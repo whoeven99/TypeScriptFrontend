@@ -1,7 +1,7 @@
 import { Input } from "antd";
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { Editor, useEditor } from "@tiptap/react";
+import { useEditor } from "@tiptap/react";
 import TextAlign from "@tiptap/extension-text-align";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
@@ -12,6 +12,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Tiptap from "app/components/richTextInput/richTextInput";
+import Image from "@tiptap/extension-image";
 import "./styles.css";
 
 const { TextArea } = Input;
@@ -82,6 +83,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
             TextStyle,
             Color,
             Highlight,
+            Image,
             Table.configure({ resizable: true }),
             TableRow,
             TableHeader,
@@ -159,6 +161,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           TextStyle,
           Color,
           Highlight,
+          Image,
           Table.configure({
             resizable: true, // 允许拖动调整列宽
           }),
