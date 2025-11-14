@@ -16,7 +16,6 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // �
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { SearchOutlined } from "@ant-design/icons";
 import {
-  ConfirmDataType,
   SingleTextTranslate,
   updateManageTranslation,
 } from "~/api/JavaServer";
@@ -36,14 +35,6 @@ const { Text } = Typography;
 
 const { Sider, Content } = Layout;
 
-type TableDataType = {
-  key: string;
-  resource: string;
-  default_language: string | undefined;
-  translated: string | undefined;
-  type: string | undefined;
-} | null;
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -61,17 +52,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-  try {
-    const formData = await request.formData();
-    const loading: any = JSON.parse(formData.get("loading") as string);
-    const confirmData: ConfirmDataType[] = JSON.parse(
-      formData.get("confirmData") as string,
-    );
-    switch (true) {
-      case !!loading:
-        try {
-          const response = await admin.graphql(
-            `#graphql
+  const formData = await request.formData();
+  const loading: any = JSON.parse(formData.get("loading") as string);
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  switch (true) {
+    case !!loading:
+      try {
+        const response = await admin.graphql(
+          `#graphql
             query {     
               translatableResources(resourceType: ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS, first: 1) {
                 nodes {
@@ -90,47 +78,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          );
+        );
 
-          const data = await response.json();
+        const data = await response.json();
 
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: data?.data?.translatableResources?.nodes || [],
-          };
-        } catch (error) {
-          console.error("Error manage theme loading:", error);
-          return {
-            success: false,
-            errorCode: 0,
-            errorMsg: "",
-            response: [],
-          };
-        }
-      case !!confirmData:
-        try {
-          const data = await updateManageTranslation({
-            shop,
-            accessToken: accessToken as string,
-            confirmData,
-          });
-          return json({ data: data, confirmData });
-        } catch (error) {
-          console.error("Error manage theme confirmData:", error);
-          return {
-            data: [],
-            confirmData,
-          };
-        }
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: data?.data?.translatableResources || [],
+        };
+      } catch (error) {
+        console.error("Error manage theme loading:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+    case !!confirmData:
+      const data = await updateManageTranslation({
+        shop,
+        accessToken: accessToken as string,
+        confirmData,
+      });
 
-      default:
-        // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
-    }
-  } catch (error) {
-    console.error("Error action theme:", error);
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
+
+    default:
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
   }
 };
 
@@ -147,17 +135,17 @@ const Index = () => {
   const loadingItemsRef = useRef<string[]>([]);
 
   const fetcher = useFetcher<any>();
-  const themeFetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>(null);
   const [selectedThemeKey, setSelectedThemeKey] = useState<string>("");
-  const [themeData, setThemeData] = useState<any>([]);
+  const [themesData, setThemesData] = useState<any[]>([]);
+  const [filteredThemesData, setFilteredThemesData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<any>([]);
-  const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
-  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<any[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
     [],
@@ -179,7 +167,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    themeFetcher.submit(
+    dataFetcher.submit(
       {
         loading: JSON.stringify({}),
       },
@@ -207,59 +195,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (themeFetcher.data?.success) {
-      const data = generateMenuItemsArray(themeFetcher.data.response);
-      setResourceData(data);
-      setFilteredResourceData(data);
-      isManualChangeRef.current = false;
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 5);
-    }
-  }, [themeFetcher.data]);
-
-  useEffect(() => {
-    const filterMenuData = exMenuData(filteredResourceData);
-
-    setMenuData(filterMenuData);
-    const findIndex = filterMenuData.find(
-      (item: any) => item.key == selectedThemeKey,
-    );
-    if (!findIndex) setSelectedThemeKey(filterMenuData[0]?.key);
-    const dataSource = filteredResourceData?.filter((item: any) => {
-      const { key } = item;
-      if (!key) return false;
-      const parts = key.split(".");
-      const first = parts[0];
-      const second = parts[1];
-      const label =
-        first === "shopify" || first === "section" ? (second ?? first) : first;
-
-      return label == selectedThemeKey;
-    });
-    setThemeData(dataSource);
-    if (currentPage !== 1) setCurrentPage(1);
-  }, [filteredResourceData]);
-
-  useEffect(() => {
-    const dataSource = filteredResourceData?.filter((item: any) => {
-      const { key } = item;
-      if (!key) return false;
-      const parts = key.split(".");
-      const first = parts[0];
-      const second = parts[1];
-      const label =
-        first === "shopify" || first === "section" ? (second ?? first) : first;
-
-      return label == selectedThemeKey;
-    });
-    setThemeData(dataSource);
-    setConfirmData([]);
-    setSuccessTranslatedKey([]);
-    if (currentPage !== 1) setCurrentPage(1);
-  }, [selectedThemeKey]);
-
-  useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
 
@@ -277,34 +212,95 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const resourceIndex = resourceData.findIndex(
-            (option: any) => option.key === item.key,
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        const newData = dataFetcher.data?.response?.nodes || [];
+        if (Array.isArray(newData)) {
+          const menuData = exMenuData(newData);
+          setMenuData(menuData);
+          setThemesData(newData);
+          setFilteredThemesData(newData);
+          setSelectedThemeKey(menuData[0]?.key);
+        }
+        isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+      }
+    }
+  }, [dataFetcher.data]);
+
+  useEffect(() => {
+    const filterMenuData = exMenuData(filteredThemesData) || [];
+
+    setMenuData(filterMenuData);
+
+    const findIndex = filterMenuData.find(
+      (item: any) => item.key == selectedThemeKey,
+    );
+
+    if (!findIndex) {
+      setSelectedThemeKey(filterMenuData[0]?.key);
+      return;
+    }
+
+    setResourceData(generateMenuItemsArray(filteredThemesData));
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [filteredThemesData]);
+
+  useEffect(() => {
+    setResourceData(generateMenuItemsArray(filteredThemesData));
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [selectedThemeKey]);
+
+  useEffect(() => {
+    if (confirmFetcher.data?.success) {
+      const errorItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === false,
+      );
+      const successfulItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === true,
+      );
+      if (Array.isArray(successfulItem) && successfulItem.length) {
+        successfulItem.forEach((item: any) => {
+          const themesIndex = themesData.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
           );
-          if (resourceIndex !== -1) {
-            setResourceData((prev: any) => {
-              const newResourceData = [...prev];
-              newResourceData[resourceIndex].translated = item.value;
-              return newResourceData;
-            });
+          if (themesIndex !== -1) {
+            const data = themesData[themesIndex]?.translations?.find(
+              (option: any) => option?.key === item?.response?.key,
+            );
+            if (data) {
+              data.value = item?.response?.value;
+            } else {
+              themesData[themesIndex].translations.push({
+                key: item.response.key,
+                value: item.response.value,
+              });
+            }
           }
-          const filteredIndex = filteredResourceData.findIndex(
-            (option: any) => option.key === item.key,
+          const filteredThemesIndex = themesData.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
           );
-          if (filteredIndex !== -1) {
-            setFilteredResourceData((prev: any) => {
-              const newFilteredResourceData = [...prev];
-              newFilteredResourceData[filteredIndex].translated = item.value;
-              return newFilteredResourceData;
-            });
+          if (filteredThemesIndex !== -1) {
+            const data = themesData[filteredThemesIndex]?.translations?.find(
+              (option: any) => option?.key === item?.response?.key,
+            );
+            if (data) {
+              data.value = item?.response?.value;
+            } else {
+              themesData[filteredThemesIndex].translations.push({
+                key: item.response.key,
+                value: item.response.value,
+              });
+            }
           }
         });
-        shopify.toast.show("Saved successfully");
+      }
+      if (Array.isArray(errorItem) && errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
             log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
@@ -315,11 +311,11 @@ const Index = () => {
           },
         );
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
     }
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
@@ -336,7 +332,7 @@ const Index = () => {
       dataIndex: "resource",
       key: "resource",
       width: "20%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return <Text style={{ display: "inline" }}>{record?.resource}</Text>;
       },
     },
@@ -345,7 +341,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return <ManageTableInput record={record} />;
       },
     },
@@ -354,7 +350,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           record && (
             <ManageTableInput
@@ -372,16 +368,15 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <Button
             onClick={() => {
-              handleTranslate(
-                "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                record?.key || "",
-                record?.type || "",
-                record?.default_language || "",
-              );
+              handleTranslate({
+                resourceType: "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                record,
+                handleInputChange,
+              });
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -395,7 +390,7 @@ const Index = () => {
   const exMenuData = (data: any) => {
     const seen = new Set<string>();
 
-    return data
+    return data[0]?.translatableContent
       ?.map(({ key }: { key: string }) => {
         const parts = key.split(".");
         const first = parts[0];
@@ -417,13 +412,45 @@ const Index = () => {
       });
   };
 
-  const handleInputChange = (key: string, value: string) => {
+  const generateMenuItemsArray = (items: any) => {
+    return items[0]?.translatableContent?.flatMap(
+      (item: any, index: number) => {
+        // 创建当前项的对象
+        if (!item?.value) return [];
+        const parts = item?.key.split(".");
+        const first = parts[0];
+        const second = parts[1];
+        const label =
+          first === "shopify" || first === "section"
+            ? (second ?? first)
+            : first;
+        if (label !== selectedThemeKey) return [];
+        const currentItem = {
+          key: `${item?.key}_${items[0]?.resourceId}_${index}`,
+          resourceId: items[0]?.resourceId,
+          shopifyKey: item?.key,
+          resource: item?.key,
+          digest: item?.digest || "",
+          type: item?.type || "",
+          default_language: item?.value || "",
+          translated: items[0]?.translations?.find(
+            (translation: any) => translation.key == item?.key,
+          )?.value,
+        };
+        return [currentItem];
+      },
+    );
+  };
+
+  const handleInputChange = (record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
-      [key]: value, // 更新对应的 key
+      [record?.key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.id === record?.key,
+      );
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -433,52 +460,30 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: themeFetcher.data.response[0]?.resourceId,
-          locale: themeFetcher.data.response[0]?.translatableContent[0]?.locale,
-          key: key,
+          id: record?.key,
+          resourceId: record?.resourceId,
+          locale: globalStore?.source || "",
+          key: record?.shopifyKey,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            themeFetcher.data.response[0]?.translatableContent.find(
-              (item: any) => item.key === key,
-            )?.digest ||
-            themeFetcher.data.response[0]?.translatableContent[0]?.digest ||
-            "",
+          translatableContentDigest: record?.digest,
           target: searchTerm || "",
         };
+
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
   };
 
-  const generateMenuItemsArray = (items: any) => {
-    return items[0]?.translatableContent.flatMap((item: any, index: number) => {
-      // 创建当前项的对象
-      if (!item?.value) return [];
-      const currentItem = {
-        key: `${item?.key}`, // 使用 key 生成唯一的 key
-        resource: item?.key,
-        default_language: item?.value, // 默认语言为 item 的标题
-        translated:
-          items[0]?.translations.find(
-            (translation: any) => translation?.key === item?.key,
-          )?.value || "", // 翻译字段初始化为空字符串
-        type: item?.type,
-      };
-      return [currentItem];
-    });
-  };
-
-  const handleTranslate = async (
-    resourceType: string,
-    key: string,
-    type: string,
-    context: string,
-  ) => {
-    if (!key || !type || !context) {
-      return;
-    }
+  const handleTranslate = async ({
+    resourceType,
+    record,
+    handleInputChange,
+  }: {
+    resourceType: string;
+    record: any;
+    handleInputChange: (key: string, value: string) => void;
+  }) => {
     fetcher.submit(
       {
         log: `${globalStore?.shop} 从翻译管理-主题页面点击单行翻译`,
@@ -488,21 +493,22 @@ const Index = () => {
         action: "/log",
       },
     );
-    setLoadingItems((prev) => [...prev, key]);
+    setLoadingItems((prev) => [...prev, record?.key]);
+
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
-      context: context,
-      key: key,
-      type: type,
+      context: record?.default_language,
+      key: record?.shopifyKey,
+      type: record?.type,
       server: globalStore?.server || "",
     });
     if (data?.success) {
-      if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response);
-        setSuccessTranslatedKey((prev) => [...prev, key]);
+      if (loadingItemsRef.current.includes(record?.key)) {
+        handleInputChange(record, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -517,7 +523,7 @@ const Index = () => {
     } else {
       shopify.toast.show(data.errorMsg);
     }
-    setLoadingItems((prev) => prev.filter((item) => item !== key));
+    setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
   const handleLanguageChange = (language: string) => {
@@ -526,7 +532,7 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
-      themeFetcher.submit(
+      dataFetcher.submit(
         {
           loading: JSON.stringify({
             searchTerm: language,
@@ -568,12 +574,17 @@ const Index = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
-    const filteredData = resourceData.filter(
-      (theme: any) =>
-        typeof theme.default_language === "string" &&
-        theme.default_language.toLowerCase().includes(value.toLowerCase()),
-    );
-    setFilteredResourceData(filteredData);
+    const filteredData = [
+      {
+        ...themesData[0],
+        translatableContent: themesData[0]?.translatableContent?.filter(
+          (theme: any) =>
+            typeof theme.value === "string" &&
+            theme.value.toLowerCase().includes(value.toLowerCase()),
+        ),
+      },
+    ];
+    setFilteredThemesData(filteredData);
   };
 
   const handleConfirm = () => {
@@ -595,8 +606,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data = generateMenuItemsArray(themeFetcher.data.response);
-    setFilteredResourceData(data); // 使用展开运算符创建新数组引用
+    setFilteredThemesData([...filteredThemesData]); // 使用展开运算符创建新数组引用
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
@@ -731,7 +741,7 @@ const Index = () => {
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
-                      {themeData.length > 20 ? (
+                      {resourceData.length > 20 ? (
                         <List
                           itemLayout="vertical"
                           style={{ listStyle: "none" }}
@@ -746,11 +756,11 @@ const Index = () => {
                               }
                             },
                             pageSize: 10,
-                            total: themeData.length,
+                            total: resourceData.length,
                             current: currentPage,
                             showSizeChanger: false,
                           }}
-                          dataSource={themeData}
+                          dataSource={resourceData}
                           renderItem={(item: any) => (
                             <List.Item key={item.key}>
                               <Space
@@ -803,12 +813,12 @@ const Index = () => {
                                 >
                                   <Button
                                     onClick={() => {
-                                      handleTranslate(
-                                        "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                                        item?.key || "",
-                                        item?.type || "",
-                                        item?.default_language || "",
-                                      );
+                                      handleTranslate({
+                                        resourceType:
+                                          "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                                        record: item,
+                                        handleInputChange,
+                                      });
                                     }}
                                     loading={loadingItems.includes(
                                       item?.key || "",
@@ -823,7 +833,7 @@ const Index = () => {
                           )}
                         />
                       ) : (
-                        themeData.map((item: any, index: number) => (
+                        resourceData.map((item: any, index: number) => (
                           <Space
                             key={index}
                             direction="vertical"
@@ -870,12 +880,12 @@ const Index = () => {
                             >
                               <Button
                                 onClick={() => {
-                                  handleTranslate(
-                                    "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                                    item?.key || "",
-                                    item?.type || "",
-                                    item?.default_language || "",
-                                  );
+                                  handleTranslate({
+                                    resourceType:
+                                      "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                                    record: item,
+                                    handleInputChange,
+                                  });
                                 }}
                                 loading={loadingItems.includes(item?.key || "")}
                               >
@@ -907,7 +917,7 @@ const Index = () => {
                 >
                   <Table
                     columns={resourceColumns}
-                    dataSource={themeData}
+                    dataSource={resourceData}
                     pagination={{
                       current: currentPage,
                       position: ["bottomCenter"],

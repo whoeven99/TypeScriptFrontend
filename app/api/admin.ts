@@ -1,17 +1,8 @@
 import axios from "axios";
 import {
   LanguagesDataType,
-  ShopLocalesType,
 } from "~/routes/app.language/route";
 import { InsertShopTranslateInfo } from "./JavaServer";
-
-// function filterEmptyTranslationsAndContent(data: any) {
-//   // 使用 filter 方法过滤掉 translations 和 translatableContent 为空的节点
-//   return data.nodes.filter((node: any) => {
-//     return node.translatableContent.length > 0 || node.translations.length > 0;
-//   });
-// }
-
 export interface PublishInfoType {
   locale: string;
   shopLocale: {
