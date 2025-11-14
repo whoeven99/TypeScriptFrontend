@@ -637,7 +637,7 @@ const Index = () => {
             return {
               key: `${option?.translatableContent[0]?.key}_${option?.resourceId}_${index}`,
               resourceId: option?.resourceId,
-              shopifyKey: option?.translatableContent[0]?.key,
+              key: `${option?.translatableContent[0]?.key}_${index}`,
               index: index,
               digest: option?.translatableContent[0]?.digest,
               resource: t(option?.translatableContent[0]?.value),
@@ -653,7 +653,7 @@ const Index = () => {
               return {
                 key: `${metafield?.translatableContent[0]?.key}_${metafield?.resourceId}_${index}`,
                 resourceId: metafield?.resourceId,
-                shopifyKey: metafield?.translatableContent[0]?.key,
+                key: `${metafield?.translatableContent[0]?.key}_${index}`,
                 index: index,
                 digest: metafield?.translatableContent[0]?.digest,
                 resource: t(metafield?.translatableContent[0]?.key),
@@ -764,7 +764,7 @@ const Index = () => {
               .map((variant: any) => ({
                 key: `${variant?.translatableContent[0]?.key}_${variant?.resourceId}_${index}`,
                 resourceId: variant?.resourceId,
-                shopifyKey: variant?.translatableContent[0]?.key,
+                key: `${variant?.translatableContent[0]?.key}_${index}`,
                 index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,

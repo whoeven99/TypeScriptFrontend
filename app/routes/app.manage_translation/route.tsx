@@ -50,10 +50,11 @@ interface ManageSelectDataType {
 interface TableDataType {
   key: string;
   title: string;
-  allTranslatedItems: number;
-  allItems: number;
+  allTranslatedItems?: number | undefined;
+  allItems?: number | undefined;
   sync_status: boolean;
   navigation: string;
+  withoutCount: boolean;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -215,6 +216,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
+      withoutCount: false,
     },
     {
       key: "collections",
@@ -231,6 +233,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
+      withoutCount: false,
     },
   ];
 
@@ -250,38 +253,35 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "locale_content",
+      withoutCount: false,
     },
     {
       key: "json_template",
       title: t("Json Template"),
-      allTranslatedItems: undefined,
-      allItems: undefined,
       sync_status: false,
       navigation: "json_template",
+      withoutCount: true,
     },
     {
       key: "section_group",
       title: t("Section Group"),
-      allTranslatedItems: undefined,
-      allItems: undefined,
       sync_status: false,
       navigation: "section_group",
+      withoutCount: true,
     },
     {
       key: "settings_category",
       title: t("Settings Category"),
-      allTranslatedItems: undefined,
-      allItems: undefined,
       sync_status: false,
       navigation: "settings_category",
+      withoutCount: true,
     },
     {
       key: "settings_data_sections",
       title: t("Settings Data Sections"),
-      allTranslatedItems: undefined,
-      allItems: undefined,
       sync_status: false,
       navigation: "settings_data_sections",
+      withoutCount: true,
     },
   ];
 
@@ -299,6 +299,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shop",
+      withoutCount: false,
     },
     {
       key: "pages",
@@ -313,21 +314,8 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
+      withoutCount: false,
     },
-    // {
-    //   key: "filters",
-    //   title: t("Filters"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "FILTER",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "FILTER",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "filter",
-    // },
     {
       key: "metaobjects",
       title: t("Metaobjects"),
@@ -343,6 +331,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
+      withoutCount: false,
     },
     {
       key: "navigation",
@@ -357,6 +346,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
+      withoutCount: false,
     },
     {
       key: "store_metadata",
@@ -373,10 +363,11 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
+      withoutCount: false,
     },
   ];
 
-  const blogAndArticleDataSource = [
+  const blogAndArticleDataSource: TableDataType[] = [
     {
       key: "articles",
       title: t("Articles"),
@@ -390,6 +381,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
+      withoutCount: false,
     },
     {
       key: "blog_titles",
@@ -404,21 +396,24 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
+      withoutCount: false,
     },
   ];
 
-  const imageDataSource = [
+  const imageDataSource: TableDataType[] = [
     {
       key: "product_images",
       title: t("Product images"),
       sync_status: false,
       navigation: "productImage",
+      withoutCount: true,
     },
     {
       key: "product_image_alt",
       title: t("Product image alt text"),
       sync_status: false,
       navigation: "productImageAlt",
+      withoutCount: true,
     },
   ];
 
@@ -438,6 +433,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
+      withoutCount: false,
     },
     {
       key: "email",
@@ -454,6 +450,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "email",
+      withoutCount: false,
     },
     {
       key: "shipping",
@@ -472,6 +469,7 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shipping",
+      withoutCount: false,
     },
     {
       key: "delivery",
@@ -490,12 +488,25 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
+      withoutCount: false,
     },
   ];
+
+  const liquidAndThirdPartyAppsDataSource: TableDataType[] = [
+    {
+      key: "custom_liquid",
+      title: t("Custom Liquid"),
+      sync_status: false,
+      navigation: "custom_liquid",
+      withoutCount: true,
+    },
+  ];
+
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
     reportClick("manage_navi_import");
   };
+
   const handleShowImportModal = () => {
     setShowModal(true);
     reportClick("manage_navi_import");
@@ -1036,26 +1047,19 @@ const Index = () => {
                   dataSource={blogAndArticleDataSource}
                   current={current}
                 />
-                <Card>
-                  <Space
-                    direction="vertical"
-                    size="small"
-                    style={{ display: "flex" }}
-                  >
-                    <Title style={{ fontSize: "1.5rem", display: "inline" }}>
-                      {t("Images data")}
-                    </Title>
-                    <Table
-                      columns={imageColumns}
-                      dataSource={imageDataSource}
-                      pagination={false}
-                    />
-                  </Space>
-                </Card>
-
+                <ManageTranslationsCard
+                  cardTitle={t("Images data")}
+                  dataSource={imageDataSource}
+                  current={current}
+                />
                 <ManageTranslationsCard
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Liquid & Third-Party Apps")}
+                  dataSource={liquidAndThirdPartyAppsDataSource}
                   current={current}
                 />
               </Space>
