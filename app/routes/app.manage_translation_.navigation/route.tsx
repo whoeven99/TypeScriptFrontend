@@ -14,11 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // �
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import {
-  ConfirmDataType,
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
@@ -31,27 +27,6 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
-
-interface ItemType {
-  key: string;
-  label: {
-    value: string;
-    type: string;
-  };
-  translations: {
-    key: string;
-    label: string | undefined;
-  };
-}
-
-type TableDataType = {
-  key: string;
-  index: number;
-  resource: string;
-  default_language: string | undefined;
-  translated: string | undefined;
-  type: string | undefined;
-} | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 如果没有 language 参数，直接返回空数据
@@ -70,140 +45,83 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  try {
-    const formData = await request.formData();
-    const navigationStartCursor: any = JSON.parse(
-      formData.get("navigationStartCursor") as string,
-    );
-    const navigationEndCursor: any = JSON.parse(
-      formData.get("navigationEndCursor") as string,
-    );
-    const itemStartCursor: any = JSON.parse(
-      formData.get("itemStartCursor") as string,
-    );
-    const itemEndCursor: any = JSON.parse(
-      formData.get("itemEndCursor") as string,
-    );
-    const confirmData: ConfirmDataType[] = JSON.parse(
-      formData.get("confirmData") as string,
-    );
-    switch (true) {
-      case !!navigationStartCursor: {
-        try {
-          const response = await queryPreviousTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "MENU",
-            startCursor: navigationStartCursor?.cursor,
-            locale: navigationStartCursor?.searchTerm || searchTerm,
-          });
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-      }
-
-      case !!navigationEndCursor: {
-        try {
-          const response = await queryNextTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "MENU",
-            endCursor: navigationEndCursor?.cursor,
-            locale: navigationEndCursor?.searchTerm || searchTerm,
-          });
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-      }
-
-      case !!itemStartCursor: {
-        try {
-          const response = await queryPreviousTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "LINK",
-            startCursor: itemStartCursor?.cursor,
-            locale: itemStartCursor?.searchTerm || searchTerm,
-          });
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-      }
-
-      case !!itemEndCursor: {
-        try {
-          const response = await queryNextTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "LINK",
-            endCursor: itemEndCursor?.cursor,
-            locale: itemEndCursor?.searchTerm || searchTerm,
-          });
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-      }
-
-      case !!confirmData:
-        const data = await updateManageTranslation({
+  const formData = await request.formData();
+  const startCursor: any = JSON.parse(formData.get("startCursor") as string);
+  const endCursor: any = JSON.parse(formData.get("endCursor") as string);
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  switch (true) {
+    case !!startCursor: {
+      try {
+        const response = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          confirmData,
+          resourceType: startCursor?.resourceType,
+          startCursor: startCursor?.cursor,
+          locale: startCursor?.searchTerm || searchTerm,
         });
-        return json({ data: data, confirmData: confirmData });
-
-      default: {
-        // 如果没有符合条件的 cursor，则抛出错误
-        throw new Response("No valid cursor provided", { status: 400 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     }
-  } catch (error) {
-    console.error("Error action navigation:", error);
-    throw new Response("Error action navigation", { status: 500 });
+
+    case !!endCursor: {
+      try {
+        const response = await queryNextTransType({
+          shop,
+          accessToken: accessToken as string,
+          resourceType: endCursor?.resourceType,
+          endCursor: endCursor?.cursor,
+          locale: endCursor?.searchTerm || searchTerm,
+        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+    }
+
+    case !!confirmData:
+      const data = await updateManageTranslation({
+        shop,
+        accessToken: accessToken as string,
+        confirmData,
+      });
+
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
+
+    default:
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
   }
 };
 
@@ -219,8 +137,8 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const menuDataFetcher = useFetcher<any>();
-  const linkDataFetcher = useFetcher<any>();
+  const fetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const menuData: any[] = [
@@ -235,14 +153,11 @@ const Index = () => {
   ];
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const [navigationsData, setNavigationsData] = useState<any>();
-  const [itemsData, setItemsData] = useState<any>();
-  const [navigationData, setNavigationData] = useState<ItemType[]>();
-  const [ItemData, setItemData] = useState<ItemType[]>();
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [navigationsData, setNavigationsData] = useState<any[]>([]);
+  const [resourceData, setResourceData] = useState<any[]>([]);
   const [selectNavigationKey, setSelectNavigationKey] =
     useState<string>("names");
-  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<any[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
     [],
@@ -258,33 +173,20 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("navigation");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
-  const [hasNext, setHasNext] = useState<boolean>(false);
+  const [pageInfo, setPageInfo] = useState<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>({
+    hasPreviousPage: false,
+    hasNextPage: false,
+    startCursor: "",
+    endCursor: "",
+  });
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    menuDataFetcher.submit(
-      {
-        navigationEndCursor: JSON.stringify({
-          cursor: "",
-          searchTerm,
-        }),
-      },
-      {
-        method: "post",
-      },
-    );
-    linkDataFetcher.submit(
-      {
-        itemEndCursor: JSON.stringify({
-          cursor: "",
-          searchTerm,
-        }),
-      },
-      {
-        method: "post",
-      },
-    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -294,6 +196,21 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          resourceType: selectNavigationKey == "names" ? "MENU" : "LINK",
+          cursor: "",
+          searchTerm,
+        }),
+      },
+      {
+        method: "post",
+      },
+    );
+  }, [selectNavigationKey]);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -313,114 +230,79 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (selectNavigationKey === "names" && navigationsData) {
-      setHasPrevious(navigationsData?.pageInfo?.hasPreviousPage || false);
-      setHasNext(navigationsData?.pageInfo?.hasNextPage || false);
-      const data = transBeforeData({
-        menus: navigationsData,
-      });
-      setNavigationData(data);
-      if (isLoading)
+    if (navigationsData) {
+      const data = generateMenuItemsArray(navigationsData);
+      setResourceData(data);
+      setLoadingItems([]);
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
+      setTranslatedValues({});
+    }
+  }, [navigationsData]);
+
+  useEffect(() => {
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        const newData = dataFetcher.data.response?.nodes;
+        if (Array.isArray(newData)) {
+          setNavigationsData(newData);
+        }
+        const newPageInfo = dataFetcher.data.response?.pageInfo;
+
+        if (newPageInfo) setPageInfo(newPageInfo);
+        isManualChangeRef.current = false; // 重置
         setTimeout(() => {
           setIsLoading(false);
         }, 100);
-    } else if (selectNavigationKey === "items" && itemsData) {
-      setHasPrevious(itemsData.pageInfo.hasPreviousPage || false);
-      setHasNext(itemsData.pageInfo.hasNextPage || false);
-      const data = transBeforeData({
-        menus: itemsData,
-      });
-      setItemData(data);
-    }
-    setConfirmData([]);
-    setSuccessTranslatedKey([]);
-    setTranslatedValues({});
-    setLoadingItems([]);
-  }, [selectNavigationKey, navigationsData, itemsData]);
-
-  useEffect(() => {
-    if (navigationData && selectNavigationKey === "names")
-      setResourceData(generateMenuItemsArray(navigationData));
-  }, [navigationData]);
-
-  useEffect(() => {
-    if (ItemData && selectNavigationKey === "items")
-      setResourceData(generateMenuItemsArray(ItemData));
-  }, [ItemData]);
-
-  useEffect(() => {
-    if (menuDataFetcher.data) {
-      if (menuDataFetcher.data?.success) {
-        setNavigationsData(menuDataFetcher.data?.response);
-        isManualChangeRef.current = false; // 重置
       }
     }
-  }, [menuDataFetcher.data]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
-    if (linkDataFetcher.data) {
-      if (linkDataFetcher.data?.success) {
-        setItemsData(linkDataFetcher.data?.response);
-      }
-    }
-  }, [linkDataFetcher.data]);
-
-  useEffect(() => {
-    if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === true,
+    if (confirmFetcher.data?.success) {
+      const errorItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === false,
       );
-      const errorItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === false,
+      const successfulItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === true,
       );
-
-      successfulItem.forEach((item: any) => {
-        if (item.data.resourceId.split("/")[3] === "Menu") {
-          const index = navigationsData?.nodes?.findIndex(
-            (option: any) => option?.resourceId === item?.data?.resourceId,
+      if (Array.isArray(successfulItem) && successfulItem.length) {
+        successfulItem.forEach((item: any) => {
+          const index = navigationsData.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
           );
           if (index !== -1) {
-            const navigation = navigationsData?.nodes[
-              index
-            ]?.translations?.find(
-              (option: any) => option?.key === item?.data?.key,
+            const data = navigationsData[index]?.translations?.find(
+              (option: any) => option?.key === item?.response?.key,
             );
-            if (navigation) {
-              navigation.value = item.data.value;
+            if (data) {
+              data.value = item?.response?.value;
             } else {
-              navigationsData?.nodes[index]?.translations?.push({
-                key: item.data.key,
-                value: item.data.value,
+              navigationsData[index].translations.push({
+                key: item.response.key,
+                value: item.response.value,
               });
             }
           }
-        } else if (item.data.resourceId.split("/")[3] === "Link") {
-          const index = itemsData?.nodes?.findIndex(
-            (option: any) => option?.resourceId === item?.data?.resourceId,
-          );
-          if (index !== -1) {
-            const link = itemsData?.nodes[index]?.translations?.find(
-              (option: any) => option?.key === item?.data?.key,
-            );
-            if (link) {
-              link.value = item.data.value;
-            } else {
-              itemsData?.nodes[index]?.translations?.push({
-                key: item.data.key,
-                value: item.data.value,
-              });
-            }
-          }
-        }
-      });
-      if (errorItem.length == 0) {
+        });
+      }
+      if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-配送页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
     }
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
@@ -443,7 +325,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return <ManageTableInput record={record} />;
       },
     },
@@ -452,7 +334,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           record && (
             <ManageTableInput
@@ -470,17 +352,15 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <Button
             onClick={() => {
-              handleTranslate(
-                selectNavigationKey === "names" ? "MENU" : "LINK",
-                record?.key || "",
-                record?.type || "",
-                record?.default_language || "",
-                record?.index || 0,
-              );
+              handleTranslate({
+                resourceType: selectNavigationKey === "names" ? "MENU" : "LINK",
+                record,
+                handleInputChange,
+              });
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -491,16 +371,36 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string, index: number) => {
+  const generateMenuItemsArray = (items: any) => {
+    return items.flatMap((item: any, index: number) => {
+      if (item?.translatableContent.length !== 0) {
+        // 创建当前项的对象
+        const currentItem = {
+          key: `title_${item?.resourceId}_${index}`,
+          resourceId: item?.resourceId,
+          shopifyKey: "title",
+          index,
+          resource: t("title"),
+          digest: item?.translatableContent[0]?.digest || "",
+          type: item?.translatableContent[0]?.type || "",
+          default_language: item?.translatableContent[0]?.value || "",
+          translated: item?.translations[0]?.value,
+        };
+        return currentItem.default_language !== "" ? [currentItem] : [];
+      }
+      return [];
+    });
+  };
+
+  const handleInputChange = (record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
-      [key]: value, // 更新对应的 key
+      [record?.key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
-        (item) => item.resourceId === key,
+        (item) => item.id === record?.key,
       );
-
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -509,27 +409,14 @@ const Index = () => {
           value: value,
         };
         return updatedConfirmData;
-      } else if (selectNavigationKey === "names") {
-        // 如果 key 不存在，新增一条数据
-        const newItem = {
-          resourceId: navigationsData.nodes[index]?.resourceId,
-          locale: navigationsData.nodes[index]?.translatableContent[0]?.locale,
-          key: "title",
-          value: value, // 初始为空字符串
-          translatableContentDigest:
-            navigationsData.nodes[index]?.translatableContent[0]?.digest,
-          target: searchTerm || "",
-        };
-
-        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       } else {
         const newItem = {
-          resourceId: itemsData.nodes[index]?.resourceId,
-          locale: itemsData.nodes[index]?.translatableContent[0]?.locale,
-          key: "title",
+          id: record?.key,
+          resourceId: record?.resourceId,
+          locale: globalStore?.source || "",
+          key: record?.shopifyKey,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            itemsData.nodes[index]?.translatableContent[0]?.digest,
+          translatableContentDigest: record?.digest,
           target: searchTerm || "",
         };
 
@@ -538,97 +425,55 @@ const Index = () => {
     });
   };
 
-  const transBeforeData = ({ menus }: { menus: any }) => {
-    let data: ItemType[] = [
+  const handleTranslate = async ({
+    resourceType,
+    record,
+    handleInputChange,
+  }: {
+    resourceType: string;
+    record: any;
+    handleInputChange: (key: string, value: string) => void;
+  }) => {
+    fetcher.submit(
       {
-        key: "",
-        label: {
-          value: "",
-          type: "",
-        },
-        translations: {
-          key: "",
-          label: "",
-        },
+        log: `${globalStore?.shop} 从翻译管理-配送页面点击单行翻译`,
       },
-    ];
-    data = menus.nodes.map((menu: any) => {
-      // 返回修改后的 menu，确保返回类型是 ItemType
-      return {
-        key: menu?.resourceId,
-        label: {
-          value: menu?.translatableContent[0]?.value || "",
-          type: menu?.translatableContent[0]?.type || "",
-        },
-        translations: {
-          key: menu?.resourceId,
-          label: menu?.translations[0]?.value || "",
-        },
-      };
-    });
-    return data;
-  };
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+    setLoadingItems((prev) => [...prev, record?.key]);
 
-  const generateMenuItemsArray = (
-    items: ItemType[],
-  ): Array<{
-    key: string;
-    index: number;
-    resource: string;
-    default_language: string | undefined;
-    translated: string | undefined;
-    type: string | undefined;
-  }> => {
-    return items.map((item: ItemType, index: number) => {
-      // 创建当前项的对象
-      const currentItem = {
-        key: item.key, // 使用 key 生成唯一的 key
-        index: index,
-        resource: "label", // 资源字段固定为 "Menu Items"
-        default_language: item?.label?.value, // 默认语言为 item 的标题
-        translated: item?.translations?.label, // 翻译字段初始化为空字符串
-        type: item?.label?.type,
-      };
-      setTranslatedValues((prev) => ({
-        ...prev,
-        [item.key]: item.translations?.label || "", // 更新翻译值
-      }));
-      // 如果没有子项，只返回当前项
-      return currentItem;
-    });
-  };
-
-  const handleTranslate = async (
-    resourceType: string,
-    key: string,
-    type: string,
-    context: string,
-    index: number,
-  ) => {
-    if (!key || !type || !context) {
-      return;
-    }
-    setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: globalStore?.shop as string,
+      shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
-      context: context,
-      key: key,
-      type: type,
-      server: server || "",
+      context: record?.default_language,
+      key: record?.shopifyKey,
+      type: record?.type,
+      server: globalStore?.server || "",
     });
     if (data?.success) {
-      if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response, index);
-        setSuccessTranslatedKey((prev) => [...prev, key]);
+      if (loadingItemsRef.current.includes(record?.key)) {
+        handleInputChange(record, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 从翻译管理-配送页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
     }
-    setLoadingItems((prev) => prev.filter((item) => item !== key));
+    setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
   const handleLanguageChange = (language: string) => {
@@ -636,20 +481,10 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      menuDataFetcher.submit(
+      dataFetcher.submit(
         {
-          navigationEndCursor: JSON.stringify({
-            cursor: "",
-            searchTerm: language,
-          }),
-        },
-        {
-          method: "post",
-        },
-      );
-      linkDataFetcher.submit(
-        {
-          itemEndCursor: JSON.stringify({
+          endCursor: JSON.stringify({
+            resourceType: selectNavigationKey == "names" ? "MENU" : "LINK",
             cursor: "",
             searchTerm: language,
           }),
@@ -691,35 +526,19 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      if (selectNavigationKey === "names") {
-        const startCursor = navigationsData?.pageInfo?.startCursor;
-        menuDataFetcher.submit(
-          {
-            navigationStartCursor: JSON.stringify({
-              cursor: startCursor,
-              searchTerm,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/navigation?language=${searchTerm}`,
-          },
-        );
-      } else {
-        const startCursor = itemsData.pageInfo.startCursor;
-        linkDataFetcher.submit(
-          {
-            itemStartCursor: JSON.stringify({
-              cursor: startCursor,
-              searchTerm,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/navigation?language=${searchTerm}`,
-          },
-        );
-      }
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            resourceType: selectNavigationKey == "names" ? "MENU" : "LINK",
+            cursor: pageInfo?.startCursor,
+            searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/navigation?language=${searchTerm}`,
+        },
+      );
     }
   };
 
@@ -728,35 +547,19 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      if (selectNavigationKey === "names") {
-        const endCursor = navigationsData?.pageInfo?.endCursor;
-        menuDataFetcher.submit(
-          {
-            navigationEndCursor: JSON.stringify({
-              cursor: endCursor,
-              searchTerm,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/navigation?language=${searchTerm}`,
-          },
-        );
-      } else {
-        const endCursor = itemsData.pageInfo.endCursor;
-        linkDataFetcher.submit(
-          {
-            itemEndCursor: JSON.stringify({
-              cursor: endCursor,
-              searchTerm,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/navigation?language=${searchTerm}`,
-          },
-        );
-      }
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            resourceType: selectNavigationKey == "names" ? "MENU" : "LINK",
+            cursor: pageInfo?.endCursor,
+            searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/navigation?language=${searchTerm}`,
+        },
+      );
     }
   };
 
@@ -771,8 +574,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    setNavigationsData({ ...navigationsData });
-    setItemsData({ ...itemsData });
+    setNavigationsData([...navigationsData]);
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
@@ -792,22 +594,6 @@ const Index = () => {
     <Page
       title={t("Navigation")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -840,7 +626,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : navigationsData?.nodes?.length ? (
+        ) : (
           <>
             {!isMobile && (
               <Sider
@@ -929,97 +715,114 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Card title={t("Resource")}>
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      {resourceData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={index}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px",
-                              }}
+                  {navigationsData.length ? (
+                    <Card
+                      title={t("Resource")}
+                      loading={dataFetcher.state === "submitting"}
+                    >
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        {resourceData.map((item: any, index: number) => {
+                          return (
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: "100%" }}
                             >
-                              {t(item.resource)}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                isSuccess={successTranslatedKey?.includes(
-                                  item?.key as string,
-                                )}
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate(
-                                    selectNavigationKey === "names"
-                                      ? "MENU"
-                                      : "LINK",
-                                    item?.key || "",
-                                    item?.type || "",
-                                    item?.default_language || "",
-                                    item?.index || 0,
-                                  );
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px",
                                 }}
-                                loading={loadingItems.includes(item?.key || "")}
                               >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        );
-                      })}
-                    </Space>
-                  </Card>
+                                {t(item.resource)}
+                              </Text>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Default Language")}</Text>
+                                <ManageTableInput record={item} />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Translated")}</Text>
+                                <ManageTableInput
+                                  isSuccess={successTranslatedKey?.includes(
+                                    item?.key as string,
+                                  )}
+                                  translatedValues={translatedValues}
+                                  setTranslatedValues={setTranslatedValues}
+                                  handleInputChange={handleInputChange}
+                                  isRtl={searchTerm === "ar"}
+                                  record={item}
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate({
+                                      resourceType:
+                                        selectNavigationKey === "names"
+                                          ? "MENU"
+                                          : "LINK",
+                                      record: item,
+                                      handleInputChange,
+                                    });
+                                  }}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0",
+                                }}
+                              />
+                            </Space>
+                          );
+                        })}
+                      </Space>
+                    </Card>
+                  ) : (
+                    <Result
+                      title={t(
+                        "The specified fields were not found in the store.",
+                      )}
+                      extra={
+                        <Button type="primary" onClick={onCancel}>
+                          {t("Yes")}
+                        </Button>
+                      }
+                    />
+                  )}
                   <SideMenu
                     items={menuData}
                     selectedKeys={selectNavigationKey}
                     onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    {(hasNext || hasPrevious) && (
+                    {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                       <Pagination
-                        hasPrevious={hasPrevious}
+                        hasPrevious={pageInfo.hasPreviousPage}
                         onPrevious={onPrevious}
-                        hasNext={hasNext}
+                        hasNext={pageInfo.hasNextPage}
                         onNext={onNext}
                       />
                     )}
@@ -1088,63 +891,45 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Table
-                    columns={resourceColumns}
-                    dataSource={resourceData}
-                    pagination={false}
-                  />
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    {(hasNext || hasPrevious) && (
-                      <Pagination
-                        hasPrevious={hasPrevious}
-                        onPrevious={onPrevious}
-                        hasNext={hasNext}
-                        onNext={onNext}
+                  {navigationsData.length ? (
+                    <>
+                      <Table
+                        columns={resourceColumns}
+                        dataSource={resourceData}
+                        pagination={false}
+                        loading={dataFetcher.state === "submitting"}
                       />
-                    )}
-                  </div>
+                      <div
+                        style={{ display: "flex", justifyContent: "center" }}
+                      >
+                        {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
+                          <Pagination
+                            hasPrevious={pageInfo.hasPreviousPage}
+                            onPrevious={onPrevious}
+                            hasNext={pageInfo.hasNextPage}
+                            onNext={onNext}
+                          />
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <Result
+                      title={t(
+                        "The specified fields were not found in the store.",
+                      )}
+                      extra={
+                        <Button type="primary" onClick={onCancel}>
+                          {t("Yes")}
+                        </Button>
+                      }
+                    />
+                  )}
                 </Space>
               )}
             </Content>
           </>
-        ) : (
-          <Result
-            title={t("The specified fields were not found in the store.")}
-            extra={
-              <Button type="primary" onClick={onCancel}>
-                {t("Yes")}
-              </Button>
-            }
-          />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };

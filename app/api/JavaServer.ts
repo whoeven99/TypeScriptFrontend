@@ -4,20 +4,6 @@ import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
-export interface ConfirmDataType {
-  resourceId: string;
-  locale: string;
-  key: string;
-  value: string;
-  translatableContentDigest: string;
-  target: string;
-}
-
-interface GroupedDeleteData {
-  resourceId: string;
-  locales: string[];
-  translationKeys: string[];
-}
 
 export const IsInFreePlanTime = async ({
   shop,

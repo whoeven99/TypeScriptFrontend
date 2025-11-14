@@ -13,7 +13,6 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  ConfirmDataType,
   SingleTextTranslate,
   updateManageTranslation,
 } from "~/api/JavaServer";
@@ -50,7 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const loading = JSON.parse(formData.get("loading") as string);
   const policyId = formData.get("policyId") as string;
-  const confirmData: ConfirmDataType[] = JSON.parse(
+  const confirmData: any[] = JSON.parse(
     formData.get("confirmData") as string,
   );
   switch (true) {

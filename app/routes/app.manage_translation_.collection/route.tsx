@@ -14,11 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // å¼
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import {
-  ConfirmDataType,
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -51,9 +47,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const startCursor = JSON.parse(formData.get("startCursor") as string);
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: ConfirmDataType[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!startCursor:
       try {

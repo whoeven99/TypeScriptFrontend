@@ -14,7 +14,6 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // å¼
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
 import {
-  ConfirmDataType,
   SingleTextTranslate,
   updateManageTranslation,
 } from "~/api/JavaServer";
@@ -49,7 +48,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: ConfirmDataType[] = JSON.parse(
+  const confirmData: any[] = JSON.parse(
     formData.get("confirmData") as string,
   );
   switch (true) {

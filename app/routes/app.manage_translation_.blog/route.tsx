@@ -15,7 +15,6 @@ import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import {
-  ConfirmDataType,
   SingleTextTranslate,
   updateManageTranslation,
 } from "~/api/JavaServer";
