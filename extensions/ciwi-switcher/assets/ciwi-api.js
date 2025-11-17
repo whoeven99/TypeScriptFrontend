@@ -63,6 +63,24 @@ export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   }
 }
 
+export async function ReadTranslatedText({
+  blockId,
+  shopName,
+  languageCode,
+}) {
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
+      {
+        method: "POST",
+      },
+    );
+    return data;
+  } catch (err) {
+    console.error("Error ReadTranslatedText:", err);
+  }
+}
+
 export async function ParseLiquidDataByShopNameAndLanguage({
   blockId,
   shopName,

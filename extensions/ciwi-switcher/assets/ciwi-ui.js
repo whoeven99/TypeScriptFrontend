@@ -355,7 +355,7 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
   // 监听属性变化
   observer.observe(img, {
     attributes: true,
-    attributeFilter: ['src', 'srcset', 'alt'],
+    attributeFilter: ["src", "srcset", "alt"],
   });
 
   // 保存监控信息
@@ -366,7 +366,6 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
     observer,
   });
 }
-
 
 /**
  * 观察 DOM 变化，动态处理新图片
@@ -470,7 +469,12 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
             img.alt = match?.altAfterTranslation;
           }
 
-          monitorImage(img, match?.imageAfterUrl, match?.imageAfterUrl, match?.altAfterTranslation);
+          monitorImage(
+            img,
+            match?.imageAfterUrl,
+            match?.imageAfterUrl,
+            match?.altAfterTranslation,
+          );
         }
       });
 
@@ -596,6 +600,84 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       const re = new RegExp(escapeRegExp(trimmedBefore), "g");
       return original.replace(re, trimmedAfter);
     },
+  );
+}
+
+/**
+ * 根据数据库数据替换PageFly文本
+ */
+export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput?.value;
+
+  // 🧩 获取数据库翻译数据
+  const readTranslatedText = await ReadTranslatedText({
+    blockId,
+    shopName: shop.value,
+    languageCode: language,
+  });
+
+  const translations = readTranslatedText?.response || [];
+  if (!translations || translations.length === 0) return;
+
+  /**
+   * 🔄 通用替换函数
+   */
+  const replaceForEntries = (entryList, matcherFn, replacerFn) => {
+    entryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const trimmedAfter = after?.trim();
+      if (!trimmedBefore || !trimmedAfter) return;
+
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            const parentTag = node.parentNode?.nodeName;
+            if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+
+            if (
+              node.parentElement &&
+              window.getComputedStyle(node.parentElement).display === "none"
+            )
+              return NodeFilter.FILTER_REJECT;
+
+            const normalized = normalizeText(node.nodeValue);
+            return matcherFn(normalized, trimmedBefore)
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_REJECT;
+          },
+        },
+      );
+
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+      textNodes.forEach((node) => {
+        const original = node.nodeValue;
+        const keepQuote = hasOuterQuote(original);
+        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
+        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
+      });
+    });
+  };
+
+  /**
+   * 🟦 将 translations 转为你的通用 replace 格式
+   */
+  const exactEntries = translations.map((t) => ({
+    before: t.sourceText,
+    after: t.targetText,
+  }));
+
+  /**
+   * 🟩 精准替换（exact match）
+   */
+  replaceForEntries(
+    exactEntries,
+    (normalized, trimmedBefore) => normalized === trimmedBefore,
+    (_original, _trimmedBefore, trimmedAfter) => trimmedAfter,
   );
 }
 

@@ -9,6 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
+  PageFlyTextTranslate
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -86,6 +87,9 @@ async function ciwiOnload() {
 
   //延时5s后再次执行
   setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
+
+  //PageFly翻译
+  PageFlyTextTranslate(blockId, shop, ciwiBlock)
 
   // 主页图片替换
   HomeImageTranslate(blockId);
