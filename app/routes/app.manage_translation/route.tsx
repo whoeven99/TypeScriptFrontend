@@ -500,6 +500,13 @@ const Index = () => {
       navigation: "custom_liquid",
       withoutCount: true,
     },
+    {
+      key: "pagefly",
+      title: t("PageFly"),
+      sync_status: false,
+      navigation: "pagefly",
+      withoutCount: true,
+    },
   ];
 
   const handleShowWarnModal = () => {
