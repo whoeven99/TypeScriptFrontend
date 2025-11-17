@@ -5,6 +5,7 @@ import {
   fetchAutoRate,
   GetShopImageData,
   ParseLiquidDataByShopNameAndLanguage,
+  ReadTranslatedText,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -604,7 +605,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 }
 
 /**
- * 根据数据库数据替换PageFly文本
+ * 根据数据库数据替换 PageFly 页面文本（精准替换）
  */
 export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
@@ -618,67 +619,79 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   });
 
   const translations = readTranslatedText?.response || [];
-  if (!translations || translations.length === 0) return;
+  if (!Array.isArray(translations) || translations.length === 0) return;
 
-  /**
-   * 🔄 通用替换函数
-   */
-  const replaceForEntries = (entryList, matcherFn, replacerFn) => {
-    entryList.forEach(({ before, after }) => {
-      const trimmedBefore = before?.trim();
-      const trimmedAfter = after?.trim();
-      if (!trimmedBefore || !trimmedAfter) return;
+  const normalizeText = (text) =>
+    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
 
-      const walker = document.createTreeWalker(
-        document.body,
-        NodeFilter.SHOW_TEXT,
-        {
-          acceptNode(node) {
-            const parentTag = node.parentNode?.nodeName;
-            if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+  const hasOuterQuote = (text) =>
+    /^["“”]/.test(text) && /["“”]$/.test(text);
 
-            if (
-              node.parentElement &&
-              window.getComputedStyle(node.parentElement).display === "none"
-            )
-              return NodeFilter.FILTER_REJECT;
+  // ❌ 不应替换内容的标签
+  const skipTags = new Set([
+    "SCRIPT",
+    "STYLE",
+    "NOSCRIPT",
+    "CODE",
+    "PRE",
+    "TEXTAREA",
+    "SVG",
+    "META",
+    "LINK",
+    "TITLE",
+  ]);
 
-            const normalized = normalizeText(node.nodeValue);
-            return matcherFn(normalized, trimmedBefore)
-              ? NodeFilter.FILTER_ACCEPT
-              : NodeFilter.FILTER_REJECT;
-          },
+  // 🔄 遍历所有翻译项
+  translations.forEach((item) => {
+    const trimmedBefore = normalizeText(item?.sourceText);
+    const trimmedAfter = normalizeText(item?.targetText);
+    if (!trimmedBefore || !trimmedAfter) return;
+
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parentTag = node.parentNode?.nodeName;
+
+          // ⛔ 跳过不应替换的标签
+          if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+
+          // ⛔ 隐藏节点也跳过
+          if (
+            node.parentElement &&
+            window.getComputedStyle(node.parentElement).display === "none"
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          const normalized = normalizeText(node.nodeValue);
+
+          // ❗ 未包含待替换内容 → 跳过
+          if (!normalized.includes(trimmedBefore)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          // ✅ 可以替换
+          return NodeFilter.FILTER_ACCEPT;
         },
-      );
+      }
+    );
 
-      const textNodes = [];
-      while (walker.nextNode()) textNodes.push(walker.currentNode);
+    const nodesToReplace = [];
+    while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
 
-      textNodes.forEach((node) => {
-        const original = node.nodeValue;
+    // ✏精准替换
+    nodesToReplace.forEach((node) => {
+      const original = node.nodeValue;
+      const normalized = normalizeText(original);
+
+      if (normalized === trimmedBefore) {
         const keepQuote = hasOuterQuote(original);
-        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
-        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
-      });
+        node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
+      }
     });
-  };
-
-  /**
-   * 🟦 将 translations 转为你的通用 replace 格式
-   */
-  const exactEntries = translations.map((t) => ({
-    before: t.sourceText,
-    after: t.targetText,
-  }));
-
-  /**
-   * 🟩 精准替换（exact match）
-   */
-  replaceForEntries(
-    exactEntries,
-    (normalized, trimmedBefore) => normalized === trimmedBefore,
-    (_original, _trimmedBefore, trimmedAfter) => trimmedAfter,
-  );
+  });
 }
 
 /**
