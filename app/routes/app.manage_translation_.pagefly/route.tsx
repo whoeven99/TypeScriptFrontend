@@ -480,29 +480,45 @@ const Index = () => {
     // 1️⃣ 删除 Liquid 变量 {{ ... }} 和逻辑标签 {% ... %}
     let cleaned = liquidCode.replace(/{%[\s\S]*?%}/g, "");
 
-    // 2️⃣ 删除 <style> 和 <script> 标签及其内容（跨行匹配）
+    // 2️⃣ 删除 <style> 和 <script>
     cleaned = cleaned
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<script[\s\S]*?<\/script>/gi, "");
 
-    // 3️⃣ 提取 HTML 标签之间的文本（保留段落）
+    console.log(cleaned);
+
+    // ------------------------------------------------------
+    // ⭐ 新增：提取所有 data-default-text
+    // 例如：<div data-default-text="Hello"></div>
+    // ------------------------------------------------------
+    const defaultTextMatches = [
+      ...cleaned.matchAll(/data-default-text="([^"]+)"/g),
+    ];
+    const defaultTexts = defaultTextMatches.map((m) => m[1].trim());
+    // ------------------------------------------------------
+
+    // 3️⃣ 提取 HTML 标签之间的文本
     const matches = cleaned.match(/>([^<]+)</g);
-    if (!matches) return [];
+    const normalTexts = matches
+      ? matches
+          .map((m) => m.replace(/[><]/g, "").trim())
+          .filter((t) => {
+            if (!t) return false;
 
-    // 4️⃣ 清理文本并跳过含 liquid 的文本段
-    const texts = matches
-      .map((m) => m.replace(/[><]/g, "").trim())
-      .filter((t) => {
-        if (!t) return false;
+            // 🚫 跳过含 Liquid
+            if (/{{[\s\S]*?}}/.test(t)) return false;
+            if (/{%[\s\S]*?%}/.test(t)) return false;
 
-        // 🚫 跳过含 Liquid 变量的文本（即使之前没删干净）
-        if (/{{[\s\S]*?}}/.test(t)) return false;
-        if (/{%[\s\S]*?%}/.test(t)) return false;
+            return true;
+          })
+      : [];
 
-        return true;
-      });
+    // ------------------------------------------------------
+    // ⭐ 最终结果 = data-default-text + 普通文本 去重
+    // ------------------------------------------------------
+    const finalTexts = Array.from(new Set([...defaultTexts, ...normalTexts]));
 
-    return texts;
+    return finalTexts;
   };
 
   const handleInputChange = (record: any, value: string) => {
