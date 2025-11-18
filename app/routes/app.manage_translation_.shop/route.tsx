@@ -224,9 +224,6 @@ const Index = () => {
   useEffect(() => {
     if (shopsData) {
       const data = generateMenuItemsArray(shopsData);
-      console.log("shopsData: ", shopsData);
-      console.log("data: ", data);
-
       setResourceData(data);
       setLoadingItems([]);
       setConfirmData([]);
