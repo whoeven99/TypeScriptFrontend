@@ -411,6 +411,7 @@ const Index = () => {
   const imageFetcher = useFetcher<any>();
   const translateImageFetcher = useFetcher<any>();
   const replaceTranslateImageFetcher = useFetcher<any>();
+  const languageFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -541,8 +542,9 @@ const Index = () => {
     { label: "Urdu", value: "ur" },
     { label: "Vietnamese", value: "vi" },
   ];
-  const [sourceLanguage, setSourceLanguage] = useState(selectedLanguage);
-  const [targetLanguage, setTargetLanguage] = useState("");
+  const [sourceLanguage, setSourceLanguage] = useState("zh");
+  const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
+  const [defaultLanguage, setDefaultLanguage] = useState<any>();
   const specialTargetRules: Record<string, string[]> = {
     "zh-tw": ["zh", "en"], // 目标为繁体，只能由 zh 或 en 来翻译
     el: ["en", "tr"], // 目标为希腊语，只能由 en 或 tr 来翻译
@@ -558,7 +560,34 @@ const Index = () => {
       };
     });
     setSourceLanguages(sourceLangOptions);
+    languageFetcher.submit(
+      { language: JSON.stringify({}) },
+      { method: "POST", action: "/app/manage_translation" },
+    );
   }, []);
+  useEffect(() => {
+    if (languageFetcher.data) {
+      languageFetcher.data.data.forEach((item: any) => {
+        if (item.primary) {
+          setDefaultLanguage(item);
+          setSourceLanguage(normalizeLocale(item.locale));
+        }
+      });
+    }
+  }, [languageFetcher.data]);
+  const canTranslate = (source: string, target: string): boolean => {
+    const src = normalizeLocale(source);
+    const tgt = normalizeLocale(target);
+    // 目标语言必须在输出范围
+    if (!baseOutput.has(tgt)) return false;
+    // 源语言必须在输入范围
+    if (!baseInput.has(src)) return false;
+    // 检查是否有特殊规则
+    if (specialTargetRules[tgt]) {
+      return specialTargetRules[tgt].includes(src);
+    }
+    return true;
+  };
   const normalizeLocale = (locale: string): string => {
     if (!locale) return "";
     const lower = locale.toLowerCase();
@@ -572,7 +601,7 @@ const Index = () => {
     return lower;
   };
   useEffect(() => {
-    setSourceLanguage(normalizeLocale(selectedLanguage));
+    setTargetLanguage(normalizeLocale(selectedLanguage));
   }, [selectedLanguage]);
   // 当 sourceLanguage 改变时，动态计算 targetLanguages
   useEffect(() => {
@@ -637,7 +666,7 @@ const Index = () => {
 
   const handleImageTranslate = (record: any) => {
     // 语言限制弹框
-    if (!baseInput.has(normalizeLocale(selectedLanguage))) {
+    if (!canTranslate(sourceLanguage, targetLanguage)) {
       // console.log("当前语言不支持翻译");
       shopify.toast.show(
         t("The current language does not support image translation"),
