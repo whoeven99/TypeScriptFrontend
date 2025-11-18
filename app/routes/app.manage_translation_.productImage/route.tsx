@@ -456,102 +456,165 @@ const Index = () => {
   const itemOptions = getItemOptions(t);
 
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
-  const sourceLanguages = [
-    { label: "English", value: "en" },
-    { label: "Chinese (Simplified)", value: "zh" },
-    // 根据需要添加更多语言
-  ];
+  const [sourceLanguages, setSourceLanguages] = useState<any[]>([]);
   const [targetLanguages, setTargetLanguages] = useState<any[]>();
   const [currentTranslatingImage, serCurrentTranslatingImage] =
     useState<any>("");
-  const languageFullNames: { [key: string]: string } = {
-    en: "English",
-    zh: "Chinese (Simplified)",
-    ru: "Russian",
-    es: "Spanish",
-    fr: "French",
-    de: "German",
-    it: "Italian",
-    nl: "Dutch",
-    pt: "Portuguese",
-    vi: "Vietnamese",
-    tr: "Turkish",
-    ms: "Malay",
-    "zh-tw": "Chinese (Traditional)",
-    th: "Thai",
-    pl: "Polish",
-    id: "Indonesian",
-    ja: "Japanese",
-    ko: "Korean",
+  const baseInput = new Set([
+    "zh",
+    "zh-tw",
+    "en",
+    "fr",
+    "it",
+    "ja",
+    "ko",
+    "pt",
+    "ru",
+    "es",
+    "th",
+    "tr",
+    "vi",
+  ]);
+  const baseOutput = new Set([
+    "ar",
+    "bn",
+    "zh",
+    "zh-tw",
+    "cs",
+    "da",
+    "nl",
+    "en",
+    "fi",
+    "fr",
+    "de",
+    "el",
+    "he",
+    "hu",
+    "id",
+    "it",
+    "ja",
+    "kk",
+    "ko",
+    "ms",
+    "pl",
+    "pt",
+    "ru",
+    "es",
+    "sv",
+    "th",
+    "tl",
+    "tr",
+    "uk",
+    "ur",
+    "vi",
+  ]);
+  const allLanguageOptions = [
+    { label: "Arabic", value: "ar" },
+    { label: "Bengali", value: "bn" },
+    { label: "Chinese (Simplified)", value: "zh" },
+    { label: "Chinese (Traditional)", value: "zh-tw" },
+    { label: "Czech", value: "cs" },
+    { label: "Danish", value: "da" },
+    { label: "Dutch", value: "nl" },
+    { label: "English", value: "en" },
+    { label: "Finnish", value: "fi" },
+    { label: "French", value: "fr" },
+    { label: "German", value: "de" },
+    { label: "Greek", value: "el" },
+    { label: "Hebrew", value: "he" },
+    { label: "Hungarian", value: "hu" },
+    { label: "Indonesian", value: "id" },
+    { label: "Italian", value: "it" },
+    { label: "Japanese", value: "ja" },
+    { label: "Kazakh", value: "kk" },
+    { label: "Korean", value: "ko" },
+    { label: "Malay", value: "ms" },
+    { label: "Polish", value: "pl" },
+    { label: "Portuguese", value: "pt" },
+    { label: "Russian", value: "ru" },
+    { label: "Spanish", value: "es" },
+    { label: "Swedish", value: "sv" },
+    { label: "Thai", value: "th" },
+    { label: "Tagalog (Filipino)", value: "tl" },
+    { label: "Turkish", value: "tr" },
+    { label: "Ukrainian", value: "uk" },
+    { label: "Urdu", value: "ur" },
+    { label: "Vietnamese", value: "vi" },
+  ];
+  const [sourceLanguage, setSourceLanguage] = useState(selectedLanguage);
+  const [targetLanguage, setTargetLanguage] = useState("");
+  const specialTargetRules: Record<string, string[]> = {
+    "zh-tw": ["zh", "en"], // 目标为繁体，只能由 zh 或 en 来翻译
+    el: ["en", "tr"], // 目标为希腊语，只能由 en 或 tr 来翻译
+    kk: ["zh"], // 目标为哈萨克语，只能由 zh 来翻译
   };
-  const languageMapping = {
-    zh: [
-      "en",
-      "ru",
-      "es",
-      "fr",
-      "de",
-      "it",
-      "nl",
-      "pt",
-      "vi",
-      "tr",
-      "ms",
-      "zh-tw",
-      "th",
-      "pl",
-      "id",
-      "ja",
-      "ko",
-    ],
-    en: [
-      "zh",
-      "ru",
-      "es",
-      "fr",
-      "de",
-      "it",
-      "pt",
-      "vi",
-      "tr",
-      "ms",
-      "th",
-      "pl",
-      "id",
-      "ja",
-      "ko",
-    ],
-  } as any;
-  const [sourceLanguage, setSourceLanguage] = useState("zh");
-  const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
 
   useEffect(() => {
-    const mappedValues = languageMapping[sourceLanguage] || [];
-    const filteredOptions = mappedValues.map((value: string) => ({
-      label: languageFullNames[value] || value,
-      value: value,
-    }));
-    // 自动切换 targetLanguage 为第一个可选项
-    if (filteredOptions.length > 0) {
-      // setTargetLanguage(filteredOptions[0].value);
-    }
-    // 重置目标语言选择
-    setTargetLanguages(filteredOptions);
-  }, [sourceLanguage]);
+    // 初始化源语言下拉
+    const sourceLangOptions = [...baseInput].map((lang) => {
+      return {
+        label: allLanguageOptions.find((o) => o.value === lang)?.label ?? lang,
+        value: lang,
+      };
+    });
+    setSourceLanguages(sourceLangOptions);
+  }, []);
+  const normalizeLocale = (locale: string): string => {
+    if (!locale) return "";
+    const lower = locale.toLowerCase();
 
+    if (lower.startsWith("zh-cn")) return "zh";
+    if (lower.startsWith("zh-tw")) return "zh-tw";
+    if (lower.startsWith("en")) return "en";
+    if (lower.startsWith("pt")) return "pt";
+
+    // ✅ 处理其它常见格式（如 en-US / fr-CA）
+    return lower;
+  };
   useEffect(() => {
-    setTargetLanguage(selectedLanguage);
-    if (selectedLanguage === "zh-CN") {
-      setSourceLanguage("en");
-      setTargetLanguage("zh");
-    } else if (selectedLanguage === "zh-TW") {
-      setSourceLanguage("zh");
-      setTargetLanguage("zh-tw");
-    } else if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
-      setTargetLanguage("pt");
-    }
+    setSourceLanguage(normalizeLocale(selectedLanguage));
   }, [selectedLanguage]);
+  // 当 sourceLanguage 改变时，动态计算 targetLanguages
+  useEffect(() => {
+    const allowedTargets = [...baseOutput].filter((target) => {
+      // 排除跟 source 相同的 code（避免自翻译）
+      if (target === normalizeLocale(sourceLanguage)) return false;
 
+      // 如果目标在特殊规则里，则仅当当前 source 在允许列表中才允许该目标
+      if (specialTargetRules[target]) {
+        return specialTargetRules[target]?.includes(
+          normalizeLocale(sourceLanguage),
+        );
+      }
+      // 否则默认允许
+      return true;
+    });
+
+    const options = allowedTargets.map((v) => {
+      const label = allLanguageOptions.find((o) => o.value === v)?.label ?? v;
+      return { label: label, value: v };
+    });
+
+    setTargetLanguages(options);
+
+    // 如果当前选的 targetLanguage 不在新候选里，重置为第一个（如果存在）
+    if (!allowedTargets.includes(targetLanguage)) {
+      setTargetLanguage(options[0]?.value ?? "");
+    }
+  }, [sourceLanguage]);
+  const buildOptions = (langs: string[]) =>
+    langs.map((v) => {
+      const label = allLanguageOptions.find((o) => o.value === v)?.label ?? v;
+      return { label, value: v };
+    });
+  useEffect(() => {
+    if (targetLanguage && specialTargetRules[targetLanguage]) {
+      const allowedSources = specialTargetRules[targetLanguage];
+      setSourceLanguages(buildOptions(allowedSources)); // 🎯 转换成 {label, value} 格式
+    } else {
+      setSourceLanguages(buildOptions([...baseInput])); // 🎯 同样格式
+    }
+  }, [targetLanguage]);
   // 图片翻译
   const handleTranslate = async () => {
     translateImageFetcher.submit(
@@ -573,19 +636,9 @@ const Index = () => {
   };
 
   const handleImageTranslate = (record: any) => {
-    let mappedLanguage =
-      selectedLanguage === "zh-CN"
-        ? "zh"
-        : selectedLanguage === "zh-TW"
-          ? "zh-tw"
-          : selectedLanguage;
-    if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
-      mappedLanguage = "pt";
-    }
-    if (
-      !languageMapping["en"].includes(mappedLanguage) &&
-      !languageMapping["zh"].includes(mappedLanguage)
-    ) {
+    // 语言限制弹框
+    if (!baseInput.has(normalizeLocale(selectedLanguage))) {
+      // console.log("当前语言不支持翻译");
       shopify.toast.show(
         t("The current language does not support image translation"),
       );
