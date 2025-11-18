@@ -1,12 +1,10 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Icon, Page } from "@shopify/polaris";
+import { Page } from "@shopify/polaris";
 import {
   Space,
   Select,
   Typography,
   Button,
-  Table,
-  Card,
   Popconfirm,
   Flex,
   Modal,
@@ -23,7 +21,6 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import {
   GetTranslationItemsInfo,
   TranslateImage,
@@ -41,12 +38,6 @@ import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 
 const { Text, Title } = Typography;
-
-interface ManageSelectDataType {
-  label: string;
-  value: string;
-}
-
 interface TableDataType {
   key: string;
   title: string;
@@ -196,10 +187,13 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>(
-    [],
-  );
-  const [current, setCurrent] = useState<string>("");
+  const [selectOptions, setSelectOptions] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
+  const [current, setCurrent] = useState<string>(searchTerm || "");
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -235,7 +229,9 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
+
   const { reportClick } = useReport();
+
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
@@ -785,7 +781,6 @@ const Index = () => {
   }, [key, selectOptions]);
 
   useEffect(() => {
-    dispatch(setSelectLanguageData(current));
     const findItem = languageItemsData.find(
       (item: any) => item?.language === current,
     );

@@ -27,6 +27,7 @@ import { globalStore } from "~/globalStore";
 import { authenticate } from "~/shopify.server";
 import { getItemOptions } from "../app.manage_translation/route";
 import styles from "./styles.module.css";
+import { queryPageFlyThemeData } from "~/api/admin";
 
 const { Sider, Content } = Layout;
 
@@ -45,7 +46,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
   const formData = await request.formData();
   const GetMenuData: any = JSON.parse(formData.get("GetMenuData") as string);
   const getContentDataByFilename: any = JSON.parse(
@@ -55,60 +58,69 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!GetMenuData:
       try {
-        const response = await admin.graphql(
-          `#graphql
-                query themeJson{     
-                  themes(first: 1 ,roles: MAIN) {
-                      nodes {
-                          files(filenames: "snippets/pf-*.liquid", first: 250) {
-                              nodes {
-                                  body {
-                                      ... on OnlineStoreThemeFileBodyText {
-                                      __typename
-                                      content
-                                      }
-                                  }
-                                  filename
-                                  updatedAt
-                                  createdAt
-                                  contentType
-                              }
-                              pageInfo {
-                                  endCursor
-                                  hasNextPage
-                                  hasPreviousPage
-                                  startCursor
-                              }
-                          }
-                      }
-                  }
-              }`,
-        );
+        const response = await queryPageFlyThemeData({
+          shop,
+          accessToken: accessToken as string,
+        });
 
-        const data = await response.json();
+        const aisalesData = response?.aisales?.nodes[0]?.files?.nodes;
+        const aispData = response?.aisp?.nodes[0]?.files?.nodes;
+        const pagesData = response?.pages?.nodes[0]?.files?.nodes;
+        const sectionsData = response?.sections?.nodes[0]?.files?.nodes;
 
-        const res = data.data?.themes?.nodes[0]?.files?.nodes;
+        console.log("aispData: ", aispData);
 
-        console.log("themeJson: ", res);
+        let themeJsonData: any[] = [];
 
-        if (Array.isArray(res)) {
-          const themeJsonData = res.filter((item) =>
+        if (Array.isArray(aisalesData)) {
+          const filteredAisalesData = aisalesData.filter((item) =>
+            /^sections\/pf-ai-sales-page-[a-zA-Z0-9]+\.liquid$/.test(
+              item?.filename,
+            ),
+          );
+
+          console.log(
+            "filteredAisalesData.length: ",
+            filteredAisalesData.length,
+          );
+
+          themeJsonData.push(...filteredAisalesData);
+        }
+
+        if (Array.isArray(aispData)) {
+          themeJsonData.push(...aispData);
+        }
+
+        if (Array.isArray(pagesData)) {
+          const filteredPagesData = pagesData.filter((item) =>
+            /^sections\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
+          );
+
+          console.log("filteredPagesData.length: ", filteredPagesData.length);
+
+          themeJsonData.push(...filteredPagesData);
+        }
+
+        if (Array.isArray(sectionsData)) {
+          const filteredSectionsData = sectionsData.filter((item) =>
             /^snippets\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
           );
 
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: themeJsonData,
-          };
+          console.log(
+            "filteredSectionsData.length: ",
+            filteredSectionsData.length,
+          );
+
+          themeJsonData.push(...filteredSectionsData);
         }
 
+        console.log("themeJsonData.length: ", themeJsonData.length);
+
         return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: undefined,
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: themeJsonData,
         };
       } catch (error) {
         return {
@@ -153,8 +165,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const res = data.data?.themes?.nodes[0]?.files?.nodes;
 
-        console.log("themeJson: ", res);
-
         if (Array.isArray(res)) {
           return {
             success: true,
@@ -192,7 +202,7 @@ const Index = () => {
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
-  const shopNameLiquidDataRef = useRef<any>(null);
+  const shopNameLiquidDataRef = useRef<any>([]);
 
   const dataFetcher = useFetcher<any>();
   const contentFetcher = useFetcher<any>();
@@ -237,7 +247,7 @@ const Index = () => {
 
   useEffect(() => {
     dataFetcher.submit({ GetMenuData: JSON.stringify({}) }, { method: "POST" });
-    axiosForTranslatedData();
+    setTimeout(() => axiosForTranslatedData(), 100);
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -263,16 +273,59 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data?.success) {
-        const data = dataFetcher.data?.response?.map((item: any) => {
-          console.log("item: ", item);
-          const match = item.body.content.match(/"pageTitle"\s*:\s*"([^"]+)"/);
-          if (match) {
-            return {
-              label: match[1],
-              key: item?.filename,
-            };
-          }
-        });
+        console.log(dataFetcher.data?.response);
+
+        const data = dataFetcher.data?.response
+          ?.map((item: any) => {
+            const content = item?.body?.content || "";
+            if (!content) return null;
+
+            // 1) 先匹配 pageTitle: "xxx"
+            const pageTitleMatch = content.match(/"pageTitle"\s*:\s*"([^"]+)"/);
+            if (pageTitleMatch) {
+              return { label: pageTitleMatch[1], key: item?.filename };
+            }
+
+            // 2) 再从 PAGEFLY_AI_SALES_PAGE 脚本里直接提取 campaign.title（兼容单/双引号）
+            //    先把脚本块抓出来（贪婪匹配到最近的 </script>）
+            const scriptBlockMatch = content.match(
+              /<script[^>]*>[\s\S]*?PAGEFLY_AI_SALES_PAGE[\s\S]*?<\/script>/i,
+            );
+            if (scriptBlockMatch) {
+              const scriptBlock = scriptBlockMatch[0];
+
+              // 在脚本块里寻找 campaign: { ... title: 'xxx' ... } 的 title
+              const campaignTitleMatch = scriptBlock.match(
+                /campaign\s*:\s*\{[\s\S]*?title\s*:\s*['"]([^'"]+)['"]/i,
+              );
+
+              if (campaignTitleMatch) {
+                return { label: campaignTitleMatch[1], key: item?.filename };
+              }
+
+              // 额外尝试直接找 window.PAGEFLY_AI_SALES_PAGE.*title = 'xxx' 或 PAGEFLY_AI_SALES_PAGE.*title:'xxx'
+              const genericTitleMatch = scriptBlock.match(
+                /PAGEFLY_AI_SALES_PAGE[\s\S]*?title\s*[:=]\s*['"]([^'"]+)['"]/i,
+              );
+              if (genericTitleMatch) {
+                return { label: genericTitleMatch[1], key: item?.filename };
+              }
+            }
+
+            // 3) 若两者都没有，跳过该项（返回 null）
+            if (item?.filename)
+              return {
+                label: item?.filename,
+                key: item?.filename,
+              };
+
+            return null;
+          })
+          // 过滤掉 null（不会出现 undefined）
+          .filter(Boolean);
+
+        console.log(data);
+
         if (Array.isArray(data)) {
           setMenuData(data);
           setSelectedMenuKey(data[0]?.key);
@@ -421,17 +474,11 @@ const Index = () => {
     },
   ];
 
-  useEffect(() => {
-    console.log(loadingItems);
-  }, [loadingItems]);
-
   const extractTextSegmentsFromLiquid = (liquidCode: string): string[] => {
     if (!liquidCode) return [];
 
     // 1️⃣ 删除 Liquid 变量 {{ ... }} 和逻辑标签 {% ... %}
-    let cleaned = liquidCode
-      .replace(/{{[\s\S]*?}}/g, "")
-      .replace(/{%[\s\S]*?%}/g, "");
+    let cleaned = liquidCode.replace(/{%[\s\S]*?%}/g, "");
 
     // 2️⃣ 删除 <style> 和 <script> 标签及其内容（跨行匹配）
     cleaned = cleaned
@@ -442,10 +489,18 @@ const Index = () => {
     const matches = cleaned.match(/>([^<]+)</g);
     if (!matches) return [];
 
-    // 4️⃣ 清理文本：去掉空格、多余换行
+    // 4️⃣ 清理文本并跳过含 liquid 的文本段
     const texts = matches
       .map((m) => m.replace(/[><]/g, "").trim())
-      .filter((t) => t.length > 0);
+      .filter((t) => {
+        if (!t) return false;
+
+        // 🚫 跳过含 Liquid 变量的文本（即使之前没删干净）
+        if (/{{[\s\S]*?}}/.test(t)) return false;
+        if (/{%[\s\S]*?%}/.test(t)) return false;
+
+        return true;
+      });
 
     return texts;
   };
@@ -583,7 +638,7 @@ const Index = () => {
       languageCode: selectedLanguage,
     });
     if (data.success) {
-      shopNameLiquidDataRef.current = data.response;
+      shopNameLiquidDataRef.current = data.response || [];
     }
     setLoadingStatus({
       ...loadingStatus,
@@ -748,8 +803,8 @@ const Index = () => {
                       }}
                     >
                       {
-                        menuData!.find(
-                          (item: any) => item.key === selectedMenuKey,
+                        menuData.find(
+                          (item: any) => item?.key === selectedMenuKey,
                         )?.label
                       }
                     </Title>
@@ -920,8 +975,8 @@ const Index = () => {
                       }}
                     >
                       {
-                        menuData!.find(
-                          (item: any) => item.key === selectedMenuKey,
+                        menuData.find(
+                          (item: any) => item?.key === selectedMenuKey,
                         )?.label
                       }
                     </Title>
