@@ -43,6 +43,40 @@ export interface TransType {
   ];
 }
 
+export const queryAppByHandle = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
+  try {
+    const query = `{
+        pagefly: appByHandle(handle: "pagefly") {
+          title
+        }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response?.data?.data;
+
+    console.log(`${shop} queryAppByHandle: `, res);
+
+    return res;
+  } catch (error) {
+    console.error("Error queryAppByHandle:", error);
+    return null;
+  }
+};
+
 export const queryShopLanguages = async ({
   shop,
   accessToken,

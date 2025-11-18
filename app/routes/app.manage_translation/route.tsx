@@ -14,7 +14,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryShopLanguages } from "~/api/admin";
+import { queryAppByHandle, queryShopLanguages } from "~/api/admin";
 import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import {
   useFetcher,
@@ -71,16 +71,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   const formData = await request.formData();
+  const appInstalls = JSON.parse(formData.get("appInstalls") as string);
   const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
   const translateImage = JSON.parse(formData.get("translateImage") as string);
   const replaceTranslateImage = JSON.parse(
     formData.get("replaceTranslateImage") as string,
   );
-  const replaceTranslateFile = JSON.parse(
-    formData.get("replaceTranslateFile") as string,
-  );
   switch (true) {
+    case !!appInstalls:
+      try {
+        const appByHandle = await queryAppByHandle({
+          shop,
+          accessToken: accessToken as string,
+        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: appByHandle,
+        };
+      } catch (error) {
+        console.error("Error manage_translation appInstalls:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+
     case !!language:
       try {
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
@@ -91,6 +111,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error manage_translation language:", error);
       }
+
     case !!itemsCount:
       try {
         const data = await GetTranslationItemsInfo({
@@ -107,9 +128,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: [],
+          response: null,
         };
       }
+
     case !!translateImage:
       try {
         const { sourceLanguage, targetLanguage, imageUrl, imageId } =
@@ -129,9 +151,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: [],
+          response: null,
         };
       }
+
     case !!replaceTranslateImage:
       try {
         const { url, userPicturesDoJson } = replaceTranslateImage;
@@ -148,13 +171,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: [],
+          response: null,
         };
       }
 
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return json({ success: false, message: "Invalid data" });
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
   }
 };
 
@@ -178,6 +206,11 @@ const Index = () => {
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [appInstallList, setAppInstallList] = useState<{
+    pagefly: boolean;
+  }>({
+    pagefly: false,
+  });
 
   const { key } = useMemo(() => location.state || {}, [location.state]);
   const { source } = useSelector((state: any) => state.userConfig);
@@ -186,6 +219,7 @@ const Index = () => {
   );
 
   const fetcher = useFetcher<any>();
+  const appFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
   const articlesFetcher = useFetcher<any>();
@@ -492,22 +526,29 @@ const Index = () => {
     },
   ];
 
-  const liquidAndThirdPartyAppsDataSource: TableDataType[] = [
-    {
-      key: "custom_liquid",
-      title: t("Custom Liquid"),
-      sync_status: false,
-      navigation: "custom_liquid",
-      withoutCount: true,
-    },
-    {
-      key: "pagefly",
-      title: t("PageFly"),
-      sync_status: false,
-      navigation: "pagefly",
-      withoutCount: true,
-    },
-  ];
+  const liquidAndThirdPartyAppsDataSource: TableDataType[] = useMemo(() => {
+    const list: TableDataType[] = [
+      {
+        key: "custom_liquid",
+        title: t("Custom Liquid"),
+        sync_status: false,
+        navigation: "custom_liquid",
+        withoutCount: true,
+      },
+    ];
+
+    if (appInstallList.pagefly) {
+      list.push({
+        key: "pagefly",
+        title: t("PageFly"),
+        sync_status: false,
+        navigation: "pagefly",
+        withoutCount: true,
+      });
+    }
+
+    return list;
+  }, [appInstallList]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -529,6 +570,14 @@ const Index = () => {
         action: "/log",
       },
     );
+    appFetcher.submit(
+      {
+        appInstalls: JSON.stringify({}),
+      },
+      {
+        method: "POST",
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -546,6 +595,25 @@ const Index = () => {
       setLoading(false);
     }
   }, [languageTableData]);
+
+  useEffect(() => {
+    if (appFetcher.data) {
+      if (appFetcher.data?.success) {
+        let newData: {
+          pagefly: boolean;
+        } = {
+          pagefly: false,
+        };
+        if ("pagefly" in appFetcher.data?.response) {
+          newData = {
+            ...newData,
+            pagefly: true,
+          };
+        }
+        setAppInstallList(newData);
+      }
+    }
+  }, [appFetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -920,34 +988,6 @@ const Index = () => {
       }); // 提交表单请求
     }
   }, [current, source?.code]);
-
-  const imageColumns = [
-    {
-      title: t("Images data"),
-      dataIndex: "title",
-      width: "60%",
-      key: "title",
-    },
-    {
-      title: t("Action"),
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          <Button
-            onClick={() => {
-              if (current)
-                navigate(
-                  `/app/manage_translation/${record.navigation}?language=${current}`,
-                );
-              reportClick("manage_list_edit");
-            }}
-          >
-            {t("Edit")}
-          </Button>
-        );
-      },
-    },
-  ];
 
   const navigateToPricing = () => {
     navigate("/app/pricing");

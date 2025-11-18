@@ -60,7 +60,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 query themeJson{     
                   themes(first: 1 ,roles: MAIN) {
                       nodes {
-                          files(filenames: "snippets/pf-*.liquid", first: 10) {
+                          files(filenames: "snippets/pf-*.liquid", first: 250) {
                               nodes {
                                   body {
                                       ... on OnlineStoreThemeFileBodyText {
