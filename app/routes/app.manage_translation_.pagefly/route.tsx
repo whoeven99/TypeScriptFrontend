@@ -382,7 +382,7 @@ const Index = () => {
                     shopNameLiquidDataRefItem?.sourceText == item,
                 )?.id || null,
               key: index,
-              resource: `Liquid Text`,
+              resource: "Text",
               default_language: item,
               translated:
                 shopNameLiquidDataRef.current?.find(
