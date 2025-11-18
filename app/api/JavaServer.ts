@@ -3,20 +3,6 @@ import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
-export interface ConfirmDataType {
-  resourceId: string;
-  locale: string;
-  key: string;
-  value: string;
-  translatableContentDigest: string;
-  target: string;
-}
-
-interface GroupedDeleteData {
-  resourceId: string;
-  locales: string[];
-  translationKeys: string[];
-}
 
 export const UpdateLiquidReplacementMethod = async ({
   shop,
@@ -1847,16 +1833,21 @@ export const updateManageTranslation = async ({
 }: {
   shop: string;
   accessToken: string;
-  confirmData: ConfirmDataType[];
+  confirmData: any[];
 }) => {
   let res: {
     success: boolean;
+    errorCode: number;
     errorMsg: string;
-    data: {
+    response: {
+      id: string;
       resourceId: string;
+      locale: string;
       key: string;
-      value?: string;
-    };
+      value: string; // 初始为空字符串
+      translatableContentDigest: string;
+      target: string;
+    } | null;
   }[] = [];
   confirmData.filter((item) => {
     // 移除所有 HTML 标签，只保留文本内容
@@ -1901,7 +1892,7 @@ export const updateManageTranslation = async ({
     if (itemsToUpdate && itemsToUpdate.length > 0) {
       if (itemsToUpdate[0].resourceId.split("/")[3] !== "OnlineStoreTheme") {
         // 定义处理单个翻译项的函数
-        const processTranslationItem = async (item: ConfirmDataType) => {
+        const processTranslationItem = async (item: any) => {
           if (!item.translatableContentDigest || !item.locale) {
             return null;
           }
@@ -1929,10 +1920,14 @@ export const updateManageTranslation = async ({
                 success: response.data.success,
                 errorCode: response.data.errorCode,
                 errorMsg: response.data.errorMsg,
-                data: {
+                response: {
+                  id: item.id,
                   resourceId: item.resourceId,
+                  locale: item.locale,
                   key: item.key,
                   value: item.value,
+                  translatableContentDigest: item.translatableContentDigest,
+                  target: item.target,
                 },
               };
             },
@@ -1961,11 +1956,9 @@ export const updateManageTranslation = async ({
           } else if (result.status === "rejected") {
             res.push({
               success: false,
+              errorCode: 10001,
               errorMsg: `Failed to process item ${index}: ${result.reason}`,
-              data: {
-                resourceId: confirmData[index].resourceId,
-                key: confirmData[index].key,
-              },
+              response: null,
             });
           }
         });
@@ -1992,56 +1985,26 @@ export const updateManageTranslation = async ({
 
         res.push({
           success: response.data.success,
+          errorCode: response.data.errorCode,
           errorMsg: response.data.errorMsg,
-          data: {
+          response: {
+            id: itemsToUpdate[0].id,
             resourceId: itemsToUpdate[0].resourceId,
+            locale: itemsToUpdate[0].locale,
             key: itemsToUpdate[0].key,
+            value: itemsToUpdate[0].value,
+            translatableContentDigest:
+              itemsToUpdate[0].translatableContentDigest,
+            target: itemsToUpdate[0].target,
           },
         });
       }
     }
 
     if (itemsToDelete.length > 0) {
-      // 创建 Map 对象
-      // const groupedMap = new Map<
-      //   string,
-      //   {
-      //     resourceId: string;
-      //     locales: string[];
-      //     translationKeys: string[];
-      //   }
-      // >();
-
-      // // 使用 forEach 填充 Map
-      // itemsToDelete.forEach((item) => {
-      //   if (!groupedMap.has(item.resourceId)) {
-      //     groupedMap.set(item.resourceId, {
-      //       resourceId: item.resourceId,
-      //       locales: [item.target],
-      //       translationKeys: [item.key],
-      //     });
-      //   } else {
-      //     const group = groupedMap.get(item.resourceId)!;
-      //     if (!group.locales.includes(item.target)) {
-      //       group.locales.push(item.target);
-      //     }
-      //     group.translationKeys.push(item.key);
-      //   }
-      // });
-
       // 将 Map 转换为数组
-      const deleteData = itemsToDelete.map((item) => {
-        return {
-          resourceId: item.resourceId,
-          locales: [item.target],
-          translationKeys: [item.key],
-        };
-      });
-
-      console.log("deleteData: ", deleteData);
-
       try {
-        const processTranslationItem = async (item: GroupedDeleteData) => {
+        const processTranslationItem = async (item: any) => {
           // 添加重试机制
           return withRetry(
             async () => {
@@ -2066,18 +2029,29 @@ export const updateManageTranslation = async ({
                       }
                     }
                   }`,
-                  variables: item,
+                  variables: {
+                    resourceId: item.resourceId,
+                    locales: [item?.target],
+                    translationKeys: [item?.key],
+                  },
                 },
               });
 
               return {
                 success:
                   response.data.data.translationsRemove.userErrors.length === 0,
+                errorCode: 0,
                 errorMsg:
-                  response.data.data.translationsRemove.userErrors[0]?.message,
-                data: {
-                  resourceId: item.resourceId,
-                  key: item.translationKeys[0],
+                  response.data.data.translationsRemove.userErrors[0]
+                    ?.message || "",
+                response: {
+                  id: item?.id,
+                  resourceId: item?.resourceId,
+                  locale: item?.locale,
+                  key: item?.key,
+                  value: item?.value, // 初始为空字符串
+                  translatableContentDigest: item?.translatableContentDigest,
+                  target: item?.target,
                 },
               };
             },
@@ -2089,7 +2063,7 @@ export const updateManageTranslation = async ({
         };
 
         // 并发处理所有翻译项
-        const promises = deleteData.map((item) =>
+        const promises = itemsToDelete.map((item) =>
           limit(() => processTranslationItem(item)),
         );
 
@@ -2101,16 +2075,14 @@ export const updateManageTranslation = async ({
         // 处理结果
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value) {
-            console.log("result: ", result.value.data);
+            console.log("result: ", result.value);
             res.push(result.value);
           } else if (result.status === "rejected") {
             res.push({
               success: false,
+              errorCode: 10001,
               errorMsg: `Failed to process item ${index}: ${result.reason}`,
-              data: {
-                resourceId: confirmData[index].resourceId,
-                key: confirmData[index].key,
-              },
+              response: null,
             });
           }
         });
