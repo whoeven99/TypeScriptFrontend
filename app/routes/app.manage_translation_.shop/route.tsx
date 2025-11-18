@@ -14,10 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // �
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -49,9 +46,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const startCursor = JSON.parse(formData.get("startCursor") as string);
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!startCursor:
       try {
@@ -229,6 +224,9 @@ const Index = () => {
   useEffect(() => {
     if (shopsData) {
       const data = generateMenuItemsArray(shopsData);
+      console.log("shopsData: ", shopsData);
+      console.log("data: ", data);
+
       setResourceData(data);
       setLoadingItems([]);
       setConfirmData([]);
@@ -367,24 +365,23 @@ const Index = () => {
   ];
 
   const generateMenuItemsArray = (items: any) => {
-    return items.flatMap((item: any, index: number) => {
-      if (item?.translatableContent.length !== 0) {
-        // 创建当前项的对象
-        const currentItem = {
-          key: `${item?.translatableContent[index]?.key}_${item?.resourceId}_${index}`,
-          resourceId: item?.resourceId,
-          shopifyKey: item?.translatableContent[index]?.key,
-          index,
-          resource: t(item?.translatableContent[index]?.key),
-          digest: item?.translatableContent[index]?.digest || "",
-          type: item?.translatableContent[index]?.type || "",
-          default_language: item?.translatableContent[index]?.value || "",
-          translated: item?.translations[index]?.value,
-        };
-        return currentItem.default_language !== "" ? [currentItem] : [];
-      }
-      return [];
-    });
+    if (items[0]?.translatableContent.length !== 0) {
+      return items[0]?.translatableContent
+        ?.filter((item: any) => item.value)
+        ?.map((content: any, index: number) => ({
+          key: `${content?.key}_${items[0]?.resourceId}_${index}`,
+          resourceId: items[0]?.resourceId,
+          shopifyKey: content?.key,
+          resource: content?.key,
+          digest: content?.digest || "",
+          type: content?.type || "",
+          default_language: content?.value || "",
+          translated: items[0]?.translations?.find(
+            (translation: any) => translation.key == content?.key,
+          )?.value,
+        }));
+    }
+    return [];
   };
 
   const handleInputChange = (record: any, value: string) => {
