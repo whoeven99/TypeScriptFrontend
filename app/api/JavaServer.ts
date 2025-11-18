@@ -4,6 +4,70 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const EditTranslatedData = async ({
+  shop,
+  server,
+  data,
+}: {
+  shop: string;
+  server: string;
+  data: {
+    id?: number;
+    sourceText: string;
+    targetText: string;
+    languageCode: string;
+  }[];
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+      method: "POST",
+      data: data,
+    });
+
+    console.log(`${shop} EditTranslatedData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} EditTranslatedData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const ReadTranslatedText = async ({
+  shop,
+  server,
+  languageCode,
+}: {
+  shop: string;
+  server: string;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userPageFly/readTranslatedText?shopName=${shop}&languageCode=${languageCode}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} ReadTranslatedText: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} ReadTranslatedText error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const UpdateLiquidReplacementMethod = async ({
   shop,
   server,

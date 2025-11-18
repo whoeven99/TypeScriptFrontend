@@ -5,6 +5,7 @@ import {
   fetchAutoRate,
   GetShopImageData,
   ParseLiquidDataByShopNameAndLanguage,
+  ReadTranslatedText,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -355,7 +356,7 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
   // 监听属性变化
   observer.observe(img, {
     attributes: true,
-    attributeFilter: ['src', 'srcset', 'alt'],
+    attributeFilter: ["src", "srcset", "alt"],
   });
 
   // 保存监控信息
@@ -366,7 +367,6 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
     observer,
   });
 }
-
 
 /**
  * 观察 DOM 变化，动态处理新图片
@@ -470,7 +470,12 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
             img.alt = match?.altAfterTranslation;
           }
 
-          monitorImage(img, match?.imageAfterUrl, match?.imageAfterUrl, match?.altAfterTranslation);
+          monitorImage(
+            img,
+            match?.imageAfterUrl,
+            match?.imageAfterUrl,
+            match?.altAfterTranslation,
+          );
         }
       });
 
@@ -597,6 +602,96 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       return original.replace(re, trimmedAfter);
     },
   );
+}
+
+/**
+ * 根据数据库数据替换 PageFly 页面文本（精准替换）
+ */
+export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput?.value;
+
+  // 🧩 获取数据库翻译数据
+  const readTranslatedText = await ReadTranslatedText({
+    blockId,
+    shopName: shop.value,
+    languageCode: language,
+  });
+
+  const translations = readTranslatedText?.response || [];
+  if (!Array.isArray(translations) || translations.length === 0) return;
+
+  const normalizeText = (text) =>
+    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+
+  const hasOuterQuote = (text) =>
+    /^["“”]/.test(text) && /["“”]$/.test(text);
+
+  // ❌ 不应替换内容的标签
+  const skipTags = new Set([
+    "SCRIPT",
+    "STYLE",
+    "NOSCRIPT",
+    "CODE",
+    "PRE",
+    "TEXTAREA",
+    "SVG",
+    "META",
+    "LINK",
+    "TITLE",
+  ]);
+
+  // 🔄 遍历所有翻译项
+  translations.forEach((item) => {
+    const trimmedBefore = normalizeText(item?.sourceText);
+    const trimmedAfter = normalizeText(item?.targetText);
+    if (!trimmedBefore || !trimmedAfter) return;
+
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parentTag = node.parentNode?.nodeName;
+
+          // ⛔ 跳过不应替换的标签
+          if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+
+          // ⛔ 隐藏节点也跳过
+          if (
+            node.parentElement &&
+            window.getComputedStyle(node.parentElement).display === "none"
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          const normalized = normalizeText(node.nodeValue);
+
+          // ❗ 未包含待替换内容 → 跳过
+          if (!normalized.includes(trimmedBefore)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          // ✅ 可以替换
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      }
+    );
+
+    const nodesToReplace = [];
+    while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
+
+    // ✏精准替换
+    nodesToReplace.forEach((node) => {
+      const original = node.nodeValue;
+      const normalized = normalizeText(original);
+
+      if (normalized === trimmedBefore) {
+        const keepQuote = hasOuterQuote(original);
+        node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
+      }
+    });
+  });
 }
 
 /**

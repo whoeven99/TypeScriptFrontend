@@ -9,7 +9,7 @@ import {
   Result,
   Skeleton,
 } from "antd";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import useReport from "scripts/eventReport";
@@ -21,15 +21,6 @@ interface SwitcherSettingCardProps {
   current: string;
 }
 
-interface DataType {
-  key: string;
-  title: string;
-  allTranslatedItems: number;
-  allItems: number;
-  sync_status: boolean;
-  navigation: string;
-}
-
 const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
@@ -38,24 +29,32 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { report } = useReport();
-  const handleEdit = (record: DataType) => {
-    if (current)
-      navigate(
-        `/app/manage_translation/${record.navigation}?language=${current}`,
+
+  const handleEdit = useCallback(
+    (record: any) => {
+      console.log(record);
+      console.log(current);
+      
+      if (current)
+        navigate(
+          `/app/manage_translation/${record.navigation}?language=${current}`,
+        );
+      report(
+        {
+          language: current,
+          online_store: record.navigation,
+        },
+        {
+          action: "/app",
+          method: "post",
+          eventType: "click",
+        },
+        "manage_list_edit",
       );
-    report(
-      {
-        language: current,
-        online_store: record.navigation,
-      },
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "manage_list_edit",
-    );
-  };
+    },
+    [dataSource],
+  );
+
   const columns = useMemo(
     () => [
       {
@@ -90,7 +89,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         dataIndex: "operation",
         key: "operation",
         width: "40%",
-        render: (_: any, record: DataType) => {
+        render: (_: any, record: any) => {
           return (
             <Button onClick={() => handleEdit(record)}>{t("Edit")}</Button>
           );
