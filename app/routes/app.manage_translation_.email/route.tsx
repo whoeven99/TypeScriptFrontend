@@ -14,10 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // å¼
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -50,9 +47,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const startCursor = JSON.parse(formData.get("startCursor") as string);
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!startCursor:
       try {
@@ -422,11 +417,14 @@ const Index = () => {
   ];
 
   const exMenuData = (menuData: any) => {
-    const data = menuData.map((item: any) => ({
-      key: item?.resourceId,
-      label: item?.translatableContent.find((item: any) => item.key === "title")
-        .value,
-    }));
+    const data = menuData
+      .map((item: any) => ({
+        key: item?.resourceId,
+        label: item?.translatableContent?.find(
+          (item: any) => item?.key === "title",
+        )?.value,
+      }))
+      ?.filter((item: any) => item.key && item.label);
     return data;
   };
 
@@ -1002,33 +1000,6 @@ const Index = () => {
           />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };
