@@ -68,8 +68,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const pagesData = response?.pages?.nodes[0]?.files?.nodes;
         const sectionsData = response?.sections?.nodes[0]?.files?.nodes;
 
-        console.log("aispData: ", aispData);
-
         let themeJsonData: any[] = [];
 
         if (Array.isArray(aisalesData)) {
@@ -77,11 +75,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             /^sections\/pf-ai-sales-page-[a-zA-Z0-9]+\.liquid$/.test(
               item?.filename,
             ),
-          );
-
-          console.log(
-            "filteredAisalesData.length: ",
-            filteredAisalesData.length,
           );
 
           themeJsonData.push(...filteredAisalesData);
@@ -96,8 +89,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             /^sections\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
           );
 
-          console.log("filteredPagesData.length: ", filteredPagesData.length);
-
           themeJsonData.push(...filteredPagesData);
         }
 
@@ -106,15 +97,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             /^snippets\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
           );
 
-          console.log(
-            "filteredSectionsData.length: ",
-            filteredSectionsData.length,
-          );
-
           themeJsonData.push(...filteredSectionsData);
         }
-
-        console.log("themeJsonData.length: ", themeJsonData.length);
 
         return {
           success: true,
@@ -273,8 +257,6 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data?.success) {
-        console.log(dataFetcher.data?.response);
-
         const data = dataFetcher.data?.response
           ?.map((item: any) => {
             const content = item?.body?.content || "";
@@ -324,8 +306,6 @@ const Index = () => {
           // 过滤掉 null（不会出现 undefined）
           .filter(Boolean);
 
-        console.log(data);
-
         if (Array.isArray(data)) {
           setMenuData(data);
           setSelectedMenuKey(data[0]?.key);
@@ -348,30 +328,14 @@ const Index = () => {
 
   useEffect(() => {
     if (contentFetcher.data) {
-      console.log(
-        "contentFetcher.data?.success: ",
-        contentFetcher.data?.success,
-      );
-      console.log(
-        "shopNameLiquidDataRef.current: ",
-        shopNameLiquidDataRef.current,
-      );
-      console.log(
-        "loadingStatus.shopNameLiquidDataIsPost: ",
-        loadingStatus.shopNameLiquidDataIsPost,
-      );
-
       if (
         contentFetcher.data?.success &&
         shopNameLiquidDataRef.current &&
         !loadingStatus.shopNameLiquidDataIsPost
       ) {
         const pfLiquidData = contentFetcher.data?.response?.content;
-        console.log("pfLiquidData: ", pfLiquidData);
 
         const pfLiquidTexts = extractTextSegmentsFromLiquid(pfLiquidData);
-
-        console.log("pfLiquidTexts: ", pfLiquidTexts);
 
         if (pfLiquidTexts.length) {
           const tableData = pfLiquidTexts.map((item: any, index: number) => {
@@ -477,45 +441,43 @@ const Index = () => {
   const extractTextSegmentsFromLiquid = (liquidCode: string): string[] => {
     if (!liquidCode) return [];
 
-    // 1️⃣ 删除 Liquid 变量 {{ ... }} 和逻辑标签 {% ... %}
+    // HTML 实体解码函数
+    const decodeHtmlEntities = (str: string): string => {
+      const textarea = document.createElement("textarea");
+      textarea.innerHTML = str;
+      return textarea.value;
+    };
+
+    // 1. 删除 Liquid 变量与逻辑
     let cleaned = liquidCode.replace(/{%[\s\S]*?%}/g, "");
 
-    // 2️⃣ 删除 <style> 和 <script>
+    // 2. 删除 <style> 和 <script>
     cleaned = cleaned
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<script[\s\S]*?<\/script>/gi, "");
 
-    console.log(cleaned);
-
-    // ------------------------------------------------------
-    // ⭐ 新增：提取所有 data-default-text
-    // 例如：<div data-default-text="Hello"></div>
-    // ------------------------------------------------------
+    // ⭐ 提取 data-default-text
     const defaultTextMatches = [
       ...cleaned.matchAll(/data-default-text="([^"]+)"/g),
     ];
-    const defaultTexts = defaultTextMatches.map((m) => m[1].trim());
-    // ------------------------------------------------------
+    const defaultTexts = defaultTextMatches.map((m) =>
+      decodeHtmlEntities(m[1].trim()),
+    );
 
-    // 3️⃣ 提取 HTML 标签之间的文本
+    // 3. 提取 HTML 标签之间的文本
     const matches = cleaned.match(/>([^<]+)</g);
     const normalTexts = matches
       ? matches
-          .map((m) => m.replace(/[><]/g, "").trim())
+          .map((m) => decodeHtmlEntities(m.replace(/[><]/g, "").trim()))
           .filter((t) => {
             if (!t) return false;
-
-            // 🚫 跳过含 Liquid
             if (/{{[\s\S]*?}}/.test(t)) return false;
             if (/{%[\s\S]*?%}/.test(t)) return false;
-
             return true;
           })
       : [];
 
-    // ------------------------------------------------------
-    // ⭐ 最终结果 = data-default-text + 普通文本 去重
-    // ------------------------------------------------------
+    // ⭐ 去重输出
     const finalTexts = Array.from(new Set([...defaultTexts, ...normalTexts]));
 
     return finalTexts;
@@ -727,7 +689,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("pageFly")}
+      title={t("PageFly")}
       fullWidth={true}
       backAction={{
         onAction: onCancel,
