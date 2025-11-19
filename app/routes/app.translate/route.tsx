@@ -284,7 +284,7 @@ const Index = () => {
       };
       GetLanguageDataFront();
     }
-  }, [languageData, source.code]);
+  }, [source.code]);
 
   useEffect(() => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
