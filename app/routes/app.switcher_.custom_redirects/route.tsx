@@ -7,7 +7,6 @@ import {
   Checkbox,
   Flex,
   Pagination,
-  Select,
   Skeleton,
   Space,
   Switch,
@@ -22,8 +21,6 @@ import {
   GetCurrencyByShopName,
   mockIpConfigData,
   mockSwitchStatus,
-  SelectShopNameLiquidData,
-  UpdateLiquidReplacementMethod,
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -516,6 +513,8 @@ const Index = () => {
         )}
       </Space>
       <UpdateCustomRedirectsModal
+        languageTableData={languageTableData}
+        currencyTableData={currencyTableData}
         server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={({

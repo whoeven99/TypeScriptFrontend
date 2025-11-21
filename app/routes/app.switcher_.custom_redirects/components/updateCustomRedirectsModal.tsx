@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Input, Space, Button, Typography, Select, Flex } from "antd";
-import { useSelector } from "react-redux";
+import { Modal, Input, Space, Button, Typography, Flex } from "antd";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import {
-  mockIpConfigDataUpdate,
-} from "~/api/JavaServer";
+import { mockIpConfigDataUpdate } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { CurrencyDataType } from "~/routes/app.currency/route";
 
 const { Text } = Typography;
 
 interface UpdateCustomRedirectsModalProps {
+  languageTableData: LanguagesDataType[];
+  currencyTableData: CurrencyDataType[];
   server: string;
   dataSource: {
     key: number;
@@ -48,6 +48,8 @@ interface UpdateCustomRedirectsModalProps {
 }
 
 const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
+  languageTableData,
+  currencyTableData,
   server,
   dataSource,
   defaultData,
@@ -58,14 +60,23 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   const { t } = useTranslation();
 
   //语言数据
-  // const options = useMemo(() => {
-  //   if (languageTableData.length > 0) {
-  //     return languageTableData.map((item) => ({
-  //       value: item.locale,
-  //       label: item.name,
-  //     }));
-  //   }
-  // }, [languageTableData]);
+  const languageOptions = useMemo(() => {
+    if (languageTableData.length > 0) {
+      return languageTableData.map((item) => ({
+        value: item.locale,
+        label: item.name,
+      }));
+    }
+  }, [languageTableData]);
+
+  const currencyOptions = useMemo(() => {
+    if (currencyTableData.length > 0) {
+      return currencyTableData.map((item) => ({
+        value: item.currencyCode,
+        label: item.currency,
+      }));
+    }
+  }, [currencyTableData]);
 
   //表单数据依据
   const [formData, setFormData] = useState<{
