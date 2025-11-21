@@ -9,7 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate
+  PageFlyTextTranslate,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -89,7 +89,7 @@ async function ciwiOnload() {
   setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
 
   //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock)
+  PageFlyTextTranslate(blockId, shop, ciwiBlock);
 
   // 主页图片替换
   HomeImageTranslate(blockId);
@@ -107,6 +107,7 @@ async function ciwiOnload() {
   );
   const currentLanguage = selectedTextElement?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
+    
   // IP 定位逻辑
   if (configData?.ipOpen) {
     const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');

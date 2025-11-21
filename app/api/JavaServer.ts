@@ -4,6 +4,147 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const mockIpConfigDataUpdate = async ({
+  shop,
+  server,
+  id,
+  region,
+  language,
+  currency,
+  redirect_url,
+}: {
+  shop: string;
+  server: string;
+  id?: number;
+  region: string;
+  language: string;
+  currency: string;
+  redirect_url: string;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            id,
+            region,
+            language,
+            currency,
+            redirect_url,
+          },
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockSwitchStatus = async ({
+  shop,
+  server,
+  id,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: id,
+        });
+      }, 2000);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockIpConfigData = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [
+            {
+              id: 0,
+              status: true,
+              region: "US",
+              language: "en",
+              currency: "USD",
+              redirect_url: "",
+            },
+            {
+              id: 1,
+              status: false,
+              region: "JP",
+              language: "ja",
+              currency: "JPY",
+              redirect_url: "",
+            },
+          ],
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const EditTranslatedData = async ({
   shop,
   server,
