@@ -258,40 +258,69 @@ const Index = () => {
         (item: any) => item?.success === true,
       );
       if (Array.isArray(successfulItem) && successfulItem.length) {
+        const newThemes = [...themesData];
+        const newFilteredThemes = [...filteredThemesData];
+
         successfulItem.forEach((item: any) => {
-          const themesIndex = themesData.findIndex(
+          const themesIndex = newThemes.findIndex(
             (option: any) => option.resourceId === item?.response?.resourceId,
           );
+          const filteredThemesIndex = newFilteredThemes.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
+          );
+
           if (themesIndex !== -1) {
-            const data = themesData[themesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
+            const translations = [...newThemes[themesIndex].translations];
+            const existedIndex = translations.findIndex(
+              (t) => t.key === item?.response?.key,
             );
-            if (data) {
-              data.value = item?.response?.value;
+
+            if (existedIndex !== -1) {
+              translations[existedIndex] = {
+                ...translations[existedIndex],
+                value: item?.response?.value,
+              };
             } else {
-              themesData[themesIndex].translations.push({
+              translations.push({
                 key: item.response.key,
                 value: item.response.value,
               });
             }
+
+            newThemes[themesIndex] = {
+              ...newThemes[themesIndex],
+              translations,
+            };
           }
-          const filteredThemesIndex = themesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
+
           if (filteredThemesIndex !== -1) {
-            const data = themesData[filteredThemesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
+            const translations = [
+              ...newFilteredThemes[filteredThemesIndex].translations,
+            ];
+            const existedIndex = translations.findIndex(
+              (t) => t.key === item?.response?.key,
             );
-            if (data) {
-              data.value = item?.response?.value;
+
+            if (existedIndex !== -1) {
+              translations[existedIndex] = {
+                ...translations[existedIndex],
+                value: item?.response?.value,
+              };
             } else {
-              themesData[filteredThemesIndex].translations.push({
+              translations.push({
                 key: item.response.key,
                 value: item.response.value,
               });
             }
+
+            newFilteredThemes[filteredThemesIndex] = {
+              ...newFilteredThemes[filteredThemesIndex],
+              translations,
+            };
           }
         });
+        setThemesData(newThemes);
+        setFilteredThemesData(newFilteredThemes);
       }
       if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
