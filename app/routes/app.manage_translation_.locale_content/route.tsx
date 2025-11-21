@@ -15,10 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { SearchOutlined } from "@ant-design/icons";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
@@ -54,9 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!loading:
       try {
@@ -245,7 +240,6 @@ const Index = () => {
     }
 
     setResourceData(generateMenuItemsArray(filteredThemesData));
-    if (currentPage !== 1) setCurrentPage(1);
   }, [filteredThemesData]);
 
   useEffect(() => {
@@ -583,6 +577,7 @@ const Index = () => {
       },
     ];
     setFilteredThemesData(filteredData);
+    if (currentPage !== 1) setCurrentPage(1);
   };
 
   const handleConfirm = () => {
