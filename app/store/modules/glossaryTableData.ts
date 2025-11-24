@@ -19,7 +19,7 @@ const glossaryTableDataSlice = createSlice({
     updateGLossaryTableData: (state, action: PayloadAction<any>) => {
       // 检查新数据是否已经存在于 state.rows 中
       const index = state.rows.findIndex(
-        (row) => row.key === action.payload?.id,
+        (row) => row.key === action.payload?.key,
       );
       if (index !== -1) {
         // 如果已存在，更新该行的数据
