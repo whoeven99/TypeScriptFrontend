@@ -200,11 +200,18 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           res.rangeCode === "ALL"
         ) {
           res = {
-            ...res,
+            key: res?.id,
+            sourceText: res?.sourceText,
+            targetText: res?.targetText,
             language:
               shopLocales.find((language: ShopLocalesType) => {
                 return language.locale === res.rangeCode;
               })?.name || "All Languages",
+            rangeCode: res?.rangeCode,
+            type: res?.caseSensitive,
+            status: res?.status,
+            loading: false,
+            createdDate: res?.createdDate,
           };
         }
         dispatch(updateGLossaryTableData(res));
