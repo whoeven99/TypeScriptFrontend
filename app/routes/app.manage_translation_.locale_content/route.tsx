@@ -15,10 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { SearchOutlined } from "@ant-design/icons";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
@@ -54,9 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!loading:
       try {
@@ -245,7 +240,6 @@ const Index = () => {
     }
 
     setResourceData(generateMenuItemsArray(filteredThemesData));
-    if (currentPage !== 1) setCurrentPage(1);
   }, [filteredThemesData]);
 
   useEffect(() => {
@@ -264,40 +258,69 @@ const Index = () => {
         (item: any) => item?.success === true,
       );
       if (Array.isArray(successfulItem) && successfulItem.length) {
+        const newThemes = [...themesData];
+        const newFilteredThemes = [...filteredThemesData];
+
         successfulItem.forEach((item: any) => {
-          const themesIndex = themesData.findIndex(
+          const themesIndex = newThemes.findIndex(
             (option: any) => option.resourceId === item?.response?.resourceId,
           );
+          const filteredThemesIndex = newFilteredThemes.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
+          );
+
           if (themesIndex !== -1) {
-            const data = themesData[themesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
+            const translations = [...newThemes[themesIndex].translations];
+            const existedIndex = translations.findIndex(
+              (t) => t.key === item?.response?.key,
             );
-            if (data) {
-              data.value = item?.response?.value;
+
+            if (existedIndex !== -1) {
+              translations[existedIndex] = {
+                ...translations[existedIndex],
+                value: item?.response?.value,
+              };
             } else {
-              themesData[themesIndex].translations.push({
+              translations.push({
                 key: item.response.key,
                 value: item.response.value,
               });
             }
+
+            newThemes[themesIndex] = {
+              ...newThemes[themesIndex],
+              translations,
+            };
           }
-          const filteredThemesIndex = themesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
+
           if (filteredThemesIndex !== -1) {
-            const data = themesData[filteredThemesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
+            const translations = [
+              ...newFilteredThemes[filteredThemesIndex].translations,
+            ];
+            const existedIndex = translations.findIndex(
+              (t) => t.key === item?.response?.key,
             );
-            if (data) {
-              data.value = item?.response?.value;
+
+            if (existedIndex !== -1) {
+              translations[existedIndex] = {
+                ...translations[existedIndex],
+                value: item?.response?.value,
+              };
             } else {
-              themesData[filteredThemesIndex].translations.push({
+              translations.push({
                 key: item.response.key,
                 value: item.response.value,
               });
             }
+
+            newFilteredThemes[filteredThemesIndex] = {
+              ...newFilteredThemes[filteredThemesIndex],
+              translations,
+            };
           }
         });
+        setThemesData(newThemes);
+        setFilteredThemesData(newFilteredThemes);
       }
       if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
@@ -583,6 +606,7 @@ const Index = () => {
       },
     ];
     setFilteredThemesData(filteredData);
+    if (currentPage !== 1) setCurrentPage(1);
   };
 
   const handleConfirm = () => {
