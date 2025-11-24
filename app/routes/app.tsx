@@ -136,8 +136,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: languageInit?.source,
           targets: languageInit?.targets,
         });
+        return null;
       } catch (error) {
         console.error("Error languageInit app:", error);
+        return null;
       }
     }
 
