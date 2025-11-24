@@ -2611,7 +2611,7 @@ export const GetGlossaryByShopNameLoading = async ({
 
     return {
       success: true,
-      errorCode: 10001,
+      errorCode: 0,
       errorMsg: "",
       response: {
         glossaryTableData: sortedRes,
