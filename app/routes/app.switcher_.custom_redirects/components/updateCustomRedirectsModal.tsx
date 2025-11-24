@@ -11,7 +11,6 @@ const { Text } = Typography;
 interface UpdateCustomRedirectsModalProps {
   languageTableData: LanguagesDataType[];
   currencyTableData: CurrencyDataType[];
-  domainBindingLanguageData: any[];
   regionsData: any[];
   server: string;
   dataSource: {
@@ -20,7 +19,6 @@ interface UpdateCustomRedirectsModalProps {
     region: string;
     language: string;
     currency: string;
-    redirect_url: string;
   }[];
   defaultData?:
     | {
@@ -29,7 +27,6 @@ interface UpdateCustomRedirectsModalProps {
         region: string;
         language: string;
         currency: string;
-        redirect_url: string;
       }
     | undefined;
   handleUpdateDataSource: ({
@@ -37,13 +34,11 @@ interface UpdateCustomRedirectsModalProps {
     region,
     language,
     currency,
-    redirect_url,
   }: {
     key?: number;
     region: string;
     language: string;
     currency: string;
-    redirect_url: string;
   }) => void;
   type: "create" | "edit";
   open: boolean;
@@ -53,7 +48,6 @@ interface UpdateCustomRedirectsModalProps {
 const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   languageTableData,
   currencyTableData,
-  domainBindingLanguageData,
   regionsData,
   server,
   dataSource,
@@ -70,12 +64,10 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     region: string;
     language: string;
     currency: string;
-    redirect_url: string;
   }>({
     region: "",
     language: "",
     currency: "",
-    redirect_url: "",
   });
 
   //地区数据
@@ -86,6 +78,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         label: item.name,
       }));
     }
+    return [];
   }, [regionsData]);
 
   //语言数据
@@ -96,6 +89,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         label: item.name,
       }));
     }
+    return [];
   }, [languageTableData]);
 
   //货币数据
@@ -106,22 +100,8 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         label: item.currency,
       }));
     }
+    return [];
   }, [currencyTableData]);
-
-  //域名数据
-  const domainOptions = useMemo(() => {
-    if (domainBindingLanguageData.length > 0) {
-      return domainBindingLanguageData
-        .find(
-          (domainBindingLanguageItem) =>
-            domainBindingLanguageItem?.region?.code == formData.region,
-        )
-        ?.domains?.map((domainsItem: any) => ({
-          value: domainsItem?.url,
-          label: domainsItem?.url,
-        }));
-    }
-  }, [domainBindingLanguageData, formData.region]);
 
   //存在数据为空时禁用提交
   const confirmButtonDisable = useMemo<boolean>(
@@ -129,7 +109,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
       !formData.region ||
       !formData.language ||
       !formData.currency ||
-      !formData.redirect_url ||
       JSON.stringify(formData) == JSON.stringify(defaultData),
     [formData],
   );
@@ -146,22 +125,9 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         region: "",
         language: "",
         currency: "",
-        redirect_url: "",
       });
     }
   }, [defaultData, open]);
-
-  useEffect(() => {
-    console.log("domainOptions: ", domainOptions);
-    console.log("formData: ", formData);
-
-    if (Array.isArray(domainOptions) && domainOptions.length) {
-      const findIndex = domainOptions?.find(
-        (item: any) => item?.value == formData.redirect_url,
-      );
-      if (!findIndex) setFormData({ ...formData, redirect_url: "" });
-    }
-  }, [domainOptions]);
 
   const handleChange = ({
     e,
@@ -189,12 +155,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           region: e,
         });
         break;
-      case item == "redirect_url":
-        setFormData({
-          ...formData,
-          redirect_url: e,
-        });
-        break;
       default:
         break;
     }
@@ -204,18 +164,13 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   const handleConfirm = async (id?: number) => {
     let isSameRuleError = true;
 
-    const { region, language, currency, redirect_url } = formData;
+    const { region } = formData;
 
     const isDuplicated = dataSource.some((item: any) => {
       // 如果是 update，需要排除自身
       if (type !== "create" && item.key === id) return false;
 
-      return (
-        item.region === region &&
-        item.language === language &&
-        item.currency === currency &&
-        item.redirect_url === redirect_url
-      );
+      return item.region === region;
     });
 
     // isSameRuleError = false 代表发现重复规则
@@ -232,7 +187,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           region: formData.region,
           language: formData.language,
           currency: formData.currency,
-          redirect_url: formData.redirect_url,
         });
       } else {
         data = await mockIpConfigDataUpdate({
@@ -241,7 +195,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           region: formData.region,
           language: formData.language,
           currency: formData.currency,
-          redirect_url: formData.redirect_url,
         });
       }
 
@@ -251,7 +204,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           region: data.response?.region,
           language: data.response?.language,
           currency: data.response?.currency,
-          redirect_url: data.response?.redirect_url,
         };
         handleUpdateDataSource(newData);
         shopify.toast.show("Saved successfully");
@@ -260,7 +212,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           region: "",
           language: "",
           currency: "",
-          redirect_url: "",
         });
         setIsModalHide();
       } else {
@@ -279,7 +230,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
       region: "",
       language: "",
       currency: "",
-      redirect_url: "",
     });
     setIsModalHide();
   };
@@ -316,6 +266,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           </Text>
           <Select
             style={{ flex: 1 }}
+            disabled={type == "edit"}
             onChange={(e) => handleChange({ e, item: "region" })}
             options={regionsOptions}
             value={formData.region}
@@ -328,7 +279,13 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           <Select
             style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "language" })}
-            options={languageOptions}
+            options={[
+              {
+                label: t("Follow browser language"),
+                value: "",
+              },
+              ...languageOptions,
+            ]}
             value={formData.language}
           />
         </Flex>
@@ -341,18 +298,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             onChange={(e) => handleChange({ e, item: "currency" })}
             options={currencyOptions}
             value={formData.currency}
-          />
-        </Flex>
-        <Flex align="center">
-          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
-            {t("Redirect URL")}:
-          </Text>
-          <Select
-            style={{ flex: 1 }}
-            disabled={!formData?.region}
-            onChange={(e) => handleChange({ e, item: "redirect_url" })}
-            options={domainOptions}
-            value={formData.redirect_url}
           />
         </Flex>
       </Space>

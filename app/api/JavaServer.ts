@@ -4,6 +4,45 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const mockIpConfigDataInit = async ({
+  shop,
+  server,
+  initData,
+}: {
+  shop: string;
+  server: string;
+  initData: {
+    region: string;
+    language: string;
+    currency: string;
+  }[];
+}) => {
+  try {
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: initData.map((item, index) => ({
+            ...item,
+            status: true,
+            id: index,
+          })),
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const mockIpConfigDataDelete = async ({
   shop,
   server,
@@ -42,7 +81,6 @@ export const mockIpConfigDataUpdate = async ({
   region,
   language,
   currency,
-  redirect_url,
 }: {
   shop: string;
   server: string;
@@ -50,7 +88,6 @@ export const mockIpConfigDataUpdate = async ({
   region: string;
   language: string;
   currency: string;
-  redirect_url: string;
 }) => {
   try {
     return await new Promise<any>((resolve) => {
@@ -64,7 +101,6 @@ export const mockIpConfigDataUpdate = async ({
             region,
             language,
             currency,
-            redirect_url,
           },
         });
       }, 500);
@@ -138,24 +174,23 @@ export const mockIpConfigData = async ({
           success: true,
           errorCode: 0,
           errorMsg: "",
-          response: [
-            {
-              id: 0,
-              status: true,
-              region: "US",
-              language: "zh-CN",
-              currency: "CAD",
-              redirect_url: "https://ciwishop.myshopify.com",
-            },
-            {
-              id: 1,
-              status: false,
-              region: "JP",
-              language: "ja",
-              currency: "JPY",
-              redirect_url: "https://ciwi.zinnbuy.com",
-            },
-          ],
+          response: [],
+          // response: [
+          //   {
+          //     id: 0,
+          //     status: true,
+          //     region: "US",
+          //     language: "zh-CN",
+          //     currency: "CAD",
+          //   },
+          //   {
+          //     id: 1,
+          //     status: false,
+          //     region: "JP",
+          //     language: "ja",
+          //     currency: "JPY",
+          //   },
+          // ],
         });
       }, 500);
     });

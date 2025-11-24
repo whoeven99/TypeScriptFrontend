@@ -59,17 +59,11 @@ export const queryMarketDomainData = async ({
               }
             }
           }
-        }
-      }
-      webPresences(first: 20) {
-        nodes {
-          domain {
-            url
-            localization {
-              alternateLocales
+          currencySettings {
+            baseCurrency {
+              currencyCode
             }
           }
-          id
         }
       }
     }`;

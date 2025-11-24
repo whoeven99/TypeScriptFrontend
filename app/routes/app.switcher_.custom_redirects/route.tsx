@@ -17,10 +17,10 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import {
-  DeleteLiquidDataByIds,
   GetCurrencyByShopName,
   mockIpConfigData,
   mockIpConfigDataDelete,
+  mockIpConfigDataInit,
   mockSwitchStatus,
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
@@ -46,7 +46,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
-    currencyLocaleData,
+    currencyLocaleData: currencyLocaleData || [],
   };
 };
 
@@ -102,17 +102,11 @@ const Index = () => {
   );
 
   //货币源数据
-  const currencyTableData: CurrencyDataType[] = useSelector(
-    (state: any) => state.currencyTableData.rows,
-  );
-
-  //域名及其绑定语言数据
-  const [domainBindingLanguageData, setDomainBindingLanguageData] = useState<
-    any[]
+  const [currencyDataSource, setCurrencyDataSource] = useState<
+    CurrencyDataType[]
   >([]);
-
   //市场数据
-  const [regionsData, setRegionsData] = useState<any[]>([]);
+  const [regionsDataSource, setRegionsDataSource] = useState<any[]>([]);
 
   //加载状态数组，目前loading表示页面正在加载
   const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
@@ -131,7 +125,6 @@ const Index = () => {
       region: string;
       language: string;
       currency: string;
-      redirect_url: string;
     }[]
   >([]);
 
@@ -207,18 +200,19 @@ const Index = () => {
           currency: string;
           redirect_url: string;
         }[] = [];
-        if (
-          Array.isArray(selectShopNameLiquidData.response) &&
-          selectShopNameLiquidData.response?.length
-        ) {
-          newData = selectShopNameLiquidData.response.map((item: any) => ({
-            key: item?.id,
-            status: item?.status,
-            region: item?.region,
-            language: item?.language,
-            currency: item?.currency,
-            redirect_url: item?.redirect_url,
-          }));
+        if (Array.isArray(selectShopNameLiquidData.response)) {
+          if (selectShopNameLiquidData.response.length) {
+            newData = selectShopNameLiquidData.response.map((item: any) => ({
+              key: item?.id,
+              status: item?.status,
+              region: item?.region,
+              language: item?.language,
+              currency: item?.currency,
+              redirect_url: item?.redirect_url,
+            }));
+          } else {
+            setLoadingArray([...loadingArray, "needInit"]);
+          }
         }
         setDataSource(newData);
         setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
@@ -236,55 +230,71 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    const primaryCurrencyCode = currencyDataSource?.find(
+      (item) => !item.exchangeRate,
+    )?.currencyCode;
+    if (
+      primaryCurrencyCode &&
+      Array.isArray(regionsDataSource) &&
+      loadingArray.includes("needInit")
+    ) {
+      console.log("regionsDataSource: ", regionsDataSource);
+
+      const initData = regionsDataSource.map((regionsDataSourceItem) => ({
+        region: regionsDataSourceItem?.code,
+        language: "",
+        currency: regionsDataSourceItem?.currencyCode || primaryCurrencyCode,
+      }));
+
+      const initCustomRedirectData = async () => {
+        const data = await mockIpConfigDataInit({
+          shop: globalStore?.shop || "",
+          server: server || "",
+          initData,
+        });
+        if (data?.success) {
+          setDataSource(data?.response || []);
+        }
+        setLoadingArray(loadingArray.filter((prev) => prev !== "needInit"));
+      };
+
+      initCustomRedirectData();
+    }
+  }, [
+    loadingArray.includes("needInit"),
+    regionsDataSource,
+    currencyDataSource,
+  ]);
+
+  useEffect(() => {
     if (!marketsFetcher.data?.success) return;
 
-    const webPresencesData =
-      marketsFetcher.data?.response?.webPresences?.nodes || [];
     const marketsData = marketsFetcher.data?.response?.markets?.nodes || [];
 
     const regionMap = new Map(); // key = region.id → { region, domains: Set }
 
     marketsData.forEach((market: any, index: any) => {
-      let domain = webPresencesData[index]?.domain;
-
-      if (!domain) {
-        domain = webPresencesData[0]?.domain || null;
-      }
-
       const regions =
         market?.conditions?.regionsCondition?.regions?.nodes || [];
+
+      console.log("market: ", market);
 
       regions.forEach((region: any) => {
         if (!region?.id) return;
 
         if (!regionMap.has(region.id)) {
           regionMap.set(region.id, {
-            region,
-            domains: new Set(),
+            ...region,
+            currencyCode: market?.currencySettings?.baseCurrency?.currencyCode,
           });
-        }
-
-        // domain 必须非空才加入 Set
-        if (domain) {
-          regionMap.get(region.id).domains.add(domain);
         }
       });
     });
 
     // Region 列表
-    const regionsData = [...regionMap.values()].map((v) => v.region);
-    setRegionsData(regionsData);
+    const regionsData = [...regionMap.values()].map((v) => v);
 
-    // region → domains 映射
-    const regionDomains = [...regionMap.values()].map((v) => ({
-      region: v.region,
-      domains: [...v.domains],
-    }));
-
-    console.log("regionDomains:", regionDomains);
-    if (Array.isArray(regionDomains) && regionDomains?.length) {
-      setDomainBindingLanguageData(regionDomains);
-    }
+    setRegionsDataSource(regionsData);
   }, [marketsFetcher.data]);
 
   //表格列管理
@@ -312,34 +322,37 @@ const Index = () => {
       title: t("Region"),
       dataIndex: "region",
       key: "region",
-      width: "10%",
+      width: "20%",
     },
     {
       title: t("Language"),
       dataIndex: "language",
       key: "language",
-      width: "20%",
+      width: "30%",
       render: (_: any, record: any) => {
         const item =
           languageLocaleData[
             record?.language as keyof typeof languageLocaleData
           ];
-        if (item)
+        if (item) {
           return (
             <Text>
               {item?.Name}({item?.isoCode})
             </Text>
           );
+        } else {
+          return <Text>{t("Follow browser language")}</Text>;
+        }
       },
     },
     {
       title: t("Currency"),
       dataIndex: "currency",
       key: "currency",
-      width: "20%",
+      width: "30%",
       render: (_: any, record: any) => {
-        const item = currencyLocaleData.find(
-          (item: any) => item.currencyCode == record?.currency,
+        const item = currencyLocaleData?.find(
+          (item: any) => item?.currencyCode == record?.currency,
         );
         if (item)
           return (
@@ -348,12 +361,6 @@ const Index = () => {
             </Text>
           );
       },
-    },
-    {
-      title: t("Redirect URL"),
-      dataIndex: "redirect_url",
-      key: "redirect_url",
-      width: "30%",
     },
     {
       title: t("Action"),
@@ -388,13 +395,11 @@ const Index = () => {
     region,
     language,
     currency,
-    redirect_url,
   }: {
     key?: number;
     region: string;
     language: string;
     currency: string;
-    redirect_url: string;
   }) => {
     setDataSource((prev) => {
       // 查找是否已有该项
@@ -409,7 +414,6 @@ const Index = () => {
           region,
           language,
           currency,
-          redirect_url,
         };
         return updated;
       } else {
@@ -420,7 +424,6 @@ const Index = () => {
           region,
           language,
           currency,
-          redirect_url,
         };
         return [newItem, ...prev];
       }
@@ -475,10 +478,7 @@ const Index = () => {
       server: server as string,
     });
     if (data?.success) {
-      const tableData = data?.response?.filter(
-        (item: any) => !item?.primaryStatus,
-      );
-      dispatch(setTableData(tableData));
+      setCurrencyDataSource(data?.response);
     }
   };
 
@@ -647,16 +647,18 @@ const Index = () => {
           <Table
             rowSelection={rowSelection}
             columns={columns}
-            loading={loadingArray.includes("loading")}
+            loading={
+              loadingArray.includes("loading") ||
+              loadingArray.includes("needInit")
+            }
             dataSource={dataSource}
           />
         )}
       </Space>
       <UpdateCustomRedirectsModal
         languageTableData={languageTableData}
-        currencyTableData={currencyTableData}
-        domainBindingLanguageData={domainBindingLanguageData}
-        regionsData={regionsData}
+        currencyTableData={currencyDataSource}
+        regionsData={regionsDataSource}
         server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={({
@@ -664,20 +666,17 @@ const Index = () => {
           region,
           language,
           currency,
-          redirect_url,
         }: {
           key?: number;
           region: string;
           language: string;
           currency: string;
-          redirect_url: string;
         }) =>
           handleUpdateDataSource({
             key,
             region,
             language,
             currency,
-            redirect_url,
           })
         }
         defaultData={editData}

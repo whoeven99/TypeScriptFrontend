@@ -62,10 +62,52 @@ const rtlLanguages = [
 
 async function ciwiOnload() {
   console.log("onload start (modular+full)");
+
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) return console.warn("ciwiBlock not found");
+
+  const language = ciwiBlock.querySelector(
+    'input[name="language_code"]',
+  )?.value;
+  const country = ciwiBlock.querySelector('input[name="country_code"]')?.value;
+
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+
+  // 是否已经处理过 URL 参数
+
+  const url_ciwi_region = params.get("ciwi_region");
+  const url_ciwi_language = params.get("ciwi_language");
+  const url_ciwi_currency = params.get("ciwi_currency");
+
+  console.log("url_ciwi_region: ", url_ciwi_region);
+  console.log("country: ", country);
+  console.log("url_ciwi_language: ", url_ciwi_language);
+  console.log("language: ", language);
+  console.log("url_ciwi_currency: ", url_ciwi_currency);
+  console.log("url_ciwi_region != country: ", url_ciwi_region != country);
+  console.log("url_ciwi_language != language: ", url_ciwi_language != language);
+
+  if (
+    (url_ciwi_region != country || url_ciwi_language != language) &&
+    url_ciwi_region &&
+    url_ciwi_language &&
+    url_ciwi_currency
+  ) {
+    console.log(1111);
+
+    // 写入 localStorage
+    localStorage.setItem("ciwi_selected_currency", url_ciwi_currency);
+    localStorage.setItem("ciwi_selected_country", url_ciwi_region);
+
+    // updateLocalization({
+    //   country: url_ciwi_region,
+    //   language: url_ciwi_language,
+    // });
+  }
+
   const shop = ciwiBlock.querySelector("#queryCiwiId");
   // 爬虫检测
   const reason = isLikelyBotByUA();
@@ -107,7 +149,7 @@ async function ciwiOnload() {
   );
   const currentLanguage = selectedTextElement?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
-    
+
   // IP 定位逻辑
   if (configData?.ipOpen) {
     const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
@@ -115,14 +157,6 @@ async function ciwiOnload() {
     if (iptokenValue) {
       const storedCountry = localStorage.getItem("ciwi_selected_country");
       const storedCurrency = localStorage.getItem("ciwi_selected_currency");
-      const languageInput = ciwiBlock.querySelector(
-        'input[name="language_code"]',
-      );
-      const countryInput = ciwiBlock.querySelector(
-        'input[name="country_code"]',
-      );
-      const language = languageInput?.value;
-      const country = countryInput?.value;
       const availableLanguages = Array.from(
         ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
       ).map((opt) => opt.dataset.value);
@@ -136,6 +170,7 @@ async function ciwiOnload() {
       let detectedLanguage = availableLanguages.includes(browserLanguage)
         ? browserLanguage
         : null;
+      let detectedCountry;
       if (!storedCountry && !storedCurrency) {
         const checkUserIpStart = Date.now();
         const userIp = await API.checkUserIp({ blockId, shop: shop.value });
@@ -145,29 +180,58 @@ async function ciwiOnload() {
           const IpData = await API.fetchUserCountryInfo(iptokenValue);
           const fetchCountryCost = Date.now() - fetchCountryStart;
           const ip = IpData?.ip;
-          const currencyCode = IpData?.currency?.code;
-          const countryCode = IpData?.country_code;
+          let detectedCurrency = IpData?.currency?.code;
+          detectedCountry = IpData?.country_code;
           API.FrontEndPrinting({
             blockId,
             shop: shop.value,
             ip,
             languageCode: browserLanguage,
             langInclude: availableLanguages.includes(browserLanguage),
-            countryCode,
-            counInclude: availableCountries.includes(countryCode),
-            currencyCode,
+            countryCode: detectedCurrency,
+            counInclude: availableCountries.includes(detectedCountry),
+            currencyCode: detectedCountry,
             checkUserIpCostTime: checkUserIpCost,
             fetchUserCountryInfoCostTime: fetchCountryCost,
             status: IpData?.status,
             error: IpData?.ip ? "" : JSON.stringify(IpData),
           });
-          if (currencyCode) {
-            localStorage.setItem("ciwi_selected_currency", currencyCode);
+          const mockIpConfigDataGet = await API.mockIpConfigDataGet({
+            blockId,
+            shopName: shop.value,
+            region: detectedCountry,
+          });
+          if (mockIpConfigDataGet?.success) {
+            const data = mockIpConfigDataGet?.response;
+            const mockIpConfigDataGet_Domain = data?.redirect_url;
+            detectedCountry = data?.region;
+            detectedLanguage = data?.language
+              ? data?.language
+              : detectedLanguage;
+            detectedCurrency = data?.currency;
+            const currentUrl = window.location.origin;
+
+            console.log(
+              "mockIpConfigDataGet_Domain: ",
+              mockIpConfigDataGet_Domain,
+            );
+            console.log("currentUrl: ", currentUrl);
+
+            if (mockIpConfigDataGet_Domain != currentUrl) {
+              console.log(
+                `${mockIpConfigDataGet_Domain}?ciwi_region=${detectedCountry}&ciwi_language=${detectedLanguage}&ciwi_currency=${detectedCurrency}`,
+              );
+
+              window.location.href = `${mockIpConfigDataGet_Domain}?ciwi_region=${detectedCountry}&ciwi_language=${detectedLanguage}&ciwi_currency=${detectedCurrency}`;
+              return;
+            }
           }
-          let detectedCountry;
-          if (countryCode && availableCountries.includes(countryCode)) {
-            detectedCountry = countryCode;
-            localStorage.setItem("ciwi_selected_country", countryCode);
+          if (detectedCurrency) {
+            localStorage.setItem("ciwi_selected_currency", detectedCurrency);
+          }
+          if (detectedCountry && availableCountries.includes(detectedCountry)) {
+            detectedCountry = detectedCountry;
+            localStorage.setItem("ciwi_selected_country", detectedCountry);
           } else {
             localStorage.setItem("ciwi_selected_country", "false");
           }
