@@ -198,7 +198,6 @@ const Index = () => {
           region: string;
           language: string;
           currency: string;
-          redirect_url: string;
         }[] = [];
         if (Array.isArray(selectShopNameLiquidData.response)) {
           if (selectShopNameLiquidData.response.length) {
@@ -208,7 +207,6 @@ const Index = () => {
               region: item?.region,
               language: item?.language,
               currency: item?.currency,
-              redirect_url: item?.redirect_url,
             }));
           } else {
             setLoadingArray([...loadingArray, "needInit"]);
@@ -233,6 +231,9 @@ const Index = () => {
     const primaryCurrencyCode = currencyDataSource?.find(
       (item) => !item.exchangeRate,
     )?.currencyCode;
+
+    console.log(loadingArray);
+
     if (
       primaryCurrencyCode &&
       Array.isArray(regionsDataSource) &&
@@ -293,6 +294,8 @@ const Index = () => {
 
     // Region 列表
     const regionsData = [...regionMap.values()].map((v) => v);
+
+    console.log("regionsData: ", regionsData);
 
     setRegionsDataSource(regionsData);
   }, [marketsFetcher.data]);
