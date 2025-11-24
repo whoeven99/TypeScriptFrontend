@@ -21,10 +21,6 @@ const glossaryTableDataSlice = createSlice({
       const index = state.rows.findIndex(
         (row) => row.key === action.payload?.key,
       );
-
-      console.log("action.payload: ", action.payload);
-      console.log("index: ", index);
-
       if (index !== -1) {
         // 如果已存在，更新该行的数据
         state.rows[index] = action.payload;
