@@ -4,6 +4,37 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const mockIpConfigDataDelete = async ({
+  shop,
+  server,
+  ids,
+}: {
+  shop: string;
+  server: string;
+  ids: number[];
+}) => {
+  try {
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: ids,
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const mockIpConfigDataUpdate = async ({
   shop,
   server,
@@ -29,7 +60,7 @@ export const mockIpConfigDataUpdate = async ({
           errorCode: 0,
           errorMsg: "",
           response: {
-            id,
+            id: id ? id : Math.random(),
             region,
             language,
             currency,
@@ -112,9 +143,9 @@ export const mockIpConfigData = async ({
               id: 0,
               status: true,
               region: "US",
-              language: "en",
-              currency: "USD",
-              redirect_url: "",
+              language: "zh-CN",
+              currency: "CAD",
+              redirect_url: "https://ciwishop.myshopify.com",
             },
             {
               id: 1,
@@ -122,7 +153,7 @@ export const mockIpConfigData = async ({
               region: "JP",
               language: "ja",
               currency: "JPY",
-              redirect_url: "",
+              redirect_url: "https://ciwi.zinnbuy.com",
             },
           ],
         });

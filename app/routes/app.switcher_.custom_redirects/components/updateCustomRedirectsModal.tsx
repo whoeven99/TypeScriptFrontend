@@ -151,6 +151,18 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     }
   }, [defaultData, open]);
 
+  useEffect(() => {
+    console.log("domainOptions: ", domainOptions);
+    console.log("formData: ", formData);
+
+    if (Array.isArray(domainOptions) && domainOptions.length) {
+      const findIndex = domainOptions?.find(
+        (item: any) => item?.value == formData.redirect_url,
+      );
+      if (!findIndex) setFormData({ ...formData, redirect_url: "" });
+    }
+  }, [domainOptions]);
+
   const handleChange = ({
     e,
     item,
@@ -306,6 +318,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "region" })}
             options={regionsOptions}
+            value={formData.region}
           />
         </Flex>
         <Flex align="center">
@@ -316,6 +329,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "language" })}
             options={languageOptions}
+            value={formData.language}
           />
         </Flex>
         <Flex align="center">
@@ -326,6 +340,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "currency" })}
             options={currencyOptions}
+            value={formData.currency}
           />
         </Flex>
         <Flex align="center">
@@ -337,6 +352,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             disabled={!formData?.region}
             onChange={(e) => handleChange({ e, item: "redirect_url" })}
             options={domainOptions}
+            value={formData.redirect_url}
           />
         </Flex>
       </Space>

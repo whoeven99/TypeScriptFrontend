@@ -20,6 +20,7 @@ import {
   DeleteLiquidDataByIds,
   GetCurrencyByShopName,
   mockIpConfigData,
+  mockIpConfigDataDelete,
   mockSwitchStatus,
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
@@ -296,7 +297,6 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Switch
-            // style={{ width: "100%" }}
             loading={switchLoadingArray.includes(record?.key)}
             onChange={() => {
               handleCustomRedirectStatus({
@@ -312,25 +312,48 @@ const Index = () => {
       title: t("Region"),
       dataIndex: "region",
       key: "region",
-      width: "15%",
+      width: "10%",
     },
     {
       title: t("Language"),
       dataIndex: "language",
       key: "language",
-      width: "15%",
+      width: "20%",
+      render: (_: any, record: any) => {
+        const item =
+          languageLocaleData[
+            record?.language as keyof typeof languageLocaleData
+          ];
+        if (item)
+          return (
+            <Text>
+              {item?.Name}({item?.isoCode})
+            </Text>
+          );
+      },
     },
     {
       title: t("Currency"),
       dataIndex: "currency",
       key: "currency",
-      width: "15%",
+      width: "20%",
+      render: (_: any, record: any) => {
+        const item = currencyLocaleData.find(
+          (item: any) => item.currencyCode == record?.currency,
+        );
+        if (item)
+          return (
+            <Text>
+              {item?.currencyName}({item?.currencyCode})
+            </Text>
+          );
+      },
     },
     {
       title: t("Redirect URL"),
       dataIndex: "redirect_url",
       key: "redirect_url",
-      width: "35%",
+      width: "30%",
     },
     {
       title: t("Action"),
@@ -430,7 +453,7 @@ const Index = () => {
 
   //表格数据删除方法
   const handleDelete = async () => {
-    const data = await DeleteLiquidDataByIds({
+    const data = await mockIpConfigDataDelete({
       shop: globalStore?.shop || "",
       server: server || "",
       ids: selectedRowKeys,
@@ -465,7 +488,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Custom Liquid")}
+      title={t("Customize Redirects by Region")}
       backAction={{
         onAction: onCancel,
       }}
@@ -475,6 +498,9 @@ const Index = () => {
         size="middle"
         style={{ display: "flex", width: "100%" }}
       >
+        <Text>
+          {t("Configure region-specific redirects for your visitors")}
+        </Text>
         <Flex
           align="center"
           justify="space-between" // 使按钮左右分布
