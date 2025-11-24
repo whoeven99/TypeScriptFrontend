@@ -37,7 +37,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { handleContactSupport } from "../app._index/route";
 import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 const { Title, Text, Paragraph } = Typography;

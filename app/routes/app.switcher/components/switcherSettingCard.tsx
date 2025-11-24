@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 const { Text, Paragraph, Title } = Typography;
 
 interface SwitcherSettingCardProps {

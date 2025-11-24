@@ -37,7 +37,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@shopify/polaris";
 import { ArrowLeftIcon } from "@shopify/polaris-icons";
 import { useNavigate, useFetcher } from "@remix-run/react";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import TranslatedIcon from "app/components/translateIcon";
 import store from "~/store";
 import { RootState } from "~/store";

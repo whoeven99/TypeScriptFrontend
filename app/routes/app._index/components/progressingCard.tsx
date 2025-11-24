@@ -3,7 +3,7 @@ import { Button, Card, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { FetcherWithComponents, useNavigate } from "@remix-run/react";
 import ProgressBlock from "./progressBlock";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {

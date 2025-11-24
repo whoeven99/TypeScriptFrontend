@@ -25,7 +25,7 @@ import {
 } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
 

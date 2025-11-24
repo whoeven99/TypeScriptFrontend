@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";

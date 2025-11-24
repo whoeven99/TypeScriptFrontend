@@ -28,7 +28,7 @@ import { queryShop } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 interface EditData {
   shopName: string;

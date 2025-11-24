@@ -34,7 +34,7 @@ import {
   GetLanguageList,
   GetLanguageLocaleInfo,
 } from "~/api/JavaServer";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 import TranslateAffix from "./components/translateAffix";
 import LanguageSelectorCard from "./components/languageSelectorCard";

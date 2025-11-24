@@ -28,7 +28,7 @@ import { useFetcher } from "@remix-run/react";
 import { GetConversionData } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import LineChartECharts from "./components/LineChartECharts";
 const { Title } = Typography;
 

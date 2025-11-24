@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Row, Col, Button, Card, Flex, Image, Typography } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { useTranslation } from "react-i18next";
-import languageLocaleData from "../../../../scripts/language-locale-data";
+import languageLocaleData from "~/scripts/language-locale-data";
 
 const TranslationPanel = () => {
   const { t } = useTranslation();

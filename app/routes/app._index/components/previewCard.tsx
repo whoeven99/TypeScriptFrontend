@@ -3,7 +3,7 @@ import { Card, Rate, Input, Form, message, Typography, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 import { CloseOutlined } from "@ant-design/icons";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 const { Text } = Typography;
 
 interface PreviewCardProps {

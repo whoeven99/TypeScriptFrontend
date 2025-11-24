@@ -44,7 +44,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import PublishModal from "./components/publishModal";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
 
@@ -445,7 +445,6 @@ const Index = () => {
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
-      console.log(webPresencesFetcher.data.response);
       let newMarketArray: MarketType[] = [];
       webPresencesFetcher.data.response?.forEach((market: any) => {
         if (market?.id && market?.domain) {

@@ -24,7 +24,7 @@ import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { useSelector } from "react-redux";
 import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";

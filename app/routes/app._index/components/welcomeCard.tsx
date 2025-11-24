@@ -1,7 +1,7 @@
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { useState, useEffect } from "react";
 const { Text } = Typography;
 

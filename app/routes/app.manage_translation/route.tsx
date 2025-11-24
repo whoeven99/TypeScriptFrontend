@@ -34,7 +34,7 @@ import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { globalStore } from "~/globalStore";
 
 const { Text, Title } = Typography;

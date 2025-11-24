@@ -38,7 +38,7 @@ import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { globalStore } from "~/globalStore";
 const { Title, Text } = Typography;
 

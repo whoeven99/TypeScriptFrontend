@@ -4,7 +4,7 @@ import { handleContactSupport } from "../route";
 import { Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { FetcherWithComponents, useNavigate } from "@remix-run/react";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 import { useMemo } from "react";
 
 const { Text } = Typography;

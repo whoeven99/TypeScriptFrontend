@@ -38,7 +38,7 @@ import { setTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import { useNavigate } from "react-router-dom";
-import useReport from "scripts/eventReport";
+import useReport from "~/scripts/eventReport";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
