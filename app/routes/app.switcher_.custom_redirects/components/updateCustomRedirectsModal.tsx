@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Input, Space, Button, Typography, Flex } from "antd";
+import { Modal, Input, Space, Button, Typography, Flex, Select } from "antd";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { mockIpConfigDataUpdate } from "~/api/JavaServer";
@@ -11,6 +11,8 @@ const { Text } = Typography;
 interface UpdateCustomRedirectsModalProps {
   languageTableData: LanguagesDataType[];
   currencyTableData: CurrencyDataType[];
+  domainBindingLanguageData: any[];
+  regionsData: any[];
   server: string;
   dataSource: {
     key: number;
@@ -43,6 +45,7 @@ interface UpdateCustomRedirectsModalProps {
     currency: string;
     redirect_url: string;
   }) => void;
+  type: "create" | "edit";
   open: boolean;
   setIsModalHide: () => void;
 }
@@ -50,33 +53,17 @@ interface UpdateCustomRedirectsModalProps {
 const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   languageTableData,
   currencyTableData,
+  domainBindingLanguageData,
+  regionsData,
   server,
   dataSource,
   defaultData,
   handleUpdateDataSource,
+  type,
   open,
   setIsModalHide,
 }) => {
   const { t } = useTranslation();
-
-  //语言数据
-  const languageOptions = useMemo(() => {
-    if (languageTableData.length > 0) {
-      return languageTableData.map((item) => ({
-        value: item.locale,
-        label: item.name,
-      }));
-    }
-  }, [languageTableData]);
-
-  const currencyOptions = useMemo(() => {
-    if (currencyTableData.length > 0) {
-      return currencyTableData.map((item) => ({
-        value: item.currencyCode,
-        label: item.currency,
-      }));
-    }
-  }, [currencyTableData]);
 
   //表单数据依据
   const [formData, setFormData] = useState<{
@@ -90,6 +77,51 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     currency: "",
     redirect_url: "",
   });
+
+  //地区数据
+  const regionsOptions = useMemo(() => {
+    if (regionsData.length > 0) {
+      return regionsData.map((item) => ({
+        value: item.code,
+        label: item.name,
+      }));
+    }
+  }, [regionsData]);
+
+  //语言数据
+  const languageOptions = useMemo(() => {
+    if (languageTableData.length > 0) {
+      return languageTableData.map((item) => ({
+        value: item.locale,
+        label: item.name,
+      }));
+    }
+  }, [languageTableData]);
+
+  //货币数据
+  const currencyOptions = useMemo(() => {
+    if (currencyTableData.length > 0) {
+      return currencyTableData.map((item) => ({
+        value: item.currencyCode,
+        label: item.currency,
+      }));
+    }
+  }, [currencyTableData]);
+
+  //域名数据
+  const domainOptions = useMemo(() => {
+    if (domainBindingLanguageData.length > 0) {
+      return domainBindingLanguageData
+        .find(
+          (domainBindingLanguageItem) =>
+            domainBindingLanguageItem?.region?.code == formData.region,
+        )
+        ?.domains?.map((domainsItem: any) => ({
+          value: domainsItem?.url,
+          label: domainsItem?.url,
+        }));
+    }
+  }, [domainBindingLanguageData, formData.region]);
 
   //存在数据为空时禁用提交
   const confirmButtonDisable = useMemo<boolean>(
@@ -107,7 +139,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
 
   //初始化表单数据
   useEffect(() => {
-    if (defaultData) {
+    if (defaultData && open) {
       setFormData(defaultData);
     } else {
       setFormData({
@@ -117,25 +149,65 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         redirect_url: "",
       });
     }
-  }, [defaultData]);
+  }, [defaultData, open]);
+
+  const handleChange = ({
+    e,
+    item,
+  }: {
+    e: string;
+    item: "language" | "currency" | "region" | "redirect_url";
+  }) => {
+    switch (true) {
+      case item == "language":
+        setFormData({
+          ...formData,
+          language: e,
+        });
+        break;
+      case item == "currency":
+        setFormData({
+          ...formData,
+          currency: e,
+        });
+        break;
+      case item == "region":
+        setFormData({
+          ...formData,
+          region: e,
+        });
+        break;
+      case item == "redirect_url":
+        setFormData({
+          ...formData,
+          redirect_url: e,
+        });
+        break;
+      default:
+        break;
+    }
+  };
 
   //提交表单数据方法
   const handleConfirm = async (id?: number) => {
     let isSameRuleError = true;
 
-    // const source = formData.sourceText + formData.languageCode;
-    // dataSource.map((item: any) => {
-    //   const string = item.sourceText + item.languageCode;
-    //   if (title === "Create rule") {
-    //     if (source == string) {
-    //       isSameRuleError = false;
-    //     }
-    //   } else {
-    //     if (source == string && item.key !== id) {
-    //       isSameRuleError = false;
-    //     }
-    //   }
-    // });
+    const { region, language, currency, redirect_url } = formData;
+
+    const isDuplicated = dataSource.some((item: any) => {
+      // 如果是 update，需要排除自身
+      if (type !== "create" && item.key === id) return false;
+
+      return (
+        item.region === region &&
+        item.language === language &&
+        item.currency === currency &&
+        item.redirect_url === redirect_url
+      );
+    });
+
+    // isSameRuleError = false 代表发现重复规则
+    isSameRuleError = !isDuplicated;
 
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
@@ -190,11 +262,21 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     }
   };
 
+  const onCancel = () => {
+    setFormData({
+      region: "",
+      language: "",
+      currency: "",
+      redirect_url: "",
+    });
+    setIsModalHide();
+  };
+
   return (
     <Modal
       title={t("Configure Redirect Rule")}
       open={open}
-      onCancel={setIsModalHide}
+      onCancel={onCancel}
       centered
       footer={[
         <Space key="updateCustomTransModal_footer">
@@ -211,72 +293,52 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text>{t("Keep translation consistent across your store")}</Text>
-        <Flex
-          gap={8}
-          justify="center"
-          align="flex-start"
-          style={{
-            width: "100%",
-          }}
-        >
-          {/* <div
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              width: "100%",
-            }}
-          >
-            <Input
-              placeholder={t("Please enter original text")}
-              value={formData.sourceText}
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  sourceText: e.target.value,
-                });
-              }}
-              disabled={loadingStatusArray.includes("submitting")}
-            />
-          </div> */}
-          <Text style={{ margin: "0 8px", lineHeight: "32px" }}>{t("to")}</Text>
-          {/* <div
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              width: "100%",
-            }}
-          >
-            <Input
-              placeholder={t("Please enter escaped text")}
-              value={formData.targetText}
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  targetText: e.target.value,
-                });
-              }}
-              disabled={loadingStatusArray.includes("submitting")}
-            />
-          </div> */}
-        </Flex>
-        <Text strong>{t("Apply for")}</Text>
-        {/* <div style={{ display: "flex", flexDirection: "column", width: 200 }}>
+        <Text>
+          {t(
+            "Define the region, language, currency, and redirect URL for this rule.The Switcher will use these settings to direct visitors.",
+          )}
+        </Text>
+        <Flex align="center">
+          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
+            {t("Region")}:
+          </Text>
           <Select
-            options={options}
-            style={{ width: "100%" }}
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                languageCode: e,
-              });
-            }}
-            value={formData.languageCode}
-            disabled={loadingStatusArray.includes("submitting")}
+            style={{ flex: 1 }}
+            onChange={(e) => handleChange({ e, item: "region" })}
+            options={regionsOptions}
           />
-        </div> */}
+        </Flex>
+        <Flex align="center">
+          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
+            {t("Language")}:
+          </Text>
+          <Select
+            style={{ flex: 1 }}
+            onChange={(e) => handleChange({ e, item: "language" })}
+            options={languageOptions}
+          />
+        </Flex>
+        <Flex align="center">
+          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
+            {t("Currency")}:
+          </Text>
+          <Select
+            style={{ flex: 1 }}
+            onChange={(e) => handleChange({ e, item: "currency" })}
+            options={currencyOptions}
+          />
+        </Flex>
+        <Flex align="center">
+          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
+            {t("Redirect URL")}:
+          </Text>
+          <Select
+            style={{ flex: 1 }}
+            disabled={!formData?.region}
+            onChange={(e) => handleChange({ e, item: "redirect_url" })}
+            options={domainOptions}
+          />
+        </Flex>
       </Space>
     </Modal>
   );

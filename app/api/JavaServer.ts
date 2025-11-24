@@ -22,12 +22,6 @@ export const mockIpConfigDataUpdate = async ({
   redirect_url: string;
 }) => {
   try {
-    // const response = await axios({
-    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
-    //   method: "POST",
-    // });
-
-    // console.log(`${shop} EditTranslatedData: `, response.data);
     return await new Promise<any>((resolve) => {
       setTimeout(() => {
         resolve({
@@ -2497,36 +2491,28 @@ export const GetCurrencyByShopName = async ({
     const res = response.data?.response;
     console.log("GetCurrencyByShopName: ", res);
 
-    if (Array.isArray(res)) {
-      const data = res?.map((item: any) => ({
-        key: item.id, // 将 id 转换为 key
-        currency: item?.currencyName, // 将 currencyName 作为 currency
-        rounding: item?.rounding,
-        exchangeRate: item?.exchangeRate,
-        currencyCode: item?.currencyCode,
-        primaryStatus: item?.primaryStatus,
-      }));
-      return {
-        success: true,
-        errorCode: 10001,
-        errorMsg: "",
-        response: data,
-      };
-    } else {
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: [],
-      };
-    }
+    const data = res?.map((item: any) => ({
+      key: item?.id, // 将 id 转换为 key
+      currency: item?.currencyName, // 将 currencyName 作为 currency
+      rounding: item?.rounding,
+      exchangeRate: item?.exchangeRate,
+      currencyCode: item?.currencyCode,
+      primaryStatus: item?.primaryStatus,
+    }));
+
+    return {
+      success: true,
+      errorCode: 10001,
+      errorMsg: "",
+      response: data || [],
+    };
   } catch (error) {
-    console.error("Error get currency:", error);
+    console.error("Error GetCurrencyByShopName:", error);
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: [],
+      response: null,
     };
   }
 };

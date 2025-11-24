@@ -1,6 +1,6 @@
 import { Page } from "@shopify/polaris";
-import { useEffect, useMemo, useState } from "react";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Card,
@@ -27,19 +27,69 @@ import { useDispatch, useSelector } from "react-redux";
 import { setTableData } from "~/store/modules/currencyDataTable";
 import { LanguagesDataType } from "../app.language/route";
 import { CurrencyDataType } from "../app.currency/route";
+import { authenticate } from "~/shopify.server";
+import { queryMarketDomainData } from "~/api/admin";
+import languageLocaleData from "~/scripts/language-locale-data";
+
 const { Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+  const url = new URL("/currencies.json", request.url).toString();
+  const currencyLocaleData = await fetch(url)
+    .then((response) => response.json())
+    .catch((error) =>
+      console.error("Error loading currencyLocaleData:", error),
+    );
 
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
+    currencyLocaleData,
   };
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
+  const formData = await request.formData();
+  const marketsData = JSON.parse(formData.get("marketsData") as string);
+
+  switch (true) {
+    case !!marketsData:
+      try {
+        const data = await queryMarketDomainData({
+          shop,
+          accessToken: accessToken as string,
+        });
+        console.log(data);
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: data,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+    default:
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
+  }
+};
+
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { server, mobile, currencyLocaleData } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -54,6 +104,14 @@ const Index = () => {
   const currencyTableData: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
+
+  //域名及其绑定语言数据
+  const [domainBindingLanguageData, setDomainBindingLanguageData] = useState<
+    any[]
+  >([]);
+
+  //市场数据
+  const [regionsData, setRegionsData] = useState<any[]>([]);
 
   //加载状态数组，目前loading表示页面正在加载
   const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
@@ -82,9 +140,11 @@ const Index = () => {
   //编辑表单类型及数据控制
   const [createOrEditModal, setCreateOrEditModal] = useState<{
     open: boolean;
+    type: "create" | "edit";
     key: number;
   }>({
     open: false,
+    type: "create",
     key: 0,
   });
 
@@ -119,18 +179,17 @@ const Index = () => {
   );
 
   const fetcher = useFetcher<any>();
+  const marketsFetcher = useFetcher<any>();
 
   useEffect(() => {
-    fetcher.submit(
+    marketsFetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在自定义翻译页面`,
+        marketsData: JSON.stringify({}),
       },
       {
         method: "POST",
-        action: "/log",
       },
     );
-
     //表格数据初始化方法
     setTimeout(async () => {
       const selectShopNameLiquidData = await mockIpConfigData({
@@ -163,8 +222,8 @@ const Index = () => {
         setDataSource(newData);
         setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
       }
+      getCurrencyByShopName();
     }, 100);
-    getCurrencyByShopName();
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -174,6 +233,58 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (!marketsFetcher.data?.success) return;
+
+    const webPresencesData =
+      marketsFetcher.data?.response?.webPresences?.nodes || [];
+    const marketsData = marketsFetcher.data?.response?.markets?.nodes || [];
+
+    const regionMap = new Map(); // key = region.id → { region, domains: Set }
+
+    marketsData.forEach((market: any, index: any) => {
+      let domain = webPresencesData[index]?.domain;
+
+      if (!domain) {
+        domain = webPresencesData[0]?.domain || null;
+      }
+
+      const regions =
+        market?.conditions?.regionsCondition?.regions?.nodes || [];
+
+      regions.forEach((region: any) => {
+        if (!region?.id) return;
+
+        if (!regionMap.has(region.id)) {
+          regionMap.set(region.id, {
+            region,
+            domains: new Set(),
+          });
+        }
+
+        // domain 必须非空才加入 Set
+        if (domain) {
+          regionMap.get(region.id).domains.add(domain);
+        }
+      });
+    });
+
+    // Region 列表
+    const regionsData = [...regionMap.values()].map((v) => v.region);
+    setRegionsData(regionsData);
+
+    // region → domains 映射
+    const regionDomains = [...regionMap.values()].map((v) => ({
+      region: v.region,
+      domains: [...v.domains],
+    }));
+
+    console.log("regionDomains:", regionDomains);
+    if (Array.isArray(regionDomains) && regionDomains?.length) {
+      setDomainBindingLanguageData(regionDomains);
+    }
+  }, [marketsFetcher.data]);
 
   //表格列管理
   const columns = [
@@ -231,6 +342,7 @@ const Index = () => {
           onClick={() =>
             setCreateOrEditModal({
               open: true,
+              type: "edit",
               key: record.key,
             })
           }
@@ -388,6 +500,7 @@ const Index = () => {
               onClick={() =>
                 setCreateOrEditModal({
                   open: true,
+                  type: "create",
                   key: -1,
                 })
               }
@@ -476,6 +589,7 @@ const Index = () => {
                       onClick={() =>
                         setCreateOrEditModal({
                           open: true,
+                          type: "edit",
                           key: item.key,
                         })
                       }
@@ -515,6 +629,8 @@ const Index = () => {
       <UpdateCustomRedirectsModal
         languageTableData={languageTableData}
         currencyTableData={currencyTableData}
+        domainBindingLanguageData={domainBindingLanguageData}
+        regionsData={regionsData}
         server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={({
@@ -539,6 +655,7 @@ const Index = () => {
           })
         }
         defaultData={editData}
+        type={createOrEditModal.type}
         open={createOrEditModal.open}
         setIsModalHide={() =>
           setCreateOrEditModal({
