@@ -63,11 +63,54 @@ export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   }
 }
 
-export async function ReadTranslatedText({
-  blockId,
-  shopName,
-  languageCode,
-}) {
+export const mockIpConfigDataGet = async ({ blockId, shopName, region }) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+    if (window) {
+      const region = localStorage.get("ciwi_test_region");
+      const language = localStorage.get("ciwi_test_language");
+      const currency = localStorage.get("ciwi_test_currency");
+
+      console.log({
+        id: 0,
+        region: region || "JA",
+        language: language || "auto",
+        currency: currency || "auto",
+      });
+
+      return await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: {
+              id: 0,
+              region,
+              language,
+              currency,
+            },
+          });
+        }, 500);
+      });
+    }
+  } catch (error) {
+    console.error(`${shopName} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
   try {
     const { data } = await fetchJson(
       `${switchUrl(blockId)}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,

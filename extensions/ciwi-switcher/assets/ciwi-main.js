@@ -9,7 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate
+  PageFlyTextTranslate,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -89,7 +89,7 @@ async function ciwiOnload() {
   setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
 
   //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock)
+  PageFlyTextTranslate(blockId, shop, ciwiBlock);
 
   // 主页图片替换
   HomeImageTranslate(blockId);
@@ -109,74 +109,155 @@ async function ciwiOnload() {
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
   // IP 定位逻辑
   if (configData?.ipOpen) {
-    const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
-    const iptokenValue = iptokenInput?.value;
+    const iptokenValue = ciwiBlock.querySelector(
+      'input[name="iptoken"]',
+    )?.value;
+
     if (iptokenValue) {
+      //获取地区信息和货币信息的缓存，用来判断是否需要ip定位
       const storedCountry = localStorage.getItem("ciwi_selected_country");
       const storedCurrency = localStorage.getItem("ciwi_selected_currency");
-      const languageInput = ciwiBlock.querySelector(
-        'input[name="language_code"]',
-      );
-      const countryInput = ciwiBlock.querySelector(
-        'input[name="country_code"]',
-      );
-      const language = languageInput?.value;
-      const country = countryInput?.value;
-      const availableLanguages = Array.from(
-        ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-      ).map((opt) => opt.dataset.value);
-      const availableCountries = Array.from(
-        ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
-      ).map((link) => link.getAttribute("data-value"));
-      let browserLanguage = navigator.language;
-      if (!browserLanguage.includes("zh")) {
-        browserLanguage = browserLanguage.split("-")[0];
-      }
-      let detectedLanguage = availableLanguages.includes(browserLanguage)
-        ? browserLanguage
-        : null;
+
+      //不存在则开始ip定位
       if (!storedCountry && !storedCurrency) {
         const checkUserIpStart = Date.now();
+
+        //获取是否能够ip定位
         const userIp = await API.checkUserIp({ blockId, shop: shop.value });
         const checkUserIpCost = Date.now() - checkUserIpStart;
+
+        //能够定位则开始调用ipapi接口
         if (userIp) {
           const fetchCountryStart = Date.now();
+
+          //调用ipapi接口
           const IpData = await API.fetchUserCountryInfo(iptokenValue);
+
           const fetchCountryCost = Date.now() - fetchCountryStart;
+
+          //ip信息
           const ip = IpData?.ip;
-          const currencyCode = IpData?.currency?.code;
-          const countryCode = IpData?.country_code;
+
+          //浏览器语言
+          let browserLanguage = navigator.language;
+          if (!browserLanguage.includes("zh")) {
+            browserLanguage = browserLanguage.split("-")[0];
+          }
+
+          //暂存默认数据
+          let detectedCountry = IpData?.country_code;
+          let detectedLanguage = browserLanguage;
+          let detectedCurrency = IpData?.currency?.code;
+
+          //获取用户自定义数据
+          const mockIpConfigDataGet = await API.mockIpConfigDataGet({
+            blockId,
+            shop: shop.value,
+            region: detectedCountry,
+          });
+
+          if (mockIpConfigDataGet?.success) {
+            if (mockIpConfigDataGet?.response) {
+              //用户自定义语言数据
+              const mockIpConfigDataGet_Language =
+                mockIpConfigDataGet?.response?.language;
+
+              //用户自定义货币数据
+              const mockIpConfigDataGet_Currency =
+                mockIpConfigDataGet?.response?.currency;
+
+              //如果存在且不是auto则使用自定义数据
+              if (
+                mockIpConfigDataGet_Language &&
+                mockIpConfigDataGet_Language != "auto"
+              ) {
+                detectedLanguage = mockIpConfigDataGet_Language;
+              }
+              if (
+                mockIpConfigDataGet_Currency &&
+                mockIpConfigDataGet_Currency != "auto"
+              ) {
+                detectedCurrency = mockIpConfigDataGet_Language;
+              }
+            }
+          }
+
+          //判断语言是否可用
+          const availableLanguages = Array.from(
+            ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
+          ).map((opt) => opt.dataset.value);
+
+          detectedLanguage = availableLanguages.includes(detectedLanguage)
+            ? detectedLanguage
+            : null;
+
+          //缓存货币数据
+          if (detectedCurrency) {
+            localStorage.setItem("ciwi_selected_currency", detectedCurrency);
+          }
+
+          //判断地区是否可用
+          const availableCountries = Array.from(
+            ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
+          ).map((link) => link.getAttribute("data-value"));
+
+          if (detectedCountry && availableCountries.includes(detectedCountry)) {
+            //缓存地区数据
+            localStorage.setItem("ciwi_selected_country", detectedCountry);
+          } else {
+            //不可用缓存“false”
+            localStorage.setItem("ciwi_selected_country", "false");
+          }
+
+          //打印日志
           API.FrontEndPrinting({
             blockId,
             shop: shop.value,
             ip,
-            languageCode: browserLanguage,
-            langInclude: availableLanguages.includes(browserLanguage),
-            countryCode,
-            counInclude: availableCountries.includes(countryCode),
-            currencyCode,
+            languageCode: detectedLanguage,
+            langInclude: availableLanguages.includes(detectedLanguage),
+            countryCode: detectedCountry,
+            counInclude: availableCountries.includes(detectedCountry),
+            currencyCode: detectedCurrency,
             checkUserIpCostTime: checkUserIpCost,
             fetchUserCountryInfoCostTime: fetchCountryCost,
             status: IpData?.status,
             error: IpData?.ip ? "" : JSON.stringify(IpData),
           });
-          if (currencyCode) {
-            localStorage.setItem("ciwi_selected_currency", currencyCode);
-          }
-          let detectedCountry;
-          if (countryCode && availableCountries.includes(countryCode)) {
-            detectedCountry = countryCode;
-            localStorage.setItem("ciwi_selected_country", countryCode);
-          } else {
-            localStorage.setItem("ciwi_selected_country", "false");
-          }
+
+          //判断是否在主题编辑器内
           const isInThemeEditor = document.documentElement.classList.contains(
             "shopify-design-mode",
           );
+
+          //获取当前语言和地区
+          const languageValue = ciwiBlock.querySelector(
+            'input[name="language_code"]',
+          )?.value;
+          const countryValue = ciwiBlock.querySelector(
+            'input[name="country_code"]',
+          )?.value;
+
+          console.log("detectedCountry: ", detectedCountry);
+          console.log("detectedLanguage: ", detectedLanguage);
+          console.log("countryValue: ", countryValue);
+          console.log("languageValue: ", languageValue);
+          console.log(
+            "detectedCountry !== countryValue: ",
+            detectedCountry !== countryValue,
+          );
+          console.log(
+            "detectedLanguage !== languageValue: ",
+            detectedLanguage !== languageValue,
+          );
+          console.log("isInThemeEditor: ", isInThemeEditor);
+
+          //如果不再主题编辑器内，并且语言和地区数据存在且和当前数据不同开始跳转
           if (
             detectedCountry &&
             detectedLanguage &&
-            (detectedCountry !== country || detectedLanguage !== language) &&
+            (detectedCountry !== countryValue ||
+              detectedLanguage !== languageValue) &&
             !isInThemeEditor
           ) {
             updateLocalization({
