@@ -58,7 +58,7 @@ export const planMapping = {
   Free: 0,
   Basic: 10,
   Pro: 50,
-  Premium: 100,
+  Premium: 500,
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
