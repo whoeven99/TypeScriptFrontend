@@ -22,7 +22,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { queryShop } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
@@ -432,28 +432,6 @@ const Index = () => {
     }
   }, [shopFetcher.data]);
 
-  // useEffect(() => {
-  //   if (languageSelector && !currencySelector) {
-  //     setSelectedLanguage(
-  //       localization.languages.find((language) => language.selected)
-  //         ?.localeName as string,
-  //     );
-  //   } else if (!languageSelector && currencySelector) {
-  //     setSelectedCurrency(
-  //       localization.currencies.find((currency) => currency.selected)
-  //         ?.localeName as string,
-  //     );
-  //   } else if (languageSelector && currencySelector) {
-  //     setSelectedLanguage(
-  //       localization.languages.find((language) => language.selected)
-  //         ?.localeName +
-  //         " / " +
-  //         localization.currencies.find((currency) => currency.selected)
-  //           ?.localeName,
-  //     );
-  //   }
-  // }, [languageSelector, currencySelector]);
-
   useEffect(() => {
     if (
       originalData &&
@@ -829,6 +807,15 @@ const Index = () => {
                           "switcher_ip_visible",
                         );
                       }}
+                    />
+                  </Flex>
+                  <Flex justify="space-between" align="center">
+                    <Text>{t("Customize Redirects by Region")}</Text>
+                    <Button
+                      color="default"
+                      variant="link"
+                      icon={<SettingOutlined />}
+                      onClick={() => navigate("custom_redirects")}
                     />
                   </Flex>
                 </Space>

@@ -4,6 +4,207 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const mockIpConfigDataInit = async ({
+  shop,
+  server,
+  initData,
+}: {
+  shop: string;
+  server: string;
+  initData: {
+    region: string;
+    language: string;
+    currency: string;
+  }[];
+}) => {
+  try {
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: initData.map((item, index) => ({
+            ...item,
+            status: true,
+            id: index,
+          })),
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockIpConfigDataDelete = async ({
+  shop,
+  server,
+  ids,
+}: {
+  shop: string;
+  server: string;
+  ids: number[];
+}) => {
+  try {
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: ids,
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockIpConfigDataUpdate = async ({
+  shop,
+  server,
+  id,
+  region,
+  language,
+  currency,
+}: {
+  shop: string;
+  server: string;
+  id?: number;
+  region: string;
+  language: string;
+  currency: string;
+}) => {
+  try {
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            id: id ? id : Math.random(),
+            region,
+            language,
+            currency,
+          },
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockSwitchStatus = async ({
+  shop,
+  server,
+  id,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: id,
+        });
+      }, 2000);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const mockIpConfigData = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
+    //   method: "POST",
+    // });
+
+    // console.log(`${shop} EditTranslatedData: `, response.data);
+    return await new Promise<any>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+          // response: [
+          //   {
+          //     id: 0,
+          //     status: true,
+          //     region: "US",
+          //     language: "zh-CN",
+          //     currency: "CAD",
+          //   },
+          //   {
+          //     id: 1,
+          //     status: false,
+          //     region: "JP",
+          //     language: "ja",
+          //     currency: "JPY",
+          //   },
+          // ],
+        });
+      }, 500);
+    });
+  } catch (error) {
+    console.error(`${shop} mockIpConfigData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const EditTranslatedData = async ({
   shop,
   server,
@@ -2356,36 +2557,28 @@ export const GetCurrencyByShopName = async ({
     const res = response.data?.response;
     console.log("GetCurrencyByShopName: ", res);
 
-    if (Array.isArray(res)) {
-      const data = res?.map((item: any) => ({
-        key: item.id, // 将 id 转换为 key
-        currency: item?.currencyName, // 将 currencyName 作为 currency
-        rounding: item?.rounding,
-        exchangeRate: item?.exchangeRate,
-        currencyCode: item?.currencyCode,
-        primaryStatus: item?.primaryStatus,
-      }));
-      return {
-        success: true,
-        errorCode: 10001,
-        errorMsg: "",
-        response: data,
-      };
-    } else {
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: [],
-      };
-    }
+    const data = res?.map((item: any) => ({
+      key: item?.id, // 将 id 转换为 key
+      currency: item?.currencyName, // 将 currencyName 作为 currency
+      rounding: item?.rounding,
+      exchangeRate: item?.exchangeRate,
+      currencyCode: item?.currencyCode,
+      primaryStatus: item?.primaryStatus,
+    }));
+
+    return {
+      success: true,
+      errorCode: 10001,
+      errorMsg: "",
+      response: data || [],
+    };
   } catch (error) {
-    console.error("Error get currency:", error);
+    console.error("Error GetCurrencyByShopName:", error);
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: [],
+      response: null,
     };
   }
 };
@@ -2611,7 +2804,7 @@ export const GetGlossaryByShopNameLoading = async ({
 
     return {
       success: true,
-      errorCode: 0,
+      errorCode: 10001,
       errorMsg: "",
       response: {
         glossaryTableData: sortedRes,

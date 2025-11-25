@@ -1,7 +1,5 @@
 import axios from "axios";
-import {
-  LanguagesDataType,
-} from "~/routes/app.language/route";
+import { LanguagesDataType } from "~/routes/app.language/route";
 import { InsertShopTranslateInfo } from "./JavaServer";
 export interface PublishInfoType {
   locale: string;
@@ -33,6 +31,63 @@ export interface TransType {
     },
   ];
 }
+
+export const queryMarketDomainData = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
+  try {
+    const query = `{
+      markets(first: 20) {
+        nodes {
+          id
+          name
+          handle
+          conditions {
+            regionsCondition {
+              regions(first: 250) {
+                nodes {
+                  ... on MarketRegionCountry {
+                    id
+                    name
+                    code
+                  }
+                }
+              }
+            }
+          }
+          currencySettings {
+            baseCurrency {
+              currencyCode
+            }
+          }
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+
+    const res = response?.data?.data;
+
+    console.log(`${shop} queryMarketDomainData: `, res);
+
+    return res;
+  } catch (error) {
+    console.error("Error queryMarketDomainData:", error);
+    return null;
+  }
+};
 
 export const queryPageFlyThemeData = async ({
   shop,
@@ -150,7 +205,7 @@ export const queryPageFlyThemeData = async ({
       },
       data: JSON.stringify({ query }),
     });
-    
+
     const res = response?.data?.data;
 
     return res;
