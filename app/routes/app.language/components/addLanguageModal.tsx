@@ -29,14 +29,14 @@ interface AddLanguageModalProps {
   shop: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  languageLocaleInfo: any;
+  languageLocaleData: any;
 }
 
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   shop,
   isVisible,
   setIsModalOpen,
-  languageLocaleInfo,
+  languageLocaleData,
 }) => {
   const { t } = useTranslation();
 
@@ -260,19 +260,19 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   ];
 
   const updatedLocales = useMemo(() => {
-    if (source?.code && languageLocaleInfo) {
+    if (source?.code && languageLocaleData) {
       return regions.map((region) => ({
         ...region,
         countries: region.countries
           .map((lang) => ({
             ...lang,
-            name: `${lang.name}(${languageLocaleInfo[lang.isoCode]?.Local})`,
-            flag: languageLocaleInfo[lang.isoCode]?.countries[0],
+            name: `${lang.name}(${languageLocaleData[lang.isoCode]?.Local})`,
+            flag: languageLocaleData[lang.isoCode]?.countries[0],
           }))
           .filter((lang) => lang.isoCode !== source?.code),
       }));
     }
-  }, [source?.code, languageLocaleInfo]);
+  }, [source?.code, languageLocaleData]);
 
   const [allSelectedKeys, setAllSelectedKeys] = useState<string[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
@@ -318,7 +318,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
           key: lang.locale,
           name: lang.name,
           localeName:
-            languageLocaleInfo[addFetcher.data.response[i].locale].Local,
+            languageLocaleData[addFetcher.data.response[i].locale].Local,
           locale: lang.locale,
           status: 0,
           auto_update_translation: false,
@@ -529,7 +529,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
       <Space wrap style={{ marginBottom: 16 }}>
         {allSelectedKeys.map((key) => {
-          const language = languageLocaleInfo[key]?.Name || key;
+          const language = languageLocaleData[key]?.Name || key;
           return (
             <SelectedTag
               key={key}
