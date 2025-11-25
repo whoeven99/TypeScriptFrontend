@@ -809,15 +809,17 @@ const Index = () => {
                       }}
                     />
                   </Flex>
-                  <Flex justify="space-between" align="center">
-                    <Text>{t("Customize Redirects by Region")}</Text>
-                    <Button
-                      color="default"
-                      variant="link"
-                      icon={<SettingOutlined />}
-                      onClick={() => navigate("custom_redirects")}
-                    />
-                  </Flex>
+                  {isGeoLocationEnabled && (
+                    <Flex justify="space-between" align="center">
+                      <Text>{t("Customize Redirects by Region")}</Text>
+                      <Button
+                        color="default"
+                        variant="link"
+                        icon={<SettingOutlined />}
+                        onClick={() => navigate("custom_redirects")}
+                      />
+                    </Flex>
+                  )}
                 </Space>
               </Card>
               <Card
