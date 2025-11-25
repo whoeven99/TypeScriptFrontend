@@ -282,7 +282,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             options={[
               {
                 label: t("Follow browser language"),
-                value: "",
+                value: "auto",
               },
               ...languageOptions,
             ]}
@@ -296,7 +296,13 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           <Select
             style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "currency" })}
-            options={currencyOptions}
+            options={[
+              {
+                label: t("Follow Ip currency"),
+                value: "auto",
+              },
+              ...currencyOptions,
+            ]}
             value={formData.currency}
           />
         </Flex>

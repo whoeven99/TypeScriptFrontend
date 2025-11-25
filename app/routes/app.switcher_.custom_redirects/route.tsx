@@ -228,14 +228,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const primaryCurrencyCode = currencyDataSource?.find(
-      (item) => !item.exchangeRate,
-    )?.currencyCode;
-
-    console.log(loadingArray);
-
     if (
-      primaryCurrencyCode &&
       Array.isArray(regionsDataSource) &&
       regionsDataSource.length &&
       loadingArray.includes("needInit")
@@ -244,8 +237,8 @@ const Index = () => {
 
       const initData = regionsDataSource.map((regionsDataSourceItem) => ({
         region: regionsDataSourceItem?.code,
-        language: "",
-        currency: regionsDataSourceItem?.currencyCode || primaryCurrencyCode,
+        language: "auto",
+        currency: "auto",
       }));
 
       const initCustomRedirectData = async () => {
@@ -288,24 +281,17 @@ const Index = () => {
       const regions =
         market?.conditions?.regionsCondition?.regions?.nodes || [];
 
-      console.log("market: ", market);
-
       regions.forEach((region: any) => {
         if (!region?.id) return;
 
         if (!regionMap.has(region.id)) {
-          regionMap.set(region.id, {
-            ...region,
-            currencyCode: market?.currencySettings?.baseCurrency?.currencyCode,
-          });
+          regionMap.set(region.id, region);
         }
       });
     });
 
     // Region 列表
     const regionsData = [...regionMap.values()].map((v) => v);
-
-    console.log("regionsData: ", regionsData);
 
     setRegionsDataSource(regionsData);
   }, [marketsFetcher.data]);
@@ -376,12 +362,15 @@ const Index = () => {
         const item = currencyLocaleData?.find(
           (item: any) => item?.currencyCode == record?.currency,
         );
-        if (item)
+        if (item) {
           return (
             <Text>
               {item?.currencyName}({item?.currencyCode})
             </Text>
           );
+        } else {
+          return <Text>{t("Follow Ip currency")}</Text>;
+        }
       },
     },
     {
@@ -409,6 +398,17 @@ const Index = () => {
   const rowSelection = {
     selectedRowKeys,
     onChange: (e: any) => setSelectedRowKeys(e),
+  };
+
+  //获取用户货币数据
+  const getCurrencyByShopName = async () => {
+    const data = await GetCurrencyByShopName({
+      shop: globalStore?.shop || "",
+      server: server as string,
+    });
+    if (data?.success) {
+      setCurrencyDataSource(data?.response);
+    }
   };
 
   //编辑表单数据更新和提交后更新表格方法
@@ -452,7 +452,7 @@ const Index = () => {
     });
   };
 
-  //编辑替换方式
+  //状态更新方法
   const handleCustomRedirectStatus = async ({ id }: { id: number }) => {
     setSwitchLoadingArray([...switchLoadingArray, id]);
     const updateLiquidReplacementMethod = await mockSwitchStatus({
@@ -491,17 +491,6 @@ const Index = () => {
       shopify.toast.show("Delete successfully");
     }
     setSelectedRowKeys([]);
-  };
-
-  //获取用户货币数据
-  const getCurrencyByShopName = async () => {
-    const data = await GetCurrencyByShopName({
-      shop: globalStore?.shop || "",
-      server: server as string,
-    });
-    if (data?.success) {
-      setCurrencyDataSource(data?.response);
-    }
   };
 
   const onCancel = () => {
@@ -616,21 +605,27 @@ const Index = () => {
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Translation text")}</Text>
-                      <Text>{item.targetText}</Text>
+                      <Text>{item.region}</Text>
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Apply for")}</Text>
-                      <Text>{item.languageCode}</Text>
+                      <Text>{t("Translation text")}</Text>
+                      <Text>{item.language}</Text>
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Apply for")}</Text>
-                      <Text>
-                        {t(
-                          item.replacementMethod
-                            ? "Precise replacement"
-                            : "Fuzzy Replacement",
-                        )}
-                      </Text>
+                      <Text>{t("Translation text")}</Text>
+                      <Text>{item.currency}</Text>
+                    </Flex>
+                    <Flex justify="space-between">
+                      <Text>{t("Status")}</Text>
+                      <Switch
+                        loading={switchLoadingArray.includes(item?.key)}
+                        onChange={() => {
+                          handleCustomRedirectStatus({
+                            id: item?.key,
+                          });
+                        }}
+                        value={item.status}
+                      />
                     </Flex>
                     <Button
                       style={{ width: "100%" }}
