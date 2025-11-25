@@ -31,22 +31,16 @@ import { authenticate } from "~/shopify.server";
 import { queryMarketDomainData } from "~/api/admin";
 import languageLocaleData from "~/utils/language-locale-data";
 import countryLocaleData from "~/utils/country-locale-data";
+import currencyLocaleData from "~/utils/currency-locale-data";
 
 const { Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
-  const url = new URL("/currencies.json", request.url).toString();
-  const currencyLocaleData = await fetch(url)
-    .then((response) => response.json())
-    .catch((error) =>
-      console.error("Error loading currencyLocaleData:", error),
-    );
 
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
-    currencyLocaleData: currencyLocaleData || [],
   };
 };
 
@@ -90,7 +84,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { server, mobile, currencyLocaleData } = useLoaderData<typeof loader>();
+  const { server, mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -359,13 +353,14 @@ const Index = () => {
       key: "currency",
       width: "30%",
       render: (_: any, record: any) => {
-        const item = currencyLocaleData?.find(
-          (item: any) => item?.currencyCode == record?.currency,
-        );
+        const item =
+          currencyLocaleData[
+            record?.currency as keyof typeof currencyLocaleData
+          ];
         if (item) {
           return (
             <Text>
-              {item?.currencyName}({item?.currencyCode})
+              {item?.currencyName}({record?.currency})
             </Text>
           );
         } else {
@@ -605,15 +600,43 @@ const Index = () => {
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Translation text")}</Text>
-                      <Text>{item.region}</Text>
+                      <Text>
+                        {countryLocaleData[
+                          item?.region as keyof typeof countryLocaleData
+                        ]
+                          ? countryLocaleData[
+                              item?.region as keyof typeof countryLocaleData
+                            ]
+                          : item?.region}
+                      </Text>
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Translation text")}</Text>
-                      <Text>{item.language}</Text>
+                      <Text>
+                        {languageLocaleData[
+                          item?.language as keyof typeof languageLocaleData
+                        ]
+                          ? `${
+                              languageLocaleData[
+                                item?.language as keyof typeof languageLocaleData
+                              ]?.Name
+                            }(${item?.language})`
+                          : t("Follow browser language")}
+                      </Text>
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Translation text")}</Text>
-                      <Text>{item.currency}</Text>
+                      <Text>
+                        {currencyLocaleData[
+                          item?.currency as keyof typeof currencyLocaleData
+                        ]
+                          ? `${
+                              currencyLocaleData[
+                                item?.currency as keyof typeof currencyLocaleData
+                              ]?.currencyName
+                            }(${item?.currency})`
+                          : t("Follow Ip currency")}
+                      </Text>
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Status")}</Text>
