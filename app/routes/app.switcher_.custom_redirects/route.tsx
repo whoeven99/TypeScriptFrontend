@@ -237,6 +237,7 @@ const Index = () => {
     if (
       primaryCurrencyCode &&
       Array.isArray(regionsDataSource) &&
+      regionsDataSource.length &&
       loadingArray.includes("needInit")
     ) {
       console.log("regionsDataSource: ", regionsDataSource);
@@ -253,8 +254,17 @@ const Index = () => {
           server: server || "",
           initData,
         });
+
+        console.log("mockIpConfigDataInit: ", data);
+
         if (data?.success) {
-          setDataSource(data?.response || []);
+          if (Array.isArray(data?.response) && data?.response?.length) {
+            const newData = data.response.map((item: any) => ({
+              ...item,
+              key: item.id,
+            }));
+            setDataSource(newData);
+          }
         }
         setLoadingArray(loadingArray.filter((prev) => prev !== "needInit"));
       };
