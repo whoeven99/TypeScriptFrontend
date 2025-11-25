@@ -25,12 +25,12 @@ import {
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
 import { useDispatch, useSelector } from "react-redux";
-import { setTableData } from "~/store/modules/currencyDataTable";
 import { LanguagesDataType } from "../app.language/route";
 import { CurrencyDataType } from "../app.currency/route";
 import { authenticate } from "~/shopify.server";
 import { queryMarketDomainData } from "~/api/admin";
-import languageLocaleData from "~/scripts/language-locale-data";
+import languageLocaleData from "~/utils/language-locale-data";
+import countryLocaleData from "~/utils/country-locale-data";
 
 const { Text } = Typography;
 
@@ -336,6 +336,15 @@ const Index = () => {
       dataIndex: "region",
       key: "region",
       width: "20%",
+      render: (_: any, record: any) => {
+        const item =
+          countryLocaleData[record?.region as keyof typeof countryLocaleData];
+        if (item) {
+          return <Text>{item}</Text>;
+        } else {
+          return <Text>{record?.region}</Text>;
+        }
+      },
     },
     {
       title: t("Language"),
