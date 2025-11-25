@@ -47,6 +47,7 @@ import PublishModal from "./components/publishModal";
 import useReport from "scripts/eventReport";
 import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
+import languageLocaleData from "~/utils/language-locale-data";
 
 const { Title, Text } = Typography;
 
@@ -105,7 +106,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const loading = JSON.parse(formData.get("loading") as string);
   const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);
   const webPresences = JSON.parse(formData.get("webPresences") as string);
-  const addData = JSON.parse(formData.get("addData") as string);
   const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
   const translation = JSON.parse(formData.get("translation") as string);
   const deleteData = JSON.parse(formData.get("deleteData") as string);
@@ -186,46 +186,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorCode: 0,
           errorMsg: "",
           dresponse: [],
-        };
-      }
-
-    case !!addData:
-      try {
-        let allLanguages: AllLanguagesType[] = await queryAllLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        allLanguages = allLanguages.map((language, index) => ({
-          ...language,
-          key: index,
-        }));
-
-        const allCountryCode = allLanguages.map((item) => item.isoCode);
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          server: process.env.SERVER_URL as string,
-          locale: allCountryCode,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            allLanguages: allLanguages,
-            languageLocaleInfo: languageLocaleInfo?.success
-              ? languageLocaleInfo?.response
-              : [],
-          },
-        };
-      } catch (error) {
-        console.error("Error addData language:", error);
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            allLanguages: [],
-            languageLocaleInfo: [],
-          },
         };
       }
 
@@ -330,13 +290,12 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const languageLocaleData = useMemo(() => {
+  const languageTableDataLocale = useMemo(() => {
     return dataSource?.map((item: any) => item?.locale) || [];
   }, [dataSource]);
 
   const prevLocaleDataRef = useRef<string[]>();
   const [markets, setMarkets] = useState<MarketType[]>([]);
-  const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
@@ -369,7 +328,6 @@ const Index = () => {
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
-  const addDataFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
@@ -381,15 +339,6 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
-    addDataFetcher.submit(
-      {
-        addData: JSON.stringify(true),
-      },
-      {
-        method: "post",
-        action: "/app/language",
-      },
-    );
     webPresencesFetcher.submit(
       {
         webPresences: JSON.stringify(true),
@@ -424,13 +373,13 @@ const Index = () => {
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
     if (
-      isEqual(prevLocaleDataRef.current, languageLocaleData) ||
+      isEqual(prevLocaleDataRef.current, languageTableDataLocale) ||
       !dataSource?.length
     ) {
       return;
     }
 
-    prevLocaleDataRef.current = languageLocaleData;
+    prevLocaleDataRef.current = languageTableDataLocale;
 
     webPresencesFetcher.submit(
       {
@@ -488,10 +437,6 @@ const Index = () => {
           autoTranslateLoading: false,
         }));
         const GetLanguageLocaleInfoFront = async () => {
-          const languageLocaleInfo = await GetLanguageLocaleInfo({
-            server: server as string,
-            locale: shopLocalesIndex,
-          });
           const languageList = await GetLanguageList({
             shop,
             server: server as string,
@@ -509,9 +454,9 @@ const Index = () => {
                 (language: any) => language.target === lang.locale,
               )?.autoTranslate || false,
             localeName:
-              languageLocaleInfo.success && languageLocaleInfo.response
-                ? languageLocaleInfo.response[lang?.locale]?.Local
-                : "",
+              languageLocaleData[
+                lang?.locale as keyof typeof languageLocaleData
+              ]?.Local,
           }));
           const findItem = data.find((data: any) => data.status === 2);
           if (findItem && shopPrimaryLanguageData) {
@@ -611,14 +556,6 @@ const Index = () => {
       }
     }
   }, [statusFetcher.data]);
-
-  useEffect(() => {
-    if (addDataFetcher.data) {
-      if (addDataFetcher.data.success) {
-        setLanguageLocaleInfo(addDataFetcher.data.response.languageLocaleInfo);
-      }
-    }
-  }, [addDataFetcher.data]);
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
@@ -1035,7 +972,7 @@ const Index = () => {
         shop={shop}
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
-        languageLocaleInfo={languageLocaleInfo}
+        languageLocaleData={languageLocaleData}
       />
       <DeleteConfirmModal
         isVisible={deleteConfirmModalVisible}
@@ -1077,7 +1014,6 @@ const Index = () => {
       <Modal
         open={noFirstTranslation}
         onCancel={() => setNoFirstTranslation(false)}
-        // title={t("The 20 language limit has been reached")}
         footer={
           <Space>
             <Button onClick={() => setNoFirstTranslation(false)}>
