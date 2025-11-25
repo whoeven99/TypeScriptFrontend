@@ -81,10 +81,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     if (isVisible) {
       const data = dataSource.find((item: any) => item.key === id);
       if (data) {
-        setSourceText(data.sourceText);
-        setTargetText(data.targetText);
-        setRangeCode(data.rangeCode);
-        setChecked(data.type);
+        setSourceText(data?.sourceText);
+        setTargetText(data?.targetText);
+        setRangeCode(data?.rangeCode);
+        setChecked(data?.type);
+      } else {
+        setRangeCode("ALL");
       }
       if (shopLocales) {
         const localeOptions = shopLocales.map(
@@ -94,7 +96,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           }),
         );
         setOptions([...options, ...localeOptions]);
-        setRangeCode("ALL");
       }
     }
   }, [isVisible]);
