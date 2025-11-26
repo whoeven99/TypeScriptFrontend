@@ -40,7 +40,25 @@ import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
+import AcountInfoCard from "./components/acountInfoCard";
+import BuyCreditsOuterCard from "./components/buyCreditsOuterCard";
+
 const { Title, Text, Paragraph } = Typography;
+
+//计划名与其对应价格Map
+const priceTable: Record<
+  string,
+  { base: number; Premium: number; Pro: number; Basic: number }
+> = {
+  "500K": { base: 3.99, Premium: 1.99, Pro: 2.99, Basic: 3.59 },
+  "1M": { base: 7.99, Premium: 3.99, Pro: 5.99, Basic: 7.19 },
+  "2M": { base: 15.99, Premium: 7.99, Pro: 11.99, Basic: 14.39 },
+  "3M": { base: 23.99, Premium: 11.99, Pro: 17.99, Basic: 21.79 },
+  "5M": { base: 39.99, Premium: 19.99, Pro: 29.99, Basic: 35.99 },
+  "10M": { base: 79.99, Premium: 39.99, Pro: 59.99, Basic: 71.99 },
+  "20M": { base: 159.99, Premium: 79.99, Pro: 119.99, Basic: 143.99 },
+  "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -166,201 +184,133 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const { useBreakpoint } = Grid;
+  const screens = useBreakpoint(); // 监听屏幕断点
+
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
+
   const { reportClick, report } = useReport();
+
+  //价格选项数组
   const creditOptions: OptionType[] = useMemo(
     () => [
       {
         key: "option-1",
         name: "500K",
         Credits: 500000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 3.99
-            : plan?.type === "Premium"
-              ? 1.99
-              : plan?.type === "Pro"
-                ? 2.99
-                : plan?.type === "Basic"
-                  ? 3.59
-                  : 3.99,
-          comparedPrice: 3.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "500K",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-2",
         name: "1M",
         Credits: 1000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 7.99
-            : plan?.type === "Premium"
-              ? 3.99
-              : plan?.type === "Pro"
-                ? 5.99
-                : plan?.type === "Basic"
-                  ? 7.19
-                  : 7.99,
-          comparedPrice: 7.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "1M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-3",
         name: "2M",
         Credits: 2000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 15.99
-            : plan?.type === "Premium"
-              ? 7.99
-              : plan?.type === "Pro"
-                ? 11.99
-                : plan?.type === "Basic"
-                  ? 14.39
-                  : 15.99,
-          comparedPrice: 15.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "2M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-4",
         name: "3M",
         Credits: 3000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 23.99
-            : plan?.type === "Premium"
-              ? 11.99
-              : plan?.type === "Pro"
-                ? 17.99
-                : plan?.type === "Basic"
-                  ? 21.79
-                  : 23.99,
-          comparedPrice: 23.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "3M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-5",
         name: "5M",
         Credits: 5000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 39.99
-            : plan?.type === "Premium"
-              ? 19.99
-              : plan?.type === "Pro"
-                ? 29.99
-                : plan?.type === "Basic"
-                  ? 35.99
-                  : 39.99,
-          comparedPrice: 39.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "5M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-6",
         name: "10M",
         Credits: 10000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 79.99
-            : plan?.type === "Premium"
-              ? 39.99
-              : plan?.type === "Pro"
-                ? 59.99
-                : plan?.type === "Basic"
-                  ? 71.99
-                  : 79.99,
-          comparedPrice: 79.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "10M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-7",
         name: "20M",
         Credits: 20000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 159.99
-            : plan?.type === "Premium"
-              ? 79.99
-              : plan?.type === "Pro"
-                ? 119.99
-                : plan?.type === "Basic"
-                  ? 143.99
-                  : 159.99,
-          comparedPrice: 159.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "20M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
       {
         key: "option-8",
         name: "30M",
         Credits: 30000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 239.99
-            : plan?.type === "Premium"
-              ? 119.99
-              : plan?.type === "Pro"
-                ? 179.99
-                : plan?.type === "Basic"
-                  ? 215.99
-                  : 239.99,
-          comparedPrice: 239.99,
-          currencyCode: "USD",
-        },
+        price: eNumPlanType({
+          planType: plan?.type,
+          optionName: "30M",
+          isInTrial: plan?.isInFreePlanTime,
+        }),
       },
     ],
     [plan],
   );
-  const [yearly, setYearly] = useState(false);
+
+  //当前选择价格
   const [selectedOptionKey, setSelectedOption] = useState<string>("option-1");
+
+  //是否为年费计划
+  const [yearly, setYearly] = useState(false);
+
+  //各种加载状态
   const [isLoading, setIsLoading] = useState(true);
-  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
-  const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
+
+  //各个表单开启状态
+  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
+  const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
   const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
+
   const isQuotaExceeded = useMemo(
     () => chars >= totalChars && totalChars > 0,
     [chars, totalChars],
   );
-  const { t } = useTranslation();
-  const dispatch = useDispatch();
 
   const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-  const { useBreakpoint } = Grid;
-  const screens = useBreakpoint(); // 监听屏幕断点
-  const handleSetYearlyReport = () => {
-    setYearly(!yearly);
-    report(
-      {
-        status: yearly ? 0 : 1,
-      },
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "pricing_plan_yearly_switcher",
-    );
-  };
 
   useEffect(() => {
     setIsLoading(false);
@@ -378,6 +328,8 @@ const Index = () => {
   useEffect(() => {
     if (payFetcher.data) {
       if (payFetcher.data?.success) {
+        console.log(payFetcher.data?.response);
+
         const order =
           payFetcher.data?.response?.appPurchaseOneTimeCreate
             ?.appPurchaseOneTime;
@@ -826,7 +778,42 @@ const Index = () => {
     },
   ];
 
-  const handlePay = () => {
+  const handleSetYearlyReport = () => {
+    setYearly(!yearly);
+    report(
+      {
+        status: yearly ? 0 : 1,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "pricing_plan_yearly_switcher",
+    );
+  };
+
+  const handleCancelPlan = async () => {
+    const data = await GetLatestActiveSubscribeId({
+      shop: globalStore?.shop as string,
+      server: globalStore?.server as string,
+    });
+    if (data.success) {
+      planCancelFetcher.submit(
+        {
+          cancelId: JSON.stringify(data.response),
+        },
+        { method: "POST" },
+      );
+    }
+  };
+
+  const handleOpenAddCreditsModal = () => {
+    setAddCreditsModalOpen(true);
+    reportClick("pricing_balance_add");
+  };
+
+  const handlePayForCredits = () => {
     setBuyButtonLoading(true);
     const selectedOption = creditOptions.find(
       (item) => item.key === selectedOptionKey,
@@ -844,21 +831,6 @@ const Index = () => {
     payFetcher.submit(formData, {
       method: "POST",
     });
-  };
-
-  const handleCancelPlan = async () => {
-    const data = await GetLatestActiveSubscribeId({
-      shop: globalStore?.shop as string,
-      server: globalStore?.server as string,
-    });
-    if (data.success) {
-      planCancelFetcher.submit(
-        {
-          cancelId: JSON.stringify(data.response),
-        },
-        { method: "POST" },
-      );
-    }
   };
 
   const handlePayForPlan = ({
@@ -882,97 +854,42 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Pricing")} />
-      <ScrollNotice
-        text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
-        )}
-      />
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
-        {/* 积分余额显示 */}
-        <Card loading={isLoading}>
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <div
+        <ScrollNotice
+          text={t(
+            "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+          )}
+        />
+        <Flex gap={8} style={{ flexDirection: "column", width: "100%" }}>
+          <Flex justify="space-between" align="center">
+            <Title level={4} style={{ margin: 0 }}>
+              {t("Your translation quota")}
+            </Title>
+            {plan.type ? (
+              <Title level={4} style={{ margin: 0, fontSize: 18 }}>
+                {t(plan.type)} Plan
+              </Title>
+            ) : (
+              <Skeleton.Button />
+            )}
+          </Flex>
+          <Flex justify="right" align="center">
+            <Text
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                display: updateTime ? "block" : "none",
               }}
             >
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                <Title level={4} style={{ marginBottom: 0 }}>
-                  {t("Your translation quota")}
-                </Title>
-                <Popover
-                  content={t(
-                    "Permanent quotas · Never expire · Top up anytime.",
-                  )}
-                >
-                  <QuestionCircleOutlined />
-                </Popover>
-                <Button
-                  type="primary"
-                  onClick={() => {
-                    setAddCreditsModalOpen(true);
-                    reportClick("pricing_balance_add");
-                  }}
-                >
-                  {t("Add credits")}
-                </Button>
-              </div>
-              {plan && (
-                <div>
-                  <Text>{t("Current plan: ")}</Text>
-                  <Text style={{ color: "#007F61", fontWeight: "bold" }}>
-                    {plan.type === "Basic"
-                      ? "Basic"
-                      : plan.type === "Pro"
-                        ? "Pro"
-                        : plan.type === "Premium"
-                          ? "Premium"
-                          : "Free"}
-                    {t("plan")}
-                  </Text>
-                </div>
-              )}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              {chars !== undefined && totalChars !== undefined && (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: t(
-                      "{{currentCredits}} has been used, total credits: {{maxCredits}}.",
-                      {
-                        currentCredits: chars?.toLocaleString() || 0,
-                        maxCredits: totalChars?.toLocaleString() || 0,
-                      },
-                    ),
-                  }}
-                />
-              )}
-              <Text
-                style={{
-                  display: updateTime && totalChars ? "block" : "none",
-                }}
-              >
-                {t("This bill was issued on {{date}}", { date: updateTime })}
-              </Text>
-            </div>
-            <Progress
-              percent={
-                totalChars == 0 ? 100 : Math.round((chars / totalChars) * 100)
-              }
-              size={["100%", 15]}
-              strokeColor="#007F61"
-              showInfo={false}
-            />
-          </Space>
-        </Card>
+              {t("Next payment time: {{date}}", { date: updateTime })}
+            </Text>
+          </Flex>
+        </Flex>
+        <AcountInfoCard loading={isLoading} />
+        <BuyCreditsOuterCard
+          planType={plan?.type}
+          isInTrial={plan?.isInFreePlanTime}
+          handleOpenAddCreditsModal={handleOpenAddCreditsModal}
+          setSelectedOption={setSelectedOption}
+        />
         {isQuotaExceeded && (
           <Alert
             message={t("The quota has been used up")}
@@ -1047,8 +964,7 @@ const Index = () => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                borderColor:
-                  plan.type === "Free" ? "#007F61" : undefined,
+                borderColor: plan.type === "Free" ? "#007F61" : undefined,
                 minWidth: "220px",
               }}
               styles={{
@@ -1070,9 +986,7 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={
-                  plan.type === "Free" || selectedPayPlanOption
-                }
+                disabled={plan.type === "Free" || selectedPayPlanOption}
                 style={{ marginBottom: isNew ? "70px" : "20px" }}
                 onClick={() => {
                   setCancelPlanWarnModal(true);
@@ -1291,14 +1205,7 @@ const Index = () => {
           >
             {t("Compare plans")}
           </Title>
-          <Table
-            dataSource={tableData}
-            columns={columns}
-            pagination={false}
-            // style={{
-            //   width: "100%",
-            // }}
-          />
+          <Table dataSource={tableData} columns={columns} pagination={false} />
         </Space>
         <Row>
           <Col span={6}>
@@ -1389,8 +1296,9 @@ const Index = () => {
                     {option.Credits.toLocaleString()} {t("Credits")}
                   </Text>
                   {(plan.type === "Premium" ||
-                  plan.type === "Pro" ||
-                  plan.type === "Basic") && !plan?.isInFreePlanTime ? (
+                    plan.type === "Pro" ||
+                    plan.type === "Basic") &&
+                  !plan?.isInFreePlanTime ? (
                     <>
                       <Title
                         level={3}
@@ -1437,7 +1345,7 @@ const Index = () => {
                 size="large"
                 disabled={!selectedOptionKey}
                 loading={buyButtonLoading}
-                onClick={handlePay}
+                onClick={handlePayForCredits}
               >
                 {t("Buy now")}
               </Button>
@@ -1481,7 +1389,7 @@ const Index = () => {
           </span>
         } // 标题加粗
         open={isModalVisible}
-        onCancel={handleCancel}
+        onCancel={() => setIsModalVisible(false)}
         width={800}
         style={{ top: 50 }}
         footer={null} // 移除 OK 和 Cancel 按钮
@@ -1584,3 +1492,47 @@ const Index = () => {
 };
 
 export default Index;
+
+//根据计划类型返回价格数据
+export const eNumPlanType = ({
+  planType,
+  optionName,
+  isInTrial,
+}: {
+  planType: string;
+  optionName: string;
+  isInTrial: boolean;
+}) => {
+  const findTableData = priceTable[optionName];
+
+  if (!findTableData)
+    return {
+      currentPrice: 239.99,
+      comparedPrice: 239.99,
+      currencyCode: "USD",
+    };
+
+  // 免费期 = base 原价
+  if (isInTrial) {
+    return {
+      currentPrice: findTableData.base,
+      comparedPrice: findTableData.base,
+      currencyCode: "USD",
+    };
+  }
+
+  // 未知类型 → base
+  const map: Record<string, number> = {
+    Premium: findTableData.Premium,
+    Pro: findTableData.Pro,
+    Basic: findTableData.Basic,
+  };
+
+  const currentPrice = map[planType ?? ""] ?? findTableData.base;
+
+  return {
+    currentPrice,
+    comparedPrice: findTableData.base,
+    currencyCode: "USD",
+  };
+};

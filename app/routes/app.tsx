@@ -715,6 +715,7 @@ export default function App() {
         theme={{
           token: {
             colorPrimary: "var(--p-color-bg-fill-brand)",
+            fontSize: 16,
           },
           components: {
             Table: {
