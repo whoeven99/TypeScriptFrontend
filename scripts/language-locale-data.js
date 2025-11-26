@@ -3,8 +3,8 @@ const languageLocaleData = {
     isoCode: "af",
     Local: "Afrikaans",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZA.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NA.webp",
+      "https://img.bogdatech.com/app/ZA.webp",
+      "https://img.bogdatech.com/app/NA.webp",
     ],
     Name: "Afrikaans",
   },
@@ -12,9 +12,7 @@ const languageLocaleData = {
   ak: {
     isoCode: "ak",
     Local: "Akan",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GH.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GH.webp"],
     Name: "Akan",
   },
 
@@ -22,8 +20,8 @@ const languageLocaleData = {
     isoCode: "sq",
     Local: "Shqip",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AL.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/XK.webp",
+      "https://img.bogdatech.com/app/AL.webp",
+      "https://img.bogdatech.com/app/XK.webp",
     ],
     Name: "Albanian",
   },
@@ -31,9 +29,7 @@ const languageLocaleData = {
   am: {
     isoCode: "am",
     Local: "አማርኛ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ET.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ET.webp"],
     Name: "Amharic",
   },
 
@@ -41,10 +37,10 @@ const languageLocaleData = {
     isoCode: "ar",
     Local: "العربية",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SA.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/EG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/JO.webp",
+      "https://img.bogdatech.com/app/SA.webp",
+      "https://img.bogdatech.com/app/EG.webp",
+      "https://img.bogdatech.com/app/AE.webp",
+      "https://img.bogdatech.com/app/JO.webp",
     ],
     Name: "Arabic",
   },
@@ -52,18 +48,14 @@ const languageLocaleData = {
   hy: {
     isoCode: "hy",
     Local: "Հայերեն",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AM.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/AM.webp"],
     Name: "Armenian",
   },
 
   as: {
     isoCode: "as",
     Local: "অসমীয়া",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Assamese",
   },
 
@@ -71,11 +63,11 @@ const languageLocaleData = {
     isoCode: "az",
     Local: "Azərbaycandili",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AZ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RU.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GE.webp",
+      "https://img.bogdatech.com/app/AZ.webp",
+      "https://img.bogdatech.com/app/IR.webp",
+      "https://img.bogdatech.com/app/RU.webp",
+      "https://img.bogdatech.com/app/TR.webp",
+      "https://img.bogdatech.com/app/GE.webp",
     ],
     Name: "Azerbaijani",
   },
@@ -83,18 +75,14 @@ const languageLocaleData = {
   bm: {
     isoCode: "bm",
     Local: "Bamanankan",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ML.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ML.webp"],
     Name: "Bambara",
   },
 
   bn: {
     isoCode: "bn",
     Local: "বাংলা",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BN.webp"],
     Name: "Bangla",
   },
 
@@ -102,8 +90,8 @@ const languageLocaleData = {
     isoCode: "eu",
     Local: "Euskara",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ES.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FR.webp",
+      "https://img.bogdatech.com/app/ES.webp",
+      "https://img.bogdatech.com/app/FR.webp",
     ],
     Name: "Basque",
   },
@@ -111,45 +99,35 @@ const languageLocaleData = {
   be: {
     isoCode: "be",
     Local: "беларуская",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BY.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BY.webp"],
     Name: "Belarusian",
   },
 
   bs: {
     isoCode: "bs",
     Local: "Bosanski",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BA.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BA.webp"],
     Name: "Bosnian",
   },
 
   br: {
     isoCode: "br",
     Local: "Brezhoneg",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FR.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/FR.webp"],
     Name: "Breton",
   },
 
   bg: {
     isoCode: "bg",
     Local: "български",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BG.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BG.webp"],
     Name: "Bulgarian",
   },
 
   my: {
     isoCode: "my",
     Local: "မြန်မာစာ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MM.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/MM.webp"],
     Name: "Burmese",
   },
 
@@ -157,8 +135,8 @@ const languageLocaleData = {
     isoCode: "ca",
     Local: "Català",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ES.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AD.webp",
+      "https://img.bogdatech.com/app/ES.webp",
+      "https://img.bogdatech.com/app/AD.webp",
     ],
     Name: "Catalan",
   },
@@ -167,8 +145,8 @@ const languageLocaleData = {
     isoCode: "ckb",
     Local: "کوردییناوەڕاست",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IQ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IR.webp",
+      "https://img.bogdatech.com/app/IQ.webp",
+      "https://img.bogdatech.com/app/IR.webp",
     ],
     Name: "Central Kurdish",
   },
@@ -176,18 +154,14 @@ const languageLocaleData = {
   ce: {
     isoCode: "ce",
     Local: "Нохчийн",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RU.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/RU.webp"],
     Name: "Chechen",
   },
 
   "zh-CN": {
     isoCode: "zh-CN",
     Local: "中文（简体）",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CN.webp"],
     Name: "Chinese (Simplified)",
   },
 
@@ -195,9 +169,9 @@ const languageLocaleData = {
     isoCode: "zh-TW",
     Local: "中文（繁體）",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/HK.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TW.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MO.webp",
+      "https://img.bogdatech.com/app/HK.webp",
+      "https://img.bogdatech.com/app/TW.webp",
+      "https://img.bogdatech.com/app/MO.webp",
     ],
     Name: "Chinese (Traditional)",
   },
@@ -205,36 +179,28 @@ const languageLocaleData = {
   kw: {
     isoCode: "kw",
     Local: "Kernewek",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GB.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GB.webp"],
     Name: "Cornish",
   },
 
   hr: {
     isoCode: "hr",
     Local: "Hrvatski",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/HR.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/HR.webp"],
     Name: "Croatian",
   },
 
   cs: {
     isoCode: "cs",
     Local: "Čeština",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CZ.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CZ.webp"],
     Name: "Czech",
   },
 
   da: {
     isoCode: "da",
     Local: "Dansk",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/DK.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/DK.webp"],
     Name: "Danish",
   },
 
@@ -242,9 +208,9 @@ const languageLocaleData = {
     isoCode: "nl",
     Local: "Nederlands",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NL.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SR.webp",
+      "https://img.bogdatech.com/app/NL.webp",
+      "https://img.bogdatech.com/app/BE.webp",
+      "https://img.bogdatech.com/app/SR.webp",
     ],
     Name: "Dutch",
   },
@@ -252,9 +218,7 @@ const languageLocaleData = {
   dz: {
     isoCode: "dz",
     Local: "རྫོང་ཁ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BT.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BT.webp"],
     Name: "Dzongkha",
   },
 
@@ -262,10 +226,10 @@ const languageLocaleData = {
     isoCode: "en",
     Local: "English",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/US.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GB.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CA.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AU.webp",
+      "https://img.bogdatech.com/app/GB.webp",
+      "https://img.bogdatech.com/app/US.webp",
+      "https://img.bogdatech.com/app/CA.webp",
+      "https://img.bogdatech.com/app/AU.webp",
     ],
     Name: "English",
   },
@@ -273,18 +237,14 @@ const languageLocaleData = {
   eo: {
     isoCode: "eo",
     Local: "Esperanto",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/UN.webp"],
     Name: "Esperanto",
   },
 
   et: {
     isoCode: "et",
     Local: "Eesti",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/EE.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/EE.webp"],
     Name: "Estonian",
   },
 
@@ -292,8 +252,8 @@ const languageLocaleData = {
     isoCode: "ee",
     Local: "Eʋegbe",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GH.webp",
+      "https://img.bogdatech.com/app/TG.webp",
+      "https://img.bogdatech.com/app/GH.webp",
     ],
     Name: "Ewe",
   },
@@ -301,27 +261,21 @@ const languageLocaleData = {
   fo: {
     isoCode: "fo",
     Local: "Føroyskt",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FO.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/FO.webp"],
     Name: "Faroese",
   },
 
   fil: {
     isoCode: "fil",
     Local: "Filipino",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PH.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/PH.webp"],
     Name: "Filipino",
   },
 
   fi: {
     isoCode: "fi",
     Local: "Suomi",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FI.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/FI.webp"],
     Name: "Finnish",
   },
 
@@ -329,10 +283,10 @@ const languageLocaleData = {
     isoCode: "fr",
     Local: "Français",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CA.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CH.webp",
+      "https://img.bogdatech.com/app/FR.webp",
+      "https://img.bogdatech.com/app/BE.webp",
+      "https://img.bogdatech.com/app/CA.webp",
+      "https://img.bogdatech.com/app/CH.webp",
     ],
     Name: "French",
   },
@@ -341,9 +295,9 @@ const languageLocaleData = {
     isoCode: "ff",
     Local: "Pulaar",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NG.webp",
+      "https://img.bogdatech.com/app/NE.webp",
+      "https://img.bogdatech.com/app/SN.webp",
+      "https://img.bogdatech.com/app/NG.webp",
     ],
     Name: "Fulah",
   },
@@ -351,27 +305,21 @@ const languageLocaleData = {
   gl: {
     isoCode: "gl",
     Local: "Galego",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ES.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ES.webp"],
     Name: "Galician",
   },
 
   lg: {
     isoCode: "lg",
     Local: "Luganda",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UG.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/UG.webp"],
     Name: "Ganda",
   },
 
   ka: {
     isoCode: "ka",
     Local: "ქართული",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GE.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GE.webp"],
     Name: "Georgian",
   },
 
@@ -379,9 +327,9 @@ const languageLocaleData = {
     isoCode: "de",
     Local: "Deutsch",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/DE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AT.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CH.webp",
+      "https://img.bogdatech.com/app/DE.webp",
+      "https://img.bogdatech.com/app/AT.webp",
+      "https://img.bogdatech.com/app/CH.webp",
     ],
     Name: "German",
   },
@@ -390,8 +338,8 @@ const languageLocaleData = {
     isoCode: "el",
     Local: "Ελληνικά",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CY.webp",
+      "https://img.bogdatech.com/app/GR.webp",
+      "https://img.bogdatech.com/app/CY.webp",
     ],
     Name: "Greek",
   },
@@ -399,9 +347,7 @@ const languageLocaleData = {
   gu: {
     isoCode: "gu",
     Local: "ગુજરાતી",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Gujarati",
   },
 
@@ -409,9 +355,9 @@ const languageLocaleData = {
     isoCode: "ha",
     Local: "Hausa",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GH.webp",
+      "https://img.bogdatech.com/app/NG.webp",
+      "https://img.bogdatech.com/app/NE.webp",
+      "https://img.bogdatech.com/app/GH.webp",
     ],
     Name: "Hausa",
   },
@@ -419,9 +365,7 @@ const languageLocaleData = {
   he: {
     isoCode: "he",
     Local: "עברית",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IL.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IL.webp"],
     Name: "Hebrew",
   },
 
@@ -429,8 +373,8 @@ const languageLocaleData = {
     isoCode: "hi",
     Local: "हिन्दी",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NP.webp",
+      "https://img.bogdatech.com/app/IN.webp",
+      "https://img.bogdatech.com/app/NP.webp",
     ],
     Name: "Hindi",
   },
@@ -438,54 +382,42 @@ const languageLocaleData = {
   hu: {
     isoCode: "hu",
     Local: "Magyar",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/HU.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/HU.webp"],
     Name: "Hungarian",
   },
 
   is: {
     isoCode: "is",
     Local: "Íslenska",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IS.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IS.webp"],
     Name: "Icelandic",
   },
 
   ig: {
     isoCode: "ig",
     Local: "Igbo",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NG.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NG.webp"],
     Name: "Igbo",
   },
 
   id: {
     isoCode: "id",
     Local: "BahasaIndonesia",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ID.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ID.webp"],
     Name: "Indonesian",
   },
 
   ia: {
     isoCode: "ia",
     Local: "Interlingua",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/UN.webp"],
     Name: "Interlingua",
   },
 
   ga: {
     isoCode: "ga",
     Local: "Gaeilge",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IE.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IE.webp"],
     Name: "Irish",
   },
 
@@ -493,8 +425,8 @@ const languageLocaleData = {
     isoCode: "it",
     Local: "Italiano",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IT.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CH.webp",
+      "https://img.bogdatech.com/app/IT.webp",
+      "https://img.bogdatech.com/app/CH.webp",
     ],
     Name: "Italian",
   },
@@ -502,36 +434,28 @@ const languageLocaleData = {
   ja: {
     isoCode: "ja",
     Local: "日本語",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/JP.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/JP.webp"],
     Name: "Japanese",
   },
 
   jv: {
     isoCode: "jv",
     Local: "ꦧꦱꦗꦮ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ID.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ID.webp"],
     Name: "Javanese",
   },
 
   kl: {
     isoCode: "kl",
     Local: "Kalaallisut",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GL.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GL.webp"],
     Name: "Kalaallisut",
   },
 
   kn: {
     isoCode: "kn",
     Local: "ಕನ್ನಡ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Kannada",
   },
 
@@ -539,8 +463,8 @@ const languageLocaleData = {
     isoCode: "ks",
     Local: "كٲشُر",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PK.webp",
+      "https://img.bogdatech.com/app/IN.webp",
+      "https://img.bogdatech.com/app/PK.webp",
     ],
     Name: "Kashmiri",
   },
@@ -548,36 +472,28 @@ const languageLocaleData = {
   kk: {
     isoCode: "kk",
     Local: "Қазақша",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KZ.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/KZ.webp"],
     Name: "Kazakh",
   },
 
   km: {
     isoCode: "km",
     Local: "ខ្មែរ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KH.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/KH.webp"],
     Name: "Khmer",
   },
 
   ki: {
     isoCode: "ki",
     Local: "Gĩkũyũ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KE.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/KE.webp"],
     Name: "Kikuyu",
   },
 
   rw: {
     isoCode: "rw",
     Local: "Ikinyarwanda",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RW.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/RW.webp"],
     Name: "Kinyarwanda",
   },
 
@@ -585,8 +501,8 @@ const languageLocaleData = {
     isoCode: "ko",
     Local: "한국어",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KR.webp",
-      // "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KP.webp",
+      "https://img.bogdatech.com/app/KR.webp",
+      // "https://img.bogdatech.com/app/KP.webp",
     ],
     Name: "Korean",
   },
@@ -595,10 +511,10 @@ const languageLocaleData = {
     isoCode: "ku",
     Local: "Kurdî",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IQ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SY.webp",
+      "https://img.bogdatech.com/app/IQ.webp",
+      "https://img.bogdatech.com/app/IR.webp",
+      "https://img.bogdatech.com/app/TR.webp",
+      "https://img.bogdatech.com/app/SY.webp",
     ],
     Name: "Kurdish",
   },
@@ -606,27 +522,21 @@ const languageLocaleData = {
   ky: {
     isoCode: "ky",
     Local: "Кыргызча",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KG.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/KG.webp"],
     Name: "Kyrgyz",
   },
 
   lo: {
     isoCode: "lo",
     Local: "ລາວ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LA.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/LA.webp"],
     Name: "Lao",
   },
 
   lv: {
     isoCode: "lv",
     Local: "Latviešu",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LV.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/LV.webp"],
     Name: "Latvian",
   },
 
@@ -634,8 +544,8 @@ const languageLocaleData = {
     isoCode: "ln",
     Local: "Lingála",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CD.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CG.webp",
+      "https://img.bogdatech.com/app/CD.webp",
+      "https://img.bogdatech.com/app/CG.webp",
     ],
     Name: "Lingala",
   },
@@ -643,45 +553,35 @@ const languageLocaleData = {
   lt: {
     isoCode: "lt",
     Local: "Lietuvių",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LT.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/LT.webp"],
     Name: "Lithuanian",
   },
 
   lu: {
     isoCode: "lu",
     Local: "Katanga",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CD.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CD.webp"],
     Name: "Luba-Katanga",
   },
 
   lb: {
     isoCode: "lb",
     Local: "Lëtzebuergesch",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LU.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/LU.webp"],
     Name: "Luxembourgish",
   },
 
   mk: {
     isoCode: "mk",
     Local: "Македонски",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MK.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/MK.webp"],
     Name: "Macedonian",
   },
 
   mg: {
     isoCode: "mg",
     Local: "Malagasy",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MG.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/MG.webp"],
     Name: "Malagasy",
   },
 
@@ -689,9 +589,9 @@ const languageLocaleData = {
     isoCode: "ms",
     Local: "BahasaMelayu",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MY.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BN.webp",
+      "https://img.bogdatech.com/app/MY.webp",
+      "https://img.bogdatech.com/app/SG.webp",
+      "https://img.bogdatech.com/app/BN.webp",
     ],
     Name: "Malay",
   },
@@ -699,45 +599,35 @@ const languageLocaleData = {
   ml: {
     isoCode: "ml",
     Local: "മലയാളം",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Malayalam",
   },
 
   mt: {
     isoCode: "mt",
     Local: "Malti",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MT.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/MT.webp"],
     Name: "Maltese",
   },
 
   gv: {
     isoCode: "gv",
     Local: "Gaelg",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IM.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IM.webp"],
     Name: "Manx",
   },
 
   mi: {
     isoCode: "mi",
     Local: "Māori",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NZ.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NZ.webp"],
     Name: "Maori",
   },
 
   mr: {
     isoCode: "mr",
     Local: "मराठी",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Marathi",
   },
 
@@ -745,8 +635,8 @@ const languageLocaleData = {
     isoCode: "mn",
     Local: "Монгол",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CN.webp",
+      "https://img.bogdatech.com/app/MN.webp",
+      "https://img.bogdatech.com/app/CN.webp",
     ],
     Name: "Mongolian",
   },
@@ -755,8 +645,8 @@ const languageLocaleData = {
     isoCode: "ne",
     Local: "नेपाली",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NP.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
+      "https://img.bogdatech.com/app/NP.webp",
+      "https://img.bogdatech.com/app/IN.webp",
     ],
     Name: "Nepali",
   },
@@ -764,9 +654,7 @@ const languageLocaleData = {
   nd: {
     isoCode: "nd",
     Local: "isiNdebele",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZW.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ZW.webp"],
     Name: "North Ndebele",
   },
 
@@ -774,9 +662,9 @@ const languageLocaleData = {
     isoCode: "se",
     Local: "Davvisámegiella",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NO.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FI.webp",
+      "https://img.bogdatech.com/app/NO.webp",
+      "https://img.bogdatech.com/app/SE.webp",
+      "https://img.bogdatech.com/app/FI.webp",
     ],
     Name: "Northern Sami",
   },
@@ -784,36 +672,28 @@ const languageLocaleData = {
   no: {
     isoCode: "no",
     Local: "Norsk",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NO.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NO.webp"],
     Name: "Norwegian",
   },
 
   nb: {
     isoCode: "nb",
     Local: "Bokmål",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NO.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NO.webp"],
     Name: "Norwegian (Bokmål)",
   },
 
   nn: {
     isoCode: "nn",
     Local: "Nynorsk",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NO.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NO.webp"],
     Name: "Norwegian Nynorsk",
   },
 
   or: {
     isoCode: "or",
     Local: "ଓଡ଼ିଆ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Odia",
   },
 
@@ -821,8 +701,8 @@ const languageLocaleData = {
     isoCode: "om",
     Local: "AfaanOromoo",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ET.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KE.webp",
+      "https://img.bogdatech.com/app/ET.webp",
+      "https://img.bogdatech.com/app/KE.webp",
     ],
     Name: "Oromo",
   },
@@ -831,8 +711,8 @@ const languageLocaleData = {
     isoCode: "os",
     Local: "Ирон",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RU.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GE.webp",
+      "https://img.bogdatech.com/app/RU.webp",
+      "https://img.bogdatech.com/app/GE.webp",
     ],
     Name: "Ossetic",
   },
@@ -841,8 +721,8 @@ const languageLocaleData = {
     isoCode: "ps",
     Local: "پښتو",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AF.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PK.webp",
+      "https://img.bogdatech.com/app/AF.webp",
+      "https://img.bogdatech.com/app/PK.webp",
     ],
     Name: "Pashto",
   },
@@ -851,9 +731,9 @@ const languageLocaleData = {
     isoCode: "fa",
     Local: "فارسی",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AF.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TJ.webp",
+      "https://img.bogdatech.com/app/IR.webp",
+      "https://img.bogdatech.com/app/AF.webp",
+      "https://img.bogdatech.com/app/TJ.webp",
     ],
     Name: "Persian",
   },
@@ -861,27 +741,21 @@ const languageLocaleData = {
   pl: {
     isoCode: "pl",
     Local: "Polski",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PL.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/PL.webp"],
     Name: "Polish",
   },
 
   "pt-BR": {
     isoCode: "pt-BR",
     Local: "Português(Brasil)",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BR.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BR.webp"],
     Name: "Portuguese (Brazil)",
   },
 
   "pt-PT": {
     isoCode: "pt-PT",
     Local: "Português(Portugal)",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PT.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/PT.webp"],
     Name: "Portuguese (Portugal)",
   },
 
@@ -889,8 +763,8 @@ const languageLocaleData = {
     isoCode: "pa",
     Local: "ਪੰਜਾਬੀ",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PK.webp",
+      "https://img.bogdatech.com/app/IN.webp",
+      "https://img.bogdatech.com/app/PK.webp",
     ],
     Name: "Punjabi",
   },
@@ -899,9 +773,9 @@ const languageLocaleData = {
     isoCode: "qu",
     Local: "RunaSimi",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BO.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/EC.webp",
+      "https://img.bogdatech.com/app/PE.webp",
+      "https://img.bogdatech.com/app/BO.webp",
+      "https://img.bogdatech.com/app/EC.webp",
     ],
     Name: "Quechua",
   },
@@ -910,8 +784,8 @@ const languageLocaleData = {
     isoCode: "ro",
     Local: "Română",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RO.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MD.webp",
+      "https://img.bogdatech.com/app/RO.webp",
+      "https://img.bogdatech.com/app/MD.webp",
     ],
     Name: "Romanian",
   },
@@ -919,18 +793,14 @@ const languageLocaleData = {
   rm: {
     isoCode: "rm",
     Local: "Rumantsch",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CH.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CH.webp"],
     Name: "Romansh",
   },
 
   rn: {
     isoCode: "rn",
     Local: "Kirundi",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BI.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/BI.webp"],
     Name: "Rundi",
   },
 
@@ -938,9 +808,9 @@ const languageLocaleData = {
     isoCode: "ru",
     Local: "Русский",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RU.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BY.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KZ.webp",
+      "https://img.bogdatech.com/app/RU.webp",
+      "https://img.bogdatech.com/app/BY.webp",
+      "https://img.bogdatech.com/app/KZ.webp",
     ],
     Name: "Russian",
   },
@@ -948,36 +818,28 @@ const languageLocaleData = {
   sg: {
     isoCode: "sg",
     Local: "Sängö",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CF.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CF.webp"],
     Name: "Sango",
   },
 
   sa: {
     isoCode: "sa",
     Local: "संस्कृतम्",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Sanskrit",
   },
 
   sc: {
     isoCode: "sc",
     Local: "Sardu",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IT.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IT.webp"],
     Name: "Sardinian",
   },
 
   gd: {
     isoCode: "gd",
     Local: "Gàidhlig",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GB.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GB.webp"],
     Name: "Scottish Gaelic",
   },
 
@@ -985,8 +847,8 @@ const languageLocaleData = {
     isoCode: "sr",
     Local: "Српски",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RS.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BA.webp",
+      "https://img.bogdatech.com/app/RS.webp",
+      "https://img.bogdatech.com/app/BA.webp",
     ],
     Name: "Serbian",
   },
@@ -994,18 +856,14 @@ const languageLocaleData = {
   sn: {
     isoCode: "sn",
     Local: "ChiShona",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZW.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ZW.webp"],
     Name: "Shona",
   },
 
   ii: {
     isoCode: "ii",
     Local: "ꆈꌠ꒿",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CN.webp"],
     Name: "Sichuan Yi",
   },
 
@@ -1013,8 +871,8 @@ const languageLocaleData = {
     isoCode: "sd",
     Local: "سنڌي",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PK.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
+      "https://img.bogdatech.com/app/PK.webp",
+      "https://img.bogdatech.com/app/IN.webp",
     ],
     Name: "Sindhi",
   },
@@ -1022,27 +880,21 @@ const languageLocaleData = {
   si: {
     isoCode: "si",
     Local: "සිංහල",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LK.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/LK.webp"],
     Name: "Sinhala",
   },
 
   sk: {
     isoCode: "sk",
     Local: "Slovenčina",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SK.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/SK.webp"],
     Name: "Slovak",
   },
 
   sl: {
     isoCode: "sl",
     Local: "Slovenščina",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SI.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/SI.webp"],
     Name: "Slovenian",
   },
 
@@ -1050,9 +902,9 @@ const languageLocaleData = {
     isoCode: "so",
     Local: "Soomaali",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SO.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/DJ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KE.webp",
+      "https://img.bogdatech.com/app/SO.webp",
+      "https://img.bogdatech.com/app/DJ.webp",
+      "https://img.bogdatech.com/app/KE.webp",
     ],
     Name: "Somali",
   },
@@ -1061,10 +913,10 @@ const languageLocaleData = {
     isoCode: "es",
     Local: "Español",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ES.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MX.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/AR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CO.webp",
+      "https://img.bogdatech.com/app/ES.webp",
+      "https://img.bogdatech.com/app/MX.webp",
+      "https://img.bogdatech.com/app/AR.webp",
+      "https://img.bogdatech.com/app/CO.webp",
     ],
     Name: "Spanish",
   },
@@ -1072,9 +924,7 @@ const languageLocaleData = {
   su: {
     isoCode: "su",
     Local: "BasaSunda",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ID.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ID.webp"],
     Name: "Sundanese",
   },
 
@@ -1082,9 +932,9 @@ const languageLocaleData = {
     isoCode: "sw",
     Local: "Kiswahili",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/KE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TZ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UG.webp",
+      "https://img.bogdatech.com/app/KE.webp",
+      "https://img.bogdatech.com/app/TZ.webp",
+      "https://img.bogdatech.com/app/UG.webp",
     ],
     Name: "Swahili",
   },
@@ -1093,8 +943,8 @@ const languageLocaleData = {
     isoCode: "sv",
     Local: "Svenska",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SE.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/FI.webp",
+      "https://img.bogdatech.com/app/SE.webp",
+      "https://img.bogdatech.com/app/FI.webp",
     ],
     Name: "Swedish",
   },
@@ -1102,9 +952,7 @@ const languageLocaleData = {
   tg: {
     isoCode: "tg",
     Local: "Тоҷикӣ",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TJ.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/TJ.webp"],
     Name: "Tajik",
   },
 
@@ -1112,10 +960,10 @@ const languageLocaleData = {
     isoCode: "ta",
     Local: "தமிழ்",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/LK.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/MY.webp",
+      "https://img.bogdatech.com/app/IN.webp",
+      "https://img.bogdatech.com/app/LK.webp",
+      "https://img.bogdatech.com/app/SG.webp",
+      "https://img.bogdatech.com/app/MY.webp",
     ],
     Name: "Tamil",
   },
@@ -1123,36 +971,28 @@ const languageLocaleData = {
   tt: {
     isoCode: "tt",
     Local: "Татар",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/RU.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/RU.webp"],
     Name: "Tatar",
   },
 
   te: {
     isoCode: "te",
     Local: "తెలుగు",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/IN.webp"],
     Name: "Telugu",
   },
 
   th: {
     isoCode: "th",
     Local: "ไทย",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TH.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/TH.webp"],
     Name: "Thai",
   },
 
   bo: {
     isoCode: "bo",
     Local: "བོད་ཡིག",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CN.webp"],
     Name: "Tibetan",
   },
 
@@ -1160,8 +1000,8 @@ const languageLocaleData = {
     isoCode: "ti",
     Local: "ትግርኛ",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ER.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ET.webp",
+      "https://img.bogdatech.com/app/ER.webp",
+      "https://img.bogdatech.com/app/ET.webp",
     ],
     Name: "Tigrinya",
   },
@@ -1169,9 +1009,7 @@ const languageLocaleData = {
   to: {
     isoCode: "to",
     Local: "Chitonga",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TO.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/TO.webp"],
     Name: "Tonga",
   },
 
@@ -1179,8 +1017,8 @@ const languageLocaleData = {
     isoCode: "tr",
     Local: "Türkçe",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TR.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CY.webp",
+      "https://img.bogdatech.com/app/TR.webp",
+      "https://img.bogdatech.com/app/CY.webp",
     ],
     Name: "Turkish",
   },
@@ -1188,18 +1026,14 @@ const languageLocaleData = {
   tk: {
     isoCode: "tk",
     Local: "Türkmençe",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TM.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/TM.webp"],
     Name: "Turkmen",
   },
 
   uk: {
     isoCode: "uk",
     Local: "Українська",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UA.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/UA.webp"],
     Name: "Ukrainian",
   },
 
@@ -1207,8 +1041,8 @@ const languageLocaleData = {
     isoCode: "ur",
     Local: "اردو",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/PK.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/IN.webp",
+      "https://img.bogdatech.com/app/PK.webp",
+      "https://img.bogdatech.com/app/IN.webp",
     ],
     Name: "Urdu",
   },
@@ -1216,45 +1050,35 @@ const languageLocaleData = {
   ug: {
     isoCode: "ug",
     Local: "ئۇيغۇرچە",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/CN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/CN.webp"],
     Name: "Uyghur",
   },
 
   uz: {
     isoCode: "uz",
     Local: "Oʻzbekcha",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/UZ.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/UZ.webp"],
     Name: "Uzbek",
   },
 
   vi: {
     isoCode: "vi",
     Local: "Tiếng Việt",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/VN.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/VN.webp"],
     Name: "Vietnamese",
   },
 
   cy: {
     isoCode: "cy",
     Local: "Cymraeg",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GB.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/GB.webp"],
     Name: "Welsh",
   },
 
   fy: {
     isoCode: "fy",
     Local: "Frysk",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NL.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/NL.webp"],
     Name: "Western Frisian",
   },
 
@@ -1262,8 +1086,8 @@ const languageLocaleData = {
     isoCode: "wo",
     Local: "Wolof",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/SN.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/GM.webp",
+      "https://img.bogdatech.com/app/SN.webp",
+      "https://img.bogdatech.com/app/GM.webp",
     ],
     Name: "Wolof",
   },
@@ -1271,18 +1095,14 @@ const languageLocaleData = {
   xh: {
     isoCode: "xh",
     Local: "isiXhosa",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZA.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ZA.webp"],
     Name: "Xhosa",
   },
 
   yi: {
     isoCode: "yi",
     Local: "ייִדיש",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/DE.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/DE.webp"],
     Name: "Yiddish",
   },
 
@@ -1290,9 +1110,9 @@ const languageLocaleData = {
     isoCode: "yo",
     Local: "Yorùbá",
     countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/NG.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/BJ.webp",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/TG.webp",
+      "https://img.bogdatech.com/app/NG.webp",
+      "https://img.bogdatech.com/app/BJ.webp",
+      "https://img.bogdatech.com/app/TG.webp",
     ],
     Name: "Yoruba",
   },
@@ -1300,9 +1120,7 @@ const languageLocaleData = {
   zu: {
     isoCode: "zu",
     Local: "isiZulu",
-    countries: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZA.webp",
-    ],
+    countries: ["https://img.bogdatech.com/app/ZA.webp"],
     Name: "Zulu",
   },
 };

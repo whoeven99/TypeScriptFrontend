@@ -6,6 +6,7 @@ import {
   UpdateDefaultCurrency,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
+import currencyLocaleData from "~/utils/currency-locale-data";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -18,29 +19,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       accessToken: accessToken as string,
     });
     const url = new URL("/currencies.json", request.url).toString();
-    const currencyLocaleData = await fetch(url)
-      .then((response) => response.json())
-      .catch((error) =>
-        console.error("Error loading currencyLocaleData:", error),
-      );
+    // const currencyLocaleData = await fetch(url)
+    //   .then((response) => response.json())
+    //   .catch((error) =>
+    //     console.error("Error loading currencyLocaleData:", error),
+    //   );
     if (!primaryCurrency?.response) {
       const currencyData = shopLoad.currencySettings.nodes
         .filter((item1: any) => item1.enabled)
         .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
         .map((item3: any) => ({
           currencyName:
-            currencyLocaleData.find(
-              (item4: any) => item4.currencyCode === item3.currencyCode,
-            )?.currencyName || "",
+            currencyLocaleData[
+              item3.currencyCode as keyof typeof currencyLocaleData
+            ]?.currencyName || "",
           currencyCode: item3.currencyCode,
           primaryStatus: 0,
         }));
 
       currencyData.push({
         currencyName:
-          currencyLocaleData.find(
-            (item: any) => item.currencyCode === shopLoad.currencyCode,
-          )?.currencyName || "",
+          currencyLocaleData[
+            shopLoad.currencyCode as keyof typeof currencyLocaleData
+          ]?.currencyName || "",
         currencyCode: shopLoad.currencyCode,
         primaryStatus: 1,
       });
@@ -62,20 +63,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     ) {
       await UpdateDefaultCurrency({
         shop,
-        currencyName: currencyLocaleData.find(
-          (item: any) => item.currencyCode === shopLoad.currencyCode,
-        ).currencyName,
+        currencyName:
+          currencyLocaleData[
+            shopLoad.currencyCode as keyof typeof currencyLocaleData
+          ]?.currencyName,
         currencyCode: shopLoad.currencyCode,
         primaryStatus: 1,
       });
     }
+
+    const currencyLocaleDataArray = Object.keys(currencyLocaleData).map(
+      (key, index) => ({
+        key: index,
+        currencyName:
+          currencyLocaleData[key as keyof typeof currencyLocaleData]
+            ?.currencyName,
+        currencyCode: key,
+        symbol:
+          currencyLocaleData[key as keyof typeof currencyLocaleData]?.symbol,
+        locale:
+          currencyLocaleData[key as keyof typeof currencyLocaleData]?.locale,
+      }),
+    );
+
     return {
       success: true,
       errorCode: 0,
       errorMsg: "",
       response: {
         defaultCurrencyCode: shopLoad.currencyCode,
-        currencyLocaleData: currencyLocaleData,
+        currencyLocaleData: currencyLocaleDataArray,
       },
     };
   } catch (error) {
