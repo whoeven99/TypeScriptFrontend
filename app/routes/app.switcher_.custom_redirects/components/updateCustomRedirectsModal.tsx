@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, Input, Space, Button, Typography, Flex, Select } from "antd";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import { mockIpConfigDataUpdate } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { CurrencyDataType } from "~/routes/app.currency/route";
+import { UpdateUserIp } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
@@ -180,7 +180,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
       let data;
       if (defaultData) {
-        data = await mockIpConfigDataUpdate({
+        data = await UpdateUserIp({
           id: defaultData.key,
           shop: globalStore?.shop || "",
           server: server,
@@ -189,7 +189,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           currency: formData.currency,
         });
       } else {
-        data = await mockIpConfigDataUpdate({
+        data = await UpdateUserIp({
           shop: globalStore?.shop || "",
           server: server,
           region: formData.region,

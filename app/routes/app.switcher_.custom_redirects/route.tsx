@@ -17,11 +17,11 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import {
+  BatchAddUserIp,
+  BatchDeleteUserIp,
   GetCurrencyByShopName,
-  mockIpConfigData,
-  mockIpConfigDataDelete,
-  mockIpConfigDataInit,
-  mockSwitchStatus,
+  SelectUserIpList,
+  UpdateUserIpStatus,
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -87,8 +87,9 @@ const Index = () => {
   const { server, mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const initRef = useRef(false);
 
   //语言源数据
   const languageTableData: LanguagesDataType[] = useSelector(
@@ -180,7 +181,7 @@ const Index = () => {
     );
     //表格数据初始化方法
     setTimeout(async () => {
-      const selectShopNameLiquidData = await mockIpConfigData({
+      const selectShopNameLiquidData = await SelectUserIpList({
         shop: globalStore?.shop || "",
         server: server || "",
       });
@@ -222,12 +223,13 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    if (initRef.current) return; // 防止重复执行
     if (
       Array.isArray(regionsDataSource) &&
       regionsDataSource.length &&
       loadingArray.includes("needInit")
     ) {
-      console.log("regionsDataSource: ", regionsDataSource);
+      initRef.current = true; // 标记已执行
 
       const initData = regionsDataSource.map((regionsDataSourceItem) => ({
         region: regionsDataSourceItem?.code,
@@ -236,13 +238,11 @@ const Index = () => {
       }));
 
       const initCustomRedirectData = async () => {
-        const data = await mockIpConfigDataInit({
+        const data = await BatchAddUserIp({
           shop: globalStore?.shop || "",
           server: server || "",
           initData,
         });
-
-        console.log("mockIpConfigDataInit: ", data);
 
         if (data?.success) {
           if (Array.isArray(data?.response) && data?.response?.length) {
@@ -253,16 +253,13 @@ const Index = () => {
             setDataSource(newData);
           }
         }
-        setLoadingArray(loadingArray.filter((prev) => prev !== "needInit"));
+
+        setLoadingArray((prev) => prev.filter((x) => x !== "needInit"));
       };
 
       initCustomRedirectData();
     }
-  }, [
-    loadingArray.includes("needInit"),
-    regionsDataSource,
-    currencyDataSource,
-  ]);
+  }, [regionsDataSource, currencyDataSource, loadingArray]);
 
   useEffect(() => {
     if (!marketsFetcher.data?.success) return;
@@ -301,9 +298,10 @@ const Index = () => {
         return (
           <Switch
             loading={switchLoadingArray.includes(record?.key)}
-            onChange={() => {
+            onChange={(e) => {
               handleCustomRedirectStatus({
                 id: record?.key,
+                status: e,
               });
             }}
             value={record.status}
@@ -448,12 +446,19 @@ const Index = () => {
   };
 
   //状态更新方法
-  const handleCustomRedirectStatus = async ({ id }: { id: number }) => {
+  const handleCustomRedirectStatus = async ({
+    id,
+    status,
+  }: {
+    id: number;
+    status: boolean;
+  }) => {
     setSwitchLoadingArray([...switchLoadingArray, id]);
-    const updateLiquidReplacementMethod = await mockSwitchStatus({
+    const updateLiquidReplacementMethod = await UpdateUserIpStatus({
       shop: globalStore?.shop || "",
       server: server || "",
       id,
+      status,
     });
     if (updateLiquidReplacementMethod?.success) {
       const newData = dataSource.map((item) =>
@@ -473,7 +478,7 @@ const Index = () => {
 
   //表格数据删除方法
   const handleDelete = async () => {
-    const data = await mockIpConfigDataDelete({
+    const data = await BatchDeleteUserIp({
       shop: globalStore?.shop || "",
       server: server || "",
       ids: selectedRowKeys,
@@ -642,9 +647,10 @@ const Index = () => {
                       <Text>{t("Status")}</Text>
                       <Switch
                         loading={switchLoadingArray.includes(item?.key)}
-                        onChange={() => {
+                        onChange={(e) => {
                           handleCustomRedirectStatus({
                             id: item?.key,
+                            status: e,
                           });
                         }}
                         value={item.status}

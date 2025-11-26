@@ -4,7 +4,8 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
-export const mockIpConfigDataInit = async ({
+//ip自定义配置初始化
+export const BatchAddUserIp = async ({
   shop,
   server,
   initData,
@@ -18,22 +19,17 @@ export const mockIpConfigDataInit = async ({
   }[];
 }) => {
   try {
-    return await new Promise<any>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: initData.map((item, index) => ({
-            ...item,
-            status: true,
-            id: index,
-          })),
-        });
-      }, 500);
+    const response = await axios({
+      url: `${server}/userIp/batchAddUserIp?shopName=${shop}`,
+      method: "POST",
+      data: initData,
     });
+
+    console.log(`${shop} BatchAddUserIp: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error(`${shop} mockIpConfigData error:`, error);
+    console.error(`${shop} BatchAddUserIp error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -43,7 +39,8 @@ export const mockIpConfigDataInit = async ({
   }
 };
 
-export const mockIpConfigDataDelete = async ({
+//批量删除ip自定义配置
+export const BatchDeleteUserIp = async ({
   shop,
   server,
   ids,
@@ -53,18 +50,17 @@ export const mockIpConfigDataDelete = async ({
   ids: number[];
 }) => {
   try {
-    return await new Promise<any>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: ids,
-        });
-      }, 500);
+    const response = await axios({
+      url: `${server}/userIp/batchDeleteUserIp?shopName=${shop}`,
+      method: "POST",
+      data: ids,
     });
+
+    console.log(`${shop} BatchDeleteUserIp: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error(`${shop} mockIpConfigData error:`, error);
+    console.error(`${shop} BatchDeleteUserIp error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -74,7 +70,8 @@ export const mockIpConfigDataDelete = async ({
   }
 };
 
-export const mockIpConfigDataUpdate = async ({
+//更新ip自定义配置
+export const UpdateUserIp = async ({
   shop,
   server,
   id,
@@ -90,23 +87,17 @@ export const mockIpConfigDataUpdate = async ({
   currency: string;
 }) => {
   try {
-    return await new Promise<any>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            id: id ? id : Math.random(),
-            region,
-            language,
-            currency,
-          },
-        });
-      }, 500);
+    const response = await axios({
+      url: `${server}/userIp/updateUserIp?shopName=${shop}`,
+      method: "POST",
+      data: { id, region, language, currency },
     });
+
+    console.log(`${shop} UpdateUserIp: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error(`${shop} mockIpConfigData error:`, error);
+    console.error(`${shop} UpdateUserIp error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -116,35 +107,29 @@ export const mockIpConfigDataUpdate = async ({
   }
 };
 
-export const mockSwitchStatus = async ({
+//更新ip自定义配置可用状态
+export const UpdateUserIpStatus = async ({
   shop,
   server,
   id,
+  status,
 }: {
   shop: string;
   server: string;
   id: number;
+  status: boolean;
 }) => {
   try {
-    // const response = await axios({
-    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
-    //   method: "POST",
-    // });
-
-    // console.log(`${shop} EditTranslatedData: `, response.data);
-
-    return await new Promise<any>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: id,
-        });
-      }, 2000);
+    const response = await axios({
+      url: `${server}/userIp/updateUserIpStatus?shopName=${shop}&id=${id}&status=${status}`,
+      method: "POST",
     });
+
+    console.log(`${shop} UpdateUserIpStatus: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error(`${shop} mockIpConfigData error:`, error);
+    console.error(`${shop} UpdateUserIpStatus error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -154,7 +139,8 @@ export const mockSwitchStatus = async ({
   }
 };
 
-export const mockIpConfigData = async ({
+//获取ip自定义配置数据
+export const SelectUserIpList = async ({
   shop,
   server,
 }: {
@@ -162,40 +148,16 @@ export const mockIpConfigData = async ({
   server: string;
 }) => {
   try {
-    // const response = await axios({
-    //   url: `${server}/userPageFly/editTranslatedData?shopName=${shop}`,
-    //   method: "POST",
-    // });
-
-    // console.log(`${shop} EditTranslatedData: `, response.data);
-    return await new Promise<any>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: [],
-          // response: [
-          //   {
-          //     id: 0,
-          //     status: true,
-          //     region: "US",
-          //     language: "zh-CN",
-          //     currency: "CAD",
-          //   },
-          //   {
-          //     id: 1,
-          //     status: false,
-          //     region: "JP",
-          //     language: "ja",
-          //     currency: "JPY",
-          //   },
-          // ],
-        });
-      }, 500);
+    const response = await axios({
+      url: `${server}/userIp/selectUserIpList?shopName=${shop}`,
+      method: "POST",
     });
+
+    console.log(`${shop} SelectUserIpList: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error(`${shop} mockIpConfigData error:`, error);
+    console.error(`${shop} SelectUserIpList error:`, error);
     return {
       success: false,
       errorCode: 10001,

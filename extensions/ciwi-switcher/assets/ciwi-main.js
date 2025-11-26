@@ -150,11 +150,12 @@ async function ciwiOnload() {
           let detectedCurrency = IpData?.currency?.code;
 
           //获取用户自定义数据
-          const mockIpConfigDataGet = await API.mockIpConfigDataGet({
-            blockId,
-            shop: shop.value,
-            region: detectedCountry,
-          });
+          const mockIpConfigDataGet =
+            await API.SelectUserIpListByShopNameAndRegion({
+              blockId,
+              shop: shop.value,
+              region: detectedCountry,
+            });
 
           if (mockIpConfigDataGet?.success) {
             if (mockIpConfigDataGet?.response) {
