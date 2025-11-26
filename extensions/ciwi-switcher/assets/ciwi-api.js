@@ -70,7 +70,7 @@ export const SelectUserIpListByShopNameAndRegion = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${switchUrl(blockId)}/userIp/SelectUserIpListByShopNameAndRegion?shopName=${shopName}&region=${region}`,
+      url: `${switchUrl(blockId)}/userIp/selectUserIpListByShopNameAndRegion?shopName=${shopName}&region=${region}`,
       method: "POST",
     });
 
