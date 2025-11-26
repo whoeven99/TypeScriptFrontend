@@ -178,7 +178,7 @@ async function ciwiOnload() {
                 mockIpConfigDataGet_Currency &&
                 mockIpConfigDataGet_Currency != "auto"
               ) {
-                detectedCurrency = mockIpConfigDataGet_Language;
+                detectedCurrency = mockIpConfigDataGet_Currency;
               }
             }
           }
