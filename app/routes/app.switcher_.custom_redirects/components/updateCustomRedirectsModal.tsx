@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Input, Space, Button, Typography, Flex, Select } from "antd";
+import { Modal, Space, Button, Typography, Flex, Select } from "antd";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
@@ -17,28 +17,28 @@ interface UpdateCustomRedirectsModalProps {
     key: number;
     status: boolean;
     region: string;
-    language: string;
-    currency: string;
+    languageCode: string;
+    currencyCode: string;
   }[];
   defaultData?:
     | {
         key: number;
         status: boolean;
         region: string;
-        language: string;
-        currency: string;
+        languageCode: string;
+        currencyCode: string;
       }
     | undefined;
   handleUpdateDataSource: ({
     key,
     region,
-    language,
-    currency,
+    languageCode,
+    currencyCode,
   }: {
     key?: number;
     region: string;
-    language: string;
-    currency: string;
+    languageCode: string;
+    currencyCode: string;
   }) => void;
   type: "create" | "edit";
   open: boolean;
@@ -62,12 +62,12 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   //表单数据依据
   const [formData, setFormData] = useState<{
     region: string;
-    language: string;
-    currency: string;
+    languageCode: string;
+    currencyCode: string;
   }>({
     region: "",
-    language: "",
-    currency: "",
+    languageCode: "",
+    currencyCode: "",
   });
 
   //地区数据
@@ -107,8 +107,8 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   const confirmButtonDisable = useMemo<boolean>(
     () =>
       !formData.region ||
-      !formData.language ||
-      !formData.currency ||
+      !formData.languageCode ||
+      !formData.currencyCode ||
       JSON.stringify(formData) == JSON.stringify(defaultData),
     [formData],
   );
@@ -123,8 +123,8 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     } else {
       setFormData({
         region: "",
-        language: "",
-        currency: "",
+        languageCode: "",
+        currencyCode: "",
       });
     }
   }, [defaultData, open]);
@@ -134,19 +134,19 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     item,
   }: {
     e: string;
-    item: "language" | "currency" | "region" | "redirect_url";
+    item: "languageCode" | "currencyCode" | "region" | "redirect_url";
   }) => {
     switch (true) {
-      case item == "language":
+      case item == "languageCode":
         setFormData({
           ...formData,
-          language: e,
+          languageCode: e,
         });
         break;
-      case item == "currency":
+      case item == "currencyCode":
         setFormData({
           ...formData,
-          currency: e,
+          currencyCode: e,
         });
         break;
       case item == "region":
@@ -185,16 +185,16 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           shop: globalStore?.shop || "",
           server: server,
           region: formData.region,
-          language: formData.language,
-          currency: formData.currency,
+          languageCode: formData.languageCode,
+          currencyCode: formData.currencyCode,
         });
       } else {
         data = await UpdateUserIp({
           shop: globalStore?.shop || "",
           server: server,
           region: formData.region,
-          language: formData.language,
-          currency: formData.currency,
+          languageCode: formData.languageCode,
+          currencyCode: formData.currencyCode,
         });
       }
 
@@ -202,16 +202,16 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         const newData = {
           key: data.response?.id || defaultData?.key,
           region: data.response?.region,
-          language: data.response?.language,
-          currency: data.response?.currency,
+          languageCode: data.response?.languageCode,
+          currencyCode: data.response?.currencyCode,
         };
         handleUpdateDataSource(newData);
         shopify.toast.show("Saved successfully");
         setFormData({
           ...formData,
           region: "",
-          language: "",
-          currency: "",
+          languageCode: "",
+          currencyCode: "",
         });
         setIsModalHide();
       } else {
@@ -228,8 +228,8 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   const onCancel = () => {
     setFormData({
       region: "",
-      language: "",
-      currency: "",
+      languageCode: "",
+      currencyCode: "",
     });
     setIsModalHide();
   };
@@ -278,7 +278,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           </Text>
           <Select
             style={{ flex: 1 }}
-            onChange={(e) => handleChange({ e, item: "language" })}
+            onChange={(e) => handleChange({ e, item: "languageCode" })}
             options={[
               {
                 label: t("Follow browser language"),
@@ -286,7 +286,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               },
               ...languageOptions,
             ]}
-            value={formData.language}
+            value={formData.languageCode}
           />
         </Flex>
         <Flex align="center">
@@ -295,7 +295,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           </Text>
           <Select
             style={{ flex: 1 }}
-            onChange={(e) => handleChange({ e, item: "currency" })}
+            onChange={(e) => handleChange({ e, item: "currencyCode" })}
             options={[
               {
                 label: t("Follow Ip currency"),
@@ -303,7 +303,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               },
               ...currencyOptions,
             ]}
-            value={formData.currency}
+            value={formData.currencyCode}
           />
         </Flex>
       </Space>

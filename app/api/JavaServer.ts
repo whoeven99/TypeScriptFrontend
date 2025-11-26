@@ -14,8 +14,8 @@ export const BatchAddUserIp = async ({
   server: string;
   initData: {
     region: string;
-    language: string;
-    currency: string;
+    languageCode: string;
+    currencyCode: string;
   }[];
 }) => {
   try {
@@ -76,21 +76,21 @@ export const UpdateUserIp = async ({
   server,
   id,
   region,
-  language,
-  currency,
+  languageCode,
+  currencyCode,
 }: {
   shop: string;
   server: string;
   id?: number;
   region: string;
-  language: string;
-  currency: string;
+  languageCode: string;
+  currencyCode: string;
 }) => {
   try {
     const response = await axios({
       url: `${server}/userIp/updateUserIp?shopName=${shop}`,
       method: "POST",
-      data: { id, region, language, currency },
+      data: { id, region, languageCode, currencyCode },
     });
 
     console.log(`${shop} UpdateUserIp: `, response.data);

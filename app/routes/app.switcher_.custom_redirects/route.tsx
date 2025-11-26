@@ -118,8 +118,8 @@ const Index = () => {
       key: number;
       status: boolean;
       region: string;
-      language: string;
-      currency: string;
+      languageCode: string;
+      currencyCode: string;
     }[]
   >([]);
 
@@ -191,8 +191,8 @@ const Index = () => {
           key: number;
           status: boolean;
           region: string;
-          language: string;
-          currency: string;
+          languageCode: string;
+          currencyCode: string;
         }[] = [];
         if (Array.isArray(selectShopNameLiquidData.response)) {
           if (selectShopNameLiquidData.response.length) {
@@ -200,8 +200,8 @@ const Index = () => {
               key: item?.id,
               status: item?.status,
               region: item?.region,
-              language: item?.language,
-              currency: item?.currency,
+              languageCode: item?.languageCode,
+              currencyCode: item?.currencyCode,
             }));
           } else {
             setLoadingArray([...loadingArray, "needInit"]);
@@ -233,8 +233,8 @@ const Index = () => {
 
       const initData = regionsDataSource.map((regionsDataSourceItem) => ({
         region: regionsDataSourceItem?.code,
-        language: "auto",
-        currency: "auto",
+        languageCode: "auto",
+        currencyCode: "auto",
       }));
 
       const initCustomRedirectData = async () => {
@@ -326,13 +326,13 @@ const Index = () => {
     },
     {
       title: t("Language"),
-      dataIndex: "language",
-      key: "language",
+      dataIndex: "languageCode",
+      key: "languageCode",
       width: "30%",
       render: (_: any, record: any) => {
         const item =
           languageLocaleData[
-            record?.language as keyof typeof languageLocaleData
+            record?.languageCode as keyof typeof languageLocaleData
           ];
         if (item) {
           return (
@@ -347,18 +347,18 @@ const Index = () => {
     },
     {
       title: t("Currency"),
-      dataIndex: "currency",
-      key: "currency",
+      dataIndex: "currencyCode",
+      key: "currencyCode",
       width: "30%",
       render: (_: any, record: any) => {
         const item =
           currencyLocaleData[
-            record?.currency as keyof typeof currencyLocaleData
+            record?.currencyCode as keyof typeof currencyLocaleData
           ];
         if (item) {
           return (
             <Text>
-              {item?.currencyName}({record?.currency})
+              {item?.currencyName}({record?.currencyCode})
             </Text>
           );
         } else {
@@ -408,13 +408,13 @@ const Index = () => {
   const handleUpdateDataSource = ({
     key,
     region,
-    language,
-    currency,
+    languageCode,
+    currencyCode,
   }: {
     key?: number;
     region: string;
-    language: string;
-    currency: string;
+    languageCode: string;
+    currencyCode: string;
   }) => {
     setDataSource((prev) => {
       // 查找是否已有该项
@@ -427,8 +427,8 @@ const Index = () => {
         updated[index] = {
           ...updated[index],
           region,
-          language,
-          currency,
+          languageCode,
+          currencyCode,
         };
         return updated;
       } else {
@@ -437,8 +437,8 @@ const Index = () => {
           key: key || 0,
           status: true,
           region,
-          language,
-          currency,
+          languageCode,
+          currencyCode,
         };
         return [newItem, ...prev];
       }
@@ -619,13 +619,13 @@ const Index = () => {
                       <Text>{t("Translation text")}</Text>
                       <Text>
                         {languageLocaleData[
-                          item?.language as keyof typeof languageLocaleData
+                          item?.languageCode as keyof typeof languageLocaleData
                         ]
                           ? `${
                               languageLocaleData[
-                                item?.language as keyof typeof languageLocaleData
+                                item?.languageCode as keyof typeof languageLocaleData
                               ]?.Name
-                            }(${item?.language})`
+                            }(${item?.languageCode})`
                           : t("Follow browser language")}
                       </Text>
                     </Flex>
@@ -633,13 +633,13 @@ const Index = () => {
                       <Text>{t("Translation text")}</Text>
                       <Text>
                         {currencyLocaleData[
-                          item?.currency as keyof typeof currencyLocaleData
+                          item?.currencyCode as keyof typeof currencyLocaleData
                         ]
                           ? `${
                               currencyLocaleData[
-                                item?.currency as keyof typeof currencyLocaleData
+                                item?.currencyCode as keyof typeof currencyLocaleData
                               ]?.currencyName
-                            }(${item?.currency})`
+                            }(${item?.currencyCode})`
                           : t("Follow Ip currency")}
                       </Text>
                     </Flex>
@@ -710,19 +710,19 @@ const Index = () => {
         handleUpdateDataSource={({
           key,
           region,
-          language,
-          currency,
+          languageCode,
+          currencyCode,
         }: {
           key?: number;
           region: string;
-          language: string;
-          currency: string;
+          languageCode: string;
+          currencyCode: string;
         }) =>
           handleUpdateDataSource({
             key,
             region,
-            language,
-            currency,
+            languageCode,
+            currencyCode,
           })
         }
         defaultData={editData}
