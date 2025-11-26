@@ -69,10 +69,17 @@ export const SelectUserIpListByShopNameAndRegion = async ({
   region,
 }) => {
   try {
-    const response = await axios({
-      url: `${switchUrl(blockId)}/userIp/selectUserIpListByShopNameAndRegion?shopName=${shopName}&region=${region}`,
-      method: "POST",
-    });
+    const response = await fetchJson(
+      `${switchUrl(blockId)}/userIp/selectUserIpListByShopNameAndRegion?shopName=${shopName}&region=${region}`,
+      {
+        method: "POST",
+      },
+    );
+
+    console.log(
+      `${shopName} SelectUserIpListByShopNameAndRegion: `,
+      response.data,
+    );
 
     return response.data;
   } catch (error) {

@@ -153,7 +153,7 @@ async function ciwiOnload() {
           const mockIpConfigDataGet =
             await API.SelectUserIpListByShopNameAndRegion({
               blockId,
-              shop: shop.value,
+              shopName: shop.value,
               region: detectedCountry,
             });
 
@@ -161,12 +161,12 @@ async function ciwiOnload() {
             if (mockIpConfigDataGet?.response) {
               //用户自定义语言数据
               const mockIpConfigDataGet_Language =
-                mockIpConfigDataGet?.response?.language;
+                mockIpConfigDataGet?.response?.languageCode;
 
               //用户自定义货币数据
               const mockIpConfigDataGet_Currency =
-                mockIpConfigDataGet?.response?.currency;
-
+                mockIpConfigDataGet?.response?.currencyCode;
+                
               //如果存在且不是auto则使用自定义数据
               if (
                 mockIpConfigDataGet_Language &&
