@@ -305,12 +305,16 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               value={formData.currencyCode}
             />
 
-            <Text style={{ marginTop: 8 }}>
-              <QuestionCircleOutlined />{" "}
-              {t(
-                "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
-              )}
-            </Text>
+            {!!regionsData?.find(
+              (item) => item?.currencyCode == defaultData?.currencyCode,
+            ) && (
+              <Text style={{ marginTop: 8 }}>
+                <QuestionCircleOutlined />{" "}
+                {t(
+                  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
+                )}
+              </Text>
+            )}
           </div>
         </Flex>
       </Space>
