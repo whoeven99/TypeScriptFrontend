@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Space, Button, Typography, Flex, Select } from "antd";
+import { Modal, Space, Button, Typography, Flex, Select, Popover } from "antd";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import { CurrencyDataType } from "~/routes/app.currency/route";
 import { UpdateUserIp } from "~/api/JavaServer";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -281,22 +282,36 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             value={formData.languageCode}
           />
         </Flex>
-        <Flex align="center">
-          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
+        <Flex align="flex-start">
+          <Text style={{ width: 100, whiteSpace: "nowrap", paddingTop: 6 }}>
             {t("Currency")}:
           </Text>
-          <Select
-            style={{ flex: 1 }}
-            onChange={(e) => handleChange({ e, item: "currencyCode" })}
-            options={[
-              {
-                label: t("Follow Ip currency"),
-                value: "auto",
-              },
-              ...currencyOptions,
-            ]}
-            value={formData.currencyCode}
-          />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <Select
+              style={{ width: "100%" }}
+              onChange={(e) => handleChange({ e, item: "currencyCode" })}
+              disabled={
+                !!regionsData?.find(
+                  (item) => item?.currencyCode == defaultData?.currencyCode,
+                )
+              }
+              options={[
+                {
+                  label: t("Follow Ip currency"),
+                  value: "auto",
+                },
+                ...currencyOptions,
+              ]}
+              value={formData.currencyCode}
+            />
+
+            <Text style={{ marginTop: 8 }}>
+              <QuestionCircleOutlined />{" "}
+              {t(
+                "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
+              )}
+            </Text>
+          </div>
         </Flex>
       </Space>
     </Modal>

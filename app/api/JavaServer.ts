@@ -5,7 +5,7 @@ import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
 //ip自定义配置初始化
-export const BatchAddUserIp = async ({
+export const SyncUserIp = async ({
   shop,
   server,
   initData,
@@ -20,16 +20,16 @@ export const BatchAddUserIp = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${server}/userIp/batchAddUserIp?shopName=${shop}`,
+      url: `${server}/userIp/syncUserIp?shopName=${shop}`,
       method: "POST",
       data: initData,
     });
 
-    console.log(`${shop} BatchAddUserIp: `, response.data);
+    console.log(`${shop} SyncUserIp: `, response.data);
 
     return response.data;
   } catch (error) {
-    console.error(`${shop} BatchAddUserIp error:`, error);
+    console.error(`${shop} SyncUserIp error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -99,34 +99,6 @@ export const UpdateUserIpStatus = async ({
     return response.data;
   } catch (error) {
     console.error(`${shop} UpdateUserIpStatus error:`, error);
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: null,
-    };
-  }
-};
-
-//获取ip自定义配置数据
-export const SelectUserIpList = async ({
-  shop,
-  server,
-}: {
-  shop: string;
-  server: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${server}/userIp/selectUserIpList?shopName=${shop}`,
-      method: "POST",
-    });
-
-    console.log(`${shop} SelectUserIpList: `, response.data);
-
-    return response.data;
-  } catch (error) {
-    console.error(`${shop} SelectUserIpList error:`, error);
     return {
       success: false,
       errorCode: 10001,

@@ -7,6 +7,7 @@ import {
   Checkbox,
   Flex,
   Pagination,
+  Popover,
   Skeleton,
   Space,
   Switch,
@@ -17,9 +18,8 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import {
-  BatchAddUserIp,
+  SyncUserIp,
   GetCurrencyByShopName,
-  SelectUserIpList,
   UpdateUserIpStatus,
 } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
@@ -31,6 +31,7 @@ import { queryMarketDomainData } from "~/api/admin";
 import languageLocaleData from "~/utils/language-locale-data";
 import countryLocaleData from "~/utils/country-locale-data";
 import currencyLocaleData from "~/utils/currency-locale-data";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -176,39 +177,7 @@ const Index = () => {
         method: "POST",
       },
     );
-    //表格数据初始化方法
-    setTimeout(async () => {
-      const selectShopNameLiquidData = await SelectUserIpList({
-        shop: globalStore?.shop || "",
-        server: server || "",
-      });
-
-      if (selectShopNameLiquidData.success) {
-        let newData: {
-          key: number;
-          status: boolean;
-          region: string;
-          languageCode: string;
-          currencyCode: string;
-        }[] = [];
-        if (Array.isArray(selectShopNameLiquidData.response)) {
-          if (selectShopNameLiquidData.response.length) {
-            newData = selectShopNameLiquidData.response.map((item: any) => ({
-              key: item?.id,
-              status: item?.status,
-              region: item?.region,
-              languageCode: item?.languageCode,
-              currencyCode: item?.currencyCode,
-            }));
-          } else {
-            setLoadingArray([...loadingArray, "needInit"]);
-          }
-        }
-        setDataSource(newData);
-        setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
-      }
-      getCurrencyByShopName();
-    }, 100);
+    getCurrencyByShopName();
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -221,23 +190,17 @@ const Index = () => {
 
   useEffect(() => {
     if (initRef.current) return; // 防止重复执行
-    if (
-      Array.isArray(regionsDataSource) &&
-      regionsDataSource.length &&
-      loadingArray.includes("needInit")
-    ) {
+    if (Array.isArray(regionsDataSource) && regionsDataSource.length) {
       initRef.current = true; // 标记已执行
-
-      console.log(regionsDataSource);
 
       const initData = regionsDataSource.map((regionsDataSourceItem) => ({
         region: regionsDataSourceItem?.code,
         languageCode: "auto",
-        currencyCode: regionsDataSourceItem?.currencyCode,
+        currencyCode: regionsDataSourceItem?.currencyCode || "auto",
       }));
 
       const initCustomRedirectData = async () => {
-        const data = await BatchAddUserIp({
+        const data = await SyncUserIp({
           shop: globalStore?.shop || "",
           server: server || "",
           initData,
@@ -252,13 +215,12 @@ const Index = () => {
             setDataSource(newData);
           }
         }
-
-        setLoadingArray((prev) => prev.filter((x) => x !== "needInit"));
+        setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
       };
 
       initCustomRedirectData();
     }
-  }, [regionsDataSource, currencyDataSource, loadingArray]);
+  }, [regionsDataSource, currencyDataSource]);
 
   useEffect(() => {
     if (!marketsFetcher.data?.success) return;
@@ -344,10 +306,25 @@ const Index = () => {
             record?.currencyCode as keyof typeof currencyLocaleData
           ];
         if (item) {
+          console.log(regionsDataSource);
+
           return (
-            <Text>
-              {item?.currencyName}({record?.currencyCode})
-            </Text>
+            <Space>
+              <Text>
+                {item?.currencyName}({record?.currencyCode})
+              </Text>
+              {!!regionsDataSource?.find(
+                (item) => item?.currencyCode == record?.currencyCode,
+              ) && (
+                <Popover
+                  content={t(
+                    "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
+                  )}
+                >
+                  <QuestionCircleOutlined />
+                </Popover>
+              )}
+            </Space>
           );
         } else {
           return <Text>{t("Follow Ip currency")}</Text>;
@@ -616,10 +593,7 @@ const Index = () => {
           <Table
             rowSelection={rowSelection}
             columns={columns}
-            loading={
-              loadingArray.includes("loading") ||
-              loadingArray.includes("needInit")
-            }
+            loading={loadingArray.includes("loading")}
             dataSource={dataSource}
           />
         )}
