@@ -18,7 +18,6 @@ import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import {
   BatchAddUserIp,
-  BatchDeleteUserIp,
   GetCurrencyByShopName,
   SelectUserIpList,
   UpdateUserIpStatus,
@@ -129,11 +128,9 @@ const Index = () => {
   //编辑表单类型及数据控制
   const [createOrEditModal, setCreateOrEditModal] = useState<{
     open: boolean;
-    type: "create" | "edit";
     key: number;
   }>({
     open: false,
-    type: "create",
     key: 0,
   });
 
@@ -231,10 +228,12 @@ const Index = () => {
     ) {
       initRef.current = true; // 标记已执行
 
+      console.log(regionsDataSource);
+
       const initData = regionsDataSource.map((regionsDataSourceItem) => ({
         region: regionsDataSourceItem?.code,
         languageCode: "auto",
-        currencyCode: "auto",
+        currencyCode: regionsDataSourceItem?.currencyCode,
       }));
 
       const initCustomRedirectData = async () => {
@@ -272,11 +271,20 @@ const Index = () => {
       const regions =
         market?.conditions?.regionsCondition?.regions?.nodes || [];
 
+      const currencyCode =
+        market?.currencySettings?.baseCurrency?.currencyCode || null;
+
       regions.forEach((region: any) => {
         if (!region?.id) return;
 
         if (!regionMap.has(region.id)) {
-          regionMap.set(region.id, region);
+          regionMap.set(region.id, { ...region, currencyCode });
+        } else {
+          const existingRegion = regionMap.get(region.id);
+
+          if (existingRegion && existingRegion.currencyCode !== currencyCode) {
+            regionMap.set(region.id, { ...existingRegion, currencyCode });
+          }
         }
       });
     });
@@ -290,30 +298,10 @@ const Index = () => {
   //表格列管理
   const columns = [
     {
-      title: t("Status"),
-      dataIndex: "status",
-      key: "status",
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          <Switch
-            loading={switchLoadingArray.includes(record?.key)}
-            onChange={(e) => {
-              handleCustomRedirectStatus({
-                id: record?.key,
-                status: e,
-              });
-            }}
-            value={record.status}
-          />
-        );
-      },
-    },
-    {
       title: t("Region"),
       dataIndex: "region",
       key: "region",
-      width: "20%",
+      width: "30%",
       render: (_: any, record: any) => {
         const item =
           countryLocaleData[record?.region as keyof typeof countryLocaleData];
@@ -376,7 +364,6 @@ const Index = () => {
           onClick={() =>
             setCreateOrEditModal({
               open: true,
-              type: "edit",
               key: record.key,
             })
           }
@@ -411,37 +398,25 @@ const Index = () => {
     languageCode,
     currencyCode,
   }: {
-    key?: number;
+    key: number;
     region: string;
     languageCode: string;
     currencyCode: string;
   }) => {
-    setDataSource((prev) => {
-      // 查找是否已有该项
-      const index =
-        key !== undefined ? prev.findIndex((item) => item.key === key) : -1;
+    const index = dataSource.findIndex((item) => item.key === key);
 
-      if (index !== -1) {
-        // ✅ 更新已有项
-        const updated = [...prev];
-        updated[index] = {
-          ...updated[index],
-          region,
-          languageCode,
-          currencyCode,
-        };
-        return updated;
-      } else {
-        // ✅ 新增到数组最前面
-        const newItem = {
-          key: key || 0,
-          status: true,
-          region,
-          languageCode,
-          currencyCode,
-        };
-        return [newItem, ...prev];
-      }
+    if (index == -1) return;
+
+    setDataSource((prev) => {
+      // ✅ 更新已有项
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        region,
+        languageCode,
+        currencyCode,
+      };
+      return updated;
     });
   };
 
@@ -476,23 +451,6 @@ const Index = () => {
     setSwitchLoadingArray((prev) => prev.filter((item) => item !== id));
   };
 
-  //表格数据删除方法
-  const handleDelete = async () => {
-    const data = await BatchDeleteUserIp({
-      shop: globalStore?.shop || "",
-      server: server || "",
-      ids: selectedRowKeys,
-    });
-    if (data.success) {
-      const newData = dataSource.filter(
-        (prev) => !data.response.includes(prev.key),
-      );
-      setDataSource(newData);
-      shopify.toast.show("Delete successfully");
-    }
-    setSelectedRowKeys([]);
-  };
-
   const onCancel = () => {
     navigate(`/app/switcher`); // 跳转到 /app/manage_translation
   };
@@ -512,40 +470,6 @@ const Index = () => {
         <Text>
           {t("Configure region-specific redirects for your visitors")}
         </Text>
-        <Flex
-          align="center"
-          justify="space-between" // 使按钮左右分布
-          style={{ width: "100%" }}
-        >
-          <Flex align="center" gap="middle">
-            {loadingArray.includes("loading") ? (
-              <Skeleton.Button active />
-            ) : (
-              <Button onClick={handleDelete} disabled={!hasSelected}>
-                {t("Delete")}
-              </Button>
-            )}
-            {hasSelected
-              ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-              : null}
-          </Flex>
-          {loadingArray.includes("loading") ? (
-            <Skeleton.Button active />
-          ) : (
-            <Button
-              type="primary"
-              onClick={() =>
-                setCreateOrEditModal({
-                  open: true,
-                  type: "create",
-                  key: -1,
-                })
-              }
-            >
-              {t("Create rule")}
-            </Button>
-          )}
-        </Flex>
         {isMobile ? (
           <>
             <Card
@@ -661,7 +585,6 @@ const Index = () => {
                       onClick={() =>
                         setCreateOrEditModal({
                           open: true,
-                          type: "edit",
                           key: item.key,
                         })
                       }
@@ -713,7 +636,7 @@ const Index = () => {
           languageCode,
           currencyCode,
         }: {
-          key?: number;
+          key: number;
           region: string;
           languageCode: string;
           currencyCode: string;
@@ -726,7 +649,6 @@ const Index = () => {
           })
         }
         defaultData={editData}
-        type={createOrEditModal.type}
         open={createOrEditModal.open}
         setIsModalHide={() =>
           setCreateOrEditModal({

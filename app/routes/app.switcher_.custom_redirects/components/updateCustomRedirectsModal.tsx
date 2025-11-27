@@ -20,7 +20,7 @@ interface UpdateCustomRedirectsModalProps {
     languageCode: string;
     currencyCode: string;
   }[];
-  defaultData?:
+  defaultData:
     | {
         key: number;
         status: boolean;
@@ -35,12 +35,11 @@ interface UpdateCustomRedirectsModalProps {
     languageCode,
     currencyCode,
   }: {
-    key?: number;
+    key: number;
     region: string;
     languageCode: string;
     currencyCode: string;
   }) => void;
-  type: "create" | "edit";
   open: boolean;
   setIsModalHide: () => void;
 }
@@ -53,7 +52,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   dataSource,
   defaultData,
   handleUpdateDataSource,
-  type,
   open,
   setIsModalHide,
 }) => {
@@ -162,13 +160,16 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
 
   //提交表单数据方法
   const handleConfirm = async (id?: number) => {
+    // 编辑表单数据源
+    if (!defaultData?.key) return;
+
     let isSameRuleError = true;
 
     const { region } = formData;
 
     const isDuplicated = dataSource.some((item: any) => {
       // 如果是 update，需要排除自身
-      if (type !== "create" && item.key === id) return false;
+      if (item.key === id) return false;
 
       return item.region === region;
     });
@@ -179,24 +180,15 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
       let data;
-      if (defaultData) {
-        data = await UpdateUserIp({
-          id: defaultData.key,
-          shop: globalStore?.shop || "",
-          server: server,
-          region: formData.region,
-          languageCode: formData.languageCode,
-          currencyCode: formData.currencyCode,
-        });
-      } else {
-        data = await UpdateUserIp({
-          shop: globalStore?.shop || "",
-          server: server,
-          region: formData.region,
-          languageCode: formData.languageCode,
-          currencyCode: formData.currencyCode,
-        });
-      }
+
+      data = await UpdateUserIp({
+        id: defaultData.key,
+        shop: globalStore?.shop || "",
+        server: server,
+        region: formData.region,
+        languageCode: formData.languageCode,
+        currencyCode: formData.currencyCode,
+      });
 
       if (data.success) {
         const newData = {
@@ -266,7 +258,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           </Text>
           <Select
             style={{ flex: 1 }}
-            disabled={type == "edit"}
+            disabled={true}
             onChange={(e) => handleChange({ e, item: "region" })}
             options={regionsOptions}
             value={formData.region}

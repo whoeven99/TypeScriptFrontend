@@ -39,37 +39,6 @@ export const BatchAddUserIp = async ({
   }
 };
 
-//批量删除ip自定义配置
-export const BatchDeleteUserIp = async ({
-  shop,
-  server,
-  ids,
-}: {
-  shop: string;
-  server: string;
-  ids: number[];
-}) => {
-  try {
-    const response = await axios({
-      url: `${server}/userIp/batchDeleteUserIp?shopName=${shop}`,
-      method: "POST",
-      data: ids,
-    });
-
-    console.log(`${shop} BatchDeleteUserIp: `, response.data);
-
-    return response.data;
-  } catch (error) {
-    console.error(`${shop} BatchDeleteUserIp error:`, error);
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: null,
-    };
-  }
-};
-
 //更新ip自定义配置
 export const UpdateUserIp = async ({
   shop,
@@ -81,7 +50,7 @@ export const UpdateUserIp = async ({
 }: {
   shop: string;
   server: string;
-  id?: number;
+  id: number;
   region: string;
   languageCode: string;
   currencyCode: string;

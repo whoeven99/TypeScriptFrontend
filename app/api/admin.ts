@@ -59,6 +59,11 @@ export const queryMarketDomainData = async ({
               }
             }
           }
+          currencySettings {
+            baseCurrency {
+              currencyCode
+            }
+          }
         }
       }
     }`;
