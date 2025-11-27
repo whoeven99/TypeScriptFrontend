@@ -189,7 +189,7 @@ const Index = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint(); // 监听屏幕断点
 
-  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
+  const { plan, updateTime, chars, totalChars, ipBalance, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
@@ -883,7 +883,11 @@ const Index = () => {
             </Text>
           </Flex>
         </Flex>
-        <AcountInfoCard loading={isLoading} />
+        <AcountInfoCard
+          loading={isLoading}
+          translation_balance={totalChars - chars || 0}
+          ip_balance={ipBalance || 0}
+        />
         <BuyCreditsOuterCard
           planType={plan?.type}
           isInTrial={plan?.isInFreePlanTime}

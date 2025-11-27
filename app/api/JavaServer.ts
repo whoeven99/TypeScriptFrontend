@@ -4,6 +4,33 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+export const QueryUserIpCount = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userIp/queryUserIpCount?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} QueryUserIpCount: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} QueryUserIpCount error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const EditTranslatedData = async ({
   shop,
   server,

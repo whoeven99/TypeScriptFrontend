@@ -1,27 +1,31 @@
 import { Button, Card, Col, ConfigProvider, Row, Typography } from "antd";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 
 interface AcountInfoCardProps {
   loading: boolean;
+  translation_balance: number;
+  ip_balance: number;
 }
 
-const AcountInfoCard: React.FC<AcountInfoCardProps> = ({ loading }) => {
+const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
+  loading,
+  translation_balance,
+  ip_balance,
+}) => {
   const { t } = useTranslation();
 
-  const [componentData, setComponentData] = useState<{
-    translation_balance: number;
-    ip_balance: number;
-    img_balance: number;
-    other_rights: number;
-  }>({
-    translation_balance: 10000,
-    ip_balance: 10000,
-    img_balance: 10000,
-    other_rights: 5,
-  });
+  const componentData = useMemo(
+    () => ({
+      translation_balance: translation_balance,
+      ip_balance: ip_balance,
+      img_balance: 10000,
+      other_rights: 5,
+    }),
+    [translation_balance, ip_balance],
+  );
 
   return (
     // 添加 Modal 组件

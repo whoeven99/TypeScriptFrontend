@@ -35,6 +35,7 @@ import {
   GetUnTranslatedWords,
   GetAllProgressData,
   IsInFreePlanTime,
+  QueryUserIpCount,
 } from "~/api/JavaServer";
 import { LanguagesDataType, ShopLocalesType } from "./app.language/route";
 import {
@@ -48,6 +49,7 @@ import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setChars,
+  setIpBalance,
   setIsNew,
   setPlan,
   setSource,
@@ -560,7 +562,7 @@ export default function App() {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { plan, chars, totalChars, isNew } = useSelector(
+  const { plan, chars, totalChars, ipBalance, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const initFetcher = useFetcher<any>();
@@ -630,6 +632,9 @@ export default function App() {
     if (!chars || !totalChars) {
       getWords();
     }
+    if (!ipBalance) {
+      getIpBalance();
+    }
     if (isNew === null) {
       checkFreeUsed();
     }
@@ -696,6 +701,16 @@ export default function App() {
         }),
       );
       dispatch(setUserConfigIsLoading({ isLoading: false }));
+    }
+  };
+
+  const getIpBalance = async () => {
+    const data = await QueryUserIpCount({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setIpBalance({ ipBalance: data?.response }));
     }
   };
 
