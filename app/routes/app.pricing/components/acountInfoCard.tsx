@@ -1,6 +1,7 @@
 import { Button, Card, Col, ConfigProvider, Row, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import "../style.css";
 
 const { Title, Text } = Typography;
 
@@ -34,15 +35,30 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
         components: {
           Card: {
             /* 这里是你的组件 token */
-            headerBg: "rgb(186,191,204)",
+            headerBg: "#007F61",
           },
         },
       }}
     >
       <Card
-        title={t(
-          "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-        )}
+        title={
+          <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
+            <div
+              className="marquee-text"
+              style={{
+                display: "inline-block",
+                paddingLeft: "100%",
+                animation: "marquee 12s linear infinite",
+              }}
+            >
+              <Text style={{ fontWeight: 450, color: "#fff" }}>
+                {t(
+                  "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                )}
+              </Text>
+            </div>
+          </div>
+        }
         loading={loading}
       >
         <Row gutter={[16, 16]}>
@@ -62,7 +78,7 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
             }}
           >
             <Text>{t("Translation Balance")}</Text>
-            <Title style={{ margin: 0 }}>
+            <Title style={{ margin: 0, fontSize: 20 }}>
               {componentData.translation_balance}
             </Title>
             <Text>{t("words")}</Text>
@@ -83,7 +99,9 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
             }}
           >
             <Text>{t("IP Balance")}</Text>
-            <Title style={{ margin: 0 }}>{componentData.ip_balance}</Title>
+            <Title style={{ margin: 0, fontSize: 20 }}>
+              {componentData.ip_balance}
+            </Title>
             <Text>{t("requests")}</Text>
           </Col>
           <Col
@@ -102,7 +120,9 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
             }}
           >
             <Text>{t("Image Balance")}</Text>
-            <Title style={{ margin: 0 }}>{componentData.img_balance}</Title>
+            <Title style={{ margin: 0, fontSize: 20 }}>
+              {componentData.img_balance}
+            </Title>
             <Text>{t("picture")}</Text>
           </Col>
           <Col

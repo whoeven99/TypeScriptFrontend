@@ -866,7 +866,10 @@ const Index = () => {
               {t("Your translation quota")}
             </Title>
             {plan.type ? (
-              <Title level={4} style={{ margin: 0, fontSize: 18 }}>
+              <Title
+                level={4}
+                style={{ margin: 0, fontSize: 18, color: "#007F61" }}
+              >
                 {t(plan.type)} Plan
               </Title>
             ) : (

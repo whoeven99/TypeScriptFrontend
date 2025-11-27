@@ -22,13 +22,22 @@
   gap: 4px;
 }
 
-
-.flexBox{
+.flexBox {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .blodSharedPlan {
   font-weight: 500;
   font-size: 24px;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-100%, 0);
+  }
 }

@@ -59,26 +59,28 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
           {planType ? (
             <>
               <Button
+                style={{ color: "#007F61" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-1")
                 }
               >
-                500,000/$ {optionPrices.priceForOption1}
+                500,000/ ${optionPrices.priceForOption1}
               </Button>
               <Button
+                style={{ color: "#007F61" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-2")
                 }
               >
-                1,000,000/$ {optionPrices.priceForOption2}
+                1,000,000/ ${optionPrices.priceForOption2}
               </Button>
               <Button
-                type="primary"
+                style={{ color: "#007F61" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-3")
                 }
               >
-                1500,000/$ {optionPrices.priceForOption3}
+                1500,000/ ${optionPrices.priceForOption3}
               </Button>
             </>
           ) : (
@@ -90,7 +92,7 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
           )}
         </Flex>
         <Button onClick={() => handleOpenAddCreditsModalAndSelectedOption()}>
-          {t("Purchase extra points")}
+          {t("Buy Credit")}
         </Button>
       </Flex>
     </Card>
