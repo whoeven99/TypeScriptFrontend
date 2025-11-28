@@ -33,11 +33,23 @@
   font-size: 24px;
 }
 
+.marquee-wrapper {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 12s linear infinite;
+}
+
+.marquee-text {
+  padding-right: 50px; /* 两段之间的间距，可调 */
+  font-weight: 450;
+  color: #fff;
+}
+
 @keyframes marquee {
   0% {
-    transform: translate(0, 0);
+    transform: translateX(0);
   }
   100% {
-    transform: translate(-100%, 0);
+    transform: translateX(-50%);
   }
 }

@@ -854,7 +854,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Pricing")} />
-      <Space direction="vertical" size="large" style={{ display: "flex" }}>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <ScrollNotice
           text={t(
             "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",

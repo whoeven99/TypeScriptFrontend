@@ -43,19 +43,17 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
       <Card
         title={
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
-            <div
-              className="marquee-text"
-              style={{
-                display: "inline-block",
-                paddingLeft: "100%",
-                animation: "marquee 12s linear infinite",
-              }}
-            >
-              <Text style={{ fontWeight: 450, color: "#fff" }}>
+            <div className="marquee-wrapper">
+              <span className="marquee-text">
                 {t(
                   "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
                 )}
-              </Text>
+              </span>
+              <span className="marquee-text">
+                {t(
+                  "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                )}
+              </span>
             </div>
           </div>
         }
