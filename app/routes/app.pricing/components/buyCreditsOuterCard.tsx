@@ -80,7 +80,7 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
                   handleOpenAddCreditsModalAndSelectedOption("option-3")
                 }
               >
-                1500,000/ ${optionPrices.priceForOption3}
+                2,000,000/ ${optionPrices.priceForOption3}
               </Button>
             </>
           ) : (

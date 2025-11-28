@@ -44,16 +44,32 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
         title={
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
             <div className="marquee-wrapper">
-              <span className="marquee-text">
-                {t(
-                  "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                )}
-              </span>
-              <span className="marquee-text">
-                {t(
-                  "Current program benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                )}
-              </span>
+              <div className="marquee-content">
+                <span className="marquee-text">
+                  {t(
+                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                  )}
+                </span>
+                <span className="marquee-text">
+                  {t(
+                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                  )}
+                </span>
+              </div>
+
+              {/* 第二份内容，用于无缝拼接 */}
+              <div className="marquee-content">
+                <span className="marquee-text">
+                  {t(
+                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                  )}
+                </span>
+                <span className="marquee-text">
+                  {t(
+                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         }
@@ -75,11 +91,11 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
               gap: 4,
             }}
           >
-            <Text>{t("Translation Balance")}</Text>
+            <Text>{t("Translation quota")}</Text>
             <Title style={{ margin: 0, fontSize: 20 }}>
-              {componentData.translation_balance}
+              {componentData.translation_balance?.toLocaleString()}
             </Title>
-            <Text>{t("words")}</Text>
+            <Text>{t("Credits")}</Text>
           </Col>
           <Col
             // key={t("Free")}
@@ -96,9 +112,9 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
               gap: 4,
             }}
           >
-            <Text>{t("IP Balance")}</Text>
+            <Text>{t("IP geo quota")}</Text>
             <Title style={{ margin: 0, fontSize: 20 }}>
-              {componentData.ip_balance}
+              {componentData.ip_balance?.toLocaleString()}
             </Title>
             <Text>{t("requests")}</Text>
           </Col>

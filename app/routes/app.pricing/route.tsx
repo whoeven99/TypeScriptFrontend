@@ -860,7 +860,7 @@ const Index = () => {
             "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
           )}
         />
-        <Flex gap={8} style={{ flexDirection: "column", width: "100%" }}>
+        <Flex gap={3} style={{ flexDirection: "column", width: "100%" }}>
           <Flex justify="space-between" align="center">
             <Title level={4} style={{ margin: 0 }}>
               {t("Your translation quota")}
@@ -868,7 +868,7 @@ const Index = () => {
             {plan.type ? (
               <Title
                 level={4}
-                style={{ margin: 0, fontSize: 18, color: "#007F61" }}
+                style={{ margin: 0, fontSize: 16, color: "#007F61" }}
               >
                 {t(plan.type)} Plan
               </Title>
@@ -880,23 +880,25 @@ const Index = () => {
             <Text
               style={{
                 display: updateTime ? "block" : "none",
+                fontSize: 14,
               }}
             >
               {t("Next payment time: {{date}}", { date: updateTime })}
             </Text>
           </Flex>
+          <AcountInfoCard
+            loading={isLoading}
+            translation_balance={totalChars - chars || 0}
+            ip_balance={ipBalance || 0}
+          />
+          <BuyCreditsOuterCard
+            planType={plan?.type}
+            isInTrial={plan?.isInFreePlanTime}
+            handleOpenAddCreditsModal={handleOpenAddCreditsModal}
+            setSelectedOption={setSelectedOption}
+          />
         </Flex>
-        <AcountInfoCard
-          loading={isLoading}
-          translation_balance={totalChars - chars || 0}
-          ip_balance={ipBalance || 0}
-        />
-        <BuyCreditsOuterCard
-          planType={plan?.type}
-          isInTrial={plan?.isInFreePlanTime}
-          handleOpenAddCreditsModal={handleOpenAddCreditsModal}
-          setSelectedOption={setSelectedOption}
-        />
+
         {isQuotaExceeded && (
           <Alert
             message={t("The quota has been used up")}

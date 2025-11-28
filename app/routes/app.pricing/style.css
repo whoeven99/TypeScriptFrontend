@@ -34,14 +34,20 @@
 }
 
 .marquee-wrapper {
-  display: inline-flex;
+  display: flex;
   white-space: nowrap;
+  width: max-content;
   animation: marquee 12s linear infinite;
 }
 
+.marquee-content {
+  display: inline-flex;
+}
+
 .marquee-text {
-  padding-right: 50px; /* 两段之间的间距，可调 */
+  padding-right: 150px;
   font-weight: 450;
+  font-size: 16px;
   color: #fff;
 }
 
