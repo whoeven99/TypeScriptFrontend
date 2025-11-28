@@ -72,7 +72,7 @@ async function ciwiOnload() {
   if (reason) {
     console.warn("⚠️ 疑似爬虫访问", reason);
     API.CrawlerDDetectionReport({
-      shop: shop.value,
+      shopName: shop.value,
       blockId,
       ua: navigator.userAgent,
       reason,
@@ -148,7 +148,7 @@ async function ciwiOnload() {
           const countryCode = IpData?.country_code;
           API.FrontEndPrinting({
             blockId,
-            shop: shop.value,
+            shopName: shop.value,
             ip,
             languageCode: browserLanguage,
             langInclude: availableLanguages.includes(browserLanguage),
