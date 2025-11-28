@@ -8,22 +8,16 @@ import {
   Flex,
   Pagination,
   Popover,
-  Skeleton,
   Space,
-  Switch,
   Table,
   Typography,
 } from "antd";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
-import {
-  SyncUserIp,
-  GetCurrencyByShopName,
-  UpdateUserIpStatus,
-} from "~/api/JavaServer";
+import { SyncUserIp, GetCurrencyByShopName } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { LanguagesDataType } from "../app.language/route";
 import { CurrencyDataType } from "../app.currency/route";
 import { authenticate } from "~/shopify.server";
@@ -338,7 +332,7 @@ const Index = () => {
               ) && (
                 <Popover
                   content={t(
-                    "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
+                    "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.",
                   )}
                 >
                   <WarningOutlined style={{ color: "#F8B400" }} />{" "}

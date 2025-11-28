@@ -320,7 +320,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               <Text style={{ marginTop: 8 }}>
                 <WarningOutlined style={{ color: "#F8B400" }} />{" "}
                 {t(
-                  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
+                  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.",
                 )}
               </Text>
             )}
