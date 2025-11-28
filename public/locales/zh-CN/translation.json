@@ -761,7 +761,7 @@
   "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
   "You’ve reached your term limit": "您已达到术语上限",
   "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "您已添加了当前计划允许的所有术语。要继续构建术语表并提高翻译准确性，请升级到更高的计划以获得更多容量。",
-  "Next payment time: {{date}}": "下次付款时间: {{date}}",
+  "Next plan update: {{date}}": "下一次计划更新：{{date}}",
   "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "计划福利: 翻译积分永不过期 · 每月翻译积分可累计 · 支持翻译积分转移。",
   "Translation quota": "翻译配额",
   "IP geo quota": "IP地理配额",

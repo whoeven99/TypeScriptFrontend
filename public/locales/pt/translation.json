@@ -759,7 +759,7 @@
   "This feature is available only with the paid plan.": "Esta funcionalidade está disponível apenas no plano pago.",
   "You’ve reached your term limit": "Você atingiu o limite de termos",
   "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Você adicionou todos os termos permitidos no seu plano atual. Para continuar construindo seu glossário e melhorar a precisão das traduções, faça um upgrade para um plano superior com mais capacidade.",
-  "Next payment time: {{date}}": "Próxima data de pagamento: {{date}}",
+  "Next plan update: {{date}}": "Próxima atualização do plano: {{date}}",
   "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Benefícios do plano: Créditos de tradução nunca expiram · créditos de tradução mensais podem ser acumulados · transferência de créditos de tradução é suportada.",
   "Translation quota": "Cota de tradução",
   "IP geo quota": "Cota geográfica IP",
