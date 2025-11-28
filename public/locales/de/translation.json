@@ -757,5 +757,11 @@
   "Feature Unavailable": "Funktion nicht verfügbar",
   "This feature is available only with the paid plan.": "Diese Funktion ist nur im kostenpflichtigen Plan verfügbar.",
   "You’ve reached your term limit": "Sie haben Ihr Terminlimit erreicht",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Sie haben alle Begriffe hinzugefügt, die in Ihrem aktuellen Plan erlaubt sind. Um weiterhin Ihr Glossar zu erweitern und die Übersetzungsgenauigkeit zu verbessern, upgraden Sie auf einen höheren Plan für mehr Kapazität."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Sie haben alle Begriffe hinzugefügt, die in Ihrem aktuellen Plan erlaubt sind. Um weiterhin Ihr Glossar zu erweitern und die Übersetzungsgenauigkeit zu verbessern, upgraden Sie auf einen höheren Plan für mehr Kapazität.",
+  "Next payment time: {{date}}": "Nächster Zahlungstermin: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Planvorteile: Übersetzungsguthaben verfallen nie · monatliche Übersetzungsguthaben können angesammelt werden · Übertragung von Übersetzungsguthaben wird unterstützt.",
+  "Translation quota": "Übersetzungskontingent",
+  "IP geo quota": "IP Geo-Kontingent",
+  "requests": "Anfragen",
+  "Buy Credit": "Guthaben kaufen"
 }

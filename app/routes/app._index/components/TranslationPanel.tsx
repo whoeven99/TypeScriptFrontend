@@ -222,7 +222,12 @@ const TranslationPanel = () => {
               </Button>
               <Button
                 type="default"
-                onClick={() => navigate("/app/manage_translation")}
+                onClick={() =>
+                  window.open(
+                    "https://apps.shopify.com/ciwi-ai-image-alt-translate",
+                    "_blank",
+                  )
+                }
                 style={{ fontSize: "12px" }}
               >
                 {t("Image & Alt Text Translation")}

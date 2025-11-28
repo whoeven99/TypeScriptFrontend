@@ -15,6 +15,7 @@ interface UserConfigState {
   updateTime: string | null;
   chars: number | undefined;
   totalChars: number | undefined;
+  ipBalance: number | undefined;
   userConfigIsLoading: boolean;
   isNew: boolean | null;
 }
@@ -34,6 +35,7 @@ const initialState: UserConfigState = {
   updateTime: null,
   chars: 0,
   totalChars: 0,
+  ipBalance: 0,
   userConfigIsLoading: true,
   isNew: null,
 };
@@ -81,6 +83,12 @@ const userConfigSlice = createSlice({
     ) => {
       state.totalChars = action.payload.totalChars;
     },
+    setIpBalance: (
+      state,
+      action: PayloadAction<{ ipBalance: number | undefined }>,
+    ) => {
+      state.ipBalance = action.payload.ipBalance;
+    },
     setUserConfigIsLoading: (
       state,
       action: PayloadAction<{ isLoading: boolean }>,
@@ -100,6 +108,7 @@ export const {
   setShop,
   setChars,
   setTotalChars,
+  setIpBalance,
   setUserConfigIsLoading,
   setIsNew,
 } = userConfigSlice.actions;

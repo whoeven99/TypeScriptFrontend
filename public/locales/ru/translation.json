@@ -758,5 +758,11 @@
   "Feature Unavailable": "Функция недоступна",
   "This feature is available only with the paid plan.": "Эта функция доступна только в платном тарифе.",
   "You’ve reached your term limit": "Вы достигли лимита по терминам",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Вы добавили все термины, разрешенные в вашем текущем плане. Чтобы продолжать строить ваш глоссарий и улучшать точность перевода, перейдите на более высокий план с большей емкостью."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Вы добавили все термины, разрешенные в вашем текущем плане. Чтобы продолжать строить ваш глоссарий и улучшать точность перевода, перейдите на более высокий план с большей емкостью.",
+  "Next payment time: {{date}}": "Следующее время платежа: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Преимущества плана: Кредиты на перевод никогда не истекают · ежемесячные кредиты на перевод можно накапливать · поддерживается передача кредитов на перевод.",
+  "Translation quota": "Квота на перевод",
+  "IP geo quota": "Географическая квота IP",
+  "requests": "запросы",
+  "Buy Credit": "Купить кредит"
 }

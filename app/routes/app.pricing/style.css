@@ -22,13 +22,40 @@
   gap: 4px;
 }
 
-
-.flexBox{
+.flexBox {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .blodSharedPlan {
   font-weight: 500;
   font-size: 24px;
+}
+
+.marquee-wrapper {
+  display: flex;
+  white-space: nowrap;
+  width: max-content;
+  animation: marquee 70s linear infinite;
+}
+
+.marquee-content {
+  display: inline-flex;
+}
+
+.marquee-text {
+  padding-right: 150px;
+  font-weight: 450;
+  font-size: 16px;
+  color: #fff;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }

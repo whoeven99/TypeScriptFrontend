@@ -757,5 +757,11 @@
   "Feature Unavailable": "기능을 사용할 수 없습니다",
   "This feature is available only with the paid plan.": "이 기능은 유료 플랜에서만 이용 가능합니다.",
   "You’ve reached your term limit": "당신은 용어 한도를 초과했습니다",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "현재 플랜에서 허용된 모든 용어를 추가했습니다. 용어집을 계속 구축하고 번역 정확도를 향상시키려면, 더 많은 용량을 제공하는 상위 플랜으로 업그레이드하세요."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "현재 플랜에서 허용된 모든 용어를 추가했습니다. 용어집을 계속 구축하고 번역 정확도를 향상시키려면, 더 많은 용량을 제공하는 상위 플랜으로 업그레이드하세요.",
+  "Next payment time: {{date}}": "다음 결제 시간: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "플랜 혜택: 번역 크레딧은 만료되지 않으며 · 월별 번역 크레딧은 누적할 수 있습니다 · 번역 크레딧 전송이 지원됩니다.",
+  "Translation quota": "번역 할당량",
+  "IP geo quota": "IP 지역 할당량",
+  "requests": "요청",
+  "Buy Credit": "크레딧 구매"
 }
