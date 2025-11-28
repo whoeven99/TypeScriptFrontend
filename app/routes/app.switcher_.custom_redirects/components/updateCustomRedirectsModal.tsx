@@ -6,6 +6,7 @@ import { globalStore } from "~/globalStore";
 import { CurrencyDataType } from "~/routes/app.currency/route";
 import { UpdateUserIp } from "~/api/JavaServer";
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import currencyLocaleData from "~/utils/currency-locale-data";
 
 const { Text } = Typography;
 
@@ -94,10 +95,18 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   //货币数据
   const currencyOptions = useMemo(() => {
     if (currencyTableData.length > 0) {
-      return currencyTableData.map((item) => ({
-        value: item.currencyCode,
-        label: item.currency,
-      }));
+      return currencyTableData.map((item) => {
+        const label = `${
+          currencyLocaleData[
+            item.currencyCode as keyof typeof currencyLocaleData
+          ]?.symbol
+        }(item.currencyCode)`;
+
+        return {
+          value: item.currencyCode,
+          label: label,
+        };
+      });
     }
     return [];
   }, [currencyTableData]);
@@ -274,7 +283,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             onChange={(e) => handleChange({ e, item: "languageCode" })}
             options={[
               {
-                label: t("Follow browser language"),
+                label: t("Match  visitor's browser"),
                 value: "auto",
               },
               ...languageOptions,
@@ -297,7 +306,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               }
               options={[
                 {
-                  label: t("Follow Ip currency"),
+                  label: t("Match visitor’s currency"),
                   value: "auto",
                 },
                 ...currencyOptions,

@@ -91,6 +91,11 @@ const Index = () => {
 
   const initRef = useRef(false);
 
+  const shopHandle = useMemo(() => {
+    if (!globalStore?.shop) return "";
+    return globalStore?.shop?.split(".")[0];
+  }, [globalStore?.shop]);
+
   //语言源数据
   const languageTableData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -291,7 +296,7 @@ const Index = () => {
             </Text>
           );
         } else {
-          return <Text>{t("Follow browser language")}</Text>;
+          return <Text>{t("Match  visitor's browser")}</Text>;
         }
       },
     },
@@ -327,7 +332,7 @@ const Index = () => {
             </Space>
           );
         } else {
-          return <Text>{t("Follow Ip currency")}</Text>;
+          return <Text>{t("Match visitor’s currency")}</Text>;
         }
       },
     },
@@ -445,8 +450,18 @@ const Index = () => {
         style={{ display: "flex", width: "100%" }}
       >
         <Text>
-          {t("Configure region-specific redirects for your visitors")}
+          {t(
+            "Configure region-specific redirects for your visitors.Need more regions? Add them in your",
+          )}{" "}
         </Text>
+        <Button
+          type="link"
+          onClick={() =>
+            window.open(`https://admin.shopify.com/store/${shopHandle}/markets`)
+          }
+        >
+          {t("Shopify Markets settings")}
+        </Button>
         {isMobile ? (
           <>
             <Card
@@ -527,7 +542,7 @@ const Index = () => {
                                 item?.languageCode as keyof typeof languageLocaleData
                               ]?.Name
                             }(${item?.languageCode})`
-                          : t("Follow browser language")}
+                          : t("Match  visitor's browser")}
                       </Text>
                     </Flex>
                     <Flex justify="space-between">
@@ -541,7 +556,7 @@ const Index = () => {
                                 item?.currencyCode as keyof typeof currencyLocaleData
                               ]?.currencyName
                             }(${item?.currencyCode})`
-                          : t("Follow Ip currency")}
+                          : t("Match visitor’s currency")}
                       </Text>
                     </Flex>
                     <Flex justify="space-between">
