@@ -715,11 +715,13 @@ const Index = () => {
       title: t("Features"),
       dataIndex: "features",
       key: "features",
+      width: "20%",
     },
     {
       title: "Free",
       dataIndex: "free",
       key: "free",
+      width: "20%",
       render: (_: any, record: any) => {
         switch (true) {
           case record.type === "credits":
@@ -735,6 +737,7 @@ const Index = () => {
       title: "Basic",
       dataIndex: "basic",
       key: "basic",
+      width: "20%",
       render: (_: any, record: any) => {
         switch (true) {
           case record.type === "credits":
@@ -750,6 +753,7 @@ const Index = () => {
       title: "Pro",
       dataIndex: "pro",
       key: "pro",
+      width: "20%",
       render: (_: any, record: any) => {
         switch (true) {
           case record.type === "credits":
@@ -765,6 +769,7 @@ const Index = () => {
       title: "Premium",
       dataIndex: "premium",
       key: "premium",
+      width: "20%",
       render: (_: any, record: any) => {
         switch (true) {
           case record.type === "credits":
