@@ -759,7 +759,7 @@
   "This feature is available only with the paid plan.": "この機能は有料プランでのみ利用可能です。",
   "You’ve reached your term limit": "あなたは用語の制限に達しました",
   "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "現在のプランで許可されたすべての用語を追加しました。用語集をさらに構築し、翻訳精度を向上させるために、より多くの容量を持つ上位プランにアップグレードしてください。",
-  "Next payment time: {{date}}": "次回の支払い日時: {{date}}",
+  "Next plan update: {{date}}": "次の計画更新: {{date}}",
   "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "プランの特典: 翻訳クレジットは期限切れになりません · 毎月の翻訳クレジットは累積可能 · 翻訳クレジットの移行がサポートされています。",
   "Translation quota": "翻訳クオータ",
   "IP geo quota": "IPジオクオータ",
