@@ -609,6 +609,54 @@ export const GetUserValue = async ({
   }
 };
 
+// export const SingleTextTranslate = async ({
+//   shopName,
+//   source,
+//   target,
+//   resourceType,
+//   context,
+//   key,
+//   type,
+//   server,
+// }: {
+//   shopName: string;
+//   source: string;
+//   target: string;
+//   resourceType: string;
+//   context: string;
+//   key: string;
+//   type: string;
+//   server: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${server}/translate/singleTextTranslate`,
+//       method: "POST",
+//       data: {
+//         shopName: shopName,
+//         source: source,
+//         target: target,
+//         resourceType: resourceType,
+//         context: context,
+//         key: key,
+//         type: type,
+//       },
+//     });
+
+//     console.log(`${shopName} SingleTextTranslate: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error SingleTextTranslate:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: "",
+//     };
+//   }
+// };
+
 export const SingleTextTranslate = async ({
   shopName,
   source,
@@ -630,7 +678,7 @@ export const SingleTextTranslate = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${server}/translate/singleTextTranslate`,
+      url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
       method: "POST",
       data: {
         shopName: shopName,
@@ -645,7 +693,10 @@ export const SingleTextTranslate = async ({
 
     console.log(`${shopName} SingleTextTranslate: `, response.data);
 
-    return response.data;
+    return {
+      ...response.data,
+      response: response.data?.response?.targetText || "",
+    };
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
     return {
