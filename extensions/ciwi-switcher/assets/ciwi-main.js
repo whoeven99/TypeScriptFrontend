@@ -127,7 +127,7 @@ async function ciwiOnload() {
         const checkUserIpCost = Date.now() - checkUserIpStart;
 
         //能够定位则开始调用ipapi接口
-        if (userIp) {
+        if (Array.isArray(userIp?.response)) {
           const fetchCountryStart = Date.now();
 
           //调用ipapi接口
@@ -149,39 +149,43 @@ async function ciwiOnload() {
           let detectedLanguage = browserLanguage;
           let detectedCurrency = IpData?.currency?.code;
 
-          //获取用户自定义数据
-          const mockIpConfigDataGet =
-            await API.SelectUserIpListByShopNameAndRegion({
-              blockId,
-              shopName: shop.value,
-              region: detectedCountry,
-            });
+          if (userIp?.success) {
+            if (userIp?.response.length) {
+              const ipCustomConfigData = userIp?.response.find(
+                (item) => item?.region == detectedCountry,
+              );
 
-          if (mockIpConfigDataGet?.success) {
-            if (mockIpConfigDataGet?.response) {
               //用户自定义语言数据
-              const mockIpConfigDataGet_Language =
-                mockIpConfigDataGet?.response?.languageCode;
+              const ipCustomConfigData_Language =
+                ipCustomConfigData?.languageCode;
 
               //用户自定义货币数据
-              const mockIpConfigDataGet_Currency =
-                mockIpConfigDataGet?.response?.currencyCode;
-                
+              const ipCustomConfigData_Currency =
+                ipCustomConfigData?.currencyCode;
+
               //如果存在且不是auto则使用自定义数据
               if (
-                mockIpConfigDataGet_Language &&
-                mockIpConfigDataGet_Language != "auto"
+                ipCustomConfigData_Language &&
+                ipCustomConfigData_Language != "auto"
               ) {
-                detectedLanguage = mockIpConfigDataGet_Language;
+                detectedLanguage = ipCustomConfigData_Language;
               }
               if (
-                mockIpConfigDataGet_Currency &&
-                mockIpConfigDataGet_Currency != "auto"
+                ipCustomConfigData_Currency &&
+                ipCustomConfigData_Currency != "auto"
               ) {
-                detectedCurrency = mockIpConfigDataGet_Currency;
+                detectedCurrency = ipCustomConfigData_Currency;
               }
             }
           }
+
+          //获取当前语言和地区
+          const languageValue = ciwiBlock.querySelector(
+            'input[name="language_code"]',
+          )?.value;
+          const countryValue = ciwiBlock.querySelector(
+            'input[name="country_code"]',
+          )?.value;
 
           //判断语言是否可用
           const availableLanguages = Array.from(
@@ -190,7 +194,7 @@ async function ciwiOnload() {
 
           detectedLanguage = availableLanguages.includes(detectedLanguage)
             ? detectedLanguage
-            : null;
+            : languageValue;
 
           //缓存货币数据
           if (detectedCurrency) {
@@ -202,13 +206,11 @@ async function ciwiOnload() {
             ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
           ).map((link) => link.getAttribute("data-value"));
 
-          if (detectedCountry && availableCountries.includes(detectedCountry)) {
-            //缓存地区数据
-            localStorage.setItem("ciwi_selected_country", detectedCountry);
-          } else {
-            //不可用缓存“false”
-            localStorage.setItem("ciwi_selected_country", "false");
-          }
+          detectedCountry = availableCountries.includes(detectedCountry)
+            ? detectedCountry
+            : countryValue;
+
+          localStorage.setItem("ciwi_selected_country", detectedCountry);
 
           //打印日志
           API.FrontEndPrinting({
@@ -230,14 +232,6 @@ async function ciwiOnload() {
           const isInThemeEditor = document.documentElement.classList.contains(
             "shopify-design-mode",
           );
-
-          //获取当前语言和地区
-          const languageValue = ciwiBlock.querySelector(
-            'input[name="language_code"]',
-          )?.value;
-          const countryValue = ciwiBlock.querySelector(
-            'input[name="country_code"]',
-          )?.value;
 
           console.log("detectedCountry: ", detectedCountry);
           console.log("detectedLanguage: ", detectedLanguage);
@@ -262,8 +256,8 @@ async function ciwiOnload() {
             !isInThemeEditor
           ) {
             updateLocalization({
-              country: detectedCountry,
-              language: detectedLanguage,
+              country: detectedCountry || countryValue,
+              language: detectedLanguage || languageValue,
             });
           }
         }

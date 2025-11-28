@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
 import { CurrencyDataType } from "~/routes/app.currency/route";
 import { UpdateUserIp } from "~/api/JavaServer";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { WarningOutlined } from "@ant-design/icons";
 import currencyLocaleData from "~/utils/currency-locale-data";
 
 const { Text } = Typography;
@@ -100,7 +100,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
           currencyLocaleData[
             item.currencyCode as keyof typeof currencyLocaleData
           ]?.symbol
-        }(item.currencyCode)`;
+        }(${item.currencyCode})`;
 
         return {
           value: item.currencyCode,
@@ -318,7 +318,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
               (item) => item?.currencyCode == defaultData?.currencyCode,
             ) && (
               <Text style={{ marginTop: 8 }}>
-                <QuestionCircleOutlined />{" "}
+                <WarningOutlined style={{ color: "#F8B400" }} />{" "}
                 {t(
                   "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
                 )}

@@ -249,7 +249,8 @@ export async function checkUserIp({ blockId, shop }) {
       `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
       { method: "POST" },
     );
-    return data?.response;
+    
+    return data;
   } catch (err) {
     console.error("Error checkUserIp:", err);
     return null;

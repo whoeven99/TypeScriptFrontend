@@ -31,7 +31,7 @@ import { queryMarketDomainData } from "~/api/admin";
 import languageLocaleData from "~/utils/language-locale-data";
 import countryLocaleData from "~/utils/country-locale-data";
 import currencyLocaleData from "~/utils/currency-locale-data";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { WarningOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -111,9 +111,6 @@ const Index = () => {
   //加载状态数组，目前loading表示页面正在加载
   const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
 
-  //切换器加载状态数组，存储正在loading的Switch组件对应的id
-  const [switchLoadingArray, setSwitchLoadingArray] = useState<number[]>([]);
-
   //移动端判断依据
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
 
@@ -123,6 +120,7 @@ const Index = () => {
       key: number;
       status: boolean;
       region: string;
+      regionName: string;
       languageCode: string;
       currencyCode: string;
     }[]
@@ -182,7 +180,7 @@ const Index = () => {
         method: "POST",
       },
     );
-    getCurrencyByShopName();
+    setTimeout(() => getCurrencyByShopName(), 100);
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -213,10 +211,18 @@ const Index = () => {
 
         if (data?.success) {
           if (Array.isArray(data?.response) && data?.response?.length) {
-            const newData = data.response.map((item: any) => ({
-              ...item,
-              key: item.id,
-            }));
+            const newData = data.response
+              .map((item: any) => ({
+                ...item,
+                regionName:
+                  countryLocaleData[
+                    item?.region as keyof typeof countryLocaleData
+                  ] || "",
+                key: item?.id,
+              }))
+              .sort((a: any, b: any) =>
+                a?.regionName?.localeCompare(b?.regionName),
+              ); // 按region字段的首字母排序
             setDataSource(newData);
           }
         }
@@ -270,13 +276,11 @@ const Index = () => {
       key: "region",
       width: "30%",
       render: (_: any, record: any) => {
-        const item =
-          countryLocaleData[record?.region as keyof typeof countryLocaleData];
-        if (item) {
-          return <Text>{item}</Text>;
-        } else {
-          return <Text>{record?.region}</Text>;
-        }
+        return (
+          <Text>
+            {record?.regionName ? record?.regionName : record?.region}
+          </Text>
+        );
       },
     },
     {
@@ -291,9 +295,22 @@ const Index = () => {
           ];
         if (item) {
           return (
-            <Text>
-              {item?.Name}({item?.isoCode})
-            </Text>
+            <Space>
+              <Text>
+                {item?.Name}({item?.isoCode})
+              </Text>
+              {!languageTableData?.find(
+                (item) => item?.locale == record?.languageCode,
+              )?.published && (
+                <Popover
+                  content={t(
+                    "Settings not applied. Please publish the current language first.",
+                  )}
+                >
+                  <WarningOutlined style={{ color: "#F8B400" }} />
+                </Popover>
+              )}
+            </Space>
           );
         } else {
           return <Text>{t("Match  visitor's browser")}</Text>;
@@ -311,8 +328,6 @@ const Index = () => {
             record?.currencyCode as keyof typeof currencyLocaleData
           ];
         if (item) {
-          console.log(regionsDataSource);
-
           return (
             <Space>
               <Text>
@@ -326,7 +341,7 @@ const Index = () => {
                     "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized per language.",
                   )}
                 >
-                  <QuestionCircleOutlined />
+                  <WarningOutlined style={{ color: "#F8B400" }} />{" "}
                 </Popover>
               )}
             </Space>
@@ -400,37 +415,6 @@ const Index = () => {
       };
       return updated;
     });
-  };
-
-  //状态更新方法
-  const handleCustomRedirectStatus = async ({
-    id,
-    status,
-  }: {
-    id: number;
-    status: boolean;
-  }) => {
-    setSwitchLoadingArray([...switchLoadingArray, id]);
-    const updateLiquidReplacementMethod = await UpdateUserIpStatus({
-      shop: globalStore?.shop || "",
-      server: server || "",
-      id,
-      status,
-    });
-    if (updateLiquidReplacementMethod?.success) {
-      const newData = dataSource.map((item) =>
-        item.key === id
-          ? {
-              ...item,
-              status: !item.status,
-            }
-          : item,
-      );
-      setDataSource(newData);
-    } else {
-      shopify.toast.show(updateLiquidReplacementMethod?.errorMsg);
-    }
-    setSwitchLoadingArray((prev) => prev.filter((item) => item !== id));
   };
 
   const onCancel = () => {
@@ -562,19 +546,6 @@ const Index = () => {
                             }(${item?.currencyCode})`
                           : t("Match visitor’s currency")}
                       </Text>
-                    </Flex>
-                    <Flex justify="space-between">
-                      <Text>{t("Status")}</Text>
-                      <Switch
-                        loading={switchLoadingArray.includes(item?.key)}
-                        onChange={(e) => {
-                          handleCustomRedirectStatus({
-                            id: item?.key,
-                            status: e,
-                          });
-                        }}
-                        value={item.status}
-                      />
                     </Flex>
                     <Button
                       style={{ width: "100%" }}
