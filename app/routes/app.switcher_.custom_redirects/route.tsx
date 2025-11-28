@@ -453,15 +453,19 @@ const Index = () => {
           {t(
             "Configure region-specific redirects for your visitors.Need more regions? Add them in your",
           )}{" "}
+          <Button
+            type="link"
+            style={{ padding: 0 }}
+            onClick={() =>
+              window.open(
+                `https://admin.shopify.com/store/${shopHandle}/markets`,
+              )
+            }
+          >
+            {t("Shopify Markets settings")}
+          </Button>
         </Text>
-        <Button
-          type="link"
-          onClick={() =>
-            window.open(`https://admin.shopify.com/store/${shopHandle}/markets`)
-          }
-        >
-          {t("Shopify Markets settings")}
-        </Button>
+
         {isMobile ? (
           <>
             <Card
