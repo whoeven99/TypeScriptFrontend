@@ -758,5 +758,11 @@
   "Feature Unavailable": "Funktionen är inte tillgänglig",
   "This feature is available only with the paid plan.": "Denna funktion är endast tillgänglig med den betalda planen.",
   "You’ve reached your term limit": "Du har nått din gräns för termer",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Du har lagt till alla termer som är tillåtna i din nuvarande plan. För att fortsätta bygga ditt lexikon och förbättra översättningsnoggrannheten, uppgradera till en högre plan för mer kapacitet."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Du har lagt till alla termer som är tillåtna i din nuvarande plan. För att fortsätta bygga ditt lexikon och förbättra översättningsnoggrannheten, uppgradera till en högre plan för mer kapacitet.",
+  "Next payment time: {{date}}": "Nästa betalningstid: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Planförmåner: Översättningskrediter går aldrig ut · månatliga översättningskrediter kan ackumuleras · överföring av översättningskrediter stöds.",
+  "Translation quota": "Översättningskvot",
+  "IP geo quota": "IP geo kvot",
+  "requests": "begärningar",
+  "Buy Credit": "Köp kredit"
 }

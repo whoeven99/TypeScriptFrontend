@@ -758,5 +758,11 @@
   "Feature Unavailable": "Özellik kullanılamıyor",
   "This feature is available only with the paid plan.": "Bu özellik yalnızca ücretli planda mevcuttur.",
   "You’ve reached your term limit": "Terim sınırınıza ulaştınız",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Mevcut planınızda izin verilen tüm terimleri eklediniz. Sözlüğünüzü oluşturmaya devam etmek ve çeviri doğruluğunu artırmak için daha yüksek bir plana yükseltin."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Mevcut planınızda izin verilen tüm terimleri eklediniz. Sözlüğünüzü oluşturmaya devam etmek ve çeviri doğruluğunu artırmak için daha yüksek bir plana yükseltin.",
+  "Next payment time: {{date}}": "Sonraki ödeme zamanı: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Plan avantajları: Çeviri kredileri asla süresi dolmaz · aylık çeviri kredileri biriktirilebilir · çeviri kredi transferi desteklenir.",
+  "Translation quota": "Çeviri kotası",
+  "IP geo quota": "IP coğrafi kotası",
+  "requests": "istekler",
+  "Buy Credit": "Kredi al"
 }
