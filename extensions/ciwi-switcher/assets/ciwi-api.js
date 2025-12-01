@@ -169,7 +169,7 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
 export async function fetchSwitcherConfig({ blockId, shop }) {
   try {
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/widgetConfigurations/getDataByShopName?shopName=${shop}`,
+      `${switchUrl(blockId)}/widgetConfigurations/getData?shopName=${shop}`,
       {
         method: "POST",
       },
@@ -210,10 +210,10 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
       };
     } else {
       return {
-        success: false,
+        success: true,
         errorCode: 10001,
         errorMsg: "SERVER_ERROR",
-        response: null,
+        response: initData,
       };
     }
   } catch (error) {

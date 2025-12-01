@@ -134,6 +134,16 @@ async function ciwiOnload() {
   let detectedLanguage = browserLanguage;
   let detectedCurrency = countryCurMap[countryValue];
 
+  //所有可用语言
+  const availableLanguages = Array.from(
+    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
+  ).map((opt) => opt.dataset.value);
+
+  //所有可用地区
+  const availableCountries = Array.from(
+    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
+  ).map((link) => link.getAttribute("data-value"));
+
   // IP 定位逻辑
   if (needRedirection) {
     const iptokenValue = ciwiBlock.querySelector(
@@ -164,7 +174,7 @@ async function ciwiOnload() {
       detectedCountry = IpData?.country_code;
 
       //地区对应货币符号
-      const ipCurrency = countryCurMap[detectedCountry];
+      const ipCurrency = countryCurMap[countryValue];
 
       //打印日志
       API.FrontEndPrinting({
@@ -191,34 +201,33 @@ async function ciwiOnload() {
   const ipRedirectionLanguageValue = ipRedirection?.languageCode || "auto";
   const ipRedirectionCurrencyValue = ipRedirection?.currencyCode || "auto";
 
-  detectedLanguage =
-    ipRedirectionLanguageValue == "auto"
+  //获取用户自定义的语言信息和货币信息的缓存
+  const storedLanguage = localStorage.getItem("ciwi_selected_language");
+
+  //更新应当跳转的货币和语言
+  detectedLanguage = storedLanguage
+    ? storedLanguage
+    : ipRedirectionLanguageValue == "auto"
       ? browserLanguage
       : ipRedirectionLanguageValue;
-  detectedCurrency =
-    ipRedirectionCurrencyValue == "auto"
+  detectedCurrency = storedCurrency
+    ? storedCurrency
+    : ipRedirectionCurrencyValue == "auto"
       ? detectedCurrency
       : ipRedirectionCurrencyValue;
 
   //判断语言是否可用
-  const availableLanguages = Array.from(
-    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-  ).map((opt) => opt.dataset.value);
 
   detectedLanguage = availableLanguages.includes(detectedLanguage)
     ? detectedLanguage
     : languageValue;
 
   //缓存货币数据
-  if (detectedCurrency) {
+  if (detectedCurrency != storedCountry && detectedCurrency) {
     localStorage.setItem("ciwi_selected_currency", detectedCurrency);
   }
 
   //判断地区是否可用
-  const availableCountries = Array.from(
-    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
-  ).map((link) => link.getAttribute("data-value"));
-
   detectedCountry = availableCountries.includes(detectedCountry)
     ? detectedCountry
     : countryValue;
