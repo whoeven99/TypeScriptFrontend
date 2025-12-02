@@ -179,8 +179,6 @@ async function ciwiOnload() {
       //地区对应货币符号
       const ipCurrency = countryCurMap[countryValue];
 
-      console.log(1);
-
       //打印日志
       API.FrontEndPrinting({
         blockId,
@@ -196,8 +194,6 @@ async function ciwiOnload() {
         status: IpData?.status,
         error: IpData?.ip ? "" : JSON.stringify(IpData),
       });
-
-      console.log(2);
     }
   }
 
