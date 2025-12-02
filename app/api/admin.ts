@@ -66,6 +66,9 @@ export const queryMarketDomainData = async ({
           }
         }
       }
+      shop {
+        currencyCode
+      }
     }`;
 
     const response = await axios({
@@ -300,13 +303,6 @@ export const queryShop = async ({
         shopOwnerName
         email
         currencyCode
-        currencySettings(first: 100) {
-          nodes {
-            currencyCode
-            currencyName
-            enabled
-          }
-        }
         myshopifyDomain
         currencyFormats {
           moneyFormat
@@ -326,7 +322,6 @@ export const queryShop = async ({
     });
     const res = response.data.data.shop;
     console.log("queryShop main currencyCode: ", res?.currencyCode);
-    console.log("queryShop currencyCodes: ", res?.currencySettings?.nodes);
     console.log("queryShop currencyFormats: ", res?.currencyFormats);
     return res;
   } catch (error) {

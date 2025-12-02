@@ -37,13 +37,12 @@ export async function FrontEndPrinting({
   error,
 }) {
   try {
-    const { data } = await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
+    await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
       method: "POST",
       body: JSON.stringify({
         data: `状态码: ${status}, ${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms${error ? `, ipapi 存在错误返回: ${error}` : ""}`,
       }),
     });
-    return data;
   } catch (err) {
     console.error("Error FrontEndPrinting:", err);
   }
@@ -51,13 +50,12 @@ export async function FrontEndPrinting({
 
 export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   try {
-    const { data } = await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
+    await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
       method: "POST",
       body: JSON.stringify({
         data: `${shop} 检测到爬虫 ${ua}, 原因: ${reason}`,
       }),
     });
-    return data;
   } catch (err) {
     console.error("Error CrawlerDDetectionReport:", err);
   }

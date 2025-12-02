@@ -118,8 +118,10 @@ async function ciwiOnload() {
     'input[name="country_code"]',
   )?.value;
 
+  //用户自定义ip配置数据
   const ipRedirections = configData?.ipRedirections;
 
+  //需要ip定位判断，为true则需要
   let needRedirection = !storedCountry && !storedCurrency;
 
   //浏览器语言
@@ -128,6 +130,7 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0];
   }
 
+  //获取地区对应货币数据
   const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
 
   let detectedCountry = countryValue;
@@ -176,6 +179,8 @@ async function ciwiOnload() {
       //地区对应货币符号
       const ipCurrency = countryCurMap[countryValue];
 
+      console.log(1);
+
       //打印日志
       API.FrontEndPrinting({
         blockId,
@@ -191,13 +196,17 @@ async function ciwiOnload() {
         status: IpData?.status,
         error: IpData?.ip ? "" : JSON.stringify(IpData),
       });
+
+      console.log(2);
     }
   }
 
+  //查询当前或者需要定位的地区的语言货币配置
   const ipRedirection = ipRedirections?.find(
     (item) => item?.region == detectedCountry,
   );
 
+  //语言货币配置
   const ipRedirectionLanguageValue = ipRedirection?.languageCode || "auto";
   const ipRedirectionCurrencyValue = ipRedirection?.currencyCode || "auto";
 
@@ -217,7 +226,6 @@ async function ciwiOnload() {
       : ipRedirectionCurrencyValue;
 
   //判断语言是否可用
-
   detectedLanguage = availableLanguages.includes(detectedLanguage)
     ? detectedLanguage
     : languageValue;
@@ -252,18 +260,33 @@ async function ciwiOnload() {
     detectedLanguage !== languageValue,
   );
   console.log("isInThemeEditor: ", isInThemeEditor);
+  console.log("needRedirection: ", needRedirection);
 
-  //如果不再主题编辑器内，并且语言和地区数据存在且和当前数据不同开始跳转
-  if (
-    detectedCountry &&
-    detectedLanguage &&
-    (detectedCountry !== countryValue || detectedLanguage !== languageValue) &&
-    !isInThemeEditor
-  ) {
-    updateLocalization({
-      country: detectedCountry || countryValue,
-      language: detectedLanguage || languageValue,
-    });
+  //不在主题编辑器内
+  if (!isInThemeEditor) {
+    //需要定位逻辑
+    if (needRedirection) {
+      if (
+        detectedCountry &&
+        detectedLanguage &&
+        (detectedCountry !== countryValue || detectedLanguage !== languageValue)
+      ) {
+        updateLocalization({
+          country: detectedCountry || countryValue,
+          language: detectedLanguage || languageValue,
+        });
+      }
+    }
+    //不需要定位但是用户切换地区后的逻辑
+    else {
+      if (detectedCountry && detectedCountry !== storedCountry) {
+        localStorage.setItem("ciwi_selected_country", detectedCountry);
+        updateLocalization({
+          country: detectedCountry || countryValue,
+          language: detectedLanguage || languageValue,
+        });
+      }
+    }
   }
 
   // 初始化语言/货币选择器
