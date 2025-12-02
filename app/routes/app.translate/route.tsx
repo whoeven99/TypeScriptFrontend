@@ -29,11 +29,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { CaretDownOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import {
-  GetGlossaryByShopName,
-  GetLanguageList,
-  GetLanguageLocaleInfo,
-} from "~/api/JavaServer";
+import { GetGlossaryByShopName, GetLanguageList } from "~/api/JavaServer";
 import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 import TranslateAffix from "./components/translateAffix";
@@ -42,6 +38,7 @@ import TransalteSettingCard from "./components/transalteSettingCard";
 import ToneSettingCard from "./components/toneSettingCard";
 import AdvanceSettingCard from "./components/advanceSettingCard";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
+import languageLocaleData from "~/utils/language-locale-data";
 
 const { Title, Text } = Typography;
 
@@ -243,19 +240,18 @@ const Index = () => {
   //更新语言数据，增加src、localeName、status字段
   useEffect(() => {
     if (languageData?.length > 0 && source.code) {
-      const shopLocalesIndex = languageData?.map((item: any) => item?.locale);
-
       let data = languageData.map((lang: any) => ({
         key: lang?.locale,
         name: lang?.name,
         locale: lang?.locale,
         published: lang.published,
+        src: languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
+          ?.countries,
+        localeName:
+          languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
+            ?.Local,
       }));
       const GetLanguageDataFront = async () => {
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          server: server as string,
-          locale: shopLocalesIndex,
-        });
         const languageList = await GetLanguageList({
           shop,
           server: server as string,
@@ -266,12 +262,6 @@ const Index = () => {
           setLanguageTableData(
             data.map((item: any) => ({
               ...item, // 展开原对象
-              src: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.countries
-                : [], // 插入新字段
-              localeName: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.Local
-                : "", // 插入新字段
               status: languageList?.response
                 ? languageList?.response.find(
                     (language: any) => language.target === item.locale,
