@@ -401,7 +401,7 @@ async function ciwiOnload() {
   API.fetchSwitcherConfig({ blockId, shop: shop.value })
     .then((fresh) => {
       if (fresh) {
-        setWithTTL("ciwi_switcher_config", JSON.stringify(fresh));
+        setWithTTL("ciwi_switcher_config", fresh);
       }
     })
     .catch(() => {});
@@ -416,7 +416,7 @@ async function ciwiOnload() {
     API.fetchCurrencies({ blockId, shop: shop.value })
       .then((fresh) => {
         if (fresh) {
-          localStorage.setItem("ciwi_currency_data", fresh);
+          localStorage.setItem("ciwi_currency_data", JSON.stringify(fresh));
         }
       })
       .catch(() => {});
