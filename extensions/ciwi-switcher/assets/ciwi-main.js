@@ -1,6 +1,6 @@
 // main.js
 import * as API from "./ciwi-api.js";
-import { useCacheThenRefresh } from "./ciwi-storage.js";
+import { useCacheThenRefresh, setWithTTL } from "./ciwi-storage.js";
 import {
   CiwiswitcherForm,
   updateDisplayText,
@@ -9,7 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate
+  PageFlyTextTranslate,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -61,6 +61,9 @@ const rtlLanguages = [
 ];
 
 async function ciwiOnload() {
+  const click_point1 = Date.now();
+  console.log("click point1: ", new Date(click_point1).toLocaleString());
+
   console.log("onload start (modular+full)");
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
@@ -79,20 +82,57 @@ async function ciwiOnload() {
     });
     return;
   }
+  const click_point2 = Date.now();
+  console.log("click point2: ", new Date(click_point2).toLocaleString());
+  console.log(
+    "click point2 - click point1: ",
+    `${click_point2 - click_point1}ms`,
+  );
+
   // 产品图片翻译（非阻塞）
   ProductImgTranslate(blockId, shop, ciwiBlock);
+  const click_point3 = Date.now();
+  console.log("click point3: ", new Date(click_point3).toLocaleString());
+  console.log(
+    "click point3 - click point2: ",
+    `${click_point3 - click_point2}ms`,
+  );
 
   // 网页custom liquid 文本翻译
   CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+  const click_point4 = Date.now();
+  console.log("click point4: ", new Date(click_point4).toLocaleString());
+  console.log(
+    "click point4 - click point3: ",
+    `${click_point4 - click_point3}ms`,
+  );
 
   //延时5s后再次执行
   setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
+  const click_point5 = Date.now();
+  console.log("click point5: ", new Date(click_point5).toLocaleString());
+  console.log(
+    "click point5 - click point4: ",
+    `${click_point5 - click_point4}ms`,
+  );
 
   //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock)
+  PageFlyTextTranslate(blockId, shop, ciwiBlock);
+  const click_point6 = Date.now();
+  console.log("click point6: ", new Date(click_point6).toLocaleString());
+  console.log(
+    "click point6 - click point5: ",
+    `${click_point6 - click_point5}ms`,
+  );
 
   // 主页图片替换
   HomeImageTranslate(blockId);
+  const click_point7 = Date.now();
+  console.log("click point7: ", new Date(click_point7).toLocaleString());
+  console.log(
+    "click point7 - click point6: ",
+    `${click_point7 - click_point6}ms`,
+  );
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
@@ -101,12 +141,26 @@ async function ciwiOnload() {
     async () => API.fetchSwitcherConfig({ blockId, shop: shop.value }),
     1000 * 60 * 60,
   );
+  const click_point8 = Date.now();
+  console.log("click point8: ", new Date(click_point8).toLocaleString());
+  console.log(
+    "click point8 - click point7: ",
+    `${click_point8 - click_point7}ms`,
+  );
+
   // RTL 判断
   const selectedTextElement = ciwiBlock.querySelector(
     '.selected-option[data-type="language"] .selected-text',
   );
   const currentLanguage = selectedTextElement?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
+  const click_point9 = Date.now();
+  console.log("click point9: ", new Date(click_point9).toLocaleString());
+  console.log(
+    "click point9 - click point8: ",
+    `${click_point9 - click_point8}ms`,
+  );
+
   // IP 定位逻辑
   if (configData?.ipOpen) {
     const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
@@ -188,6 +242,13 @@ async function ciwiOnload() {
       }
     }
   }
+  const click_point10 = Date.now();
+  console.log("click point10: ", new Date(click_point10).toLocaleString());
+  console.log(
+    "click point10 - click point9: ",
+    `${click_point10 - click_point9}ms`,
+  );
+
   // 初始化语言/货币选择器
   const isCurrencySelectorTakeEffect =
     configData.currencySelector ||
@@ -195,18 +256,39 @@ async function ciwiOnload() {
   const isLanguageSelectorTakeEffect =
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
-  await LanguageSelectorTakeEffect(
+  const click_point11 = Date.now();
+  console.log("click point11: ", new Date(click_point11).toLocaleString());
+  console.log(
+    "click point11 - click point10: ",
+    `${click_point11 - click_point10}ms`,
+  );
+
+  LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
     configData,
     ciwiBlock,
   );
-  await CurrencySelectorTakeEffect(
+  const click_point12 = Date.now();
+  console.log("click point12: ", new Date(click_point12).toLocaleString());
+  console.log(
+    "click point12 - click point11: ",
+    `${click_point12 - click_point11}ms`,
+  );
+
+  CurrencySelectorTakeEffect(
     blockId,
     isCurrencySelectorTakeEffect,
     shop.value,
     configData,
     ciwiBlock,
   );
+  const click_point13 = Date.now();
+  console.log("click point13: ", new Date(click_point13).toLocaleString());
+  console.log(
+    "click point13 - click point12: ",
+    `${click_point13 - click_point12}ms`,
+  );
+
   // UI 样式控制（top/bottom left/right）
   const switcher = ciwiBlock.querySelector("#ciwi-container");
   const mainBox = ciwiBlock.querySelector("#main-box");
@@ -218,6 +300,13 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const click_point14 = Date.now();
+  console.log("click point14: ", new Date(click_point14).toLocaleString());
+  console.log(
+    "click point14 - click point13: ",
+    `${click_point14 - click_point13}ms`,
+  );
+
   if (switcher) {
     if (!configData?.isTransparent) {
       const translateFloatBtnText = ciwiBlock.querySelector(
@@ -294,6 +383,13 @@ async function ciwiOnload() {
       }
     }
   }
+  const click_point15 = Date.now();
+  console.log("click point15: ", new Date(click_point15).toLocaleString());
+  console.log(
+    "click point15 - click point14: ",
+    `${click_point15 - click_point14}ms`,
+  );
+
   // RTL 样式微调
   if (isRtlLanguage && selectedLanguageText) {
     selectedLanguageText.style.transform = "rotate(90deg)";
@@ -305,10 +401,16 @@ async function ciwiOnload() {
   API.fetchSwitcherConfig({ blockId, shop: shop.value })
     .then((fresh) => {
       if (fresh) {
-        localStorage.setItem("ciwi_switcher_config", JSON.stringify(fresh));
+        setWithTTL("ciwi_switcher_config", JSON.stringify(fresh));
       }
     })
     .catch(() => {});
+  const click_point16 = Date.now();
+  console.log("click point16: ", new Date(click_point16).toLocaleString());
+  console.log(
+    "click point16 - click point15: ",
+    `${click_point16 - click_point15}ms`,
+  );
 
   if (isCurrencySelectorTakeEffect) {
     API.fetchCurrencies({ blockId, shop: shop.value })
@@ -319,6 +421,13 @@ async function ciwiOnload() {
       })
       .catch(() => {});
   }
+  const click_point17 = Date.now();
+  console.log("click point17: ", new Date(click_point17).toLocaleString());
+  console.log(
+    "click point17 - click point16: ",
+    `${click_point17 - click_point16}ms`,
+  );
+
   // 刷新缓存
   console.log("onload end (modular+full)");
 }
