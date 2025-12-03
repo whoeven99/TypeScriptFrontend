@@ -416,7 +416,7 @@ async function ciwiOnload() {
     API.fetchCurrencies({ blockId, shop: shop.value })
       .then((fresh) => {
         if (fresh) {
-          localStorage.setItem("ciwi_currency_data", JSON.stringify(fresh));
+          localStorage.setItem("ciwi_currency_data", fresh);
         }
       })
       .catch(() => {});
