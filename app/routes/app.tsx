@@ -598,12 +598,6 @@ export default function App() {
         const targets = languageFetcher.data?.response?.targets;
         globalStore.source = source.code;
 
-        dispatch(
-          setSource({
-            source,
-          }),
-        );
-
         //判断语言数据是否存在，针对用户直接进入language页面的情况，此时可能会出现同时调用setLanguageTableData方法的情况所以保证根路由的优先级较低不覆盖language页面的数据
         if (targets?.length > 0 && source && languageTableData.length == 0) {
           dispatch(setLanguageTableData(targets));
@@ -620,6 +614,11 @@ export default function App() {
             },
           );
         }
+        dispatch(
+          setSource({
+            source,
+          }),
+        );
       }
     }
   }, [languageFetcher.data]);
