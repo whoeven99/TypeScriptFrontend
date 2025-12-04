@@ -471,7 +471,9 @@ const Index = () => {
                           ],
                     )
                   }
-                />
+                >
+                  {t("Region rules")}
+                </Checkbox>
               }
               loading={loadingArray.includes("loading")}
             >
