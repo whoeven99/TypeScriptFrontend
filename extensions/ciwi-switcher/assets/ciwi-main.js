@@ -68,9 +68,6 @@ async function ciwiOnload() {
   );
   const countryInputs = document.querySelectorAll('input[name="country_code"]');
 
-  console.log("languageInputs: ", languageInputs);
-  console.log("countryInputs: ", countryInputs);
-
   // 创建 MutationObserver 监听器
   const observeValueChange = (inputElement, storageKey) => {
     const observer = new MutationObserver((mutationsList) => {
@@ -218,9 +215,9 @@ async function ciwiOnload() {
       const ipCurrency = countryCurMap[countryValue];
 
       //打印日志
-      API.FrontEndPrinting({
+      API.NoCrawlerPrintLog({
         blockId,
-        shop: shop.value,
+        shopName: shop.value,
         ip,
         languageCode: browserLanguage,
         langInclude: availableLanguages.includes(browserLanguage),
