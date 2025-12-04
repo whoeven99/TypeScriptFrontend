@@ -889,7 +889,7 @@ const Index = () => {
                 fontSize: 14,
               }}
             >
-              {t("Next payment time: {{date}}", { date: updateTime })}
+              {t("Next plan update: {{date}}", { date: updateTime })}
             </Text>
           </Flex>
           <AcountInfoCard

@@ -18,8 +18,6 @@ export function renderCurrencyOptions({
   currencyData,
   selectedCurrencyCode,
 }) {
-  console.log("currency: ", currencyData);
-
   optionsList.innerHTML = "";
   currencyData.forEach((currency) => {
     const optionItem = document.createElement("div");

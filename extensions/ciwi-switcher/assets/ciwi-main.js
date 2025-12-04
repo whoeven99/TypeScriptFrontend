@@ -1,6 +1,6 @@
 // main.js
 import * as API from "./ciwi-api.js";
-import { useCacheThenRefresh } from "./ciwi-storage.js";
+import { useCacheThenRefresh, setWithTTL } from "./ciwi-storage.js";
 import {
   CiwiswitcherForm,
   updateDisplayText,
@@ -115,6 +115,7 @@ async function ciwiOnload() {
     });
     return;
   }
+
   // 产品图片翻译（非阻塞）
   ProductImgTranslate(blockId, shop, ciwiBlock);
 
@@ -318,13 +319,13 @@ async function ciwiOnload() {
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
 
-  await LanguageSelectorTakeEffect(
+  LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
     configData,
     ciwiBlock,
   );
 
-  await CurrencySelectorTakeEffect(
+  CurrencySelectorTakeEffect(
     blockId,
     isCurrencySelectorTakeEffect,
     shop.value,
@@ -343,6 +344,7 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+
   if (switcher) {
     if (!configData?.isTransparent) {
       const translateFloatBtnText = ciwiBlock.querySelector(
@@ -438,7 +440,7 @@ async function ciwiOnload() {
   API.fetchSwitcherConfig({ blockId, shop: shop.value })
     .then((fresh) => {
       if (fresh) {
-        localStorage.setItem("ciwi_switcher_config", JSON.stringify(fresh));
+        setWithTTL("ciwi_switcher_config", fresh);
       }
     })
     .catch(() => {});
@@ -452,6 +454,7 @@ async function ciwiOnload() {
       })
       .catch(() => {});
   }
+
   // 刷新缓存
   console.log("onload end (modular+full)");
 }
