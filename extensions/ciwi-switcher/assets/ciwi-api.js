@@ -22,9 +22,9 @@ async function fetchJson(url, options = {}) {
   return { status: res.status, data };
 }
 
-export async function FrontEndPrinting({
+export async function NoCrawlerPrintLog({
   blockId,
-  shop,
+  shopName,
   ip,
   languageCode,
   langInclude,
@@ -37,62 +37,50 @@ export async function FrontEndPrinting({
   error,
 }) {
   try {
-    await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
-      method: "POST",
-      body: JSON.stringify({
-        data: `状态码: ${status}, ${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms${error ? `, ipapi 存在错误返回: ${error}` : ""}`,
-      }),
-    });
-  } catch (err) {
-    console.error("Error FrontEndPrinting:", err);
-  }
-}
-
-export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
-  try {
-    await fetchJson(`${switchUrl(blockId)}/frontEndPrinting`, {
-      method: "POST",
-      body: JSON.stringify({
-        data: `${shop} 检测到爬虫 ${ua}, 原因: ${reason}`,
-      }),
-    });
-  } catch (err) {
-    console.error("Error CrawlerDDetectionReport:", err);
-  }
-}
-
-export const SelectUserIpListByShopNameAndRegion = async ({
-  blockId,
-  shopName,
-  region,
-}) => {
-  try {
-    const response = await fetchJson(
-      `${switchUrl(blockId)}/userIp/selectUserIpListByShopNameAndRegion?shopName=${shopName}&region=${region}`,
+    await fetchJson(
+      `${switchUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
       {
         method: "POST",
+        body: JSON.stringify({
+          status: status,
+          userIp: ip,
+          languageCode: languageCode,
+          languageCodeStatus: langInclude,
+          countryCode: countryCode,
+          currencyCode: currencyCode,
+          currencyCodeStatus: counInclude,
+          costTime: checkUserIpCostTime,
+          ipApiCostTime: fetchUserCountryInfoCostTime,
+          errorMessage: error,
+        }),
       },
     );
-
-    console.log(
-      `${shopName} SelectUserIpListByShopNameAndRegion: `,
-      response.data,
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error(
-      `${shopName} SelectUserIpListByShopNameAndRegion error:`,
-      error,
-    );
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: null,
-    };
+  } catch (err) {
+    console.error("Error NoCrawlerPrintLog:", err);
   }
-};
+}
+
+export async function IncludeCrawlerPrintLog({
+  shopName,
+  blockId,
+  ua,
+  reason,
+}) {
+  try {
+    await fetchJson(
+      `${switchUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          uaInformation: ua,
+          uaReason: reason,
+        }),
+      },
+    );
+  } catch (err) {
+    console.error("Error IncludeCrawlerPrintLog:", err);
+  }
+}
 
 export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
   try {

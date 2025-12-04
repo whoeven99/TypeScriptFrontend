@@ -107,8 +107,8 @@ async function ciwiOnload() {
   const reason = isLikelyBotByUA();
   if (reason) {
     console.warn("⚠️ 疑似爬虫访问", reason);
-    API.CrawlerDDetectionReport({
-      shop: shop.value,
+    API.IncludeCrawlerPrintLog({
+      shopName: shop.value,
       blockId,
       ua: navigator.userAgent,
       reason,
