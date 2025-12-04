@@ -283,7 +283,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             onChange={(e) => handleChange({ e, item: "languageCode" })}
             options={[
               {
-                label: t("Match  visitor's browser"),
+                label: t("Match visitor's browser"),
                 value: "auto",
               },
               ...languageOptions,

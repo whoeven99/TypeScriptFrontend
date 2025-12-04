@@ -307,7 +307,7 @@ const Index = () => {
             </Space>
           );
         } else {
-          return <Text>{t("Match  visitor's browser")}</Text>;
+          return <Text>{t("Match visitor's browser")}</Text>;
         }
       },
     },
@@ -507,7 +507,7 @@ const Index = () => {
                                 item?.languageCode as keyof typeof languageLocaleData
                               ]?.Name
                             }(${item?.languageCode})`
-                          : t("Match  visitor's browser")}
+                          : t("Match visitor's browser")}
                       </Text>
                     </Flex>
                     <Flex justify="space-between">

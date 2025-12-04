@@ -764,5 +764,15 @@
   "Translation quota": "翻訳クオータ",
   "IP geo quota": "IPジオクオータ",
   "requests": "リクエスト",
-  "Buy Credit": "クレジットを購入"
+  "Buy Credit": "クレジットを購入",
+  "Customize Redirects by Region": "地域別にリダイレクトをカスタマイズ",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "訪問者のために地域別のリダイレクトを設定します。もっと地域が必要ですか？あなたの",
+  "Shopify Markets settings": "Shopify Markets 設定",
+  "Region": "地域",
+  "Match visitor's browser": "訪問者のブラウザに一致させる",
+  "Match visitor’s currency": "訪問者の通貨に一致させる",
+  "Configure Redirect Rule": "リダイレクトルールを設定",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "このルールの地域、言語、通貨、リダイレクトURLを定義します。スイッチャーはこれらの設定を使用して訪問者を案内します。",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "Shopify Marketsの規則により、各市場はそのデフォルト通貨を使用する必要があり、通貨のカスタマイズはできません。",
+  "Settings not applied. Please publish the current language first.": "設定が適用されていません。現在の言語をまず公開してください。"
 }

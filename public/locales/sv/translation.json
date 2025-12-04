@@ -764,5 +764,15 @@
   "Translation quota": "Översättningskvot",
   "IP geo quota": "IP geo kvot",
   "requests": "begärningar",
-  "Buy Credit": "Köp kredit"
+  "Buy Credit": "Köp kredit",
+  "Customize Redirects by Region": "Anpassa omdirigeringar per region",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Konfigurera regionspecifika omdirigeringar för dina besökare. Behöver du fler regioner? Lägg till dem i din",
+  "Shopify Markets settings": "Shopify Markets-inställningar",
+  "Region": "Region",
+  "Match visitor's browser": "Matcha besökarens webbläsare",
+  "Match visitor’s currency": "Matcha besökarens valuta",
+  "Configure Redirect Rule": "Konfigurera omdirigeringsregel",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Definiera region, språk, valuta och omdirigerings-URL för denna regel. Switcher kommer att använda dessa inställningar för att dirigera besökare.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "På grund av Shopify Markets regler måste varje marknad använda sin standardvaluta, så valutor kan inte anpassas.",
+  "Settings not applied. Please publish the current language first.": "Inställningar tillämpades inte. Vänligen publicera det aktuella språket först."
 }
