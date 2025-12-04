@@ -71,8 +71,8 @@ async function ciwiOnload() {
   const reason = isLikelyBotByUA();
   if (reason) {
     console.warn("⚠️ 疑似爬虫访问", reason);
-    API.CrawlerDDetectionReport({
-      shop: shop.value,
+    API.IncludeCrawlerPrintLog({
+      shopName: shop.value,
       blockId,
       ua: navigator.userAgent,
       reason,
@@ -149,9 +149,9 @@ async function ciwiOnload() {
           const ip = IpData?.ip;
           const currencyCode = IpData?.currency?.code;
           const countryCode = IpData?.country_code;
-          API.FrontEndPrinting({
+          API.NoCrawlerPrintLog({
             blockId,
-            shop: shop.value,
+            shopName: shop.value,
             ip,
             languageCode: browserLanguage,
             langInclude: availableLanguages.includes(browserLanguage),
