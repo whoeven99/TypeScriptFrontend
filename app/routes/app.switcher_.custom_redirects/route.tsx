@@ -471,9 +471,7 @@ const Index = () => {
                           ],
                     )
                   }
-                >
-                  {t("Custom Liquid")}
-                </Checkbox>
+                />
               }
               loading={loadingArray.includes("loading")}
             >
@@ -485,24 +483,7 @@ const Index = () => {
                     style={{ width: "100%" }}
                   >
                     <Flex justify="space-between">
-                      <Checkbox
-                        checked={selectedRowKeys.includes(item.key)}
-                        onChange={(e: any) => {
-                          setSelectedRowKeys(
-                            e.target.checked
-                              ? [...selectedRowKeys, item.key]
-                              : selectedRowKeys.filter(
-                                  (key) => key !== item.key,
-                                ),
-                          );
-                        }}
-                      >
-                        {t("Text")}{" "}
-                      </Checkbox>
-                      <Text>{item.sourceText}</Text>
-                    </Flex>
-                    <Flex justify="space-between">
-                      <Text>{t("Translation text")}</Text>
+                      <Text>{t("Region")}</Text>
                       <Text>
                         {countryLocaleData[
                           item?.region as keyof typeof countryLocaleData
@@ -514,7 +495,7 @@ const Index = () => {
                       </Text>
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Translation text")}</Text>
+                      <Text>{t("Language")}</Text>
                       <Text>
                         {languageLocaleData[
                           item?.languageCode as keyof typeof languageLocaleData
@@ -528,7 +509,7 @@ const Index = () => {
                       </Text>
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Translation text")}</Text>
+                      <Text>{t("Currency")}</Text>
                       <Text>
                         {currencyLocaleData[
                           item?.currencyCode as keyof typeof currencyLocaleData
