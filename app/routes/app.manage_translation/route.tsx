@@ -577,19 +577,17 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (languageTableData.length > 0) {
-      const newArray = languageTableData.map((language: ShopLocalesType) => ({
-        label: language.name,
-        value: language.locale,
-      }));
-      setSelectOptions(newArray);
-      if (!searchTerm) {
-        setCurrent(newArray[0]?.value);
-      } else {
-        setCurrent(searchTerm);
-      }
-      setLoading(false);
+    const newArray = languageTableData?.map((language: ShopLocalesType) => ({
+      label: language?.name,
+      value: language?.locale,
+    }));
+    setSelectOptions(newArray || []);
+    if (!searchTerm) {
+      setCurrent(newArray[0]?.value);
+    } else {
+      setCurrent(searchTerm);
     }
+    setLoading(false);
   }, [languageTableData]);
 
   useEffect(() => {
@@ -779,6 +777,14 @@ const Index = () => {
       setCurrent(key);
     }
   }, [key, selectOptions]);
+
+  useEffect(() => {
+    console.log("loading: ", loading);
+  }, [loading]);
+
+  // console.log("selectOptions: ", loading);
+  // console.log("selectOptions: ", !!selectOptions.length);
+  // console.log("selectOptions: ", loading || !!selectOptions?.length);
 
   useEffect(() => {
     const findItem = languageItemsData.find(
@@ -1005,18 +1011,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      {!loading && !selectOptions?.length ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "90vh",
-          }}
-        >
-          <NoLanguageSetCard />
-        </div>
-      ) : (
+      {loading || !!selectOptions?.length ? (
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div className="manage-header">
             <div className="manage-header-left">
@@ -1109,6 +1104,8 @@ const Index = () => {
             {/* <div className="manage-content-right"></div> */}
           </div>
         </Space>
+      ) : (
+        <NoLanguageSetCard />
       )}
       <Modal
         title={t("How to import translation data")}
