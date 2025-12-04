@@ -22,7 +22,7 @@ async function fetchJson(url, options = {}) {
   return { status: res.status, data };
 }
 
-export async function FrontEndPrinting({
+export async function NoCrawlerPrintLog({
   blockId,
   shopName,
   ip,
@@ -37,8 +37,8 @@ export async function FrontEndPrinting({
   error,
 }) {
   try {
-    const { data } = await fetchJson(
-      `${switchUrl(blockId)}/frontEndPrinting?shopName=${shopName}`,
+    await fetchJson(
+      `${switchUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -55,21 +55,20 @@ export async function FrontEndPrinting({
         }),
       },
     );
-    return data;
   } catch (err) {
-    console.error("Error FrontEndPrinting:", err);
+    console.error("Error NoCrawlerPrintLog:", err);
   }
 }
 
-export async function CrawlerDDetectionReport({
+export async function IncludeCrawlerPrintLog({
   shopName,
   blockId,
   ua,
   reason,
 }) {
   try {
-    const { data } = await fetchJson(
-      `${switchUrl(blockId)}/frontEndPrinting?shopName=${shopName}`,
+    await fetchJson(
+      `${switchUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -78,9 +77,8 @@ export async function CrawlerDDetectionReport({
         }),
       },
     );
-    return data;
   } catch (err) {
-    console.error("Error CrawlerDDetectionReport:", err);
+    console.error("Error IncludeCrawlerPrintLog:", err);
   }
 }
 
