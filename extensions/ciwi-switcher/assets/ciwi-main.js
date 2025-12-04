@@ -1,6 +1,6 @@
 // main.js
 import * as API from "./ciwi-api.js";
-import { useCacheThenRefresh } from "./ciwi-storage.js";
+import { useCacheThenRefresh, setWithTTL } from "./ciwi-storage.js";
 import {
   CiwiswitcherForm,
   updateDisplayText,
@@ -9,7 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate
+  PageFlyTextTranslate,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -79,6 +79,7 @@ async function ciwiOnload() {
     });
     return;
   }
+
   // 产品图片翻译（非阻塞）
   ProductImgTranslate(blockId, shop, ciwiBlock);
 
@@ -89,7 +90,7 @@ async function ciwiOnload() {
   setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
 
   //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock)
+  PageFlyTextTranslate(blockId, shop, ciwiBlock);
 
   // 主页图片替换
   HomeImageTranslate(blockId);
@@ -101,12 +102,14 @@ async function ciwiOnload() {
     async () => API.fetchSwitcherConfig({ blockId, shop: shop.value }),
     1000 * 60 * 60,
   );
+
   // RTL 判断
   const selectedTextElement = ciwiBlock.querySelector(
     '.selected-option[data-type="language"] .selected-text',
   );
   const currentLanguage = selectedTextElement?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
+
   // IP 定位逻辑
   if (configData?.ipOpen) {
     const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
@@ -188,6 +191,7 @@ async function ciwiOnload() {
       }
     }
   }
+
   // 初始化语言/货币选择器
   const isCurrencySelectorTakeEffect =
     configData.currencySelector ||
@@ -195,18 +199,21 @@ async function ciwiOnload() {
   const isLanguageSelectorTakeEffect =
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
-  await LanguageSelectorTakeEffect(
+
+  LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
     configData,
     ciwiBlock,
   );
-  await CurrencySelectorTakeEffect(
+
+  CurrencySelectorTakeEffect(
     blockId,
     isCurrencySelectorTakeEffect,
     shop.value,
     configData,
     ciwiBlock,
   );
+
   // UI 样式控制（top/bottom left/right）
   const switcher = ciwiBlock.querySelector("#ciwi-container");
   const mainBox = ciwiBlock.querySelector("#main-box");
@@ -218,6 +225,7 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+
   if (switcher) {
     if (!configData?.isTransparent) {
       const translateFloatBtnText = ciwiBlock.querySelector(
@@ -294,6 +302,7 @@ async function ciwiOnload() {
       }
     }
   }
+
   // RTL 样式微调
   if (isRtlLanguage && selectedLanguageText) {
     selectedLanguageText.style.transform = "rotate(90deg)";
@@ -305,7 +314,7 @@ async function ciwiOnload() {
   API.fetchSwitcherConfig({ blockId, shop: shop.value })
     .then((fresh) => {
       if (fresh) {
-        localStorage.setItem("ciwi_switcher_config", JSON.stringify(fresh));
+        setWithTTL("ciwi_switcher_config", fresh);
       }
     })
     .catch(() => {});
@@ -319,6 +328,7 @@ async function ciwiOnload() {
       })
       .catch(() => {});
   }
+
   // 刷新缓存
   console.log("onload end (modular+full)");
 }

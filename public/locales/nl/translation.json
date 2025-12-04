@@ -757,5 +757,11 @@
   "Feature Unavailable": "Functie niet beschikbaar",
   "This feature is available only with the paid plan.": "Deze functie is alleen beschikbaar met het betaalde abonnement.",
   "You’ve reached your term limit": "Je hebt je termijnlimiet bereikt",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Je hebt alle termen toegevoegd die in je huidige plan zijn toegestaan. Om je woordenlijst verder uit te breiden en de vertaalnauwkeurigheid te verbeteren, upgrade je naar een hoger plan voor meer capaciteit."
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Je hebt alle termen toegevoegd die in je huidige plan zijn toegestaan. Om je woordenlijst verder uit te breiden en de vertaalnauwkeurigheid te verbeteren, upgrade je naar een hoger plan voor meer capaciteit.",
+  "Next plan update: {{date}}": "Volgende planupdate: {{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "Planvoordelen: Vertaalcredits vervallen nooit · maandelijks vertaalcredits kunnen worden opgespaard · overdracht van vertaalcredits wordt ondersteund.",
+  "Translation quota": "Vertaalquotum",
+  "IP geo quota": "IP geoquotum",
+  "requests": "verzoeken",
+  "Buy Credit": "Koop krediet"
 }

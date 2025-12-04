@@ -35,6 +35,7 @@ import {
   GetUnTranslatedWords,
   GetAllProgressData,
   IsInFreePlanTime,
+  QueryUserIpCount,
 } from "~/api/JavaServer";
 import { LanguagesDataType, ShopLocalesType } from "./app.language/route";
 import {
@@ -48,6 +49,7 @@ import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setChars,
+  setIpBalance,
   setIsNew,
   setPlan,
   setSource,
@@ -560,7 +562,7 @@ export default function App() {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { plan, chars, totalChars, isNew } = useSelector(
+  const { plan, chars, totalChars, ipBalance, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const initFetcher = useFetcher<any>();
@@ -596,12 +598,6 @@ export default function App() {
         const targets = languageFetcher.data?.response?.targets;
         globalStore.source = source.code;
 
-        dispatch(
-          setSource({
-            source,
-          }),
-        );
-
         //判断语言数据是否存在，针对用户直接进入language页面的情况，此时可能会出现同时调用setLanguageTableData方法的情况所以保证根路由的优先级较低不覆盖language页面的数据
         if (targets?.length > 0 && source && languageTableData.length == 0) {
           dispatch(setLanguageTableData(targets));
@@ -618,6 +614,11 @@ export default function App() {
             },
           );
         }
+        dispatch(
+          setSource({
+            source,
+          }),
+        );
       }
     }
   }, [languageFetcher.data]);
@@ -629,6 +630,9 @@ export default function App() {
     }
     if (!chars || !totalChars) {
       getWords();
+    }
+    if (!ipBalance) {
+      getIpBalance();
     }
     if (isNew === null) {
       checkFreeUsed();
@@ -699,6 +703,16 @@ export default function App() {
     }
   };
 
+  const getIpBalance = async () => {
+    const data = await QueryUserIpCount({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setIpBalance({ ipBalance: data?.response }));
+    }
+  };
+
   const checkFreeUsed = async () => {
     const data = await IsOpenFreePlan({
       shop,
@@ -715,6 +729,7 @@ export default function App() {
         theme={{
           token: {
             colorPrimary: "var(--p-color-bg-fill-brand)",
+            fontSize: 16,
           },
           components: {
             Table: {

@@ -758,5 +758,11 @@
   "Feature Unavailable": "功能無法使用",
   "This feature is available only with the paid plan.": "此功能僅適用於付費方案。",
   "You’ve reached your term limit": "您已達到詞彙上限",
-  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "您已新增了目前方案允許的所有詞彙。若要持續建立詞彙表並提升翻譯準確度，請升級至更高級的方案以獲得更多容量。"
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "您已新增了目前方案允許的所有詞彙。若要持續建立詞彙表並提升翻譯準確度，請升級至更高級的方案以獲得更多容量。",
+  "Next plan update: {{date}}": "下一次計劃更新：{{date}}",
+  "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.": "計劃福利：翻譯點數永不過期 · 每月翻譯點數可以累積 · 支援翻譯點數轉移。",
+  "Translation quota": "翻譯配額",
+  "IP geo quota": "IP 地理配額",
+  "requests": "請求",
+  "Buy Credit": "購買點數"
 }
