@@ -4,6 +4,7 @@
  */
 
 export function setWithTTL(key, value, ttlMs = 1000 * 60 * 60) {
+  if (!value?.success) return;
   const payload = { ts: Date.now(), ttl: ttlMs, data: value };
   try {
     localStorage.setItem(key, JSON.stringify(payload));

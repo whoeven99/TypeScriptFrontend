@@ -764,5 +764,15 @@
   "Translation quota": "Quota di traduzione",
   "IP geo quota": "Quota geografica IP",
   "requests": "richieste",
-  "Buy Credit": "Acquista credito"
+  "Buy Credit": "Acquista credito",
+  "Customize Redirects by Region": "Personalizza i reindirizzamenti per regione",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Configura reindirizzamenti specifici per regione per i tuoi visitatori. Hai bisogno di più regioni? Aggiungile nelle tue",
+  "Shopify Markets settings": "Impostazioni di Shopify Markets",
+  "Region": "Regione",
+  "Match visitor's browser": "Corrispondere al browser del visitatore",
+  "Match visitor’s currency": "Corrispondere alla valuta del visitatore",
+  "Configure Redirect Rule": "Configura la regola di reindirizzamento",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Definisci la regione, la lingua, la valuta e l'URL di reindirizzamento per questa regola. Il Switcher utilizzerà queste impostazioni per indirizzare i visitatori.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "A causa delle regole di Shopify Markets, ogni mercato deve utilizzare la propria valuta predefinita, quindi le valute non possono essere personalizzate.",
+  "Settings not applied. Please publish the current language first.": "Impostazioni non applicate. Pubblica prima la lingua corrente."
 }

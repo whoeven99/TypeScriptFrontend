@@ -4,6 +4,110 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+//ip自定义配置初始化
+export const SyncUserIp = async ({
+  shop,
+  server,
+  initData,
+}: {
+  shop: string;
+  server: string;
+  initData: {
+    region: string;
+    languageCode: string;
+    currencyCode: string;
+  }[];
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userIp/syncUserIp?shopName=${shop}`,
+      method: "POST",
+      data: initData,
+    });
+
+    console.log(`${shop} SyncUserIp: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} SyncUserIp error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+//更新ip自定义配置
+export const UpdateUserIp = async ({
+  shop,
+  server,
+  id,
+  region,
+  languageCode,
+  currencyCode,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+  region: string;
+  languageCode: string;
+  currencyCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userIp/updateUserIp?shopName=${shop}`,
+      method: "POST",
+      data: { id, region, languageCode, currencyCode },
+    });
+
+    console.log(`${shop} UpdateUserIp: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} UpdateUserIp error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+//更新ip自定义配置可用状态
+export const UpdateUserIpStatus = async ({
+  shop,
+  server,
+  id,
+  status,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+  status: boolean;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userIp/updateUserIpStatus?shopName=${shop}&id=${id}&status=${status}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} UpdateUserIpStatus: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} UpdateUserIpStatus error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const QueryUserIpCount = async ({
   shop,
   server,
@@ -2434,36 +2538,28 @@ export const GetCurrencyByShopName = async ({
     const res = response.data?.response;
     console.log("GetCurrencyByShopName: ", res);
 
-    if (Array.isArray(res)) {
-      const data = res?.map((item: any) => ({
-        key: item.id, // 将 id 转换为 key
-        currency: item?.currencyName, // 将 currencyName 作为 currency
-        rounding: item?.rounding,
-        exchangeRate: item?.exchangeRate,
-        currencyCode: item?.currencyCode,
-        primaryStatus: item?.primaryStatus,
-      }));
-      return {
-        success: true,
-        errorCode: 10001,
-        errorMsg: "",
-        response: data,
-      };
-    } else {
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: [],
-      };
-    }
+    const data = res?.map((item: any) => ({
+      key: item?.id, // 将 id 转换为 key
+      currency: item?.currencyName, // 将 currencyName 作为 currency
+      rounding: item?.rounding,
+      exchangeRate: item?.exchangeRate,
+      currencyCode: item?.currencyCode,
+      primaryStatus: item?.primaryStatus,
+    }));
+
+    return {
+      success: true,
+      errorCode: 10001,
+      errorMsg: "",
+      response: data || [],
+    };
   } catch (error) {
-    console.error("Error get currency:", error);
+    console.error("Error GetCurrencyByShopName:", error);
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: [],
+      response: null,
     };
   }
 };
@@ -2689,7 +2785,7 @@ export const GetGlossaryByShopNameLoading = async ({
 
     return {
       success: true,
-      errorCode: 0,
+      errorCode: 10001,
       errorMsg: "",
       response: {
         glossaryTableData: sortedRes,

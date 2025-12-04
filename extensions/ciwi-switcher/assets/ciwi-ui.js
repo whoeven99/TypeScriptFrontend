@@ -622,8 +622,7 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const normalizeText = (text) =>
     text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
 
-  const hasOuterQuote = (text) =>
-    /^["“”]/.test(text) && /["“”]$/.test(text);
+  const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
 
   // ❌ 不应替换内容的标签
   const skipTags = new Set([
@@ -673,7 +672,7 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
           // ✅ 可以替换
           return NodeFilter.FILTER_ACCEPT;
         },
-      }
+      },
     );
 
     const nodesToReplace = [];
@@ -861,6 +860,7 @@ export class CiwiswitcherForm extends HTMLElement {
       languageOptions?.forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
       this.elements.languageInput.value = value;
+      localStorage.setItem("ciwi_selected_language", value);
     } else if (selectorType === "currency") {
       const symbol = option.querySelector(".currency-symbol")?.textContent;
       if (selectedCurrencySymbol) {
@@ -992,20 +992,6 @@ export class CiwiswitcherForm extends HTMLElement {
 
     // 旋转箭头
     this.rotateArrow("#mainbox-arrow-icon", isVisible ? 0 : 180);
-  }
-
-  updateLanguage(event) {
-    const selectedLanguage = event.target.value;
-    if (this.elements.languageInput) {
-      this.elements.languageInput.value = selectedLanguage;
-    }
-  }
-
-  updateCurrency(event) {
-    const selectedCurrency = event.target.value;
-    if (this.elements.currencyInput) {
-      this.elements.currencyInput.value = selectedCurrency;
-    }
   }
 
   rotateArrow(elementId, degrees) {

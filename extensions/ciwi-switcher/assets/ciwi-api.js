@@ -153,40 +153,64 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
 }
 
 export async function fetchSwitcherConfig({ blockId, shop }) {
-  const { data } = await fetchJson(
-    `${switchUrl(blockId)}/widgetConfigurations/getData`,
-    {
-      method: "POST",
-      body: JSON.stringify({ shopName: shop }),
-    },
-  );
-
-  const initData = {
-    shopName: shop,
-    includedFlag: true,
-    languageSelector: true,
-    currencySelector: true,
-    ipOpen: false,
-    fontColor: "#000000",
-    backgroundColor: "#ffffff",
-    buttonColor: "#ffffff",
-    buttonBackgroundColor: "#000000",
-    optionBorderColor: "#ccc",
-    selectorPosition: "bottom_left",
-    positionData: 10,
-  };
-
-  if (
-    data.success &&
-    typeof data.response === "object" &&
-    data.response !== null
-  ) {
-    const filteredResponse = Object.fromEntries(
-      Object.entries(data.response).filter(([_, value]) => value !== null),
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/widgetConfigurations/getData`,
+      {
+        method: "POST",
+        body: JSON.stringify({ shopName: shop }),
+      },
     );
-    return { ...initData, ...filteredResponse };
-  } else {
-    return initData;
+
+    const initData = {
+      shopName: shop,
+      includedFlag: true,
+      languageSelector: true,
+      currencySelector: true,
+      ipOpen: false,
+      ipRedirections: [],
+      fontColor: "#000000",
+      backgroundColor: "#ffffff",
+      buttonColor: "#ffffff",
+      buttonBackgroundColor: "#000000",
+      optionBorderColor: "#ccc",
+      selectorPosition: "bottom_left",
+      positionData: 10,
+    };
+
+    if (
+      data.success &&
+      typeof data.response === "object" &&
+      data.response !== null
+    ) {
+      const filteredResponse = Object.fromEntries(
+        Object.entries(data.response).filter(([_, value]) => value !== null),
+      );
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: {
+          ...initData,
+          ...filteredResponse,
+        },
+      };
+    } else {
+      return {
+        success: true,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: initData,
+      };
+    }
+  } catch (error) {
+    console.error(`${shop} fetchSwitcherConfig error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
 }
 
@@ -235,7 +259,8 @@ export async function checkUserIp({ blockId, shop }) {
       `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
       { method: "POST" },
     );
-    return data?.response;
+
+    return data;
   } catch (err) {
     console.error("Error checkUserIp:", err);
     return null;

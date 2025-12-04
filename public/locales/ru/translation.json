@@ -764,5 +764,15 @@
   "Translation quota": "Квота на перевод",
   "IP geo quota": "Географическая квота IP",
   "requests": "запросы",
-  "Buy Credit": "Купить кредит"
+  "Buy Credit": "Купить кредит",
+  "Customize Redirects by Region": "Настроить редиректы по регионам",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Настройте редиректы, специфичные для региона, для ваших посетителей. Нужно больше регионов? Добавьте их в вашем",
+  "Shopify Markets settings": "Настройки Shopify Markets",
+  "Region": "Регион",
+  "Match visitor's browser": "Совпадение с браузером посетителя",
+  "Match visitor’s currency": "Совпадение с валютой посетителя",
+  "Configure Redirect Rule": "Настроить правило редиректа",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Определите регион, язык, валюту и URL редиректа для этого правила. Переключатель будет использовать эти настройки для перенаправления посетителей.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "В соответствии с правилами Shopify Markets каждый рынок должен использовать свою валюту по умолчанию, поэтому валюты не могут быть настроены.",
+  "Settings not applied. Please publish the current language first.": "Настройки не применены. Пожалуйста, сначала опубликуйте текущий язык."
 }
