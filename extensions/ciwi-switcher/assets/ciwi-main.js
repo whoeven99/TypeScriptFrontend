@@ -62,6 +62,42 @@ const rtlLanguages = [
 
 async function ciwiOnload() {
   console.log("onload start (modular+full)");
+
+  const languageInputs = document.querySelectorAll(
+    'input[name="language_code"], input[name="locale_code"]',
+  );
+  const countryInputs = document.querySelectorAll('input[name="country_code"]');
+
+  console.log("languageInputs: ", languageInputs);
+  console.log("countryInputs: ", countryInputs);
+
+  // 创建 MutationObserver 监听器
+  const observeValueChange = (inputElement, storageKey) => {
+    const observer = new MutationObserver((mutationsList) => {
+      mutationsList.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "value"
+        ) {
+          console.log(`value has changed: `, inputElement.value);
+          localStorage.setItem(storageKey, inputElement.value);
+        }
+      });
+    });
+
+    observer.observe(inputElement, { attributes: true });
+  };
+
+  // 为每个语言输入字段添加 MutationObserver
+  languageInputs.forEach((languageInput) => {
+    observeValueChange(languageInput, "ciwi_selected_language");
+  });
+
+  // 为每个地区输入字段添加 MutationObserver
+  countryInputs.forEach((countryInput) => {
+    observeValueChange(countryInput, "ciwi_selected_country");
+  });
+
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
@@ -106,9 +142,10 @@ async function ciwiOnload() {
     ? fetchSwitcherConfig?.response
     : null;
 
-  //获取地区信息和货币信息的缓存，用来判断是否需要ip定位
-  const storedCountry = localStorage.getItem("ciwi_selected_country");
+  //获取语言信息、地区信息和货币信息的缓存，用来判断是否需要ip定位
+  const storedLanguage = localStorage.getItem("ciwi_selected_language");
   const storedCurrency = localStorage.getItem("ciwi_selected_currency");
+  const storedCountry = localStorage.getItem("ciwi_selected_country");
 
   //获取当前语言和地区
   const languageValue = ciwiBlock.querySelector(
@@ -148,7 +185,7 @@ async function ciwiOnload() {
   ).map((link) => link.getAttribute("data-value"));
 
   // IP 定位逻辑
-  if (needRedirection) {
+  if (needRedirection && configData?.ipOpen) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
@@ -206,9 +243,6 @@ async function ciwiOnload() {
   const ipRedirectionLanguageValue = ipRedirection?.languageCode || "auto";
   const ipRedirectionCurrencyValue = ipRedirection?.currencyCode || "auto";
 
-  //获取用户自定义的语言信息和货币信息的缓存
-  const storedLanguage = localStorage.getItem("ciwi_selected_language");
-
   //更新应当跳转的货币和语言
   detectedLanguage = storedLanguage
     ? storedLanguage
@@ -225,6 +259,8 @@ async function ciwiOnload() {
   detectedLanguage = availableLanguages.includes(detectedLanguage)
     ? detectedLanguage
     : languageValue;
+
+  localStorage.setItem("ciwi_selected_language", detectedLanguage);
 
   //缓存货币数据
   if (detectedCurrency != storedCountry && detectedCurrency) {
@@ -259,29 +295,17 @@ async function ciwiOnload() {
   console.log("needRedirection: ", needRedirection);
 
   //不在主题编辑器内
-  if (!isInThemeEditor) {
+  if (!isInThemeEditor && configData?.ipOpen) {
     //需要定位逻辑
-    if (needRedirection) {
-      if (
-        detectedCountry &&
-        detectedLanguage &&
-        (detectedCountry !== countryValue || detectedLanguage !== languageValue)
-      ) {
-        updateLocalization({
-          country: detectedCountry || countryValue,
-          language: detectedLanguage || languageValue,
-        });
-      }
-    }
-    //不需要定位但是用户切换地区后的逻辑
-    else {
-      if (detectedCountry && detectedCountry !== storedCountry) {
-        localStorage.setItem("ciwi_selected_country", detectedCountry);
-        updateLocalization({
-          country: detectedCountry || countryValue,
-          language: detectedLanguage || languageValue,
-        });
-      }
+    if (
+      detectedCountry &&
+      detectedLanguage &&
+      (detectedCountry !== countryValue || detectedLanguage !== languageValue)
+    ) {
+      updateLocalization({
+        country: detectedCountry || countryValue,
+        language: detectedLanguage || languageValue,
+      });
     }
   }
 

@@ -167,9 +167,10 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
 export async function fetchSwitcherConfig({ blockId, shop }) {
   try {
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/widgetConfigurations/getData?shopName=${shop}`,
+      `${switchUrl(blockId)}/widgetConfigurations/getData`,
       {
         method: "POST",
+        body: JSON.stringify({ shopName: shop }),
       },
     );
 
