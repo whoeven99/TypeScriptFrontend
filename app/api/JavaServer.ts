@@ -918,8 +918,11 @@ export const WidgetConfigurations = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${server}/widgetConfigurations/getData?shopName=${shop}`,
+      url: `${server}/widgetConfigurations/getData`,
       method: "POST",
+      data: {
+        shopName: shop,
+      },
     });
 
     console.log(`${shop} WidgetConfigurations: `, response.data);
