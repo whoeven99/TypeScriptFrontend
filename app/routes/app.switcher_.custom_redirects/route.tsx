@@ -239,7 +239,9 @@ const Index = () => {
         market?.conditions?.regionsCondition?.regions?.nodes || [];
 
       const currencyCode =
-        market?.currencySettings?.baseCurrency?.currencyCode || null;
+        market?.handle == "international"
+          ? "auto"
+          : market?.currencySettings?.baseCurrency?.currencyCode;
 
       regions.forEach((region: any) => {
         if (!region?.id) return;
