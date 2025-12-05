@@ -763,5 +763,15 @@
   "Translation quota": "번역 할당량",
   "IP geo quota": "IP 지역 할당량",
   "requests": "요청",
-  "Buy Credit": "크레딧 구매"
+  "Buy Credit": "크레딧 구매",
+  "Customize Redirects by Region": "지역별 리디렉션 맞춤 설정",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "방문자를 위한 지역별 리디렉션을 설정하세요. 더 많은 지역이 필요하신가요? 귀하의",
+  "Shopify Markets settings": "Shopify Markets 설정",
+  "Region": "지역",
+  "Match visitor's browser": "방문자의 브라우저와 일치",
+  "Match visitor’s currency": "방문자의 통화와 일치",
+  "Configure Redirect Rule": "리디렉션 규칙 설정",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "이 규칙에 대한 지역, 언어, 통화 및 리디렉션 URL을 정의하세요. 스위처는 이러한 설정을 사용하여 방문자를 안내합니다.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "Shopify Markets 규정에 따라 각 시장은 기본 통화를 사용해야 하므로 통화를 사용자 정의할 수 없습니다.",
+  "Settings not applied. Please publish the current language first.": "설정이 적용되지 않았습니다. 현재 언어를 먼저 게시하세요."
 }

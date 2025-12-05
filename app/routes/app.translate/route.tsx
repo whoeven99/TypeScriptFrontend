@@ -42,11 +42,6 @@ import languageLocaleData from "~/utils/language-locale-data";
 
 const { Title, Text } = Typography;
 
-interface LanguageSettingType {
-  primaryLanguage: string;
-  primaryLanguageCode: string;
-}
-
 export interface apiKeyConfiguration {
   apiModel: string;
   apiName: Number;
@@ -239,7 +234,9 @@ const Index = () => {
 
   //更新语言数据，增加src、localeName、status字段
   useEffect(() => {
-    if (languageData?.length > 0 && source.code) {
+    if (source.code) {
+      const shopLocalesIndex = languageData?.map((item: any) => item?.locale);
+
       let data = languageData.map((lang: any) => ({
         key: lang?.locale,
         name: lang?.name,
@@ -251,6 +248,7 @@ const Index = () => {
           languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
             ?.Local,
       }));
+
       const GetLanguageDataFront = async () => {
         const languageList = await GetLanguageList({
           shop,
@@ -274,7 +272,7 @@ const Index = () => {
       };
       GetLanguageDataFront();
     }
-  }, [source.code]);
+  }, [source]);
 
   useEffect(() => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {

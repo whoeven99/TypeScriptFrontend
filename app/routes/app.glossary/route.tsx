@@ -417,16 +417,7 @@ const Index = () => {
           {t("Create translation rules for certain words and phrases")}
         </Text>
         {!shopLocales?.length && !loading ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: "90vh",
-            }}
-          >
-            <NoLanguageSetCard />
-          </div>
+          <NoLanguageSetCard />
         ) : (
           <div className={styles.languageTable_action}>
             <Flex

@@ -1,5 +1,5 @@
 import { ActionFunctionArgs } from "react-router";
-import { queryShop } from "~/api/admin";
+import { queryMarketDomainData } from "~/api/admin";
 import {
   InitCurrency,
   AddCurrency,
@@ -7,6 +7,7 @@ import {
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import currencyLocaleData from "~/utils/currency-locale-data";
+import countryCurMap from "~/utils/country-cur-map";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -14,41 +15,64 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const primaryCurrency = await InitCurrency({ shop });
-    const shopLoad = await queryShop({
+    const marketDomainData = await queryMarketDomainData({
       shop,
       accessToken: accessToken as string,
     });
-    const url = new URL("/currencies.json", request.url).toString();
-    // const currencyLocaleData = await fetch(url)
-    //   .then((response) => response.json())
-    //   .catch((error) =>
-    //     console.error("Error loading currencyLocaleData:", error),
-    //   );
-    if (!primaryCurrency?.response) {
-      const currencyData = shopLoad.currencySettings.nodes
-        .filter((item1: any) => item1.enabled)
-        .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
-        .map((item3: any) => ({
-          currencyName:
-            currencyLocaleData[
-              item3.currencyCode as keyof typeof currencyLocaleData
-            ]?.currencyName || "",
-          currencyCode: item3.currencyCode,
-          primaryStatus: 0,
-        }));
+    console.log("marketDomainData: ", marketDomainData?.markets?.nodes);
 
-      currencyData.push({
+    const newPrimaryCode = marketDomainData?.shop?.currencyCode;
+
+    if (!primaryCurrency?.response) {
+      //地区对应货币代码数组
+      const regionCurArray: string[] = []; 
+
+      //接口AddCurrency数据
+      let AddCurrencyArray: any[] = []; 
+
+      //筛选regionCurArray数据
+      marketDomainData?.markets?.nodes?.forEach((market: any) => {
+        const regions =
+          market?.conditions?.regionsCondition?.regions?.nodes || [];
+
+        regions.forEach((region: any) => {
+          if (!region?.code) return;
+          const currencyCode =
+            countryCurMap[region.code as keyof typeof countryCurMap];
+
+          if (!regionCurArray.includes(currencyCode)) {
+            regionCurArray.push(currencyCode);
+          }
+        });
+      });
+
+      //当regionCurArray存在时创建非默认货币数据
+      if (regionCurArray.length) {
+        AddCurrencyArray = regionCurArray.map((item) => {
+          if (item == newPrimaryCode) return;
+          return {
+            currencyName:
+              currencyLocaleData[item as keyof typeof currencyLocaleData]
+                ?.currencyName || "",
+            currencyCode: item,
+            primaryStatus: 0,
+          };
+        });
+      }
+
+      //添加默认货币数据
+      AddCurrencyArray.push({
         currencyName:
-          currencyLocaleData[
-            shopLoad.currencyCode as keyof typeof currencyLocaleData
-          ]?.currencyName || "",
-        currencyCode: shopLoad.currencyCode,
+          currencyLocaleData[newPrimaryCode as keyof typeof currencyLocaleData]
+            ?.currencyName || "",
+        currencyCode: newPrimaryCode,
         primaryStatus: 1,
       });
 
-      console.log(`应用日志: ${shop} 初始化货币`, currencyData);
+      console.log(`应用日志: ${shop} 初始化货币`, AddCurrencyArray);
 
-      const promises = currencyData.map((currency: any) =>
+      //调用AddCurrency接口添加数据
+      const promises = AddCurrencyArray.map((currency: any) =>
         AddCurrency({
           shop,
           server: process.env.SERVER_URL as string,
@@ -58,16 +82,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }),
       );
       await Promise.allSettled(promises);
-    } else if (
-      shopLoad.currencyCode !== primaryCurrency?.response?.currencyCode
-    ) {
+    } else if (newPrimaryCode !== primaryCurrency?.response?.currencyCode) {
+      //更新默认货币数据
       await UpdateDefaultCurrency({
         shop,
         currencyName:
-          currencyLocaleData[
-            shopLoad.currencyCode as keyof typeof currencyLocaleData
-          ]?.currencyName,
-        currencyCode: shopLoad.currencyCode,
+          currencyLocaleData[newPrimaryCode as keyof typeof currencyLocaleData]
+            ?.currencyName,
+        currencyCode: newPrimaryCode,
         primaryStatus: 1,
       });
     }
@@ -91,26 +113,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       errorCode: 0,
       errorMsg: "",
       response: {
-        defaultCurrencyCode: shopLoad.currencyCode,
+        defaultCurrencyCode: newPrimaryCode,
         currencyLocaleData: currencyLocaleDataArray,
       },
     };
   } catch (error) {
     console.error("Error currencyInit: ", error);
-    const url = new URL("/currencies.json", request.url).toString();
-    const currencyLocaleData = await fetch(url)
-      .then((response) => response.json())
-      .catch((error) =>
-        console.error("Error loading currencyLocaleData:", error),
-      );
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: {
-        defaultCurrencyCode: "",
-        currencyLocaleData: currencyLocaleData,
-      },
+      response: null,
     };
   }
 };

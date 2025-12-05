@@ -763,5 +763,15 @@
   "Translation quota": "Квота на переклад",
   "IP geo quota": "Географічна квота IP",
   "requests": "запити",
-  "Buy Credit": "Купити кредит"
+  "Buy Credit": "Купити кредит",
+  "Customize Redirects by Region": "Налаштувати перенаправлення за регіонами",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Налаштуйте перенаправлення для ваших відвідувачів за регіонами. Потрібно більше регіонів? Додайте їх у ваші",
+  "Shopify Markets settings": "Налаштування Shopify Markets",
+  "Region": "Регіон",
+  "Match visitor's browser": "Збігати з браузером відвідувача",
+  "Match visitor’s currency": "Збігати з валютою відвідувача",
+  "Configure Redirect Rule": "Налаштувати правило перенаправлення",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Визначте регіон, мову, валюту та URL перенаправлення для цього правила. Перемикач використовуватиме ці налаштування для направлення відвідувачів.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "Згідно з правилами Shopify Markets, кожен ринок повинен використовувати свою валюту за замовчуванням, тому валюти не можна налаштувати.",
+  "Settings not applied. Please publish the current language first.": "Налаштування не застосовані. Будь ласка, спершу опублікуйте поточну мову."
 }

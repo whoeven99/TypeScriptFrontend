@@ -764,5 +764,15 @@
   "Translation quota": "翻譯配額",
   "IP geo quota": "IP 地理配額",
   "requests": "請求",
-  "Buy Credit": "購買點數"
+  "Buy Credit": "購買點數",
+  "Customize Redirects by Region": "根據區域自訂重定向",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "為您的訪客設置區域特定的重定向。需要更多區域嗎？請在您的",
+  "Shopify Markets settings": "Shopify Markets 設定",
+  "Region": "區域",
+  "Match visitor's browser": "匹配訪客的瀏覽器",
+  "Match visitor’s currency": "匹配訪客的貨幣",
+  "Configure Redirect Rule": "設置重定向規則",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "為此規則定義區域、語言、貨幣和重定向 URL。Switch會根據這些設置引導訪客。",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "根據 Shopify Markets 規則，每個市場必須使用其默認貨幣，因此無法自訂貨幣。",
+  "Settings not applied. Please publish the current language first.": "設定未應用。請先發布當前語言。"
 }

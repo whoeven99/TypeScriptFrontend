@@ -764,5 +764,15 @@
   "Translation quota": "Çeviri kotası",
   "IP geo quota": "IP coğrafi kotası",
   "requests": "istekler",
-  "Buy Credit": "Kredi al"
+  "Buy Credit": "Kredi al",
+  "Customize Redirects by Region": "Bölgeye göre yönlendirmeleri özelleştir",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Ziyaretçileriniz için bölgeye özel yönlendirmeler yapılandırın. Daha fazla bölgeye ihtiyacınız var mı? Bunları şu şekilde ekleyin",
+  "Shopify Markets settings": "Shopify Markets ayarları",
+  "Region": "Bölge",
+  "Match visitor's browser": "Ziyaretçinin tarayıcısına göre eşleştir",
+  "Match visitor’s currency": "Ziyaretçinin parasına göre eşleştir",
+  "Configure Redirect Rule": "Yönlendirme Kuralını Yapılandır",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Bu kural için bölge, dil, para birimi ve yönlendirme URL'sini tanımlayın. Switcher, ziyaretçileri yönlendirmek için bu ayarları kullanacaktır.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "Shopify Markets kuralları nedeniyle her pazar kendi varsayılan para birimini kullanmalıdır, bu yüzden para birimleri özelleştirilemez.",
+  "Settings not applied. Please publish the current language first.": "Ayarlar uygulanmadı. Lütfen önce mevcut dili yayınlayın."
 }

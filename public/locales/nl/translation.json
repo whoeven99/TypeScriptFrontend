@@ -763,5 +763,15 @@
   "Translation quota": "Vertaalquotum",
   "IP geo quota": "IP geoquotum",
   "requests": "verzoeken",
-  "Buy Credit": "Koop krediet"
+  "Buy Credit": "Koop krediet",
+  "Customize Redirects by Region": "Pas doorverwijzingen per regio aan",
+  "Configure region-specific redirects for your visitors. Need more regions? Add them in your": "Stel regio-specifieke doorverwijzingen in voor uw bezoekers. Meer regio's nodig? Voeg ze toe in uw",
+  "Shopify Markets settings": "Shopify Markets instellingen",
+  "Region": "Regio",
+  "Match visitor's browser": "Koppel aan de browser van de bezoeker",
+  "Match visitor’s currency": "Koppel aan de valuta van de bezoeker",
+  "Configure Redirect Rule": "Configureer doorverwijsregel",
+  "Define the region, language, currency, and redirect URL for this rule. The Switcher will use these settings to direct visitors.": "Definieer de regio, taal, valuta en doorverwijs-URL voor deze regel. De Switcher zal deze instellingen gebruiken om bezoekers door te sturen.",
+  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.": "Vanwege de regels van Shopify Markets moet elke markt de standaardvaluta gebruiken, dus valuta's kunnen niet worden aangepast.",
+  "Settings not applied. Please publish the current language first.": "Instellingen niet toegepast. Publiceer eerst de huidige taal."
 }
