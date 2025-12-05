@@ -1664,66 +1664,66 @@ export const GetUserWords = async ({
 };
 
 //获取本地化信息
-export const GetLanguageLocaleInfo = async ({
-  server,
-  locale,
-}: {
-  server: string;
-  locale: string[];
-}) => {
-  // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
-  const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
+// export const GetLanguageLocaleInfo = async ({
+//   server,
+//   locale,
+// }: {
+//   server: string;
+//   locale: string[];
+// }) => {
+//   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
+//   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
-  try {
-    const response = await axios({
-      url: `${server}/shopify/getImageInfo`,
-      method: "POST",
-      data: updatedLocales,
-    });
-    if (response.data?.success) {
-      const data = response.data?.response;
-      const res = Object.keys(data).reduce(
-        (
-          acc: {
-            [key: string]: {
-              isoCode: string;
-              Local: string;
-              countries: [];
-              Name: string;
-            };
-          },
-          key,
-        ) => {
-          // 将 key 中的 "_" 替换为 "-"
-          const newKey = key.replace("_", "-");
-          // 保持原来的值，重新赋值给新键
-          acc[newKey] = data[key];
-          return acc;
-        },
-        {},
-      );
-      return {
-        ...response.data,
-        response: res,
-      };
-    } else {
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: undefined,
-      };
-    }
-  } catch (error) {
-    console.error("Error occurred in the languageData:", error);
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: undefined,
-    };
-  }
-};
+//   try {
+//     const response = await axios({
+//       url: `${server}/shopify/getImageInfo`,
+//       method: "POST",
+//       data: updatedLocales,
+//     });
+//     if (response.data?.success) {
+//       const data = response.data?.response;
+//       const res = Object.keys(data).reduce(
+//         (
+//           acc: {
+//             [key: string]: {
+//               isoCode: string;
+//               Local: string;
+//               countries: [];
+//               Name: string;
+//             };
+//           },
+//           key,
+//         ) => {
+//           // 将 key 中的 "_" 替换为 "-"
+//           const newKey = key.replace("_", "-");
+//           // 保持原来的值，重新赋值给新键
+//           acc[newKey] = data[key];
+//           return acc;
+//         },
+//         {},
+//       );
+//       return {
+//         ...response.data,
+//         response: res,
+//       };
+//     } else {
+//       return {
+//         success: false,
+//         errorCode: 10001,
+//         errorMsg: "SERVER_ERROR",
+//         response: undefined,
+//       };
+//     }
+//   } catch (error) {
+//     console.error("Error occurred in the languageData:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: undefined,
+//     };
+//   }
+// };
 
 //查询语言状态
 export const GetLanguageList = async ({
