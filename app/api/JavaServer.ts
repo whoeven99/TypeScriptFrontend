@@ -374,7 +374,10 @@ export const GetAllProgressData = async ({
       method: "POST",
     });
 
-    console.log(`${shop} GetAllProgressData: `, response.data);
+    console.log(
+      `应用日志: ${shop} GetAllProgressData: `,
+      response.data?.response?.list,
+    );
 
     return response.data;
   } catch (error) {
