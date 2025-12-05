@@ -63,6 +63,19 @@ const rtlLanguages = [
 async function ciwiOnload() {
   console.log("onload start (modular+full)");
 
+  //超过7天清理缓存
+  const ipOccTime = Number(
+    localStorage.getItem("ciwi_iplocation_occurrence_time"),
+  );
+  const now = Date.now();
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (ipOccTime && now - ipOccTime > sevenDays) {
+    localStorage.removeItem("ciwi_selected_language");
+    localStorage.removeItem("ciwi_selected_currency");
+    localStorage.removeItem("ciwi_selected_country");
+    localStorage.removeItem("ciwi_iplocation_occurrence_time");
+  }
+
   const languageInputs = document.querySelectorAll(
     'input[name="language_code"], input[name="locale_code"]',
   );
@@ -203,6 +216,9 @@ async function ciwiOnload() {
       //调用ipapi接口
       const IpData = await API.fetchUserCountryInfo(iptokenValue);
 
+      localStorage.setItem("ciwi_iplocation_occurrence_time", Date.now);
+
+      //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
 
       //ip信息
