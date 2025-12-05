@@ -64,16 +64,14 @@ async function ciwiOnload() {
   console.log("onload start (modular+full)");
 
   //超过7天清理缓存
-  const ipOccTime = Number(
-    localStorage.getItem("ciwi_iplocation_occurrence_time"),
-  );
+  const expireAt = Number(localStorage.getItem("ciwi_iplocation_expire_at"));
   const now = Date.now();
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  if (ipOccTime && now - ipOccTime > sevenDays) {
+
+  if (expireAt && now > expireAt) {
     localStorage.removeItem("ciwi_selected_language");
     localStorage.removeItem("ciwi_selected_currency");
     localStorage.removeItem("ciwi_selected_country");
-    localStorage.removeItem("ciwi_iplocation_occurrence_time");
+    localStorage.removeItem("ciwi_iplocation_expire_at");
   }
 
   const languageInputs = document.querySelectorAll(
@@ -216,8 +214,10 @@ async function ciwiOnload() {
       //调用ipapi接口
       const IpData = await API.fetchUserCountryInfo(iptokenValue);
 
-      localStorage.setItem("ciwi_iplocation_occurrence_time", Date.now);
-
+      localStorage.setItem(
+        "ciwi_iplocation_expire_at",
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      );
       //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
 
