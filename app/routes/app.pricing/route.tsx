@@ -5,12 +5,10 @@ import {
   Row,
   Col,
   Card,
-  Progress,
   Button,
   Typography,
   Alert,
   Skeleton,
-  Popover,
   Badge,
   Flex,
   Switch,
@@ -23,12 +21,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { GetLatestActiveSubscribeId } from "~/api/JavaServer";
+import { ActionFunctionArgs } from "@remix-run/node";
+import { GetLatestActiveSubscribeId, QueryUserIpCount } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
-import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
 import {
   mutationAppPurchaseOneTimeCreate,
@@ -36,14 +34,18 @@ import {
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { handleContactSupport } from "../app._index/route";
-import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
+import {
+  setIpBalance,
+  setPlan,
+  setUpdateTime,
+} from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import BuyCreditsOuterCard from "./components/buyCreditsOuterCard";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 //计划名与其对应价格Map
 const priceTable: Record<
@@ -58,6 +60,12 @@ const priceTable: Record<
   "10M": { base: 79.99, Premium: 39.99, Pro: 59.99, Basic: 71.99 },
   "20M": { base: 159.99, Premium: 79.99, Pro: 119.99, Basic: 143.99 },
   "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
+};
+
+export const loader = async () => {
+  return {
+    server: process.env.SERVER_URL,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -150,7 +158,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: undefined,
         };
       }
-      
+
     case !!cancelId:
       try {
         const response = await admin.graphql(
@@ -179,6 +187,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return data;
       } catch (error) {
         console.error("Error cancelId action:", error);
+        return null;
       }
   }
   return null;
@@ -195,6 +204,8 @@ const Index = () => {
   );
 
   const { reportClick, report } = useReport();
+
+  const { server } = useLoaderData<typeof loader>();
 
   //价格选项数组
   const creditOptions: OptionType[] = useMemo(
@@ -329,8 +340,6 @@ const Index = () => {
   useEffect(() => {
     if (payFetcher.data) {
       if (payFetcher.data?.success) {
-        console.log(payFetcher.data?.response);
-
         const order =
           payFetcher.data?.response?.appPurchaseOneTimeCreate
             ?.appPurchaseOneTime;
@@ -397,6 +406,7 @@ const Index = () => {
         }),
       );
       dispatch(setUpdateTime({ updateTime: "" }));
+      dispatch(setIpBalance({ ipBalance: 500 }));
       setCancelPlanWarnModal(false);
     }
   }, [planCancelFetcher.data]);

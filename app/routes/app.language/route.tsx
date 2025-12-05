@@ -32,10 +32,8 @@ import {
 } from "~/store/modules/languageTableData";
 import {
   GetLanguageList,
-  GetLanguageLocaleInfo,
   GetTranslate,
   UpdateAutoTranslateByData,
-  GoogleAnalyticClickReport,
 } from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
