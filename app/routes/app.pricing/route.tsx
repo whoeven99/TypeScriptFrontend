@@ -406,7 +406,7 @@ const Index = () => {
         }),
       );
       dispatch(setUpdateTime({ updateTime: "" }));
-      getIpBalance();
+      dispatch(setIpBalance({ ipBalance: 500 }));
       setCancelPlanWarnModal(false);
     }
   }, [planCancelFetcher.data]);
@@ -793,16 +793,6 @@ const Index = () => {
       },
     },
   ];
-
-  const getIpBalance = async () => {
-    const data = await QueryUserIpCount({
-      shop: globalStore?.shop || "",
-      server: server || "",
-    });
-    if (data?.success) {
-      dispatch(setIpBalance({ ipBalance: data?.response }));
-    }
-  };
 
   const handleSetYearlyReport = () => {
     setYearly(!yearly);
