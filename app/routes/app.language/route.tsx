@@ -327,7 +327,6 @@ const Index = () => {
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
-  const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
 
   useEffect(() => {
@@ -418,9 +417,6 @@ const Index = () => {
         );
         const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
           (language: any) => !language?.primary,
-        );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item: any) => item?.locale,
         );
         let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
           key: lang?.locale,
