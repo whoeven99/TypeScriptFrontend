@@ -296,7 +296,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             {t("Currency")}:
           </Text>
           <Select
-            style={{ width: "100%" }}
+            style={{ flex: 1 }}
             onChange={(e) => handleChange({ e, item: "currencyCode" })}
             options={[
               {
