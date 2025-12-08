@@ -14,10 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // å¼
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -26,6 +23,8 @@ import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { LoadingOutlined } from "@ant-design/icons";
+import { ColumnGroupType, ColumnType } from "antd/es/table";
 
 const { Sider, Content } = Layout;
 
@@ -50,9 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const startCursor = JSON.parse(formData.get("startCursor") as string);
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!startCursor:
       try {
@@ -455,7 +452,7 @@ const Index = () => {
     }
   }, [confirmData]);
 
-  const resourceColumns = [
+  const resourceColumns: (ColumnGroupType<any> | ColumnType<any>)[] = [
     {
       title: t("Resource"),
       dataIndex: "resource",
@@ -504,7 +501,9 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
+      align: "center",
       render: (_: any, record: any) => {
+        if (loadingItems.includes(record?.key)) return <LoadingOutlined />;
         return (
           <Button
             onClick={() => {
@@ -514,7 +513,6 @@ const Index = () => {
                 handleInputChange,
               });
             }}
-            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
@@ -523,7 +521,7 @@ const Index = () => {
     },
   ];
 
-  const SEOColumns = [
+  const SEOColumns: (ColumnGroupType<any> | ColumnType<any>)[] = [
     {
       title: "SEO",
       dataIndex: "resource",
@@ -560,7 +558,9 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
+      align: "center",
       render: (_: any, record: any) => {
+        if (loadingItems.includes(record?.key)) return <LoadingOutlined />;
         return (
           <Button
             onClick={() => {
@@ -570,7 +570,6 @@ const Index = () => {
                 handleInputChange,
               });
             }}
-            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
