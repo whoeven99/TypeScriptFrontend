@@ -327,7 +327,6 @@ const Index = () => {
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
-  const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
 
   useEffect(() => {
@@ -388,11 +387,10 @@ const Index = () => {
         action: "/app/language",
       },
     );
-  }, [languageLocaleData]);
+  }, [languageTableDataLocale]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
-      console.log(webPresencesFetcher.data.response);
       let newMarketArray: MarketType[] = [];
       webPresencesFetcher.data.response?.forEach((market: any) => {
         if (market?.id && market?.domain) {
@@ -419,17 +417,18 @@ const Index = () => {
         const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
           (language: any) => !language?.primary,
         );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item: any) => item?.locale,
-        );
         let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
           key: lang?.locale,
           name: lang?.name,
           locale: lang?.locale,
           published: lang.published,
-          localeName: "",
+          localeName:
+            languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
+              ?.Local || "",
           status: 0,
-          countries: [],
+          countries:
+            languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
+              ?.countries || [],
           autoTranslate: false,
           publishLoading: false,
           autoTranslateLoading: false,
@@ -451,10 +450,6 @@ const Index = () => {
               languageList.response?.find(
                 (language: any) => language.target === lang.locale,
               )?.autoTranslate || false,
-            localeName:
-              languageLocaleData[
-                lang?.locale as keyof typeof languageLocaleData
-              ]?.Local,
           }));
           const findItem = data.find((data: any) => data.status === 2);
           if (findItem && shopPrimaryLanguageData) {
@@ -608,7 +603,15 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => (
         <Switch
-          checked={record.published}
+          checked={
+            record.published &&
+            markets?.some((item) => {
+              return Object.keys(item.domain).some((key) => {
+                // 检查 domain[key] 数组中是否包含 record?.locale
+                return item.domain[key].includes(record?.locale);
+              });
+            })
+          }
           onChange={(checked) => handlePublishChange(record.locale, checked)}
           loading={record.publishLoading} // 使用每个项的 loading 状态
         />

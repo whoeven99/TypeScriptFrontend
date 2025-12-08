@@ -16,6 +16,7 @@ const { Text } = Typography;
 interface MarketDataType {
   key: string;
   domain: string;
+  originalPublishStatus: boolean;
   published: boolean;
 }
 
@@ -40,8 +41,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const selectedLanguage = useMemo(() => {
     return languageData.find((item) => item.locale == publishLangaugeCode);
   }, [languageData, publishLangaugeCode]);
-
-  const submitCurrent = useRef<string[]>([]);
 
   const [published, setPublished] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
@@ -149,16 +148,15 @@ const PublishModal: React.FC<PublishModalProps> = ({
   }, [publishFetcher.data]);
 
   useEffect(() => {
-    console.log(submitCurrent.current);
-  }, [submitCurrent.current]);
-
-  useEffect(() => {
     if (!publishLangaugeCode) return;
     setDataSource(
       markets.flatMap((market) =>
         Object.entries(market.domain).map(([host, locales]) => ({
           key: market.key,
           domain: host,
+          originalPublishStatus: (locales as string[]).includes(
+            publishLangaugeCode,
+          ),
           published: (locales as string[]).includes(publishLangaugeCode),
         })),
       ),
@@ -183,7 +181,10 @@ const PublishModal: React.FC<PublishModalProps> = ({
             setDataSource(
               dataSource.map((item) =>
                 item.key === record.key
-                  ? { ...item, published: checked }
+                  ? {
+                      ...item,
+                      published: checked,
+                    }
                   : item,
               ),
             );
@@ -205,35 +206,33 @@ const PublishModal: React.FC<PublishModalProps> = ({
       }
     }
 
-    if (published) {
-      webPresencesData = dataSource.map((item) => {
-        // 找到对应的 market
-        const market = markets.find((m) => m.key === item.key);
-        // 找到 domain 的 value（数组）
-        let locales: string[] = [];
-        if (market) {
-          // 取出 domain 的第一个键值对（因为你的结构是 { [host]: string[] }，通常只有一个 host）
-          const domainLocales = Object.values(market.domain)[0] || [];
-          locales = [...domainLocales];
+    webPresencesData = dataSource.map((item) => {
+      // 找到对应的 market
+      const market = markets.find((m) => m.key === item.key);
+      // 找到 domain 的 value（数组）
+      let locales: string[] = [];
+      if (market) {
+        // 取出 domain 的第一个键值对（因为你的结构是 { [host]: string[] }，通常只有一个 host）
+        const domainLocales = Object.values(market.domain)[0] || [];
+        locales = [...domainLocales];
+      }
+      if (item.published) {
+        // published 为 true，确保 languageCode 存在且去重
+        if (!locales.includes(publishLangaugeCode)) {
+          locales.push(publishLangaugeCode);
         }
-        if (item.published) {
-          // published 为 true，确保 languageCode 存在且去重
-          if (!locales.includes(publishLangaugeCode)) {
-            locales.push(publishLangaugeCode);
-          }
-          // 去重（其实上面已保证唯一，但更保险）
-          locales = Array.from(new Set(locales));
-        } else {
-          // published 为 false，确保 languageCode 不存在
-          locales = locales.filter((l) => l !== publishLangaugeCode);
-        }
-        return {
-          id: item.key,
-          alternateLocales: locales,
-          publishedCode: publishLangaugeCode,
-        };
-      });
-    }
+        // 去重（其实上面已保证唯一，但更保险）
+        locales = Array.from(new Set(locales));
+      } else {
+        // published 为 false，确保 languageCode 不存在
+        locales = locales.filter((l) => l !== publishLangaugeCode);
+      }
+      return {
+        id: item.key,
+        alternateLocales: locales,
+        publishedCode: publishLangaugeCode,
+      };
+    });
 
     publishFetcher.submit(
       {
@@ -259,7 +258,11 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
           <Button
             type="primary"
-            disabled={dataSource.every((item) => !item.published) && published}
+            disabled={
+              dataSource.every(
+                (item) => item.originalPublishStatus == item.published,
+              ) && published == selectedLanguage?.published
+            }
             loading={publishFetcher.state == "submitting"}
             onClick={onSave}
           >
@@ -280,16 +283,10 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Text strong>{t("Language Publishing Status")}</Text>
           <Switch value={published} onChange={(e) => setPublished(e)} />
         </Flex>
-        {published && (
-          <div className={styles.publishModal_webpresence_card}>
-            <Text strong>{t("Publish to Selected Domains")}</Text>
-            <Table
-              dataSource={dataSource}
-              columns={columns}
-              pagination={false}
-            />
-          </div>
-        )}
+        <div className={styles.publishModal_webpresence_card}>
+          <Text strong>{t("Publish to Selected Domains")}</Text>
+          <Table dataSource={dataSource} columns={columns} pagination={false} />
+        </div>
       </Space>
     </Modal>
   );
