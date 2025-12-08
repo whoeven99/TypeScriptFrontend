@@ -184,7 +184,9 @@ const Index = () => {
         }
       }
 
-      setProgressDataSource(data);
+      if (!hasStopped.current) {
+        setProgressDataSource(data);
+      }
 
       // 若轮询仍激活，则等待3秒后继续
       if (isActiveRef.current && !hasStopped.current) {
