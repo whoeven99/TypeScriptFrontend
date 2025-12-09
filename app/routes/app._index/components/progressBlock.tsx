@@ -410,7 +410,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               onClick={handleContinueTranslate}
               loading={ciwiTransTaskIsContinueArray.includes(taskId)}
             >
-              {t("progressing.continueTranslate")}
+              {t("progressing.reTranslate")}
             </Button>
             <Button
               block
