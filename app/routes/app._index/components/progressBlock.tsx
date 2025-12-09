@@ -383,7 +383,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               {t("progressing.apikeySetting")}
             </Button>
             <Button block onClick={handleReTranslate}>
-              {t("progressing.continueTranslate")}
+              {t("progressing.reTranslate")}
             </Button>
           </div>
         )}
@@ -393,7 +393,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             onClick={handleReTranslate}
             style={{ marginTop: "auto" }}
           >
-            {t("progressing.continueTranslate")}
+            {t("progressing.reTranslate")}
           </Button>
         )}
         {status === 7 && (
@@ -410,7 +410,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               onClick={handleContinueTranslate}
               loading={ciwiTransTaskIsContinueArray.includes(taskId)}
             >
-              {t("progressing.reTranslate")}
+              {t("progressing.continueTranslate")}
             </Button>
             <Button
               block
