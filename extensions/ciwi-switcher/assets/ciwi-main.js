@@ -63,6 +63,17 @@ const rtlLanguages = [
 async function ciwiOnload() {
   console.log("onload start (modular+full)");
 
+  //超过7天清理缓存
+  const expireAt = Number(localStorage.getItem("ciwi_iplocation_expire_at"));
+  const now = Date.now();
+
+  if (expireAt && now > expireAt) {
+    localStorage.removeItem("ciwi_selected_language");
+    localStorage.removeItem("ciwi_selected_currency");
+    localStorage.removeItem("ciwi_selected_country");
+    localStorage.removeItem("ciwi_iplocation_expire_at");
+  }
+
   const languageInputs = document.querySelectorAll(
     'input[name="language_code"], input[name="locale_code"]',
   );
@@ -160,10 +171,16 @@ async function ciwiOnload() {
   let needRedirection = !storedCountry && !storedCurrency;
 
   //浏览器语言
-  let browserLanguage = navigator.language;
+  let browserLanguage = navigator.language || navigator.userLanguage;
+
+  // 如果语言包含 'q=xx' 或类似的内容，提取前面的部分
+  browserLanguage = browserLanguage.split(";")[0];
+
   if (!browserLanguage.includes("zh")) {
-    browserLanguage = browserLanguage.split("-")[0];
+    browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
+
+  console.log(browserLanguage);
 
   //获取地区对应货币数据
   const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
@@ -203,6 +220,12 @@ async function ciwiOnload() {
       //调用ipapi接口
       const IpData = await API.fetchUserCountryInfo(iptokenValue);
 
+      localStorage.setItem(
+        "ciwi_iplocation_expire_at",
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      );
+      
+      //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
 
       //ip信息

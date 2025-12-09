@@ -291,40 +291,22 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
             value={formData.languageCode}
           />
         </Flex>
-        <Flex align="flex-start">
-          <Text style={{ width: 100, whiteSpace: "nowrap", paddingTop: 6 }}>
+        <Flex align="center">
+          <Text style={{ width: 100, whiteSpace: "nowrap" }}>
             {t("Currency")}:
           </Text>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <Select
-              style={{ width: "100%" }}
-              onChange={(e) => handleChange({ e, item: "currencyCode" })}
-              disabled={
-                !!regionsData?.find(
-                  (item) => item?.currencyCode == defaultData?.currencyCode,
-                )
-              }
-              options={[
-                {
-                  label: t("Match visitor’s currency"),
-                  value: "auto",
-                },
-                ...currencyOptions,
-              ]}
-              value={formData.currencyCode}
-            />
-
-            {!!regionsData?.find(
-              (item) => item?.currencyCode == defaultData?.currencyCode,
-            ) && (
-              <Text style={{ marginTop: 8 }}>
-                <WarningOutlined style={{ color: "#F8B400" }} />{" "}
-                {t(
-                  "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.",
-                )}
-              </Text>
-            )}
-          </div>
+          <Select
+            style={{ flex: 1 }}
+            onChange={(e) => handleChange({ e, item: "currencyCode" })}
+            options={[
+              {
+                label: t("Match visitor’s currency"),
+                value: "auto",
+              },
+              ...currencyOptions,
+            ]}
+            value={formData.currencyCode}
+          />
         </Flex>
       </Space>
     </Modal>

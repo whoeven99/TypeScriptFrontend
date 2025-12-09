@@ -25,10 +25,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (!primaryCurrency?.response) {
       //地区对应货币代码数组
-      const regionCurArray: string[] = []; 
+      const regionCurArray: string[] = [];
 
       //接口AddCurrency数据
-      let AddCurrencyArray: any[] = []; 
+      let AddCurrencyArray: any[] = [];
 
       //筛选regionCurArray数据
       marketDomainData?.markets?.nodes?.forEach((market: any) => {
@@ -48,16 +48,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       //当regionCurArray存在时创建非默认货币数据
       if (regionCurArray.length) {
-        AddCurrencyArray = regionCurArray.map((item) => {
-          if (item == newPrimaryCode) return;
-          return {
+        AddCurrencyArray = regionCurArray
+          .filter((item) => item !== newPrimaryCode) // 过滤掉不要的
+          .map((item) => ({
             currencyName:
               currencyLocaleData[item as keyof typeof currencyLocaleData]
                 ?.currencyName || "",
             currencyCode: item,
             primaryStatus: 0,
-          };
-        });
+          }));
       }
 
       //添加默认货币数据
