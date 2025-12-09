@@ -3,7 +3,11 @@ import { Progress, Button } from "antd";
 import { handleContactSupport } from "../route";
 import { Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { FetcherWithComponents, useNavigate } from "@remix-run/react";
+import {
+  FetcherWithComponents,
+  useFetcher,
+  useNavigate,
+} from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useMemo } from "react";
 import { globalStore } from "~/globalStore";
@@ -56,6 +60,8 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     return [];
   }, [localStorage.getItem("ciwiTransTaskIsContinue")]);
 
+  const languageFetcher = useFetcher<any>({ key: "handle-to-allProgressData" });
+
   const handleContinueTranslate = async () => {
     if (globalStore?.shop == "ciwishop.myshopify.com") {
       const continueTranslating = await ContinueTranslating({
@@ -68,6 +74,14 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
         localStorage.setItem(
           "ciwiTransTaskIsContinue",
           JSON.stringify([...ciwiTransTaskIsContinueArray, taskId]),
+        );
+        setTimeout(
+          () =>
+            languageFetcher.submit(
+              { nearTransaltedData: JSON.stringify(true) },
+              { method: "post", action: "/app" },
+            ),
+          1000,
         );
       }
       return;

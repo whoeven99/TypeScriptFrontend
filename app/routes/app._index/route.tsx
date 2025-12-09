@@ -70,9 +70,8 @@ const Index = () => {
 
   const source = useRef<string>("");
   const timeoutIdRef = useRef<number | null>(null);
-  const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
+  const isActiveRef = useRef(true); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
-  // const hasStopped = useRef(false);
 
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
 
@@ -91,8 +90,10 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
 
-  const languageFetcher = useFetcher<any>();
-  const stopTranslateFetcher = useFetcher<any>();
+  const languageFetcher = useFetcher<any>({ key: "handle-to-allProgressData" });
+  const stopTranslateFetcher = useFetcher<any>({
+    key: "handle-to-stopTranslatingTask",
+  });
 
   const { reportClick } = useReport();
 
@@ -116,7 +117,6 @@ const Index = () => {
         action: "/log",
       },
     );
-    isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -171,20 +171,6 @@ const Index = () => {
         hasInitialized.current = true;
       }
 
-      const needRepoll = response.some(
-        (item: any) =>
-          item?.translateStatus !== "translation_process_saved" &&
-          (item?.status == 1 || item?.status == 2),
-      );
-
-      if (!needRepoll) {
-        localStorage.removeItem("ciwiTransTaskIsStopping");
-        if (timeoutIdRef.current) {
-          clearTimeout(timeoutIdRef.current);
-          isActiveRef.current = false;
-        }
-      }
-
       const ciwiTransTaskIsContinueLocal = localStorage.getItem(
         "ciwiTransTaskIsContinue",
       );
@@ -193,6 +179,23 @@ const Index = () => {
         ? (JSON.parse(ciwiTransTaskIsContinueLocal) as number[])
         : [];
 
+      const needRepoll =
+        response.some(
+          (item: any) =>
+            item?.translateStatus !== "translation_process_saved" &&
+            (item?.status == 1 || item?.status == 2),
+        ) || ciwiTransTaskIsContinueArray.length;
+
+      if (!needRepoll) {
+        localStorage.removeItem("ciwiTransTaskIsStopping");
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current);
+          isActiveRef.current = false;
+        }
+      } else if (isActiveRef.current == false) {
+        isActiveRef.current = true;
+      }
+
       if (ciwiTransTaskIsContinueArray?.length) {
         const newCiwiTransTaskIsContinueArray =
           ciwiTransTaskIsContinueArray.filter((item) => {
@@ -200,10 +203,7 @@ const Index = () => {
               (dataItem: any) => dataItem?.taskId == item,
             );
 
-            return (
-              findItem?.translateStatus !== "translation_process_saved" &&
-              (findItem?.status == 1 || findItem?.status == 2)
-            );
+            return findItem?.status == 7;
           });
 
         if (
@@ -314,19 +314,6 @@ const Index = () => {
       },
     );
     reportClick("dashboard_currency_manage");
-  };
-
-  const handleReceive = () => {
-    navigate("/app/pricing");
-    fetcher.submit(
-      {
-        log: `${shop} 前往付费页面, 从新人链接点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
   };
 
   const pollStatus = () => {
