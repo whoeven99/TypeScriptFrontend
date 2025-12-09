@@ -151,9 +151,6 @@ const Index = () => {
   useEffect(() => {
     if (languageFetcher.data) {
       const response = languageFetcher.data?.response?.list || [];
-      setIsProgressLoading(false);
-
-      if (!response.length) return;
 
       const data =
         response.map((item: any) => {
@@ -164,11 +161,12 @@ const Index = () => {
             };
           return item;
         }) ?? [];
+
       if (!hasInitialized.current) {
-        setProgressDataSource(data);
         source.current = languageFetcher.data?.response?.source;
-        setIsProgressLoading(false);
         hasInitialized.current = true;
+        setProgressDataSource(data);
+        setIsProgressLoading(false);
       }
 
       const needRepoll = response.some(
