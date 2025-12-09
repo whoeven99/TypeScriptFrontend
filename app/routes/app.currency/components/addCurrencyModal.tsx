@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Table, Space, Button, message, Typography } from "antd";
+import { Modal, Input, Table, Space, Button, Typography } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
-import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
