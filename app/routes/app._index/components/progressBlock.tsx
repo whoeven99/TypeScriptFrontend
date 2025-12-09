@@ -64,6 +64,11 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
 
   const handleContinueTranslate = async () => {
     if (globalStore?.shop == "ciwishop.myshopify.com") {
+      localStorage.setItem(
+        "ciwiTransTaskIsContinue",
+        JSON.stringify([...ciwiTransTaskIsContinueArray, taskId]),
+      );
+
       const continueTranslating = await ContinueTranslating({
         shop: globalStore?.shop,
         server: globalStore?.server || "",
@@ -71,10 +76,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       });
 
       if (continueTranslating?.success) {
-        localStorage.setItem(
-          "ciwiTransTaskIsContinue",
-          JSON.stringify([...ciwiTransTaskIsContinueArray, taskId]),
-        );
         setTimeout(
           () =>
             languageFetcher.submit(
@@ -83,6 +84,8 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             ),
           1000,
         );
+      } else {
+        localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify([]));
       }
       return;
     }

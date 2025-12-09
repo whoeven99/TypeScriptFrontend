@@ -117,6 +117,8 @@ const Index = () => {
         action: "/log",
       },
     );
+    
+    isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
     const handleResize = () => setIsMobile(window.innerWidth < 768);
