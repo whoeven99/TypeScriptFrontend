@@ -137,10 +137,6 @@ const Index = () => {
     return dataSource.find((item) => item.key == createOrEditModal.key);
   }, [dataSource, createOrEditModal.key]);
 
-  const hasSelected = useMemo(() => {
-    return selectedRowKeys.length > 0;
-  }, [selectedRowKeys]);
-
   //页面管理数据
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10; // 每页显示5条，可自定义
@@ -162,7 +158,6 @@ const Index = () => {
     [currentPageKeys, selectedRowKeys],
   );
 
-  const fetcher = useFetcher<any>();
   const marketsFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -319,19 +314,22 @@ const Index = () => {
       key: "currencyCode",
       width: "30%",
       render: (_: any, record: any) => {
-        const item =
+        const currencyLocaleDataByRecordCurrencyCode =
           currencyLocaleData[
             record?.currencyCode as keyof typeof currencyLocaleData
           ];
-        if (item) {
+        const hasCustomCurrencyCodeRegion = regionsDataSource?.find(
+          (item) => item?.code == record?.region,
+        );
+
+        if (currencyLocaleDataByRecordCurrencyCode) {
           return (
             <Space>
               <Text>
-                {item?.currencyName}({record?.currencyCode})
+                {currencyLocaleDataByRecordCurrencyCode?.currencyName}(
+                {record?.currencyCode})
               </Text>
-              {!!regionsDataSource?.find(
-                (item) => item?.currencyCode == record?.currencyCode,
-              ) && (
+              {hasCustomCurrencyCodeRegion?.currencyCode != "auto" && (
                 <Popover
                   content={t(
                     "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.",
@@ -343,7 +341,20 @@ const Index = () => {
             </Space>
           );
         } else {
-          return <Text>{t("Match visitor’s currency")}</Text>;
+          return (
+            <Space>
+              <Text>{t("Match visitor’s currency")}</Text>
+              {hasCustomCurrencyCodeRegion?.currencyCode != "auto" && (
+                <Popover
+                  content={t(
+                    "Due to Shopify Markets rules, each market must use its default currency, so currencies cannot be customized.",
+                  )}
+                >
+                  <WarningOutlined style={{ color: "#F8B400" }} />{" "}
+                </Popover>
+              )}
+            </Space>
+          );
         }
       },
     },
