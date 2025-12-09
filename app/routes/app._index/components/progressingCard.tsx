@@ -32,7 +32,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
       state: { from: "/app", selectedLanguageCode: "" },
     });
   };
-  
+
   return (
     <Card
       style={{ width: "100%" }}
@@ -55,6 +55,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
       ) : dataSource?.length !== 0 ? (
         <Card>
           <ProgressBlock
+            taskId={dataSource[0]?.taskId}
             key={dataSource[0]?.target}
             isMobile={isMobile}
             source={source}

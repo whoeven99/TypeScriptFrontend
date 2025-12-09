@@ -5,6 +5,36 @@ import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
 //ip自定义配置初始化
+export const ContinueTranslating = async ({
+  shop,
+  server,
+  taskId,
+}: {
+  shop: string;
+  server: string;
+  taskId: number;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/translate/continueTranslating?shopName=${shop}&taskId=${taskId}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} ContinueTranslating: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} ContinueTranslating error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+//ip自定义配置初始化
 export const SyncUserIp = async ({
   shop,
   server,
@@ -539,18 +569,10 @@ export const GetProgressData = async ({
 export const StopTranslatingTask = async ({
   shopName,
   source,
-  accessToken,
 }: {
   shopName: string;
   source: string;
-  accessToken: string;
 }) => {
-  console.log(`${shopName} StopTranslatingTask: `, {
-    shopName,
-    source,
-    accessToken,
-  });
-
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/stopTranslatingTask?shopName=${shopName}`,
@@ -560,8 +582,6 @@ export const StopTranslatingTask = async ({
       },
       data: {
         source: source,
-        // target: target,
-        accessToken: accessToken,
       },
     });
 

@@ -72,7 +72,7 @@ const Index = () => {
   const timeoutIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
-  const hasStopped = useRef(false);
+  // const hasStopped = useRef(false);
 
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
 
@@ -177,17 +177,49 @@ const Index = () => {
           (item?.status == 1 || item?.status == 2),
       );
 
-      if (!needRepoll || hasStopped.current) {
+      if (!needRepoll) {
+        localStorage.removeItem("ciwiTransTaskIsStopping");
         if (timeoutIdRef.current) {
           clearTimeout(timeoutIdRef.current);
           isActiveRef.current = false;
         }
       }
 
+      const ciwiTransTaskIsContinueLocal = localStorage.getItem(
+        "ciwiTransTaskIsContinue",
+      );
+
+      const ciwiTransTaskIsContinueArray = ciwiTransTaskIsContinueLocal
+        ? (JSON.parse(ciwiTransTaskIsContinueLocal) as number[])
+        : [];
+
+      if (ciwiTransTaskIsContinueArray?.length) {
+        const newCiwiTransTaskIsContinueArray =
+          ciwiTransTaskIsContinueArray.filter((item) => {
+            const findItem = data?.find(
+              (dataItem: any) => dataItem?.taskId == item,
+            );
+
+            return (
+              findItem?.translateStatus !== "translation_process_saved" &&
+              (findItem?.status == 1 || findItem?.status == 2)
+            );
+          });
+
+        if (
+          newCiwiTransTaskIsContinueArray.length !=
+          ciwiTransTaskIsContinueArray.length
+        )
+          localStorage.setItem(
+            "ciwiTransTaskIsContinue",
+            JSON.stringify(newCiwiTransTaskIsContinueArray),
+          );
+      }
+
       setProgressDataSource(data);
 
       // 若轮询仍激活，则等待3秒后继续
-      if (isActiveRef.current && !hasStopped.current) {
+      if (isActiveRef.current) {
         timeoutIdRef.current = window.setTimeout(() => {
           pollStatus();
         }, 3000);
@@ -195,16 +227,15 @@ const Index = () => {
     }
   }, [languageFetcher.data]);
 
-  useEffect(() => {
-    if (stopTranslateFetcher.data) {
-      setProgressDataSource((prev: any[] = []) =>
-        prev.map((item) =>
-          item?.status === 2 ? { ...item, status: 7 } : item,
-        ),
-      );
-      hasStopped.current = true;
-    }
-  }, [stopTranslateFetcher.data]);
+  // useEffect(() => {
+  //   if (stopTranslateFetcher.data) {
+  //     setProgressDataSource((prev: any[] = []) =>
+  //       prev.map((item) =>
+  //         item?.status === 2 ? { ...item, status: 7 } : item,
+  //       ),
+  //     );
+  //   }
+  // }, [stopTranslateFetcher.data]);
 
   const columns = [
     {

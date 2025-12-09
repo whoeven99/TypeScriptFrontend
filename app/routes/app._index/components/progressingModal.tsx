@@ -28,6 +28,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
       return (
         <Card key={item?.target}>
           <ProgressBlock
+            taskId={item?.taskId}
             key={item?.target}
             isMobile={isMobile}
             source={source}

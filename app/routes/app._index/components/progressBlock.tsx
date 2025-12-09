@@ -6,10 +6,13 @@ import { useTranslation } from "react-i18next";
 import { FetcherWithComponents, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useMemo } from "react";
+import { globalStore } from "~/globalStore";
+import { ContinueTranslating } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
 interface ProgressBlockProps {
+  taskId: number;
   isMobile: boolean; // 是否为移动端
   source: string; // 原语言
   target: string; // 目标语言
@@ -25,6 +28,7 @@ interface ProgressBlockProps {
 }
 
 const ProgressBlock: React.FC<ProgressBlockProps> = ({
+  taskId,
   isMobile,
   source,
   target,
@@ -37,8 +41,42 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
+  const stopButtonLoading = useMemo(() => {
+    return !!localStorage.getItem("ciwiTransTaskIsStopping");
+  }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
 
-  const handleReTranslate = () => {
+  const ciwiTransTaskIsContinueArray: number[] = useMemo(() => {
+    const ciwiTransTaskIsContinueLocal = localStorage.getItem(
+      "ciwiTransTaskIsContinue",
+    );
+
+    if (ciwiTransTaskIsContinueLocal) {
+      return JSON.parse(ciwiTransTaskIsContinueLocal) as number[];
+    }
+    return [];
+  }, [localStorage.getItem("ciwiTransTaskIsContinue")]);
+
+  const handleContinueTranslate = async () => {
+    if (globalStore?.shop == "ciwishop.myshopify.com") {
+      const continueTranslating = await ContinueTranslating({
+        shop: globalStore?.shop,
+        server: globalStore?.server || "",
+        taskId,
+      });
+
+      if (continueTranslating?.success) {
+        localStorage.setItem(
+          "ciwiTransTaskIsContinue",
+          JSON.stringify([...ciwiTransTaskIsContinueArray, taskId]),
+        );
+      }
+      return;
+    }
+    navigate("/app/translate");
+    reportClick("dashboard_translation_task_retranslate");
+  };
+
+  const handleReTranslate = async () => {
     navigate("/app/translate");
     reportClick("dashboard_translation_task_retranslate");
   };
@@ -76,6 +114,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       { method: "post", action: "/app", eventType: "click" },
       "dashboard_translation_task_stop",
     );
+    localStorage.setItem("ciwiTransTaskIsStopping", "1");
   };
 
   return (
@@ -255,7 +294,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={handleStopTranslate}
-              loading={stopTranslateFetcher.state == "submitting"}
+              loading={stopButtonLoading}
               style={{ marginTop: "auto" }}
             >
               {t("progressing.stopTranslate")}
@@ -327,7 +366,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               {t("progressing.apikeySetting")}
             </Button>
             <Button block onClick={handleReTranslate}>
-              {t("progressing.reTranslate")}
+              {t("progressing.continueTranslate")}
             </Button>
           </div>
         )}
@@ -349,7 +388,11 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               gap: 10,
             }}
           >
-            <Button block onClick={() => navigate("/app/translate")}>
+            <Button
+              block
+              onClick={handleContinueTranslate}
+              loading={ciwiTransTaskIsContinueArray.includes(taskId)}
+            >
               {t("progressing.reTranslate")}
             </Button>
             <Button

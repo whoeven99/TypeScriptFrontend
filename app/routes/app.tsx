@@ -170,10 +170,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error languageData app:", error);
         return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: undefined,
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
     }
@@ -194,7 +194,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         console.error("Error customApikeyData app:", error);
-        return json({ error: "Error customApikeyData app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 
@@ -217,11 +222,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         if (translatingData?.success) {
           const listData = translatingData?.response?.list?.map((item: any) => {
             return {
-              target: item?.target,
-              status: item?.status,
-              translateStatus: item?.translateStatus,
-              resourceType: item?.resourceType,
-              value: item?.value,
+              ...item,
               progressData:
                 item.translateStatus == "translation_process_saving_shopify"
                   ? {
@@ -242,26 +243,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           };
         } else {
-          return {
-            success: false,
-            errorCode: 0,
-            errorMsg: "",
-            response: {
-              list: [],
-              source: "",
-            },
-          };
+          return translatingData;
         }
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            list: [],
-            source: "",
-          },
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
     }
@@ -278,9 +268,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error statusData app:", error);
         return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: [],
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
     }
@@ -329,7 +319,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const data = await StopTranslatingTask({
           shopName: shop,
-          accessToken: accessToken as string,
           source: stopTranslate.source,
         });
         return data;
