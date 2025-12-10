@@ -72,6 +72,7 @@ const Index = () => {
   const timeoutIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
+  const hasStopped = useRef(false);
 
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
 
@@ -117,7 +118,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    
+
     isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
@@ -188,8 +189,8 @@ const Index = () => {
             (item?.status == 1 || item?.status == 2),
         ) || ciwiTransTaskIsContinueArray.length;
 
-      if (!needRepoll) {
-        localStorage.removeItem("ciwiTransTaskIsStopping");
+      if (!needRepoll || hasStopped.current) {
+        // localStorage.removeItem("ciwiTransTaskIsStopping");
         if (timeoutIdRef.current) {
           clearTimeout(timeoutIdRef.current);
           isActiveRef.current = false;
@@ -218,10 +219,12 @@ const Index = () => {
           );
       }
 
-      setProgressDataSource(data);
+      if (!hasStopped.current) {
+        setProgressDataSource(data);
+      }
 
       // 若轮询仍激活，则等待3秒后继续
-      if (isActiveRef.current) {
+      if (isActiveRef.current && !hasStopped.current) {
         timeoutIdRef.current = window.setTimeout(() => {
           pollStatus();
         }, 3000);
@@ -229,15 +232,16 @@ const Index = () => {
     }
   }, [languageFetcher.data]);
 
-  // useEffect(() => {
-  //   if (stopTranslateFetcher.data) {
-  //     setProgressDataSource((prev: any[] = []) =>
-  //       prev.map((item) =>
-  //         item?.status === 2 ? { ...item, status: 7 } : item,
-  //       ),
-  //     );
-  //   }
-  // }, [stopTranslateFetcher.data]);
+  useEffect(() => {
+    if (stopTranslateFetcher.data) {
+      setProgressDataSource((prev: any[] = []) =>
+        prev.map((item) =>
+          item?.status === 2 ? { ...item, status: 7 } : item,
+        ),
+      );
+      hasStopped.current = true;
+    }
+  }, [stopTranslateFetcher.data]);
 
   const columns = [
     {

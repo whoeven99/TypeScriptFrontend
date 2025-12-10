@@ -45,9 +45,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
-  const stopButtonLoading = useMemo(() => {
-    return !!localStorage.getItem("ciwiTransTaskIsStopping");
-  }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
+  // const stopButtonLoading = useMemo(() => {
+  //   return !!localStorage.getItem("ciwiTransTaskIsStopping");
+  // }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
 
   const ciwiTransTaskIsContinueArray: number[] = useMemo(() => {
     const ciwiTransTaskIsContinueLocal = localStorage.getItem(
@@ -131,7 +131,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       { method: "post", action: "/app", eventType: "click" },
       "dashboard_translation_task_stop",
     );
-    localStorage.setItem("ciwiTransTaskIsStopping", "1");
+    // localStorage.setItem("ciwiTransTaskIsStopping", "1");
   };
 
   return (
@@ -311,7 +311,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={handleStopTranslate}
-              loading={stopButtonLoading}
+              loading={stopTranslateFetcher.state === "submitting"}
               style={{ marginTop: "auto" }}
             >
               {t("progressing.stopTranslate")}
