@@ -9,7 +9,7 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import useReport from "scripts/eventReport";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { globalStore } from "~/globalStore";
 import { ContinueTranslating } from "~/api/JavaServer";
 
@@ -47,56 +47,8 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
-  // const stopButtonLoading = useMemo(() => {
-  //   return !!localStorage.getItem("ciwiTransTaskIsStopping");
-  // }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
 
-  const ciwiTransTaskIsContinueArray: number[] = useMemo(() => {
-    const ciwiTransTaskIsContinueLocal = localStorage.getItem(
-      "ciwiTransTaskIsContinue",
-    );
-
-    if (ciwiTransTaskIsContinueLocal) {
-      return JSON.parse(ciwiTransTaskIsContinueLocal) as number[];
-    }
-    return [];
-  }, [localStorage.getItem("ciwiTransTaskIsContinue")]);
-
-  const handleContinueTranslate = async () => {
-    if (globalStore?.shop == "ciwishop.myshopify.com") {
-      localStorage.setItem(
-        "ciwiTransTaskIsContinue",
-        JSON.stringify([...ciwiTransTaskIsContinueArray, taskId]),
-      );
-
-      const continueTranslating = await ContinueTranslating({
-        shop: globalStore?.shop,
-        server: globalStore?.server || "",
-        taskId,
-      });
-
-      if (continueTranslating?.success) {
-        setTimeout(
-          () =>
-            languageFetcher.submit(
-              { nearTransaltedData: JSON.stringify(true) },
-              { method: "post", action: "/app" },
-            ),
-          1000,
-        );
-      } else {
-        localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify([]));
-      }
-      return;
-    }
-    navigate("/app/translate");
-    reportClick("dashboard_translation_task_retranslate");
-  };
-
-  const handleReTranslate = async () => {
-    navigate("/app/translate");
-    reportClick("dashboard_translation_task_retranslate");
-  };
+  const continueTranslateLock = useRef(false);
 
   const progress = useMemo(
     () =>
@@ -107,6 +59,52 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       ).toFixed(3),
     [progressData],
   );
+
+  // const stopButtonLoading = useMemo(() => {
+  //   return !!localStorage.getItem("ciwiTransTaskIsStopping");
+  // }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
+
+  const [ciwiTransTaskIsContinueArray, setCiwiTransTaskIsContinueArray] =
+    useState<number[]>(() => {
+      const raw = localStorage.getItem("ciwiTransTaskIsContinue");
+      return raw ? JSON.parse(raw) : [];
+    });
+
+  const handleContinueTranslate = async () => {
+    if (continueTranslateLock.current) return;
+    continueTranslateLock.current = true;
+
+    setTimeout(() => {
+      continueTranslateLock.current = false;
+    }, 1500);
+
+    if (!ciwiTransTaskIsContinueArray.includes(taskId)) {
+      const newArr = [...ciwiTransTaskIsContinueArray, taskId];
+      setCiwiTransTaskIsContinueArray(newArr);
+      localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify(newArr));
+    }
+
+    const continueTranslating = await ContinueTranslating({
+      shop: globalStore?.shop || "",
+      server: globalStore?.server || "",
+      taskId,
+    });
+
+    if (continueTranslating?.success) {
+      languageFetcher.submit(
+        { nearTransaltedData: JSON.stringify(true) },
+        { method: "post", action: "/app" },
+      );
+    } else {
+      setCiwiTransTaskIsContinueArray([]);
+      localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify([]));
+    }
+  };
+
+  const handleReTranslate = async () => {
+    navigate("/app/translate");
+    reportClick("dashboard_translation_task_retranslate");
+  };
 
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(
