@@ -10,7 +10,6 @@ import {
   Space,
   Table,
   Typography,
-  Modal,
 } from "antd";
 import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,10 +24,7 @@ import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
-import { useSelector } from "react-redux";
 import ProgressingModal from "./components/progressingModal";
-import CorrectIcon from "~/components/icon/correctIcon";
-import GiftIcon from "~/components/icon/giftIcon";
 import TranslationPanel from "./components/TranslationPanel";
 
 const { Title, Text } = Typography;
@@ -155,8 +151,6 @@ const Index = () => {
 
       setIsProgressLoading(false);
 
-      console.log("languageFetcher.data: ", languageFetcher.data);
-
       if (!response.length) return;
 
       const data =
@@ -168,8 +162,6 @@ const Index = () => {
             };
           return item;
         }) ?? [];
-
-      console.log("languageFetcher.data: ", languageFetcher.data);
 
       if (!hasInitialized.current) {
         setProgressDataSource(data);
@@ -193,11 +185,7 @@ const Index = () => {
             (item?.status == 1 || item?.status == 2),
         ) || ciwiTransTaskIsContinueArray.length;
 
-      console.log("hasStopped.current: ", hasStopped.current);
-
       if (ciwiTransTaskIsContinueArray.length) hasStopped.current = false;
-
-      console.log("hasStopped.current: ", hasStopped.current);
 
       if (!needRepoll || hasStopped.current) {
         // localStorage.removeItem("ciwiTransTaskIsStopping");
