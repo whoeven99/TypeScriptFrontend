@@ -91,10 +91,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
 
-  const languageFetcher = useFetcher<any>({ key: "handle-to-allProgressData" });
-  const stopTranslateFetcher = useFetcher<any>({
-    key: "handle-to-stopTranslatingTask",
-  });
+  const languageFetcher = useFetcher<any>();
+  const stopTranslateFetcher = useFetcher<any>();
 
   const { reportClick } = useReport();
 
@@ -118,7 +116,7 @@ const Index = () => {
         action: "/log",
       },
     );
-
+    hasStopped.current = false;
     isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
@@ -323,7 +321,11 @@ const Index = () => {
   };
 
   const pollStatus = () => {
+    console.log("isActiveRef.current1: ", isActiveRef.current);
+
     if (!isActiveRef.current) return;
+
+    console.log("isActiveRef.current2: ", isActiveRef.current);
 
     languageFetcher.submit(
       { nearTransaltedData: JSON.stringify(true) },
