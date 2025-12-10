@@ -628,7 +628,7 @@ export default function App() {
     if (!plan?.id) {
       getPlan();
     }
-    if (!chars || !totalChars) {
+    if (!chars || !totalChars || location.pathname == "/app/pricing") {
       getWords();
     }
     if (!ipBalance) {

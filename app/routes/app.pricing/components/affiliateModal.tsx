@@ -1,5 +1,4 @@
-import { useFetcher, useNavigate } from "@remix-run/react";
-import { Button, ConfigProvider, Flex, Modal, Space, Typography } from "antd";
+import { Button, Flex, Modal, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
