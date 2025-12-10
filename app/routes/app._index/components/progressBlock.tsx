@@ -28,6 +28,7 @@ interface ProgressBlockProps {
   }; // 翻译进度
   value: string; // 翻译值
   module: string; // 翻译项
+  languageFetcher: FetcherWithComponents<any>;
   stopTranslateFetcher: FetcherWithComponents<any>;
 }
 
@@ -40,6 +41,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   translateStatus,
   progressData,
   module,
+  languageFetcher,
   stopTranslateFetcher,
 }) => {
   const { t } = useTranslation();
@@ -59,8 +61,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     }
     return [];
   }, [localStorage.getItem("ciwiTransTaskIsContinue")]);
-
-  const languageFetcher = useFetcher<any>({ key: "handle-to-allProgressData" });
 
   const handleContinueTranslate = async () => {
     if (globalStore?.shop == "ciwishop.myshopify.com") {

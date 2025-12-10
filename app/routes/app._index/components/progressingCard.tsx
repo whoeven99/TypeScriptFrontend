@@ -9,6 +9,7 @@ const { Text, Title } = Typography;
 interface ProgressingCardProps {
   dataSource: any[];
   source: string;
+  languageFetcher: FetcherWithComponents<any>;
   stopTranslateFetcher: FetcherWithComponents<any>;
   isProgressLoading: boolean;
   isMobile: boolean;
@@ -18,6 +19,7 @@ interface ProgressingCardProps {
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
   dataSource = [],
   source = "",
+  languageFetcher,
   stopTranslateFetcher,
   isProgressLoading,
   isMobile,
@@ -65,6 +67,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             progressData={dataSource[0]?.progressData}
             value={dataSource[0]?.value}
             module={dataSource[0]?.module}
+            languageFetcher={languageFetcher}
             stopTranslateFetcher={stopTranslateFetcher}
           />
         </Card>

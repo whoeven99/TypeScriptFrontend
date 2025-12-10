@@ -152,7 +152,10 @@ const Index = () => {
   useEffect(() => {
     if (languageFetcher.data) {
       const response = languageFetcher.data?.response?.list || [];
+
       setIsProgressLoading(false);
+
+      console.log("languageFetcher.data: ", languageFetcher.data);
 
       if (!response.length) return;
 
@@ -165,6 +168,9 @@ const Index = () => {
             };
           return item;
         }) ?? [];
+
+      console.log("languageFetcher.data: ", languageFetcher.data);
+
       if (!hasInitialized.current) {
         setProgressDataSource(data);
         source.current = languageFetcher.data?.response?.source;
@@ -186,6 +192,12 @@ const Index = () => {
             item?.translateStatus !== "translation_process_saved" &&
             (item?.status == 1 || item?.status == 2),
         ) || ciwiTransTaskIsContinueArray.length;
+
+      console.log("hasStopped.current: ", hasStopped.current);
+
+      if (ciwiTransTaskIsContinueArray.length) hasStopped.current = false;
+
+      console.log("hasStopped.current: ", hasStopped.current);
 
       if (!needRepoll || hasStopped.current) {
         // localStorage.removeItem("ciwiTransTaskIsStopping");
@@ -321,11 +333,7 @@ const Index = () => {
   };
 
   const pollStatus = () => {
-    console.log("isActiveRef.current1: ", isActiveRef.current);
-
     if (!isActiveRef.current) return;
-
-    console.log("isActiveRef.current2: ", isActiveRef.current);
 
     languageFetcher.submit(
       { nearTransaltedData: JSON.stringify(true) },
@@ -416,6 +424,7 @@ const Index = () => {
           <ProgressingCard
             dataSource={progressDataSource}
             source={source.current}
+            languageFetcher={languageFetcher}
             stopTranslateFetcher={stopTranslateFetcher}
             isProgressLoading={isProgressLoading}
             isMobile={isMobile}
@@ -615,6 +624,7 @@ const Index = () => {
         dataSource={progressDataSource}
         isMobile={isMobile}
         source={source.current || ""}
+        languageFetcher={languageFetcher}
         stopTranslateFetcher={stopTranslateFetcher}
       />
     </Page>

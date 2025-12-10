@@ -10,6 +10,7 @@ interface ProgressingModalProps {
   dataSource: any[];
   isMobile: boolean;
   source: string;
+  languageFetcher: FetcherWithComponents<any>;
   stopTranslateFetcher: FetcherWithComponents<any>;
 }
 
@@ -19,6 +20,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
   dataSource = [],
   isMobile,
   source,
+  languageFetcher,
   stopTranslateFetcher,
 }) => {
   const { t } = useTranslation();
@@ -38,6 +40,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
             progressData={item?.progressData}
             value={item?.value}
             module={item?.module}
+            languageFetcher={languageFetcher}
             stopTranslateFetcher={stopTranslateFetcher}
           />
         </Card>
