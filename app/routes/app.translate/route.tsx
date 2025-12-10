@@ -314,7 +314,7 @@ const Index = () => {
         ) {
           if (isNew) {
             setFirstTranslationModalShow(true);
-          } else {
+          } else if (translateFetcher?.data?.errorCode === 10016) {
             setShowPaymentModal(true);
           }
         }
