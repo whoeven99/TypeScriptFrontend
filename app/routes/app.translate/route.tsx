@@ -314,8 +314,10 @@ const Index = () => {
         ) {
           if (isNew) {
             setFirstTranslationModalShow(true);
-          } else {
+          } else if (translateFetcher?.data?.errorCode === 10016) {
             setShowPaymentModal(true);
+          } else {
+            shopify.toast.show(translateFetcher?.data?.errorMsg);
           }
         }
         if (translateFetcher?.data?.errorCode === 10014) {
@@ -440,20 +442,18 @@ const Index = () => {
     const selectedItems = languageData.find((item: LanguagesDataType) =>
       selectedLanguageCode.includes(item.locale),
     );
-    const selectedTranslatingItem = languageData.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
+    // const selectedTranslatingItem = languageData.find(
+    // (item: LanguagesDataType) => item.status === 2,
+    // );
 
-    if (selectedItems && !selectedTranslatingItem) {
+    if (selectedItems) {
       handleTranslate();
-    } else {
-      shopify.toast.show(
-        t(
-          "The translation task is in progress. Please try translating again later.",
-        ),
-      );
-      // setCurrentModal("interfaceIsOccupied");
-      // setIsApiKeyModalOpen(true);
+      // } else {
+      //   shopify.toast.show(
+      //     t(
+      //       "The translation task is in progress. Please try translating again later.",
+      //     ),
+      //   );
     }
   };
 

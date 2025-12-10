@@ -10,7 +10,6 @@ import {
   Space,
   Table,
   Typography,
-  Modal,
 } from "antd";
 import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,10 +24,7 @@ import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
-import { useSelector } from "react-redux";
 import ProgressingModal from "./components/progressingModal";
-import CorrectIcon from "~/components/icon/correctIcon";
-import GiftIcon from "~/components/icon/giftIcon";
 import TranslationPanel from "./components/TranslationPanel";
 
 const { Title, Text } = Typography;
@@ -70,7 +66,7 @@ const Index = () => {
 
   const source = useRef<string>("");
   const timeoutIdRef = useRef<number | null>(null);
-  const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
+  const isActiveRef = useRef(true); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
   const hasStopped = useRef(false);
 
@@ -116,6 +112,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    hasStopped.current = false;
     isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
@@ -151,6 +148,7 @@ const Index = () => {
   useEffect(() => {
     if (languageFetcher.data) {
       const response = languageFetcher.data?.response?.list || [];
+
       setIsProgressLoading(false);
 
       if (!response.length) return;
@@ -164,6 +162,7 @@ const Index = () => {
             };
           return item;
         }) ?? [];
+
       if (!hasInitialized.current) {
         setProgressDataSource(data);
         source.current = languageFetcher.data?.response?.source;
@@ -171,20 +170,56 @@ const Index = () => {
         hasInitialized.current = true;
       }
 
-      const needRepoll = response.some(
-        (item: any) =>
-          item?.translateStatus !== "translation_process_saved" &&
-          (item?.status == 1 || item?.status == 2),
+      const ciwiTransTaskIsContinueLocal = localStorage.getItem(
+        "ciwiTransTaskIsContinue",
       );
 
+      const ciwiTransTaskIsContinueArray = ciwiTransTaskIsContinueLocal
+        ? (JSON.parse(ciwiTransTaskIsContinueLocal) as number[])
+        : [];
+
+      const needRepoll =
+        response.some(
+          (item: any) =>
+            item?.translateStatus !== "translation_process_saved" &&
+            (item?.status == 1 || item?.status == 2),
+        ) || ciwiTransTaskIsContinueArray.length;
+
+      if (ciwiTransTaskIsContinueArray.length) hasStopped.current = false;
+
       if (!needRepoll || hasStopped.current) {
+        // localStorage.removeItem("ciwiTransTaskIsStopping");
         if (timeoutIdRef.current) {
           clearTimeout(timeoutIdRef.current);
           isActiveRef.current = false;
         }
+      } else if (isActiveRef.current == false) {
+        isActiveRef.current = true;
       }
 
-      setProgressDataSource(data);
+      if (ciwiTransTaskIsContinueArray?.length) {
+        const newCiwiTransTaskIsContinueArray =
+          ciwiTransTaskIsContinueArray.filter((item) => {
+            const findItem = data?.find(
+              (dataItem: any) => dataItem?.taskId == item,
+            );
+
+            return findItem?.status == 7;
+          });
+
+        if (
+          newCiwiTransTaskIsContinueArray.length !=
+          ciwiTransTaskIsContinueArray.length
+        )
+          localStorage.setItem(
+            "ciwiTransTaskIsContinue",
+            JSON.stringify(newCiwiTransTaskIsContinueArray),
+          );
+      }
+
+      if (!hasStopped.current) {
+        setProgressDataSource(data);
+      }
 
       // 若轮询仍激活，则等待3秒后继续
       if (isActiveRef.current && !hasStopped.current) {
@@ -285,19 +320,6 @@ const Index = () => {
     reportClick("dashboard_currency_manage");
   };
 
-  const handleReceive = () => {
-    navigate("/app/pricing");
-    fetcher.submit(
-      {
-        log: `${shop} 前往付费页面, 从新人链接点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  };
-
   const pollStatus = () => {
     if (!isActiveRef.current) return;
 
@@ -390,6 +412,7 @@ const Index = () => {
           <ProgressingCard
             dataSource={progressDataSource}
             source={source.current}
+            languageFetcher={languageFetcher}
             stopTranslateFetcher={stopTranslateFetcher}
             isProgressLoading={isProgressLoading}
             isMobile={isMobile}
@@ -589,6 +612,7 @@ const Index = () => {
         dataSource={progressDataSource}
         isMobile={isMobile}
         source={source.current || ""}
+        languageFetcher={languageFetcher}
         stopTranslateFetcher={stopTranslateFetcher}
       />
     </Page>
