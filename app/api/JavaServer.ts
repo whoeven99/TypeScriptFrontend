@@ -1470,7 +1470,6 @@ export const InsertTargets = async ({
   source: string;
   targets: string[];
 }) => {
-  console.log(`${shop} InsertTargets source: `, source, `, targets: `, targets);
   // 创建异步任务
   try {
     await axios({

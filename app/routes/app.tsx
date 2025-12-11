@@ -594,8 +594,8 @@ export default function App() {
           languageAddFetcher.submit(
             {
               languageInit: JSON.stringify({
-                source,
-                targets,
+                source: source.code,
+                targets: targets?.map((item: any) => item?.locale) || [],
               }),
             },
             {
