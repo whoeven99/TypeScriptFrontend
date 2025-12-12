@@ -276,12 +276,13 @@ const TransalteSettingCard = ({
               {t("translateSettings1.title")}
             </Title>
 
-            <Button
+            {/* 注释私有key入口 */}
+            {/* <Button
               icon={<Icon source={PlusIcon} />}
               onClick={() => handleUsePrivateApi()}
             >
               {t("Use private api to translate")}
-            </Button>
+            </Button> */}
           </Space>
           {translateSettings1Options.map((item, index) => (
             <Flex
@@ -337,7 +338,9 @@ const TransalteSettingCard = ({
               </div>
             </Flex>
           ))}
-          {customApikeyData &&
+
+          {/* 注释私有key选项 */}
+          {/* {customApikeyData &&
             checkApiKeyConfiguration(customApikeyData, 0) && (
               <Badge.Ribbon
                 text={t("Private")}
@@ -426,7 +429,7 @@ const TransalteSettingCard = ({
                   </div>
                 </div>
               </Badge.Ribbon>
-            )}
+            )} */}
         </Space>
       </Space>
     </Card>
