@@ -180,9 +180,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
       dataIndex: "publish",
       key: "publish",
       render: (_: any, record: any) => {
-        console.log("record?.defaultLocale: ", record?.defaultLocale);
-        console.log("publishLangaugeCode: ", publishLangaugeCode);
-
         if (record?.defaultLocale == publishLangaugeCode)
           return <Text>{t("Default")}</Text>;
         return (

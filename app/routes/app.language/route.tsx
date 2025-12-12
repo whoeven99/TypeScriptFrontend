@@ -578,10 +578,6 @@ const Index = () => {
     }
   }, [dataSource]);
 
-  useEffect(() => {
-    console.log("markets: ", markets);
-  }, [markets]);
-
   const columns = [
     {
       title: t("Language"),
