@@ -63,7 +63,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const appInstalls = JSON.parse(formData.get("appInstalls") as string);
-  const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
   const translateImage = JSON.parse(formData.get("translateImage") as string);
   const replaceTranslateImage = JSON.parse(
@@ -90,17 +89,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "SERVER_ERROR",
           response: null,
         };
-      }
-
-    case !!language:
-      try {
-        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        return json({ data: shopLanguages });
-      } catch (error) {
-        console.error("Error manage_translation language:", error);
       }
 
     case !!itemsCount:
@@ -180,24 +168,37 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
+
+  const { reportClick } = useReport();
+
+  const { source } = useSelector((state: any) => state.userConfig);
 
   const languageTableData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
 
-  const [selectOptions, setSelectOptions] = useState<
-    {
-      label: string;
-      value: string;
-    }[]
-  >([]);
-  const [current, setCurrent] = useState<string>(searchTerm || "");
-  const [loading, setLoading] = useState(true);
-  const dispatch = useDispatch();
-  const { t } = useTranslation();
-  const location = useLocation();
+  const languageItemsData = useSelector(
+    (state: any) => state.languageItemsData,
+  );
+
+  const loading = useMemo(() => {
+    return !source?.code;
+  }, [source]);
+
+  const selectOptions = useMemo(() => {
+    const newArray = languageTableData?.map((language: ShopLocalesType) => ({
+      label: language?.name,
+      value: language?.locale,
+    }));
+
+    return newArray || [];
+  }, [languageTableData]);
+
+  const [currentLocale, setCurrentLocale] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [appInstallList, setAppInstallList] = useState<{
@@ -205,12 +206,6 @@ const Index = () => {
   }>({
     pagefly: false,
   });
-
-  const { key } = useMemo(() => location.state || {}, [location.state]);
-  const { source } = useSelector((state: any) => state.userConfig);
-  const languageItemsData = useSelector(
-    (state: any) => state.languageItemsData,
-  );
 
   const fetcher = useFetcher<any>();
   const appFetcher = useFetcher<any>();
@@ -230,19 +225,19 @@ const Index = () => {
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
 
-  const { reportClick } = useReport();
-
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
       title: t("Products"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PRODUCT",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "PRODUCT",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PRODUCT",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "PRODUCT",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
@@ -254,12 +249,12 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "COLLECTION",
+            item?.language === currentLocale && item?.type === "COLLECTION",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "COLLECTION",
+            item?.language === currentLocale && item?.type === "COLLECTION",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
@@ -274,12 +269,14 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+            item?.language === currentLocale &&
+            item?.type === "ONLINE_STORE_THEME",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+            item?.language === currentLocale &&
+            item?.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "locale_content",
@@ -321,11 +318,13 @@ const Index = () => {
       title: t("Shop"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "SHOP",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "SHOP",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shop",
@@ -336,11 +335,13 @@ const Index = () => {
       title: t("Pages"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PAGE",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "PAGE",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PAGE",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "PAGE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
@@ -352,12 +353,12 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAOBJECT",
+            item?.language === currentLocale && item?.type === "METAOBJECT",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAOBJECT",
+            item?.language === currentLocale && item?.type === "METAOBJECT",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
@@ -368,11 +369,13 @@ const Index = () => {
       title: t("Navigation"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "LINK",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "LINK",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "LINK",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "LINK",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
@@ -384,12 +387,12 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
+            item?.language === currentLocale && item?.type === "METAFIELD",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
+            item?.language === currentLocale && item?.type === "METAFIELD",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
@@ -403,11 +406,13 @@ const Index = () => {
       title: t("Articles"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "ARTICLE",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "ARTICLE",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "ARTICLE",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "ARTICLE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
@@ -418,11 +423,13 @@ const Index = () => {
       title: t("Blog titles"),
       allTranslatedItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "BLOG",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "BLOG",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "BLOG",
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "BLOG",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
@@ -454,12 +461,12 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
+            item?.language === currentLocale && item?.type === "SHOP_POLICY",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
+            item?.language === currentLocale && item?.type === "SHOP_POLICY",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
@@ -471,12 +478,12 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "EMAIL_TEMPLATE",
+            item?.language === currentLocale && item?.type === "EMAIL_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "EMAIL_TEMPLATE",
+            item?.language === currentLocale && item?.type === "EMAIL_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "email",
@@ -488,13 +495,13 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current &&
+            item?.language === currentLocale &&
             item?.type === "PACKING_SLIP_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current &&
+            item?.language === currentLocale &&
             item?.type === "PACKING_SLIP_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -507,13 +514,13 @@ const Index = () => {
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current &&
+            item?.language === currentLocale &&
             item?.type === "DELIVERY_METHOD_DEFINITION",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current &&
+            item?.language === currentLocale &&
             item?.type === "DELIVERY_METHOD_DEFINITION",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -546,16 +553,6 @@ const Index = () => {
     return list;
   }, [appInstallList]);
 
-  const handleShowWarnModal = () => {
-    setShowWarnModal(true);
-    reportClick("manage_navi_import");
-  };
-
-  const handleShowImportModal = () => {
-    setShowModal(true);
-    reportClick("manage_navi_import");
-  };
-
   useEffect(() => {
     fetcher.submit(
       {
@@ -577,17 +574,20 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const newArray = languageTableData?.map((language: ShopLocalesType) => ({
-      label: language?.name,
-      value: language?.locale,
-    }));
-    setSelectOptions(newArray || []);
-    if (!searchTerm) {
-      setCurrent(newArray[0]?.value);
-    } else {
-      setCurrent(searchTerm);
+    if (languageTableData?.length) {
+      const newArray = languageTableData?.map((language: ShopLocalesType) => ({
+        label: language?.name,
+        value: language?.locale,
+      }));
+
+      const findValue = newArray?.find((item) => item.value == searchTerm);
+
+      if (findValue && searchTerm) {
+        setCurrentLocale(searchTerm);
+      } else {
+        setCurrentLocale(newArray[0]?.value);
+      }
     }
-    setLoading(false);
   }, [languageTableData]);
 
   useEffect(() => {
@@ -772,19 +772,8 @@ const Index = () => {
   }, [shippingFetcher.data]);
 
   useEffect(() => {
-    const foundItem = selectOptions?.find((item) => item.value === key);
-    if (foundItem && source) {
-      setCurrent(key);
-    }
-  }, [key, selectOptions]);
-
-  // console.log("selectOptions: ", loading);
-  // console.log("selectOptions: ", !!selectOptions.length);
-  // console.log("selectOptions: ", loading || !!selectOptions?.length);
-
-  useEffect(() => {
     const findItem = languageItemsData.find(
-      (item: any) => item?.language === current,
+      (item: any) => item?.language === currentLocale,
     );
     const sourceCode = source?.code;
     if (!findItem && sourceCode) {
@@ -793,7 +782,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Products",
         }),
       );
@@ -806,7 +795,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Collection",
         }),
       );
@@ -819,7 +808,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Article",
         }),
       );
@@ -832,7 +821,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Blog titles",
         }),
       );
@@ -845,7 +834,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Pages",
         }),
       );
@@ -858,7 +847,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Filters",
         }),
       );
@@ -871,7 +860,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Metaobjects",
         }),
       );
@@ -884,7 +873,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Navigation",
         }),
       );
@@ -897,7 +886,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Notifications",
         }),
       );
@@ -910,7 +899,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Policies",
         }),
       );
@@ -923,7 +912,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Shop",
         }),
       );
@@ -936,7 +925,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Metafield",
         }),
       );
@@ -949,7 +938,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Theme",
         }),
       );
@@ -962,7 +951,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Delivery",
         }),
       );
@@ -975,7 +964,7 @@ const Index = () => {
         "itemsCount",
         JSON.stringify({
           source: sourceCode,
-          target: current,
+          target: currentLocale,
           resourceType: "Shipping",
         }),
       );
@@ -984,7 +973,17 @@ const Index = () => {
         action: "/app/manage_translation",
       }); // 提交表单请求
     }
-  }, [current, source?.code]);
+  }, [currentLocale, source?.code]);
+
+  const handleShowWarnModal = () => {
+    setShowWarnModal(true);
+    reportClick("manage_navi_import");
+  };
+
+  const handleShowImportModal = () => {
+    setShowModal(true);
+    reportClick("manage_navi_import");
+  };
 
   const navigateToPricing = () => {
     navigate("/app/pricing");
@@ -1019,8 +1018,8 @@ const Index = () => {
               </Title>
               <Select
                 options={selectOptions}
-                value={current}
-                onChange={(value) => setCurrent(value)}
+                value={currentLocale}
+                onChange={(value) => setCurrentLocale(value)}
                 style={{ minWidth: "200px" }}
               />
             </div>
@@ -1063,37 +1062,37 @@ const Index = () => {
                 <ManageTranslationsCard
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Online Store Theme")}
                   dataSource={onlineStoreThemeDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Online Store")}
                   dataSource={onlineStoreDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Blogs and articles")}
                   dataSource={blogAndArticleDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Images data")}
                   dataSource={imageDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Liquid & Third-Party Apps")}
                   dataSource={liquidAndThirdPartyAppsDataSource}
-                  current={current}
+                  currentLocale={currentLocale}
                 />
               </Space>
             </div>

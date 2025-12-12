@@ -1,47 +1,34 @@
 import { useNavigate } from "@remix-run/react";
-import {
-  Card,
-  Space,
-  Button,
-  Typography,
-  Table,
-  Modal,
-  Result,
-  Skeleton,
-} from "antd";
-import { useCallback, useMemo } from "react";
+import { Card, Space, Button, Typography, Table } from "antd";
+import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import useReport from "scripts/eventReport";
 const { Title } = Typography;
 
 interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
-  current: string;
+  currentLocale: string;
 }
 
 const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
-  current,
+  currentLocale,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { report } = useReport();
 
   const handleEdit = useCallback(
-    (record: any) => {
-      console.log(record);
-      console.log(current);
-      
-      if (current)
+    (record: any, currentLocale: string) => {
+      if (currentLocale)
         navigate(
-          `/app/manage_translation/${record.navigation}?language=${current}`,
+          `/app/manage_translation/${record.navigation}?language=${currentLocale}`,
         );
       report(
         {
-          language: current,
+          language: currentLocale,
           online_store: record.navigation,
         },
         {
@@ -52,7 +39,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         "manage_list_edit",
       );
     },
-    [dataSource],
+    [dataSource, currentLocale],
   );
 
   const columns = useMemo(
@@ -91,12 +78,14 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         width: "40%",
         render: (_: any, record: any) => {
           return (
-            <Button onClick={() => handleEdit(record)}>{t("Edit")}</Button>
+            <Button onClick={() => handleEdit(record, currentLocale)}>
+              {t("Edit")}
+            </Button>
           );
         },
       },
     ],
-    [dataSource, cardTitle, t],
+    [dataSource, currentLocale],
   );
   return (
     <Card>

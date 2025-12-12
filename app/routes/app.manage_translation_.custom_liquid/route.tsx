@@ -273,7 +273,7 @@ const Index = () => {
               replacementMethod: !!updateLiquidReplacementMethod?.response,
             }
           : item,
-      );      
+      );
       setDataSource(newData);
     } else {
       shopify.toast.show(updateLiquidReplacementMethod?.errorMsg);

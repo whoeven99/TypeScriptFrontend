@@ -425,7 +425,7 @@ const Index = () => {
   };
 
   const onCancel = () => {
-    navigate(`/app/switcher`); // 跳转到 /app/manage_translation
+    navigate(`/app/switcher`); // 跳转到 /app/switcher
   };
 
   return (

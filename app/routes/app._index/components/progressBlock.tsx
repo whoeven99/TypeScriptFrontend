@@ -278,11 +278,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={() => {
-                navigate("/app/manage_translation", {
-                  state: {
-                    key: target,
-                  },
-                });
+                navigate(`/app/manage_translation?language=${target}`);
                 reportClick("dashboard_translation_task_review");
               }}
             >
@@ -327,11 +323,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={() => {
-                navigate("/app/manage_translation", {
-                  state: {
-                    key: target,
-                  },
-                });
+                navigate(`/app/manage_translation?language=${target}`);
                 reportClick("dashboard_translation_task_review");
               }}
             >
@@ -413,11 +405,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={() => {
-                navigate("/app/manage_translation", {
-                  state: {
-                    key: target,
-                  },
-                });
+                navigate(`/app/manage_translation?language=${target}`);
                 reportClick("dashboard_translation_task_review");
               }}
             >
