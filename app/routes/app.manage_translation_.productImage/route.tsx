@@ -1136,9 +1136,7 @@ const Index = () => {
   };
 
   const onCancel = () => {
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
   };
 
   return (

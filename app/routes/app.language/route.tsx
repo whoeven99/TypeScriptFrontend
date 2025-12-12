@@ -678,9 +678,7 @@ const Index = () => {
   };
 
   const navigateToManage = (selectedLanguageCode: string) => {
-    navigate("/app/manage_translation", {
-      state: { key: selectedLanguageCode },
-    });
+    navigate(`/app/manage_translation?language=${selectedLanguageCode}`);
     fetcher.submit(
       {
         log: `${shop} 前往管理${selectedLanguageCode}, 从语言页面点击`,
@@ -948,9 +946,9 @@ const Index = () => {
                     <Button
                       style={{ width: "100%" }}
                       onClick={() => {
-                        navigate("/app/manage_translation", {
-                          state: { key: item.locale },
-                        });
+                        navigate(
+                          `/app/manage_translation?language=${item?.locale}`,
+                        );
                       }}
                     >
                       {t("Manage")}

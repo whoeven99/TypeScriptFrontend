@@ -13,10 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
-import {
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
@@ -48,9 +45,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const endCursor = JSON.parse(formData.get("endCursor") as string);
-  const confirmData: any[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!endCursor:
       try {
@@ -497,9 +492,7 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`, {
-        state: { key: searchTerm },
-      }); // 跳转到 /app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
     }
   };
 

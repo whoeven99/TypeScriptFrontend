@@ -63,7 +63,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const appInstalls = JSON.parse(formData.get("appInstalls") as string);
-  const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
   const translateImage = JSON.parse(formData.get("translateImage") as string);
   const replaceTranslateImage = JSON.parse(
@@ -90,17 +89,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "SERVER_ERROR",
           response: null,
         };
-      }
-
-    case !!language:
-      try {
-        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        return json({ data: shopLanguages });
-      } catch (error) {
-        console.error("Error manage_translation language:", error);
       }
 
     case !!itemsCount:
@@ -183,8 +171,9 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const { plan } = useSelector((state: any) => state.userConfig);
+
+  const { reportClick } = useReport();
 
   const { source } = useSelector((state: any) => state.userConfig);
 
@@ -196,7 +185,9 @@ const Index = () => {
     (state: any) => state.languageItemsData,
   );
 
-  const { key } = useMemo(() => location.state || {}, [location.state]);
+  const loading = useMemo(() => {
+    return !source?.code;
+  }, [source]);
 
   const selectOptions = useMemo(() => {
     const newArray = languageTableData?.map((language: ShopLocalesType) => ({
@@ -207,8 +198,7 @@ const Index = () => {
     return newArray || [];
   }, [languageTableData]);
 
-  const [currentLocale, setCurrentLocale] = useState<string>(searchTerm || "");
-  const [loading, setLoading] = useState(true);
+  const [currentLocale, setCurrentLocale] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [appInstallList, setAppInstallList] = useState<{
@@ -234,8 +224,6 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
-
-  const { reportClick } = useReport();
 
   const productsDataSource: TableDataType[] = [
     {
@@ -565,16 +553,6 @@ const Index = () => {
     return list;
   }, [appInstallList]);
 
-  const handleShowWarnModal = () => {
-    setShowWarnModal(true);
-    reportClick("manage_navi_import");
-  };
-
-  const handleShowImportModal = () => {
-    setShowModal(true);
-    reportClick("manage_navi_import");
-  };
-
   useEffect(() => {
     fetcher.submit(
       {
@@ -596,16 +574,20 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const newArray = languageTableData?.map((language: ShopLocalesType) => ({
-      label: language?.name,
-      value: language?.locale,
-    }));
-    if (!searchTerm) {
-      setCurrentLocale(newArray[0]?.value);
-    } else {
-      setCurrentLocale(searchTerm);
+    if (languageTableData?.length) {
+      const newArray = languageTableData?.map((language: ShopLocalesType) => ({
+        label: language?.name,
+        value: language?.locale,
+      }));
+
+      const findValue = newArray?.find((item) => item.value == searchTerm);
+
+      if (findValue && searchTerm) {
+        setCurrentLocale(searchTerm);
+      } else {
+        setCurrentLocale(newArray[0]?.value);
+      }
     }
-    setLoading(false);
   }, [languageTableData]);
 
   useEffect(() => {
@@ -788,13 +770,6 @@ const Index = () => {
       }
     }
   }, [shippingFetcher.data]);
-
-  useEffect(() => {
-    const foundItem = selectOptions?.find((item) => item.value === key);
-    if (foundItem && source) {
-      setCurrentLocale(key);
-    }
-  }, [key, selectOptions]);
 
   useEffect(() => {
     const findItem = languageItemsData.find(
@@ -999,6 +974,16 @@ const Index = () => {
       }); // 提交表单请求
     }
   }, [currentLocale, source?.code]);
+
+  const handleShowWarnModal = () => {
+    setShowWarnModal(true);
+    reportClick("manage_navi_import");
+  };
+
+  const handleShowImportModal = () => {
+    setShowModal(true);
+    reportClick("manage_navi_import");
+  };
 
   const navigateToPricing = () => {
     navigate("/app/pricing");
