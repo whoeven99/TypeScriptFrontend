@@ -51,6 +51,7 @@ const { Title, Text } = Typography;
 
 export interface MarketType {
   key: string;
+  defaultLocale: string;
   domain: {
     [key: string]: string[];
   };
@@ -155,6 +156,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               webPresences(first: 10) {
                 nodes {
                   id
+                  defaultLocale{
+                    locale
+                  }
                   domain {
                     id
                     host
@@ -396,6 +400,7 @@ const Index = () => {
         if (market?.id && market?.domain) {
           newMarketArray.push({
             key: market?.id,
+            defaultLocale: market?.defaultLocale?.locale,
             domain: {
               [market?.domain?.host]:
                 market?.domain?.localization?.alternateLocales,
@@ -606,10 +611,15 @@ const Index = () => {
           checked={
             record.published &&
             markets?.some((item) => {
-              return Object.keys(item.domain).some((key) => {
-                // 检查 domain[key] 数组中是否包含 record?.locale
-                return item.domain[key].includes(record?.locale);
-              });
+              // console.log("item: ", item);
+              // console.log("record: ", record);
+
+              return (
+                Object.keys(item.domain).some((key) => {
+                  // 检查 domain[key] 数组中是否包含 record?.locale
+                  return item.domain[key].includes(record?.locale);
+                }) || item.defaultLocale == record?.locale
+              );
             })
           }
           onChange={(checked) => handlePublishChange(record.locale, checked)}

@@ -28,6 +28,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       }
                       webPresence {
                         id
+                        defaultLocale{
+                          locale
+                        }
                         domain {
                           id
                           host
