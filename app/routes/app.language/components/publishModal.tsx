@@ -69,6 +69,9 @@ const PublishModal: React.FC<PublishModalProps> = ({
         webPresenceUpdate?.forEach((market: any) => {
           const webpresenceId =
             market?.value?.data?.webPresenceUpdate?.webPresence?.id;
+          const defaultLocale =
+            market?.value?.data?.webPresenceUpdate?.webPresence?.defaultLocale
+              ?.locale;
           const host =
             market?.value?.data?.webPresenceUpdate?.webPresence?.domain?.host;
           const locales =
@@ -91,6 +94,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
             } else {
               updatedMarkets.push({
                 key: webpresenceId,
+                defaultLocale,
                 domain: {
                   [host]: locales,
                 },
@@ -153,6 +157,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
       markets.flatMap((market) =>
         Object.entries(market.domain).map(([host, locales]) => ({
           key: market.key,
+          defaultLocale: market.defaultLocale,
           domain: host,
           originalPublishStatus: (locales as string[]).includes(
             publishLangaugeCode,
@@ -174,23 +179,30 @@ const PublishModal: React.FC<PublishModalProps> = ({
       title: t("Publish"),
       dataIndex: "publish",
       key: "publish",
-      render: (_: any, record: any) => (
-        <Switch
-          checked={record.published}
-          onChange={(checked) => {
-            setDataSource(
-              dataSource.map((item) =>
-                item.key === record.key
-                  ? {
-                      ...item,
-                      published: checked,
-                    }
-                  : item,
-              ),
-            );
-          }}
-        />
-      ),
+      render: (_: any, record: any) => {
+        console.log("record?.defaultLocale: ", record?.defaultLocale);
+        console.log("publishLangaugeCode: ", publishLangaugeCode);
+
+        if (record?.defaultLocale == publishLangaugeCode)
+          return <Text>{t("Default")}</Text>;
+        return (
+          <Switch
+            checked={record.published}
+            onChange={(checked) => {
+              setDataSource(
+                dataSource.map((item) =>
+                  item.key === record.key
+                    ? {
+                        ...item,
+                        published: checked,
+                      }
+                    : item,
+                ),
+              );
+            }}
+          />
+        );
+      },
     },
   ];
 
