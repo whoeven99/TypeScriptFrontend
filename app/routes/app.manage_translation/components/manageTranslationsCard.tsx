@@ -18,13 +18,13 @@ const { Title } = Typography;
 interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
-  current: string;
+  currentLocale: string;
 }
 
 const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
-  current,
+  currentLocale,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -33,15 +33,15 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const handleEdit = useCallback(
     (record: any) => {
       console.log(record);
-      console.log(current);
-      
-      if (current)
+      console.log(currentLocale);
+
+      if (currentLocale)
         navigate(
-          `/app/manage_translation/${record.navigation}?language=${current}`,
+          `/app/manage_translation/${record.navigation}?language=${currentLocale}`,
         );
       report(
         {
-          language: current,
+          language: currentLocale,
           online_store: record.navigation,
         },
         {
