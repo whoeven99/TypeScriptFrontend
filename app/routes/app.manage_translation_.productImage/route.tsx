@@ -399,12 +399,15 @@ const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
-  const languageTableData = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
   const navigate = useNavigate();
   const isManualChange = useRef(true);
   const timeoutIdRef = useRef<any>(true);
+
+  const languageTableData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  const { source } = useSelector((state: any) => state.userConfig);
 
   const fetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -542,9 +545,8 @@ const Index = () => {
     { label: "Urdu", value: "ur" },
     { label: "Vietnamese", value: "vi" },
   ];
-  const [sourceLanguage, setSourceLanguage] = useState("zh");
+  const [sourceLanguage, setSourceLanguage] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
-  const [defaultLanguage, setDefaultLanguage] = useState<any>();
   const specialTargetRules: Record<string, string[]> = {
     "zh-tw": ["zh", "en"], // 目标为繁体，只能由 zh 或 en 来翻译
     el: ["en", "tr"], // 目标为希腊语，只能由 en 或 tr 来翻译
@@ -560,21 +562,14 @@ const Index = () => {
       };
     });
     setSourceLanguages(sourceLangOptions);
-    languageFetcher.submit(
-      { language: JSON.stringify({}) },
-      { method: "POST", action: "/app/manage_translation" },
-    );
   }, []);
+
   useEffect(() => {
-    if (languageFetcher.data) {
-      languageFetcher.data.data.forEach((item: any) => {
-        if (item.primary) {
-          setDefaultLanguage(item);
-          setSourceLanguage(normalizeLocale(item.locale));
-        }
-      });
+    if (source?.code) {
+      setSourceLanguage(normalizeLocale(source?.code));
     }
-  }, [languageFetcher.data]);
+  }, [source]);
+
   const canTranslate = (source: string, target: string): boolean => {
     const src = normalizeLocale(source);
     const tgt = normalizeLocale(target);
