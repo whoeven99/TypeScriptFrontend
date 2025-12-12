@@ -778,10 +778,6 @@ const Index = () => {
     }
   }, [key, selectOptions]);
 
-  useEffect(() => {
-    console.log("loading: ", loading);
-  }, [loading]);
-
   // console.log("selectOptions: ", loading);
   // console.log("selectOptions: ", !!selectOptions.length);
   // console.log("selectOptions: ", loading || !!selectOptions?.length);

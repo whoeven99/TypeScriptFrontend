@@ -572,6 +572,7 @@ const Index = () => {
           action: `/app/manage_translation/pagefly?language=${language}`,
         },
       ); // 提交表单请求
+      axiosForTranslatedData(language);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/pagefly?language=${language}`);
@@ -605,7 +606,7 @@ const Index = () => {
     }
   };
 
-  const axiosForTranslatedData = async () => {
+  const axiosForTranslatedData = async (language?: string) => {
     setLoadingStatus({
       ...loadingStatus,
       shopNameLiquidDataIsPost: true,
@@ -613,7 +614,7 @@ const Index = () => {
     const data = await ReadTranslatedText({
       shop: globalStore?.shop || "",
       server: server || "",
-      languageCode: selectedLanguage,
+      languageCode: language || selectedLanguage,
     });
     if (data.success) {
       shopNameLiquidDataRef.current = data.response || [];
