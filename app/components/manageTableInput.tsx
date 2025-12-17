@@ -29,7 +29,7 @@ interface ManageTableInputProps {
       [key: string]: string;
     }>
   >;
-  handleInputChange?: (record: any, value: string, index?: number) => void;
+  handleInputChange?: (record: any, value: string) => void;
   isRtl?: boolean;
   index?: number;
 }
@@ -95,11 +95,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           onUpdate: ({ editor }) => {
             if (!isInitialized) return;
             const html = editor.getHTML(); // 原始 HTML
-            handleInputChange(
-              record,
-              html,
-              index ? Number(index + "" + record.index) : record.index,
-            );
+            handleInputChange(record, html);
           },
         },
         [],
@@ -129,8 +125,8 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       return (
         <Tiptap
           editor={targetEditor}
-          htmlContent={htmlContent}
-          setHtmlContent={setHtmlContent}
+          htmlContent={translatedValues[record?.key]}
+          setHtmlContent={(e) => handleInputChange(record, e)}
           isSuccess={isSuccess}
           isrtl={isRtl}
         />
@@ -140,13 +136,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       <TextArea
         rows={4}
         value={translatedValues[record?.key]}
-        onChange={(e) =>
-          handleInputChange(
-            record,
-            e.target.value,
-            index ? Number(index + "" + record.index) : record.index,
-          )
-        }
+        onChange={(e) => handleInputChange(record, e.target.value)}
         className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
       />
     );

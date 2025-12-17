@@ -518,7 +518,7 @@ const Index = () => {
   }: {
     resourceType: string;
     record: any;
-    handleInputChange: (key: string, value: string) => void;
+    handleInputChange: (record: any, value: string) => void;
   }) => {
     fetcher.submit(
       {

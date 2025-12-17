@@ -29,13 +29,7 @@ const Tiptap = ({
   const [showTiptap, setShowTiptap] = useState(true);
 
   const hideTiptap = (value: boolean) => {
-    setHtmlContent(editor?.options?.content as string);
     setShowTiptap(value);
-  };
-
-  const handleHtmlContentChange = (e: any) => {
-    editor?.commands.setContent(e.target.value);
-    setHtmlContent(e.target.value);
   };
 
   return (
@@ -61,7 +55,7 @@ const Tiptap = ({
           className={`html-input ${isrtl ? "rtl-input" : ""} ${readOnly ? "readOnly-input" : ""}`}
           ref={textareaRef}
           value={htmlContent}
-          onChange={(e) => handleHtmlContentChange(e)}
+          onChange={(e) => setHtmlContent(e.target.value)}
           readOnly={readOnly}
         />
       )}
