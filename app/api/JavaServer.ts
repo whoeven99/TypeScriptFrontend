@@ -4,6 +4,68 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
 
+//SHOP_UPDATE触发通知
+export const WebhookDefaultLanguage = async ({
+  shop,
+  JSONData,
+}: {
+  shop: string;
+  JSONData: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/webhookDefaultLanguage?shopName=${shop}`,
+      method: "POST",
+      data: {
+        languageData: JSONData,
+      },
+    });
+
+    console.log(`${shop} WebhookDefaultLanguage: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} WebhookDefaultLanguage error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+//THEMES_PUBLISH触发通知
+export const WebhookDefaultTheme = async ({
+  shop,
+  JSONData,
+}: {
+  shop: string;
+  JSONData: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/webhookDefaultTheme?shopName=${shop}`,
+      method: "POST",
+      data: {
+        themeData: JSONData,
+      },
+    });
+
+    console.log(`${shop} WebhookDefaultTheme: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} WebhookDefaultTheme error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 //ip自定义配置初始化
 export const ContinueTranslating = async ({
   shop,

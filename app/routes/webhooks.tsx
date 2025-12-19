@@ -16,6 +16,8 @@ import {
   Uninstall,
   UpdateStatus,
   UpdateUserPlan,
+  WebhookDefaultLanguage,
+  WebhookDefaultTheme,
 } from "~/api/JavaServer";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -230,6 +232,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       } catch (error) {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
+        return new Response(null, { status: 200 });
+      }
+    case "THEMES_PUBLISH":
+      try {
+        const JSONData = JSON.stringify(payload);
+        await WebhookDefaultTheme({
+          shop,
+          JSONData,
+        });
+        break;
+      } catch (error) {
+        console.error("Error THEMES_PUBLISH:", error);
+        return new Response(null, { status: 200 });
+      }
+    case "SHOP_UPDATE":
+      try {
+        const JSONData = JSON.stringify(payload);
+        await WebhookDefaultLanguage({
+          shop,
+          JSONData,
+        });
+        break;
+      } catch (error) {
+        console.error("Error SHOP_UPDATE:", error);
         return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_DATA_REQUEST":
