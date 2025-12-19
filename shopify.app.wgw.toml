@@ -1,9 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
 client_id = "4c3f52479223c2cd7ef817687bb10319"
 name = "Ciwi.ai:FAT(LocalW)"
 handle = "ciwi-localw"
-application_url = "https://2c971c469ed8.ngrok.app"
+application_url = "https://a21a398b17e0.ngrok.app"
 embedded = true
 
 [build]
@@ -16,22 +15,32 @@ scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_na
 
 [auth]
 redirect_urls = [
-  "https://2c971c469ed8.ngrok.app/auth/callback",
-  "https://2c971c469ed8.ngrok.app/auth/shopify/callback",
-  "https://2c971c469ed8.ngrok.app/api/auth/callback"
+  "https://a21a398b17e0.ngrok.app/auth/callback",
+  "https://a21a398b17e0.ngrok.app/auth/shopify/callback",
+  "https://a21a398b17e0.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2025-04"
 
-  [[webhooks.subscriptions]]
-  topics = [
+[[webhooks.subscriptions]]
+topics = [
   "app_purchases_one_time/update",
   "app_subscriptions/update",
-  "app/uninstalled"
-  ]
-  uri = "/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  "app/uninstalled",
+  "themes/publish"
+]
+uri = "/webhooks"
+
+[[webhooks.subscriptions]]
+topics = ["shop/update"]
+uri = "/webhooks"
+include_fields = ["primary_locale"]
+compliance_topics = [
+  "customers/data_request",
+  "customers/redact",
+  "shop/redact"
+]
 
 [pos]
 embedded = false
