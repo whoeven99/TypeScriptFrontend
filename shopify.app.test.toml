@@ -1,5 +1,4 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
 client_id = "dec512b68e658e4f21588e3d4de0e748"
 name = "Ciwi.ai:FAT(Test)"
 handle = "ciwi-test"
@@ -11,7 +10,8 @@ embedded = true
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,read_themes,read_translations,unauthenticated_read_metaobjects,unauthenticated_read_product_listings,write_locales,write_markets,write_metaobjects,write_products,write_translations"
-optional_scopes = ["read_customer_events","write_pixels"]
+optional_scopes = ["read_customer_events", "write_pixels"]
+
 [auth]
 redirect_urls = [
   "https://typescriptfrontend.onrender.com/auth/callback",
@@ -22,14 +22,24 @@ redirect_urls = [
 [webhooks]
 api_version = "2025-04"
 
-  [[webhooks.subscriptions]]
-  topics = [
+[[webhooks.subscriptions]]
+topics = [
   "app_purchases_one_time/update",
   "app_subscriptions/update",
-  "app/uninstalled"
+  "app/uninstalled",
+  "themes/publish"
 ]
-  uri = "/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+uri = "/webhooks"
+
+[[webhooks.subscriptions]]
+topics = ["shop/update"]
+uri = "/webhooks"
+include_fields = ["primary_locale"]
+compliance_topics = [
+  "customers/data_request",
+  "customers/redact",
+  "shop/redact"
+]
 
 [pos]
 embedded = false
