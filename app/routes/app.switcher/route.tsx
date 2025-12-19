@@ -24,7 +24,7 @@ import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
 import axios from "axios";
-import { queryShop } from "~/api/admin";
+import { queryShopBaseConfigData } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
@@ -112,21 +112,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!shopInfo:
       try {
-        const shopLoad = await queryShop({
+        const shopLoad = await queryShopBaseConfigData({
           shop,
           accessToken: accessToken as string,
         });
-        const moneyFormat = shopLoad?.currencyFormats?.moneyFormat;
+        const moneyFormat = shopLoad?.shop?.currencyFormats?.moneyFormat;
         const moneyWithCurrencyFormat =
-          shopLoad?.currencyFormats?.moneyWithCurrencyFormat;
+          shopLoad?.shop?.currencyFormats?.moneyWithCurrencyFormat;
         if (shopLoad) {
           return {
             success: true,
             errorCode: 0,
             errorMsg: "",
             response: {
-              defaultCurrencyCode:
-                shopLoad?.currencyFormats?.defaultCurrencyCode,
               moneyFormat,
               moneyWithCurrencyFormat,
             },
@@ -134,20 +132,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } else {
           return {
             success: false,
-            errorCode: 1,
-            errorMsg: "",
-            response: {
-              defaultCurrencyCode: "",
-              moneyFormat: "",
-              moneyWithCurrencyFormat: "",
-            },
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
           };
         }
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     default:
-      return null;
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
   }
 };
 
@@ -192,7 +197,6 @@ const Index = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
-  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
     useState<boolean>(false);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
@@ -426,7 +430,6 @@ const Index = () => {
             setWithoutMoneyValue(moneyFormatHtmlData);
           }
         }
-        setDefaultCurrencyCode(shopFetcher.data.response.defaultCurrencyCode);
       }
     } else {
     }
@@ -736,7 +739,6 @@ const Index = () => {
           loading={cardLoading}
           shop={shop}
           ciwiSwitcherId={ciwiSwitcherId}
-          defaultCurrencyCode={defaultCurrencyCode}
           withMoneyValue={withMoneyValue}
           withoutMoneyValue={withoutMoneyValue}
         />

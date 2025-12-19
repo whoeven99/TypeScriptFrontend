@@ -29,7 +29,7 @@ api_version = "2025-04"
   "app_purchases_one_time/update",
   "app_subscriptions/update",
   "app/uninstalled"
-]
+  ]
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 

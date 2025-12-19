@@ -23,7 +23,7 @@ import {
   AddUserFreeSubscription,
   InsertOrUpdateOrder,
   InitializationDetection,
-  UserAdd,
+  UserInitialization,
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
@@ -103,12 +103,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
     if (init) {
       try {
-        const init = await InitializationDetection({ shop });
-        await UserAdd({
+        await UserInitialization({
           shop,
           accessToken: accessToken as string,
-          init: init?.add,
         });
+        const init = await InitializationDetection({ shop });
         if (init?.success) {
           if (!init?.response?.insertCharsByShopName) {
             await InsertCharsByShopName({

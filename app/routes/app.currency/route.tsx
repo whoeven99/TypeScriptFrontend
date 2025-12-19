@@ -3,7 +3,6 @@ import { Page } from "@shopify/polaris";
 import {
   Button,
   Flex,
-  message,
   Space,
   Table,
   Typography,
@@ -20,16 +19,11 @@ import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
 import { useDispatch, useSelector } from "react-redux";
-import { BaseOptionType, DefaultOptionType } from "antd/es/select";
-import { queryShop } from "~/api/admin";
 import {
-  AddCurrency,
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
-  InitCurrency,
   UpdateCurrency,
-  UpdateDefaultCurrency,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
@@ -37,7 +31,6 @@ import CurrencyEditModal from "./components/currencyEditModal";
 import { setTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-import { useNavigate } from "react-router-dom";
 import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 

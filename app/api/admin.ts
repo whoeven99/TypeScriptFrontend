@@ -289,7 +289,7 @@ export const queryShopLanguages = async ({
   }
 };
 
-export const queryShop = async ({
+export const queryShopBaseConfigData = async ({
   shop,
   accessToken,
 }: {
@@ -307,7 +307,19 @@ export const queryShop = async ({
         currencyFormats {
           moneyFormat
           moneyWithCurrencyFormat
-        }      
+        }
+      }
+      themes(roles: MAIN, first: 1) {
+        nodes {
+          id
+          name
+        }
+      }
+      shopLocales(published: true) {
+        name
+        locale
+        primary
+        published
       }
     }`;
 
@@ -320,9 +332,15 @@ export const queryShop = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.shop;
-    console.log("queryShop main currencyCode: ", res?.currencyCode);
-    console.log("queryShop currencyFormats: ", res?.currencyFormats);
+    const res = response.data.data;
+    console.log(
+      "queryShopBaseConfigData main currencyCode: ",
+      res?.shop?.currencyCode,
+    );
+    console.log(
+      "queryShopBaseConfigData currencyFormats: ",
+      res?.shop?.currencyFormats,
+    );
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);
