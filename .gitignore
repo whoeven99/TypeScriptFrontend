@@ -13,11 +13,9 @@ database.sqlite
 .env
 .env.*
 
-
-
-
-
 /extensions/*/dist
+
+shopify.app.wgw.toml
 
 # Ignore shopify files created during app dev
 .shopify/*
