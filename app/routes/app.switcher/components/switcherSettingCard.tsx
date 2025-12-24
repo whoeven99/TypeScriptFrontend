@@ -22,7 +22,6 @@ interface SwitcherSettingCardProps {
   ciwiSwitcherId: string;
   withMoneyValue: string;
   withoutMoneyValue: string;
-  defaultCurrencyCode: string;
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
@@ -140,15 +139,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         <div>
           <strong>HTML with currency:</strong>
           {withMoneyValue ? (
-            // <Paragraph
-            //   copyable={{
-            //     text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
-            //   }}
-            // >
-            //   &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
-            //   {defaultCurrencyCode}
-            //   &lt;/span&gt;
-            // </Paragraph>
             <Paragraph
               copyable={{
                 text: `<span class=ciwi-money>${withMoneyValue}</span>`,

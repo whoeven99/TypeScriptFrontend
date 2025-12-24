@@ -1,8 +1,71 @@
 import axios from "axios";
-import { queryShop, queryShopLanguages } from "./admin";
+import { queryShopBaseConfigData, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
+
+// TODO THEMES_PUBLISH和SHOP_UPDATE webhooks待订阅
+// //SHOP_UPDATE触发通知
+// export const WebhookDefaultLanguage = async ({
+//   shop,
+//   JSONData,
+// }: {
+//   shop: string;
+//   JSONData: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/user/webhookDefaultLanguage?shopName=${shop}`,
+//       method: "POST",
+//       data: {
+//         languageData: JSONData,
+//       },
+//     });
+
+//     console.log(`${shop} WebhookDefaultLanguage: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error(`${shop} WebhookDefaultLanguage error:`, error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: null,
+//     };
+//   }
+// };
+
+// //THEMES_PUBLISH触发通知
+// export const WebhookDefaultTheme = async ({
+//   shop,
+//   JSONData,
+// }: {
+//   shop: string;
+//   JSONData: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/user/webhookDefaultTheme?shopName=${shop}`,
+//       method: "POST",
+//       data: {
+//         themeData: JSONData,
+//       },
+//     });
+
+//     console.log(`${shop} WebhookDefaultTheme: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error(`${shop} WebhookDefaultTheme error:`, error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: null,
+//     };
+//   }
+// };
 
 //ip自定义配置初始化
 export const ContinueTranslating = async ({
@@ -1309,36 +1372,41 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
 
 //用户数据初始化
 //添加用户
-export const UserAdd = async ({
+export const UserInitialization = async ({
   shop,
   accessToken,
-  init,
 }: {
   shop: string;
   accessToken: string;
-  init: boolean;
 }) => {
   try {
-    const shopData = await queryShop({ shop, accessToken });
-    const shopOwnerName = shopData?.shopOwnerName;
+    const shopData = await queryShopBaseConfigData({ shop, accessToken });
+    const shopEmail = shopData?.shop?.email;
+    const shopOwnerName = shopData?.shop?.shopOwnerName;
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
     const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
-    const addUserInfoResponse = await axios({
-      url: `${process.env.SERVER_URL}/user/add`,
+    const themesData = shopData?.themes?.nodes?.[0];
+    const defaultThemeId = themesData?.id;
+    const defaultThemeName = themesData?.name;
+    const defaultLanguageData = shopData?.shopLocales?.[0]?.locale;
+
+    await axios({
+      url: `${process.env.SERVER_URL}/user/userInitialization?shopName=${shop}`,
       method: "POST",
       data: {
-        shopName: shop,
         accessToken: accessToken,
-        email: init ? "" : shopData.email || "",
-        firstName: init ? "" : firstName || "",
-        lastName: init ? "" : lastName || "",
-        userTag: init ? "" : shopOwnerName || "",
+        email: shopEmail,
+        firstName: firstName || "",
+        lastName: lastName || "",
+        userTag: shopOwnerName,
+        defaultThemeId,
+        defaultThemeName,
+        defaultLanguageData,
       },
     });
-    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
   } catch (error) {
-    console.error("Error UserAdd:", error);
+    console.error("Error UserInitialization:", error);
   }
 };
 
