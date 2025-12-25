@@ -1391,6 +1391,17 @@ export const UserInitialization = async ({
     const defaultThemeName = themesData?.name;
     const defaultLanguageData = shopData?.shopLocales?.[0]?.locale;
 
+    console.log(`${shop} UserInitialization: `, {
+      accessToken: accessToken,
+      email: shopEmail,
+      firstName: firstName || "",
+      lastName: lastName || "",
+      userTag: shopOwnerName,
+      defaultThemeId,
+      defaultThemeName,
+      defaultLanguageData,
+    });
+
     await axios({
       url: `${process.env.SERVER_URL}/user/userInitialization?shopName=${shop}`,
       method: "POST",
