@@ -333,17 +333,12 @@ export const queryShopBaseConfigData = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data;
-    console.log(
-      "queryShopBaseConfigData main currencyCode: ",
-      res?.shop?.currencyCode,
-    );
-    console.log(
-      "queryShopBaseConfigData currencyFormats: ",
-      res?.shop?.currencyFormats,
-    );
+    console.log(`${shop} shopData: `, res?.shop);
+    console.log(`${shop} themesData: `, res?.themes?.nodes?.[0]);
+    console.log(`${shop} shopLocalesData: `, res?.shopLocales);
     return res;
   } catch (error) {
-    console.error("Error fetching shop:", error);
+    console.error(`${shop} Error queryShopBaseConfigData: `, error);
     return null;
   }
 };
