@@ -926,7 +926,7 @@ const Index = () => {
         JSON.stringify({
           source: sourceCode,
           target: currentLocale,
-          resourceType: "Metafield",
+          resourceType: "Store metadata",
         }),
       );
       store_metadataFetcher.submit(store_metadataFormData, {
