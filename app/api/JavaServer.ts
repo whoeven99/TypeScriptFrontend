@@ -1389,7 +1389,9 @@ export const UserInitialization = async ({
     const themesData = shopData?.themes?.nodes?.[0];
     const defaultThemeId = themesData?.id;
     const defaultThemeName = themesData?.name;
-    const defaultLanguageData = shopData?.shopLocales?.[0]?.locale;
+    const defaultLanguageData = shopData?.shopLocales?.find(
+      (item: any) => item?.primary,
+    )?.locale;
 
     console.log(`${shop} UserInitialization: `, {
       accessToken: accessToken,
