@@ -23,14 +23,24 @@ redirect_urls = [
 [webhooks]
 api_version = "2025-04"
 
-  [[webhooks.subscriptions]]
-  topics = [
-  "app_purchases_one_time/update",
-  "app_subscriptions/update",
-  "app/uninstalled"
+[[webhooks.subscriptions]]
+topics = [
+    "app_purchases_one_time/update",
+    "app_subscriptions/update",
+    "app/uninstalled",
+    "themes/publish"
 ]
-  uri = "/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+uri = "/webhooks"
+
+[[webhooks.subscriptions]]
+topics = ["shop/update"]
+uri = "/webhooks"
+include_fields = ["primary_locale"]
+compliance_topics = [
+    "customers/data_request",
+    "customers/redact",
+    "shop/redact"
+]
 
 [pos]
 embedded = false
