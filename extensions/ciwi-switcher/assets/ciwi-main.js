@@ -171,7 +171,7 @@ async function ciwiOnload() {
   let needRedirection = !storedCountry && !storedCurrency;
 
   //浏览器语言
-  let browserLanguage = navigator.language || navigator.userLanguage;
+  let browserLanguage = navigator.language;
 
   // 如果语言包含 'q=xx' 或类似的内容，提取前面的部分
   browserLanguage = browserLanguage.split(";")[0];
@@ -179,8 +179,6 @@ async function ciwiOnload() {
   if (!browserLanguage.includes("zh")) {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
-
-  console.log(browserLanguage);
 
   //获取地区对应货币数据
   const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
@@ -224,7 +222,7 @@ async function ciwiOnload() {
         "ciwi_iplocation_expire_at",
         Date.now() + 7 * 24 * 60 * 60 * 1000,
       );
-      
+
       //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
 
