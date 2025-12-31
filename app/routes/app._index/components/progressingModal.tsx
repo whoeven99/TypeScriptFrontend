@@ -37,6 +37,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
             target={item?.target}
             status={item?.status}
             translateStatus={item?.translateStatus}
+            initialCount={item?.initialCount}
             progressData={item?.progressData}
             value={item?.value}
             module={item?.module}

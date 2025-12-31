@@ -540,7 +540,7 @@
   "progressing.continueTranslate": "Übersetzung fortsetzen",
   "translation_process_saved": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
   "progressing.hasPayed": "Übersetzungs-Credits wurden hinzugefügt. Sie können nun Ihre Übersetzung fortsetzen.",
-  "translation_process_init": "Übersetzungsaufgabe wird initialisiert...",
+  "translation_process_init": "Übersetzungsinhalte werden vorbereitet… Shop-Daten werden gescannt: {{initialCount}} Elemente geladen",
   "progressing.noTranslate": "Es gibt keine laufenden Übersetzungsaufgaben.",
   "progressing.privateApiKeyAmountLimit": "Ihr API-Schlüssel hat das Limit erreicht. Bitte setzen Sie es zurück, um Ihre Übersetzungsaufgabe fortzusetzen.",
   "translation_process_translating": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",

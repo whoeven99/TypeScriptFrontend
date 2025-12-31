@@ -64,6 +64,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             target={dataSource[0]?.target}
             status={dataSource[0]?.status}
             translateStatus={dataSource[0]?.translateStatus}
+            initialCount={dataSource[0]?.initialCount}
             progressData={dataSource[0]?.progressData}
             value={dataSource[0]?.value}
             module={dataSource[0]?.module}

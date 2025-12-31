@@ -22,6 +22,7 @@ interface ProgressBlockProps {
   target: string; // 目标语言
   status: number; // 状态
   translateStatus: string; // 翻译状态
+  initialCount?: string;
   progressData: {
     RemainingQuantity: number;
     TotalQuantity: number;
@@ -39,6 +40,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   target,
   status,
   translateStatus,
+  initialCount,
   progressData,
   module,
   languageFetcher,
@@ -197,9 +199,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                    0
+                      0
                       ? progressData.TotalQuantity -
-                        progressData.RemainingQuantity
+                      progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0
@@ -210,14 +212,15 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             )}
             {status === 2 && (
               <Text>
-                {t(translateStatus, {
+                {t("translation_process_init", {
                   item: t(module),
+                  initialCount: initialCount,
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                    0
+                      0
                       ? progressData.TotalQuantity -
-                        progressData.RemainingQuantity
+                      progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0
