@@ -225,7 +225,7 @@ const Index = () => {
       if (isActiveRef.current && !hasStopped.current) {
         timeoutIdRef.current = window.setTimeout(() => {
           pollStatus();
-        }, 3000);
+        }, 1000);
       }
     }
   }, [languageFetcher.data]);

@@ -197,7 +197,7 @@
   "rating.description": "저희의 제품과 서비스에 만족하셨다면, 리뷰를 남겨주시면 개선에 도움이 될 것입니다!",
   "progressing.title": "번역 작업:",
   "progressing.target": "목표:",
-  "translation_process_init": "번역 작업을 초기화하는 중...",
+  "translation_process_init": "번역 콘텐츠 준비 중… 스토어 데이터 스캔 중: {{initialCount}} 항목 로드됨",
   "translation_process_translating": "{{item}} 모듈 번역 중({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "{{item}} 모듈 번역:",
   "translation_process_saving_shopify": "Shopify에 번역 적용 중",

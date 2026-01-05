@@ -540,7 +540,7 @@
   "progressing.continueTranslate": "Продовжити переклад",
   "translation_process_saved": "Ваш переклад готовий. Опублікуйте його, щоб застосувати зміни.",
   "progressing.hasPayed": "Кредити для перекладу додано. Тепер ви можете продовжити переклад.",
-  "translation_process_init": "Ініціалізація завдання перекладу...",
+  "translation_process_init": "Підготовка вмісту перекладу… Сканування даних магазину: завантажено {{initialCount}} елементів",
   "progressing.noTranslate": "Немає поточних завдань перекладу.",
   "progressing.privateApiKeyAmountLimit": "Ваш API ключ досяг ліміту. Скиньте його, щоб продовжити завдання перекладу.",
   "translation_process_translating": "Переклад модуля {{item}} ({{hasTranslated}}/{{totalNumber}}): ",
