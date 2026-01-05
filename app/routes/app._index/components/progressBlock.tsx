@@ -199,9 +199,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                      0
+                    0
                       ? progressData.TotalQuantity -
-                      progressData.RemainingQuantity
+                        progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0
@@ -212,15 +212,15 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             )}
             {status === 2 && (
               <Text>
-                {t("translation_process_init", {
+                {t(translateStatus, {
                   item: t(module),
                   initialCount: initialCount,
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                      0
+                    0
                       ? progressData.TotalQuantity -
-                      progressData.RemainingQuantity
+                        progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0
