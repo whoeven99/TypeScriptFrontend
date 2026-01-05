@@ -196,7 +196,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
 
   const selectedOption = useMemo(() => {
     return options.find((item) => item.key == selectedKey) || options[0];
-  }, [selectedKey]);
+  }, [selectedKey, options]);
 
   useEffect(() => {
     if (payFetcher.data) {
