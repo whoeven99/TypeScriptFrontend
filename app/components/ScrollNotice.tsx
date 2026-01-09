@@ -39,8 +39,8 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
         WebkitBoxOrient: "vertical",
       }}
       className={className}
-      // onMouseEnter={() => setIsHovered(true)}
-      // onMouseLeave={() => setIsHovered(false)}
+    // onMouseEnter={() => setIsHovered(true)}
+    // onMouseLeave={() => setIsHovered(false)}
     >
       {/* <div
                 ref={contentRef}

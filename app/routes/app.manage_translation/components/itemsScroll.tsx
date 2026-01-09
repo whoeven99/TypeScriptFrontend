@@ -46,7 +46,7 @@ const ItemsScroll: React.FC<ItemsScrollProps> = ({ menuData = undefined, setSele
                             maxHeight: '3em', // 2行 * 1.5em
                         }}
                     > */}
-                        {"item?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.label"}
+                    {"item?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.labelitem?.label"}
                     {/* </Text> */}
                 </div>
             ))}

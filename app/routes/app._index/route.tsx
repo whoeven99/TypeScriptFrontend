@@ -265,37 +265,37 @@ const Index = () => {
     votes: number;
     devStatus: string;
   }[] = [
-    {
-      key: 1,
-      need: t("devplanCard1.title"),
-      votes: 65,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 2,
-      need: t("devplanCard2.title"),
-      votes: 33,
-      devStatus: t("In development"),
-    },
-    {
-      key: 3,
-      need: t("devplanCard3.title"),
-      votes: 41,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 4,
-      need: t("devplanCard4.title"),
-      votes: 18,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 5,
-      need: t("devplanCard5.title"),
-      votes: 29,
-      devStatus: t("In development"),
-    },
-  ];
+      {
+        key: 1,
+        need: t("devplanCard1.title"),
+        votes: 65,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 2,
+        need: t("devplanCard2.title"),
+        votes: 33,
+        devStatus: t("In development"),
+      },
+      {
+        key: 3,
+        need: t("devplanCard3.title"),
+        votes: 41,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 4,
+        need: t("devplanCard4.title"),
+        votes: 18,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 5,
+        need: t("devplanCard5.title"),
+        votes: 29,
+        devStatus: t("In development"),
+      },
+    ];
 
   const handleCommitRequest = () => {
     handleContactSupport();
@@ -424,7 +424,7 @@ const Index = () => {
             switcherOpen={switcherOpen}
             blockUrl={blockUrl}
             shop={shop}
-            // handleReload={handleReload}
+          // handleReload={handleReload}
           />
 
           <Row gutter={16}>

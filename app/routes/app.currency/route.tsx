@@ -505,16 +505,16 @@ const Index = () => {
                     setSelectedRowKeys(
                       e.target.checked
                         ? [
-                            ...currentPageKeys,
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ]
+                          ...currentPageKeys,
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ]
                         : [
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ],
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ],
                     )
                   }
                 >
@@ -563,17 +563,17 @@ const Index = () => {
                             (item: any) =>
                               item?.currencyCode == item.currencyCode,
                           )?.rate === "number" && (
-                            <Text>
-                              ({defaultCurrency.symbol}1 ={" "}
-                              {currencyAutoRate
-                                .find(
-                                  (item: any) =>
-                                    item?.currencyCode == item.currencyCode,
-                                )
-                                ?.rate.toFixed(4)}{" "}
-                              {item.currencyCode})
-                            </Text>
-                          )}
+                              <Text>
+                                ({defaultCurrency.symbol}1 ={" "}
+                                {currencyAutoRate
+                                  .find(
+                                    (item: any) =>
+                                      item?.currencyCode == item.currencyCode,
+                                  )
+                                  ?.rate.toFixed(4)}{" "}
+                                {item.currencyCode})
+                              </Text>
+                            )}
                         </div>
                       ) : (
                         <Text>

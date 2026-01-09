@@ -2,7 +2,8 @@
   min-width: 100px;
   right: auto;
   top: auto;
-  position: fixed; /* 改为相对屏幕的位置 */
+  position: fixed;
+  /* 改为相对屏幕的位置 */
   height: auto;
   display: block;
   z-index: 9999999999;
@@ -19,24 +20,32 @@
 }
 
 .close_button_wrapper {
-  display: flex; /* 居中对齐图标 */
+  display: flex;
+  /* 居中对齐图标 */
   width: 100%;
   justify-content: flex-end;
 }
 
 .selector_box_close_button {
-  width: 16px; /* 给按钮固定宽度 */
-  height: 16px; /* 给按钮固定高度 */
-  display: flex; /* 居中对齐图标 */
+  width: 16px;
+  /* 给按钮固定宽度 */
+  height: 16px;
+  /* 给按钮固定高度 */
+  display: flex;
+  /* 居中对齐图标 */
   align-items: center;
   justify-content: center;
-  background: transparent; /* 背景透明 */
-  border: none; /* 去掉边框 */
+  background: transparent;
+  /* 背景透明 */
+  border: none;
+  /* 去掉边框 */
   padding: 0;
   cursor: pointer;
-  font-size: 20px; /* 如果是文字 × */
+  font-size: 20px;
+  /* 如果是文字 × */
   font-weight: bold;
-  color: #000; /* 图标颜色 */
+  color: #000;
+  /* 图标颜色 */
 }
 
 .ciwi_main_box {
@@ -47,39 +56,53 @@
   cursor: pointer;
   user-select: none;
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: center; /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: center;
+  /* 水平居中 */
   gap: 8px;
-  height: 40px; /* 明确设置高度 */
-  text-align: center; /* 文本居中 */
+  height: 40px;
+  /* 明确设置高度 */
+  text-align: center;
+  /* 文本居中 */
 }
 
 .main_box_text {
   display: inline-block;
-  line-height: 20px; /* 与图片高度一致 */
+  line-height: 20px;
+  /* 与图片高度一致 */
   vertical-align: middle;
   padding: 0;
-  font-size: 14px; /* 明确设置字体大小 */
+  font-size: 14px;
+  /* 明确设置字体大小 */
   /* overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap; */
-  text-align: center; /* 文本居中 */
-  flex: 1; /* 让文本占据剩余空间 */
+  text-align: center;
+  /* 文本居中 */
+  flex: 1;
+  /* 让文本占据剩余空间 */
 }
 
 .mainarrow_icon {
   position: absolute;
-  right: 10px; /* 改用右侧固定距离 */
-  transition: transform 0.3s ease; /* 平滑过渡 */
+  right: 10px;
+  /* 改用右侧固定距离 */
+  transition: transform 0.3s ease;
+  /* 平滑过渡 */
   width: 10% !important;
   height: 25% !important;
-  transform-origin: center center; /* 设置旋转中心点为图标中心 */
+  transform-origin: center center;
+  /* 设置旋转中心点为图标中心 */
 }
 
 .button_wrapper {
-  display: flex; /* 启用 Flexbox 布局 */
-  align-items: center; /* 垂直居中按钮 */
-  width: 100%; /* 使容器占满父元素的宽度 */
+  display: flex;
+  /* 启用 Flexbox 布局 */
+  align-items: center;
+  /* 垂直居中按钮 */
+  width: 100%;
+  /* 使容器占满父元素的宽度 */
   flex-direction: column;
   gap: 8px;
 }
@@ -132,18 +155,26 @@
 .ciwi_switcher_cancel_button {
   height: 40px;
   width: 100%;
-  border-radius: 6px; /* 边框圆角 */
-  padding: 12px; /* 按钮内边距 */
-  font-size: 14px; /* 字体大小 */
-  background-color: #000; /* 按钮背景颜色 */
-  color: white; /* 字体颜色 */
-  border: none; /* 去掉默认边框 */
-  cursor: pointer; /* 鼠标指针样式 */
+  border-radius: 6px;
+  /* 边框圆角 */
+  padding: 12px;
+  /* 按钮内边距 */
+  font-size: 14px;
+  /* 字体大小 */
+  background-color: #000;
+  /* 按钮背景颜色 */
+  color: white;
+  /* 字体颜色 */
+  border: none;
+  /* 去掉默认边框 */
+  cursor: pointer;
+  /* 鼠标指针样式 */
   text-align: center;
   line-height: normal;
   transition:
     background-color 0.3s,
-    transform 0.2s ease; /* 增加过渡效果 */
+    transform 0.2s ease;
+  /* 增加过渡效果 */
 }
 
 .ciwi_switcher_confirm_button:hover,
@@ -153,7 +184,8 @@
 
 .ciwi_switcher_confirm_button:active,
 .ciwi_switcher_cancel_button:active {
-  transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
+  transform: scale(0.98);
+  /* 点击时的反馈效果，按钮缩小 */
 }
 
 .select-wrapper {
@@ -169,9 +201,12 @@
   border: 0 !important;
   display: flex;
   position: absolute;
-  right: 5%; /* 箭头图标右对齐 */
-  pointer-events: none; /* 防止图标影响选择框的点击 */
-  transition: transform 0.3s ease; /* 平滑过渡 */
+  right: 5%;
+  /* 箭头图标右对齐 */
+  pointer-events: none;
+  /* 防止图标影响选择框的点击 */
+  transition: transform 0.3s ease;
+  /* 平滑过渡 */
 }
 
 /* @media (max-width: 768px) {
@@ -215,26 +250,32 @@
   }
 } */
 
-body > .skiptranslate {
+body>.skiptranslate {
   display: none;
 }
+
 .goog-logo-link {
   display: none !important;
 }
+
 .goog-te-gadget {
   color: transparent !important;
 }
+
 .goog-te-banner-frame.skiptranslate {
   display: none !important;
 }
-a[href="https://translate.google.com"]
-{
+
+a[href="https://translate.google.com"] {
   display: none !important;
 }
+
 .goog-te-gadget-simple {
   visibility: hidden !important;
 }
-[class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
+
+[class^="VIpgJd-"],
+/* 匹配所有以 'VIpgJd-' 开头的类名 */
 [class*="VIpgJd-"] {
   /* 匹配所有包含 'VIpgJd-' 的类名 */
   display: none !important;
@@ -293,8 +334,10 @@ a[href="https://translate.google.com"]
   object-fit: cover;
   border-radius: 2px;
   /* border: 1px solid #ddd; */
-  opacity: 0; /* 初始状态完全透明 */
-  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+  opacity: 0;
+  /* 初始状态完全透明 */
+  transition: opacity 0.3s ease;
+  /* 平滑过渡效果 */
 }
 
 .translate_float_btn_icon {
@@ -305,9 +348,12 @@ a[href="https://translate.google.com"]
   object-fit: cover;
   border-radius: 2px;
   border: 1px solid #ddd;
-  min-width: 30px; /* 保持最小宽度 */
-  opacity: 0; /* 初始状态完全透明 */
-  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+  min-width: 30px;
+  /* 保持最小宽度 */
+  opacity: 0;
+  /* 初始状态完全透明 */
+  transition: opacity 0.3s ease;
+  /* 平滑过渡效果 */
   bottom: 15px;
 }
 
@@ -317,23 +363,22 @@ a[href="https://translate.google.com"]
   object-fit: cover;
   border-radius: 2px;
   border: 1px solid #ddd;
-  opacity: 0; /* 初始状态完全透明 */
-  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+  opacity: 0;
+  /* 初始状态完全透明 */
+  transition: opacity 0.3s ease;
+  /* 平滑过渡效果 */
 }
 
 /* 当图片加载完成时显示 */
-.country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
-{
+.country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"]) {
   opacity: 1;
 }
 
-.translate_float_btn_icon[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
-{
+.translate_float_btn_icon[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"]) {
   opacity: 1;
 }
 
-.option-country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
-{
+.option-country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"]) {
   opacity: 1;
 }
 

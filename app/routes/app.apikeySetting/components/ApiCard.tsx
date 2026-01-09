@@ -37,28 +37,28 @@ export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestAp
               {modelVersion &&
                 <Text as="p" variant="bodyMd" tone="subdued">
                   {t('openai.mv')}{modelVersion}
-                </Text> 
+                </Text>
               }
-              <div style={{height:"5px"}}></div>
+              <div style={{ height: "5px" }}></div>
               <Text as="p" variant="bodyMd">
                 {t('openai.as')}
                 <Text as="span" tone={apiStatus ? 'success' : 'critical'}>
                   {apiStatus ? t('openai.Effective') : t('openai.ne')}
                 </Text>
               </Text>
-              <div style={{height:"5px"}}></div>
+              <div style={{ height: "5px" }}></div>
               <Text as="p" variant="bodyMd" tone="subdued">
                 {t('openai.Amount')}{formatNumber(limit)}
               </Text>
               {
-                !modelVersion && <div style={{height:"20px"}}></div>
-              } 
-                
+                !modelVersion && <div style={{ height: "20px" }}></div>
+              }
+
             </>
           )}
         </Box>
 
-        <div style={{ display: 'flex', gap: "10px",justifyContent:'end' }}>
+        <div style={{ display: 'flex', gap: "10px", justifyContent: 'end' }}>
           <Box paddingBlockStart="300">
             <Button variant="primary" onClick={onConfigure}>{t('openai.Configuration')}</Button>
           </Box>

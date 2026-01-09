@@ -1025,8 +1025,8 @@ const Index = () => {
             </div>
             <div className="manage-header-right">
               {plan?.type == "Free" ||
-              plan?.type == "Basic" ||
-              typeof plan === "undefined" ? (
+                plan?.type == "Basic" ||
+                typeof plan === "undefined" ? (
                 <Flex align="center" gap="middle">
                   <Popconfirm
                     title=""

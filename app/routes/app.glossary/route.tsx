@@ -488,16 +488,16 @@ const Index = () => {
                         setSelectedRowKeys(
                           e.target.checked
                             ? [
-                                ...currentPageKeys,
-                                ...selectedRowKeys.filter(
-                                  (key) => !currentPageKeys.includes(key),
-                                ),
-                              ]
+                              ...currentPageKeys,
+                              ...selectedRowKeys.filter(
+                                (key) => !currentPageKeys.includes(key),
+                              ),
+                            ]
                             : [
-                                ...selectedRowKeys.filter(
-                                  (key) => !currentPageKeys.includes(key),
-                                ),
-                              ],
+                              ...selectedRowKeys.filter(
+                                (key) => !currentPageKeys.includes(key),
+                              ),
+                            ],
                         )
                       }
                     >
@@ -521,8 +521,8 @@ const Index = () => {
                                 e.target.checked
                                   ? [...selectedRowKeys, item.key]
                                   : selectedRowKeys.filter(
-                                      (key) => key !== item.key,
-                                    ),
+                                    (key) => key !== item.key,
+                                  ),
                               );
                             }}
                           >

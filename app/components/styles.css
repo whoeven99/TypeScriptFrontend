@@ -1,44 +1,62 @@
 /* translateIcon */
 .icon-container {
   display: flex;
-  align-items: center; /* 垂直居中 */
-  background-color: #f0f0f0; /* 背景色，灰色背景 */
+  align-items: center;
+  /* 垂直居中 */
+  background-color: #f0f0f0;
+  /* 背景色，灰色背景 */
   padding: 4px 12px;
-  border-radius: 25px; /* 椭圆形容器 */
-  width: fit-content; /* 根据内容宽度自动调整 */
+  border-radius: 25px;
+  /* 椭圆形容器 */
+  width: fit-content;
+  /* 根据内容宽度自动调整 */
 }
 
 .circle {
   width: 12px;
   height: 12px;
-  border: 2px solid #888; /* 默认灰色边框 */
-  border-radius: 50%; /* 圆形 */
-  margin-right: 8px; /* 圆形和文字之间的间距 */
-  transition: all 0.2s ease; /* 圆形动画效果 */
+  border: 2px solid #888;
+  /* 默认灰色边框 */
+  border-radius: 50%;
+  /* 圆形 */
+  margin-right: 8px;
+  /* 圆形和文字之间的间距 */
+  transition: all 0.2s ease;
+  /* 圆形动画效果 */
 }
 
 .solidCircle {
   width: 6px;
   height: 6px;
-  border-radius: 50%; /* 圆形 */
-  margin-right: 8px; /* 圆形和文字之间的间距 */
-  transition: all 0.2s ease; /* 圆形动画效果 */
+  border-radius: 50%;
+  /* 圆形 */
+  margin-right: 8px;
+  /* 圆形和文字之间的间距 */
+  transition: all 0.2s ease;
+  /* 圆形动画效果 */
 }
 
 .text {
   font-size: 12px;
-  color: #888; /* 默认灰色文字 */
+  color: #888;
+  /* 默认灰色文字 */
   font-family: Arial, sans-serif;
-  display: flex; /* 启用 flexbox 布局 */
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  height: 100%; /* 确保有足够的高度 */
-  line-height: normal; /* 可以根据需要调整行高 */
+  display: flex;
+  /* 启用 flexbox 布局 */
+  justify-content: center;
+  /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  height: 100%;
+  /* 确保有足够的高度 */
+  line-height: normal;
+  /* 可以根据需要调整行高 */
 }
 
 /* 状态为 "Untranslated" 时 */
 .untranslated {
-  background-color: #f0f0f0; /* 灰色背景 */
+  background-color: #f0f0f0;
+  /* 灰色背景 */
 }
 
 .untranslated.solidCircle {
@@ -46,47 +64,59 @@
 }
 
 .untranslated .circle {
-  border-color: #888; /* 灰色圆圈 */
+  border-color: #888;
+  /* 灰色圆圈 */
 }
 
 .untranslated .text {
-  color: #888; /* 灰色文字 */
+  color: #888;
+  /* 灰色文字 */
 }
 
 /* 状态为 "Translated" 时 */
 .translated {
-  background-color: #e0f7e0; /* 浅绿色背景 */
+  background-color: #e0f7e0;
+  /* 浅绿色背景 */
 }
 
 .translated.solidCircle {
-  background-color: #4caf50; /* 绿色圆圈 */
+  background-color: #4caf50;
+  /* 绿色圆圈 */
 }
 
 .translated .circle {
-  border-color: #4caf50; /* 绿色圆圈 */
+  border-color: #4caf50;
+  /* 绿色圆圈 */
 }
 
 .translated .text {
-  color: #29845a; /* 绿色文字 */
+  color: #29845a;
+  /* 绿色文字 */
 }
 
 /* 状态为 "Translating" 时 */
 .translating {
-  background-color: #e0f7ff; /* 浅蓝色背景 */
+  background-color: #e0f7ff;
+  /* 浅蓝色背景 */
 }
 
 .translating.solidCircle {
-  background-color: #2196f3; /* 只保留顶部边框为蓝色 */
+  background-color: #2196f3;
+  /* 只保留顶部边框为蓝色 */
 }
 
 .translating .circle {
-  border-color: transparent; /* 设置边框透明 */
-  border-top-color: #2196f3; /* 只保留顶部边框为蓝色 */
-  animation: rotating 1s infinite linear; /* 旋转动画 */
+  border-color: transparent;
+  /* 设置边框透明 */
+  border-top-color: #2196f3;
+  /* 只保留顶部边框为蓝色 */
+  animation: rotating 1s infinite linear;
+  /* 旋转动画 */
 }
 
 .translating .text {
-  color: #2196f3; /* 蓝色文字 */
+  color: #2196f3;
+  /* 蓝色文字 */
 }
 
 .partly_translated {
@@ -120,19 +150,25 @@
 /* 动画：旋转 */
 @keyframes rotating {
   0% {
-    transform: rotate(0deg); /* 初始角度 */
+    transform: rotate(0deg);
+    /* 初始角度 */
   }
+
   100% {
-    transform: rotate(360deg); /* 旋转360度 */
+    transform: rotate(360deg);
+    /* 旋转360度 */
   }
 }
 
 /* paymentOptionSelect */
 .payment-option-container {
   display: flex;
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  gap: 16px; /* 每个选项之间的间隔 */
+  justify-content: center;
+  /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  gap: 16px;
+  /* 每个选项之间的间隔 */
 }
 
 .payment-option {
@@ -140,20 +176,26 @@
   padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
-  text-align: center; /* 让文本居中 */
+  text-align: center;
+  /* 让文本居中 */
   transition:
     border-color 0.3s,
-    background-color 0.3s; /* 添加过渡效果 */
+    background-color 0.3s;
+  /* 添加过渡效果 */
 }
 
 .payment-option.selected {
-  border: 2px solid #75d344; /* 选中时显示蓝色边框 */
-  background-color: #e0f7e0; /* 选中时背景色变化 */
+  border: 2px solid #75d344;
+  /* 选中时显示蓝色边框 */
+  background-color: #e0f7e0;
+  /* 选中时背景色变化 */
 }
 
 .payment-option:not(.selected) {
-  border: 2px solid #d9d9d9; /* 默认边框颜色 */
-  background-color: white; /* 默认背景色 */
+  border: 2px solid #d9d9d9;
+  /* 默认边框颜色 */
+  background-color: white;
+  /* 默认背景色 */
 }
 
 .payment-option span {
@@ -162,7 +204,8 @@
 }
 
 .payment-option input {
-  display: none; /* 隐藏默认的单选框 */
+  display: none;
+  /* 隐藏默认的单选框 */
 }
 
 .price {
@@ -208,13 +251,16 @@
 }
 
 .success_input {
-  color: rgb(0, 127, 97);          /* 文本颜色 */
-  border-color: rgb(0, 127, 97) !important; /* 边框颜色 */
+  color: rgb(0, 127, 97);
+  /* 文本颜色 */
+  border-color: rgb(0, 127, 97) !important;
+  /* 边框颜色 */
   caret-color: rgb(0, 127, 97);
 }
 
 .success_input:focus,
 .success_input:hover {
   border-color: rgb(0, 127, 97) !important;
-  box-shadow: none !important; /* 去掉antd自带高亮 */
+  box-shadow: none !important;
+  /* 去掉antd自带高亮 */
 }

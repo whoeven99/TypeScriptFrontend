@@ -18,14 +18,14 @@ interface UpdateCustomTransModalProps {
     languageCode: string;
   }[];
   defaultData?:
-    | {
-        key: number;
-        sourceText: string;
-        targetText: string;
-        replacementMethod: boolean;
-        languageCode: string;
-      }
-    | undefined;
+  | {
+    key: number;
+    sourceText: string;
+    targetText: string;
+    replacementMethod: boolean;
+    languageCode: string;
+  }
+  | undefined;
   handleUpdateDataSource: ({
     key,
     sourceText,

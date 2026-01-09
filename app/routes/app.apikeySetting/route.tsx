@@ -290,9 +290,9 @@ const Index = () => {
     setTempModelVersion(userApiConfigs[id].modelVersion || "gpt-4o");
     id === "openai"
       ? setTempKeyWords(
-          userApiConfigs[id].keywords ||
-            "Translate the following content into {language} .Only output the final correct translation",
-        )
+        userApiConfigs[id].keywords ||
+        "Translate the following content into {language} .Only output the final correct translation",
+      )
       : setTempKeyWords("");
     if (userApiConfigs[id].apiStatus) {
       setTempApiKey("******************************");
@@ -316,9 +316,9 @@ const Index = () => {
     setContent("");
     id === "openai"
       ? setTempKeyWords(
-          userApiConfigs[id].keywords ||
-            "Translate the following content into {language} .Only output the final correct translation",
-        )
+        userApiConfigs[id].keywords ||
+        "Translate the following content into {language} .Only output the final correct translation",
+      )
       : setTempKeyWords("");
   };
   const handleTranslate = () => {

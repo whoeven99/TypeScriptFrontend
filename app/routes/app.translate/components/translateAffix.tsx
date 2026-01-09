@@ -68,11 +68,11 @@ const TranslateAffix = ({
             loading={translateFetcher.state === "submitting"}
           >
             {selectedLanguageCode.length > 0 &&
-            selectedLanguageCode.every(
-              (item: string) =>
-                languageData.find((lang: any) => lang?.locale === item)
-                  ?.status === 1,
-            )
+              selectedLanguageCode.every(
+                (item: string) =>
+                  languageData.find((lang: any) => lang?.locale === item)
+                    ?.status === 1,
+              )
               ? t("Update")
               : t("Translate")}
           </Button>

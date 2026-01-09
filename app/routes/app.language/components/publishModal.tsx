@@ -190,9 +190,9 @@ const PublishModal: React.FC<PublishModalProps> = ({
                 dataSource.map((item) =>
                   item.key === record.key
                     ? {
-                        ...item,
-                        published: checked,
-                      }
+                      ...item,
+                      published: checked,
+                    }
                     : item,
                 ),
               );

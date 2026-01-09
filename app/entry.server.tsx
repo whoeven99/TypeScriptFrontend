@@ -90,7 +90,7 @@ export default async function handleRequest(
         },
       },
     });
-    
+
   const cache = createCache();
 
   function MainApp() {

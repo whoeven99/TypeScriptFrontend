@@ -12,7 +12,7 @@ interface ContactCardProps {
 
 const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
   const { t } = useTranslation();
-  const { reportClick, report } = useReport();  
+  const { reportClick, report } = useReport();
   const handleContactSupportReport = () => {
     reportClick("dashboard_contact_us");
   };

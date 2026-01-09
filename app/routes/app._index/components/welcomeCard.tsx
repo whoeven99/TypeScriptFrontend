@@ -83,18 +83,18 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           : t("Enable language and currency switcher")
       }
       styles={{
-        header: { borderBottom: "none",fontSize:"20px" },
+        header: { borderBottom: "none", fontSize: "20px" },
         body: {
           padding: "0 24px 12px 24px",
         },
       }}
-      // extra={
-      //   <Button
-      //     icon={<RedoOutlined spin={loading} />}
-      //     type="link"
-      //     onClick={handleReload}
-      //   />
-      // }
+    // extra={
+    //   <Button
+    //     icon={<RedoOutlined spin={loading} />}
+    //     type="link"
+    //     onClick={handleReload}
+    //   />
+    // }
     >
       <Flex vertical align="center" gap={8}>
         <Flex
@@ -104,11 +104,11 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           <Text style={{ width: "75%" }}>
             {!switcherOpen
               ? t(
-                  "Customers can switch languages and currencies when visiting the site. "
-                )
+                "Customers can switch languages and currencies when visiting the site. "
+              )
               : t(
-                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
-                )}
+                "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
+              )}
           </Text>
           <div
             style={{

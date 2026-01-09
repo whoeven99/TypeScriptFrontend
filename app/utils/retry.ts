@@ -40,13 +40,13 @@ export async function withRetry<T>(
   } = config;
 
   let lastError: any;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error;
-      
+
       if (attempt === maxRetries || !shouldRetry(error)) {
         console.error(`All ${maxRetries} retry attempts failed:`, error);
         // 转换错误为 AppError

@@ -412,7 +412,7 @@ const Index = () => {
             value={
               confirmData.find((item: any) => item.key === record?.key)
                 ? confirmData.find((item: any) => item.key === record?.key)
-                    ?.value
+                  ?.value
                 : record?.translated
             }
             onChange={(e) => handleInputChange(record, e.target.value)}
@@ -468,13 +468,13 @@ const Index = () => {
     const matches = cleaned.match(/>([^<]+)</g);
     const normalTexts = matches
       ? matches
-          .map((m) => decodeHtmlEntities(m.replace(/[><]/g, "").trim()))
-          .filter((t) => {
-            if (!t) return false;
-            if (/{{[\s\S]*?}}/.test(t)) return false;
-            if (/{%[\s\S]*?%}/.test(t)) return false;
-            return true;
-          })
+        .map((m) => decodeHtmlEntities(m.replace(/[><]/g, "").trim()))
+        .filter((t) => {
+          if (!t) return false;
+          if (/{{[\s\S]*?}}/.test(t)) return false;
+          if (/{%[\s\S]*?%}/.test(t)) return false;
+          return true;
+        })
       : [];
 
     // ⭐ 去重输出
@@ -879,8 +879,8 @@ const Index = () => {
                                     (item: any) => item.key === item?.key,
                                   )
                                     ? confirmData.find(
-                                        (item: any) => item.key === item?.key,
-                                      )?.value
+                                      (item: any) => item.key === item?.key,
+                                    )?.value
                                     : item?.translated
                                 }
                                 onChange={(e) =>

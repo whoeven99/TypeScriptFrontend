@@ -761,21 +761,21 @@ const Index = () => {
                     </Title>
                     {(plan?.type == "Free" ||
                       typeof plan?.type === "undefined") && (
-                      <Popconfirm
-                        title=""
-                        description={t(
-                          "This feature is available only with the paid plan.",
-                        )}
-                        trigger="hover"
-                        showCancel={false}
-                        okText={t("Upgrade")}
-                        onConfirm={() => navigate("/app/pricing")}
-                      >
-                        <InfoCircleOutlined
-                          style={{ paddingBottom: "0.5rem" }}
-                        />
-                      </Popconfirm>
-                    )}
+                        <Popconfirm
+                          title=""
+                          description={t(
+                            "This feature is available only with the paid plan.",
+                          )}
+                          trigger="hover"
+                          showCancel={false}
+                          okText={t("Upgrade")}
+                          onConfirm={() => navigate("/app/pricing")}
+                        >
+                          <InfoCircleOutlined
+                            style={{ paddingBottom: "0.5rem" }}
+                          />
+                        </Popconfirm>
+                      )}
                   </Flex>
 
                   <Flex justify="space-between">
@@ -783,7 +783,7 @@ const Index = () => {
                     <Switch
                       className={
                         plan?.type == "Free" ||
-                        typeof plan?.type === "undefined"
+                          typeof plan?.type === "undefined"
                           ? defaultStyles.Switch_disable
                           : ""
                       }
@@ -1030,12 +1030,12 @@ const Index = () => {
                     position: "relative",
                     top:
                       selectorPosition === "top_left" ||
-                      selectorPosition === "top_right"
+                        selectorPosition === "top_right"
                         ? ((Number(positionData) * 81) / 100).toString() + "%"
                         : (
-                            ((100 - Number(positionData)) * 81) /
-                            100
-                          ).toString() + "%",
+                          ((100 - Number(positionData)) * 81) /
+                          100
+                        ).toString() + "%",
                     height: "auto",
                     display: "block",
                     zIndex: "1000",
@@ -1049,12 +1049,12 @@ const Index = () => {
                       position: "absolute", // 改为绝对定位
                       left:
                         selectorPosition === "top_left" ||
-                        selectorPosition === "bottom_left"
+                          selectorPosition === "bottom_left"
                           ? "0"
                           : "auto",
                       right:
                         selectorPosition === "top_right" ||
-                        selectorPosition === "bottom_right"
+                          selectorPosition === "bottom_right"
                           ? "0"
                           : "auto",
                       background: backgroundColor,
@@ -1073,12 +1073,12 @@ const Index = () => {
                           position: "absolute",
                           bottom:
                             selectorPosition === "bottom_left" ||
-                            selectorPosition === "bottom_right"
+                              selectorPosition === "bottom_right"
                               ? "100%"
                               : "auto",
                           top:
                             selectorPosition === "top_left" ||
-                            selectorPosition === "top_right"
+                              selectorPosition === "top_right"
                               ? "100%"
                               : "auto",
                           background: backgroundColor,
@@ -1167,12 +1167,12 @@ const Index = () => {
                               style={{
                                 bottom:
                                   selectorPosition === "bottom_left" ||
-                                  selectorPosition === "bottom_right"
+                                    selectorPosition === "bottom_right"
                                     ? "100%"
                                     : "auto",
                                 top:
                                   selectorPosition === "top_left" ||
-                                  selectorPosition === "top_right"
+                                    selectorPosition === "top_right"
                                     ? "100%"
                                     : "auto",
                                 display: isLanguageOpen ? "block" : "none",
@@ -1275,12 +1275,12 @@ const Index = () => {
                                 display: isCurrencyOpen ? "block" : "none",
                                 bottom:
                                   selectorPosition === "bottom_left" ||
-                                  selectorPosition === "bottom_right"
+                                    selectorPosition === "bottom_right"
                                     ? "100%"
                                     : "auto",
                                 top:
                                   selectorPosition === "top_left" ||
-                                  selectorPosition === "top_right"
+                                    selectorPosition === "top_right"
                                     ? "100%"
                                     : "auto",
                               }}
@@ -1335,10 +1335,10 @@ const Index = () => {
                       )}
                       <span id="display-text" className={styles.main_box_text}>
                         {(languageSelector && currencySelector) ||
-                        (!languageSelector && !currencySelector)
+                          (!languageSelector && !currencySelector)
                           ? selectedLanguage?.localeName +
-                            " / " +
-                            selectedCurrency?.localeName
+                          " / " +
+                          selectedCurrency?.localeName
                           : languageSelector
                             ? selectedLanguage?.localeName
                             : selectedCurrency?.localeName}

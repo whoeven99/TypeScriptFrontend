@@ -225,11 +225,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               progressData:
                 item.translateStatus == "translation_process_saving_shopify"
                   ? {
-                      RemainingQuantity:
-                        item?.writingData?.write_total -
-                          item?.writingData?.write_done || 0,
-                      TotalQuantity: item?.writingData?.write_total || 1,
-                    }
+                    RemainingQuantity:
+                      item?.writingData?.write_total -
+                      item?.writingData?.write_done || 0,
+                    TotalQuantity: item?.writingData?.write_total || 1,
+                  }
                   : item?.progressData,
             };
           });

@@ -262,8 +262,8 @@ const Index = () => {
               ...item, // 展开原对象
               status: languageList?.response
                 ? languageList?.response.find(
-                    (language: any) => language.target === item.locale,
-                  )?.status
+                  (language: any) => language.target === item.locale,
+                )?.status
                 : 0,
             })),
           ),

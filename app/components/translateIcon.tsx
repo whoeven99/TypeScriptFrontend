@@ -46,8 +46,21 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
 
   const iconContent = (
     <div
-      className={`icon-container ${
-        isError
+      className={`icon-container ${isError
+        ? "error"
+        : isTranslated
+          ? "translated"
+          : isTranslating
+            ? "translating"
+            : isPartlyTranslated
+              ? "partly_translated"
+              : isTranslateException
+                ? "translate_exception"
+                : "untranslated"
+        }`}
+    >
+      <div
+        className={`circle ${isError
           ? "error"
           : isTranslated
             ? "translated"
@@ -58,22 +71,7 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
                 : isTranslateException
                   ? "translate_exception"
                   : "untranslated"
-      }`}
-    >
-      <div
-        className={`circle ${
-          isError
-            ? "error"
-            : isTranslated
-              ? "translated"
-              : isTranslating
-                ? "translating"
-                : isPartlyTranslated
-                  ? "partly_translated"
-                  : isTranslateException
-                    ? "translate_exception"
-                    : "untranslated"
-        }`}
+          }`}
       />
       <span className="text">
         {isError

@@ -13,6 +13,7 @@
 }
 
 @media (max-width: 768px) {
+
   .arrow_icon,
   .mainarrow_icon,
   .main_box_text {
@@ -26,46 +27,58 @@
   }
 
   .switcher_container {
-    flex-direction: column; /* 改为上下布局 */
-    gap: 10px; /* 调整间距 */
+    flex-direction: column;
+    /* 改为上下布局 */
+    gap: 10px;
+    /* 调整间距 */
   }
 
   .switcher_editor,
   .switcher_preview {
-    flex: none; /* 取消 flex 比例 */
-    width: 100%; /* 占满宽度 */
+    flex: none;
+    /* 取消 flex 比例 */
+    width: 100%;
+    /* 占满宽度 */
   }
 
   .main_box {
-    max-width: 200px; /* 限制主按钮最大宽度 */
-    margin: 0 auto; /* 水平居中 */
+    max-width: 200px;
+    /* 限制主按钮最大宽度 */
+    margin: 0 auto;
+    /* 水平居中 */
   }
 
   /* 调整选项列表的样式 */
   .options_container {
-    position: fixed; /* 固定定位 */
+    position: fixed;
+    /* 固定定位 */
     left: 0;
     width: 100%;
     margin: 0;
-    border-radius: 8px 8px 0 0; /* 上圆角 */
+    border-radius: 8px 8px 0 0;
+    /* 上圆角 */
   }
 
   .options_list {
-    max-height: 50vh; /* 最大高度为视窗高度的一半 */
+    max-height: 50vh;
+    /* 最大高度为视窗高度的一半 */
     border-radius: 8px 8px;
   }
 
   /* 移动端按钮样式优化 */
   .button_wrapper {
-    flex-direction: column; /* 按钮垂直排列 */
+    flex-direction: column;
+    /* 按钮垂直排列 */
     gap: 10px;
     padding: 10px;
   }
 
   .ciwi_switcher_confirm_button,
   .ciwi_switcher_cancel_button {
-    width: 100%; /* 按钮占满宽度 */
-    height: 44px; /* 增加按钮高度，更容易点击 */
+    width: 100%;
+    /* 按钮占满宽度 */
+    height: 44px;
+    /* 增加按钮高度，更容易点击 */
   }
 
   /* 隐藏不需要的元素 */
@@ -83,50 +96,64 @@
   }
 }
 
-body > .skiptranslate {
+body>.skiptranslate {
   display: none;
 }
+
 .goog-logo-link {
   display: none !important;
 }
+
 .goog-te-gadget {
   color: transparent !important;
 }
+
 .goog-te-banner-frame.skiptranslate {
   display: none !important;
 }
-a[href="https://translate.google.com"]
-{
+
+a[href="https://translate.google.com"] {
   display: none !important;
 }
+
 .goog-te-gadget-simple {
   visibility: hidden !important;
 }
-[class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
-    [class*="VIpgJd-"] {
+
+[class^="VIpgJd-"],
+/* 匹配所有以 'VIpgJd-' 开头的类名 */
+[class*="VIpgJd-"] {
   /* 匹配所有包含 'VIpgJd-' 的类名 */
   display: none !important;
 }
 
 .close_button_wrapper {
-  display: flex; /* 居中对齐图标 */
+  display: flex;
+  /* 居中对齐图标 */
   width: 100%;
   justify-content: flex-end;
 }
 
 .selector_box_close_button {
-  width: 16px; /* 给按钮固定宽度 */
-  height: 16px; /* 给按钮固定高度 */
-  display: flex; /* 居中对齐图标 */
+  width: 16px;
+  /* 给按钮固定宽度 */
+  height: 16px;
+  /* 给按钮固定高度 */
+  display: flex;
+  /* 居中对齐图标 */
   align-items: center;
   justify-content: center;
-  background: transparent; /* 背景透明 */
-  border: none; /* 去掉边框 */
+  background: transparent;
+  /* 背景透明 */
+  border: none;
+  /* 去掉边框 */
   padding: 0;
   cursor: pointer;
-  font-size: 20px; /* 如果是文字 × */
+  font-size: 20px;
+  /* 如果是文字 × */
   font-weight: bold;
-  color: #000; /* 图标颜色 */
+  color: #000;
+  /* 图标颜色 */
 }
 
 .main_box {
@@ -138,29 +165,38 @@ a[href="https://translate.google.com"]
   cursor: pointer;
   user-select: none;
   display: flex;
-  align-items: center; /* 垂直居中 */
-  height: 40px; /* 明确设置高度 */
+  align-items: center;
+  /* 垂直居中 */
+  height: 40px;
+  /* 明确设置高度 */
 }
 
 .main_box_text {
   display: inline-block;
-  line-height: 20px; /* 与图片高度一致 */
+  line-height: 20px;
+  /* 与图片高度一致 */
   vertical-align: middle;
   margin: 0 20px;
   padding: 0;
-  font-size: 14px; /* 明确设置字体大小 */
+  font-size: 14px;
+  /* 明确设置字体大小 */
 }
 
 .mainarrow_icon {
   position: absolute;
-  right: 0; /* 改用右侧固定距离 */
-  transition: transform 0.3s ease; /* 平滑过渡 */
+  right: 0;
+  /* 改用右侧固定距离 */
+  transition: transform 0.3s ease;
+  /* 平滑过渡 */
 }
 
 .button_wrapper {
-  display: flex; /* 启用 Flexbox 布局 */
-  align-items: center; /* 垂直居中按钮 */
-  width: 100%; /* 使容器占满父元素的宽度 */
+  display: flex;
+  /* 启用 Flexbox 布局 */
+  align-items: center;
+  /* 垂直居中按钮 */
+  width: 100%;
+  /* 使容器占满父元素的宽度 */
   flex-direction: column;
   gap: 8px;
 }
@@ -169,16 +205,24 @@ a[href="https://translate.google.com"]
 .ciwi_switcher_confirm_button {
   height: 40px;
   width: 100%;
-  border-radius: 6px; /* 边框圆角 */
-  padding: 12px; /* 按钮内边距 */
-  font-size: 14px; /* 字体大小 */
-  background-color: #000; /* 按钮背景颜色 */
-  color: white; /* 字体颜色 */
-  border: none; /* 去掉默认边框 */
-  cursor: pointer; /* 鼠标指针样式 */
+  border-radius: 6px;
+  /* 边框圆角 */
+  padding: 12px;
+  /* 按钮内边距 */
+  font-size: 14px;
+  /* 字体大小 */
+  background-color: #000;
+  /* 按钮背景颜色 */
+  color: white;
+  /* 字体颜色 */
+  border: none;
+  /* 去掉默认边框 */
+  cursor: pointer;
+  /* 鼠标指针样式 */
   transition:
     background-color 0.3s,
-    transform 0.2s ease; /* 增加过渡效果 */
+    transform 0.2s ease;
+  /* 增加过渡效果 */
 }
 
 .ciwi_switcher_confirm_button:hover {
@@ -186,7 +230,8 @@ a[href="https://translate.google.com"]
 }
 
 .ciwi_switcher_confirm_button:active {
-  transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
+  transform: scale(0.98);
+  /* 点击时的反馈效果，按钮缩小 */
 }
 
 .select-wrapper {
@@ -202,36 +247,45 @@ a[href="https://translate.google.com"]
   border: 0 !important;
   display: flex;
   position: absolute;
-  right: 5%; /* 箭头图标右对齐 */
-  pointer-events: none; /* 防止图标影响选择框的点击 */
-  transition: transform 0.3s ease; /* 平滑过渡 */
+  right: 5%;
+  /* 箭头图标右对齐 */
+  pointer-events: none;
+  /* 防止图标影响选择框的点击 */
+  transition: transform 0.3s ease;
+  /* 平滑过渡 */
 }
 
 .mobile_trans_img {
   display: none;
 }
 
-body > .skiptranslate {
+body>.skiptranslate {
   display: none;
 }
+
 .goog-logo-link {
   display: none !important;
 }
+
 .goog-te-gadget {
   color: transparent !important;
 }
+
 .goog-te-banner-frame.skiptranslate {
   display: none !important;
 }
-a[href="https://translate.google.com"]
-{
+
+a[href="https://translate.google.com"] {
   display: none !important;
 }
+
 .goog-te-gadget-simple {
   visibility: hidden !important;
 }
-[class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
-  [class*="VIpgJd-"] {
+
+[class^="VIpgJd-"],
+/* 匹配所有以 'VIpgJd-' 开头的类名 */
+[class*="VIpgJd-"] {
   /* 匹配所有包含 'VIpgJd-' 的类名 */
   display: none !important;
 }
@@ -269,14 +323,16 @@ a[href="https://translate.google.com"]
   object-fit: cover;
   border-radius: 2px;
   border: 1px solid #ddd;
-  min-width: 30px; /* 保持最小宽度 */
-  opacity: 0; /* 初始状态完全透明 */
-  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+  min-width: 30px;
+  /* 保持最小宽度 */
+  opacity: 0;
+  /* 初始状态完全透明 */
+  transition: opacity 0.3s ease;
+  /* 平滑过渡效果 */
 }
 
 /* 当图片加载完成时显示 */
-.country_flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
-{
+.country_flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"]) {
   opacity: 1;
 }
 

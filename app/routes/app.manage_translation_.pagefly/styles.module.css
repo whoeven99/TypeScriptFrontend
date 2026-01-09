@@ -10,13 +10,16 @@
 }
 
 .success_input {
-  color: rgb(0, 127, 97); /* 文本颜色 */
-  border-color: rgb(0, 127, 97) !important; /* 边框颜色 */
+  color: rgb(0, 127, 97);
+  /* 文本颜色 */
+  border-color: rgb(0, 127, 97) !important;
+  /* 边框颜色 */
   caret-color: rgb(0, 127, 97);
 }
 
 .success_input:focus,
 .success_input:hover {
   border-color: rgb(0, 127, 97) !important;
-  box-shadow: none !important; /* 去掉antd自带高亮 */
+  box-shadow: none !important;
+  /* 去掉antd自带高亮 */
 }

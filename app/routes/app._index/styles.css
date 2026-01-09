@@ -1,50 +1,67 @@
 .user_profile_wrapper {
   display: flex;
-  justify-content: space-around; /* 元素之间有均等的间距，且两端有间距 */
+  justify-content: space-around;
+  /* 元素之间有均等的间距，且两端有间距 */
 }
 
 .user_profilecard_left {
   display: flex;
-  flex-direction: column; /* 使整个布局变为上下结构 */
-  align-items: flex-start; /* 让所有内容左对齐 */
+  flex-direction: column;
+  /* 使整个布局变为上下结构 */
+  align-items: flex-start;
+  /* 让所有内容左对齐 */
 }
 
 .user_profilecard_right {
   display: flex;
   flex-direction: column;
   margin-left: auto;
-  align-items: flex-end; /* 使所有内容右对齐 */
+  align-items: flex-end;
+  /* 使所有内容右对齐 */
   justify-content: space-between;
 }
 
 .gpttip {
   max-height: 20px;
 }
+
 .character_usage_label {
-  margin-bottom: 4px; /* 标签和统计数据之间的间距 */
+  margin-bottom: 4px;
+  /* 标签和统计数据之间的间距 */
   display: flex;
-  flex-direction: column; /* 保证在列方向上排列 */
-  align-items: flex-end; /* 标签右对齐 */
+  flex-direction: column;
+  /* 保证在列方向上排列 */
+  align-items: flex-end;
+  /* 标签右对齐 */
 }
 
 .characters_statistical {
   display: flex;
-  gap: 4px; /* 控制各字符使用项的间距 */
+  gap: 4px;
+  /* 控制各字符使用项的间距 */
   margin-top: 20px;
-  justify-content: center; /* 水平居中对齐 */
-  align-items: center; /* 垂直居中对齐 */
+  justify-content: center;
+  /* 水平居中对齐 */
+  align-items: center;
+  /* 垂直居中对齐 */
 }
 
 .language_statu {
   display: flex;
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  height: 2em; /* 设置高度为两行高，假设一行高为 1em */
-  text-align: center; /* 使文本水平居中 */
+  justify-content: center;
+  /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  height: 2em;
+  /* 设置高度为两行高，假设一行高为 1em */
+  text-align: center;
+  /* 使文本水平居中 */
 }
 
 .flag_container {
   display: flex;
-  justify-content: center; /* 横向居中 */
-  gap: 10px; /* 设置图片间距 */
+  justify-content: center;
+  /* 横向居中 */
+  gap: 10px;
+  /* 设置图片间距 */
 }
