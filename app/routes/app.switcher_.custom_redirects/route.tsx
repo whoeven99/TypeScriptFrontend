@@ -205,7 +205,7 @@ const Index = () => {
                 ...item,
                 regionName:
                   countryLocaleData[
-                    item?.region as keyof typeof countryLocaleData
+                  item?.region as keyof typeof countryLocaleData
                   ] || "",
                 key: item?.id,
               }))
@@ -282,7 +282,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         const item =
           languageLocaleData[
-            record?.languageCode as keyof typeof languageLocaleData
+          record?.languageCode as keyof typeof languageLocaleData
           ];
         if (item) {
           return (
@@ -293,14 +293,14 @@ const Index = () => {
               {!languageTableData?.find(
                 (item) => item?.locale == record?.languageCode,
               )?.published && (
-                <Popover
-                  content={t(
-                    "Settings not applied. Please publish the current language first.",
-                  )}
-                >
-                  <WarningOutlined style={{ color: "#F8B400" }} />
-                </Popover>
-              )}
+                  <Popover
+                    content={t(
+                      "Settings not applied. Please publish the current language first.",
+                    )}
+                  >
+                    <WarningOutlined style={{ color: "#F8B400" }} />
+                  </Popover>
+                )}
             </Space>
           );
         } else {
@@ -316,7 +316,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         const currencyLocaleDataByRecordCurrencyCode =
           currencyLocaleData[
-            record?.currencyCode as keyof typeof currencyLocaleData
+          record?.currencyCode as keyof typeof currencyLocaleData
           ];
         const hasCustomCurrencyCodeRegion = regionsDataSource?.find(
           (item) => item?.code == record?.region,
@@ -472,16 +472,16 @@ const Index = () => {
                     setSelectedRowKeys(
                       e.target.checked
                         ? [
-                            ...currentPageKeys,
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ]
+                          ...currentPageKeys,
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ]
                         : [
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ],
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ],
                     )
                   }
                 >
@@ -504,8 +504,8 @@ const Index = () => {
                           item?.region as keyof typeof countryLocaleData
                         ]
                           ? countryLocaleData[
-                              item?.region as keyof typeof countryLocaleData
-                            ]
+                          item?.region as keyof typeof countryLocaleData
+                          ]
                           : item?.region}
                       </Text>
                     </Flex>
@@ -515,11 +515,10 @@ const Index = () => {
                         {languageLocaleData[
                           item?.languageCode as keyof typeof languageLocaleData
                         ]
-                          ? `${
-                              languageLocaleData[
-                                item?.languageCode as keyof typeof languageLocaleData
-                              ]?.Name
-                            }(${item?.languageCode})`
+                          ? `${languageLocaleData[
+                            item?.languageCode as keyof typeof languageLocaleData
+                          ]?.Name
+                          }(${item?.languageCode})`
                           : t("Match visitor's browser")}
                       </Text>
                     </Flex>
@@ -529,11 +528,10 @@ const Index = () => {
                         {currencyLocaleData[
                           item?.currencyCode as keyof typeof currencyLocaleData
                         ]
-                          ? `${
-                              currencyLocaleData[
-                                item?.currencyCode as keyof typeof currencyLocaleData
-                              ]?.currencyName
-                            }(${item?.currencyCode})`
+                          ? `${currencyLocaleData[
+                            item?.currencyCode as keyof typeof currencyLocaleData
+                          ]?.currencyName
+                          }(${item?.currencyCode})`
                           : t("Match visitor’s currency")}
                       </Text>
                     </Flex>

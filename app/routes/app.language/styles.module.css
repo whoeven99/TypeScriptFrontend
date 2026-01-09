@@ -1,7 +1,8 @@
 .languageTable_action {
   width: 100%;
   display: flex;
-  flex-direction: column; /* 设置垂直方向排列 */
+  flex-direction: column;
+  /* 设置垂直方向排列 */
 }
 
 .publishModal_webpresence_card {

@@ -45,19 +45,18 @@ const EasyTranslateIcon: React.FC<EasyTranslateIconProps> = ({ status }) => {
 
   const iconContent = (
     <div
-      className={`solidCircle ${
-        isError
-          ? "error"
-          : isTranslated
-            ? "translated"
-            : isTranslating
-              ? "translating"
-              : isPartlyTranslated
-                ? "partly_translated"
-                : isTranslateException
-                  ? "translate_exception"
-                  : "untranslated"
-      }`}
+      className={`solidCircle ${isError
+        ? "error"
+        : isTranslated
+          ? "translated"
+          : isTranslating
+            ? "translating"
+            : isPartlyTranslated
+              ? "partly_translated"
+              : isTranslateException
+                ? "translate_exception"
+                : "untranslated"
+        }`}
     />
   );
 

@@ -852,7 +852,7 @@ const Index = () => {
         ) : (
           <>
             {record.imageId === currentTranslatingImage.imageId &&
-            translateImageFetcher.state === "submitting" ? (
+              translateImageFetcher.state === "submitting" ? (
               <Spinner accessibilityLabel="Loading thumbnail" size="large" />
             ) : (
               <Thumbnail source={NoteIcon} size="large" alt="Small document" />
@@ -1538,13 +1538,13 @@ const Index = () => {
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(productImageData[0]?.imageHasPreviousPage ||
                       productImageData[0]?.imageHasNextPage) && (
-                      <Pagination
-                        hasPrevious={productImageData[0]?.imageHasPreviousPage}
-                        onPrevious={handleImagePrevious}
-                        hasNext={productImageData[0]?.imageHasNextPage}
-                        onNext={handleImageNext}
-                      />
-                    )}
+                        <Pagination
+                          hasPrevious={productImageData[0]?.imageHasPreviousPage}
+                          onPrevious={handleImagePrevious}
+                          hasNext={productImageData[0]?.imageHasNextPage}
+                          onNext={handleImageNext}
+                        />
+                      )}
                   </div>
                 </Space>
               )}

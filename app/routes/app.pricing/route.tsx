@@ -1293,12 +1293,12 @@ const Index = () => {
                     textAlign: "center",
                     borderColor:
                       JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
+                        JSON.stringify(option.key)
                         ? "#007F61"
                         : undefined,
                     borderWidth:
                       JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
+                        JSON.stringify(option.key)
                         ? "2px"
                         : "1px",
                     cursor: "pointer",
@@ -1323,7 +1323,7 @@ const Index = () => {
                   {(plan.type === "Premium" ||
                     plan.type === "Pro" ||
                     plan.type === "Basic") &&
-                  !plan?.isInFreePlanTime ? (
+                    !plan?.isInFreePlanTime ? (
                     <>
                       <Title
                         level={3}
@@ -1361,8 +1361,8 @@ const Index = () => {
                 {t("Total pay")}: $
                 {selectedOptionKey
                   ? creditOptions
-                      .find((item) => item.key === selectedOptionKey)
-                      ?.price.currentPrice.toFixed(2)
+                    .find((item) => item.key === selectedOptionKey)
+                    ?.price.currentPrice.toFixed(2)
                   : "0.00"}
               </Text>
               <Button
