@@ -270,9 +270,16 @@ export async function checkUserIp({ blockId, shop }) {
 export async function fetchUserCountryInfo(access_key) {
   try {
     const res = await fetch(
-      `https://api.ipapi.com/api/check?access_key=${access_key}`,
+      window.Shopify.routes.root +
+        "browsing_context_suggestions.json" +
+        "?country[enabled]=true" +
+        `&country[exclude]=${window.Shopify.country}` +
+        "&language[enabled]=true" +
+        `&language[exclude]=${window.Shopify.language}`,
     );
+
     const json = await res.json();
+
     return { ...json, status: res.status };
   } catch (err) {
     console.error("Error fetchUserCountryInfo:", err);

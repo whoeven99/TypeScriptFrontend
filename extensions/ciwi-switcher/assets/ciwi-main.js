@@ -180,8 +180,6 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
 
-  console.log(browserLanguage);
-
   //获取地区对应货币数据
   const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
 
@@ -224,15 +222,16 @@ async function ciwiOnload() {
         "ciwi_iplocation_expire_at",
         Date.now() + 7 * 24 * 60 * 60 * 1000,
       );
-      
+
       //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
-
-      //ip信息
-      const ip = IpData?.ip;
+      console.log(
+        "IpData?.detected_values?.country?.handle: ",
+        IpData?.detected_values?.country?.handle,
+      );
 
       //暂存默认数据
-      detectedCountry = IpData?.country_code;
+      detectedCountry = IpData?.detected_values?.country?.handle;
 
       //地区对应货币符号
       const ipCurrency = countryCurMap[countryValue];
@@ -241,7 +240,7 @@ async function ciwiOnload() {
       API.NoCrawlerPrintLog({
         blockId,
         shopName: shop.value,
-        ip,
+        ip: "0.0.0.0",
         languageCode: browserLanguage,
         langInclude: availableLanguages.includes(browserLanguage),
         countryCode: detectedCountry,
@@ -249,8 +248,8 @@ async function ciwiOnload() {
         currencyCode: ipCurrency,
         checkUserIpCostTime: checkUserIpCost,
         fetchUserCountryInfoCostTime: fetchCountryCost,
-        status: IpData?.status,
-        error: IpData?.ip ? "" : JSON.stringify(IpData),
+        status: "",
+        error: "",
       });
     }
   }
@@ -373,6 +372,7 @@ async function ciwiOnload() {
       const optionsContainer = ciwiBlock.querySelectorAll(".options-container");
       selectorBox.style.backgroundColor = configData.backgroundColor;
       switcher.style.color = configData.fontColor;
+
       // 四个方向处理（保持原始逻辑）
       switch (configData.selectorPosition) {
         case "top_left":
