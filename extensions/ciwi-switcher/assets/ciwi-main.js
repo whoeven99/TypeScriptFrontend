@@ -269,11 +269,6 @@ async function ciwiOnload() {
     : ipRedirectionLanguageValue == "auto"
       ? browserLanguage
       : ipRedirectionLanguageValue;
-  detectedCurrency = storedCurrency
-    ? storedCurrency
-    : ipRedirectionCurrencyValue == "auto"
-      ? countryCurMap[countryValue]
-      : ipRedirectionCurrencyValue;
 
   //判断语言是否可用
   detectedLanguage = availableLanguages.includes(detectedLanguage)
@@ -282,17 +277,23 @@ async function ciwiOnload() {
 
   localStorage.setItem("ciwi_selected_language", detectedLanguage);
 
-  //缓存货币数据
-  if (detectedCurrency != storedCountry && detectedCurrency) {
-    localStorage.setItem("ciwi_selected_currency", detectedCurrency);
-  }
-
   //判断地区是否可用
   detectedCountry = availableCountries.includes(detectedCountry)
     ? detectedCountry
     : countryValue;
 
   localStorage.setItem("ciwi_selected_country", detectedCountry);
+
+  detectedCurrency = storedCurrency
+    ? storedCurrency
+    : ipRedirectionCurrencyValue == "auto"
+      ? countryCurMap[detectedCountry]
+      : ipRedirectionCurrencyValue;
+
+  //缓存货币数据
+  if (detectedCurrency != storedCountry && detectedCurrency) {
+    localStorage.setItem("ciwi_selected_currency", detectedCurrency);
+  }
 
   //判断是否在主题编辑器内
   const isInThemeEditor = document.documentElement.classList.contains(
