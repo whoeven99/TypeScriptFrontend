@@ -272,7 +272,7 @@ async function ciwiOnload() {
   detectedCurrency = storedCurrency
     ? storedCurrency
     : ipRedirectionCurrencyValue == "auto"
-      ? detectedCurrency
+      ? countryCurMap[countryValue]
       : ipRedirectionCurrencyValue;
 
   //判断语言是否可用
