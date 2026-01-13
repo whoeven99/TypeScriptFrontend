@@ -630,21 +630,15 @@ export const GetProgressData = async ({
 
 export const StopTranslatingTask = async ({
   shopName,
-  source,
+  taskId
 }: {
   shopName: string;
-  source: string;
+  taskId: number;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/stopTranslatingTaskV2?shopName=${shopName}`,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: {
-        source: source,
-      },
+      url: `${process.env.SERVER_URL}/translate/stopTranslatingTaskV2?shopName=${shopName}&taskId=${taskId}`,
+      method: "POST",
     });
 
     console.log(`${shopName} StopTranslatingTaskV2: `, response.data);
@@ -1109,11 +1103,8 @@ export const AddSubscriptionQuotaRecord = async ({
 export const UpdateStatus = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/updateStatusV2`,
+      url: `${process.env.SERVER_URL}/translate/updateStatusV2?shopName=${shop}`,
       method: "POST",
-      data: {
-        shopName: shop,
-      },
     });
 
     console.log(`${shop} updateStatusV2: `, response.data);

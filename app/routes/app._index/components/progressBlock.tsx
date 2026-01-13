@@ -112,8 +112,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     stopTranslateFetcher.submit(
       {
         stopTranslate: JSON.stringify({
-          source: source,
-          target: target,
+          taskId,
         }),
       },
       {
@@ -124,8 +123,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     report(
       {
         stopTranslate: JSON.stringify({
-          source: source,
-          target: target,
+          taskId,
         }),
       },
       { method: "post", action: "/app", eventType: "click" },
@@ -199,9 +197,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                    0
+                      0
                       ? progressData.TotalQuantity -
-                        progressData.RemainingQuantity
+                      progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0
@@ -218,9 +216,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
                   hasTranslated:
                     progressData.TotalQuantity -
                       progressData.RemainingQuantity >
-                    0
+                      0
                       ? progressData.TotalQuantity -
-                        progressData.RemainingQuantity
+                      progressData.RemainingQuantity
                       : 0,
                   totalNumber:
                     progressData.TotalQuantity > 0

@@ -68,7 +68,6 @@ const Index = () => {
   const timeoutIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
-  const hasStopped = useRef(false);
 
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
 
@@ -112,7 +111,6 @@ const Index = () => {
         action: "/log",
       },
     );
-    hasStopped.current = false;
     isActiveRef.current = true;
     pollStatus(); // 立即执行第一次
 
@@ -185,10 +183,7 @@ const Index = () => {
             (item?.status == 1 || item?.status == 2),
         ) || ciwiTransTaskIsContinueArray.length;
 
-      if (ciwiTransTaskIsContinueArray.length) hasStopped.current = false;
-
-      if (!needRepoll || hasStopped.current) {
-        // localStorage.removeItem("ciwiTransTaskIsStopping");
+      if (!needRepoll) {
         if (timeoutIdRef.current) {
           clearTimeout(timeoutIdRef.current);
           isActiveRef.current = false;
@@ -217,12 +212,10 @@ const Index = () => {
           );
       }
 
-      if (!hasStopped.current) {
-        setProgressDataSource(data);
-      }
+      setProgressDataSource(data);
 
       // 若轮询仍激活，则等待3秒后继续
-      if (isActiveRef.current && !hasStopped.current) {
+      if (isActiveRef.current) {
         timeoutIdRef.current = window.setTimeout(() => {
           pollStatus();
         }, 1000);
@@ -232,12 +225,18 @@ const Index = () => {
 
   useEffect(() => {
     if (stopTranslateFetcher.data) {
-      setProgressDataSource((prev: any[] = []) =>
-        prev.map((item) =>
-          item?.status === 2 ? { ...item, status: 7 } : item,
-        ),
-      );
-      hasStopped.current = true;
+      if (stopTranslateFetcher.data?.success) {
+        const taskId = stopTranslateFetcher.data?.response;
+
+        const newProgressDataSource = progressDataSource.map((item) => {
+          if (item?.taskId === taskId) {
+            return { ...item, status: 7 };
+          }
+          return item;
+        });
+
+        setProgressDataSource(newProgressDataSource);
+      }
     }
   }, [stopTranslateFetcher.data]);
 
@@ -265,37 +264,37 @@ const Index = () => {
     votes: number;
     devStatus: string;
   }[] = [
-    {
-      key: 1,
-      need: t("devplanCard1.title"),
-      votes: 65,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 2,
-      need: t("devplanCard2.title"),
-      votes: 33,
-      devStatus: t("In development"),
-    },
-    {
-      key: 3,
-      need: t("devplanCard3.title"),
-      votes: 41,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 4,
-      need: t("devplanCard4.title"),
-      votes: 18,
-      devStatus: t("Launched"),
-    },
-    {
-      key: 5,
-      need: t("devplanCard5.title"),
-      votes: 29,
-      devStatus: t("In development"),
-    },
-  ];
+      {
+        key: 1,
+        need: t("devplanCard1.title"),
+        votes: 65,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 2,
+        need: t("devplanCard2.title"),
+        votes: 33,
+        devStatus: t("In development"),
+      },
+      {
+        key: 3,
+        need: t("devplanCard3.title"),
+        votes: 41,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 4,
+        need: t("devplanCard4.title"),
+        votes: 18,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 5,
+        need: t("devplanCard5.title"),
+        votes: 29,
+        devStatus: t("In development"),
+      },
+    ];
 
   const handleCommitRequest = () => {
     handleContactSupport();
@@ -424,7 +423,7 @@ const Index = () => {
             switcherOpen={switcherOpen}
             blockUrl={blockUrl}
             shop={shop}
-            // handleReload={handleReload}
+          // handleReload={handleReload}
           />
 
           <Row gutter={16}>
