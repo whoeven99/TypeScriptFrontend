@@ -151,15 +151,16 @@ const Index = () => {
 
       if (!response.length) return;
 
-      const data =
-        response.map((item: any) => {
-          if (item)
-            return {
-              ...item,
-              module: resourceTypeToModule(item?.resourceType || ""),
-            };
-          return item;
-        }) ?? [];
+      const data = response.map((item: any) => {
+        const oldStatus = progressDataSource.find(progress => progress?.taskId == item?.taskId)?.status;
+        const hasStopped = oldStatus === 7;
+
+        return {
+          ...item,
+          status: hasStopped ? 7 : item?.status,
+          module: resourceTypeToModule(item?.resourceType ?? ""),
+        };
+      });
 
       if (!hasInitialized.current) {
         setProgressDataSource(data);
