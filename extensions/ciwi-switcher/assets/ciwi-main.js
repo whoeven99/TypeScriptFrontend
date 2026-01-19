@@ -198,7 +198,8 @@ async function ciwiOnload() {
   ).map((link) => link.getAttribute("data-value"));
 
   // IP 定位逻辑
-  if (needRedirection && configData?.ipOpen) {
+  // if (needRedirection && configData?.ipOpen) {
+  if (true) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
@@ -225,13 +226,9 @@ async function ciwiOnload() {
 
       //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
-      console.log(
-        "IpData?.detected_values?.country?.handle: ",
-        IpData?.detected_values?.country?.handle,
-      );
 
       //暂存默认数据
-      detectedCountry = IpData?.detected_values?.country?.handle;
+      detectedCountry = IpData?.countryCode;
 
       //地区对应货币符号
       const ipCurrency = countryCurMap[countryValue];
@@ -323,10 +320,10 @@ async function ciwiOnload() {
       detectedLanguage &&
       (detectedCountry !== countryValue || detectedLanguage !== languageValue)
     ) {
-      updateLocalization({
-        country: detectedCountry || countryValue,
-        language: detectedLanguage || languageValue,
-      });
+      // updateLocalization({
+      //   country: detectedCountry || countryValue,
+      //   language: detectedLanguage || languageValue,
+      // });
     }
   }
 
