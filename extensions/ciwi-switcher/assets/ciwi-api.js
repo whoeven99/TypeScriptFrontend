@@ -270,10 +270,35 @@ export async function checkUserIp({ blockId, shop }) {
 export async function fetchUserCountryInfo(access_key) {
   try {
     const res = await fetch(
-      `https://api.ipapi.com/api/check?access_key=${access_key}`,
+      window.Shopify.routes.root +
+        "browsing_context_suggestions.json" +
+        "?country[enabled]=true" +
+        `&country[exclude]=${window.Shopify.country}` +
+        "&language[enabled]=true" +
+        `&language[exclude]=${window.Shopify.language}`,
     );
+
     const json = await res.json();
-    return { ...json, status: res.status };
+
+    if (json) {
+      return {
+        status: res.status,
+        countryCode: json?.detected_values?.country?.handle,
+        languageCode: json?.detected_values?.language?.handle,
+      };
+    } else {
+      const res = await fetch(
+        `https://api.ipapi.com/api/check?access_key=${access_key}`,
+      );
+
+      const json = await res.json();
+
+      return {
+        status: res.status,
+        countryCode: json?.country_code,
+        languageCode: json?.location?.languages[0]?.code,
+      };
+    }
   } catch (err) {
     console.error("Error fetchUserCountryInfo:", err);
     return null;
