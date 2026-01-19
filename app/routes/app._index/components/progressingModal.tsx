@@ -1,7 +1,6 @@
 import { Card, Divider, Modal, Space } from "antd";
 import React, { useCallback } from "react";
 import ProgressBlock from "./progressBlock";
-import { FetcherWithComponents } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 
 interface ProgressingModalProps {
@@ -9,9 +8,7 @@ interface ProgressingModalProps {
   onCancel: () => void;
   dataSource: any[];
   isMobile: boolean;
-  source: string;
-  languageFetcher: FetcherWithComponents<any>;
-  stopTranslateFetcher: FetcherWithComponents<any>;
+  updateProgressDataSourceStatus: (taskId: number, status: number) => void;
 }
 
 const ProgressingModal: React.FC<ProgressingModalProps> = ({
@@ -19,9 +16,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
   onCancel,
   dataSource = [],
   isMobile,
-  source,
-  languageFetcher,
-  stopTranslateFetcher,
+  updateProgressDataSourceStatus,
 }) => {
   const { t } = useTranslation();
 
@@ -33,7 +28,6 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
             taskId={item?.taskId}
             key={item?.target}
             isMobile={isMobile}
-            source={source}
             target={item?.target}
             status={item?.status}
             translateStatus={item?.translateStatus}
@@ -41,15 +35,14 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
             progressData={item?.progressData}
             value={item?.value}
             module={item?.module}
-            languageFetcher={languageFetcher}
-            stopTranslateFetcher={stopTranslateFetcher}
+            updateProgressDataSourceStatus={updateProgressDataSourceStatus}
           />
         </Card>
       );
     });
 
     return dom;
-  }, [dataSource, isMobile, source, stopTranslateFetcher]);
+  }, [dataSource, isMobile]);
 
   return (
     <Modal

@@ -630,14 +630,16 @@ export const GetProgressData = async ({
 
 export const StopTranslatingTask = async ({
   shopName,
+  server,
   taskId
 }: {
   shopName: string;
+  server: string;
   taskId: number;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/stopTranslatingTaskV2?shopName=${shopName}&taskId=${taskId}`,
+      url: `${server}/translate/stopTranslatingTaskV2?shopName=${shopName}&taskId=${taskId}`,
       method: "POST",
     });
 

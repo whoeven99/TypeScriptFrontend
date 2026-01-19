@@ -26,6 +26,8 @@ import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
 import TranslationPanel from "./components/TranslationPanel";
+import { GetAllProgressData } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
@@ -59,23 +61,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  const { language, isChinese, shop, ciwiSwitcherBlocksId, ciwiSwitcherId } =
+  const { language, isChinese, shop, server, ciwiSwitcherBlocksId, ciwiSwitcherId } =
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const source = useRef<string>("");
-  const timeoutIdRef = useRef<number | null>(null);
-  const isActiveRef = useRef(true); // 当前轮询是否激活（可控制停止）
-  const hasInitialized = useRef(false);
+  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasStoppedTaskIds = useRef<number[]>([]);
 
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
-
   const [isLoading, setIsLoading] = useState(true);
   const [isProgressLoading, setIsProgressLoading] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(true);
   const [progressingModalOpen, setProgressingModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  const needRepoll = useMemo(() =>
+    progressDataSource.some(
+      (item: any) =>
+        item?.translateStatus !== "translation_process_saved" &&
+        (item?.status == 1 || item?.status == 2),
+    ),
+    [progressDataSource],
+  );
 
   const blockUrl = useMemo(
     () =>
@@ -85,9 +93,6 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-
-  const languageFetcher = useFetcher<any>();
-  const stopTranslateFetcher = useFetcher<any>();
 
   const { reportClick } = useReport();
 
@@ -111,9 +116,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    isActiveRef.current = true;
-    pollStatus(); // 立即执行第一次
-
+    getAllProgressDataFromEnd({ active: false });
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -144,102 +147,15 @@ const Index = () => {
   }, [themeFetcher.data]);
 
   useEffect(() => {
-    if (languageFetcher.data) {
-      const response = languageFetcher.data?.response?.list || [];
+    console.log("needRepoll: ", needRepoll);
 
-      setIsProgressLoading(false);
-
-      if (!response.length) return;
-
-      const data = response.map((item: any) => {
-        const oldStatus = progressDataSource.find(progress => progress?.taskId == item?.taskId)?.status;
-        const hasStopped = oldStatus === 7;
-
-        return {
-          ...item,
-          status: hasStopped ? 7 : item?.status,
-          module: resourceTypeToModule(item?.resourceType ?? ""),
-        };
-      });
-
-      if (!hasInitialized.current) {
-        setProgressDataSource(data);
-        source.current = languageFetcher.data?.response?.source;
-        setIsProgressLoading(false);
-        hasInitialized.current = true;
-      }
-
-      const ciwiTransTaskIsContinueLocal = localStorage.getItem(
-        "ciwiTransTaskIsContinue",
-      );
-
-      const ciwiTransTaskIsContinueArray = ciwiTransTaskIsContinueLocal
-        ? (JSON.parse(ciwiTransTaskIsContinueLocal) as number[])
-        : [];
-
-      const needRepoll =
-        response.some(
-          (item: any) =>
-            item?.translateStatus !== "translation_process_saved" &&
-            (item?.status == 1 || item?.status == 2),
-        ) || ciwiTransTaskIsContinueArray.length;
-
-      if (!needRepoll) {
-        if (timeoutIdRef.current) {
-          clearTimeout(timeoutIdRef.current);
-          isActiveRef.current = false;
-        }
-      } else if (isActiveRef.current == false) {
-        isActiveRef.current = true;
-      }
-
-      if (ciwiTransTaskIsContinueArray?.length) {
-        const newCiwiTransTaskIsContinueArray =
-          ciwiTransTaskIsContinueArray.filter((item) => {
-            const findItem = data?.find(
-              (dataItem: any) => dataItem?.taskId == item,
-            );
-
-            return findItem?.status == 7;
-          });
-
-        if (
-          newCiwiTransTaskIsContinueArray.length !=
-          ciwiTransTaskIsContinueArray.length
-        )
-          localStorage.setItem(
-            "ciwiTransTaskIsContinue",
-            JSON.stringify(newCiwiTransTaskIsContinueArray),
-          );
-      }
-
-      setProgressDataSource(data);
-
-      // 若轮询仍激活，则等待3秒后继续
-      if (isActiveRef.current) {
-        timeoutIdRef.current = window.setTimeout(() => {
-          pollStatus();
-        }, 1000);
-      }
+    if (needRepoll) {
+      getAllProgressDataFromEnd({ active: needRepoll });
+    } else if (pollingTimerRef.current) {
+      clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = null;
     }
-  }, [languageFetcher.data]);
-
-  useEffect(() => {
-    if (stopTranslateFetcher.data) {
-      if (stopTranslateFetcher.data?.success) {
-        const taskId = stopTranslateFetcher.data?.response;
-
-        const newProgressDataSource = progressDataSource.map((item) => {
-          if (item?.taskId === taskId) {
-            return { ...item, status: 7 };
-          }
-          return item;
-        });
-
-        setProgressDataSource(newProgressDataSource);
-      }
-    }
-  }, [stopTranslateFetcher.data]);
+  }, [needRepoll]);
 
   const columns = [
     {
@@ -297,6 +213,62 @@ const Index = () => {
       },
     ];
 
+  const getAllProgressDataFromEnd = async ({
+    retryCount = 0,
+    active = false
+  }: {
+    retryCount?: number,
+    active?: boolean
+  }) => {
+    // source 不存在：500ms 重试，最多 5 次
+    if (!globalStore.source) {
+      if (retryCount < 50) {
+        setTimeout(() => {
+          getAllProgressDataFromEnd({ retryCount: retryCount + 1, active });
+        }, 500);
+      }
+      return;
+    }
+
+    const getAllProgressData = await GetAllProgressData({
+      shop,
+      server: server || "",
+      source: globalStore.source || "",
+    });
+
+    if (getAllProgressData?.success) {
+      const listData =
+        getAllProgressData?.response?.list?.map((item: any) => {
+          return {
+            ...item,
+            progressData:
+              item?.translateStatus === "translation_process_saving_shopify"
+                ? {
+                  RemainingQuantity:
+                    item?.writingData?.write_total -
+                    item?.writingData?.write_done || 0,
+                  TotalQuantity: item?.writingData?.write_total || 1,
+                }
+                : item?.progressData,
+            module: resourceTypeToModule(item?.resourceType ?? ""),
+            status: hasStoppedTaskIds.current.includes(item?.taskId) ? 7 : item?.status,
+          };
+        }) ?? [];
+
+      setProgressDataSource(listData);
+    }
+
+    if (isProgressLoading) {
+      setIsProgressLoading(false);
+    }
+
+    if (active) {
+      pollingTimerRef.current = setTimeout(() => {
+        getAllProgressDataFromEnd({ active: needRepoll });
+      }, 1000);
+    }
+  };
+
   const handleCommitRequest = () => {
     handleContactSupport();
     reportClick("dashboard_devprogress_request");
@@ -318,15 +290,6 @@ const Index = () => {
       },
     );
     reportClick("dashboard_currency_manage");
-  };
-
-  const pollStatus = () => {
-    if (!isActiveRef.current) return;
-
-    languageFetcher.submit(
-      { nearTransaltedData: JSON.stringify(true) },
-      { method: "post", action: "/app" },
-    );
   };
 
   const resourceTypeToModule = (resourceType: string) => {
@@ -391,6 +354,26 @@ const Index = () => {
     }
   };
 
+  const updateProgressDataSourceStatus = (taskId: number, status: number) => {
+    if (status === 7) {
+      hasStoppedTaskIds.current.push(taskId);
+    } else if (status === 2 && hasStoppedTaskIds.current.includes(taskId)) {
+      hasStoppedTaskIds.current.splice(hasStoppedTaskIds.current.indexOf(taskId), 1);
+    }
+
+    setProgressDataSource((prev: any) => {
+      return prev.map((item: any) => {
+        if (item.taskId === taskId) {
+          return {
+            ...item,
+            status,
+          };
+        }
+        return item;
+      });
+    });
+  };
+
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -411,12 +394,10 @@ const Index = () => {
           <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
             dataSource={progressDataSource}
-            source={source.current}
-            languageFetcher={languageFetcher}
-            stopTranslateFetcher={stopTranslateFetcher}
             isProgressLoading={isProgressLoading}
             isMobile={isMobile}
             setProgressingModalOpen={setProgressingModalOpen}
+            updateProgressDataSourceStatus={updateProgressDataSourceStatus}
           />
           <TranslationPanel />
 
@@ -611,9 +592,7 @@ const Index = () => {
         onCancel={() => setProgressingModalOpen(false)}
         dataSource={progressDataSource}
         isMobile={isMobile}
-        source={source.current || ""}
-        languageFetcher={languageFetcher}
-        stopTranslateFetcher={stopTranslateFetcher}
+        updateProgressDataSourceStatus={updateProgressDataSourceStatus}
       />
     </Page>
   );

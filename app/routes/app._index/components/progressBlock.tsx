@@ -11,14 +11,13 @@ import {
 import useReport from "scripts/eventReport";
 import { useMemo, useRef, useState } from "react";
 import { globalStore } from "~/globalStore";
-import { ContinueTranslating } from "~/api/JavaServer";
+import { ContinueTranslating, StopTranslatingTask } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
 interface ProgressBlockProps {
   taskId: number;
   isMobile: boolean; // 是否为移动端
-  source: string; // 原语言
   target: string; // 目标语言
   status: number; // 状态
   translateStatus: string; // 翻译状态
@@ -29,28 +28,23 @@ interface ProgressBlockProps {
   }; // 翻译进度
   value: string; // 翻译值
   module: string; // 翻译项
-  languageFetcher: FetcherWithComponents<any>;
-  stopTranslateFetcher: FetcherWithComponents<any>;
+  updateProgressDataSourceStatus: (taskId: number, status: number) => void;
 }
 
 const ProgressBlock: React.FC<ProgressBlockProps> = ({
   taskId,
   isMobile,
-  source,
   target,
   status,
   translateStatus,
   initialCount,
   progressData,
   module,
-  languageFetcher,
-  stopTranslateFetcher,
+  updateProgressDataSourceStatus,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
-
-  const continueTranslateLock = useRef(false);
 
   const progress = useMemo(
     () =>
@@ -62,30 +56,11 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     [progressData],
   );
 
-  // const stopButtonLoading = useMemo(() => {
-  //   return !!localStorage.getItem("ciwiTransTaskIsStopping");
-  // }, [localStorage.getItem("ciwiTransTaskIsStopping")]);
-
-  const [ciwiTransTaskIsContinueArray, setCiwiTransTaskIsContinueArray] =
-    useState<number[]>(() => {
-      const raw = localStorage.getItem("ciwiTransTaskIsContinue");
-      return raw ? JSON.parse(raw) : [];
-    });
+  const [stopButtonLoading, setStopButtonLoading] = useState(false);
+  const [continueButtonLoading, setContinueButtonLoading] = useState(false);
 
   const handleContinueTranslate = async () => {
-    if (continueTranslateLock.current) return;
-    continueTranslateLock.current = true;
-
-    setTimeout(() => {
-      continueTranslateLock.current = false;
-    }, 1500);
-
-    if (!ciwiTransTaskIsContinueArray.includes(taskId)) {
-      const newArr = [...ciwiTransTaskIsContinueArray, taskId];
-      setCiwiTransTaskIsContinueArray(newArr);
-      localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify(newArr));
-    }
-
+    setContinueButtonLoading(true)
     const continueTranslating = await ContinueTranslating({
       shop: globalStore?.shop || "",
       server: globalStore?.server || "",
@@ -93,33 +68,22 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     });
 
     if (continueTranslating?.success) {
-      languageFetcher.submit(
-        { nearTransaltedData: JSON.stringify(true) },
-        { method: "post", action: "/app" },
-      );
-    } else {
-      setCiwiTransTaskIsContinueArray([]);
-      localStorage.setItem("ciwiTransTaskIsContinue", JSON.stringify([]));
+      setContinueButtonLoading(false)
+      updateProgressDataSourceStatus(taskId, 2)
     }
   };
 
-  const handleReTranslate = async () => {
-    navigate("/app/translate");
-    reportClick("dashboard_translation_task_retranslate");
-  };
-
-  const handleStopTranslate = () => {
-    stopTranslateFetcher.submit(
-      {
-        stopTranslate: JSON.stringify({
-          taskId,
-        }),
-      },
-      {
-        method: "post",
-        action: "/app",
-      },
-    );
+  const handleStopTranslate = async () => {
+    setStopButtonLoading(true)
+    const stopTranslatingTask = await StopTranslatingTask({
+      shopName: globalStore?.shop || "",
+      server: globalStore?.server || "",
+      taskId,
+    });
+    if (stopTranslatingTask?.success) {
+      setStopButtonLoading(false)
+      updateProgressDataSourceStatus(taskId, 7)
+    }
     report(
       {
         stopTranslate: JSON.stringify({
@@ -129,7 +93,11 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       { method: "post", action: "/app", eventType: "click" },
       "dashboard_translation_task_stop",
     );
-    // localStorage.setItem("ciwiTransTaskIsStopping", "1");
+  };
+
+  const handleReTranslate = async () => {
+    navigate("/app/translate");
+    reportClick("dashboard_translation_task_retranslate");
   };
 
   return (
@@ -306,7 +274,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={handleStopTranslate}
-              loading={stopTranslateFetcher.state === "submitting"}
+              loading={stopButtonLoading}
               style={{ marginTop: "auto" }}
             >
               {t("progressing.stopTranslate")}
@@ -399,7 +367,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             <Button
               block
               onClick={handleContinueTranslate}
-              loading={ciwiTransTaskIsContinueArray.includes(taskId)}
+              loading={continueButtonLoading}
             >
               {t("progressing.reTranslate")}
             </Button>
