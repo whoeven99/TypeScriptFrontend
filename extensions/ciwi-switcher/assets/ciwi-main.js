@@ -198,8 +198,7 @@ async function ciwiOnload() {
   ).map((link) => link.getAttribute("data-value"));
 
   // IP 定位逻辑
-  // if (needRedirection && configData?.ipOpen) {
-  if (true) {
+  if (needRedirection && configData?.ipOpen) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
@@ -320,10 +319,10 @@ async function ciwiOnload() {
       detectedLanguage &&
       (detectedCountry !== countryValue || detectedLanguage !== languageValue)
     ) {
-      // updateLocalization({
-      //   country: detectedCountry || countryValue,
-      //   language: detectedLanguage || languageValue,
-      // });
+      updateLocalization({
+        country: detectedCountry || countryValue,
+        language: detectedLanguage || languageValue,
+      });
     }
   }
 
