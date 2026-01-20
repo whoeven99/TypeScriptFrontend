@@ -12,10 +12,10 @@ const store = configureStore({
     languageTableData: languageTableDataSlice,
     languageItemsData: languageItemsDataSlice,
     currencyTableData: currencyTableDataSlice,
-    glossaryTableData:glossaryTableDataSlice,
-    totalCharacters:TotalCharactersSlice,
-    translatingResourceType:translatingResourceTypeSlice,
-    userConfig:userConfigSlice,
+    glossaryTableData: glossaryTableDataSlice,
+    totalCharacters: TotalCharactersSlice,
+    translatingResourceType: translatingResourceTypeSlice,
+    userConfig: userConfigSlice,
   },
 });
 

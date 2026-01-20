@@ -4,10 +4,10 @@ import { useEditorState } from '@tiptap/react';
 
 interface HeadingMenuProps {
   editor: any;
-  disabled:boolean
+  disabled: boolean
 }
 
-export default function HeadingMenu({ editor,disabled }: HeadingMenuProps) {
+export default function HeadingMenu({ editor, disabled }: HeadingMenuProps) {
   const [active, setActive] = useState(false);
 
   const headingItems = [
@@ -61,7 +61,7 @@ export default function HeadingMenu({ editor,disabled }: HeadingMenuProps) {
     setActive(false);
   };
 
-  const actions : any = headingItems.map((item) => ({
+  const actions: any = headingItems.map((item) => ({
     content: (
       <span style={{ fontSize: item.fontSize, fontWeight: item.fontWeight, lineHeight: '1.2' }}>
         {item.content}

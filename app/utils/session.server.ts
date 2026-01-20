@@ -38,9 +38,9 @@ export class SessionService {
   getShopSession(): ShopSession | null {
     const shop = this.session.get("shop");
     const accessToken = this.session.get("accessToken");
-    
+
     if (!shop || !accessToken) return null;
-    
+
     return { shop, accessToken };
   }
 

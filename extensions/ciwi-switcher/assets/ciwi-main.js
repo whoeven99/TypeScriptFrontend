@@ -224,7 +224,7 @@ async function ciwiOnload() {
         "ciwi_iplocation_expire_at",
         Date.now() + 7 * 24 * 60 * 60 * 1000,
       );
-      
+
       //缓存定位时间
       const fetchCountryCost = Date.now() - fetchCountryStart;
 

@@ -711,7 +711,7 @@ const Index = () => {
             value={
               confirmData.find((item: any) => item.key === record?.imageId)
                 ? confirmData.find((item: any) => item.key === record?.imageId)
-                    ?.value
+                  ?.value
                 : record?.targetAltText
             }
             onChange={(e) => handleInputChange(record, e.target.value)}
@@ -1193,10 +1193,10 @@ const Index = () => {
                                         productAltTextItem?.imageId,
                                     )
                                       ? confirmData.find(
-                                          (confirmItem: any) =>
-                                            confirmItem.key ===
-                                            productAltTextItem?.imageId,
-                                        )?.value
+                                        (confirmItem: any) =>
+                                          confirmItem.key ===
+                                          productAltTextItem?.imageId,
+                                      )?.value
                                       : productAltTextItem.targetAltText
                                   }
                                   onChange={(e) =>

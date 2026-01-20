@@ -47,8 +47,8 @@ export const AlignText: React.FC<AlignTextProps> = ({ editor }) => {
     currentAlign === 'left'
       ? TextAlignLeftIcon
       : currentAlign === 'center'
-      ? TextAlignCenterIcon
-      : TextAlignRightIcon;
+        ? TextAlignCenterIcon
+        : TextAlignRightIcon;
 
   return (
     <Popover

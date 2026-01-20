@@ -63,8 +63,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
-        console.log("data.data.shopLocales",data.data.shopLocales);
-        
+        console.log("data.data.shopLocales", data.data.shopLocales);
+
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             // storeLanguage.push(item.locale);
@@ -534,8 +534,8 @@ const Index = () => {
                     }}
                   >
                     {Array.isArray(chart.data) &&
-                    chart.data.length > 0 &&
-                    ready ? (
+                      chart.data.length > 0 &&
+                      ready ? (
                       <LineChartECharts data={chart.data} height={300} />
                     ) : (
                       <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />

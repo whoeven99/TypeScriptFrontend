@@ -23,14 +23,14 @@ interface UpdateCustomRedirectsModalProps {
     currencyCode: string;
   }[];
   defaultData:
-    | {
-        key: number;
-        status: boolean;
-        region: string;
-        languageCode: string;
-        currencyCode: string;
-      }
-    | undefined;
+  | {
+    key: number;
+    status: boolean;
+    region: string;
+    languageCode: string;
+    currencyCode: string;
+  }
+  | undefined;
   handleUpdateDataSource: ({
     key,
     region,
@@ -96,11 +96,10 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   const currencyOptions = useMemo(() => {
     if (currencyTableData.length > 0) {
       return currencyTableData.map((item) => {
-        const label = `${
-          currencyLocaleData[
-            item.currencyCode as keyof typeof currencyLocaleData
-          ]?.symbol
-        }(${item.currencyCode})`;
+        const label = `${currencyLocaleData[
+          item.currencyCode as keyof typeof currencyLocaleData
+        ]?.symbol
+          }(${item.currencyCode})`;
 
         return {
           value: item.currencyCode,

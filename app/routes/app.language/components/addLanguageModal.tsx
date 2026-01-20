@@ -564,8 +564,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
                       e.stopPropagation(); // 阻止事件冒泡，防止触发面板展开/收起
                       handleRegionChange(state, !isRegionChecked(state));
                     }}
-                    // onChange={(e) => handleRegionChange(state, e.target.checked)}
-                    // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
+                  // onChange={(e) => handleRegionChange(state, e.target.checked)}
+                  // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
                   />
                   <span style={{ marginLeft: 8 }}>{state.name}</span>
                 </>
