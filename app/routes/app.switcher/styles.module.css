@@ -159,7 +159,7 @@ a[href="https://translate.google.com"] {
 .main_box {
   display: flex;
   position: relative;
-  background: #fff;
+  background-color: transparent !important;
   padding: 10px;
   border-radius: 5px;
   cursor: pointer;

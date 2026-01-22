@@ -1321,6 +1321,7 @@ const Index = () => {
                       className={styles.main_box}
                       style={{
                         justifyContent: isIncludedFlag ? "" : "center",
+                        background: backgroundColor,
                       }}
                       onClick={handleSelectorClick}
                     >
