@@ -200,33 +200,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
 
   useEffect(() => {
     if (payFetcher.data) {
-      if (
-        payFetcher.data.data.data.appPurchaseOneTimeCreate.appPurchaseOneTime &&
-        payFetcher.data.data.data.appPurchaseOneTimeCreate.confirmationUrl
-      ) {
-        const order =
-          payFetcher.data.data.data.appPurchaseOneTimeCreate.appPurchaseOneTime;
-        const confirmationUrl =
-          payFetcher.data.data.data.appPurchaseOneTimeCreate.confirmationUrl;
-        const orderInfo = {
-          id: order.id,
-          amount: order.price.amount,
-          name: order.name,
-          createdAt: order.createdAt,
-          status: order.status,
-          confirmationUrl: confirmationUrl,
-        };
-        const formData = new FormData();
-        formData.append("orderInfo", JSON.stringify(orderInfo));
-        orderFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
+      if (payFetcher.data.success) {
+        const confirmationUrl = payFetcher.data.response.confirmationUrl;
         open(confirmationUrl, "_top");
-      }
-      if (
-        payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors.length
-      ) {
+      } else {
         setBuyButtonLoading(false);
       }
     }
@@ -245,7 +222,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     formData.append("payInfo", JSON.stringify(payInfo));
     payFetcher.submit(formData, {
       method: "post",
-      action: "/app",
+      action: "/app/pricing",
     });
     reportClick("dashboard_translation_task_buy");
   };

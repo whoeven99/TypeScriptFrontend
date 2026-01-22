@@ -631,7 +631,7 @@ export const GetProgressData = async ({
 export const StopTranslatingTask = async ({
   shopName,
   server,
-  taskId
+  taskId,
 }: {
   shopName: string;
   server: string;
@@ -2707,7 +2707,17 @@ export const InsertOrUpdateOrder = async ({
   confirmationUrl?: URL;
 }) => {
   try {
-    await axios({
+    console.log(`${shop} InsertOrUpdateOrder Input: `, {
+      shop,
+      id,
+      amount,
+      name,
+      createdAt,
+      status,
+      confirmationUrl,
+    });
+
+    const response = await axios({
       url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
       data: {
@@ -2720,8 +2730,18 @@ export const InsertOrUpdateOrder = async ({
         confirmationUrl: confirmationUrl,
       },
     });
+
+    console.log(`${shop} InsertOrUpdateOrder: `, response.data);
+    
+    return response.data;
   } catch (error) {
     console.error("Error InsertOrUpdateOrder:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
 };
 
