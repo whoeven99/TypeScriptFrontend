@@ -202,59 +202,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (nearTransaltedData) {
-      try {
-        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        const shopPrimaryLanguage = shopLanguagesIndex?.filter(
-          (language) => language?.primary,
-        );
-
-        const translatingData = await GetAllProgressData({
-          shop,
-          server: process.env.SERVER_URL as string,
-          source: shopPrimaryLanguage[0]?.locale,
-        });
-
-        if (translatingData?.success) {
-          const listData = translatingData?.response?.list?.map((item: any) => {
-            return {
-              ...item,
-              progressData:
-                item.translateStatus == "translation_process_saving_shopify"
-                  ? {
-                    RemainingQuantity:
-                      item?.writingData?.write_total -
-                      item?.writingData?.write_done || 0,
-                    TotalQuantity: item?.writingData?.write_total || 1,
-                  }
-                  : item?.progressData,
-            };
-          });
-
-          return {
-            ...translatingData,
-            response: {
-              list: listData || [],
-              source: shopPrimaryLanguage[0]?.locale,
-            },
-          };
-        } else {
-          return translatingData;
-        }
-      } catch (error) {
-        console.error("Error nearTransaltedData app:", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
     if (statusData) {
       try {
         const data = await GetLanguageStatus({
@@ -311,24 +258,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error orderInfo app:", error);
         return json({ error: "Error orderInfo app" }, { status: 500 });
-      }
-    }
-
-    if (stopTranslate) {
-      try {
-        const data = await StopTranslatingTask({
-          shopName: shop,
-          source: stopTranslate.source,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error stopTranslate app:", error);
-        return json({
-          data: {
-            success: false,
-            message: "Error stopTranslate app",
-          },
-        });
       }
     }
 

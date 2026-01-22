@@ -78,15 +78,15 @@ export const ContinueTranslating = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${server}/translate/continueTranslating?shopName=${shop}&taskId=${taskId}`,
+      url: `${server}/translate/continueTranslatingV2?shopName=${shop}&taskId=${taskId}`,
       method: "POST",
     });
 
-    console.log(`${shop} ContinueTranslating: `, response.data);
+    console.log(`${shop} ContinueTranslatingV2: `, response.data);
 
     return response.data;
   } catch (error) {
-    console.error(`${shop} ContinueTranslating error:`, error);
+    console.error(`${shop} ContinueTranslatingV2 error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -630,28 +630,24 @@ export const GetProgressData = async ({
 
 export const StopTranslatingTask = async ({
   shopName,
-  source,
+  server,
+  taskId
 }: {
   shopName: string;
-  source: string;
+  server: string;
+  taskId: number;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/stopTranslatingTask?shopName=${shopName}`,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: {
-        source: source,
-      },
+      url: `${server}/translate/stopTranslatingTaskV2?shopName=${shopName}&taskId=${taskId}`,
+      method: "POST",
     });
 
-    console.log(`${shopName} StopTranslatingTask: `, response.data);
+    console.log(`${shopName} StopTranslatingTaskV2: `, response.data);
 
     return response.data;
   } catch (error) {
-    console.error(`${shopName} StopTranslatingTask error:`, error);
+    console.error(`${shopName} StopTranslatingTaskV2 error:`, error);
     return {
       success: false,
       errorCode: 10001,
@@ -1109,16 +1105,13 @@ export const AddSubscriptionQuotaRecord = async ({
 export const UpdateStatus = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/updateStatus`,
+      url: `${process.env.SERVER_URL}/translate/updateStatusV2?shopName=${shop}`,
       method: "POST",
-      data: {
-        shopName: shop,
-      },
     });
 
-    console.log(`${shop} UpdateStatus: `, response.data);
+    console.log(`${shop} updateStatusV2: `, response.data);
   } catch (error) {
-    console.error("Error UpdateStatus:", error);
+    console.error("Error updateStatusV2:", error);
   }
 };
 

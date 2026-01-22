@@ -1,29 +1,25 @@
 import React, { useState } from "react";
 import { Button, Card, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { FetcherWithComponents, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import ProgressBlock from "./progressBlock";
 import useReport from "scripts/eventReport";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
   dataSource: any[];
-  source: string;
-  languageFetcher: FetcherWithComponents<any>;
-  stopTranslateFetcher: FetcherWithComponents<any>;
   isProgressLoading: boolean;
   isMobile: boolean;
   setProgressingModalOpen: (e: boolean) => void;
+  updateProgressDataSourceStatus: (taskId: number, status: number) => void;
 }
 
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
   dataSource = [],
-  source = "",
-  languageFetcher,
-  stopTranslateFetcher,
   isProgressLoading,
   isMobile,
   setProgressingModalOpen,
+  updateProgressDataSourceStatus,
 }) => {
   const { t } = useTranslation();
   const { reportClick } = useReport();
@@ -60,7 +56,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             taskId={dataSource[0]?.taskId}
             key={dataSource[0]?.target}
             isMobile={isMobile}
-            source={source}
             target={dataSource[0]?.target}
             status={dataSource[0]?.status}
             translateStatus={dataSource[0]?.translateStatus}
@@ -68,8 +63,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             progressData={dataSource[0]?.progressData}
             value={dataSource[0]?.value}
             module={dataSource[0]?.module}
-            languageFetcher={languageFetcher}
-            stopTranslateFetcher={stopTranslateFetcher}
+            updateProgressDataSourceStatus={updateProgressDataSourceStatus}
           />
         </Card>
       ) : (
