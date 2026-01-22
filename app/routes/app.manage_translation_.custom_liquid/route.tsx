@@ -269,9 +269,9 @@ const Index = () => {
       const newData = dataSource.map((item) =>
         item.key === id
           ? {
-              ...item,
-              replacementMethod: !!updateLiquidReplacementMethod?.response,
-            }
+            ...item,
+            replacementMethod: !!updateLiquidReplacementMethod?.response,
+          }
           : item,
       );
       setDataSource(newData);
@@ -389,16 +389,16 @@ const Index = () => {
                     setSelectedRowKeys(
                       e.target.checked
                         ? [
-                            ...currentPageKeys,
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ]
+                          ...currentPageKeys,
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ]
                         : [
-                            ...selectedRowKeys.filter(
-                              (key) => !currentPageKeys.includes(key),
-                            ),
-                          ],
+                          ...selectedRowKeys.filter(
+                            (key) => !currentPageKeys.includes(key),
+                          ),
+                        ],
                     )
                   }
                 >
@@ -422,8 +422,8 @@ const Index = () => {
                             e.target.checked
                               ? [...selectedRowKeys, item.key]
                               : selectedRowKeys.filter(
-                                  (key) => key !== item.key,
-                                ),
+                                (key) => key !== item.key,
+                              ),
                           );
                         }}
                       >

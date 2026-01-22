@@ -8,9 +8,9 @@ import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
-interface HasPayForFreePlanModalProps {}
+interface HasPayForFreePlanModalProps { }
 
-const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
+const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({ }) => {
   const { t } = useTranslation();
 
   const [content, setContent] = useState<any>({

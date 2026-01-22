@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 const { Text } = Typography;
 
-const PrimaryLanguage = ({}) => {
+const PrimaryLanguage = ({ }) => {
   const { t } = useTranslation();
 
   //用户默认语言数据

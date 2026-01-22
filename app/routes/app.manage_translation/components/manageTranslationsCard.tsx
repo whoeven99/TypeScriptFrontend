@@ -52,24 +52,24 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       },
       dataSource.some((item: any) => !item.withoutCount)
         ? {
-            title: t("Items Translated"),
-            dataIndex: "items",
-            key: "items",
-            width: "30%",
-            render: (_: any, record: any) => {
-              if (record.withoutCount) return null;
-              return record.allItems === undefined ||
-                record.allTranslatedItems === undefined ? (
-                <div>{t("Syncing")}</div>
-              ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
-                <div>--</div>
-              ) : (
-                <div>
-                  {record.allTranslatedItems}/{record.allItems}
-                </div>
-              );
-            },
-          }
+          title: t("Items Translated"),
+          dataIndex: "items",
+          key: "items",
+          width: "30%",
+          render: (_: any, record: any) => {
+            if (record.withoutCount) return null;
+            return record.allItems === undefined ||
+              record.allTranslatedItems === undefined ? (
+              <div>{t("Syncing")}</div>
+            ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
+              <div>--</div>
+            ) : (
+              <div>
+                {record.allTranslatedItems}/{record.allItems}
+              </div>
+            );
+          },
+        }
         : {},
       {
         title: t("Action"),

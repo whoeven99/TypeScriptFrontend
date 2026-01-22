@@ -487,7 +487,7 @@ const TranslationDashboard = () => {
 
                     <li>
                       {storeLanguageFetcher.state === "submitting" ||
-                      reportIntroduction.optimizationNotEnabled === null ? (
+                        reportIntroduction.optimizationNotEnabled === null ? (
                         <Spin size="small" />
                       ) : (
                         <>
@@ -627,7 +627,7 @@ const TranslationDashboard = () => {
                       navigate("/app/glossary");
                       reportClick("translate_report_open_termbase");
                     }}
-                    // style={{ marginTop: 8 }}
+                  // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>
@@ -681,7 +681,7 @@ const TranslationDashboard = () => {
                       navigate("/app/language");
                       reportClick("translate_report_manage_language");
                     }}
-                    // style={{ marginTop: 8 }}
+                  // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>
@@ -708,7 +708,7 @@ const TranslationDashboard = () => {
                       navigate("/app/language");
                       reportClick("translate_report_manage_auto_translate");
                     }}
-                    // style={{ marginTop: 8 }}
+                  // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>

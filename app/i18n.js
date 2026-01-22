@@ -1,6 +1,22 @@
 export default {
   // This is the list of languages your application supports
-  supportedLngs: ["en", "fr", "de", "es", "it", "nl", "pt", "sv", "ja", "ko", "ru" , "tr" , "uk" , "zh-CN", "zh-TW"],
+  supportedLngs: [
+    "en",
+    "fr",
+    "de",
+    "es",
+    "it",
+    "nl",
+    "pt",
+    "sv",
+    "ja",
+    "ko",
+    "ru",
+    "tr",
+    "uk",
+    "zh-CN",
+    "zh-TW",
+  ],
   // This is the language you want to use in case
   // if the user language is not in the supportedLngs
   interpolation: {
@@ -54,4 +70,3 @@ export default {
 // } else {
 //   console.log('⚠️ 请输入一个要翻译的 key，例如：npm run i18n:key hello');
 // }
-
