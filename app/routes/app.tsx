@@ -86,13 +86,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const customApikeyData = JSON.parse(
       formData.get("customApikeyData") as string,
     );
-    const nearTransaltedData = JSON.parse(
-      formData.get("nearTransaltedData") as string,
-    );
     const statusData = JSON.parse(formData.get("statusData") as string);
-    const payInfo = JSON.parse(formData.get("payInfo") as string);
-    const orderInfo = JSON.parse(formData.get("orderInfo") as string);
-    const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
     );
@@ -218,46 +212,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "SERVER_ERROR",
           response: null,
         };
-      }
-    }
-
-    if (payInfo) {
-      try {
-        const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
-        );
-        const payData = await mutationAppPurchaseOneTimeCreate({
-          shop,
-          accessToken: accessToken as string,
-          name: payInfo.name,
-          price: payInfo.price,
-          returnUrl,
-          test:
-            process.env.NODE_ENV === "development" ||
-            process.env.NODE_ENV === "test",
-        });
-        return json({ data: payData });
-      } catch (error) {
-        console.error("Error payInfo app:", error);
-        return json({ error: "Error payInfo app" }, { status: 500 });
-      }
-    }
-
-    if (orderInfo) {
-      try {
-        const orderData = await InsertOrUpdateOrder({
-          shop,
-          id: orderInfo.id,
-          amount: orderInfo.amount,
-          name: orderInfo.name,
-          createdAt: orderInfo.createdAt,
-          status: orderInfo.status,
-          confirmationUrl: orderInfo.confirmationUrl,
-        });
-        return json({ data: orderData });
-      } catch (error) {
-        console.error("Error orderInfo app:", error);
-        return json({ error: "Error orderInfo app" }, { status: 500 });
       }
     }
 

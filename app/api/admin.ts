@@ -1920,10 +1920,15 @@ export const mutationAppPurchaseOneTimeCreate = async ({
         },
       },
     });
+
     const res = response.data;
+
+    console.log(`${shop} mutationAppPurchaseOneTimeCreate: `, res);
+
     return res;
   } catch (error) {
     console.error("Error mutationAppPurchaseOneTimeCreate:", error);
+    return null;
   }
 };
 
@@ -2008,13 +2013,13 @@ export const mutationAppSubscriptionCreate = async ({
         },
       },
     });
-    const res = response.data?.data?.appSubscriptionCreate;
+    const res = response.data;
 
     console.log(`${shop} mutationAppSubscriptionCreate: `, res);
 
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);
-    return undefined;
+    return null;
   }
 };

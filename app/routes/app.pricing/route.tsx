@@ -22,7 +22,11 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs } from "@remix-run/node";
-import { GetLatestActiveSubscribeId, QueryUserIpCount } from "~/api/JavaServer";
+import {
+  GetLatestActiveSubscribeId,
+  InsertOrUpdateOrder,
+  QueryUserIpCount,
+} from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -93,19 +97,43 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             process.env.NODE_ENV === "development" ||
             process.env.NODE_ENV === "test",
         });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: res?.data,
-        };
-      } catch (error) {
-        console.error("Error payInfo app:", error);
+
+        if (res) {
+          const order = res?.data?.appPurchaseOneTimeCreate?.appPurchaseOneTime;
+          const confirmationUrl =
+            res?.data?.appPurchaseOneTimeCreate?.confirmationUrl;
+
+          const orderData = await InsertOrUpdateOrder({
+            shop,
+            id: order?.id,
+            amount: order?.price?.amount,
+            name: order?.name,
+            createdAt: order?.createdAt,
+            status: order?.status,
+            confirmationUrl: confirmationUrl,
+          });
+
+          return {
+            ...orderData,
+            response: {
+              confirmationUrl,
+            },
+          };
+        }
+
         return {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: undefined,
+          response: null,
+        };
+      } catch (error) {
+        console.error("Error payInfo pricing action: ", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
 
@@ -132,30 +160,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             process.env.NODE_ENV === "test",
         });
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            ...res,
-            appSubscription: {
-              ...res.appSubscription,
-              price: {
-                amount: payForPlan.yearly
-                  ? payForPlan.yearlyPrice
-                  : payForPlan.monthlyPrice,
-                currencyCode: "USD",
-              },
+        if (res) {
+          const order = res?.data?.appSubscriptionCreate?.appSubscription;
+          const confirmationUrl =
+            res?.data?.appSubscriptionCreate?.confirmationUrl;
+
+          const orderData = await InsertOrUpdateOrder({
+            shop,
+            id: order?.id,
+            amount: payForPlan.yearly
+              ? payForPlan.yearlyPrice
+              : payForPlan.monthlyPrice,
+            name: order?.name,
+            createdAt: order?.createdAt,
+            status: order?.status,
+            confirmationUrl: confirmationUrl,
+          });
+
+          return {
+            ...orderData,
+            response: {
+              confirmationUrl,
             },
-          },
-        };
-      } catch (error) {
-        console.error("Error payForPlan action:", error);
+          };
+        }
+
         return {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: undefined,
+          response: null,
+        };
+      } catch (error) {
+        console.error("Error payForPlan pricing action:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
 
@@ -340,25 +382,7 @@ const Index = () => {
   useEffect(() => {
     if (payFetcher.data) {
       if (payFetcher.data?.success) {
-        const order =
-          payFetcher.data?.response?.appPurchaseOneTimeCreate
-            ?.appPurchaseOneTime;
-        const confirmationUrl =
-          payFetcher.data?.response?.appPurchaseOneTimeCreate?.confirmationUrl;
-        const orderInfo = {
-          id: order.id,
-          amount: order.price.amount,
-          name: order.name,
-          createdAt: order.createdAt,
-          status: order.status,
-          confirmationUrl: confirmationUrl,
-        };
-        const formData = new FormData();
-        formData.append("orderInfo", JSON.stringify(orderInfo));
-        orderFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
+        const confirmationUrl = payFetcher.data?.response?.confirmationUrl;
         open(confirmationUrl, "_top");
       } else {
         setBuyButtonLoading(false);
@@ -369,23 +393,8 @@ const Index = () => {
   useEffect(() => {
     if (payForPlanFetcher.data) {
       if (payForPlanFetcher.data?.success) {
-        const order = payForPlanFetcher.data?.response?.appSubscription;
         const confirmationUrl =
           payForPlanFetcher.data?.response?.confirmationUrl;
-        const orderInfo = {
-          id: order.id,
-          amount: order.price.amount,
-          name: order.name,
-          createdAt: order.createdAt,
-          status: order.status,
-          confirmationUrl: confirmationUrl,
-        };
-        const formData = new FormData();
-        formData.append("orderInfo", JSON.stringify(orderInfo));
-        orderFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
         open(confirmationUrl, "_top");
       } else {
         setPayForPlanButtonLoading("");
@@ -1293,12 +1302,12 @@ const Index = () => {
                     textAlign: "center",
                     borderColor:
                       JSON.stringify(selectedOptionKey) ===
-                        JSON.stringify(option.key)
+                      JSON.stringify(option.key)
                         ? "#007F61"
                         : undefined,
                     borderWidth:
                       JSON.stringify(selectedOptionKey) ===
-                        JSON.stringify(option.key)
+                      JSON.stringify(option.key)
                         ? "2px"
                         : "1px",
                     cursor: "pointer",
@@ -1323,7 +1332,7 @@ const Index = () => {
                   {(plan.type === "Premium" ||
                     plan.type === "Pro" ||
                     plan.type === "Basic") &&
-                    !plan?.isInFreePlanTime ? (
+                  !plan?.isInFreePlanTime ? (
                     <>
                       <Title
                         level={3}
@@ -1361,8 +1370,8 @@ const Index = () => {
                 {t("Total pay")}: $
                 {selectedOptionKey
                   ? creditOptions
-                    .find((item) => item.key === selectedOptionKey)
-                    ?.price.currentPrice.toFixed(2)
+                      .find((item) => item.key === selectedOptionKey)
+                      ?.price.currentPrice.toFixed(2)
                   : "0.00"}
               </Text>
               <Button
