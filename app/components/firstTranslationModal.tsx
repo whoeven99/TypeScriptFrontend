@@ -21,29 +21,13 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
 
   const fetcher = useFetcher<any>();
   const planFetcher = useFetcher<any>();
-  const orderFetcher = useFetcher<any>();
 
   useEffect(() => {
     if (planFetcher.data) {
       if (planFetcher.data?.success) {
-        const order = planFetcher.data?.response?.appSubscription;
-        const confirmationUrl = planFetcher.data?.response?.confirmationUrl;
-        const orderInfo = {
-          id: order.id,
-          amount: order.price.amount,
-          name: order.name,
-          createdAt: order.createdAt,
-          status: order.status,
-          confirmationUrl: confirmationUrl,
-        };
-        const formData = new FormData();
-        formData.append("orderInfo", JSON.stringify(orderInfo));
-        orderFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
+        const confirmationUrl =
+          planFetcher.data?.response?.confirmationUrl;
         open(confirmationUrl, "_top");
-      } else {
       }
     }
   }, [planFetcher.data]);
