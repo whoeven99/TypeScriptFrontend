@@ -31,6 +31,45 @@ const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
 
+const logGraphQLErrorDetail = (context: string, error: unknown) => {
+  const e = error as any;
+  const response = e?.response;
+  const responseHeaders =
+    typeof response?.headers?.get === "function"
+      ? {
+          requestId: response.headers.get("x-request-id"),
+          apiVersion: response.headers.get("x-shopify-api-version"),
+          apiVersionWarning: response.headers.get("x-shopify-api-version-warning"),
+        }
+      : undefined;
+
+  const graphQLErrors = Array.isArray(e?.graphQLErrors)
+    ? e.graphQLErrors.map((gqlError: any) => ({
+        message: gqlError?.message,
+        path: gqlError?.path,
+        extensions: gqlError?.extensions,
+      }))
+    : [];
+  console.error(`[${context}] GraphQL request failed`, {
+    name: e?.name,
+    message: e?.message,
+    networkStatusCode: e?.networkStatusCode,
+    response: response
+      ? {
+          status: response?.status,
+          statusText: response?.statusText,
+          url: response?.url,
+          headers: responseHeaders,
+        }
+      : undefined,
+    stack: e?.stack,
+  });
+  console.error(
+    `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
+  );
+  console.error(`[${context}] rawError`, e);
+};
+
 type ManageDataSourceType = {
   key: string;
   resourceId: string;
@@ -115,7 +154,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         });
       } catch (error) {
-        console.error("Error action startCursor product:", error);
+        logGraphQLErrorDetail("Error action startCursor product", error);
         return json({
           success: false,
           errorCode: 0,
@@ -171,7 +210,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         });
       } catch (error) {
-        console.error("Error action endCursor product:", error);
+        logGraphQLErrorDetail("Error action endCursor product", error);
         return json({
           success: false,
           errorCode: 0,
@@ -242,7 +281,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data.data?.translatableResource,
         });
       } catch (error) {
-        console.error("Error action productId product:", error);
+        logGraphQLErrorDetail("Error action productId product", error);
         return json({
           success: false,
           errorCode: 0,
@@ -279,7 +318,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const variantsData = await Promise.allSettled(promise);
         return json({ variantsData: variantsData });
       } catch (error) {
-        console.error("Error action variants product:", error);
+        logGraphQLErrorDetail("Error action variants product", error);
         return {
           success: false,
           errorCode: 10001,
