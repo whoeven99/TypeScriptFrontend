@@ -74,17 +74,22 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
         }
       : undefined;
 
-  const graphQLErrors = Array.isArray(e?.graphQLErrors)
-    ? e.graphQLErrors.map((gqlError: any) => ({
-        message: gqlError?.message,
-        path: gqlError?.path,
-        extensions: gqlError?.extensions,
-      }))
-    : [];
+  const graphQLErrorList =
+    (Array.isArray(e?.graphQLErrors) && e.graphQLErrors) ||
+    (Array.isArray(e?.errors?.graphQLErrors) && e.errors.graphQLErrors) ||
+    (Array.isArray(e?.body?.errors) && e.body.errors) ||
+    [];
+
+  const graphQLErrors = graphQLErrorList.map((gqlError: any) => ({
+    message: gqlError?.message,
+    path: gqlError?.path,
+    extensions: gqlError?.extensions,
+    locations: gqlError?.locations,
+  }));
   console.error(`[${context}] GraphQL request failed`, {
     name: e?.name,
     message: e?.message,
-    networkStatusCode: e?.networkStatusCode,
+    networkStatusCode: e?.networkStatusCode ?? e?.errors?.networkStatusCode,
     response: response
       ? {
           status: response?.status,
@@ -97,6 +102,16 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   });
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
+  );
+  graphQLErrors.forEach((item, index) => {
+    console.error(`[${context}] graphQLError[${index}]`, item);
+  });
+  console.error(
+    `[${context}] rawError_full=${JSON.stringify(
+      e,
+      Object.getOwnPropertyNames(e || {}),
+      2,
+    )}`,
   );
   console.error(`[${context}] rawError`, e);
 };
