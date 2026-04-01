@@ -235,59 +235,103 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case !!productId:
       try {
-        const response = await admin.graphql(
-          `#graphql
-            query {     
-              translatableResource(resourceId: "${productId}") {
-                  resourceId
-                  translatableContent {
-                    digest
-                    key
-                    locale
-                    type
-                    value
-                  }
-                  translations(locale: "${searchTerm}") {
-                    value
-                    key
-                  }
-                  options: nestedTranslatableResources(first: 20, resourceType: PRODUCT_OPTION) {
-                    nodes {
-                      resourceId
-                      translatableContent {
-                        digest
-                        key
-                        locale
-                        type
-                        value
-                      }
-                      translations(locale: "${searchTerm}") {
-                        key
-                        value
+        let data: any;
+        try {
+          const response = await admin.graphql(
+            `#graphql
+              query {     
+                translatableResource(resourceId: "${productId}") {
+                    resourceId
+                    translatableContent {
+                      digest
+                      key
+                      locale
+                      type
+                      value
+                    }
+                    translations(locale: "${searchTerm}") {
+                      value
+                      key
+                    }
+                    options: nestedTranslatableResources(first: 20, resourceType: PRODUCT_OPTION) {
+                      nodes {
+                        resourceId
+                        translatableContent {
+                          digest
+                          key
+                          locale
+                          type
+                          value
+                        }
+                        translations(locale: "${searchTerm}") {
+                          key
+                          value
+                        }
                       }
                     }
-                  }
-                  metafields: nestedTranslatableResources(first: 20, resourceType: METAFIELD) {
-                    nodes {
-                      resourceId
-                      translatableContent {
-                        digest
-                        key
-                        locale
-                        type
-                        value
-                      }
-                      translations(locale: "${searchTerm}") {
-                        key
-                        value
+                    metafields: nestedTranslatableResources(first: 20, resourceType: METAFIELD) {
+                      nodes {
+                        resourceId
+                        translatableContent {
+                          digest
+                          key
+                          locale
+                          type
+                          value
+                        }
+                        translations(locale: "${searchTerm}") {
+                          key
+                          value
+                        }
                       }
                     }
+              }
+            }`,
+          );
+          data = await response.json();
+        } catch (error) {
+          const message = (error as any)?.message || "";
+          if (message.includes("Query not supported")) {
+            // Some API versions/shops reject nestedTranslatableResources in this query shape.
+            // Fall back to base resource query so the page still works.
+            const fallbackResponse = await admin.graphql(
+              `#graphql
+                query {
+                  translatableResource(resourceId: "${productId}") {
+                    resourceId
+                    translatableContent {
+                      digest
+                      key
+                      locale
+                      type
+                      value
+                    }
+                    translations(locale: "${searchTerm}") {
+                      value
+                      key
+                    }
                   }
-            }
-          }`,
-        );
-
-        const data = await response.json();
+                }`,
+            );
+            const fallbackData = await fallbackResponse.json();
+            data = {
+              ...fallbackData,
+              data: {
+                ...fallbackData?.data,
+                translatableResource: {
+                  ...fallbackData?.data?.translatableResource,
+                  options: { nodes: [] },
+                  metafields: { nodes: [] },
+                },
+              },
+            };
+            console.warn(
+              `[productId query fallback] Query not supported for nestedTranslatableResources, fallback to base query.`,
+            );
+          } else {
+            throw error;
+          }
+        }
 
         return json({
           success: true,
