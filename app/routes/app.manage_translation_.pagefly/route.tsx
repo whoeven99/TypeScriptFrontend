@@ -551,6 +551,7 @@ const Index = () => {
       key: record?.key,
       type: record?.type,
       server: server || "",
+      resourceId: record?.resourceId,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
