@@ -876,6 +876,7 @@ export const SingleTextTranslate = async ({
   type,
   server,
   targetText,
+  resourceId,
 }: {
   shopName: string;
   source: string;
@@ -886,8 +887,19 @@ export const SingleTextTranslate = async ({
   type: string;
   server: string;
   targetText: string | null; // 必传，但可 null
+  resourceId: string | null; // 必传，但可 null
 }) => {
   try {
+    console.log("SingleTextTranslate Input: ", {
+      shopName,
+      source,
+      target,
+      resourceType,
+      context,
+      key,
+      type,
+      resourceId,
+    });
     const response = await axios({
       url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
       method: "POST",

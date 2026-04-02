@@ -195,6 +195,13 @@ const Index = () => {
       value: language?.locale,
     }));
 
+    // debug: 打印下拉框 options 的数据来源（languageTableData）
+    console.log("[debug][manage_translation] selectOptions computed", {
+      languageCount: languageTableData?.length,
+      locales: languageTableData?.map((l) => l?.locale),
+      first: languageTableData?.[0]?.locale,
+    });
+
     return newArray || [];
   }, [languageTableData]);
 
@@ -593,18 +600,12 @@ const Index = () => {
   useEffect(() => {
     if (appFetcher.data) {
       if (appFetcher.data?.success) {
-        let newData: {
-          pagefly: boolean;
-        } = {
-          pagefly: false,
-        };
-        if ("pagefly" in appFetcher.data?.response) {
-          newData = {
-            ...newData,
-            pagefly: true,
-          };
-        }
-        setAppInstallList(newData);
+        const response = appFetcher.data?.response as any;
+        // debug: queryAppByHandle 失败时 response 可能是 null
+        // 这里用安全取值避免 `in` 操作符对 null 抛错
+        setAppInstallList({
+          pagefly: Boolean(response?.pagefly),
+        });
       }
     }
   }, [appFetcher.data]);

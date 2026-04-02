@@ -269,6 +269,12 @@ export const queryShopLanguages = async ({
         }
     }`;
 
+    // debug: 记录本次调用使用的 API 版本（避免定位不到是因为版本/权限问题导致的 null）
+    console.log("[debug][queryShopLanguages] start", {
+      shop,
+      graphqlVersion: process.env.GRAPHQL_VERSION,
+    });
+
     const response = await axios({
       url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
       method: "POST",
@@ -280,6 +286,7 @@ export const queryShopLanguages = async ({
     });
     const res = response?.data?.data?.shopLocales;
 
+    // debug: 记录返回结果摘要（不打印 token）
     console.log(`${shop} queryShopLanguages: `, res);
 
     return res;

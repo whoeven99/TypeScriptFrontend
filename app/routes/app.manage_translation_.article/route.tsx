@@ -625,6 +625,7 @@ const Index = () => {
     record: any;
     handleInputChange: (record: any, value: string) => void;
   }) => {
+    console.log("log data record: ", record);
     fetcher.submit(
       {
         log: `${globalStore?.shop} 从翻译管理-文章页面点击单行翻译`,
@@ -648,6 +649,7 @@ const Index = () => {
       key: record?.shopifyKey,
       type: record?.type,
       server: globalStore?.server || "",
+      resourceId: record?.resourceId,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

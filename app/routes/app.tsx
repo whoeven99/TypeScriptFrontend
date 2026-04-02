@@ -194,10 +194,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageData) {
       try {
+        // debug: languageData 初始化时会触发这里
+        console.log("[debug][app.action] languageData received", {
+          shop,
+          // 只打印关键字段，避免泄露 token
+        });
+
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
         });
+
+        // debug: 打印语言查询结果摘要（不打印 accessToken）
+        console.log("[debug][app.action] queryShopLanguages result", {
+          count: shopLanguagesIndex?.length,
+          primary: shopLanguagesIndex?.filter((l) => l?.primary)?.[0]?.locale,
+          allLocales: shopLanguagesIndex?.map((l) => l?.locale),
+        });
+
         const shopPrimaryLanguage = shopLanguagesIndex?.filter(
           (language) => language?.primary,
         );

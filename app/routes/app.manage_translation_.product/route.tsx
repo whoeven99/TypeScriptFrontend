@@ -1261,6 +1261,7 @@ const Index = () => {
       key: record?.shopifyKey,
       type: record?.type,
       server: globalStore?.server || "",
+      resourceId: record?.resourceId,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
