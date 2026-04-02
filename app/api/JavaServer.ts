@@ -876,6 +876,7 @@ export const SingleTextTranslate = async ({
   type,
   server,
   targetText,
+  resourceId,
 }: {
   shopName: string;
   source: string;
@@ -886,6 +887,7 @@ export const SingleTextTranslate = async ({
   type: string;
   server: string;
   targetText: string | null; // 必传，但可 null
+  resourceId: string | null; // 必传，但可 null
 }) => {
   try {
     const response = await axios({
@@ -900,6 +902,7 @@ export const SingleTextTranslate = async ({
         key: key,
         type: type,
         targetText: targetText,
+        resourceId: resourceId,
       },
     });
 
