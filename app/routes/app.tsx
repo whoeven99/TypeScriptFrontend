@@ -62,6 +62,60 @@ import { setLanguageTableData } from "~/store/modules/languageTableData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
+const logGraphQLErrorDetail = (context: string, error: unknown) => {
+  const e = error as any;
+  const response = e?.response;
+  const responseHeaders =
+    typeof response?.headers?.get === "function"
+      ? {
+          requestId: response.headers.get("x-request-id"),
+          apiVersion: response.headers.get("x-shopify-api-version"),
+          apiVersionWarning: response.headers.get("x-shopify-api-version-warning"),
+        }
+      : undefined;
+
+  const graphQLErrorList =
+    (Array.isArray(e?.graphQLErrors) && e.graphQLErrors) ||
+    (Array.isArray(e?.errors?.graphQLErrors) && e.errors.graphQLErrors) ||
+    (Array.isArray(e?.body?.errors) && e.body.errors) ||
+    [];
+
+  const graphQLErrors = graphQLErrorList.map((gqlError: any) => ({
+    message: gqlError?.message,
+    path: gqlError?.path,
+    extensions: gqlError?.extensions,
+    locations: gqlError?.locations,
+  }));
+  console.error(`[${context}] GraphQL request failed`, {
+    name: e?.name,
+    message: e?.message,
+    networkStatusCode: e?.networkStatusCode ?? e?.errors?.networkStatusCode,
+    response: response
+      ? {
+          status: response?.status,
+          statusText: response?.statusText,
+          url: response?.url,
+          headers: responseHeaders,
+        }
+      : undefined,
+    stack: e?.stack,
+  });
+  console.error(
+    `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
+  );
+  graphQLErrors.forEach((item, index) => {
+    console.error(`[${context}] graphQLError[${index}]`, item);
+  });
+  console.error(
+    `[${context}] rawError_full=${JSON.stringify(
+      e,
+      Object.getOwnPropertyNames(e || {}),
+      2,
+    )}`,
+  );
+  console.error(`[${context}] rawError`, e);
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -118,7 +172,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
         return null;
       } catch (error) {
-        console.error("Error loading app:", error);
+        logGraphQLErrorDetail("Error loading app", error);
         return null;
       }
     }
@@ -133,7 +187,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return null;
       } catch (error) {
-        console.error("Error languageInit app:", error);
+        logGraphQLErrorDetail("Error languageInit app", error);
         return null;
       }
     }
@@ -161,7 +215,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.error("Error languageData app:", error);
+        logGraphQLErrorDetail("Error languageData app", error);
         return {
           success: false,
           errorCode: 10001,
@@ -186,7 +240,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           customApikeyData: results,
         });
       } catch (error) {
-        console.error("Error customApikeyData app:", error);
+        logGraphQLErrorDetail("Error customApikeyData app", error);
         return {
           success: false,
           errorCode: 10001,
@@ -205,7 +259,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return data;
       } catch (error) {
-        console.error("Error statusData app:", error);
+        logGraphQLErrorDetail("Error statusData app", error);
         return {
           success: false,
           errorCode: 10001,
@@ -229,7 +283,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         });
       } catch (error) {
-        console.error("Error googleAnalytics app:", error);
+        logGraphQLErrorDetail("Error googleAnalytics app", error);
         return json({
           data: {
             success: false,
@@ -298,7 +352,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log(`${shop} getOrderData failed`, error);
+        logGraphQLErrorDetail(`${shop} getOrderData failed`, error);
         return {
           success: false,
           response: {
@@ -346,7 +400,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log(`${shop} findWebPixel failed`, error);
+        logGraphQLErrorDetail(`${shop} findWebPixel failed`, error);
         return {
           success: false,
           errorCode: 10001,
@@ -403,7 +457,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.log(`${shop} get unTranslated words failed`, error);
+        logGraphQLErrorDetail(`${shop} get unTranslated words failed`, error);
         return {
           success: false,
           errorCode: 10001,
@@ -415,7 +469,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     return json({ success: false, message: "Invalid data" });
   } catch (error) {
-    console.error("Error action app:", error);
+    logGraphQLErrorDetail("Error action app", error);
     return json({ error: "Error action app" }, { status: 500 });
   }
 };
