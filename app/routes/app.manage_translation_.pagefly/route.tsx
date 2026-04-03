@@ -525,7 +525,6 @@ const Index = () => {
     if (!record) {
       return;
     }
-    setLoadingItems((prev) => [...prev, record?.key]); 
 
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
