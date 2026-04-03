@@ -1151,6 +1151,14 @@ const Index = () => {
     );
     setLoadingItems((prev) => [...prev, record?.key]);
 
+    console.log({
+      shopName: globalStore?.shop || "",
+      source: globalStore?.source || "",
+      target: searchTerm || "",
+      resourceType: resourceType,
+      resourceId: record?.resourceId,
+    });
+    
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",

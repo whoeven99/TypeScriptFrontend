@@ -888,6 +888,13 @@ export const SingleTextTranslate = async ({
   resourceId: string | null; // 必传，但可 null
 }) => {
   try {
+      console.log({
+      shopName: shopName,
+      source: source,
+      target: target,
+      resourceType: resourceType,
+      resourceId: resourceId,
+    });
     const response = await axios({
       url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
       method: "POST",
