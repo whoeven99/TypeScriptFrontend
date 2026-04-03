@@ -796,9 +796,6 @@ const Index = () => {
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
       target: searchTerm || "",
-      targetText: translatedValues?.[record?.key]?.trim()
-        ? translatedValues?.[record?.key]
-        : null,
       resourceType: resourceType,
       context: record?.altText,
       key: record?.key,
