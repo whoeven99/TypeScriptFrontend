@@ -525,27 +525,12 @@ const Index = () => {
     if (!record) {
       return;
     }
-    setLoadingItems((prev) => [...prev, record?.key]);
-    const currentTranslatedValue =
-      confirmData.find((item: any) => item.key === record?.key)?.value ??
-      record?.translated;
-    console.log({
-      shopName: globalStore?.shop || "",
-      source: globalStore?.source || "",
-      target: searchTerm || "",
-      targetText: currentTranslatedValue?.trim() ? currentTranslatedValue : null,
-      resourceType: record?.type,
-      context: record?.default_language,
-      key: record?.key,
-      type: record?.type,
-      server: server || "",
-    });
+    setLoadingItems((prev) => [...prev, record?.key]); 
 
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
       target: searchTerm || "",
-      targetText: currentTranslatedValue?.trim() ? currentTranslatedValue : null,
       resourceType: record?.type,
       context: record?.default_language,
       key: record?.key,
