@@ -525,6 +525,17 @@ const Index = () => {
     if (!record) {
       return;
     }
+    setLoadingItems((prev) => [...prev, record?.key]);
+    console.log({
+      shopName: globalStore?.shop || "",
+      source: globalStore?.source || "",
+      target: searchTerm || "",
+      resourceType: record?.type,
+      context: record?.default_language,
+      key: record?.key,
+      type: record?.type,
+      server: server || "",
+    });
 
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
