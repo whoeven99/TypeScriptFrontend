@@ -801,6 +801,7 @@ const Index = () => {
       key: record?.key,
       type: "SINGLE_LINE_TEXT_FIELD",
       server: globalStore?.server || "",
+      resourceId: record?.resourceId,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
