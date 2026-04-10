@@ -72,7 +72,7 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
   );
-  graphQLErrors.forEach((item, index) => {
+  graphQLErrors.forEach((item: any, index: number) => {
     console.error(`[${context}] graphQLError[${index}]`, item);
   });
   console.error(
@@ -120,6 +120,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const productId: any = formData.get("productId") as string;
   const variants: any = JSON.parse(formData.get("variants") as string);
   const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  const refreshResourceIds: string[] = JSON.parse(
+    (formData.get("refreshResourceIds") as string) || "[]",
+  );
   switch (true) {
     case !!startCursor:
       try {
@@ -385,6 +388,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       }
+    case refreshResourceIds.length > 0:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query refreshProductResources($resourceIds: [ID!]!, $locale: String!) {
+              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    key
+                    digest
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: $locale) {
+                    key
+                    value
+                  }
+                }
+              }
+            }`,
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
+          },
+        );
+        const data = await response.json();
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            nodes: data.data?.translatableResourcesByIds?.nodes || [],
+            pageInfo: null,
+          },
+        };
+      } catch (error) {
+        console.error("Error refreshing current page:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
     case !!confirmData:
       const data = await updateManageTranslation({
         shop,
@@ -507,7 +560,13 @@ const Index = () => {
           };
         });
         setMenuData(menuData);
-        setSelectProductKey(dataFetcher.data.response.data[0]?.id);
+        setSelectProductKey((prev) => {
+          const matchedItem = dataFetcher.data.response.data.find(
+            (item: any) => item?.id === prev,
+          );
+
+          return matchedItem?.id || dataFetcher.data.response.data[0]?.id || "";
+        });
         setHasPrevious(dataFetcher.data.response.pageInfo.hasPreviousPage);
         setHasNext(dataFetcher.data.response.pageInfo.hasNextPage);
         setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
@@ -774,6 +833,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           const key = item?.response?.id || "";
@@ -842,6 +908,12 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
       setConfirmData([]);
       setSuccessTranslatedKey([]);
@@ -1433,7 +1505,26 @@ const Index = () => {
     }
   };
 
-  const onNext = () => {
+  
+  const refreshCurrentPageData = () => {
+    const currentResourceIds = productBaseData
+      .map((item: any) => item?.resourceId)
+      .filter(Boolean);
+
+    if (currentResourceIds.length === 0) return;
+
+    setIsLoading(true);
+    dataFetcher.submit(
+      {
+        refreshResourceIds: JSON.stringify(currentResourceIds),
+      },
+      {
+        method: "post",
+        action: `/app/manage_translation/product?language=${selectedLanguage}`,
+      },
+    );
+  };
+const onNext = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {

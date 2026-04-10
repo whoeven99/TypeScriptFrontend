@@ -49,6 +49,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const startCursor: any = JSON.parse(formData.get("startCursor") as string);
   const endCursor: any = JSON.parse(formData.get("endCursor") as string);
   const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  const refreshResourceIds: string[] = JSON.parse(
+    (formData.get("refreshResourceIds") as string) || "[]",
+  );
   switch (true) {
     case !!startCursor:
       try {
@@ -154,6 +157,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       }
+    case refreshResourceIds.length > 0:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query refreshSettingsCategoryResources($resourceIds: [ID!]!, $locale: String!) {
+              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    key
+                    digest
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: $locale) {
+                    key
+                    value
+                  }
+                }
+              }
+            }`,
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
+          },
+        );
+        const data = await response.json();
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            nodes: data.data?.translatableResourcesByIds?.nodes || [],
+            pageInfo: null,
+          },
+        };
+      } catch (error) {
+        console.error("Error refreshing current page:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
     case !!confirmData:
       const data = await updateManageTranslation({
         shop,
@@ -299,7 +352,13 @@ const Index = () => {
           const menuData = exMenuData(newData);
           setMenuData(menuData);
           setThemesData(newData);
-          setSelectedThemeKey(newData[0]?.resourceId);
+          setSelectedThemeKey((prev) => {
+            const matchedItem = newData.find(
+              (item: any) => item?.resourceId === prev,
+            );
+
+            return matchedItem?.resourceId || newData[0]?.resourceId || "";
+          });
         }
         const newPageInfo = dataFetcher.data.response?.pageInfo;
 
@@ -320,6 +379,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           const index = themesData.findIndex(
@@ -353,6 +419,12 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
     }
     setConfirmData([]);
@@ -583,7 +655,26 @@ const Index = () => {
     }
   };
 
-  const onNext = () => {
+  
+  const refreshCurrentPageData = () => {
+    const currentResourceIds = themesData
+      .map((item: any) => item?.resourceId)
+      .filter(Boolean);
+
+    if (currentResourceIds.length === 0) return;
+
+    setIsLoading(true);
+    dataFetcher.submit(
+      {
+        refreshResourceIds: JSON.stringify(currentResourceIds),
+      },
+      {
+        method: "post",
+        action: `/app/manage_translation/settings_category?language=${selectedLanguage}`,
+      },
+    );
+  };
+const onNext = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
