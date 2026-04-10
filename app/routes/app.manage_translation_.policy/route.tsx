@@ -291,52 +291,20 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data?.success) {
-        const response = dataFetcher.data?.response;
-
-        if (Array.isArray(response)) {
-          const filterMenuData = response.map((policy: any) => ({
+        const filterMenuData = dataFetcher.data?.response?.map(
+          (policy: any) => ({
             key: policy?.id,
             label: policy?.title,
-          }));
-          setMenuData(filterMenuData);
-          const nextSelectedPolicyId =
-            response.find((policy: any) => policy?.id === selectPolicyKey)?.id ||
-            response[0]?.id ||
-            "";
-          setSelectPolicyKey(nextSelectedPolicyId);
-          policyFetcher.submit(
-            {
-              policyId: nextSelectedPolicyId,
-            },
-            { method: "POST" },
-          );
-        } else if (Array.isArray(response?.nodes)) {
-          const refreshedNode =
-            response.nodes.find(
-              (item: any) => item?.resourceId === selectPolicyKey,
-            ) || response.nodes[0];
-
-          if (refreshedNode) {
-            setPolicyData(refreshedNode);
-            const bodyContent = refreshedNode?.translatableContent?.find(
-              (item: any) => item.key == "body",
-            );
-            setResourceData([
-              {
-                key: `body_${refreshedNode?.resourceId}_0`,
-                resourceId: refreshedNode?.resourceId,
-                shopifyKey: "body",
-                resource: t("Content"),
-                digest: bodyContent?.digest || "",
-                type: bodyContent?.type || "",
-                default_language: bodyContent?.value || "",
-                translated: refreshedNode?.translations?.find(
-                  (item: any) => item.key == "body",
-                )?.value,
-              },
-            ]);
-          }
-        }
+          }),
+        );
+        setMenuData(filterMenuData);
+        setSelectPolicyKey(dataFetcher.data.response[0]?.id);
+        policyFetcher.submit(
+          {
+            policyId: dataFetcher.data.response[0]?.id,
+          },
+          { method: "POST" },
+        );
         isManualChangeRef.current = false; // 重置
         setTimeout(() => {
           setIsLoading(false);

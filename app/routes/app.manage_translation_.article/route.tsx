@@ -436,13 +436,7 @@ const Index = () => {
           const menuData = exMenuData(newData);
           setMenuData(menuData);
           setArticlesData(newData);
-          setSelectArticleKey((prev) => {
-            const matchedItem = newData.find(
-              (item: any) => item?.resourceId === prev,
-            );
-
-            return matchedItem?.resourceId || newData[0]?.resourceId || "";
-          });
+          setSelectArticleKey(newData[0]?.resourceId);
         }
         const newPageInfo = dataFetcher.data.response?.pageInfo;
 

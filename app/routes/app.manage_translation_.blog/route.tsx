@@ -343,13 +343,7 @@ const Index = () => {
           const menuData = exMenuData(newData);
           setMenuData(menuData);
           setBlogsData(newData);
-          setSelectBlogKey((prev) => {
-            const matchedItem = newData.find(
-              (item: any) => item?.resourceId === prev,
-            );
-
-            return matchedItem?.resourceId || newData[0]?.resourceId || "";
-          });
+          setSelectBlogKey(newData[0]?.resourceId);
         }
         const newPageInfo = dataFetcher.data.response?.pageInfo;
 

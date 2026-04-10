@@ -560,13 +560,7 @@ const Index = () => {
           };
         });
         setMenuData(menuData);
-        setSelectProductKey((prev) => {
-          const matchedItem = dataFetcher.data.response.data.find(
-            (item: any) => item?.id === prev,
-          );
-
-          return matchedItem?.id || dataFetcher.data.response.data[0]?.id || "";
-        });
+        setSelectProductKey(dataFetcher.data.response.data[0]?.id);
         setHasPrevious(dataFetcher.data.response.pageInfo.hasPreviousPage);
         setHasNext(dataFetcher.data.response.pageInfo.hasNextPage);
         setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
