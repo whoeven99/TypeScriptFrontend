@@ -492,8 +492,6 @@ const Index = () => {
       }
       if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
-        // 全部成功：刷新一遍，拿到最新 digest / translations
-        refreshCurrentPageData();
         fetcher.submit(
           {
             log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
