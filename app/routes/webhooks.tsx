@@ -235,6 +235,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
         return new Response(null, { status: 200 });
       }
+      break;
     case "THEMES_PUBLISH":
       try {
         const JSONData = JSON.stringify(payload);

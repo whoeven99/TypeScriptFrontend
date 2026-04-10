@@ -39,6 +39,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           if (!region?.code) return;
           const currencyCode =
             countryCurMap[region.code as keyof typeof countryCurMap];
+          if (!currencyCode) {
+            console.warn("currencyInit: countryCurMap 映射失败", {
+              shop,
+              marketId: market?.id,
+              marketName: market?.name,
+              regionCode: region?.code,
+              availableCurrencyCode: market?.currencySettings?.baseCurrency?.currencyCode,
+            });
+            return;
+          }
 
           if (!regionCurArray.includes(currencyCode)) {
             regionCurArray.push(currencyCode);
@@ -71,7 +81,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.log(`应用日志: ${shop} 初始化货币`, AddCurrencyArray);
 
       //调用AddCurrency接口添加数据
-      const promises = AddCurrencyArray.map((currency: any) =>
+      const promises = AddCurrencyArray.filter((currency: any) => {
+        const invalid =
+          !currency?.currencyCode ||
+          !currency?.currencyName ||
+          String(currency.currencyName).trim() === "";
+        if (invalid) {
+          console.warn("currencyInit: 跳过无效 AddCurrency 参数", {
+            shop,
+            currency,
+            newPrimaryCode,
+          });
+          return false;
+        }
+        return true;
+      }).map((currency: any) =>
         AddCurrency({
           shop,
           server: process.env.SERVER_URL as string,
