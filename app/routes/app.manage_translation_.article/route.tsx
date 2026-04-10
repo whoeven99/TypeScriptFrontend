@@ -463,6 +463,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           const index = articlesData.findIndex(
@@ -485,9 +492,8 @@ const Index = () => {
       }
       if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
-        if (Array.isArray(successfulItem) && successfulItem.length > 0) {
-          refreshCurrentPageData();
-        }
+        // 全部成功：刷新一遍，拿到最新 digest / translations
+        refreshCurrentPageData();
         fetcher.submit(
           {
             log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
@@ -499,6 +505,13 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        // 部分失败：如果命中 digest 失效（或存在成功项），刷新一遍拿最新 digest，方便用户下一次重试
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
     }
     setConfirmData([]);
