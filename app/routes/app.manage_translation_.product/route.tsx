@@ -553,6 +553,64 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data.success) {
+        // 处理刷新操作返回的数据（包含 nodes）
+        if (dataFetcher.data.response?.nodes) {
+          // 刷新操作：更新当前产品的翻译数据
+          const refreshedNodes = dataFetcher.data.response.nodes;
+
+          // 更新产品基础数据
+          setProductBaseData((prevData) =>
+            prevData.map((item) => {
+              const refreshedNode = refreshedNodes.find(
+                (node: any) => node.resourceId === item.resourceId
+              );
+              if (refreshedNode) {
+                const translation = refreshedNode.translations?.find(
+                  (t: any) => t.key === item.shopifyKey
+                );
+                return {
+                  ...item,
+                  digest:
+                    refreshedNode.translatableContent?.find(
+                      (c: any) => c.key === item.shopifyKey
+                    )?.digest || item.digest,
+                  translated: translation?.value || item.translated,
+                };
+              }
+              return item;
+            })
+          );
+
+          // 更新 SEO 数据
+          setProductSeoData((prevData) =>
+            prevData.map((item) => {
+              const refreshedNode = refreshedNodes.find(
+                (node: any) => node.resourceId === item.resourceId
+              );
+              if (refreshedNode) {
+                const translation = refreshedNode.translations?.find(
+                  (t: any) => t.key === item.shopifyKey
+                );
+                return {
+                  ...item,
+                  digest:
+                    refreshedNode.translatableContent?.find(
+                      (c: any) => c.key === item.shopifyKey
+                    )?.digest || item.digest,
+                  translated: translation?.value || item.translated,
+                };
+              }
+              return item;
+            })
+          );
+
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 100);
+          return;
+        }
+
+        // 处理常规分页请求返回的数据（包含 data）
         const menuData = dataFetcher.data.response.data.map((item: any) => {
           return {
             key: item.id,
@@ -1600,7 +1658,7 @@ const onNext = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
+          loading={confirmFetcher.state === "submitting" ? true : undefined}
         >
           {t("Save")}
         </button>
