@@ -72,7 +72,7 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
   );
-  graphQLErrors.forEach((item, index) => {
+  graphQLErrors.forEach((item: any, index: number) => {
     console.error(`[${context}] graphQLError[${index}]`, item);
   });
   console.error(
@@ -120,6 +120,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const productId: any = formData.get("productId") as string;
   const variants: any = JSON.parse(formData.get("variants") as string);
   const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  const refreshResourceIds: string[] = JSON.parse(
+    (formData.get("refreshResourceIds") as string) || "[]",
+  );
   switch (true) {
     case !!startCursor:
       try {
@@ -385,6 +388,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       }
+    case refreshResourceIds.length > 0:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query refreshProductResources($resourceIds: [ID!]!, $locale: String!) {
+              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    key
+                    digest
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: $locale) {
+                    key
+                    value
+                  }
+                }
+              }
+            }`,
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
+          },
+        );
+        const data = await response.json();
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            nodes: data.data?.translatableResourcesByIds?.nodes || [],
+            pageInfo: null,
+          },
+        };
+      } catch (error) {
+        console.error("Error refreshing current page:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
     case !!confirmData:
       const data = await updateManageTranslation({
         shop,
@@ -421,6 +474,7 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
   const timeoutIdRef = useRef<any>();
+  const refreshOrderRef = useRef<string[]>([]);
 
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
@@ -500,19 +554,91 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data.success) {
-        const menuData = dataFetcher.data.response.data.map((item: any) => {
+        // 处理刷新操作返回的数据（包含 nodes）
+        if (dataFetcher.data.response?.nodes) {
+          // 刷新操作：更新当前产品的翻译数据
+          const refreshedNodes = dataFetcher.data.response.nodes;
+
+          // 更新产品基础数据
+          setProductBaseData((prevData) =>
+            prevData.map((item) => {
+              const refreshedNode = refreshedNodes.find(
+                (node: any) => node.resourceId === item.resourceId,
+              );
+              if (refreshedNode) {
+                const translatableContent = refreshedNode.translatableContent?.find(
+                  (c: any) => c.key === item.shopifyKey,
+                );
+                const translation = refreshedNode.translations?.find(
+                  (t: any) => t.key === item.shopifyKey,
+                );
+                return {
+                  ...item,
+                  digest: translatableContent?.digest || item.digest,
+                  translated: translation?.value || item.translated,
+                  default_language:
+                    translatableContent?.value || item.default_language,
+                };
+              }
+              return item;
+            }),
+          );
+
+          // 更新 SEO 数据
+          setProductSeoData((prevData) =>
+            prevData.map((item) => {
+              const refreshedNode = refreshedNodes.find(
+                (node: any) => node.resourceId === item.resourceId,
+              );
+              if (refreshedNode) {
+                const translatableContent = refreshedNode.translatableContent?.find(
+                  (c: any) => c.key === item.shopifyKey,
+                );
+                const translation = refreshedNode.translations?.find(
+                  (t: any) => t.key === item.shopifyKey,
+                );
+                return {
+                  ...item,
+                  digest: translatableContent?.digest || item.digest,
+                  translated: translation?.value || item.translated,
+                  default_language:
+                    translatableContent?.value || item.default_language,
+                };
+              }
+              return item;
+            }),
+          );
+
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 100);
+          return;
+        }
+
+        // 处理常规分页请求返回的数据（包含 data）
+        let refreshedData = dataFetcher.data.response.data;
+        if (refreshOrderRef.current.length > 0) {
+          refreshedData.sort((a: any, b: any) => {
+            return (
+              refreshOrderRef.current.indexOf(a.id) -
+              refreshOrderRef.current.indexOf(b.id)
+            );
+          });
+          refreshOrderRef.current = []; // Reset the ref
+        }
+        const menuData = refreshedData.map((item: any) => {
           return {
             key: item.id,
             label: item.title,
           };
         });
         setMenuData(menuData);
-        setSelectProductKey(dataFetcher.data.response.data[0]?.id);
+        setSelectProductKey(refreshedData[0]?.id);
         setHasPrevious(dataFetcher.data.response.pageInfo.hasPreviousPage);
         setHasNext(dataFetcher.data.response.pageInfo.hasNextPage);
         setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
         setEndCursor(dataFetcher.data.response.pageInfo.endCursor);
-        setProductsData(dataFetcher.data.response.data);
+        setProductsData(refreshedData);
         setTimeout(() => {
           setIsLoading(false);
         }, 100);
@@ -774,6 +900,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           const key = item?.response?.id || "";
@@ -842,6 +975,12 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
       setConfirmData([]);
       setSuccessTranslatedKey([]);
@@ -1433,7 +1572,26 @@ const Index = () => {
     }
   };
 
-  const onNext = () => {
+  
+  const refreshCurrentPageData = () => {
+    const currentResourceIds = productsData
+      .map((item: any) => item?.id)
+      .filter(Boolean);
+
+    if (currentResourceIds.length === 0) return;
+    refreshOrderRef.current = currentResourceIds;
+    setIsLoading(true);
+    dataFetcher.submit(
+      {
+        refreshResourceIds: JSON.stringify(currentResourceIds),
+      },
+      {
+        method: "post",
+        action: `/app/manage_translation/product?language=${selectedLanguage}`,
+      },
+    );
+  };
+const onNext = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {

@@ -43,11 +43,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
   const startCursor = JSON.parse(formData.get("startCursor") as string);
   const endCursor = JSON.parse(formData.get("endCursor") as string);
   const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  const refreshResourceIds: string[] = JSON.parse(
+    (formData.get("refreshResourceIds") as string) || "[]",
+  );
   switch (true) {
     case !!startCursor:
       try {
@@ -93,6 +97,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response,
         };
       } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
+    case refreshResourceIds.length > 0:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query refreshArticles($resourceIds: [ID!]!, $locale: String!) {
+              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    key
+                    digest
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: $locale) {
+                    key
+                    value
+                  }
+                }
+              }
+            }`,
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
+          },
+        );
+        const data = await response.json();
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            nodes: data.data?.translatableResourcesByIds?.nodes || [],
+            pageInfo: null,
+          },
+        };
+      } catch (error) {
+        console.error("Error refreshing current article page:", error);
         return {
           success: false,
           errorCode: 10001,
@@ -379,6 +433,8 @@ const Index = () => {
       if (dataFetcher.data?.success) {
         const newData = dataFetcher.data.response?.nodes;
         if (Array.isArray(newData)) {
+          // Sort by resourceId to ensure stable order
+          newData.sort((a, b) => (a.resourceId > b.resourceId ? 1 : -1));
           const menuData = exMenuData(newData);
           setMenuData(menuData);
           setArticlesData(newData);
@@ -403,6 +459,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           const index = articlesData.findIndex(
@@ -436,6 +499,13 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        // 部分失败：如果命中 digest 失效（或存在成功项），刷新一遍拿最新 digest，方便用户下一次重试
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
     }
     setConfirmData([]);
@@ -686,6 +756,25 @@ const Index = () => {
         },
       ); // 提交表单请求
     }
+  };
+
+  const refreshCurrentPageData = () => {
+    const currentResourceIds = articlesData
+      .map((item: any) => item?.resourceId)
+      .filter(Boolean);
+
+    if (currentResourceIds.length === 0) return;
+
+    setIsLoading(true);
+    dataFetcher.submit(
+      {
+        refreshResourceIds: JSON.stringify(currentResourceIds),
+      },
+      {
+        method: "post",
+        action: `/app/manage_translation/article?language=${selectedLanguage}`,
+      },
+    );
   };
 
   const onNext = () => {

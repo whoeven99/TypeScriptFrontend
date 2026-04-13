@@ -40,13 +40,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const { admin, session } = await authenticate.admin(request);
-  const { shop, accessToken } = session;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
   const loading = JSON.parse(formData.get("loading") as string);
   const policyId = formData.get("policyId") as string;
   const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
+  const refreshResourceIds: string[] = JSON.parse(
+    (formData.get("refreshResourceIds") as string) || "[]",
+  );
   switch (true) {
     case !!loading:
       try {
@@ -115,6 +119,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: res,
         };
       } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
+    case refreshResourceIds.length > 0:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query refreshPolicyResources($resourceIds: [ID!]!, $locale: String!) {
+              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    key
+                    digest
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: $locale) {
+                    key
+                    value
+                  }
+                }
+              }
+            }`,
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
+          },
+        );
+        const data = await response.json();
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            nodes: data.data?.translatableResourcesByIds?.nodes || [],
+            pageInfo: null,
+          },
+        };
+      } catch (error) {
+        console.error("Error refreshing current page:", error);
         return {
           success: false,
           errorCode: 10001,
@@ -290,6 +344,13 @@ const Index = () => {
       const successfulItem = confirmFetcher.data?.response?.filter(
         (item: any) => item?.success === true,
       );
+      const hasInvalidDigestError =
+        Array.isArray(errorItem) &&
+        errorItem.some((item: any) =>
+          String(item?.errorMsg || "")
+            .toLowerCase()
+            .includes("translatable content hash is invalid"),
+        );
       if (Array.isArray(successfulItem) && successfulItem.length) {
         successfulItem.forEach((item: any) => {
           console.log("policyData: ", policyData);
@@ -320,6 +381,12 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
+        if (
+          hasInvalidDigestError ||
+          (Array.isArray(successfulItem) && successfulItem.length > 0)
+        ) {
+          refreshCurrentPageData();
+        }
       }
     }
     setConfirmData([]);
@@ -478,7 +545,26 @@ const Index = () => {
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
-  const handleLanguageChange = (language: string) => {
+  
+  const refreshCurrentPageData = () => {
+    const currentResourceIds = menuData
+      .map((item: any) => item?.key)
+      .filter(Boolean);
+
+    if (currentResourceIds.length === 0) return;
+
+    setIsLoading(true);
+    dataFetcher.submit(
+      {
+        refreshResourceIds: JSON.stringify(currentResourceIds),
+      },
+      {
+        method: "post",
+        action: `/app/manage_translation/policy?language=${selectedLanguage}`,
+      },
+    );
+  };
+const handleLanguageChange = (language: string) => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
