@@ -299,6 +299,8 @@ const Index = () => {
       if (dataFetcher.data?.success) {
         const newData = dataFetcher.data.response?.nodes;
         if (Array.isArray(newData)) {
+          // Sort by resourceId to ensure stable order
+          newData.sort((a, b) => (a.resourceId > b.resourceId ? 1 : -1));
           setNavigationsData(newData);
         }
         const newPageInfo = dataFetcher.data.response?.pageInfo;

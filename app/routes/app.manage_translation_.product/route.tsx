@@ -563,46 +563,50 @@ const Index = () => {
           setProductBaseData((prevData) =>
             prevData.map((item) => {
               const refreshedNode = refreshedNodes.find(
-                (node: any) => node.resourceId === item.resourceId
+                (node: any) => node.resourceId === item.resourceId,
               );
               if (refreshedNode) {
+                const translatableContent = refreshedNode.translatableContent?.find(
+                  (c: any) => c.key === item.shopifyKey,
+                );
                 const translation = refreshedNode.translations?.find(
-                  (t: any) => t.key === item.shopifyKey
+                  (t: any) => t.key === item.shopifyKey,
                 );
                 return {
                   ...item,
-                  digest:
-                    refreshedNode.translatableContent?.find(
-                      (c: any) => c.key === item.shopifyKey
-                    )?.digest || item.digest,
+                  digest: translatableContent?.digest || item.digest,
                   translated: translation?.value || item.translated,
+                  default_language:
+                    translatableContent?.value || item.default_language,
                 };
               }
               return item;
-            })
+            }),
           );
 
           // 更新 SEO 数据
           setProductSeoData((prevData) =>
             prevData.map((item) => {
               const refreshedNode = refreshedNodes.find(
-                (node: any) => node.resourceId === item.resourceId
+                (node: any) => node.resourceId === item.resourceId,
               );
               if (refreshedNode) {
+                const translatableContent = refreshedNode.translatableContent?.find(
+                  (c: any) => c.key === item.shopifyKey,
+                );
                 const translation = refreshedNode.translations?.find(
-                  (t: any) => t.key === item.shopifyKey
+                  (t: any) => t.key === item.shopifyKey,
                 );
                 return {
                   ...item,
-                  digest:
-                    refreshedNode.translatableContent?.find(
-                      (c: any) => c.key === item.shopifyKey
-                    )?.digest || item.digest,
+                  digest: translatableContent?.digest || item.digest,
                   translated: translation?.value || item.translated,
+                  default_language:
+                    translatableContent?.value || item.default_language,
                 };
               }
               return item;
-            })
+            }),
           );
 
           setTimeout(() => {
