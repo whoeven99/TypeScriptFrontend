@@ -665,6 +665,15 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
+    if (!selectProductKey) {
+      setProductBaseData([]);
+      setProductSeoData([]);
+      setOptionsData([]);
+      setMetafieldsData([]);
+      setVariantsData([]);
+      setIsLoading(false);
+      return;
+    }
     setProductBaseData([]);
     setProductSeoData([]);
     setOptionsData([]);
