@@ -474,6 +474,7 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
   const timeoutIdRef = useRef<any>();
+  const refreshOrderRef = useRef<string[]>([]);
 
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
@@ -611,19 +612,29 @@ const Index = () => {
         }
 
         // 处理常规分页请求返回的数据（包含 data）
-        const menuData = dataFetcher.data.response.data.map((item: any) => {
+        let refreshedData = dataFetcher.data.response.data;
+        if (refreshOrderRef.current.length > 0) {
+          refreshedData.sort((a: any, b: any) => {
+            return (
+              refreshOrderRef.current.indexOf(a.id) -
+              refreshOrderRef.current.indexOf(b.id)
+            );
+          });
+          refreshOrderRef.current = []; // Reset the ref
+        }
+        const menuData = refreshedData.map((item: any) => {
           return {
             key: item.id,
             label: item.title,
           };
         });
         setMenuData(menuData);
-        setSelectProductKey(dataFetcher.data.response.data[0]?.id);
+        setSelectProductKey(refreshedData[0]?.id);
         setHasPrevious(dataFetcher.data.response.pageInfo.hasPreviousPage);
         setHasNext(dataFetcher.data.response.pageInfo.hasNextPage);
         setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
         setEndCursor(dataFetcher.data.response.pageInfo.endCursor);
-        setProductsData(dataFetcher.data.response.data);
+        setProductsData(refreshedData);
         setTimeout(() => {
           setIsLoading(false);
         }, 100);
@@ -1559,12 +1570,12 @@ const Index = () => {
 
   
   const refreshCurrentPageData = () => {
-    const currentResourceIds = productBaseData
-      .map((item: any) => item?.resourceId)
+    const currentResourceIds = productsData
+      .map((item: any) => item?.id)
       .filter(Boolean);
 
     if (currentResourceIds.length === 0) return;
-
+    refreshOrderRef.current = currentResourceIds;
     setIsLoading(true);
     dataFetcher.submit(
       {
