@@ -237,6 +237,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     case !!productId:
+      if (!productId || productId === "undefined") {
+        logGraphQLErrorDetail(
+          "Error action productId product",
+          new Error(`Invalid productId: ${productId}`),
+        );
+        return json({
+          success: false,
+          errorCode: 400,
+          errorMsg: "Invalid Product ID provided.",
+          response: null,
+        });
+      }
       try {
         let data: any;
         try {
@@ -665,6 +677,15 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
+    if (!selectProductKey) {
+      setProductBaseData([]);
+      setProductSeoData([]);
+      setOptionsData([]);
+      setMetafieldsData([]);
+      setVariantsData([]);
+      setIsLoading(false);
+      return;
+    }
     setProductBaseData([]);
     setProductSeoData([]);
     setOptionsData([]);
