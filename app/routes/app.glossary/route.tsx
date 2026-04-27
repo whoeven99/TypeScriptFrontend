@@ -299,7 +299,9 @@ const Index = () => {
   };
 
   const modalShowForPlan = () => {
-    if (plan?.type == "Free") {
+    const currentPlanLimit =
+      planMapping[plan?.type as keyof typeof planMapping] || 0;
+    if (currentPlanLimit === 0) {
       setUpgradeModalContent({
         title: t("Feature Unavailable"),
         body: t("This feature is available only with the paid plan."),
