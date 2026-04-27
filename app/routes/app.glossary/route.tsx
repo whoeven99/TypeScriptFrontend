@@ -55,9 +55,9 @@ export interface GLossaryDataType {
 }
 
 export const planMapping = {
-  Free: 0,
-  Basic: 10,
-  Pro: 50,
+  Free: 200,
+  Basic: 200,
+  Pro: 200,
   Premium: 500,
 };
 
