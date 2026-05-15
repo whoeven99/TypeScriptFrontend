@@ -538,14 +538,270 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const exactEntries = entries.filter((e) => e.isExact);
   const fuzzyEntries = entries.filter((e) => !e.isExact);
 
+  const looksLikeHtml = (text) => /<\/?[a-z][\s\S]*>/i.test(text || "");
+
+  const debugLiquidTranslate = (() => {
+    try {
+      return (
+        localStorage.getItem("ciwi_debug_liquid_translate") === "1" ||
+        new URLSearchParams(window.location.search).has("ciwiDebugLiquid")
+      );
+    } catch {
+      return false;
+    }
+  })();
+
+  const debugLog = (...args) => {
+    if (!debugLiquidTranslate) return;
+    console.log("[ciwi-liquid-translate]", ...args);
+  };
+
+  const summarize = (text, max = 240) => {
+    const str = String(text ?? "");
+    return str.length > max ? `${str.slice(0, max)}…(${str.length})` : str;
+  };
+
+  const normalizeCollapsedText = (text) =>
+    normalizeText(text).replace(/\s+/g, " ").trim();
+
+  let debugReplaceTextCount = 0;
+
+  const preserveBoundaryWhitespace = (original, replacement) => {
+    const prefix = String(original ?? "").match(/^\s*/)?.[0] || "";
+    const suffix = String(original ?? "").match(/\s*$/)?.[0] || "";
+    return `${prefix}${String(replacement ?? "")}${suffix}`;
+  };
+
+  const shouldFlexibleWhitespaceMatch = (text) =>
+    /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
+
+  debugLog("init", {
+    blockId,
+    language,
+    total: entries.length,
+    exact: exactEntries.length,
+    fuzzy: fuzzyEntries.length,
+  });
+
+  if (debugLiquidTranslate) {
+    const htmlCount = entries.filter(({ before, after }) => {
+      try {
+        return looksLikeHtml(before) || looksLikeHtml(after);
+      } catch {
+        return false;
+      }
+    }).length;
+    const maxBeforeLen = entries.reduce((max, e) => {
+      const len = String(e?.before ?? "").length;
+      return len > max ? len : max;
+    }, 0);
+    debugLog("entriesSample", {
+      htmlCount,
+      maxBeforeLen,
+      sample: entries.slice(0, 20).map((e) => ({
+        isExact: e.isExact,
+        beforeLen: String(e.before ?? "").length,
+        afterLen: String(e.after ?? "").length,
+        before: summarize(e.before, 320),
+        after: summarize(e.after, 160),
+      })),
+    });
+  }
+
+  const decodeHtmlEntities = (html) => {
+    if (!html) return "";
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = html;
+    return textarea.value;
+  };
+
+  const normalizeHtml = (html) => {
+    const raw = normalizeText(decodeHtmlEntities(html));
+    if (!raw) return "";
+    const template = document.createElement("template");
+    template.innerHTML = raw;
+    const serialized =
+      template.content.childElementCount === 1
+        ? template.content.firstElementChild.outerHTML
+        : template.innerHTML;
+    return serialized.replace(/\s+/g, " ").replace(/>\s+</g, "><").trim();
+  };
+
+  const parseSingleRootElement = (html) => {
+    const raw = normalizeText(decodeHtmlEntities(html));
+    if (!raw) return null;
+    const template = document.createElement("template");
+    template.innerHTML = raw;
+    if (template.content.childElementCount !== 1) return null;
+    return template.content.firstElementChild;
+  };
+
+  const replaceHtmlExactEntries = (entryList) => {
+    const htmlEntries = entryList
+      .filter(({ before, after }) => looksLikeHtml(before) || looksLikeHtml(after))
+      .map(({ before, after }) => ({
+        normalizedBefore: normalizeHtml(before),
+        normalizedAfter: normalizeText(decodeHtmlEntities(after)).trim(),
+        beforeEl: parseSingleRootElement(before),
+        afterEl: parseSingleRootElement(after),
+        rawBefore: before,
+        rawAfter: after,
+        beforeTag: parseSingleRootElement(before)?.nodeName || null,
+        afterTag: parseSingleRootElement(after)?.nodeName || null,
+        beforeText: (() => {
+          const el = parseSingleRootElement(before);
+          return el ? normalizeCollapsedText(el.textContent) : "";
+        })(),
+        afterInner: (() => {
+          const el = parseSingleRootElement(after);
+          return el ? normalizeText(el.innerHTML) : "";
+        })(),
+        beforeClasses: (() => {
+          const el = parseSingleRootElement(before);
+          if (!el) return [];
+          return Array.from(el.classList || []).filter(Boolean);
+        })(),
+      }))
+      .filter((e) => e.normalizedBefore && e.normalizedAfter);
+
+    if (htmlEntries.length === 0) return;
+
+    const htmlMap = new Map();
+    htmlEntries.forEach((e) => {
+      htmlMap.set(e.normalizedBefore, e);
+    });
+
+    const hitStats = new Map();
+    htmlEntries.forEach((e) => {
+      hitStats.set(e.normalizedBefore, { outer: 0, inner: 0, text: 0 });
+    });
+
+    debugLog("htmlEntries", {
+      count: htmlEntries.length,
+      sample: htmlEntries.slice(0, 5).map((e) => ({
+        before: summarize(e.rawBefore),
+        normalizedBefore: summarize(e.normalizedBefore),
+        beforeTag: e.beforeEl?.nodeName || null,
+        afterTag: e.afterEl?.nodeName || null,
+      })),
+    });
+
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          const tag = node?.nodeName;
+          if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+          if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          if (window.getComputedStyle(node).display === "none")
+            return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    const replacements = [];
+    nodes.forEach((node) => {
+      const normalizedOuter = normalizeHtml(node.outerHTML);
+      if (!normalizedOuter) return;
+      const entry = htmlMap.get(normalizedOuter);
+      if (entry) {
+        replacements.push({ type: "outer", node, html: entry.normalizedAfter });
+        const stats = hitStats.get(entry.normalizedBefore);
+        if (stats) stats.outer += 1;
+        debugLog("match:outer", {
+          tag: node.nodeName,
+          before: summarize(entry.rawBefore),
+          nodeOuter: summarize(node.outerHTML),
+        });
+        return;
+      }
+
+      const normalizedInner = normalizeHtml(node.innerHTML);
+      if (!normalizedInner) return;
+
+      for (const candidate of htmlEntries) {
+        if (
+          candidate.beforeEl &&
+          candidate.afterEl &&
+          node.nodeName === candidate.beforeEl.nodeName &&
+          node.nodeName === candidate.afterEl.nodeName &&
+          normalizedInner === normalizeHtml(candidate.beforeEl.innerHTML)
+        ) {
+          replacements.push({
+            type: "inner",
+            node,
+            html: normalizeText(candidate.afterEl.innerHTML),
+          });
+          const stats = hitStats.get(candidate.normalizedBefore);
+          if (stats) stats.inner += 1;
+          debugLog("match:inner", {
+            tag: node.nodeName,
+            before: summarize(candidate.rawBefore),
+            nodeInner: summarize(node.innerHTML),
+          });
+          return;
+        }
+      }
+
+      const nodeText = normalizeCollapsedText(node.textContent);
+      if (!nodeText) return;
+
+      for (const candidate of htmlEntries) {
+        if (!candidate.beforeEl || !candidate.afterEl) continue;
+        if (node.nodeName !== candidate.beforeEl.nodeName) continue;
+        if (candidate.beforeClasses.length > 0) {
+          const ok = candidate.beforeClasses.every((c) => node.classList?.contains(c));
+          if (!ok) continue;
+        }
+        if (!candidate.beforeText || nodeText !== candidate.beforeText) continue;
+
+        replacements.push({
+          type: "inner",
+          node,
+          html: candidate.afterInner,
+        });
+        const stats = hitStats.get(candidate.normalizedBefore);
+        if (stats) stats.text += 1;
+        debugLog("match:text", {
+          tag: node.nodeName,
+          before: summarize(candidate.rawBefore),
+          nodeOuter: summarize(node.outerHTML),
+        });
+        return;
+      }
+    });
+
+    replacements.forEach(({ type, node, html }) => {
+      if (type === "outer") node.outerHTML = html;
+      else node.innerHTML = html;
+    });
+
+    if (debugLiquidTranslate) {
+      const missed = [];
+      hitStats.forEach((stats, key) => {
+        if (stats.outer === 0 && stats.inner === 0) missed.push(key);
+      });
+      debugLog("htmlSummary", {
+        replaced: replacements.length,
+        missed: missed.length,
+        missedSample: missed.slice(0, 5).map((k) => summarize(k)),
+      });
+    }
+  };
+
   /**
    * 🔄 通用替换函数
    */
   const replaceForEntries = (entryList, matcherFn, replacerFn) => {
     entryList.forEach(({ before, after }) => {
       const trimmedBefore = before?.trim();
-      const trimmedAfter = after?.trim();
-      if (!trimmedBefore || !trimmedAfter) return;
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
 
       const walker = document.createTreeWalker(
         document.body,
@@ -575,31 +831,166 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       const textNodes = [];
       while (walker.nextNode()) textNodes.push(walker.currentNode);
 
+      if (debugLiquidTranslate && entryList.length <= 50) {
+        debugLog("textEntry", {
+          before: summarize(trimmedBefore, 240),
+          nodes: textNodes.length,
+        });
+      }
+
       textNodes.forEach((node) => {
         const original = node.nodeValue;
         const keepQuote = hasOuterQuote(original);
-        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
-        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
+        const newValue = replacerFn(original, trimmedBefore, afterRaw);
+        const newValueWithWhitespace = preserveBoundaryWhitespace(original, newValue);
+        if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+          debugReplaceTextCount += 1;
+          debugLog("replace:text", {
+            before: summarize(original, 200),
+            after: summarize(newValueWithWhitespace, 200),
+          });
+        }
+        node.nodeValue = keepQuote ? `"${newValueWithWhitespace}"` : newValueWithWhitespace;
       });
     });
   };
 
-  // ✅ 1. 先执行精准替换
-  replaceForEntries(
-    exactEntries,
-    (normalized, trimmedBefore) => normalized === trimmedBefore,
-    (_original, _trimmedBefore, trimmedAfter) => trimmedAfter,
-  );
+  const replaceExactEntriesFast = (entryList) => {
+    const exactMap = new Map();
+    entryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
+        ? normalizeCollapsedText(trimmedBefore)
+        : normalizeText(trimmedBefore);
+      exactMap.set(key, {
+        replacement: afterRaw,
+        flexibleWhitespace: shouldFlexibleWhitespaceMatch(trimmedBefore),
+      });
+    });
 
-  // ✅ 2. 再执行模糊替换
-  replaceForEntries(
-    fuzzyEntries,
-    (normalized, trimmedBefore) => normalized.includes(trimmedBefore),
-    (original, trimmedBefore, trimmedAfter) => {
-      const re = new RegExp(escapeRegExp(trimmedBefore), "g");
-      return original.replace(re, trimmedAfter);
-    },
-  );
+    if (exactMap.size === 0) return;
+
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parentTag = node.parentNode?.nodeName;
+          if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+          if (ciwiBlock && node.parentElement && ciwiBlock.contains(node.parentElement))
+            return NodeFilter.FILTER_REJECT;
+          if (
+            node.parentElement &&
+            window.getComputedStyle(node.parentElement).display === "none"
+          )
+            return NodeFilter.FILTER_REJECT;
+          const strictKey = normalizeText(node.nodeValue);
+          const collapsedKey = normalizeCollapsedText(node.nodeValue);
+          if (exactMap.has(strictKey)) return NodeFilter.FILTER_ACCEPT;
+          return exactMap.has(collapsedKey)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        },
+      },
+    );
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    if (debugLiquidTranslate && entryList.length <= 50) {
+      debugLog("textExactFast", { keys: exactMap.size, nodes: nodes.length });
+    }
+
+    nodes.forEach((node) => {
+      const original = node.nodeValue;
+      const strictKey = normalizeText(original);
+      const collapsedKey = normalizeCollapsedText(original);
+      const entry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
+      if (!entry) return;
+      const keepQuote = hasOuterQuote(original);
+      const replacement = preserveBoundaryWhitespace(original, entry.replacement);
+      if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+        debugReplaceTextCount += 1;
+        debugLog("replace:text", {
+          before: summarize(original, 200),
+          after: summarize(replacement, 200),
+        });
+      }
+      node.nodeValue = keepQuote ? `"${replacement}"` : replacement;
+    });
+  };
+
+  const applyAllReplacements = () => {
+    replaceHtmlExactEntries(exactEntries);
+    replaceHtmlExactEntries(fuzzyEntries);
+
+    replaceExactEntriesFast(exactEntries);
+
+    replaceForEntries(
+      fuzzyEntries,
+      (normalized, trimmedBefore) => {
+        if (shouldFlexibleWhitespaceMatch(trimmedBefore)) {
+          return normalizeCollapsedText(normalized).includes(
+            normalizeCollapsedText(trimmedBefore),
+          );
+        }
+        return normalized.includes(trimmedBefore);
+      },
+      (original, trimmedBefore, trimmedAfter) => {
+        const re = new RegExp(
+          shouldFlexibleWhitespaceMatch(trimmedBefore)
+            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
+            : escapeRegExp(trimmedBefore),
+          "g",
+        );
+        return original.replace(re, () => trimmedAfter);
+      },
+    );
+  };
+
+  applyAllReplacements();
+
+  if (typeof window !== "undefined") {
+    const observerKey = "__ciwi_liquid_translate_observer__";
+    if (!window[observerKey]) {
+      let scheduled = false;
+      let lastRunAt = 0;
+      const observer = new MutationObserver(() => {
+        if (scheduled) return;
+        scheduled = true;
+
+        const now = Date.now();
+        const delay = now - lastRunAt < 200 ? 200 : 0;
+
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            try {
+              applyAllReplacements();
+            } finally {
+              lastRunAt = Date.now();
+              scheduled = false;
+            }
+          });
+        }, delay);
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+      window[observerKey] = observer;
+
+      setTimeout(() => {
+        try {
+          observer.disconnect();
+        } catch {}
+        try {
+          delete window[observerKey];
+        } catch {
+          window[observerKey] = null;
+        }
+      }, 15000);
+    }
+  }
 }
 
 /**
