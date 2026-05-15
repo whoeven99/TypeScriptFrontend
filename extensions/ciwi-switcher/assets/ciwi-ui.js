@@ -566,6 +566,15 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
   let debugReplaceTextCount = 0;
 
+  const preserveBoundaryWhitespace = (original, replacement) => {
+    const prefix = String(original ?? "").match(/^\s*/)?.[0] || "";
+    const suffix = String(original ?? "").match(/\s*$/)?.[0] || "";
+    return `${prefix}${String(replacement ?? "")}${suffix}`;
+  };
+
+  const shouldFlexibleWhitespaceMatch = (text) =>
+    /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
+
   debugLog("init", {
     blockId,
     language,
@@ -791,8 +800,8 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const replaceForEntries = (entryList, matcherFn, replacerFn) => {
     entryList.forEach(({ before, after }) => {
       const trimmedBefore = before?.trim();
-      const trimmedAfter = after?.trim();
-      if (!trimmedBefore || !trimmedAfter) return;
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
 
       const walker = document.createTreeWalker(
         document.body,
@@ -832,15 +841,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       textNodes.forEach((node) => {
         const original = node.nodeValue;
         const keepQuote = hasOuterQuote(original);
-        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
+        const newValue = replacerFn(original, trimmedBefore, afterRaw);
+        const newValueWithWhitespace = preserveBoundaryWhitespace(original, newValue);
         if (debugLiquidTranslate && debugReplaceTextCount < 20) {
           debugReplaceTextCount += 1;
           debugLog("replace:text", {
             before: summarize(original, 200),
-            after: summarize(newValue, 200),
+            after: summarize(newValueWithWhitespace, 200),
           });
         }
-        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
+        node.nodeValue = keepQuote ? `"${newValueWithWhitespace}"` : newValueWithWhitespace;
       });
     });
   };
@@ -849,9 +859,15 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const exactMap = new Map();
     entryList.forEach(({ before, after }) => {
       const trimmedBefore = before?.trim();
-      const trimmedAfter = after?.trim();
-      if (!trimmedBefore || !trimmedAfter) return;
-      exactMap.set(normalizeCollapsedText(trimmedBefore), trimmedAfter);
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
+        ? normalizeCollapsedText(trimmedBefore)
+        : normalizeText(trimmedBefore);
+      exactMap.set(key, {
+        replacement: afterRaw,
+        flexibleWhitespace: shouldFlexibleWhitespaceMatch(trimmedBefore),
+      });
     });
 
     if (exactMap.size === 0) return;
@@ -870,8 +886,10 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
             window.getComputedStyle(node.parentElement).display === "none"
           )
             return NodeFilter.FILTER_REJECT;
-          const normalized = normalizeCollapsedText(node.nodeValue);
-          return exactMap.has(normalized)
+          const strictKey = normalizeText(node.nodeValue);
+          const collapsedKey = normalizeCollapsedText(node.nodeValue);
+          if (exactMap.has(strictKey)) return NodeFilter.FILTER_ACCEPT;
+          return exactMap.has(collapsedKey)
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_REJECT;
         },
@@ -887,10 +905,12 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     nodes.forEach((node) => {
       const original = node.nodeValue;
-      const key = normalizeCollapsedText(original);
-      const replacement = exactMap.get(key);
-      if (!replacement) return;
+      const strictKey = normalizeText(original);
+      const collapsedKey = normalizeCollapsedText(original);
+      const entry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
+      if (!entry) return;
       const keepQuote = hasOuterQuote(original);
+      const replacement = preserveBoundaryWhitespace(original, entry.replacement);
       if (debugLiquidTranslate && debugReplaceTextCount < 20) {
         debugReplaceTextCount += 1;
         debugLog("replace:text", {
@@ -910,10 +930,22 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     replaceForEntries(
       fuzzyEntries,
-      (normalized, trimmedBefore) => normalized.includes(trimmedBefore),
+      (normalized, trimmedBefore) => {
+        if (shouldFlexibleWhitespaceMatch(trimmedBefore)) {
+          return normalizeCollapsedText(normalized).includes(
+            normalizeCollapsedText(trimmedBefore),
+          );
+        }
+        return normalized.includes(trimmedBefore);
+      },
       (original, trimmedBefore, trimmedAfter) => {
-        const re = new RegExp(escapeRegExp(trimmedBefore), "g");
-        return original.replace(re, trimmedAfter);
+        const re = new RegExp(
+          shouldFlexibleWhitespaceMatch(trimmedBefore)
+            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
+            : escapeRegExp(trimmedBefore),
+          "g",
+        );
+        return original.replace(re, () => trimmedAfter);
       },
     );
   };
