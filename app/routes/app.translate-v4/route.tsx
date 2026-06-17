@@ -24,6 +24,8 @@ import type { TranslationJobProgressSummary } from "~/server/translateV4/progres
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
+  type StageName,
+  type StageTiming,
   type TranslationV4Status,
 } from "~/server/translateV4/types";
 
@@ -139,11 +141,72 @@ function stageOf(status: TranslationV4Status): 0 | 1 | 2 | 3 | 4 {
   return 0;
 }
 
-const STAGE_NAMES = ["初始化", "翻译", "写回", "校验"];
+function formatElapsed(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return `${s}秒`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  if (m < 60) return rs ? `${m}分${rs}秒` : `${m}分`;
+  const h = Math.floor(m / 60);
+  return `${h}时${m % 60}分`;
+}
+
+function stageElapsedMs(t?: StageTiming): number | null {
+  if (!t?.startedAt) return null;
+  const end = t.endedAt ? new Date(t.endedAt).getTime() : Date.now();
+  const ms = end - new Date(t.startedAt).getTime();
+  return Number.isFinite(ms) && ms >= 0 ? ms : null;
+}
+
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+}
+
+const STAGE_DEFS: { name: string; key: StageName }[] = [
+  { name: "初始化", key: "INIT" },
+  { name: "翻译", key: "TRANSLATE" },
+  { name: "写回", key: "WRITEBACK" },
+  { name: "校验", key: "VERIFY" },
+];
 
 function JobCard({ job }: { job: TranslationJobProgressSummary }) {
   const activeStage = stageOf(job.status);
-  const pct = job.progressPercent;
+  const m = job.metrics;
+  const timings = job.stageTimings ?? {};
+
+  // 每阶段的计数明细（资源 done/total，翻译额外含节点）
+  const stageDetail = (idx: number): string => {
+    if (idx === 0) return `${m.initDone}/${m.initTotal}`;
+    if (idx === 1) {
+      const res = `资源 ${m.translateDone}/${m.translateTotal}`;
+      return m.translateUnitTotal > 0
+        ? `${res} · 节点 ${m.translateUnitDone}/${m.translateUnitTotal}`
+        : res;
+    }
+    if (idx === 2) return `${m.writebackDone}/${m.writebackTotal}`;
+    return `${m.verifyDone}/${m.verifyTotal}`;
+  };
+
+  // 每阶段自身的进度百分比
+  const stageRatio = (idx: number): number => {
+    const ratio = (d: number, t: number) =>
+      t > 0 ? Math.min(100, Math.round((d / t) * 100)) : 0;
+    if (idx === 0) return ratio(m.initDone, m.initTotal);
+    if (idx === 1)
+      return m.translateUnitTotal > 0
+        ? ratio(m.translateUnitDone, m.translateUnitTotal)
+        : ratio(m.translateDone, m.translateTotal);
+    if (idx === 2) return ratio(m.writebackDone, m.writebackTotal);
+    return ratio(m.verifyDone, m.verifyTotal);
+  };
+
+  const totalItems = m.translateTotal || m.initTotal || 0;
+  const overallMs = stageElapsedMs({
+    startedAt: job.createdAt,
+    endedAt: job.isTerminal ? job.updatedAt : null,
+  });
+
   return (
     <Card size="small" style={{ marginBottom: 12 }}>
       <Flex justify="space-between" align="center" wrap gap={8}>
@@ -156,40 +219,59 @@ function JobCard({ job }: { job: TranslationJobProgressSummary }) {
           </Tag>
           {job.testMode ? <Tag color="purple">测试模式</Tag> : null}
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {job.modules.map((m) => MODULE_LABELS[m] ?? m).join(" · ")}
+            {job.modules.map((mod) => MODULE_LABELS[mod] ?? mod).join(" · ")}
           </Text>
         </Space>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          创建于 {fmtTime(job.createdAt)}
+          {job.status === "COMPLETED" ? ` · 完成于 ${fmtTime(job.updatedAt)}` : ""}
+        </Text>
       </Flex>
 
-      <Flex gap={6} style={{ marginTop: 12 }}>
-        {STAGE_NAMES.map((name, idx) => {
+      <div style={{ marginTop: 12 }}>
+        {STAGE_DEFS.map(({ name, key }, idx) => {
           const done = job.status === "COMPLETED" || idx < activeStage;
           const current = idx === activeStage && !job.isTerminal;
+          const percent = done ? 100 : current || idx < activeStage ? stageRatio(idx) : 0;
+          const ms = stageElapsedMs(timings[key]);
           return (
-            <div key={name} style={{ flex: 1 }}>
+            <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
               <Text
+                style={{ width: 44, fontSize: 12, flexShrink: 0 }}
                 type={done ? "success" : current ? "warning" : "secondary"}
-                style={{ fontSize: 11 }}
               >
                 {name}
-                {current && pct != null ? ` ${pct}%` : ""}
               </Text>
               <Progress
-                percent={done ? 100 : current ? (pct ?? 0) : 0}
+                style={{ flex: 1, margin: 0 }}
+                percent={percent}
                 showInfo={false}
                 size="small"
                 status={job.status === "FAILED" && current ? "exception" : "active"}
                 strokeColor={done ? "#1d9e75" : undefined}
               />
-            </div>
+              <Text
+                type="secondary"
+                style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
+              >
+                {stageDetail(idx)}
+                {done ? " ✓" : ""}
+                {ms != null ? ` · 耗时 ${formatElapsed(ms)}` : ""}
+              </Text>
+            </Flex>
           );
         })}
-      </Flex>
+      </div>
 
-      <Space size={18} wrap style={{ marginTop: 8 }}>
+      <Space size={16} wrap style={{ marginTop: 8 }}>
         <Text type="secondary" style={{ fontSize: 12 }}>
-          {job.stageSummary}
+          共处理 {totalItems.toLocaleString()} 条数据
         </Text>
+        {overallMs != null ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            任务耗时 {formatElapsed(overallMs)}
+          </Text>
+        ) : null}
         {job.usedTokens > 0 ? (
           <Text type="secondary" style={{ fontSize: 12 }}>
             用量 {job.usedTokens.toLocaleString()} tokens

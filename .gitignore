@@ -20,3 +20,4 @@ shopify.app.wgw.toml
 # Ignore shopify files created during app dev
 .shopify/*
 .shopify.lock
+/.vscode

@@ -3,6 +3,7 @@ import { getV4Job, listV4Jobs } from "./cosmos.server";
 import {
   ACTIVE_V4_STATUSES,
   TERMINAL_V4_STATUSES,
+  type StageTimings,
   type TranslationV4Job,
   type TranslationV4Metrics,
   type TranslationV4Status,
@@ -196,6 +197,7 @@ export type TranslationJobProgressSummary = {
   errorMessage: string | null;
   errorStage: string | null;
   stageSummary: string;
+  stageTimings: StageTimings | null;
   progressPercent: number | null;
   usedTokens: number;
   metrics: {
@@ -238,6 +240,7 @@ function toProgressSummary(
     errorMessage: job.errorMessage,
     errorStage: job.errorStage,
     stageSummary: buildTranslationV4StageSummary(status, metrics),
+    stageTimings: job.stageTimings ?? null,
     progressPercent: computeTranslationV4ProgressPercent(status, metrics),
     usedTokens: metrics.usedTokens,
     metrics: {
