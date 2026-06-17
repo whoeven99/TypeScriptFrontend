@@ -1,6 +1,4 @@
 import { register } from "@shopify/web-pixels-extension";
-import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 
 register(async ({ analytics, browser, init, settings }) => {
   const { shopName, server } = settings;
@@ -68,10 +66,12 @@ register(async ({ analytics, browser, init, settings }) => {
         clientId: event.clientId,
       };
       // Example for sending event data to third party servers
-      const response = await axios({
-        url: serverUrl,
+      await fetch(serverUrl, {
         method: "POST",
-        data: payload,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
     } catch (error) {
       console.error("Failed to send page_viewed event:", error);
@@ -90,14 +90,14 @@ register(async ({ analytics, browser, init, settings }) => {
       };
 
       // Example for sending event to third party servers
-      const response = await axios({
-        url: serverUrl,
+      await fetch(serverUrl, {
         method: "POST",
-        data: payload,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
       console.log("add cart payload", payload);
-
-      console.log("add cart res", response);
 
     } catch (error) {
       console.error("Failed to send product_added_to_cart event:", error);
