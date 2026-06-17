@@ -9,5 +9,4 @@ node_modules
 Dockerfile*
 docker-compose*
 .vscode
-scripts/
 extensions/
