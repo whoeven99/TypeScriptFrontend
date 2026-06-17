@@ -56,9 +56,11 @@ const MODULE_LABELS: Record<string, string> = {
 
 const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
 
+// 对齐 DeepSeek 文档：deepseek-chat/reasoner 将于 2026/07/24 弃用，
+// 分别对应 deepseek-v4-flash(非思考) 与 deepseek-v4-pro(思考)。
 const AI_MODEL_OPTIONS = [
-  { value: "deepseek-chat", label: "deepseek-chat" },
-  { value: "deepseek-reasoner", label: "deepseek-reasoner" },
+  { value: "deepseek-v4-flash", label: "deepseek-v4-flash" },
+  { value: "deepseek-v4-pro", label: "deepseek-v4-pro" },
 ];
 
 type ShopLocaleOption = {
@@ -218,7 +220,7 @@ export default function AppTranslateV4() {
   const [source, setSource] = useState<string>(primaryLocale || "zh-CN");
   const [target, setTarget] = useState<string | undefined>(undefined);
   const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
-  const [aiModel, setAiModel] = useState<string>("deepseek-chat");
+  const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
   const [limitPerType, setLimitPerType] = useState<number>(20);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);

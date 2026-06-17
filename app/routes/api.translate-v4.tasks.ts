@@ -83,7 +83,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     source,
     target,
     modules,
-    aiModel: body.aiModel?.trim() || "deepseek-chat",
+    aiModel: body.aiModel?.trim() || "deepseek-v4-flash",
     limitPerType,
     isCover: body.isCover ?? false,
     isHandle: body.isHandle ?? false,

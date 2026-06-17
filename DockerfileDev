@@ -1,21 +1,44 @@
-FROM node:20-alpine3.17
+# ============ 构建阶段 ============
+FROM node:20-alpine AS builder
 
-EXPOSE 3000
+# Prisma 运行时需要系统级 openssl（Alpine 默认不含）
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
+# 先复制依赖文件，充分利用 Docker 层缓存
 COPY package.json package-lock.json* ./
 
 ENV NODE_ENV=test
 
-RUN npm install
+# npm ci 比 npm install 更快且确定性更强
+RUN npm ci && npm cache clean --force
 
-# Remove CLI packages since we don't need them in production by default.
-# Remove this line if you want to run CLI commands in your container.
-RUN npm remove @shopify/cli
+# 生成 Prisma Client（构建时完成，非运行时）
+COPY prisma ./prisma
+RUN npx prisma generate
 
+# 复制源码并构建
 COPY . .
-
 RUN npm run build
 
-CMD ["npm", "run", "docker-start"]
+# ============ 运行阶段 ============
+FROM node:20-alpine
+
+# Prisma 运行时需要系统级 openssl
+RUN apk add --no-cache openssl
+
+EXPOSE 3000
+WORKDIR /app
+
+ENV NODE_ENV=test
+
+# 从构建阶段按需复制
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
+
+# Prisma Client 已在构建阶段生成，运行时只需 migrate
+CMD ["sh", "-c", "npx prisma migrate deploy && npx remix-serve ./build/server/index.js"]
