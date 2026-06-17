@@ -281,49 +281,28 @@ a[href="https://translate.google.com"] {
   display: none !important;
 }
 
-.custom-selector {
-  position: relative;
+.native-selector {
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
 }
 
-.language_selector_header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  height: 40px;
-}
-
+.switcher-native-select,
+.language_selector_header,
 .currency_selector_header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  width: 100%;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background: #fff;
-  cursor: pointer;
-  height: 40px;
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
 }
 
-.selected-text {
-  font-size: 14px;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.selected-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.switcher-native-select:focus,
+.language_selector_header:focus,
+.currency_selector_header:focus {
+  outline: auto;
 }
 
 .country-flag {
@@ -380,66 +359,4 @@ a[href="https://translate.google.com"] {
 
 .option-country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"]) {
   opacity: 1;
-}
-
-.arrow-icon {
-  font-size: 12px;
-  transition: transform 0.2s;
-}
-
-.custom-selector.open .arrow-icon {
-  transform: rotate(180deg);
-}
-
-.options-container {
-  position: absolute;
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: none;
-  z-index: 1000;
-}
-
-.custom-selector.open .options-container {
-  display: block;
-}
-
-.options-list {
-  height: 135px;
-  overflow-y: auto;
-}
-
-.option-item {
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.option-item:hover {
-  background-color: #f5f5f5;
-}
-
-/* 滚动条样式 */
-.options-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.options-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.options-list::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.options-list::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }

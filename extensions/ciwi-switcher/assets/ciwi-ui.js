@@ -13,41 +13,21 @@ import { transformPrices } from "./ciwi-utils.js";
  * 渲染货币选项
  */
 export function renderCurrencyOptions({
-  optionsList,
-  selectedOption,
+  currencySelect,
   currencyData,
   selectedCurrencyCode,
 }) {
-  optionsList.innerHTML = "";
+  if (!currencySelect) return;
+
+  currencySelect.innerHTML = "";
   currencyData.forEach((currency) => {
-    const optionItem = document.createElement("div");
-    optionItem.className = `option-item ${currency?.currencyCode == selectedCurrencyCode ? "selected" : ""}`;
-    optionItem.dataset.value = currency?.currencyCode;
-    optionItem.dataset.type = "currency";
-    optionItem.innerHTML = `
-          <span class="option-text">${currency?.currencyCode}</span> 
-          <span class="currency-symbol">(${currency?.symbol})</span>
-        `;
-
-    // 为新创建的选项添加点击事件监听器
-    optionItem.addEventListener("click", function (e) {
-      // 获取 CiwiswitcherForm 实例
-      const form = document.querySelector("ciwiswitcher-form");
-      if (form) {
-        form.handleOptionClick(e);
-      }
-    });
-
-    optionsList.appendChild(optionItem);
-
-    if (currency?.currencyCode === selectedCurrencyCode && selectedOption) {
-      selectedOption.innerHTML = `
-        <span class="selected-text" data-type="currency">${currency?.currencyCode}</span>
-        <span class="currency-symbol">(${currency?.symbol})</span>
-      `;
-    }
-
-    // 如果是选中项，更新选择器头部显示
+    const optionItem = document.createElement("option");
+    optionItem.value = currency?.currencyCode || "";
+    optionItem.textContent = currency?.symbol
+      ? `${currency?.currencyCode} (${currency?.symbol})`
+      : `${currency?.currencyCode}`;
+    optionItem.selected = currency?.currencyCode === selectedCurrencyCode;
+    currencySelect.appendChild(optionItem);
   });
 }
 
@@ -75,15 +55,13 @@ export async function initializeCurrency({
   const customSelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
   );
-  const selectedOption = customSelector?.querySelector(".selected-option");
-  const optionsList = customSelector?.querySelector(".options-list");
+  const currencySelect = customSelector?.querySelector(".currency_selector_header");
   const pageCurrencyCode = ciwiBlock.querySelector(
     'input[name="currency_code"]',
   )?.value;
 
   renderCurrencyOptions({
-    optionsList,
-    selectedOption,
+    currencySelect,
     currencyData,
     selectedCurrencyCode: selectedCurrencyCode || pageCurrencyCode,
   });
@@ -161,31 +139,23 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
 export function updateDisplayText(lang, cur, ciwiBlock) {
   let selectedLanguageText = "";
   let selectedCurrencyText = "";
-  // 获取货币选择器中当前选中的值
   if (lang) {
-    // 获取语言选择器中当前选中的值
-    const languageSelector = ciwiBlock.querySelector(
-      '.custom-selector[data-type="language"]',
-    );
+    const languageSelect = ciwiBlock.querySelector(".language_selector_header");
     selectedLanguageText =
-      languageSelector?.querySelector(".selected-text")?.textContent || "";
+      languageSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
   }
 
   if (cur) {
-    const currencyCode = ciwiBlock.querySelector('input[name="currency_code"]');
-    const storedCurrency = localStorage.getItem("ciwi_selected_currency");
+    const currencySelect = ciwiBlock.querySelector(".currency_selector_header");
     selectedCurrencyText =
-      storedCurrency && typeof storedCurrency == "string"
-        ? storedCurrency
-        : currencyCode?.value;
+      currencySelect?.value ||
+      ciwiBlock.querySelector('input[name="currency_code"]')?.value ||
+      "";
   }
-  // 更新显示文本
+
   const displayTextElement = ciwiBlock.querySelector("#display-text");
-  console.log("selectedLanguageText: ", selectedLanguageText);
-  console.log("ciwiBlock: ", ciwiBlock);
 
   if (displayTextElement) {
-    // 如果已经有语言文本，添加货币文本
     if (selectedLanguageText && selectedCurrencyText) {
       displayTextElement.textContent = `${selectedLanguageText} / ${selectedCurrencyText}`;
     } else if (selectedLanguageText) {
@@ -233,11 +203,6 @@ export async function CurrencySelectorTakeEffect(
 
   currencySelectorHeader.style.backgroundColor = data.backgroundColor;
   currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-  const currencySelectorSelectedOption = ciwiBlock.querySelector(
-    ".options-container[data-type='currency']",
-  );
-  currencySelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-  currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
   currencySelector.style.display = "block";
 
   initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
@@ -266,50 +231,18 @@ export async function LanguageSelectorTakeEffect(
   );
   languageSelectorHeader.style.backgroundColor = data.backgroundColor;
   languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-  const languageSelectorSelectedOption = ciwiBlock.querySelector(
-    ".options-container[data-type='language']",
-  );
-  languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-  languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
 
   const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
   const translateFloatBtnIcon = ciwiBlock.querySelector(
     "#translate-float-btn-icon",
   );
   if (data?.includedFlag) {
-    //获取所有语言代码
     const languageLocaleData = window.languageLocaleData
       ? window.languageLocaleData
       : null;
-    const languageOptions = ciwiBlock.querySelectorAll(
-      ".option-item[data-type='language']",
-    );
-    languageOptions.forEach((option) => {
-      const langCode = option.dataset.value;
-      const countryCode = languageLocaleData[langCode]?.countries[0];
-      if (countryCode) {
-        // 创建并插入国旗图片
-        const flagImg = document.createElement("img");
-        flagImg.className = "option-country-flag";
-        flagImg.src = countryCode;
-        flagImg.alt = "";
-        // 将图片插入到选项的最前面
-        option.insertBefore(flagImg, option.firstChild);
-      }
-    });
-    // 为当前选中的语言添加国旗
-    const selectedOption = ciwiBlock.querySelector(
-      ".language_selector_header[data-type='language'] .selected-option",
-    );
-    if (selectedOption) {
-      const countryCode = languageLocaleData[language]?.countries[0];
-      const optionFlagImg = document.createElement("img");
-      optionFlagImg.className = "option-country-flag";
-      optionFlagImg.src = countryCode;
-      optionFlagImg.alt = "";
-      if (countryCode) {
-        selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
-      }
+    const countryCode = languageLocaleData?.[language]?.countries?.[0];
+    if (countryCode) {
       if (
         mainLanguageFlag &&
         (data.languageSelector || data.currencySelector)
@@ -326,8 +259,11 @@ export async function LanguageSelectorTakeEffect(
         translateFloatBtnIcon.hidden = false;
       }
     }
+    if (languageSelect) {
+      languageSelect.style.paddingLeft = "12px";
+    }
     const mainBoxText = ciwiBlock.querySelector(".main_box_text");
-    if (mainBoxText) {
+    if (mainBoxText && countryCode) {
       mainBoxText.style.margin = "0 20px 0px 25px";
     }
   }
@@ -1142,25 +1078,8 @@ export class CiwiswitcherForm extends HTMLElement {
       mainBox: this.querySelector("#main-box"),
       translateFloatBtn: this.querySelector("#translate-float-btn"),
       translateFloatBtnText: this.querySelector("#translate-float-btn-text"),
-      languageSelector: this.querySelector(
-        ".custom-selector[data-type='language']",
-      ),
-      currencySelector: this.querySelector(
-        ".custom-selector[data-type='currency']",
-      ),
-      languageHeader: this.querySelector(".language_selector_header"),
-      currencyHeader: this.querySelector(".currency_selector_header"),
-      languageOptionsContainer: this.querySelector(
-        ".options-container[data-type='language']",
-      ),
-      currencyOptionsContainer: this.querySelector(
-        ".options-container[data-type='currency']",
-      ),
-      selectedFlag: this.querySelector(".selected-option .country-flag"),
-      selectedLanguageText: this.querySelector(
-        ".selected-option .selected-text[data-type='language']",
-      ),
-      options: this.querySelectorAll(".option-item"),
+      languageSelect: this.querySelector(".language_selector_header"),
+      currencySelect: this.querySelector(".currency_selector_header"),
       closeButton: this.querySelector(".selector_box_close_button"),
     };
     // 初始化所有事件监听
@@ -1182,30 +1101,15 @@ export class CiwiswitcherForm extends HTMLElement {
       this.toggleSelector.bind(this),
     );
 
-    // 修改语言选择器的点击事件
-    this.elements.languageHeader?.addEventListener("click", () => {
-      // 关闭货币选择器
-      this.elements.currencySelector?.classList.remove("open");
-      // 切换语言选择器
-      this.elements.languageSelector?.classList.toggle("open");
-    });
+    this.elements.languageSelect?.addEventListener(
+      "change",
+      this.handleSelectChange.bind(this),
+    );
 
-    // 修改货币选择器的点击事件
-    this.elements.currencyHeader?.addEventListener("click", () => {
-      // 关闭语言选择器
-      this.elements.languageSelector?.classList.remove("open");
-      // 切换货币选择器
-      this.elements.currencySelector?.classList.toggle("open");
-    });
-
-    // 修改选项点击事件
-    this.elements.options?.forEach((option) => {
-      option.addEventListener("click", (e) => {
-        this.handleOptionClick(e);
-        // 关闭所有选择器
-        this.closeAllSelectors();
-      });
-    });
+    this.elements.currencySelect?.addEventListener(
+      "change",
+      this.handleSelectChange.bind(this),
+    );
 
     this.elements.closeButton?.addEventListener(
       "click",
@@ -1216,59 +1120,33 @@ export class CiwiswitcherForm extends HTMLElement {
     document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
 
-  handleOptionClick(event) {
-    const languageOptions = this.querySelectorAll(
-      ".option-item[data-type='language']",
-    );
-    const currencyOptions = this.querySelectorAll(
-      ".option-item[data-type='currency']",
-    );
-    const selectedCurrencyText = this.querySelector(
-      ".selected-option .selected-text[data-type='currency']",
-    );
-    const selectedCurrencySymbol = this.querySelector(
-      ".selected-option .currency-symbol",
-    );
-    const selectedFlag = this.querySelector(
-      ".selected-option .option-country-flag",
-    );
-    const option = event.currentTarget;
-    const value = option.dataset.value;
-    const text = option.querySelector(".option-text")?.textContent;
-    const flag = option.querySelector(".option-country-flag")?.src;
-    const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
-    if (this.elements.languageInput.value == value) return;
+  handleSelectChange(event) {
+    const select = event.currentTarget;
+    const value = select?.value;
+    const selectorType = select?.dataset.type;
+    const languageLocaleData = window.languageLocaleData || null;
 
     if (selectorType === "language") {
-      // 更新选中项显示
-      if (selectedFlag) {
-        selectedFlag.src = flag;
-      }
-      if (this.elements.selectedLanguageText) {
-        this.elements.selectedLanguageText.textContent = text;
-      }
-      // 更新选中状态
-      languageOptions?.forEach((opt) => opt.classList.remove("selected"));
-      option.classList.add("selected");
+      if (!value || this.elements.languageInput.value == value) return;
       this.elements.languageInput.value = value;
       localStorage.setItem("ciwi_selected_language", value);
+      const flag = languageLocaleData?.[value]?.countries?.[0];
+      const mainBoxFlag = this.querySelector("#main-language-flag");
+      const translateFloatBtnIcon = this.querySelector("#translate-float-btn-icon");
+      if (mainBoxFlag && flag) {
+        mainBoxFlag.src = flag;
+        mainBoxFlag.hidden = false;
+      }
+      if (translateFloatBtnIcon && flag) {
+        translateFloatBtnIcon.src = flag;
+        translateFloatBtnIcon.hidden = false;
+      }
     } else if (selectorType === "currency") {
-      const symbol = option.querySelector(".currency-symbol")?.textContent;
-      if (selectedCurrencySymbol) {
-        selectedCurrencySymbol.textContent = symbol;
-      }
-      if (selectedCurrencyText) {
-        selectedCurrencyText.textContent = text;
-      }
-      // 更新选中状态
-      currencyOptions?.forEach((opt) => opt.classList.remove("selected"));
-      option.classList.add("selected");
+      if (!value || this.elements.currencyInput.value == value) return;
+      this.elements.currencyInput.value = value;
       localStorage.setItem("ciwi_selected_currency", value);
     }
-    // 关闭所有选择器
-    this.closeAllSelectors();
-    this.elements.languageSelector?.classList.remove("open");
-    this.elements.currencySelector?.classList.remove("open");
+
     this.elements.selectorBox.style.display = "none";
     if (
       this.elements.translateFloatBtn.style.justifyContent &&
@@ -1278,53 +1156,27 @@ export class CiwiswitcherForm extends HTMLElement {
     }
     this.rotateArrow("#mainbox-arrow-icon", 0);
     event.preventDefault();
-    // 更新 main-box 显示文本
-    const mainBoxFlag = this.querySelector("#main-language-flag");
 
-    if (mainBoxFlag && flag) {
-      mainBoxFlag.src = flag;
-    }
-    const displayText = this.elements.ciwiBlock.querySelector("#display-text");
-    if (displayText) {
-      const selectedLanguage =
-        this.elements.languageSelector?.querySelector(".selected-text")
-          ?.textContent || "";
-      const selectedCurrency =
-        this.elements.currencySelector?.querySelector(".selected-text")
-          ?.textContent || "";
-
-      const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
-        "#language-switcher-container",
-      );
-      const currencySelectorContainer = this.elements.ciwiBlock.querySelector(
-        "#currency-switcher-container",
-      );
-
-      if (
-        languageSelectorContainer.style.display === "block" &&
-        currencySelectorContainer.style.display === "block"
-      ) {
-        displayText.textContent = `${selectedLanguage} / ${selectedCurrency}`;
-      } else if (languageSelectorContainer.style.display === "block") {
-        displayText.textContent = selectedLanguage;
-      } else if (currencySelectorContainer.style.display === "block") {
-        displayText.textContent = selectedCurrency;
-      }
-    }
+    const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
+      "#language-switcher-container",
+    );
+    const currencySelectorContainer = this.elements.ciwiBlock.querySelector(
+      "#currency-switcher-container",
+    );
+    updateDisplayText(
+      languageSelectorContainer?.style.display === "block",
+      currencySelectorContainer?.style.display === "block",
+      this.elements.ciwiBlock,
+    );
     const form = this.querySelector("form");
 
-    // 提交表单
     if (form) {
-      // 判断语言的iso_code，动态点击确定按钮的时候，修改dir的属性
-      // 根据语言选择更新页面方向
       form.submit();
     }
   }
 
   handleCancelClick(event) {
     event.preventDefault();
-    this.elements.languageSelector?.classList.remove("open");
-    this.elements.currencySelector?.classList.remove("open");
     this.elements.selectorBox.style.display = "none";
     if (
       this.elements.translateFloatBtn.style.justifyContent &&
@@ -1341,8 +1193,6 @@ export class CiwiswitcherForm extends HTMLElement {
       !this.elements.ciwiContainer.contains(event.target)
     ) {
       if (this.elements.selectorBox) {
-        this.elements.languageSelector?.classList.remove("open");
-        this.elements.currencySelector?.classList.remove("open");
         this.elements.selectorBox.style.display = "none";
         if (
           this.elements.translateFloatBtn.style.justifyContent &&
@@ -1393,9 +1243,7 @@ export class CiwiswitcherForm extends HTMLElement {
     }
   }
 
-  // 添加一个关闭所有选择器的方法
   closeAllSelectors() {
-    this.elements.languageSelector?.classList.remove("open");
-    this.elements.currencySelector?.classList.remove("open");
+    return;
   }
 }

@@ -189,8 +189,8 @@ async function ciwiOnload() {
 
   //所有可用语言
   const availableLanguages = Array.from(
-    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-  ).map((opt) => opt.dataset.value);
+    ciwiBlock.querySelectorAll(".language_selector_header option"),
+  ).map((opt) => opt.value);
 
   //所有可用地区
   const availableCountries = Array.from(
@@ -366,7 +366,6 @@ async function ciwiOnload() {
       const translateFloatBtnText = ciwiBlock.querySelector(
         "#translate-float-btn-text",
       );
-      const optionsContainer = ciwiBlock.querySelectorAll(".options-container");
       selectorBox.style.backgroundColor = configData.backgroundColor;
       switcher.style.color = configData.fontColor;
 
@@ -382,10 +381,6 @@ async function ciwiOnload() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_left":
-          optionsContainer.forEach((item) => {
-            item.style.top = "-135px";
-            item.style.marginTop = "-4px";
-          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.top = "auto";
           translateFloatBtnText.style.borderRadius = "8px 8px 0 0";
@@ -405,10 +400,6 @@ async function ciwiOnload() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_right":
-          optionsContainer.forEach((item) => {
-            item.style.top = "-135px";
-            item.style.marginTop = "-4px";
-          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.right = "0";
           switcher.style.top = "auto";
@@ -440,10 +431,8 @@ async function ciwiOnload() {
   }
 
   // RTL 判断
-  const selectedTextElement = ciwiBlock.querySelector(
-    '.selected-option[data-type="language"] .selected-text',
-  );
-  const currentLanguage = selectedTextElement?.textContent?.trim();
+  const selectedTextElement = ciwiBlock.querySelector(".language_selector_header");
+  const currentLanguage = selectedTextElement?.selectedOptions?.[0]?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
 
   if (isRtlLanguage && selectedLanguageText) {
