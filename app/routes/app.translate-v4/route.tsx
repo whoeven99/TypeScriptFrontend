@@ -1,0 +1,443 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Page } from "@shopify/polaris";
+import { TitleBar } from "@shopify/app-bridge-react";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Divider,
+  Flex,
+  InputNumber,
+  Progress,
+  Select,
+  Space,
+  Switch,
+  Tag,
+  Typography,
+  message,
+} from "antd";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { authenticate } from "~/shopify.server";
+import { listV4JobSummaries } from "~/server/translateV4/progress.server";
+import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import {
+  TRANSLATION_V4_MODULES,
+  TS_FRONTEND_TASK_SOURCE,
+  type TranslationV4Status,
+} from "~/server/translateV4/types";
+
+const { Title, Text } = Typography;
+
+/** 模块中文展示名（仅用于本页 UI，与服务端解耦）。 */
+const MODULE_LABELS: Record<string, string> = {
+  PRODUCT: "商品",
+  PRODUCT_OPTION: "商品选项",
+  PRODUCT_OPTION_VALUE: "商品选项值",
+  COLLECTION: "商品系列",
+  ONLINE_STORE_THEME_APP_EMBED: "主题 App 嵌入",
+  ONLINE_STORE_THEME_JSON_TEMPLATE: "主题模板",
+  ONLINE_STORE_THEME_SECTION_GROUP: "主题区块组",
+  ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS: "主题设置",
+  MENU: "导航菜单",
+  LINK: "链接",
+  DELIVERY_METHOD_DEFINITION: "配送方式",
+  FILTER: "筛选器",
+  METAFIELD: "元字段",
+  METAOBJECT: "元对象",
+  PAYMENT_GATEWAY: "支付网关",
+  SELLING_PLAN: "销售计划",
+  SELLING_PLAN_GROUP: "销售计划组",
+  SHOP: "店铺信息",
+  ARTICLE: "博客文章",
+  BLOG: "博客",
+  PAGE: "页面",
+};
+
+const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
+
+const AI_MODEL_OPTIONS = [
+  { value: "deepseek-chat", label: "deepseek-chat" },
+  { value: "deepseek-reasoner", label: "deepseek-reasoner" },
+];
+
+type ShopLocaleOption = {
+  value: string;
+  label: string;
+  primary: boolean;
+  published: boolean;
+};
+
+const SHOP_LOCALES_QUERY = `#graphql
+  query TranslateV4ShopLocales {
+    shopLocales {
+      locale
+      name
+      primary
+      published
+    }
+  }
+`;
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { admin, session } = await authenticate.admin(request);
+
+  let locales: ShopLocaleOption[] = [];
+  let primaryLocale = "zh-CN";
+  try {
+    const res = await admin.graphql(SHOP_LOCALES_QUERY);
+    const payload = (await res.json()) as {
+      data?: {
+        shopLocales?: Array<{
+          locale: string;
+          name: string;
+          primary: boolean;
+          published: boolean;
+        }> | null;
+      };
+    };
+    const rows = payload.data?.shopLocales ?? [];
+    locales = rows.map((r) => ({
+      value: r.locale,
+      label: `${r.name} (${r.locale})`,
+      primary: r.primary,
+      published: r.published,
+    }));
+    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+  } catch (err) {
+    console.error("[translateV4] load shopLocales failed:", err);
+  }
+
+  const jobs = await listV4JobSummaries(session.shop, {
+    taskSource: TS_FRONTEND_TASK_SOURCE,
+  });
+
+  return json({ shop: session.shop, locales, primaryLocale, jobs });
+};
+
+const STATUS_COLOR: Partial<Record<TranslationV4Status, string>> = {
+  COMPLETED: "success",
+  FAILED: "error",
+  CANCELLED: "default",
+  PAUSED: "warning",
+  TRANSLATING: "processing",
+  INITIALIZING: "processing",
+  WRITING_BACK: "processing",
+  VERIFYING: "processing",
+};
+
+function stageOf(status: TranslationV4Status): 0 | 1 | 2 | 3 | 4 {
+  if (["INIT_QUEUED", "INITIALIZING"].includes(status)) return 0;
+  if (status === "INIT_DONE") return 1;
+  if (["TRANSLATE_QUEUED", "TRANSLATING"].includes(status)) return 1;
+  if (status === "TRANSLATE_DONE") return 2;
+  if (["WRITEBACK_QUEUED", "WRITING_BACK"].includes(status)) return 2;
+  if (["VERIFY_QUEUED", "VERIFYING"].includes(status)) return 3;
+  if (status === "COMPLETED") return 4;
+  return 0;
+}
+
+const STAGE_NAMES = ["初始化", "翻译", "写回", "校验"];
+
+function JobCard({ job }: { job: TranslationJobProgressSummary }) {
+  const activeStage = stageOf(job.status);
+  const pct = job.progressPercent;
+  return (
+    <Card size="small" style={{ marginBottom: 12 }}>
+      <Flex justify="space-between" align="center" wrap gap={8}>
+        <Space size={10} wrap>
+          <Text strong>
+            {job.source} → {job.target}
+          </Text>
+          <Tag color={STATUS_COLOR[job.status] ?? "default"}>
+            {job.statusLabel}
+          </Tag>
+          {job.testMode ? <Tag color="purple">测试模式</Tag> : null}
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {job.modules.map((m) => MODULE_LABELS[m] ?? m).join(" · ")}
+          </Text>
+        </Space>
+      </Flex>
+
+      <Flex gap={6} style={{ marginTop: 12 }}>
+        {STAGE_NAMES.map((name, idx) => {
+          const done = job.status === "COMPLETED" || idx < activeStage;
+          const current = idx === activeStage && !job.isTerminal;
+          return (
+            <div key={name} style={{ flex: 1 }}>
+              <Text
+                type={done ? "success" : current ? "warning" : "secondary"}
+                style={{ fontSize: 11 }}
+              >
+                {name}
+                {current && pct != null ? ` ${pct}%` : ""}
+              </Text>
+              <Progress
+                percent={done ? 100 : current ? (pct ?? 0) : 0}
+                showInfo={false}
+                size="small"
+                status={job.status === "FAILED" && current ? "exception" : "active"}
+                strokeColor={done ? "#1d9e75" : undefined}
+              />
+            </div>
+          );
+        })}
+      </Flex>
+
+      <Space size={18} wrap style={{ marginTop: 8 }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {job.stageSummary}
+        </Text>
+        {job.usedTokens > 0 ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            用量 {job.usedTokens.toLocaleString()} tokens
+          </Text>
+        ) : null}
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {job.aiModel}
+        </Text>
+      </Space>
+
+      {job.errorMessage ? (
+        <div style={{ marginTop: 6 }}>
+          <Text type="danger" style={{ fontSize: 12 }}>
+            {job.errorStage ? `[${job.errorStage}] ` : ""}
+            {job.errorMessage}
+          </Text>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+export default function AppTranslateV4() {
+  const { shop, locales, primaryLocale, jobs: initialJobs } =
+    useLoaderData<typeof loader>();
+
+  const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
+  const [source, setSource] = useState<string>(primaryLocale || "zh-CN");
+  const [target, setTarget] = useState<string | undefined>(undefined);
+  const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
+  const [aiModel, setAiModel] = useState<string>("deepseek-chat");
+  const [limitPerType, setLimitPerType] = useState<number>(20);
+  const [isCover, setIsCover] = useState(false);
+  const [isHandle, setIsHandle] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const localeOptions = useMemo(
+    () =>
+      locales.length
+        ? locales
+        : [{ value: "zh-CN", label: "中文 (zh-CN)", primary: true, published: true }],
+    [locales],
+  );
+  const targetOptions = useMemo(
+    () => localeOptions.filter((l) => l.value !== source),
+    [localeOptions, source],
+  );
+
+  const refreshList = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) setJobs(data.jobs as TranslationJobProgressSummary[]);
+    } catch (err) {
+      console.error("[translateV4] refresh list failed:", err);
+    }
+  }, [shop]);
+
+  const handleCreate = useCallback(async () => {
+    if (!target) {
+      message.warning("请选择目标语言");
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch("/api/translate-v4/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source,
+          target,
+          modules,
+          aiModel,
+          limitPerType,
+          isCover,
+          isHandle,
+          testMode,
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok) {
+        message.success("任务已创建，worker 即将开始处理");
+        await refreshList();
+      } else {
+        message.error(data?.error || "创建失败");
+      }
+    } catch (err) {
+      console.error("[translateV4] create failed:", err);
+      message.error("创建失败，请稍后重试");
+    } finally {
+      setCreating(false);
+    }
+  }, [
+    source,
+    target,
+    modules,
+    aiModel,
+    limitPerType,
+    isCover,
+    isHandle,
+    testMode,
+    refreshList,
+  ]);
+
+  // 轮询活跃任务的实时进度（逐条 task-progress 合并 Cosmos + Redis）
+  const jobsRef = useRef(jobs);
+  jobsRef.current = jobs;
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      const active = jobsRef.current.filter((j) => !j.isTerminal);
+      if (!active.length) return;
+      const updated = await Promise.all(
+        active.map(async (j) => {
+          try {
+            const res = await fetch(
+              `/api/translate-v4/task-progress?taskId=${encodeURIComponent(
+                j.taskId,
+              )}&shopName=${encodeURIComponent(shop)}`,
+            );
+            const data = await res.json();
+            return data?.ok
+              ? (data.summary as TranslationJobProgressSummary)
+              : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      setJobs((prev) =>
+        prev.map((j) => updated.find((u) => u && u.taskId === j.taskId) ?? j),
+      );
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [shop]);
+
+  return (
+    <Page>
+      <TitleBar title="智能翻译 (v4)" />
+      <Card style={{ marginBottom: 16 }}>
+        <Flex justify="space-between" align="center">
+          <Title level={5} style={{ margin: 0 }}>
+            创建翻译任务
+          </Title>
+          <Tag color="geekblue">{TS_FRONTEND_TASK_SOURCE}</Tag>
+        </Flex>
+        <Divider style={{ margin: "12px 0" }} />
+
+        <Flex gap={16} wrap>
+          <div style={{ minWidth: 180 }}>
+            <Text type="secondary">源语言</Text>
+            <Select
+              style={{ width: "100%", marginTop: 4 }}
+              value={source}
+              options={localeOptions}
+              onChange={(v) => {
+                setSource(v);
+                if (v === target) setTarget(undefined);
+              }}
+            />
+          </div>
+          <div style={{ minWidth: 180 }}>
+            <Text type="secondary">目标语言</Text>
+            <Select
+              style={{ width: "100%", marginTop: 4 }}
+              placeholder="选择目标语言"
+              value={target}
+              options={targetOptions}
+              onChange={setTarget}
+            />
+          </div>
+          <div style={{ minWidth: 180 }}>
+            <Text type="secondary">AI 模型</Text>
+            <Select
+              style={{ width: "100%", marginTop: 4 }}
+              value={aiModel}
+              options={AI_MODEL_OPTIONS}
+              onChange={setAiModel}
+            />
+          </div>
+          <div style={{ minWidth: 160 }}>
+            <Text type="secondary">每类上限（0=全部）</Text>
+            <InputNumber
+              style={{ width: "100%", marginTop: 4 }}
+              min={0}
+              value={limitPerType}
+              onChange={(v) => setLimitPerType(Number(v ?? 0))}
+            />
+          </div>
+        </Flex>
+
+        <div style={{ marginTop: 16 }}>
+          <Text type="secondary">翻译模块</Text>
+          <div style={{ marginTop: 6 }}>
+            <Checkbox.Group
+              value={modules}
+              onChange={(v) => setModules(v as string[])}
+              options={TRANSLATION_V4_MODULES.map((m) => ({
+                label: MODULE_LABELS[m] ?? m,
+                value: m,
+              }))}
+            />
+          </div>
+        </div>
+
+        <Flex
+          justify="space-between"
+          align="center"
+          wrap
+          gap={12}
+          style={{ marginTop: 16 }}
+        >
+          <Space size={20} wrap>
+            <Space size={6}>
+              <Switch checked={isCover} onChange={setIsCover} size="small" />
+              <Text>覆盖已有译文</Text>
+            </Space>
+            <Space size={6}>
+              <Switch checked={isHandle} onChange={setIsHandle} size="small" />
+              <Text>翻译 handle</Text>
+            </Space>
+            <Space size={6}>
+              <Switch checked={testMode} onChange={setTestMode} size="small" />
+              <Text>测试模式</Text>
+            </Space>
+          </Space>
+          <Button type="primary" loading={creating} onClick={handleCreate}>
+            创建任务
+          </Button>
+        </Flex>
+      </Card>
+
+      <Card>
+        <Flex justify="space-between" align="center">
+          <Title level={5} style={{ margin: 0 }}>
+            翻译任务
+          </Title>
+          <Button size="small" onClick={refreshList}>
+            刷新
+          </Button>
+        </Flex>
+        <Divider style={{ margin: "12px 0" }} />
+        {jobs.length === 0 ? (
+          <Text type="secondary">暂无任务，创建一个开始翻译吧。</Text>
+        ) : (
+          jobs.map((job) => <JobCard key={job.taskId} job={job} />)
+        )}
+      </Card>
+    </Page>
+  );
+}
