@@ -11,7 +11,13 @@ import {
   Table,
   Typography,
 } from "antd";
-import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
@@ -28,6 +34,7 @@ import ProgressingModal from "./components/progressingModal";
 import TranslationPanel from "./components/TranslationPanel";
 import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const { Title, Text } = Typography;
 
@@ -65,6 +72,7 @@ const Index = () => {
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasStoppedTaskIds = useRef<number[]>([]);
@@ -104,7 +112,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app/currency",
+        action: withEmbeddedSearch("/app/currency", location.search),
       },
     );
     fetcher.submit(
@@ -121,7 +129,7 @@ const Index = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (themeFetcher.data) {

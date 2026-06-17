@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLocation } from "@remix-run/react";
 import {
   Card,
   Button,
@@ -20,12 +20,14 @@ import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
 import { globalStore } from "~/globalStore";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const { Text, Title } = Typography;
 
 const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
+  const location = useLocation();
   const { t } = useTranslation();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const graphqlFetcher = useFetcher<any>();
@@ -159,7 +161,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     formData.append("qualityEvaluation", JSON.stringify({})); // 修正拼写错误，假设是 qualityEvaluation
     graphqlFetcher.submit(formData, {
       method: "post",
-      action: "/app",
+      action: withEmbeddedSearch("/app", location.search),
     });
 
     // 等待提交完成（useFetcher 是异步的，这里用 Promise 包装等待 idle）
@@ -181,7 +183,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     formData.append("findWebPixelId", JSON.stringify({}));
     queryWebPixelFetcher.submit(formData, {
       method: "post",
-      action: "/app",
+      action: withEmbeddedSearch("/app", location.search),
     });
   };
   const handleCancelScope = async () => {
@@ -276,7 +278,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
         formData.append("translationScore", JSON.stringify({}));
         translationScoreFetcher.submit(formData, {
           method: "post",
-          action: "/app/translate_report",
+          action: withEmbeddedSearch("/app/translate_report", location.search),
         });
       }
     } catch (error) {
@@ -296,16 +298,16 @@ const AnalyticsCard = ({ isLoading }: any) => {
     );
     unTranslatedFetcher.submit(untranslatedForm, {
       method: "post",
-      action: "/app",
+      action: withEmbeddedSearch("/app", location.search),
     });
-  }, []);
+  }, [location.search]);
   useEffect(() => {
     if (configCreateWebPixel) {
       const conversionForm = new FormData();
       conversionForm.append("polarisVizFetcher", JSON.stringify({ days: 7 }));
       conversionCateFetcher.submit(conversionForm, {
         method: "post",
-        action: "/app/conversion_rate",
+        action: withEmbeddedSearch("/app/conversion_rate", location.search),
       });
     }
   }, [configCreateWebPixel]);

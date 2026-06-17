@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Row, Col, Button, Card, Flex, Image, Typography } from "antd";
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
 import languageLocaleData from "../../../../scripts/language-locale-data";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const TranslationPanel = () => {
   const { t } = useTranslation();
   const { Text, Title } = Typography;
   const { reportClick } = useReport();
   const navigate = useNavigate();
+  const location = useLocation();
   const LanguageFetcher = useFetcher<any>();
   const [languages, setLanguages] = useState<any>([]);
   const [nationalFlags, setNationalFlags] = useState<string[]>([]);
@@ -22,10 +24,10 @@ const TranslationPanel = () => {
     const formData = new FormData();
     formData.append("LanguageFetcher", JSON.stringify({}));
     LanguageFetcher.submit(formData, {
-      action: "/app/translate_report",
+      action: withEmbeddedSearch("/app/translate_report", location.search),
       method: "post",
     });
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (LanguageFetcher.data) {

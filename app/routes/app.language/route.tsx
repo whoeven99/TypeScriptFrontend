@@ -14,7 +14,12 @@ import {
 } from "antd";
 import { useEffect, useState, startTransition, useMemo, useRef } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
@@ -46,6 +51,7 @@ import useReport from "scripts/eventReport";
 import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
 import languageLocaleData from "~/utils/language-locale-data";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const { Title, Text } = Typography;
 
@@ -332,13 +338,14 @@ const Index = () => {
   const statusFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
+  const location = useLocation();
 
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
     loadingFetcher.submit(formData, {
       method: "post",
-      action: "/app/language",
+      action: withEmbeddedSearch("/app/language", location.search),
     });
     webPresencesFetcher.submit(
       {
@@ -346,7 +353,7 @@ const Index = () => {
       },
       {
         method: "POST",
-        action: "/app/language",
+        action: withEmbeddedSearch("/app/language", location.search),
       },
     );
     fetcher.submit(
@@ -369,7 +376,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -388,10 +395,10 @@ const Index = () => {
       },
       {
         method: "POST",
-        action: "/app/language",
+        action: withEmbeddedSearch("/app/language", location.search),
       },
     );
-  }, [languageTableDataLocale]);
+  }, [languageTableDataLocale, location.search]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {

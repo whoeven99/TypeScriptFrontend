@@ -26,6 +26,7 @@ import {
   Link,
   useFetcher,
   useLoaderData,
+  useLocation,
   useNavigate,
 } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
@@ -43,6 +44,7 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import ApiCard from "./components/ApiCard";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const { Title, Text } = Typography;
 
@@ -161,6 +163,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop } = useLoaderData<typeof loader>();
+  const location = useLocation();
   const [apiKeyError, setApiKeyError] = useState(false);
   const [countError, setCountError] = useState(false);
   const [keywordsError, setkeywordsError] = useState(false);
@@ -385,7 +388,7 @@ const Index = () => {
       },
       {
         method: "POST",
-        action: "/app/apikeySetting",
+        action: withEmbeddedSearch("/app/apikeySetting", location.search),
       },
     );
     fetcher.submit(
@@ -397,7 +400,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (loadingfetcher.state === "idle" && loadingfetcher.data) {

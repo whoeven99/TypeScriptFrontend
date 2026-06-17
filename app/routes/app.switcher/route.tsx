@@ -18,7 +18,12 @@ import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
@@ -30,6 +35,7 @@ const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 interface EditData {
   shopName: string;
   includedFlag: boolean;
@@ -208,6 +214,7 @@ const Index = () => {
   const { report } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const fetcher = useFetcher<any>();
@@ -234,7 +241,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app/currency",
+        action: withEmbeddedSearch("/app/currency", location.search),
       },
     );
     shopFetcher.submit(
@@ -243,7 +250,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app/switcher",
+        action: withEmbeddedSearch("/app/switcher", location.search),
       },
     );
     initFetcher.submit(
@@ -321,7 +328,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (themeFetcher.data) {

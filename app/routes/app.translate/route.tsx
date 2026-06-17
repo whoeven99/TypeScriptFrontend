@@ -39,6 +39,7 @@ import ToneSettingCard from "./components/toneSettingCard";
 import AdvanceSettingCard from "./components/advanceSettingCard";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
 import languageLocaleData from "~/utils/language-locale-data";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 
 const { Title, Text } = Typography;
 
@@ -207,7 +208,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app",
+        action: withEmbeddedSearch("/app", location.search),
       },
     );
     fetcher.submit(
@@ -230,7 +231,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [location.search]);
 
   //更新语言数据，增加src、localeName、status字段
   useEffect(() => {
