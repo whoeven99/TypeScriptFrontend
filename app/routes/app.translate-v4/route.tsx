@@ -59,6 +59,9 @@ const MODULE_LABELS: Record<string, string> = {
 
 const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
 
+// 额度扣费系数：实际 token × 此系数 = 消耗的积分（与 worker QUOTA_TOKEN_MULTIPLIER 对齐）。
+const QUOTA_TOKEN_MULTIPLIER = 1.5;
+
 // 对齐 DeepSeek 文档：deepseek-chat/reasoner 将于 2026/07/24 弃用，
 // 分别对应 deepseek-v4-flash(非思考) 与 deepseek-v4-pro(思考)。
 const AI_MODEL_OPTIONS = [
@@ -304,7 +307,7 @@ function JobCard({
         ) : null}
         {job.usedTokens > 0 ? (
           <Text type="secondary" style={{ fontSize: 12 }}>
-            用量 {job.usedTokens.toLocaleString()} tokens
+            消耗 {Math.round(job.usedTokens * QUOTA_TOKEN_MULTIPLIER).toLocaleString()} 积分
           </Text>
         ) : null}
         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -325,10 +328,11 @@ function JobCard({
 }
 
 export default function AppTranslateV4() {
-  const { shop, locales, primaryLocale, jobs: initialJobs } =
+  const { shop, locales, primaryLocale, jobs: initialJobs, quota: initialQuota } =
     useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
+  const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [source, setSource] = useState<string>(primaryLocale || "zh-CN");
   const [target, setTarget] = useState<string | undefined>(undefined);
   const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
@@ -363,6 +367,18 @@ export default function AppTranslateV4() {
     }
   }, [shop]);
 
+  const refreshQuota = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+    } catch (err) {
+      console.error("[translateV4] refresh quota failed:", err);
+    }
+  }, [shop]);
+
   const handleAction = useCallback(
     async (taskId: string, actionType: "pause" | "resume" | "cancel") => {
       try {
@@ -376,7 +392,7 @@ export default function AppTranslateV4() {
           const label =
             actionType === "pause" ? "已暂停" : actionType === "resume" ? "已继续" : "已取消";
           message.success(label);
-          await refreshList();
+          await Promise.all([refreshList(), refreshQuota()]);
         } else {
           message.error(data?.error || "操作失败");
         }
@@ -385,7 +401,7 @@ export default function AppTranslateV4() {
         message.error("操作失败，请稍后重试");
       }
     },
-    [shop, refreshList],
+    [shop, refreshList, refreshQuota],
   );
 
   const handleCreate = useCallback(async () => {
@@ -412,7 +428,7 @@ export default function AppTranslateV4() {
       const data = await res.json();
       if (data?.ok) {
         message.success("任务已创建，worker 即将开始处理");
-        await refreshList();
+        await Promise.all([refreshList(), refreshQuota()]);
       } else {
         message.error(data?.error || "创建失败");
       }
@@ -432,6 +448,7 @@ export default function AppTranslateV4() {
     isHandle,
     testMode,
     refreshList,
+    refreshQuota,
   ]);
 
   // 轮询活跃任务的实时进度（逐条 task-progress 合并 Cosmos + Redis）
@@ -461,13 +478,65 @@ export default function AppTranslateV4() {
       setJobs((prev) =>
         prev.map((j) => updated.find((u) => u && u.taskId === j.taskId) ?? j),
       );
+      // 有活跃任务时顺带刷新余额，让额度随 worker 扣减实时下降。
+      void refreshQuota();
     }, 3000);
     return () => clearInterval(timer);
-  }, [shop]);
+  }, [shop, refreshQuota]);
+
+  const quotaPercent =
+    quota && quota.maxToken > 0
+      ? Math.min(100, Math.round((quota.usedToken / quota.maxToken) * 100))
+      : 0;
 
   return (
     <Page>
       <TitleBar title="智能翻译 (v4)" />
+
+      {quota ? (
+        <Card style={{ marginBottom: 16 }}>
+          <Flex justify="space-between" align="center" wrap gap={16}>
+            <Space size={28} wrap>
+              <span>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  总额度
+                </Text>
+                <br />
+                <Text strong>{quota.maxToken.toLocaleString()}</Text>
+              </span>
+              <span>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  已用积分
+                </Text>
+                <br />
+                <Text strong>{quota.usedToken.toLocaleString()}</Text>
+              </span>
+              <span>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  剩余积分
+                </Text>
+                <br />
+                <Text strong type={quota.remaining < 0 ? "danger" : undefined}>
+                  {quota.remaining.toLocaleString()}
+                </Text>
+              </span>
+            </Space>
+            <div style={{ minWidth: 240, flex: "0 1 320px" }}>
+              <Progress
+                percent={quotaPercent}
+                status={quota.remaining < 0 ? "exception" : "normal"}
+                size="small"
+              />
+              {quota.remaining < 0 ? (
+                <Text type="danger" style={{ fontSize: 12 }}>
+                  额度已用尽，充值后可在任务列表点「继续」
+                </Text>
+              ) : null}
+            </div>
+          </Flex>
+        </Card>
+      ) : null}
+
       <Card style={{ marginBottom: 16 }}>
         <Flex justify="space-between" align="center">
           <Title level={5} style={{ margin: 0 }}>
