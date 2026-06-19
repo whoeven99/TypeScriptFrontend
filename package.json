@@ -14,7 +14,6 @@
     "config:use": "shopify app config use",
     "env": "shopify app env",
     "start": "remix-serve ./build/server/index.js",
-    "docker-start": "npm run turso:migrate:prod && npm run setup && npm run start",
     "setup": "prisma generate",
     "turso:migrate:test": "node scripts/turso-migrate.cjs test",
     "turso:migrate:prod": "node scripts/turso-migrate.cjs prod",
