@@ -3,6 +3,7 @@ import { PrismaLibSQL } from "@prisma/adapter-libsql/web";
 import { createRequire } from "node:module";
 import path from "node:path";
 import type { PrismaClient as PrismaClientType } from "./generated/prisma";
+import { libsqlFetch } from "./config/libsqlFetch.server";
 import { ensureRuntimeEnv, describeTursoEnvKeys } from "./config/runtimeEnv.server";
 import {
   readTursoCredentials,
@@ -65,7 +66,7 @@ function createTursoPrismaClient(): PrismaClientType {
     `[Turso] Prisma 使用 ${target} 库 host=${tursoUrlHost(url)} (TURSO_TARGET=${process.env.TURSO_TARGET?.trim() || "未设置"})`,
   );
 
-  const adapter = new PrismaLibSQL({ url, authToken });
+  const adapter = new PrismaLibSQL({ url, authToken, fetch: libsqlFetch });
   return new PrismaClient({ adapter });
 }
 
