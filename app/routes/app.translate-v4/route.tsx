@@ -29,6 +29,7 @@ import {
   type StageTiming,
   type TranslationV4Status,
 } from "~/server/translateV4/types";
+import { SupportChatWidget } from "./SupportChatWidget";
 
 const { Title, Text } = Typography;
 
@@ -648,6 +649,8 @@ export default function AppTranslateV4() {
           ))
         )}
       </Card>
+
+      <SupportChatWidget />
     </Page>
   );
 }
