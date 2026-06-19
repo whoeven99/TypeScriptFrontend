@@ -103,7 +103,7 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
   );
-  graphQLErrors.forEach((item, index) => {
+  graphQLErrors.forEach((item: any, index: number) => {
     console.error(`[${context}] graphQLError[${index}]`, item);
   });
   console.error(

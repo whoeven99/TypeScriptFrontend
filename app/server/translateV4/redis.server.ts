@@ -56,3 +56,27 @@ export const V4_HINT_KEYS = {
 export function v4ProgressKey(taskId: string): string {
   return `translate:v4:progress:${taskId}`;
 }
+
+/** 运行时控制键：worker 在阶段中途读取后优雅暂停/取消。 */
+export function v4ControlKey(taskId: string): string {
+  return `translate:v4:control:${taskId}`;
+}
+
+export async function setV4Control(
+  taskId: string,
+  action: "pause" | "cancel",
+): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().set(v4ControlKey(taskId), action, "EX", 24 * 3600);
+  } catch {
+    // 尽力而为；即便失败，阶段结束后仍会依据 Cosmos 状态停止
+  }
+}
+
+export async function clearV4Control(taskId: string): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().del(v4ControlKey(taskId));
+  } catch {
+    // non-fatal
+  }
+}

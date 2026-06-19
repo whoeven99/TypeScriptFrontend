@@ -21,6 +21,7 @@ import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
@@ -112,11 +113,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  const jobs = await listV4JobSummaries(session.shop, {
-    taskSource: TS_FRONTEND_TASK_SOURCE,
-  });
+  const [jobs, quota] = await Promise.all([
+    listV4JobSummaries(session.shop, { taskSource: TS_FRONTEND_TASK_SOURCE }),
+    getShopQuota(session.shop),
+  ]);
 
-  return json({ shop: session.shop, locales, primaryLocale, jobs });
+  return json({ shop: session.shop, locales, primaryLocale, jobs, quota });
 };
 
 const STATUS_COLOR: Partial<Record<TranslationV4Status, string>> = {
@@ -170,10 +172,21 @@ const STAGE_DEFS: { name: string; key: StageName }[] = [
   { name: "校验", key: "VERIFY" },
 ];
 
-function JobCard({ job }: { job: TranslationJobProgressSummary }) {
+function JobCard({
+  job,
+  onAction,
+}: {
+  job: TranslationJobProgressSummary;
+  onAction: (taskId: string, action: "pause" | "resume" | "cancel") => void | Promise<void>;
+}) {
   const activeStage = stageOf(job.status);
   const m = job.metrics;
   const timings = job.stageTimings ?? {};
+
+  // 可恢复（暂停/失败，含"额度不足自动暂停"）→ 继续 + 取消；运行中 → 暂停 + 取消。
+  const canResume = job.status === "PAUSED" || job.status === "FAILED";
+  const canPause = !job.isTerminal && job.status !== "PAUSED";
+  const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED";
 
   // 每阶段的计数明细（资源 done/total，翻译额外含节点）
   const stageDetail = (idx: number): string => {
@@ -222,10 +235,27 @@ function JobCard({ job }: { job: TranslationJobProgressSummary }) {
             {job.modules.map((mod) => MODULE_LABELS[mod] ?? mod).join(" · ")}
           </Text>
         </Space>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          创建于 {fmtTime(job.createdAt)}
-          {job.status === "COMPLETED" ? ` · 完成于 ${fmtTime(job.updatedAt)}` : ""}
-        </Text>
+        <Space size={8} align="center">
+          {canResume ? (
+            <Button size="small" type="primary" onClick={() => onAction(job.taskId, "resume")}>
+              继续
+            </Button>
+          ) : null}
+          {canPause ? (
+            <Button size="small" onClick={() => onAction(job.taskId, "pause")}>
+              暂停
+            </Button>
+          ) : null}
+          {canCancel ? (
+            <Button size="small" danger onClick={() => onAction(job.taskId, "cancel")}>
+              取消
+            </Button>
+          ) : null}
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            创建于 {fmtTime(job.createdAt)}
+            {job.status === "COMPLETED" ? ` · 完成于 ${fmtTime(job.updatedAt)}` : ""}
+          </Text>
+        </Space>
       </Flex>
 
       <div style={{ marginTop: 12 }}>
@@ -332,6 +362,31 @@ export default function AppTranslateV4() {
       console.error("[translateV4] refresh list failed:", err);
     }
   }, [shop]);
+
+  const handleAction = useCallback(
+    async (taskId: string, actionType: "pause" | "resume" | "cancel") => {
+      try {
+        const res = await fetch("/api/translate-v4/task-action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskId, shopName: shop, action: actionType }),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          const label =
+            actionType === "pause" ? "已暂停" : actionType === "resume" ? "已继续" : "已取消";
+          message.success(label);
+          await refreshList();
+        } else {
+          message.error(data?.error || "操作失败");
+        }
+      } catch (err) {
+        console.error("[translateV4] task action failed:", err);
+        message.error("操作失败，请稍后重试");
+      }
+    },
+    [shop, refreshList],
+  );
 
   const handleCreate = useCallback(async () => {
     if (!target) {
@@ -519,7 +574,9 @@ export default function AppTranslateV4() {
         {jobs.length === 0 ? (
           <Text type="secondary">暂无任务，创建一个开始翻译吧。</Text>
         ) : (
-          jobs.map((job) => <JobCard key={job.taskId} job={job} />)
+          jobs.map((job) => (
+            <JobCard key={job.taskId} job={job} onAction={handleAction} />
+          ))
         )}
       </Card>
     </Page>
