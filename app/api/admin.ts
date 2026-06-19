@@ -327,12 +327,23 @@ export const queryShopBaseConfigData = async ({
       url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
-        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "X-Shopify-Access-Token": accessToken,
         "Content-Type": "application/json",
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data;
+    if (response.data?.errors?.length) {
+      console.error(
+        `${shop} queryShopBaseConfigData GraphQL errors:`,
+        response.data.errors,
+      );
+      return null;
+    }
+    const res = response.data?.data;
+    if (!res?.shop) {
+      console.error(`${shop} queryShopBaseConfigData: missing shop in response`);
+      return null;
+    }
     console.log(`${shop} shopData: `, res?.shop);
     console.log(`${shop} themesData: `, res?.themes?.nodes?.[0]);
     console.log(`${shop} shopLocalesData: `, res?.shopLocales);

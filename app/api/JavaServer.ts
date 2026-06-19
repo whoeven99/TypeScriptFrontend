@@ -1375,12 +1375,26 @@ export const UserInitialization = async ({
   accessToken: string;
 }) => {
   try {
+    if (!accessToken?.trim()) {
+      console.warn(`${shop} UserInitialization: missing accessToken, skipping`);
+      return;
+    }
+
     const shopData = await queryShopBaseConfigData({ shop, accessToken });
-    const shopEmail = shopData?.shop?.email;
-    const shopOwnerName = shopData?.shop?.shopOwnerName;
+    if (!shopData?.shop) {
+      console.warn(`${shop} UserInitialization: shop data unavailable, skipping`);
+      return;
+    }
+
+    const shopEmail = shopData.shop.email ?? "";
+    const shopOwnerName = shopData.shop.shopOwnerName ?? "";
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
-    const firstName = shopOwnerName.substring(0, lastSpaceIndex);
-    const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
+    const firstName =
+      lastSpaceIndex > 0
+        ? shopOwnerName.substring(0, lastSpaceIndex)
+        : shopOwnerName;
+    const lastName =
+      lastSpaceIndex > 0 ? shopOwnerName.substring(lastSpaceIndex + 1) : "";
     const themesData = shopData?.themes?.nodes?.[0];
     const defaultThemeId = themesData?.id;
     const defaultThemeName = themesData?.name;

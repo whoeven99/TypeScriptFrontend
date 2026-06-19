@@ -67,19 +67,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop } = session;
   const formData = await request.formData();
-  const theme = JSON.parse(formData.get("theme") as string);
-  const deleteCurrencies: number[] = JSON.parse(
-    formData.get("deleteCurrencies") as string,
-  );
-  const updateCurrencies = JSON.parse(
-    formData.get("updateCurrencies") as string,
-  );
+  const theme = formData.get("theme")
+    ? JSON.parse(formData.get("theme") as string)
+    : null;
+  const deleteCurrencies = formData.get("deleteCurrencies")
+    ? (JSON.parse(formData.get("deleteCurrencies") as string) as number[])
+    : null;
+  const updateCurrencies = formData.get("updateCurrencies")
+    ? JSON.parse(formData.get("updateCurrencies") as string)
+    : null;
 
-  switch (true) {
-    case !!theme:
-      try {
-        const response = await admin.graphql(
-          `#graphql
+  if (theme) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
             query {
               themes(roles: MAIN, first: 1) {
                 nodes {
@@ -96,36 +97,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-        );
-        const data = await response.json();
-        return json({ data: data.data.themes });
-      } catch (error) {
-        console.error("Error theme currency:", error);
-      }
-    case !!deleteCurrencies:
-      try {
-        const promises = deleteCurrencies.map((currency) =>
-          DeleteCurrency({ shop, id: currency }),
-        );
-        const data = await Promise.allSettled(promises);
-        return data;
-      } catch (error) {
-        console.error("Error deleteCurrencies currency:", error);
-        return [];
-      }
-    case !!updateCurrencies:
-      try {
-        const data = await UpdateCurrency({
-          shop,
-          updateCurrencies,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error updateCurrencies currency:", error);
-      }
-    default:
-      return null;
+      );
+      const data = await response.json();
+      return json({ data: data.data.themes });
+    } catch (error) {
+      console.error("Error theme currency:", error);
+      return json({ error: "theme fetch failed" }, { status: 500 });
+    }
   }
+
+  if (Array.isArray(deleteCurrencies) && deleteCurrencies.length > 0) {
+    try {
+      const promises = deleteCurrencies.map((currency) =>
+        DeleteCurrency({ shop, id: currency }),
+      );
+      const data = await Promise.allSettled(promises);
+      return data;
+    } catch (error) {
+      console.error("Error deleteCurrencies currency:", error);
+      return [];
+    }
+  }
+
+  if (updateCurrencies) {
+    try {
+      const data = await UpdateCurrency({
+        shop,
+        updateCurrencies,
+      });
+      return data;
+    } catch (error) {
+      console.error("Error updateCurrencies currency:", error);
+      return json({ error: "update currencies failed" }, { status: 500 });
+    }
+  }
+
+  return null;
 };
 
 const Index = () => {
