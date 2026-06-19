@@ -1,6 +1,7 @@
 .cache
 build
 node_modules
+node_modules/.cache
 .env
 .env.*
 .git
@@ -10,3 +11,7 @@ Dockerfile*
 docker-compose*
 .vscode
 extensions/
+.npm
+.cursor
+*.log
+.eslintcache

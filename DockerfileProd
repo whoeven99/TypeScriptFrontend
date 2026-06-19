@@ -1,20 +1,46 @@
-FROM node:20-alpine3.17
+# syntax=docker/dockerfile:1
+# ============ 构建阶段 ============
+FROM node:20-alpine AS builder
 
-EXPOSE 3000
+# Prisma 运行时需要系统级 openssl
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
+# 先复制依赖文件，充分利用 Docker 层缓存
 COPY package.json package-lock.json .npmrc ./
 
 ENV NODE_ENV=production
 
-RUN npm ci --legacy-peer-deps --omit=dev && npm cache clean --force
-# Remove CLI packages since we don't need them in production by default.
-# Remove this line if you want to run CLI commands in your container.
-RUN npm remove @shopify/cli
+# BuildKit 缓存挂载：只下载新增/变更的包，omit dev 减体积
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --legacy-peer-deps --omit=dev --prefer-offline
 
+# 生成 Prisma Client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# 复制源码并构建
 COPY . .
+RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    npm run build
 
-RUN npm run build
+# ============ 运行阶段 ============
+FROM node:20-alpine
+
+RUN apk add --no-cache openssl
+
+EXPOSE 3000
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# 从构建阶段按需复制（不含 devDependencies）
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
 
 CMD ["npm", "run", "docker-start"]

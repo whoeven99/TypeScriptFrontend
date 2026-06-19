@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ============ 构建阶段 ============
 FROM node:20-alpine AS builder
 
@@ -11,16 +12,18 @@ COPY package.json package-lock.json .npmrc ./
 
 ENV NODE_ENV=test
 
-# npm ci 比 npm install 更快且确定性更强
-RUN npm ci --legacy-peer-deps && npm cache clean --force
+# BuildKit 缓存挂载：persist npm 缓存目录，只下载新增/变更的包
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --legacy-peer-deps --prefer-offline
 
 # 生成 Prisma Client（构建时完成，非运行时）
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# 复制源码并构建
+# 复制源码并构建（Vite 缓存也持久化）
 COPY . .
-RUN npm run build
+RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    npm run build
 
 # ============ 运行阶段 ============
 FROM node:20-alpine
