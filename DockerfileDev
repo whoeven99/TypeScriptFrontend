@@ -1,16 +1,16 @@
 # syntax=docker/dockerfile:1
-# ============ 构建阶段 ============
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 # Prisma 运行时需要系统级 openssl（Alpine 默认不含）
 RUN apk add --no-cache openssl
 
+EXPOSE 3000
 WORKDIR /app
+
+ENV NODE_ENV=test
 
 # 先复制依赖文件，充分利用 Docker 层缓存
 COPY package.json package-lock.json .npmrc ./
-
-ENV NODE_ENV=test
 
 # BuildKit 缓存挂载：persist npm 缓存目录，只下载新增/变更的包
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
@@ -24,26 +24,6 @@ RUN npx prisma generate
 COPY . .
 RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
     npm run build
-
-# ============ 运行阶段 ============
-FROM node:20-alpine
-
-# Prisma 运行时需要系统级 openssl
-RUN apk add --no-cache openssl
-
-EXPOSE 3000
-WORKDIR /app
-
-ENV NODE_ENV=test
-
-# 从构建阶段按需复制
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/app/generated ./app/generated
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/scripts ./scripts
 
 # Turso 远程数据库迁移 + 启动
 CMD ["sh", "-c", "node scripts/turso-migrate.cjs test && npx remix-serve ./build/server/index.js"]
