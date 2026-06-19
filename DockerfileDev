@@ -7,12 +7,12 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # 先复制依赖文件，充分利用 Docker 层缓存
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json .npmrc ./
 
 ENV NODE_ENV=test
 
 # npm ci 比 npm install 更快且确定性更强
-RUN npm ci && npm cache clean --force
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # 生成 Prisma Client（构建时完成，非运行时）
 COPY prisma ./prisma
@@ -39,6 +39,7 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
 
-# Prisma Client 已在构建阶段生成，运行时只需 migrate
-CMD ["sh", "-c", "npx prisma migrate deploy && npx remix-serve ./build/server/index.js"]
+# Turso 远程数据库迁移 + 启动
+CMD ["sh", "-c", "node scripts/turso-migrate.cjs test && npx remix-serve ./build/server/index.js"]

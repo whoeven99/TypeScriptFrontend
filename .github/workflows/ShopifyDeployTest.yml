@@ -32,7 +32,7 @@ jobs:
         SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
         # app的客户端id
         SHOPIFY_API_KEY: "dec512b68e658e4f21588e3d4de0e748"
-      run: shopify app deploy -c shopify.app.test.toml -f
+      run: shopify app deploy -c shopify.app.test.toml --allow-updates --allow-deletes
 
   deploy_render:
     runs-on: ubuntu-latest
