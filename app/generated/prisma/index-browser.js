@@ -133,7 +133,9 @@ exports.Prisma.SessionScalarFieldEnum = {
   accountOwner: 'accountOwner',
   locale: 'locale',
   collaborator: 'collaborator',
-  emailVerified: 'emailVerified'
+  emailVerified: 'emailVerified',
+  refreshToken: 'refreshToken',
+  refreshTokenExpires: 'refreshTokenExpires'
 };
 
 exports.Prisma.SortOrder = {

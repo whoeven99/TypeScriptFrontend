@@ -897,6 +897,8 @@ export namespace Prisma {
     locale: string | null
     collaborator: boolean | null
     emailVerified: boolean | null
+    refreshToken: string | null
+    refreshTokenExpires: Date | null
   }
 
   export type SessionMaxAggregateOutputType = {
@@ -915,6 +917,8 @@ export namespace Prisma {
     locale: string | null
     collaborator: boolean | null
     emailVerified: boolean | null
+    refreshToken: string | null
+    refreshTokenExpires: Date | null
   }
 
   export type SessionCountAggregateOutputType = {
@@ -933,6 +937,8 @@ export namespace Prisma {
     locale: number
     collaborator: number
     emailVerified: number
+    refreshToken: number
+    refreshTokenExpires: number
     _all: number
   }
 
@@ -961,6 +967,8 @@ export namespace Prisma {
     locale?: true
     collaborator?: true
     emailVerified?: true
+    refreshToken?: true
+    refreshTokenExpires?: true
   }
 
   export type SessionMaxAggregateInputType = {
@@ -979,6 +987,8 @@ export namespace Prisma {
     locale?: true
     collaborator?: true
     emailVerified?: true
+    refreshToken?: true
+    refreshTokenExpires?: true
   }
 
   export type SessionCountAggregateInputType = {
@@ -997,6 +1007,8 @@ export namespace Prisma {
     locale?: true
     collaborator?: true
     emailVerified?: true
+    refreshToken?: true
+    refreshTokenExpires?: true
     _all?: true
   }
 
@@ -1102,6 +1114,8 @@ export namespace Prisma {
     locale: string | null
     collaborator: boolean | null
     emailVerified: boolean | null
+    refreshToken: string | null
+    refreshTokenExpires: Date | null
     _count: SessionCountAggregateOutputType | null
     _avg: SessionAvgAggregateOutputType | null
     _sum: SessionSumAggregateOutputType | null
@@ -1139,6 +1153,8 @@ export namespace Prisma {
     locale?: boolean
     collaborator?: boolean
     emailVerified?: boolean
+    refreshToken?: boolean
+    refreshTokenExpires?: boolean
   }, ExtArgs["result"]["session"]>
 
   export type SessionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1157,6 +1173,8 @@ export namespace Prisma {
     locale?: boolean
     collaborator?: boolean
     emailVerified?: boolean
+    refreshToken?: boolean
+    refreshTokenExpires?: boolean
   }, ExtArgs["result"]["session"]>
 
   export type SessionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1175,6 +1193,8 @@ export namespace Prisma {
     locale?: boolean
     collaborator?: boolean
     emailVerified?: boolean
+    refreshToken?: boolean
+    refreshTokenExpires?: boolean
   }, ExtArgs["result"]["session"]>
 
   export type SessionSelectScalar = {
@@ -1193,9 +1213,11 @@ export namespace Prisma {
     locale?: boolean
     collaborator?: boolean
     emailVerified?: boolean
+    refreshToken?: boolean
+    refreshTokenExpires?: boolean
   }
 
-  export type SessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "state" | "isOnline" | "scope" | "expires" | "accessToken" | "userId" | "firstName" | "lastName" | "email" | "accountOwner" | "locale" | "collaborator" | "emailVerified", ExtArgs["result"]["session"]>
+  export type SessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "state" | "isOnline" | "scope" | "expires" | "accessToken" | "userId" | "firstName" | "lastName" | "email" | "accountOwner" | "locale" | "collaborator" | "emailVerified" | "refreshToken" | "refreshTokenExpires", ExtArgs["result"]["session"]>
 
   export type $SessionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Session"
@@ -1216,6 +1238,8 @@ export namespace Prisma {
       locale: string | null
       collaborator: boolean | null
       emailVerified: boolean | null
+      refreshToken: string | null
+      refreshTokenExpires: Date | null
     }, ExtArgs["result"]["session"]>
     composites: {}
   }
@@ -1654,6 +1678,8 @@ export namespace Prisma {
     readonly locale: FieldRef<"Session", 'String'>
     readonly collaborator: FieldRef<"Session", 'Boolean'>
     readonly emailVerified: FieldRef<"Session", 'Boolean'>
+    readonly refreshToken: FieldRef<"Session", 'String'>
+    readonly refreshTokenExpires: FieldRef<"Session", 'DateTime'>
   }
     
 
@@ -2044,7 +2070,9 @@ export namespace Prisma {
     accountOwner: 'accountOwner',
     locale: 'locale',
     collaborator: 'collaborator',
-    emailVerified: 'emailVerified'
+    emailVerified: 'emailVerified',
+    refreshToken: 'refreshToken',
+    refreshTokenExpires: 'refreshTokenExpires'
   };
 
   export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
@@ -2135,6 +2163,8 @@ export namespace Prisma {
     locale?: StringNullableFilter<"Session"> | string | null
     collaborator?: BoolNullableFilter<"Session"> | boolean | null
     emailVerified?: BoolNullableFilter<"Session"> | boolean | null
+    refreshToken?: StringNullableFilter<"Session"> | string | null
+    refreshTokenExpires?: DateTimeNullableFilter<"Session"> | Date | string | null
   }
 
   export type SessionOrderByWithRelationInput = {
@@ -2153,6 +2183,8 @@ export namespace Prisma {
     locale?: SortOrderInput | SortOrder
     collaborator?: SortOrderInput | SortOrder
     emailVerified?: SortOrderInput | SortOrder
+    refreshToken?: SortOrderInput | SortOrder
+    refreshTokenExpires?: SortOrderInput | SortOrder
   }
 
   export type SessionWhereUniqueInput = Prisma.AtLeast<{
@@ -2174,6 +2206,8 @@ export namespace Prisma {
     locale?: StringNullableFilter<"Session"> | string | null
     collaborator?: BoolNullableFilter<"Session"> | boolean | null
     emailVerified?: BoolNullableFilter<"Session"> | boolean | null
+    refreshToken?: StringNullableFilter<"Session"> | string | null
+    refreshTokenExpires?: DateTimeNullableFilter<"Session"> | Date | string | null
   }, "id">
 
   export type SessionOrderByWithAggregationInput = {
@@ -2192,6 +2226,8 @@ export namespace Prisma {
     locale?: SortOrderInput | SortOrder
     collaborator?: SortOrderInput | SortOrder
     emailVerified?: SortOrderInput | SortOrder
+    refreshToken?: SortOrderInput | SortOrder
+    refreshTokenExpires?: SortOrderInput | SortOrder
     _count?: SessionCountOrderByAggregateInput
     _avg?: SessionAvgOrderByAggregateInput
     _max?: SessionMaxOrderByAggregateInput
@@ -2218,6 +2254,8 @@ export namespace Prisma {
     locale?: StringNullableWithAggregatesFilter<"Session"> | string | null
     collaborator?: BoolNullableWithAggregatesFilter<"Session"> | boolean | null
     emailVerified?: BoolNullableWithAggregatesFilter<"Session"> | boolean | null
+    refreshToken?: StringNullableWithAggregatesFilter<"Session"> | string | null
+    refreshTokenExpires?: DateTimeNullableWithAggregatesFilter<"Session"> | Date | string | null
   }
 
   export type SessionCreateInput = {
@@ -2236,6 +2274,8 @@ export namespace Prisma {
     locale?: string | null
     collaborator?: boolean | null
     emailVerified?: boolean | null
+    refreshToken?: string | null
+    refreshTokenExpires?: Date | string | null
   }
 
   export type SessionUncheckedCreateInput = {
@@ -2254,6 +2294,8 @@ export namespace Prisma {
     locale?: string | null
     collaborator?: boolean | null
     emailVerified?: boolean | null
+    refreshToken?: string | null
+    refreshTokenExpires?: Date | string | null
   }
 
   export type SessionUpdateInput = {
@@ -2272,6 +2314,8 @@ export namespace Prisma {
     locale?: NullableStringFieldUpdateOperationsInput | string | null
     collaborator?: NullableBoolFieldUpdateOperationsInput | boolean | null
     emailVerified?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    refreshToken?: NullableStringFieldUpdateOperationsInput | string | null
+    refreshTokenExpires?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type SessionUncheckedUpdateInput = {
@@ -2290,6 +2334,8 @@ export namespace Prisma {
     locale?: NullableStringFieldUpdateOperationsInput | string | null
     collaborator?: NullableBoolFieldUpdateOperationsInput | boolean | null
     emailVerified?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    refreshToken?: NullableStringFieldUpdateOperationsInput | string | null
+    refreshTokenExpires?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type SessionCreateManyInput = {
@@ -2308,6 +2354,8 @@ export namespace Prisma {
     locale?: string | null
     collaborator?: boolean | null
     emailVerified?: boolean | null
+    refreshToken?: string | null
+    refreshTokenExpires?: Date | string | null
   }
 
   export type SessionUpdateManyMutationInput = {
@@ -2326,6 +2374,8 @@ export namespace Prisma {
     locale?: NullableStringFieldUpdateOperationsInput | string | null
     collaborator?: NullableBoolFieldUpdateOperationsInput | boolean | null
     emailVerified?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    refreshToken?: NullableStringFieldUpdateOperationsInput | string | null
+    refreshTokenExpires?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type SessionUncheckedUpdateManyInput = {
@@ -2344,6 +2394,8 @@ export namespace Prisma {
     locale?: NullableStringFieldUpdateOperationsInput | string | null
     collaborator?: NullableBoolFieldUpdateOperationsInput | boolean | null
     emailVerified?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    refreshToken?: NullableStringFieldUpdateOperationsInput | string | null
+    refreshTokenExpires?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -2427,6 +2479,8 @@ export namespace Prisma {
     locale?: SortOrder
     collaborator?: SortOrder
     emailVerified?: SortOrder
+    refreshToken?: SortOrder
+    refreshTokenExpires?: SortOrder
   }
 
   export type SessionAvgOrderByAggregateInput = {
@@ -2449,6 +2503,8 @@ export namespace Prisma {
     locale?: SortOrder
     collaborator?: SortOrder
     emailVerified?: SortOrder
+    refreshToken?: SortOrder
+    refreshTokenExpires?: SortOrder
   }
 
   export type SessionMinOrderByAggregateInput = {
@@ -2467,6 +2523,8 @@ export namespace Prisma {
     locale?: SortOrder
     collaborator?: SortOrder
     emailVerified?: SortOrder
+    refreshToken?: SortOrder
+    refreshTokenExpires?: SortOrder
   }
 
   export type SessionSumOrderByAggregateInput = {

@@ -105,7 +105,9 @@ exports.Prisma.SessionScalarFieldEnum = {
   accountOwner: 'accountOwner',
   locale: 'locale',
   collaborator: 'collaborator',
-  emailVerified: 'emailVerified'
+  emailVerified: 'emailVerified',
+  refreshToken: 'refreshToken',
+  refreshTokenExpires: 'refreshTokenExpires'
 };
 
 exports.Prisma.SortOrder = {
@@ -151,7 +153,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
@@ -170,13 +172,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:dev.sqlite\"\n}\n\nmodel Session {\n  id            String    @id\n  shop          String\n  state         String\n  isOnline      Boolean   @default(false)\n  scope         String?\n  expires       DateTime?\n  accessToken   String\n  userId        BigInt?\n  firstName     String?\n  lastName      String?\n  email         String?\n  accountOwner  Boolean   @default(false)\n  locale        String?\n  collaborator  Boolean?  @default(false)\n  emailVerified Boolean?  @default(false)\n}\n",
-  "inlineSchemaHash": "6ae361cb9137cb69f6816a1379743b18c0e194ba72d5f8f1cab99a8669aed6e1",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:dev.sqlite\"\n}\n\nmodel Session {\n  id                  String    @id\n  shop                String\n  state               String\n  isOnline            Boolean   @default(false)\n  scope               String?\n  expires             DateTime?\n  accessToken         String\n  userId              BigInt?\n  firstName           String?\n  lastName            String?\n  email               String?\n  accountOwner        Boolean   @default(false)\n  locale              String?\n  collaborator        Boolean?  @default(false)\n  emailVerified       Boolean?  @default(false)\n  refreshToken        String?\n  refreshTokenExpires DateTime?\n}\n",
+  "inlineSchemaHash": "3a0f9b92c6e7ce940346ac6eec01a168b33477c8125f48f453bd7e5d98504918",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"isOnline\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"accessToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"BigInt\"},{\"name\":\"firstName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"accountOwner\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"collaborator\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"emailVerified\",\"kind\":\"scalar\",\"type\":\"Boolean\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"isOnline\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"accessToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"BigInt\"},{\"name\":\"firstName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"accountOwner\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"collaborator\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"emailVerified\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"refreshToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"refreshTokenExpires\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),
