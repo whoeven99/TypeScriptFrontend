@@ -113,7 +113,6 @@ export type TranslationV4Job = {
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
-  testMode: boolean;
   /** 任务来源标识（TsFrontend）。worker 据此区分入口。 */
   taskSource?: string | null;
   status: TranslationV4Status;

@@ -234,10 +234,13 @@ function JobCard({
   };
 
   const totalItems = m.translateTotal || m.initTotal || 0;
-  const overallMs = stageElapsedMs({
-    startedAt: job.createdAt,
-    endedAt: job.isTerminal ? job.updatedAt : null,
-  });
+  const hideDuration = job.status === "PAUSED" || job.status === "CANCELLED";
+  const overallMs = hideDuration
+    ? null
+    : stageElapsedMs({
+        startedAt: job.createdAt,
+        endedAt: job.isTerminal ? job.updatedAt : null,
+      });
 
   return (
     <Card size="small" style={{ marginBottom: 12 }}>
@@ -249,7 +252,6 @@ function JobCard({
           <Tag color={STATUS_COLOR[job.status] ?? "default"}>
             {job.statusLabel}
           </Tag>
-          {job.testMode ? <Tag color="purple">测试模式</Tag> : null}
           <Text type="secondary" style={{ fontSize: 12 }}>
             {job.modules.map((mod) => MODULE_LABELS[mod] ?? mod).join(" · ")}
           </Text>
@@ -299,7 +301,7 @@ function JobCard({
             : current || pausedHere || idx < activeStage
               ? stageRatio(idx)
               : 0;
-          const ms = stageElapsedMs(timings[key]);
+          const ms = hideDuration ? null : stageElapsedMs(timings[key]);
           return (
             <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
               <Text
@@ -383,7 +385,6 @@ export default function AppTranslateV4() {
   const [limitPerType, setLimitPerType] = useState<number>(20);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
-  const [testMode, setTestMode] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const localeOptions = useMemo(
@@ -465,7 +466,6 @@ export default function AppTranslateV4() {
           limitPerType,
           isCover,
           isHandle,
-          testMode,
         }),
       });
       const data = await res.json();
@@ -489,7 +489,6 @@ export default function AppTranslateV4() {
     limitPerType,
     isCover,
     isHandle,
-    testMode,
     refreshList,
     refreshQuota,
   ]);
@@ -585,7 +584,6 @@ export default function AppTranslateV4() {
           <Title level={5} style={{ margin: 0 }}>
             创建翻译任务
           </Title>
-          <Tag color="geekblue">{TS_FRONTEND_TASK_SOURCE}</Tag>
         </Flex>
         <Divider style={{ margin: "12px 0" }} />
 
@@ -661,10 +659,6 @@ export default function AppTranslateV4() {
             <Space size={6}>
               <Switch checked={isHandle} onChange={setIsHandle} size="small" />
               <Text>翻译 handle</Text>
-            </Space>
-            <Space size={6}>
-              <Switch checked={testMode} onChange={setTestMode} size="small" />
-              <Text>测试模式</Text>
             </Space>
           </Space>
           <Button type="primary" loading={creating} onClick={handleCreate}>

@@ -243,7 +243,6 @@ export type TranslationJobProgressSummary = {
   modules: string[];
   aiModel: string;
   taskSource: string | null;
-  testMode: boolean;
   createdAt: string;
   updatedAt: string;
   errorMessage: string | null;
@@ -290,7 +289,6 @@ function toProgressSummary(
     modules: job.modules,
     aiModel: job.aiModel,
     taskSource: job.taskSource ?? null,
-    testMode: job.testMode,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     errorMessage,
