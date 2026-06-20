@@ -271,6 +271,17 @@ function JobCard({
             </Button>
           ) : null}
           <Text type="secondary" style={{ fontSize: 12 }}>
+            <span
+              style={{
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                fontSize: 11,
+                opacity: 0.45,
+                marginRight: 8,
+              }}
+              title={job.taskId}
+            >
+              #{job.taskId.slice(0, 8)}
+            </span>
             创建于 {fmtTime(job.createdAt)}
             {job.status === "COMPLETED" ? ` · 完成于 ${fmtTime(job.updatedAt)}` : ""}
           </Text>
