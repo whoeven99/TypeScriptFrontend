@@ -26,6 +26,45 @@ type SupportConversation = {
 const OPEN_POLL_MS = 5000;
 const BADGE_POLL_MS = 30000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TAWK_HIDE_STYLE_ID = "hide-tawk-translate-v4";
+
+type TawkApi = {
+  hideWidget?: () => void;
+  showWidget?: () => void;
+  onLoad?: () => void;
+};
+
+/** v4 页使用自建客服，屏蔽 root.tsx 全局注入的 Tawk.to 绿色气泡。 */
+function useHideTawkWidget() {
+  useEffect(() => {
+    const win = window as Window & { Tawk_API?: TawkApi };
+    const hideTawk = () => win.Tawk_API?.hideWidget?.();
+
+    if (win.Tawk_API?.hideWidget) {
+      hideTawk();
+    } else {
+      win.Tawk_API = win.Tawk_API ?? {};
+      const prevOnLoad = win.Tawk_API.onLoad;
+      win.Tawk_API.onLoad = () => {
+        prevOnLoad?.();
+        hideTawk();
+      };
+    }
+
+    if (!document.getElementById(TAWK_HIDE_STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = TAWK_HIDE_STYLE_ID;
+      style.textContent =
+        "#tawk-bubble-container, .tawk-min-container { display: none !important; }";
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      document.getElementById(TAWK_HIDE_STYLE_ID)?.remove();
+      win.Tawk_API?.showWidget?.();
+    };
+  }, []);
+}
 
 async function fetchConversation(
   markSeen: boolean,
@@ -56,6 +95,8 @@ async function postSupport(body: Record<string, unknown>): Promise<{
 }
 
 export function SupportChatWidget() {
+  useHideTawkWidget();
+
   const [open, setOpen] = useState(false);
   const [conversation, setConversation] = useState<SupportConversation | null>(null);
   const [draft, setDraft] = useState("");
