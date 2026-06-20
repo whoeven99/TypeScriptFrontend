@@ -30,6 +30,10 @@ import {
   type TranslationV4Status,
 } from "~/server/translateV4/types";
 import { SupportChatWidget } from "./SupportChatWidget";
+import {
+  createTranslateV4Tasks,
+  formatCreateTasksMessage,
+} from "~/lib/createTranslateV4Tasks";
 
 const { Title, Text } = Typography;
 
@@ -379,7 +383,7 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [source, setSource] = useState<string>(primaryLocale || "zh-CN");
-  const [target, setTarget] = useState<string | undefined>(undefined);
+  const [targets, setTargets] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
   const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
   const [limitPerType, setLimitPerType] = useState<number>(20);
@@ -449,31 +453,37 @@ export default function AppTranslateV4() {
   );
 
   const handleCreate = useCallback(async () => {
-    if (!target) {
-      message.warning("请选择目标语言");
-      return;
-    }
     setCreating(true);
     try {
-      const res = await fetch("/api/translate-v4/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source,
-          target,
-          modules,
-          aiModel,
-          limitPerType,
-          isCover,
-          isHandle,
-        }),
+      const result = await createTranslateV4Tasks({
+        source,
+        targets,
+        modules,
+        aiModel,
+        limitPerType,
+        isCover,
+        isHandle,
+        targetOptions,
       });
-      const data = await res.json();
-      if (data?.ok) {
-        message.success("任务已创建，worker 即将开始处理");
+
+      if (result.validationError) {
+        message.warning(result.validationError);
+        return;
+      }
+
+      const summary = formatCreateTasksMessage(result);
+      if (result.created.length > 0) {
+        message.success(summary);
         await Promise.all([refreshList(), refreshQuota()]);
       } else {
-        message.error(data?.error || "创建失败");
+        message.error(summary);
+      }
+
+      if (result.failed.length > 0 && result.created.length > 0) {
+        message.warning(
+          result.failed.map((f) => `${f.target}: ${f.error}`).join("；"),
+          6,
+        );
       }
     } catch (err) {
       console.error("[translateV4] create failed:", err);
@@ -483,12 +493,13 @@ export default function AppTranslateV4() {
     }
   }, [
     source,
-    target,
+    targets,
     modules,
     aiModel,
     limitPerType,
     isCover,
     isHandle,
+    targetOptions,
     refreshList,
     refreshQuota,
   ]);
@@ -596,18 +607,21 @@ export default function AppTranslateV4() {
               options={localeOptions}
               onChange={(v) => {
                 setSource(v);
-                if (v === target) setTarget(undefined);
+                setTargets((prev) => prev.filter((t) => t !== v));
               }}
             />
           </div>
-          <div style={{ minWidth: 180 }}>
-            <Text type="secondary">目标语言</Text>
+          <div style={{ minWidth: 280, flex: "1 1 280px" }}>
+            <Text type="secondary">目标语言（可多选）</Text>
             <Select
+              mode="multiple"
+              allowClear
               style={{ width: "100%", marginTop: 4 }}
-              placeholder="选择目标语言"
-              value={target}
+              placeholder="选择一种或多种目标语言"
+              value={targets}
               options={targetOptions}
-              onChange={setTarget}
+              maxTagCount="responsive"
+              onChange={(values) => setTargets(values)}
             />
           </div>
           <div style={{ minWidth: 180 }}>
@@ -662,7 +676,7 @@ export default function AppTranslateV4() {
             </Space>
           </Space>
           <Button type="primary" loading={creating} onClick={handleCreate}>
-            创建任务
+            {targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
           </Button>
         </Flex>
       </Card>
