@@ -17,7 +17,7 @@
 |---|---|---|
 | 建任务 API | `app/routes/api.translate-v4.tasks.ts` | ✅ 写 Cosmos + 推 Redis hint |
 | 任务控制（暂停/恢复/取消） | `app/routes/api.translate-v4.task-action.ts` | ✅ |
-| 进度查询 | `app/routes/api.translate-v4.task-progress.ts` | ✅ 读 Cosmos |
+| 进度查询 | `app/routes/api.translate-v4.task-progress.ts` | ✅ Cosmos + Redis 合并（`mergeV4JobMetrics`） |
 | 额度查询 | `app/routes/api.translate-v4.quota.ts` → `server/translateV4/quota.server.ts` | ✅ 调 Java `/quota/query`（走 `SERVER_URL`） |
 | v4 UI 入口 | `app/routes/app.translate-v4/route.tsx`（653 行） | ✅ 已实现 |
 | v4 服务层 | `app/server/translateV4/*`（cosmos/redis/progress/token/quota/resumeStatus/locale/types） | ✅ 与旧链路完全解耦 |
@@ -73,7 +73,7 @@ PAYMENT_GATEWAY / SELLING_PLAN(_GROUP) / SHOP / ARTICLE / BLOG / PAGE。
 - **退出标准**：一个完整任务跑通、结果与 v2 同店同语言抽样一致、额度扣减正确。
 
 **前置环境检查清单**
-- 前端：`SERVER_URL`（Java 额度）、`COSMOS_*_V4`、`REDIS_*_V4` 已配（见 `.env`）。
+- 前端：`SERVER_URL`（Java 额度）、`COSMOS_*_V4`、**`REDIS_URL_V4` 必须与 Spark worker 的 `REDIS_URL` 指向同一实例**（test 为 `sparkredistest`，勿用 `azure-cache-dev`）。
 - worker：`TSF_SERVER_URL`（= Java 额度 base）、Cosmos/Redis 同一套、`WORKER_STAGES` 默认全开。
 - 确认前端写入的 Cosmos 容器 = worker `cosmosV4.ts` 读取的容器（同 `COSMOS_TRANSLATION_V4_JOBS_CONTAINER_V4`）。
 

@@ -136,7 +136,21 @@ const STATUS_COLOR: Partial<Record<TranslationV4Status, string>> = {
   VERIFYING: "processing",
 };
 
-function stageOf(status: TranslationV4Status): 0 | 1 | 2 | 3 | 4 {
+function stageOf(
+  status: TranslationV4Status,
+  errorStage?: string | null,
+): 0 | 1 | 2 | 3 | 4 {
+  if (status === "PAUSED" || status === "FAILED") {
+    switch (errorStage) {
+      case "WRITEBACK":
+        return 2;
+      case "VERIFY":
+        return 3;
+      case "TRANSLATE":
+      default:
+        return 1;
+    }
+  }
   if (["INIT_QUEUED", "INITIALIZING"].includes(status)) return 0;
   if (status === "INIT_DONE") return 1;
   if (["TRANSLATE_QUEUED", "TRANSLATING"].includes(status)) return 1;
@@ -183,7 +197,8 @@ function JobCard({
   job: TranslationJobProgressSummary;
   onAction: (taskId: string, action: "pause" | "resume" | "cancel") => void | Promise<void>;
 }) {
-  const activeStage = stageOf(job.status);
+  const activeStage = stageOf(job.status, job.errorStage);
+  const isPaused = job.status === "PAUSED";
   const m = job.metrics;
   const timings = job.stageTimings ?? {};
 
@@ -265,14 +280,22 @@ function JobCard({
       <div style={{ marginTop: 12 }}>
         {STAGE_DEFS.map(({ name, key }, idx) => {
           const done = job.status === "COMPLETED" || idx < activeStage;
-          const current = idx === activeStage && !job.isTerminal;
-          const percent = done ? 100 : current || idx < activeStage ? stageRatio(idx) : 0;
+          const current =
+            idx === activeStage && !job.isTerminal && !isPaused;
+          const pausedHere = isPaused && idx === activeStage;
+          const percent = done
+            ? 100
+            : current || pausedHere || idx < activeStage
+              ? stageRatio(idx)
+              : 0;
           const ms = stageElapsedMs(timings[key]);
           return (
             <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
               <Text
                 style={{ width: 44, fontSize: 12, flexShrink: 0 }}
-                type={done ? "success" : current ? "warning" : "secondary"}
+                type={
+                  done ? "success" : current || pausedHere ? "warning" : "secondary"
+                }
               >
                 {name}
               </Text>
@@ -281,8 +304,16 @@ function JobCard({
                 percent={percent}
                 showInfo={false}
                 size="small"
-                status={job.status === "FAILED" && current ? "exception" : "active"}
-                strokeColor={done ? "#1d9e75" : undefined}
+                status={
+                  job.status === "FAILED" && current
+                    ? "exception"
+                    : pausedHere
+                      ? "normal"
+                      : "active"
+                }
+                strokeColor={
+                  done ? "#1d9e75" : pausedHere ? "#faad14" : undefined
+                }
               />
               <Text
                 type="secondary"
@@ -316,7 +347,7 @@ function JobCard({
         </Text>
       </Space>
 
-      {job.errorMessage ? (
+      {job.errorMessage && job.statusLabel !== job.errorMessage ? (
         <div style={{ marginTop: 6 }}>
           <Text type="danger" style={{ fontSize: 12 }}>
             {job.errorStage ? `[${job.errorStage}] ` : ""}

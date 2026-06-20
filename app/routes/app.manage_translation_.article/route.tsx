@@ -62,7 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           resourceType: "ARTICLE",
           startCursor: startCursor.cursor,
           locale: searchTerm || "",
-        }); // 处理逻辑
+        });
         console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
 
         return {
@@ -88,7 +88,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           resourceType: "ARTICLE",
           endCursor: endCursor.cursor,
           locale: searchTerm || "",
-        }); // 处理逻辑
+        });
         console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
 
         return {

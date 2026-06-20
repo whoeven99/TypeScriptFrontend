@@ -8,8 +8,8 @@
  * 数据源仍是 Shopify（与 Java 一样需翻页拉取），本模块不提速，只保证去 Java + 口径一致。
  *
  * 覆盖范围（见 LOCAL_COUNT_SPEC）：仅纳入「v4 有对应 module」且「非 id-based 发布过滤」
- * 的类型。COLLECTION/PAGE/ARTICLE（带 published 过滤的 id-based）、无 v4 module 的
- * Notifications/Policies/Shipping、以及 Theme，暂仍走 Java。
+ * 的类型。COLLECTION/PAGE/ARTICLE、无 v4 module 的 Notifications/Policies/Shipping、
+ * 以及 Theme，暂仍走 Java。
  */
 import { shouldIncludeFieldV2 } from "./translationFilter";
 import { getTranslateV4RedisClient } from "./redis.server";

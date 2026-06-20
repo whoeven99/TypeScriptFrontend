@@ -16,6 +16,9 @@ export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   currentModule: string | null;
   translateStartedAt: string | null;
   progressUpdatedAt: string | null;
+  /** worker 触发暂停后、Cosmos 尚未落盘前的 Redis 信号 */
+  pausePending: boolean;
+  pauseReason: string | null;
 };
 
 /** 合并 Cosmos 持久化 metrics 与 worker 实时写入 Redis 的进度。 */
@@ -54,10 +57,27 @@ export function mergeV4JobMetrics(
     currentModule: redisProgress.currentModule ?? null,
     translateStartedAt: redisProgress.translateStartedAt ?? null,
     progressUpdatedAt: redisProgress.updatedAt ?? null,
+    pausePending: redisProgress.pausePending === "1",
+    pauseReason: redisProgress.pauseReason?.trim() || null,
   };
 }
 
-export function translationV4StatusLabel(status: TranslationV4Status): string {
+/** UI 展示用状态：Redis 已标记暂停但 Cosmos 仍为 TRANSLATING 时提前显示暂停。 */
+export function resolveV4DisplayStatus(
+  status: TranslationV4Status,
+  metrics: Pick<TranslationV4MergedMetrics, "pausePending">,
+): TranslationV4Status {
+  if (metrics.pausePending && status === "TRANSLATING") return "PAUSED";
+  return status;
+}
+
+export function translationV4StatusLabel(
+  status: TranslationV4Status,
+  errorMessage?: string | null,
+): string {
+  if (status === "PAUSED" && errorMessage?.trim()) {
+    return errorMessage.trim();
+  }
   const labels: Record<TranslationV4Status, string> = {
     CREATED: "已创建",
     INIT_QUEUED: "等待初始化",
@@ -87,9 +107,25 @@ function ratioPercent(done: number, total: number): number | null {
 export function computeTranslationV4ProgressPercent(
   status: TranslationV4Status,
   metrics: TranslationV4Metrics,
+  errorStage?: string | null,
 ): number | null {
   if (status === "COMPLETED") return 100;
   if (TERMINAL_V4_STATUSES.includes(status)) return null;
+
+  if (status === "PAUSED") {
+    switch (errorStage) {
+      case "WRITEBACK":
+        return ratioPercent(metrics.writebackDone, metrics.writebackTotal);
+      case "VERIFY":
+        return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
+      case "TRANSLATE":
+      default:
+        if (metrics.translateUnitTotal > 0) {
+          return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+        }
+        return ratioPercent(metrics.translateDone, metrics.translateTotal);
+    }
+  }
 
   if (
     status === "INIT_QUEUED" ||
@@ -137,8 +173,24 @@ function formatTranslateDetail(
 export function buildTranslationV4StageSummary(
   status: TranslationV4Status,
   metrics: TranslationV4MergedMetrics,
+  errorMessage?: string | null,
+  errorStage?: string | null,
 ): string {
-  const label = translationV4StatusLabel(status);
+  const label = translationV4StatusLabel(status, errorMessage);
+
+  if (status === "PAUSED") {
+    if (errorStage === "TRANSLATE" || !errorStage) {
+      const detail = formatTranslateDetail(metrics);
+      return [label, detail].filter(Boolean).join(" · ");
+    }
+    if (errorStage === "WRITEBACK" && metrics.writebackTotal > 0) {
+      return `${label} · ${metrics.writebackDone}/${metrics.writebackTotal}`;
+    }
+    if (errorStage === "VERIFY" && metrics.verifyTotal > 0) {
+      return `${label} · ${metrics.verifyDone}/${metrics.verifyTotal}`;
+    }
+    return label;
+  }
 
   if (
     status === "TRANSLATING" ||
@@ -222,13 +274,17 @@ function toProgressSummary(
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): TranslationJobProgressSummary {
-  const status = job.status;
+  const displayStatus = resolveV4DisplayStatus(job.status, metrics);
+  const errorMessage = job.errorMessage ?? metrics.pauseReason;
+  const errorStage =
+    job.errorStage ?? (displayStatus === "PAUSED" ? "TRANSLATE" : null);
   return {
     taskId: job.id,
-    status,
-    statusLabel: translationV4StatusLabel(status),
-    isActive: ACTIVE_V4_STATUSES.includes(status),
-    isTerminal: TERMINAL_V4_STATUSES.includes(status),
+    status: displayStatus,
+    statusLabel: translationV4StatusLabel(displayStatus, errorMessage),
+    isActive:
+      ACTIVE_V4_STATUSES.includes(job.status) && !metrics.pausePending,
+    isTerminal: TERMINAL_V4_STATUSES.includes(job.status),
     source: job.source,
     target: job.target,
     modules: job.modules,
@@ -237,11 +293,20 @@ function toProgressSummary(
     testMode: job.testMode,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
-    errorMessage: job.errorMessage,
-    errorStage: job.errorStage,
-    stageSummary: buildTranslationV4StageSummary(status, metrics),
+    errorMessage,
+    errorStage,
+    stageSummary: buildTranslationV4StageSummary(
+      displayStatus,
+      metrics,
+      errorMessage,
+      errorStage,
+    ),
     stageTimings: job.stageTimings ?? null,
-    progressPercent: computeTranslationV4ProgressPercent(status, metrics),
+    progressPercent: computeTranslationV4ProgressPercent(
+      displayStatus,
+      metrics,
+      errorStage,
+    ),
     usedTokens: metrics.usedTokens,
     metrics: {
       initDone: metrics.initDone,
