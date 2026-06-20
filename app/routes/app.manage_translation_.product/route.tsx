@@ -109,6 +109,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const url = new URL(request.url);
@@ -453,6 +454,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!confirmData:
       const data = await registerManageTranslations({
         admin,
+        shop,
         confirmData,
       });
 

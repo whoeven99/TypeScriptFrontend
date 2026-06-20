@@ -42,6 +42,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
@@ -180,6 +181,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!confirmData:
       const data = await registerManageTranslations({
         admin,
+        shop,
         confirmData,
       });
 

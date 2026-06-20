@@ -26,7 +26,10 @@ import {
   TranslateImage,
   storageTranslateImage,
 } from "~/api/JavaServer";
-import { getProductsItemsCount } from "~/server/translateV4/itemsCount.server";
+import {
+  getItemsCountByLabel,
+  isLocalItemsCountSupported,
+} from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
@@ -95,11 +98,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!itemsCount:
       try {
-        // Products 试点：改为 TSF 本地计算（v4 口径），其余类型仍走 Java。
-        if (itemsCount.resourceType === "Products") {
-          const response = await getProductsItemsCount({
+        // 已支持的类型改为 TSF 本地计算（v4 口径），其余仍走 Java。
+        if (isLocalItemsCountSupported(itemsCount.resourceType)) {
+          const response = await getItemsCountByLabel({
             admin,
+            shop,
             target: itemsCount.target,
+            resourceTypeLabel: itemsCount.resourceType,
           });
           return { success: true, errorCode: 0, errorMsg: "", response };
         }

@@ -158,6 +158,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!confirmData:
       const data = await registerManageTranslations({
         admin,
+        shop,
         confirmData,
       });
 

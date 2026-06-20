@@ -9,6 +9,10 @@
  * 关键点：confirmData 里 `locale` 是「源语言」，`target` 才是要写入的「目标语言」。
  * Shopify 的 TranslationInput.locale / translationsRemove.locales 必须用 `target`。
  */
+import {
+  cachedModulesFromResourceIds,
+  invalidateItemsCount,
+} from "~/server/translateV4/itemsCount.server";
 
 /** 仅依赖 admin.graphql，这里用最小结构化类型避免与 SDK 版本耦合。 */
 export type AdminGraphqlClient = {
@@ -114,9 +118,12 @@ function resultFor(
  */
 export async function registerManageTranslations({
   admin,
+  shop,
   confirmData,
 }: {
   admin: AdminGraphqlClient;
+  /** 传入则保存后失效对应统计缓存（汇总页据此重算）；不传则跳过失效。 */
+  shop?: string;
   confirmData: ManageTranslationItem[];
 }): Promise<ManageSaveResult[]> {
   const results: ManageSaveResult[] = [];
@@ -189,6 +196,17 @@ export async function registerManageTranslations({
       for (const item of group) {
         results.push(resultFor(item, false, "translationsRemove request failed"));
       }
+    }
+  }
+
+  // 保存改变了译文 → 失效对应类型的统计缓存，汇总页下次重算（best-effort）。
+  if (shop && confirmData.length) {
+    const locale = confirmData.find((i) => i.target)?.target;
+    if (locale) {
+      const modules = cachedModulesFromResourceIds(
+        confirmData.map((i) => i.resourceId),
+      );
+      await invalidateItemsCount(shop, locale, modules);
     }
   }
 
