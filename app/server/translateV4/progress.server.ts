@@ -1,5 +1,6 @@
-import { getTranslateV4RedisClient, v4ProgressKey } from "./redis.server";
+import { getTranslateV4RedisClient, v4ControlKey, v4ProgressKey, type V4ControlAction } from "./redis.server";
 import { getV4Job, listV4Jobs } from "./cosmos.server";
+import { escalateStuckPauseIfNeeded } from "./pauseReconcile.server";
 import {
   ACTIVE_V4_STATUSES,
   TERMINAL_V4_STATUSES,
@@ -19,12 +20,17 @@ export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   /** worker 触发暂停后、Cosmos 尚未落盘前的 Redis 信号 */
   pausePending: boolean;
   pauseReason: string | null;
+  /** 控制键仍 pending（API 已写入、worker 尚未消费） */
+  controlAction: V4ControlAction | null;
+  /** API 写入 pausePending 的时间戳（ms） */
+  pauseRequestedAt: string | null;
 };
 
 /** 合并 Cosmos 持久化 metrics 与 worker 实时写入 Redis 的进度。 */
 export function mergeV4JobMetrics(
   job: TranslationV4Job,
   redisProgress: Record<string, string>,
+  controlAction: V4ControlAction | null = null,
 ): TranslationV4MergedMetrics {
   // 计数器在单个 run 内单调递增；两源取 max 而非「redis || cosmos」，避免某一源瞬时
   // 为 0/空（pause/resume 切换、Redis 与 Cosmos 短暂不一致）时进度回退闪 0。
@@ -51,6 +57,8 @@ export function mergeV4JobMetrics(
     progressUpdatedAt: redisProgress.updatedAt ?? null,
     pausePending: redisProgress.pausePending === "1",
     pauseReason: redisProgress.pauseReason?.trim() || null,
+    controlAction,
+    pauseRequestedAt: redisProgress.pauseRequestedAt ?? null,
   };
 }
 
@@ -272,7 +280,6 @@ function toProgressSummary(
   metrics: TranslationV4MergedMetrics,
 ): TranslationJobProgressSummary {
   const displayStatus = resolveV4DisplayStatus(job.status);
-  const errorMessage = job.errorMessage ?? metrics.pauseReason;
   const errorStage =
     job.errorStage ?? (displayStatus === "PAUSED" ? "TRANSLATE" : null);
   // 暂停/取消触发的「先写回已翻译」阶段：写回中显示「已暂停/已取消，正在写入」，
@@ -285,16 +292,30 @@ function toProgressSummary(
         : "已暂停，正在写入"
       : null;
   // 已请求暂停/取消但 worker 仍在翻译收尾（尚未进入写回）的过渡态。
-  const isStopping = metrics.pausePending && job.status === "TRANSLATING";
+  const isStopping =
+    job.status === "TRANSLATING" &&
+    (metrics.pausePending ||
+      metrics.controlAction === "pause" ||
+      metrics.controlAction === "cancel");
+  const stoppingLabel =
+    metrics.controlAction === "cancel" || metrics.pauseReason === "已取消"
+      ? "正在取消…"
+      : "正在暂停…";
+  // 过渡态不把 pauseReason 当作 errorMessage 暴露——否则顶部「正在暂停…」与底部
+  // 「已手动暂停」同时出现，语义重复且像两个矛盾状态。
+  const errorMessage =
+    job.errorMessage ?? (isStopping ? null : metrics.pauseReason);
   return {
     taskId: job.id,
     status: displayStatus,
     statusLabel:
       writebackPauseLabel ??
-      (isStopping ? "正在暂停…" : translationV4StatusLabel(displayStatus, errorMessage)),
+      (isStopping ? stoppingLabel : translationV4StatusLabel(displayStatus, errorMessage)),
     isStopping,
     isActive:
-      ACTIVE_V4_STATUSES.includes(job.status) && !metrics.pausePending,
+      ACTIVE_V4_STATUSES.includes(job.status) &&
+      !metrics.pausePending &&
+      !metrics.controlAction,
     isTerminal: TERMINAL_V4_STATUSES.includes(job.status),
     source: job.source,
     target: job.target,
@@ -339,12 +360,60 @@ function toProgressSummary(
 
 async function readRedisProgress(
   taskId: string,
-): Promise<Record<string, string>> {
+): Promise<{ progress: Record<string, string>; control: V4ControlAction | null }> {
   try {
-    return await getTranslateV4RedisClient().hgetall(v4ProgressKey(taskId));
+    const redis = getTranslateV4RedisClient();
+    const [progress, controlRaw] = await Promise.all([
+      redis.hgetall(v4ProgressKey(taskId)),
+      redis.get(v4ControlKey(taskId)),
+    ]);
+    const control =
+      controlRaw === "pause" || controlRaw === "cancel" ? controlRaw : null;
+    return { progress, control };
   } catch {
-    return {};
+    return { progress: {}, control: null };
   }
+}
+
+/** 列表页批量读取活跃翻译任务的 Redis 进度 + 控制键（避免 refresh 后丢失「正在暂停…」）。 */
+async function batchReadRedisForJobs(
+  jobs: TranslationV4Job[],
+): Promise<Map<string, { progress: Record<string, string>; control: V4ControlAction | null }>> {
+  const activeIds = jobs
+    .filter((j) => j.status === "TRANSLATING" || j.status === "TRANSLATE_QUEUED")
+    .map((j) => j.id);
+  const out = new Map<
+    string,
+    { progress: Record<string, string>; control: V4ControlAction | null }
+  >();
+  if (!activeIds.length) return out;
+
+  try {
+    const redis = getTranslateV4RedisClient();
+    const pipeline = redis.pipeline();
+    for (const id of activeIds) {
+      pipeline.hgetall(v4ProgressKey(id));
+      pipeline.get(v4ControlKey(id));
+    }
+    const results = await pipeline.exec();
+    if (!results) return out;
+
+    for (let i = 0; i < activeIds.length; i++) {
+      const progressResult = results[i * 2];
+      const controlResult = results[i * 2 + 1];
+      const progress =
+        progressResult?.[1] && typeof progressResult[1] === "object"
+          ? (progressResult[1] as Record<string, string>)
+          : {};
+      const controlRaw = controlResult?.[1];
+      const control =
+        controlRaw === "pause" || controlRaw === "cancel" ? controlRaw : null;
+      out.set(activeIds[i], { progress, control });
+    }
+  } catch {
+    // non-fatal — 列表仍可用 Cosmos 快照
+  }
+  return out;
 }
 
 /** 单个任务的实时进度摘要（Cosmos + Redis 合并）。 */
@@ -352,10 +421,16 @@ export async function getV4JobProgressSummary(
   shopName: string,
   taskId: string,
 ): Promise<TranslationJobProgressSummary | null> {
-  const job = await getV4Job(shopName, taskId);
+  let job = await getV4Job(shopName, taskId);
   if (!job) return null;
-  const redisProgress = await readRedisProgress(taskId);
-  return toProgressSummary(job, mergeV4JobMetrics(job, redisProgress));
+  const { progress, control } = await readRedisProgress(taskId);
+  const metrics = mergeV4JobMetrics(job, progress, control);
+  const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
+  if (escalated) {
+    job = escalated;
+    return toProgressSummary(job, mergeV4JobMetrics(job, {}, null));
+  }
+  return toProgressSummary(job, metrics);
 }
 
 /**
@@ -371,5 +446,23 @@ export async function listV4JobSummaries(
   const filtered = options?.taskSource
     ? jobs.filter((j) => (j.taskSource ?? null) === options.taskSource)
     : jobs;
-  return filtered.map((job) => toProgressSummary(job, mergeV4JobMetrics(job, {})));
+  const redisByTaskId = await batchReadRedisForJobs(filtered);
+  const summaries: TranslationJobProgressSummary[] = [];
+  for (const job of filtered) {
+    const redis = redisByTaskId.get(job.id);
+    const metrics = mergeV4JobMetrics(
+      job,
+      redis?.progress ?? {},
+      redis?.control ?? null,
+    );
+    const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
+    const finalJob = escalated ?? job;
+    summaries.push(
+      toProgressSummary(
+        finalJob,
+        escalated ? mergeV4JobMetrics(finalJob, {}, null) : metrics,
+      ),
+    );
+  }
+  return summaries;
 }

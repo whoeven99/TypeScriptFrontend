@@ -6,6 +6,7 @@ import {
   getTranslateV4RedisClient,
   V4_HINT_KEYS,
   setV4Control,
+  setV4PausePending,
   clearV4Control,
 } from "~/server/translateV4/redis.server";
 import {
@@ -37,6 +38,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 过程）。仅设控制信号，由 worker 把已翻译的先写回再落 CANCELLED。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "cancel");
+      await setV4PausePending(taskId, "已取消");
       return json({ ok: true, pending: true });
     }
     await updateV4Job(shopName, taskId, { status: "CANCELLED", claimedBy: null });
@@ -52,6 +54,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 状态单调推进，避免 PAUSED 闪现导致「继续」按钮提前出现又消失。仅设控制信号。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "pause");
+      await setV4PausePending(taskId, "已手动暂停");
       return json({ ok: true, pending: true });
     }
     // 排队未运行(TRANSLATE_QUEUED)：没有在飞内容，直接置 PAUSED。

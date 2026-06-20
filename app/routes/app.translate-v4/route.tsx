@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import {
+  Alert,
   Button,
   Card,
   Checkbox,
@@ -195,12 +196,52 @@ const STAGE_DEFS: { name: string; key: StageName }[] = [
   { name: "校验", key: "VERIFY" },
 ];
 
+// 初始化阶段总数未知（worker 仍在翻页枚举 Shopify 资源），无法算百分比 → 用不确定型
+// 滑动条 + 持续递增的「已发现 N 项」+ 动画省略号，传达「正在扫描、一直在动」。
+const INIT_SCAN_CSS = `
+@keyframes v4-indet { 0% { left: -42%; } 100% { left: 100%; } }
+@keyframes v4-dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%,100% { content: "..."; } }
+.v4-indet-track { position: relative; height: 6px; border-radius: 3px; background: #f0f0f0; overflow: hidden; }
+.v4-indet-fill { position: absolute; top: 0; height: 100%; width: 42%; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(22,119,255,0.15), #1677ff, rgba(22,119,255,0.15));
+  animation: v4-indet 1.1s ease-in-out infinite; }
+.v4-dots::after { content: ""; animation: v4-dots 1.2s steps(1) infinite; }
+`;
+
+function InitScanIndicator({
+  initDone,
+  moduleLabel,
+}: {
+  initDone: number;
+  moduleLabel: string | null;
+}) {
+  return (
+    <>
+      <style>{INIT_SCAN_CSS}</style>
+      <div className="v4-indet-track" style={{ flex: 1 }}>
+        <div className="v4-indet-fill" />
+      </div>
+      <Text
+        type="secondary"
+        style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
+      >
+        已发现 {initDone.toLocaleString()} 项
+        {moduleLabel ? ` · ${moduleLabel}` : ""}
+        <span className="v4-dots" />
+      </Text>
+    </>
+  );
+}
+
 function JobCard({
   job,
   onAction,
 }: {
   job: TranslationJobProgressSummary;
-  onAction: (taskId: string, action: "pause" | "resume" | "cancel") => void | Promise<void>;
+  onAction: (
+    taskId: string,
+    action: "pause" | "resume" | "cancel",
+  ) => Promise<boolean>;
 }) {
   const activeStage = stageOf(job.status, job.errorStage);
   const isPaused = job.status === "PAUSED";
@@ -224,12 +265,10 @@ function JobCard({
 
   const runAction = (action: "pause" | "resume" | "cancel") => {
     setPending(action);
-    void Promise.resolve(onAction(job.taskId, action));
-    // 兜底：万一动作失败/状态始终不变（异常），8s 后自动解除 loading，避免卡死。
-    window.setTimeout(
-      () => setPending((p) => (p === action ? null : p)),
-      8000,
-    );
+    void (async () => {
+      const ok = await onAction(job.taskId, action);
+      if (!ok) setPending(null);
+    })();
   };
   const busy = pending !== null;
 
@@ -353,6 +392,8 @@ function JobCard({
               ? stageRatio(idx)
               : 0;
           const ms = hideDuration ? null : stageElapsedMs(timings[key]);
+          // 初始化进行中且总数未知（worker 仍在枚举）→ 不确定型动画 + 已发现计数。
+          const initScanning = idx === 0 && current && m.initTotal <= 0;
           return (
             <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
               <Text
@@ -363,30 +404,43 @@ function JobCard({
               >
                 {name}
               </Text>
-              <Progress
-                style={{ flex: 1, margin: 0 }}
-                percent={percent}
-                showInfo={false}
-                size="small"
-                status={
-                  job.status === "FAILED" && current
-                    ? "exception"
-                    : pausedHere
-                      ? "normal"
-                      : "active"
-                }
-                strokeColor={
-                  done ? "#1d9e75" : pausedHere ? "#faad14" : undefined
-                }
-              />
-              <Text
-                type="secondary"
-                style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
-              >
-                {stageDetail(idx)}
-                {done ? " ✓" : ""}
-                {ms != null ? ` · 耗时 ${formatElapsed(ms)}` : ""}
-              </Text>
+              {initScanning ? (
+                <InitScanIndicator
+                  initDone={m.initDone}
+                  moduleLabel={
+                    m.currentModule
+                      ? MODULE_LABELS[m.currentModule] ?? m.currentModule
+                      : null
+                  }
+                />
+              ) : (
+                <>
+                  <Progress
+                    style={{ flex: 1, margin: 0 }}
+                    percent={percent}
+                    showInfo={false}
+                    size="small"
+                    status={
+                      job.status === "FAILED" && current
+                        ? "exception"
+                        : pausedHere
+                          ? "normal"
+                          : "active"
+                    }
+                    strokeColor={
+                      done ? "#1d9e75" : pausedHere ? "#faad14" : undefined
+                    }
+                  />
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
+                  >
+                    {stageDetail(idx)}
+                    {done ? " ✓" : ""}
+                    {ms != null ? ` · 耗时 ${formatElapsed(ms)}` : ""}
+                  </Text>
+                </>
+              )}
             </Flex>
           );
         })}
@@ -411,7 +465,7 @@ function JobCard({
         </Text>
       </Space>
 
-      {job.errorMessage && job.statusLabel !== job.errorMessage ? (
+      {job.errorMessage && !job.isStopping && job.statusLabel !== job.errorMessage ? (
         <div style={{ marginTop: 6 }}>
           <Text type="danger" style={{ fontSize: 12 }}>
             {job.errorStage ? `[${job.errorStage}] ` : ""}
@@ -497,12 +551,14 @@ export default function AppTranslateV4() {
                   : "已取消";
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
-        } else {
-          message.error(data?.error || "操作失败");
+          return true;
         }
+        message.error(data?.error || "操作失败");
+        return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
         message.error("操作失败，请稍后重试");
+        return false;
       }
     },
     [shop, refreshList, refreshQuota],
@@ -598,9 +654,30 @@ export default function AppTranslateV4() {
       ? Math.min(100, Math.round((quota.usedToken / quota.maxToken) * 100))
       : 0;
 
+  const activeTranslateJobs = useMemo(
+    () =>
+      jobs.filter(
+        (j) =>
+          !j.isTerminal &&
+          (j.status === "TRANSLATING" ||
+            j.status === "TRANSLATE_QUEUED" ||
+            j.isStopping),
+      ),
+    [jobs],
+  );
+
   return (
     <Page>
       <TitleBar title="智能翻译 (v4)" />
+
+      {activeTranslateJobs.length > 1 ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={`当前有 ${activeTranslateJobs.length} 个翻译任务并行运行，会共享 LLM 并发，单个任务可能明显变慢。建议逐语言执行，或先暂停其它任务。`}
+        />
+      ) : null}
 
       {quota ? (
         <Card style={{ marginBottom: 16 }}>

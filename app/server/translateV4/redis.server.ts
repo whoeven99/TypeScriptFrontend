@@ -80,3 +80,60 @@ export async function clearV4Control(taskId: string): Promise<void> {
     // non-fatal
   }
 }
+
+export type V4ControlAction = "pause" | "cancel";
+
+/** 读取 worker 尚未消费的外部控制指令。 */
+export async function readV4Control(
+  taskId: string,
+): Promise<V4ControlAction | null> {
+  try {
+    const v = await getTranslateV4RedisClient().get(v4ControlKey(taskId));
+    return v === "pause" || v === "cancel" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+const V4_PROGRESS_TTL_SEC = 7 * 24 * 3600;
+
+/**
+ * 用户点击暂停/取消后立刻写入 progress hash，让 UI 在 worker 轮询控制键之前
+ * 就能显示「正在暂停…」（与 worker 的 persistAbortSoon 语义一致）。
+ */
+export async function setV4PausePending(
+  taskId: string,
+  reason: string,
+): Promise<void> {
+  try {
+    const key = v4ProgressKey(taskId);
+    await getTranslateV4RedisClient()
+      .multi()
+      .hset(
+        key,
+        "pausePending",
+        "1",
+        "pauseReason",
+        reason,
+        "pauseRequestedAt",
+        String(Date.now()),
+      )
+      .expire(key, V4_PROGRESS_TTL_SEC)
+      .exec();
+  } catch {
+    // best-effort
+  }
+}
+
+export async function clearV4PausePending(taskId: string): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().hdel(
+      v4ProgressKey(taskId),
+      "pausePending",
+      "pauseReason",
+      "pauseRequestedAt",
+    );
+  } catch {
+    // non-fatal
+  }
+}
