@@ -12,7 +12,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/JavaServer";
+import { registerManageTranslations } from "~/server/shopify/translations.server";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
@@ -41,7 +42,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
@@ -178,9 +178,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!confirmData:
-      const data = await updateManageTranslation({
-        shop,
-        accessToken: accessToken as string,
+      const data = await registerManageTranslations({
+        admin,
         confirmData,
       });
 
