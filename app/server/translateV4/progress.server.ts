@@ -26,34 +26,26 @@ export function mergeV4JobMetrics(
   job: TranslationV4Job,
   redisProgress: Record<string, string>,
 ): TranslationV4MergedMetrics {
+  // 计数器在单个 run 内单调递增；两源取 max 而非「redis || cosmos」，避免某一源瞬时
+  // 为 0/空（pause/resume 切换、Redis 与 Cosmos 短暂不一致）时进度回退闪 0。
+  const merge = (key: keyof TranslationV4Metrics): number =>
+    Math.max(Number(redisProgress[key]) || 0, Number(job.metrics[key]) || 0);
   return {
-    initTotal: Number(redisProgress.initTotal) || job.metrics.initTotal,
-    initDone: Number(redisProgress.initDone) || job.metrics.initDone,
-    translateTotal:
-      Number(redisProgress.translateTotal) || job.metrics.translateTotal,
-    translateDone:
-      Number(redisProgress.translateDone) || job.metrics.translateDone,
-    translateFailed:
-      Number(redisProgress.translateFailed) || job.metrics.translateFailed,
+    initTotal: merge("initTotal"),
+    initDone: merge("initDone"),
+    translateTotal: merge("translateTotal"),
+    translateDone: merge("translateDone"),
+    translateFailed: merge("translateFailed"),
     translateFallback: job.metrics.translateFallback,
-    translateUnitTotal:
-      Number(redisProgress.translateUnitTotal) ||
-      job.metrics.translateUnitTotal ||
-      0,
-    translateUnitDone:
-      Number(redisProgress.translateUnitDone) ||
-      job.metrics.translateUnitDone ||
-      0,
-    writebackTotal:
-      Number(redisProgress.writebackTotal) || job.metrics.writebackTotal,
-    writebackDone:
-      Number(redisProgress.writebackDone) || job.metrics.writebackDone,
-    writebackFailed:
-      Number(redisProgress.writebackFailed) || job.metrics.writebackFailed,
-    verifyTotal: Number(redisProgress.verifyTotal) || job.metrics.verifyTotal,
-    verifyDone: Number(redisProgress.verifyDone) || job.metrics.verifyDone,
-    verifyFailed: Number(redisProgress.verifyFailed) || job.metrics.verifyFailed,
-    usedTokens: Number(redisProgress.usedTokens) || job.metrics.usedTokens || 0,
+    translateUnitTotal: merge("translateUnitTotal"),
+    translateUnitDone: merge("translateUnitDone"),
+    writebackTotal: merge("writebackTotal"),
+    writebackDone: merge("writebackDone"),
+    writebackFailed: merge("writebackFailed"),
+    verifyTotal: merge("verifyTotal"),
+    verifyDone: merge("verifyDone"),
+    verifyFailed: merge("verifyFailed"),
+    usedTokens: merge("usedTokens"),
     currentModule: redisProgress.currentModule ?? null,
     translateStartedAt: redisProgress.translateStartedAt ?? null,
     progressUpdatedAt: redisProgress.updatedAt ?? null,
@@ -62,12 +54,15 @@ export function mergeV4JobMetrics(
   };
 }
 
-/** UI 展示用状态：Redis 已标记暂停但 Cosmos 仍为 TRANSLATING 时提前显示暂停。 */
+/**
+ * UI 展示用状态：保留真实状态。
+ * 注意——以前会把「TRANSLATING + pausePending」提前显示成 PAUSED，但那会让「继续」
+ * 按钮提前出现、随后又因 worker 进入写回而消失，造成闪烁。现改为不提前翻转，由
+ * `isStopping` 标志单独驱动「正在暂停…」展示（见 toProgressSummary）。
+ */
 export function resolveV4DisplayStatus(
   status: TranslationV4Status,
-  metrics: Pick<TranslationV4MergedMetrics, "pausePending">,
 ): TranslationV4Status {
-  if (metrics.pausePending && status === "TRANSLATING") return "PAUSED";
   return status;
 }
 
@@ -238,6 +233,9 @@ export type TranslationJobProgressSummary = {
   statusLabel: string;
   isActive: boolean;
   isTerminal: boolean;
+  /** 已请求暂停/取消、但 worker 尚未把已翻译内容收尾写回前的过渡态。前端据此显示
+   *  「正在暂停…」并禁用「继续」/「暂停」，避免按钮闪烁。 */
+  isStopping: boolean;
   source: string;
   target: string;
   modules: string[];
@@ -273,14 +271,28 @@ function toProgressSummary(
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): TranslationJobProgressSummary {
-  const displayStatus = resolveV4DisplayStatus(job.status, metrics);
+  const displayStatus = resolveV4DisplayStatus(job.status);
   const errorMessage = job.errorMessage ?? metrics.pauseReason;
   const errorStage =
     job.errorStage ?? (displayStatus === "PAUSED" ? "TRANSLATE" : null);
+  // 暂停/取消触发的「先写回已翻译」阶段：写回中显示「已暂停/已取消，正在写入」，
+  // 且此时 status 仍是 WRITING_BACK → 前端「继续」按钮自然禁用，直到写回结束。
+  const writebackPauseLabel =
+    (job.status === "WRITEBACK_QUEUED" || job.status === "WRITING_BACK") &&
+    job.pauseAfterWriteback
+      ? job.pauseAfterWriteback === "cancel"
+        ? "已取消，正在写入"
+        : "已暂停，正在写入"
+      : null;
+  // 已请求暂停/取消但 worker 仍在翻译收尾（尚未进入写回）的过渡态。
+  const isStopping = metrics.pausePending && job.status === "TRANSLATING";
   return {
     taskId: job.id,
     status: displayStatus,
-    statusLabel: translationV4StatusLabel(displayStatus, errorMessage),
+    statusLabel:
+      writebackPauseLabel ??
+      (isStopping ? "正在暂停…" : translationV4StatusLabel(displayStatus, errorMessage)),
+    isStopping,
     isActive:
       ACTIVE_V4_STATUSES.includes(job.status) && !metrics.pausePending,
     isTerminal: TERMINAL_V4_STATUSES.includes(job.status),

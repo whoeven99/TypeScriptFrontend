@@ -124,6 +124,8 @@ export type TranslationV4Job = {
   stageTimings?: StageTimings | null;
   errorMessage: string | null;
   errorStage: string | null;
+  /** 暂停/取消时先写回已翻译内容；写回完成后据此收尾（pause→PAUSED、cancel→CANCELLED）。 */
+  pauseAfterWriteback?: "pause" | "cancel" | null;
   estimationRecordedAt?: string | null;
   createdBy: string;
   createdAt: string;
@@ -149,3 +151,30 @@ export const TERMINAL_V4_STATUSES: TranslationV4Status[] = [
   "FAILED",
   "CANCELLED",
 ];
+
+/** 仅翻译排队/执行中允许用户暂停（init / writeback / verify 不可暂停）。 */
+export function canPauseV4Job(status: TranslationV4Status): boolean {
+  switch (status) {
+    case "TRANSLATE_QUEUED":
+    case "TRANSLATING":
+      return true;
+    case "CREATED":
+    case "INIT_QUEUED":
+    case "INITIALIZING":
+    case "INIT_DONE":
+    case "TRANSLATE_DONE":
+    case "WRITEBACK_QUEUED":
+    case "WRITING_BACK":
+    case "VERIFY_QUEUED":
+    case "VERIFYING":
+    case "COMPLETED":
+    case "FAILED":
+    case "PAUSED":
+    case "CANCELLED":
+      return false;
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
+  }
+}

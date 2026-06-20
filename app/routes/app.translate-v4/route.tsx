@@ -25,6 +25,7 @@ import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server"
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
+  canPauseV4Job,
   type StageName,
   type StageTiming,
   type TranslationV4Status,
@@ -206,10 +207,39 @@ function JobCard({
   const m = job.metrics;
   const timings = job.stageTimings ?? {};
 
-  // 可恢复（暂停/失败，含"额度不足自动暂停"）→ 继续 + 取消；运行中 → 暂停 + 取消。
+  // 本地「刚点击」态：点击到 worker 落定前给按钮即时 loading + 禁用，避免误以为没反应。
+  const [pending, setPending] = useState<null | "pause" | "resume" | "cancel">(
+    null,
+  );
+  // worker 已把动作落定（进入停止/写回过渡 或 离开 PAUSED）→ 清掉本地 pending。
+  useEffect(() => {
+    if (!pending) return;
+    const stopSettled =
+      job.isStopping ||
+      (job.status !== "TRANSLATING" && job.status !== "TRANSLATE_QUEUED");
+    const resumeSettled = job.status !== "PAUSED" && job.status !== "FAILED";
+    if ((pending === "pause" || pending === "cancel") && stopSettled) setPending(null);
+    if (pending === "resume" && resumeSettled) setPending(null);
+  }, [pending, job.status, job.isStopping]);
+
+  const runAction = (action: "pause" | "resume" | "cancel") => {
+    setPending(action);
+    void Promise.resolve(onAction(job.taskId, action));
+    // 兜底：万一动作失败/状态始终不变（异常），8s 后自动解除 loading，避免卡死。
+    window.setTimeout(
+      () => setPending((p) => (p === action ? null : p)),
+      8000,
+    );
+  };
+  const busy = pending !== null;
+
+  // 可恢复（暂停/失败）→ 继续；翻译阶段且未在停止中 → 暂停；非终态且未在停止中 → 取消。
   const canResume = job.status === "PAUSED" || job.status === "FAILED";
-  const canPause = !job.isTerminal && job.status !== "PAUSED";
-  const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED";
+  const canPause = canPauseV4Job(job.status) && !job.isStopping;
+  const canCancel =
+    job.status !== "COMPLETED" &&
+    job.status !== "CANCELLED" &&
+    !job.isStopping;
 
   // 每阶段的计数明细（资源 done/total，翻译额外含节点）
   const stageDetail = (idx: number): string => {
@@ -262,17 +292,34 @@ function JobCard({
         </Space>
         <Space size={8} align="center">
           {canResume ? (
-            <Button size="small" type="primary" onClick={() => onAction(job.taskId, "resume")}>
+            <Button
+              size="small"
+              type="primary"
+              loading={pending === "resume"}
+              disabled={busy}
+              onClick={() => runAction("resume")}
+            >
               继续
             </Button>
           ) : null}
           {canPause ? (
-            <Button size="small" onClick={() => onAction(job.taskId, "pause")}>
+            <Button
+              size="small"
+              loading={pending === "pause"}
+              disabled={busy}
+              onClick={() => runAction("pause")}
+            >
               暂停
             </Button>
           ) : null}
           {canCancel ? (
-            <Button size="small" danger onClick={() => onAction(job.taskId, "cancel")}>
+            <Button
+              size="small"
+              danger
+              loading={pending === "cancel"}
+              disabled={busy}
+              onClick={() => runAction("cancel")}
+            >
               取消
             </Button>
           ) : null}
@@ -437,8 +484,17 @@ export default function AppTranslateV4() {
         });
         const data = await res.json();
         if (data?.ok) {
+          // pending=true：worker 还要先把已翻译的写回，过程态用「正在…」表述。
           const label =
-            actionType === "pause" ? "已暂停" : actionType === "resume" ? "已继续" : "已取消";
+            actionType === "resume"
+              ? "正在继续…"
+              : actionType === "pause"
+                ? data.pending
+                  ? "正在暂停…"
+                  : "已暂停"
+                : data.pending
+                  ? "正在取消…"
+                  : "已取消";
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
         } else {

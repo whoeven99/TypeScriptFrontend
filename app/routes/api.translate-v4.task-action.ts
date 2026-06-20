@@ -12,6 +12,7 @@ import {
   resolveResumeV4JobStatus,
   stageFromStatus,
 } from "~/server/translateV4/resumeStatus";
+import { canPauseV4Job } from "~/server/translateV4/types";
 
 /** POST /api/translate-v4/task-action —— pause / resume / cancel 一个 TsFrontend 任务。 */
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -32,18 +33,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!job) return json({ ok: false, error: "task not found" }, { status: 404 });
 
   if (actionType === "cancel") {
+    // 翻译执行中取消：不乐观置 CANCELLED（终态会让前端停止轮询、却看不到「正在写入」
+    // 过程）。仅设控制信号，由 worker 把已翻译的先写回再落 CANCELLED。
+    if (job.status === "TRANSLATING") {
+      await setV4Control(taskId, "cancel");
+      return json({ ok: true, pending: true });
+    }
     await updateV4Job(shopName, taskId, { status: "CANCELLED", claimedBy: null });
-    await setV4Control(taskId, "cancel"); // 让运行中的阶段中途即时取消
+    await setV4Control(taskId, "cancel");
     return json({ ok: true, status: "CANCELLED" });
   }
 
   if (actionType === "pause") {
+    if (!canPauseV4Job(job.status)) {
+      return json({ ok: false, error: "仅翻译阶段可暂停" }, { status: 400 });
+    }
+    // 翻译执行中暂停：不乐观置 PAUSED，交给 worker 先把已翻译的写回再落 PAUSED，
+    // 状态单调推进，避免 PAUSED 闪现导致「继续」按钮提前出现又消失。仅设控制信号。
+    if (job.status === "TRANSLATING") {
+      await setV4Control(taskId, "pause");
+      return json({ ok: true, pending: true });
+    }
+    // 排队未运行(TRANSLATE_QUEUED)：没有在飞内容，直接置 PAUSED。
     await updateV4Job(shopName, taskId, {
       status: "PAUSED",
       claimedBy: null,
       errorStage: stageFromStatus(job.status),
     });
-    await setV4Control(taskId, "pause"); // 让运行中的阶段中途即时暂停
+    await setV4Control(taskId, "pause");
     return json({ ok: true, status: "PAUSED" });
   }
 
