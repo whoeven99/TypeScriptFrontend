@@ -26,6 +26,7 @@ import {
   TranslateImage,
   storageTranslateImage,
 } from "~/api/JavaServer";
+import { getProductsItemsCount } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
@@ -60,6 +61,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
   const appInstalls = JSON.parse(formData.get("appInstalls") as string);
@@ -93,6 +95,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!itemsCount:
       try {
+        // Products 试点：改为 TSF 本地计算（v4 口径），其余类型仍走 Java。
+        if (itemsCount.resourceType === "Products") {
+          const response = await getProductsItemsCount({
+            admin,
+            target: itemsCount.target,
+          });
+          return { success: true, errorCode: 0, errorMsg: "", response };
+        }
+
         const data = await GetTranslationItemsInfo({
           shop,
           accessToken,

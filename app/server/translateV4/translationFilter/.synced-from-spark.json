@@ -1,0 +1,18 @@
+{
+  "note": "AUTO-GENERATED from Spark worker. 勿手改本目录任何文件——改规则请在 Spark 改后运行 scripts/sync-translation-filter.mjs。",
+  "source": "worker/src/services/translationFilter @ Spark",
+  "sparkCommit": "aec24c018c990c1c5017b85b6c65070e13940a4c",
+  "syncedAt": "2026-06-20T01:20:58.327Z",
+  "combined": "f7a1860a689139599858cae9b873bf767752b10f95eed75f91b1f1dc1e1adba7",
+  "files": {
+    "constants.ts": "a116109e199a5acac0f83f3dfa3f65e91df6fa29c79c0e2bd1a813e65ccd9c57",
+    "index.ts": "00b4c0c8e991fba3c93a71dbe4a7860b34f96bd540b5de2b72f2a70b91a4e602",
+    "judgeTranslateUtils.ts": "f428807b2e84d0f908919741e904b2aa6922bb2c607c60bf9cfefcc6c6146a60",
+    "metafieldRules.ts": "38afa61ca1c0e60e458178bd45900106a3ffaa7ca4bae0b6ec56388e41b5faf5",
+    "rejectRules.ts": "3a4ebdf657b39cb71f7301425f3d3fe4c22c487c1e79e1cb966fd60c61acddf6",
+    "shouldIncludeFieldV2.ts": "1d1b5ce408595fe4eb8b9a624591ae4580d0f2e94482718ef2bcb827068a94f4",
+    "themeRules.ts": "ed85ed4caddec8372e0c0417d5fa6efa7578d6be6bb8b3666357f6d648d5f5fe",
+    "types.ts": "cb9b51d7ce7d0b0f29a448fd5cd0888b1ad7e7f30e465069a6ef4a51bf752c73",
+    "v3Base.ts": "b9779376695dfe2f93f451bdae414f7ad7b29294e5924a01d81ce045063bbe70"
+  }
+}
