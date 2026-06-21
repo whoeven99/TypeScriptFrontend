@@ -174,7 +174,12 @@ function ratioPercent(done: number, total: number): number {
   return Math.min(100, Math.round((done / total) * 100));
 }
 
-/** 各阶段进度条百分比：始终按 metrics 实际 done/total，与 activeStage 无关。 */
+/** 任务级资源总数（翻译/写回进度条的分母）。 */
+function taskResourceTotal(m: StageMetrics): number {
+  return m.translateTotal || m.initTotal || 0;
+}
+
+/** 各阶段进度条百分比：翻译/写回均以任务资源总数为分母，与右侧计数一致。 */
 function stageBarPercent(
   idx: number,
   m: StageMetrics,
@@ -185,11 +190,11 @@ function stageBarPercent(
     case 0:
       return ratioPercent(m.initDone, m.initTotal);
     case 1:
-      return m.translateUnitTotal > 0
-        ? ratioPercent(m.translateUnitDone, m.translateUnitTotal)
-        : ratioPercent(m.translateDone, m.translateTotal);
-    case 2:
-      return ratioPercent(m.writebackDone, m.writebackTotal);
+      return ratioPercent(m.translateDone, taskResourceTotal(m));
+    case 2: {
+      const total = taskResourceTotal(m);
+      return total > 0 ? ratioPercent(m.writebackDone, total) : 0;
+    }
     case 3:
       return ratioPercent(m.verifyDone, m.verifyTotal);
     default:
@@ -197,7 +202,7 @@ function stageBarPercent(
   }
 }
 
-/** 某阶段是否已按 metrics 完成（可显示 ✓ 与绿色条）。 */
+/** 某阶段是否已完成（100% 时显示 ✓ 与绿色条）。 */
 function isStageBarComplete(
   idx: number,
   m: StageMetrics,
@@ -208,9 +213,14 @@ function isStageBarComplete(
     case 0:
       return m.initTotal > 0 && m.initDone >= m.initTotal;
     case 1:
-      return m.translateTotal > 0 && m.translateDone >= m.translateTotal;
-    case 2:
-      return m.writebackTotal > 0 && m.writebackDone >= m.writebackTotal;
+      return (
+        taskResourceTotal(m) > 0 &&
+        m.translateDone >= taskResourceTotal(m)
+      );
+    case 2: {
+      const total = taskResourceTotal(m);
+      return total > 0 && m.writebackDone >= total;
+    }
     case 3:
       return m.verifyTotal > 0 && m.verifyDone >= m.verifyTotal;
     default:
@@ -346,7 +356,10 @@ function JobCard({
         ? `${res} · 节点 ${m.translateUnitDone}/${m.translateUnitTotal}`
         : res;
     }
-    if (idx === 2) return `${m.writebackDone}/${m.writebackTotal}`;
+    if (idx === 2) {
+      const total = taskResourceTotal(m);
+      return `${m.writebackDone}/${total || m.writebackTotal}`;
+    }
     return `${m.verifyDone}/${m.verifyTotal}`;
   };
 
@@ -427,14 +440,14 @@ function JobCard({
       <div style={{ marginTop: 12 }}>
         {STAGE_DEFS.map(({ name, key }, idx) => {
           const complete = isStageBarComplete(idx, m, job.status);
-          const percent = complete ? 100 : stageBarPercent(idx, m, job.status);
+          const percent = stageBarPercent(idx, m, job.status);
           const current =
             idx === activeStage && !job.isTerminal && !isPaused && !job.isStopping;
           const pausedHere = isPaused && idx === activeStage;
           const stoppingHere = job.isStopping && idx === activeStage;
           const ms = hideDuration ? null : stageElapsedMs(timings[key]);
-          // 初始化进行中且总数未知（worker 仍在枚举）→ 不确定型动画 + 已发现计数。
           const initScanning = idx === 0 && current && m.initTotal <= 0;
+          const inProgress = percent > 0 && !complete;
           return (
             <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
               <Text
@@ -472,18 +485,9 @@ function JobCard({
                         ? "exception"
                         : complete
                           ? "success"
-                          : pausedHere || stoppingHere
-                            ? "normal"
-                            : percent > 0
-                              ? "active"
-                              : "normal"
-                    }
-                    strokeColor={
-                      complete
-                        ? "#1d9e75"
-                        : pausedHere || stoppingHere
-                          ? "#faad14"
-                          : undefined
+                          : inProgress
+                            ? "active"
+                            : "normal"
                     }
                   />
                   <Text

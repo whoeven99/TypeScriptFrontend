@@ -106,6 +106,10 @@ function ratioPercent(done: number, total: number): number | null {
   return Math.min(100, Math.round((done / total) * 100));
 }
 
+function taskResourceTotal(metrics: TranslationV4Metrics): number {
+  return metrics.translateTotal || metrics.initTotal || 0;
+}
+
 /** 当前阶段的进度百分比；终态(非完成)返回 null。 */
 export function computeTranslationV4ProgressPercent(
   status: TranslationV4Status,
@@ -117,16 +121,15 @@ export function computeTranslationV4ProgressPercent(
 
   if (status === "PAUSED") {
     switch (errorStage) {
-      case "WRITEBACK":
-        return ratioPercent(metrics.writebackDone, metrics.writebackTotal);
+      case "WRITEBACK": {
+        const total = taskResourceTotal(metrics);
+        return total > 0 ? ratioPercent(metrics.writebackDone, total) : null;
+      }
       case "VERIFY":
         return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
       case "TRANSLATE":
       default:
-        if (metrics.translateUnitTotal > 0) {
-          return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
-        }
-        return ratioPercent(metrics.translateDone, metrics.translateTotal);
+        return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
     }
   }
 
@@ -144,14 +147,12 @@ export function computeTranslationV4ProgressPercent(
     status === "TRANSLATING" ||
     status === "TRANSLATE_DONE"
   ) {
-    if (metrics.translateUnitTotal > 0) {
-      return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
-    }
-    return ratioPercent(metrics.translateDone, metrics.translateTotal);
+    return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
   }
 
   if (status === "WRITEBACK_QUEUED" || status === "WRITING_BACK") {
-    return ratioPercent(metrics.writebackDone, metrics.writebackTotal);
+    const total = taskResourceTotal(metrics);
+    return total > 0 ? ratioPercent(metrics.writebackDone, total) : null;
   }
 
   if (status === "VERIFY_QUEUED" || status === "VERIFYING") {
@@ -184,18 +185,20 @@ export function buildTranslationV4StageSummary(
   if (status === "PAUSED") {
     if (errorStage === "TRANSLATE" || !errorStage) {
       const detail = formatTranslateDetail(metrics);
+      const taskTotal = taskResourceTotal(metrics);
       const writebackNote =
-        metrics.writebackTotal > 0
-          ? metrics.writebackDone >= metrics.writebackTotal
-            ? `写回 ${metrics.writebackDone}/${metrics.writebackTotal} 已完成`
-            : metrics.writebackDone > 0
-              ? `写回 ${metrics.writebackDone}/${metrics.writebackTotal}`
-              : null
+        taskTotal > 0 && metrics.writebackDone > 0
+          ? metrics.writebackDone >= taskTotal
+            ? `写回 ${metrics.writebackDone}/${taskTotal} 已完成`
+            : `写回 ${metrics.writebackDone}/${taskTotal}`
           : null;
       return [label, detail, writebackNote].filter(Boolean).join(" · ");
     }
-    if (errorStage === "WRITEBACK" && metrics.writebackTotal > 0) {
-      return `${label} · ${metrics.writebackDone}/${metrics.writebackTotal}`;
+    if (errorStage === "WRITEBACK") {
+      const taskTotal = taskResourceTotal(metrics);
+      if (taskTotal > 0) {
+        return `${label} · ${metrics.writebackDone}/${taskTotal}`;
+      }
     }
     if (errorStage === "VERIFY" && metrics.verifyTotal > 0) {
       return `${label} · ${metrics.verifyDone}/${metrics.verifyTotal}`;
@@ -225,8 +228,10 @@ export function buildTranslationV4StageSummary(
   }
 
   if (status === "WRITING_BACK" || status === "WRITEBACK_QUEUED") {
-    if (metrics.writebackTotal > 0)
-      return `${label} · ${metrics.writebackDone}/${metrics.writebackTotal}`;
+    const taskTotal = taskResourceTotal(metrics);
+    if (taskTotal > 0) {
+      return `${label} · ${metrics.writebackDone}/${taskTotal}`;
+    }
     return label;
   }
 
