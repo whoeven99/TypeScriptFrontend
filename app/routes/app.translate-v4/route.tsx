@@ -236,13 +236,19 @@ function InitScanIndicator({
 function JobCard({
   job,
   onAction,
+  translateSlotBusy,
 }: {
   job: TranslationJobProgressSummary;
   onAction: (
     taskId: string,
     action: "pause" | "resume" | "cancel",
   ) => Promise<boolean>;
+  translateSlotBusy: boolean;
 }) {
+  const displayStatusLabel =
+    job.status === "TRANSLATE_QUEUED" && translateSlotBusy
+      ? "排队等待翻译"
+      : job.statusLabel;
   const activeStage = stageOf(job.status, job.errorStage);
   const isPaused = job.status === "PAUSED";
   const m = job.metrics;
@@ -323,7 +329,7 @@ function JobCard({
             {job.source} → {job.target}
           </Text>
           <Tag color={STATUS_COLOR[job.status] ?? "default"}>
-            {job.statusLabel}
+            {displayStatusLabel}
           </Tag>
           <Text type="secondary" style={{ fontSize: 12 }}>
             {job.modules.map((mod) => MODULE_LABELS[mod] ?? mod).join(" · ")}
@@ -654,15 +660,12 @@ export default function AppTranslateV4() {
       ? Math.min(100, Math.round((quota.usedToken / quota.maxToken) * 100))
       : 0;
 
-  const activeTranslateJobs = useMemo(
-    () =>
-      jobs.filter(
-        (j) =>
-          !j.isTerminal &&
-          (j.status === "TRANSLATING" ||
-            j.status === "TRANSLATE_QUEUED" ||
-            j.isStopping),
-      ),
+  const translateSlotBusy = useMemo(
+    () => jobs.some((j) => j.status === "TRANSLATING" || j.isStopping),
+    [jobs],
+  );
+  const translateQueue = useMemo(
+    () => jobs.filter((j) => !j.isTerminal && j.status === "TRANSLATE_QUEUED"),
     [jobs],
   );
 
@@ -670,12 +673,16 @@ export default function AppTranslateV4() {
     <Page>
       <TitleBar title="智能翻译 (v4)" />
 
-      {activeTranslateJobs.length > 1 ? (
+      {translateQueue.length > 0 ? (
         <Alert
-          type="warning"
+          type="info"
           showIcon
           style={{ marginBottom: 16 }}
-          message={`当前有 ${activeTranslateJobs.length} 个翻译任务并行运行，会共享 LLM 并发，单个任务可能明显变慢。建议逐语言执行，或先暂停其它任务。`}
+          message={
+            translateSlotBusy
+              ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
+              : `${translateQueue.length} 个语言任务等待开始翻译。`
+          }
         />
       ) : null}
 
@@ -828,7 +835,12 @@ export default function AppTranslateV4() {
           <Text type="secondary">暂无任务，创建一个开始翻译吧。</Text>
         ) : (
           jobs.map((job) => (
-            <JobCard key={job.taskId} job={job} onAction={handleAction} />
+            <JobCard
+              key={job.taskId}
+              job={job}
+              onAction={handleAction}
+              translateSlotBusy={translateSlotBusy}
+            />
           ))
         )}
       </Card>
