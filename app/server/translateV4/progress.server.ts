@@ -184,7 +184,15 @@ export function buildTranslationV4StageSummary(
   if (status === "PAUSED") {
     if (errorStage === "TRANSLATE" || !errorStage) {
       const detail = formatTranslateDetail(metrics);
-      return [label, detail].filter(Boolean).join(" · ");
+      const writebackNote =
+        metrics.writebackTotal > 0
+          ? metrics.writebackDone >= metrics.writebackTotal
+            ? `写回 ${metrics.writebackDone}/${metrics.writebackTotal} 已完成`
+            : metrics.writebackDone > 0
+              ? `写回 ${metrics.writebackDone}/${metrics.writebackTotal}`
+              : null
+          : null;
+      return [label, detail, writebackNote].filter(Boolean).join(" · ");
     }
     if (errorStage === "WRITEBACK" && metrics.writebackTotal > 0) {
       return `${label} · ${metrics.writebackDone}/${metrics.writebackTotal}`;

@@ -167,6 +167,57 @@ function stageOf(
   return 0;
 }
 
+type StageMetrics = TranslationJobProgressSummary["metrics"];
+
+function ratioPercent(done: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.round((done / total) * 100));
+}
+
+/** 各阶段进度条百分比：始终按 metrics 实际 done/total，与 activeStage 无关。 */
+function stageBarPercent(
+  idx: number,
+  m: StageMetrics,
+  jobStatus: TranslationV4Status,
+): number {
+  if (jobStatus === "COMPLETED") return 100;
+  switch (idx) {
+    case 0:
+      return ratioPercent(m.initDone, m.initTotal);
+    case 1:
+      return m.translateUnitTotal > 0
+        ? ratioPercent(m.translateUnitDone, m.translateUnitTotal)
+        : ratioPercent(m.translateDone, m.translateTotal);
+    case 2:
+      return ratioPercent(m.writebackDone, m.writebackTotal);
+    case 3:
+      return ratioPercent(m.verifyDone, m.verifyTotal);
+    default:
+      return 0;
+  }
+}
+
+/** 某阶段是否已按 metrics 完成（可显示 ✓ 与绿色条）。 */
+function isStageBarComplete(
+  idx: number,
+  m: StageMetrics,
+  jobStatus: TranslationV4Status,
+): boolean {
+  if (jobStatus === "COMPLETED") return true;
+  switch (idx) {
+    case 0:
+      return m.initTotal > 0 && m.initDone >= m.initTotal;
+    case 1:
+      return m.translateTotal > 0 && m.translateDone >= m.translateTotal;
+    case 2:
+      return m.writebackTotal > 0 && m.writebackDone >= m.writebackTotal;
+    case 3:
+      return m.verifyTotal > 0 && m.verifyDone >= m.verifyTotal;
+    default:
+      return false;
+  }
+}
+
 function formatElapsed(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
   if (s < 60) return `${s}秒`;
@@ -299,19 +350,6 @@ function JobCard({
     return `${m.verifyDone}/${m.verifyTotal}`;
   };
 
-  // 每阶段自身的进度百分比
-  const stageRatio = (idx: number): number => {
-    const ratio = (d: number, t: number) =>
-      t > 0 ? Math.min(100, Math.round((d / t) * 100)) : 0;
-    if (idx === 0) return ratio(m.initDone, m.initTotal);
-    if (idx === 1)
-      return m.translateUnitTotal > 0
-        ? ratio(m.translateUnitDone, m.translateUnitTotal)
-        : ratio(m.translateDone, m.translateTotal);
-    if (idx === 2) return ratio(m.writebackDone, m.writebackTotal);
-    return ratio(m.verifyDone, m.verifyTotal);
-  };
-
   const totalItems = m.translateTotal || m.initTotal || 0;
   const hideDuration = job.status === "PAUSED" || job.status === "CANCELLED";
   const overallMs = hideDuration
@@ -388,15 +426,12 @@ function JobCard({
 
       <div style={{ marginTop: 12 }}>
         {STAGE_DEFS.map(({ name, key }, idx) => {
-          const done = job.status === "COMPLETED" || idx < activeStage;
+          const complete = isStageBarComplete(idx, m, job.status);
+          const percent = complete ? 100 : stageBarPercent(idx, m, job.status);
           const current =
-            idx === activeStage && !job.isTerminal && !isPaused;
+            idx === activeStage && !job.isTerminal && !isPaused && !job.isStopping;
           const pausedHere = isPaused && idx === activeStage;
-          const percent = done
-            ? 100
-            : current || pausedHere || idx < activeStage
-              ? stageRatio(idx)
-              : 0;
+          const stoppingHere = job.isStopping && idx === activeStage;
           const ms = hideDuration ? null : stageElapsedMs(timings[key]);
           // 初始化进行中且总数未知（worker 仍在枚举）→ 不确定型动画 + 已发现计数。
           const initScanning = idx === 0 && current && m.initTotal <= 0;
@@ -405,7 +440,13 @@ function JobCard({
               <Text
                 style={{ width: 44, fontSize: 12, flexShrink: 0 }}
                 type={
-                  done ? "success" : current || pausedHere ? "warning" : "secondary"
+                  complete
+                    ? "success"
+                    : pausedHere || stoppingHere
+                      ? "warning"
+                      : current
+                        ? undefined
+                        : "secondary"
                 }
               >
                 {name}
@@ -427,14 +468,22 @@ function JobCard({
                     showInfo={false}
                     size="small"
                     status={
-                      job.status === "FAILED" && current
+                      job.status === "FAILED" && (current || pausedHere)
                         ? "exception"
-                        : pausedHere
-                          ? "normal"
-                          : "active"
+                        : complete
+                          ? "success"
+                          : pausedHere || stoppingHere
+                            ? "normal"
+                            : percent > 0
+                              ? "active"
+                              : "normal"
                     }
                     strokeColor={
-                      done ? "#1d9e75" : pausedHere ? "#faad14" : undefined
+                      complete
+                        ? "#1d9e75"
+                        : pausedHere || stoppingHere
+                          ? "#faad14"
+                          : undefined
                     }
                   />
                   <Text
@@ -442,7 +491,7 @@ function JobCard({
                     style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
                   >
                     {stageDetail(idx)}
-                    {done ? " ✓" : ""}
+                    {complete ? " ✓" : ""}
                     {ms != null ? ` · 耗时 ${formatElapsed(ms)}` : ""}
                   </Text>
                 </>
