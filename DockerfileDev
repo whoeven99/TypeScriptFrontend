@@ -1,21 +1,29 @@
-FROM node:20-alpine3.17
+# syntax=docker/dockerfile:1
+FROM node:20-alpine
+
+# Prisma 运行时需要系统级 openssl（Alpine 默认不含）
+RUN apk add --no-cache openssl
 
 EXPOSE 3000
-
 WORKDIR /app
-
-COPY package.json package-lock.json* ./
 
 ENV NODE_ENV=test
 
-RUN npm install
+# 先复制依赖文件，充分利用 Docker 层缓存
+COPY package.json package-lock.json .npmrc ./
 
-# Remove CLI packages since we don't need them in production by default.
-# Remove this line if you want to run CLI commands in your container.
-RUN npm remove @shopify/cli
+# BuildKit 缓存挂载：persist npm 缓存目录，只下载新增/变更的包
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --legacy-peer-deps --prefer-offline
 
+# 生成 Prisma Client（构建时完成，非运行时）
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# 复制源码并构建（Vite 缓存也持久化）
 COPY . .
+RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    npm run build
 
-RUN npm run build
-
-CMD ["npm", "run", "docker-start"]
+# Turso 远程数据库迁移 + 启动
+CMD ["sh", "-c", "node scripts/turso-migrate.cjs test && npx remix-serve ./build/server/index.js"]

@@ -14,7 +14,8 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/JavaServer";
+import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -108,7 +109,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const url = new URL(request.url);
@@ -451,9 +452,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!confirmData:
-      const data = await updateManageTranslation({
+      const data = await registerManageTranslations({
+        admin,
         shop,
-        accessToken: accessToken as string,
         confirmData,
       });
 

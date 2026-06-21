@@ -103,7 +103,7 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
   );
-  graphQLErrors.forEach((item, index) => {
+  graphQLErrors.forEach((item: any, index: number) => {
     console.error(`[${context}] graphQLError[${index}]`, item);
   });
   console.error(
@@ -689,6 +689,7 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
+              <Link to="/app/translate-v4">智能翻译 (v4)</Link>
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}
