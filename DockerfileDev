@@ -11,6 +11,7 @@ ENV NODE_ENV=test
 
 # 先复制依赖文件，充分利用 Docker 层缓存
 COPY package.json package-lock.json .npmrc ./
+COPY patches ./patches
 
 # BuildKit 缓存挂载：persist npm 缓存目录，只下载新增/变更的包
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
@@ -22,6 +23,8 @@ RUN npx prisma generate
 
 # 复制源码并构建（Vite 缓存也持久化）
 COPY . .
+# 确保 patch 在 build 前生效（Docker 层缓存可能导致 postinstall 时 patches 尚未就位）
+RUN npx patch-package
 RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
     npm run build
 
