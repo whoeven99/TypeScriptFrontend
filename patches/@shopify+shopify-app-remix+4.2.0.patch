@@ -1,0 +1,40 @@
+diff --git a/node_modules/@shopify/shopify-app-remix/dist/cjs/server/authenticate/helpers/reject-bot-request.js b/node_modules/@shopify/shopify-app-remix/dist/cjs/server/authenticate/helpers/reject-bot-request.js
+index f446a29..c7dc654 100644
+--- a/node_modules/@shopify/shopify-app-remix/dist/cjs/server/authenticate/helpers/reject-bot-request.js
++++ b/node_modules/@shopify/shopify-app-remix/dist/cjs/server/authenticate/helpers/reject-bot-request.js
+@@ -5,7 +5,15 @@ var isbot = require('isbot');
+ const SHOPIFY_POS_USER_AGENT = /Shopify POS\//;
+ const SHOPIFY_MOBILE_USER_AGENT = /Shopify Mobile\//;
+ const SHOPIFY_USER_AGENTS = [SHOPIFY_POS_USER_AGENT, SHOPIFY_MOBILE_USER_AGENT];
++function isShopifyBotCheckBypassEnabled() {
++    const raw = process.env.SHOPIFY_ALLOW_BOT_UA?.trim()?.toLowerCase();
++    return raw === 'true' || raw === '1' || raw === 'yes';
++}
+ function respondToBotRequest({ logger }, request) {
++    if (isShopifyBotCheckBypassEnabled()) {
++        logger.debug('Bot check bypassed (SHOPIFY_ALLOW_BOT_UA)');
++        return;
++    }
+     const userAgent = request.headers.get('User-Agent') ?? '';
+     // We call isbot below to prevent good (self-identifying) bots from triggering auth requests, but there are some
+     // Shopify-specific cases we want to allow that are identified as bots by isbot.
+diff --git a/node_modules/@shopify/shopify-app-remix/dist/esm/server/authenticate/helpers/reject-bot-request.mjs b/node_modules/@shopify/shopify-app-remix/dist/esm/server/authenticate/helpers/reject-bot-request.mjs
+index 0da30b7..60f63e2 100644
+--- a/node_modules/@shopify/shopify-app-remix/dist/esm/server/authenticate/helpers/reject-bot-request.mjs
++++ b/node_modules/@shopify/shopify-app-remix/dist/esm/server/authenticate/helpers/reject-bot-request.mjs
+@@ -3,7 +3,15 @@ import { isbot } from 'isbot';
+ const SHOPIFY_POS_USER_AGENT = /Shopify POS\//;
+ const SHOPIFY_MOBILE_USER_AGENT = /Shopify Mobile\//;
+ const SHOPIFY_USER_AGENTS = [SHOPIFY_POS_USER_AGENT, SHOPIFY_MOBILE_USER_AGENT];
++function isShopifyBotCheckBypassEnabled() {
++    const raw = process.env.SHOPIFY_ALLOW_BOT_UA?.trim()?.toLowerCase();
++    return raw === 'true' || raw === '1' || raw === 'yes';
++}
+ function respondToBotRequest({ logger }, request) {
++    if (isShopifyBotCheckBypassEnabled()) {
++        logger.debug('Bot check bypassed (SHOPIFY_ALLOW_BOT_UA)');
++        return;
++    }
+     const userAgent = request.headers.get('User-Agent') ?? '';
+     // We call isbot below to prevent good (self-identifying) bots from triggering auth requests, but there are some
+     // Shopify-specific cases we want to allow that are identified as bots by isbot.
