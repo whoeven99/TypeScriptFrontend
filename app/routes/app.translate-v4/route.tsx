@@ -17,9 +17,10 @@ import {
   Typography,
   message,
 } from "antd";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
+import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
@@ -95,6 +96,10 @@ const SHOP_LOCALES_QUERY = `#graphql
 `;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  if (!isTranslateV4Enabled()) {
+    throw redirect("/app");
+  }
+
   const { admin, session } = await authenticate.admin(request);
 
   let locales: ShopLocaleOption[] = [];
