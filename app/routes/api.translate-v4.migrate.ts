@@ -5,26 +5,23 @@ import {
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
-import { getTranslateV4RedisClient } from "~/server/translateV4/redis.server";
 import {
   GetGlossaryByShopName,
   SelectShopNameLiquidData,
   GetTranslateDOByShopNameAndSource,
+  MarkShopMigratedToTsf,
 } from "~/api/JavaServer";
 
 /**
- * 已迁移店铺标记 SET。Java 的 autoTranslateTask 启动时读这个 SET 跳过已迁移店，
- * 避免新旧两版重复自动翻译。⚠️ 需与 Java 读取的是同一个 Redis 实例。
- * 写入纯字符串（与 Java StringRedisTemplate 一致），勿用会 JSON 编码的客户端。
+ * 通知 Java：本店已迁移到 TSF。Java 自己记录，后续自动翻译任务跳过该店，
+ * 避免新旧两版重复翻译。两边 Redis 不同实例，故走 Java API 而非直接写 Redis。
  */
-const TSF_MIGRATED_SHOPS_KEY = "tsf:migrated:shops";
-
-async function markShopMigratedInRedis(shop: string): Promise<void> {
+async function notifyJavaShopMigrated(shop: string, server: string): Promise<void> {
   try {
-    await getTranslateV4RedisClient().sadd(TSF_MIGRATED_SHOPS_KEY, shop);
+    await MarkShopMigratedToTsf({ shop, server });
   } catch (err) {
-    // 非致命：标记失败不应阻断迁移；下次进卡片会再补写
-    console.error(`[migrate] ${shop} 写 Redis 迁移标记失败:`, err);
+    // 非致命：标记失败不应阻断迁移；下次进卡片会再补通知
+    console.error(`[migrate] ${shop} 通知 Java 迁移标记失败:`, err);
   }
 }
 
@@ -110,7 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     where: { shop },
   });
   if (existing?.migratedToTsf) {
-    await markShopMigratedInRedis(shop); // 自愈：标记可能被清过
+    await notifyJavaShopMigrated(shop, server); // 自愈：标记可能丢失
     const [glossaryCount, liquidCount] = await Promise.all([
       prisma.glossary.count({ where: { shop } }),
       prisma.liquidRule.count({ where: { shop } }),
@@ -187,8 +184,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }),
     ]);
 
-    // 写 Redis 标记，让 Java 自动翻译任务跳过本店（避免双翻译）
-    await markShopMigratedInRedis(shop);
+    // 通知 Java 跳过本店的自动翻译（避免双翻译）
+    await notifyJavaShopMigrated(shop, server);
 
     const summary: MigrationSummary = {
       already: false,

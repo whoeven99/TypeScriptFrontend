@@ -737,6 +737,26 @@ export const UpdateAutoTranslateByData = async ({
   );
 };
 
+/**
+ * 通知 Java 本店已迁移到 TSF 新版翻译。Java 自行记录，自动翻译任务后续跳过该店。
+ */
+export const MarkShopMigratedToTsf = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  return javaApiRequest(
+    `${shop} MarkShopMigratedToTsf`,
+    {
+      url: `${server}/translate/markShopMigratedToTsf?shopName=${encodeURIComponent(shop)}`,
+      method: "POST",
+    },
+    { fallback: undefined },
+  );
+};
+
 export const WidgetConfigurations = async ({
   shop,
   server,
