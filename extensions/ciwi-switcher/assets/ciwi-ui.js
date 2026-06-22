@@ -1188,6 +1188,10 @@ export class CiwiswitcherForm extends HTMLElement {
     document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
 
+  isDirectSelectorMode() {
+    return this.elements.selectorBox?.dataset.mode === "direct";
+  }
+
   handleSelectChange(event) {
     const select = event.currentTarget;
     const value = select?.value;
@@ -1215,14 +1219,16 @@ export class CiwiswitcherForm extends HTMLElement {
       localStorage.setItem("ciwi_selected_currency", value);
     }
 
-    this.elements.selectorBox.style.display = "none";
-    if (
-      this.elements.translateFloatBtn.style.justifyContent &&
-      this.elements.mainBox.style.display === "none"
-    ) {
-      this.elements.translateFloatBtn.style.display = "flex";
+    if (!this.isDirectSelectorMode()) {
+      this.elements.selectorBox.style.display = "none";
+      if (
+        this.elements.translateFloatBtn.style.justifyContent &&
+        this.elements.mainBox.style.display === "none"
+      ) {
+        this.elements.translateFloatBtn.style.display = "flex";
+      }
+      this.rotateArrow("#mainbox-arrow-icon", 0);
     }
-    this.rotateArrow("#mainbox-arrow-icon", 0);
     event.preventDefault();
 
     const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
@@ -1245,6 +1251,7 @@ export class CiwiswitcherForm extends HTMLElement {
 
   handleCancelClick(event) {
     event.preventDefault();
+    if (this.isDirectSelectorMode()) return;
     this.elements.selectorBox.style.display = "none";
     if (
       this.elements.translateFloatBtn.style.justifyContent &&
@@ -1256,6 +1263,7 @@ export class CiwiswitcherForm extends HTMLElement {
   }
 
   handleOutsideClick(event) {
+    if (this.isDirectSelectorMode()) return;
     if (
       this.elements.ciwiContainer &&
       !this.elements.ciwiContainer.contains(event.target)
@@ -1275,6 +1283,7 @@ export class CiwiswitcherForm extends HTMLElement {
 
   toggleSelector(event) {
     event.preventDefault();
+    if (this.isDirectSelectorMode()) return;
     const ciwiBlock = this.elements.ciwiBlock;
     if (!ciwiBlock) {
       console.error("ciwiBlock not found");

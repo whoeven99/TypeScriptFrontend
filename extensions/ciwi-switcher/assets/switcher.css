@@ -19,6 +19,10 @@
   width: 100%;
 }
 
+.selector_box.direct-select-mode {
+  position: static;
+}
+
 .close_button_wrapper {
   display: flex;
   /* 居中对齐图标 */

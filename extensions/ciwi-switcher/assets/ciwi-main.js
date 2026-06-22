@@ -318,6 +318,11 @@ async function ciwiOnload() {
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
 
+  const activeSelectorCount =
+    Number(Boolean(isLanguageSelectorTakeEffect)) +
+    Number(Boolean(isCurrencySelectorTakeEffect));
+  const isDirectSelectorMode = activeSelectorCount === 1;
+
   LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
     configData,
@@ -359,6 +364,7 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const closeButtonWrapper = ciwiBlock.querySelector(".close_button_wrapper");
 
   if (switcher) {
     if (!configData?.isTransparent) {
@@ -410,8 +416,18 @@ async function ciwiOnload() {
           break;
       }
       selectorBox.style.border = `1px solid ${configData.optionBorderColor}`;
+      selectorBox.dataset.mode = isDirectSelectorMode ? "direct" : "overlay";
+      selectorBox.classList.toggle("direct-select-mode", isDirectSelectorMode);
+      if (closeButtonWrapper) {
+        closeButtonWrapper.style.display = isDirectSelectorMode ? "none" : "flex";
+      }
 
-      if (configData.languageSelector || configData.currencySelector) {
+      if (isDirectSelectorMode) {
+        selectorBox.style.width = "150px";
+        selectorBox.style.display = "flex";
+        mainBox.style.display = "none";
+        translateFloatBtn.style.display = "none";
+      } else if (configData.languageSelector || configData.currencySelector) {
         mainBox.style.backgroundColor = configData.backgroundColor;
         mainBox.style.border = `1px solid ${configData.optionBorderColor}`;
         updateDisplayText(
