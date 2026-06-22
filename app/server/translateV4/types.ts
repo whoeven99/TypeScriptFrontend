@@ -5,8 +5,8 @@
  * `app/server/translateV4/` 与 `app/routes/api.translate-v4.*`、
  * `app/routes/app.translate-v4/` 下，未来可整体删除而不影响旧链路。
  *
- * 数据结构与 Spark worker(`worker/src/services/cosmosV4.ts`)读取的 job 文档保持一致，
- * 这样 TsFrontend 写入同一个 Cosmos 容器后，现有 worker 流水线可直接消费。
+ * 数据结构与 Spark 仓库 `Spark/worker` 读取的 job 文档保持一致，
+ * 这样 TsFrontend 写入同一个 Cosmos 容器后，Spark worker 流水线可直接消费。
  */
 
 export const TRANSLATION_V4_MODULES = [
