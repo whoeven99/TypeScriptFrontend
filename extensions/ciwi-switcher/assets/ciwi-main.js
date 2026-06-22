@@ -417,6 +417,8 @@ async function ciwiOnload() {
       }
       selectorBox.style.border = `1px solid ${configData.optionBorderColor}`;
       selectorBox.dataset.mode = isDirectSelectorMode ? "direct" : "overlay";
+      selectorBox.dataset.preferredPlacement =
+        configData.selectorPosition?.startsWith("bottom") ? "up" : "down";
       selectorBox.classList.toggle("direct-select-mode", isDirectSelectorMode);
       if (closeButtonWrapper) {
         closeButtonWrapper.style.display = isDirectSelectorMode ? "none" : "flex";

@@ -1192,6 +1192,37 @@ export class CiwiswitcherForm extends HTMLElement {
     return this.elements.selectorBox?.dataset.mode === "direct";
   }
 
+  updateSelectorPlacement() {
+    if (this.isDirectSelectorMode()) return;
+
+    const selectorBox = this.elements.selectorBox;
+    const anchor =
+      this.elements.mainBox?.style.display !== "none"
+        ? this.elements.mainBox
+        : this.elements.translateFloatBtn;
+
+    if (!selectorBox || !anchor) return;
+
+    const anchorRect = anchor.getBoundingClientRect();
+    const selectorRect = selectorBox.getBoundingClientRect();
+    const selectorHeight = selectorRect.height || selectorBox.scrollHeight || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const spaceAbove = anchorRect.top;
+    const spaceBelow = viewportHeight - anchorRect.bottom;
+    const preferredPlacement = selectorBox.dataset.preferredPlacement || "down";
+
+    let placement = preferredPlacement;
+    if (spaceBelow < selectorHeight && spaceAbove > spaceBelow) {
+      placement = "up";
+    } else if (spaceAbove < selectorHeight && spaceBelow >= spaceAbove) {
+      placement = "down";
+    }
+
+    selectorBox.dataset.placement = placement;
+    selectorBox.style.top = placement === "down" ? "100%" : "auto";
+    selectorBox.style.bottom = placement === "up" ? "100%" : "auto";
+  }
+
   handleSelectChange(event) {
     const select = event.currentTarget;
     const value = select?.value;
@@ -1291,7 +1322,12 @@ export class CiwiswitcherForm extends HTMLElement {
     }
 
     const isVisible = this.elements.selectorBox.style.display !== "none";
-    this.elements.selectorBox.style.display = isVisible ? "none" : "flex";
+    if (isVisible) {
+      this.elements.selectorBox.style.display = "none";
+    } else {
+      this.elements.selectorBox.style.display = "flex";
+      this.updateSelectorPlacement();
+    }
     if (
       this.elements.translateFloatBtn.style.justifyContent &&
       this.elements.mainBox.style.display === "none"
