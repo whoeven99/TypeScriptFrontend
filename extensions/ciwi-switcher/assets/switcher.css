@@ -19,6 +19,16 @@
   width: 100%;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
   box-sizing: border-box;
+  overflow: hidden;
+  background-clip: padding-box;
+}
+
+.selector_backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(2px);
+  z-index: 9999999998;
 }
 
 .selector_box.direct-select-mode {
@@ -28,6 +38,20 @@
   background: transparent;
   border-radius: 0;
   box-shadow: none;
+}
+
+@media (min-width: 769px) {
+  .ciwi_main_box,
+  .selector_box,
+  .native-selector {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .language-native-selector,
+  .native-selector {
+    background-clip: padding-box;
+  }
 }
 
 .close_button_wrapper {
@@ -79,6 +103,8 @@
   height: 44px;
   text-align: center;
   box-sizing: border-box;
+  overflow: hidden;
+  background-clip: padding-box;
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease,
@@ -227,47 +253,6 @@
   /* 平滑过渡 */
 }
 
-/* @media (max-width: 768px) {
-  .ciwi_container {
-    position: fixed;
-    width: 50px; 
-    background-color: transparent;
-    transition: width 0.3s ease; 
-    z-index: 9999;
-    display: block; 
-    height: 50px; 
-  }
-
-  .ciwi_container.expanded {
-    width: 200px;
-  }
-
-  .arrow_icon,
-  .mainarrow_icon,
-  .main_box_text,
-  .main_box_flag {
-    display: none;
-  }
-
- 
-  .ciwi_container.expanded #selector-box {
-    display: block; 
-    position: absolute;
-    top: -182px; 
-    width: 100%;
-  }
-
-  .ciwi_main_box {
-    padding: 0%;
-    border: 0;
-    background-color: transparent;
-  }
-
-  .mobile_trans_img {
-    display: block;
-  }
-} */
-
 body>.skiptranslate {
   display: none;
 }
@@ -301,11 +286,13 @@ a[href="https://translate.google.com"] {
 
 .native-selector {
   width: 100%;
+  position: relative;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #ddd;
   background: #fff;
   box-sizing: border-box;
+  background-clip: padding-box;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -319,6 +306,19 @@ a[href="https://translate.google.com"] {
 .native-selector:focus-within {
   border-color: #111827;
   box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.native-selector::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid rgba(17, 24, 39, 0.68);
+  border-bottom: 1.5px solid rgba(17, 24, 39, 0.68);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
 }
 
 .language-native-selector {
@@ -345,21 +345,24 @@ a[href="https://translate.google.com"] {
   display: block;
   width: 100%;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0 38px 0 14px;
   border: none;
   border-radius: inherit;
   background: transparent;
   color: inherit;
   font: inherit;
   box-sizing: border-box;
-  appearance: auto;
-  -webkit-appearance: menulist;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   font-size: 14px;
   line-height: 1.4;
+  box-shadow: none;
 }
 
 .language-native-selector .language_selector_header {
   padding-left: 42px;
+  padding-right: 38px;
 }
 
 .switcher-native-select:focus,

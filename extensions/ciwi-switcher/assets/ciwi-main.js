@@ -321,7 +321,6 @@ async function ciwiOnload() {
   const activeSelectorCount =
     Number(Boolean(isLanguageSelectorTakeEffect)) +
     Number(Boolean(isCurrencySelectorTakeEffect));
-  const isDirectSelectorMode = activeSelectorCount === 1;
 
   LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
@@ -367,15 +366,28 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const selectorBackdrop = ciwiBlock.querySelector("#selector-backdrop");
   const closeButtonWrapper = ciwiBlock.querySelector(".close_button_wrapper");
+  const shouldUseSidebarWidget =
+    !configData.languageSelector && !configData.currencySelector;
+  const isDirectSelectorMode = activeSelectorCount === 1 && !shouldUseSidebarWidget;
+  const isTransparentMode = Boolean(configData?.isTransparent);
 
   if (switcher) {
+    switcher.style.visibility = isTransparentMode ? "hidden" : "visible";
+    switcher.style.opacity = isTransparentMode ? "0" : "1";
+    switcher.style.pointerEvents = isTransparentMode ? "none" : "auto";
+    if (selectorBackdrop) {
+      selectorBackdrop.style.display = "none";
+    }
+
     if (!configData?.isTransparent) {
       const translateFloatBtnText = ciwiBlock.querySelector(
         "#translate-float-btn-text",
       );
       selectorBox.style.backgroundColor = configData.backgroundColor;
       switcher.style.color = configData.fontColor;
+      translateFloatBtn.style.pointerEvents = "auto";
 
       // 四个方向处理（保持原始逻辑）
       switch (configData.selectorPosition) {
@@ -420,9 +432,18 @@ async function ciwiOnload() {
       }
       selectorBox.style.border = `1px solid ${configData.optionBorderColor}`;
       selectorBox.dataset.mode = isDirectSelectorMode ? "direct" : "overlay";
+      selectorBox.dataset.layout = shouldUseSidebarWidget
+        ? "sidebar-widget"
+        : "floating";
       selectorBox.dataset.preferredPlacement =
         configData.selectorPosition?.startsWith("bottom") ? "up" : "down";
       selectorBox.classList.toggle("direct-select-mode", isDirectSelectorMode);
+      selectorBox.classList.remove("mobile-sidebar-mode");
+      switcher.classList.remove("mobile-sidebar-widget");
+      if (selectorBackdrop) {
+        selectorBackdrop.classList.remove("mobile-sidebar-backdrop");
+        selectorBackdrop.style.display = "none";
+      }
       if (closeButtonWrapper) {
         closeButtonWrapper.style.display = isDirectSelectorMode ? "none" : "flex";
       }
@@ -430,10 +451,20 @@ async function ciwiOnload() {
       if (isDirectSelectorMode) {
         selectorBox.style.width = "168px";
         selectorBox.style.border = "none";
+        selectorBox.style.backgroundColor = "transparent";
         selectorBox.style.display = "flex";
         mainBox.style.display = "none";
         translateFloatBtn.style.display = "none";
-      } else if (configData.languageSelector || configData.currencySelector) {
+      } else if (shouldUseSidebarWidget) {
+        selectorBox.style.width = "168px";
+        selectorBox.style.backgroundColor = configData.backgroundColor;
+        selectorBox.style.display = "none";
+        mainBox.style.display = "none";
+        translateFloatBtnText.style.backgroundColor =
+          configData.backgroundColor;
+        translateFloatBtn.style.display = "flex";
+      } else if (activeSelectorCount > 0) {
+        selectorBox.style.backgroundColor = configData.backgroundColor;
         mainBox.style.backgroundColor = configData.backgroundColor;
         mainBox.style.border = `1px solid ${configData.optionBorderColor}`;
         updateDisplayText(
@@ -444,9 +475,9 @@ async function ciwiOnload() {
         mainBox.style.display = "flex";
       } else {
         selectorBox.style.width = "168px";
-        translateFloatBtnText.style.backgroundColor =
-          configData.backgroundColor;
-        translateFloatBtn.style.display = "flex";
+        selectorBox.style.display = "none";
+        mainBox.style.display = "none";
+        translateFloatBtn.style.display = "none";
       }
     }
   }

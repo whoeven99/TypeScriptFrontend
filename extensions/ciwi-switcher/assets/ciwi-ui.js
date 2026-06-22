@@ -1157,6 +1157,7 @@ export class CiwiswitcherForm extends HTMLElement {
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
+      selectorBackdrop: this.querySelector("#selector-backdrop"),
       languageInput: this.querySelector('input[name="language_code"]'),
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
@@ -1201,6 +1202,11 @@ export class CiwiswitcherForm extends HTMLElement {
       this.handleCancelClick.bind(this),
     );
 
+    this.elements.selectorBackdrop?.addEventListener(
+      "click",
+      this.handleCancelClick.bind(this),
+    );
+
     // 点击外部关闭
     document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
@@ -1209,8 +1215,35 @@ export class CiwiswitcherForm extends HTMLElement {
     return this.elements.selectorBox?.dataset.mode === "direct";
   }
 
+  isSidebarWidgetMode() {
+    return this.elements.selectorBox?.dataset.layout === "sidebar-widget";
+  }
+
+  openSelectorPanel() {
+    this.elements.selectorBox.style.display = "flex";
+    if (this.isSidebarWidgetMode()) {
+      this.elements.ciwiContainer?.classList.add("expanded");
+    } else {
+      this.updateSelectorPlacement();
+    }
+    this.rotateArrow("#mainbox-arrow-icon", 180);
+  }
+
+  closeSelectorPanel() {
+    if (this.isSidebarWidgetMode()) {
+      this.elements.ciwiContainer?.classList.remove("expanded");
+    }
+    this.elements.selectorBox.style.display = this.isDirectSelectorMode()
+      ? "flex"
+      : "none";
+    if (this.elements.selectorBackdrop) {
+      this.elements.selectorBackdrop.style.display = "none";
+    }
+    this.rotateArrow("#mainbox-arrow-icon", 0);
+  }
+
   updateSelectorPlacement() {
-    if (this.isDirectSelectorMode()) return;
+    if (this.isDirectSelectorMode() || this.isSidebarWidgetMode()) return;
 
     const selectorBox = this.elements.selectorBox;
     const anchor =
@@ -1269,14 +1302,7 @@ export class CiwiswitcherForm extends HTMLElement {
     }
 
     if (!this.isDirectSelectorMode()) {
-      this.elements.selectorBox.style.display = "none";
-      if (
-        this.elements.translateFloatBtn.style.justifyContent &&
-        this.elements.mainBox.style.display === "none"
-      ) {
-        this.elements.translateFloatBtn.style.display = "flex";
-      }
-      this.rotateArrow("#mainbox-arrow-icon", 0);
+      this.closeSelectorPanel();
     }
     event.preventDefault();
 
@@ -1301,14 +1327,7 @@ export class CiwiswitcherForm extends HTMLElement {
   handleCancelClick(event) {
     event.preventDefault();
     if (this.isDirectSelectorMode()) return;
-    this.elements.selectorBox.style.display = "none";
-    if (
-      this.elements.translateFloatBtn.style.justifyContent &&
-      this.elements.mainBox.style.display === "none"
-    ) {
-      this.elements.translateFloatBtn.style.display = "flex";
-    }
-    this.rotateArrow("#mainbox-arrow-icon", 0);
+    this.closeSelectorPanel();
   }
 
   handleOutsideClick(event) {
@@ -1317,16 +1336,7 @@ export class CiwiswitcherForm extends HTMLElement {
       this.elements.ciwiContainer &&
       !this.elements.ciwiContainer.contains(event.target)
     ) {
-      if (this.elements.selectorBox) {
-        this.elements.selectorBox.style.display = "none";
-        if (
-          this.elements.translateFloatBtn.style.justifyContent &&
-          this.elements.mainBox.style.display === "none"
-        ) {
-          this.elements.translateFloatBtn.style.display = "flex";
-        }
-      }
-      this.rotateArrow("#mainbox-arrow-icon", 0);
+      if (this.elements.selectorBox) this.closeSelectorPanel();
     }
   }
 
@@ -1341,28 +1351,10 @@ export class CiwiswitcherForm extends HTMLElement {
 
     const isVisible = this.elements.selectorBox.style.display !== "none";
     if (isVisible) {
-      this.elements.selectorBox.style.display = "none";
+      this.closeSelectorPanel();
     } else {
-      this.elements.selectorBox.style.display = "flex";
-      this.updateSelectorPlacement();
+      this.openSelectorPanel();
     }
-    if (
-      this.elements.translateFloatBtn.style.justifyContent &&
-      this.elements.mainBox.style.display === "none"
-    ) {
-      this.elements.translateFloatBtn.style.display = isVisible
-        ? "flex"
-        : "none";
-    }
-    // // 移动端适配
-    // if (window.innerWidth <= 768) {
-    //   const mainBox = ciwiBlock.querySelector("main-box");
-    //   mainBox.style.display = isVisible ? "block" : "none";
-    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    // }
-
-    // 旋转箭头
-    this.rotateArrow("#mainbox-arrow-icon", isVisible ? 0 : 180);
   }
 
   rotateArrow(elementId, degrees) {
