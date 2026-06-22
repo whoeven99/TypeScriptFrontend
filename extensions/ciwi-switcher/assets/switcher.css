@@ -292,6 +292,8 @@ a[href="https://translate.google.com"] {
 
 .native-selector {
   width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .switcher-native-select,
@@ -306,12 +308,15 @@ a[href="https://translate.google.com"] {
   color: inherit;
   font: inherit;
   box-sizing: border-box;
+  appearance: auto;
+  -webkit-appearance: menulist;
 }
 
 .switcher-native-select:focus,
 .language_selector_header:focus,
 .currency_selector_header:focus {
-  outline: auto;
+  outline: none;
+  box-shadow: none;
 }
 
 .country-flag {
