@@ -17,9 +17,10 @@ import {
   Typography,
   message,
 } from "antd";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
+import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
@@ -95,6 +96,10 @@ const SHOP_LOCALES_QUERY = `#graphql
 `;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  if (!isTranslateV4Enabled()) {
+    throw redirect("/app");
+  }
+
   const { admin, session } = await authenticate.admin(request);
 
   let locales: ShopLocaleOption[] = [];
@@ -146,7 +151,7 @@ function stageOf(
   status: TranslationV4Status,
   errorStage?: string | null,
 ): 0 | 1 | 2 | 3 | 4 {
-  if (status === "PAUSED" || status === "FAILED") {
+  if (status === "PAUSED" || status === "FAILED" || status === "CANCELLED") {
     switch (errorStage) {
       case "WRITEBACK":
         return 2;
@@ -174,12 +179,19 @@ function ratioPercent(done: number, total: number): number {
   return Math.min(100, Math.round((done / total) * 100));
 }
 
-/** 任务级资源总数（翻译/写回进度条的分母）。 */
+/** 任务级资源总数（写回进度条的分母）。 */
 function taskResourceTotal(m: StageMetrics): number {
   return m.translateTotal || m.initTotal || 0;
 }
 
-/** 各阶段进度条百分比：翻译/写回均以任务资源总数为分母，与右侧计数一致。 */
+function translateStageProgress(m: StageMetrics): { done: number; total: number } {
+  if (m.translateUnitTotal > 0) {
+    return { done: m.translateUnitDone, total: m.translateUnitTotal };
+  }
+  return { done: m.translateDone, total: taskResourceTotal(m) };
+}
+
+/** 各阶段进度条百分比：翻译优先按子节点；写回以任务资源总数为分母。 */
 function stageBarPercent(
   idx: number,
   m: StageMetrics,
@@ -189,8 +201,10 @@ function stageBarPercent(
   switch (idx) {
     case 0:
       return ratioPercent(m.initDone, m.initTotal);
-    case 1:
-      return ratioPercent(m.translateDone, taskResourceTotal(m));
+    case 1: {
+      const { done, total } = translateStageProgress(m);
+      return ratioPercent(done, total);
+    }
     case 2: {
       const total = taskResourceTotal(m);
       return total > 0 ? ratioPercent(m.writebackDone, total) : 0;
@@ -212,11 +226,10 @@ function isStageBarComplete(
   switch (idx) {
     case 0:
       return m.initTotal > 0 && m.initDone >= m.initTotal;
-    case 1:
-      return (
-        taskResourceTotal(m) > 0 &&
-        m.translateDone >= taskResourceTotal(m)
-      );
+    case 1: {
+      const { done, total } = translateStageProgress(m);
+      return total > 0 && done >= total;
+    }
     case 2: {
       const total = taskResourceTotal(m);
       return total > 0 && m.writebackDone >= total;
@@ -238,9 +251,13 @@ function formatElapsed(ms: number): string {
   return `${h}时${m % 60}分`;
 }
 
-function stageElapsedMs(t?: StageTiming): number | null {
+function stageElapsedMs(t?: StageTiming, freezeAt?: string | null): number | null {
   if (!t?.startedAt) return null;
-  const end = t.endedAt ? new Date(t.endedAt).getTime() : Date.now();
+  const end = t.endedAt
+    ? new Date(t.endedAt).getTime()
+    : freezeAt
+      ? new Date(freezeAt).getTime()
+      : Date.now();
   const ms = end - new Date(t.startedAt).getTime();
   return Number.isFinite(ms) && ms >= 0 ? ms : null;
 }
@@ -364,13 +381,14 @@ function JobCard({
   };
 
   const totalItems = m.translateTotal || m.initTotal || 0;
-  const hideDuration = job.status === "PAUSED" || job.status === "CANCELLED";
-  const overallMs = hideDuration
-    ? null
-    : stageElapsedMs({
-        startedAt: job.createdAt,
-        endedAt: job.isTerminal ? job.updatedAt : null,
-      });
+  const freezeAt =
+    job.status === "PAUSED" || job.status === "CANCELLED" || job.isTerminal
+      ? job.updatedAt
+      : null;
+  const overallMs = stageElapsedMs({
+    startedAt: job.createdAt,
+    endedAt: freezeAt,
+  });
 
   return (
     <Card size="small" style={{ marginBottom: 12 }}>
@@ -445,7 +463,11 @@ function JobCard({
             idx === activeStage && !job.isTerminal && !isPaused && !job.isStopping;
           const pausedHere = isPaused && idx === activeStage;
           const stoppingHere = job.isStopping && idx === activeStage;
-          const ms = hideDuration ? null : stageElapsedMs(timings[key]);
+          const stageFreezeAt =
+            (job.status === "PAUSED" || job.status === "CANCELLED") && idx === activeStage
+              ? freezeAt
+              : undefined;
+          const ms = stageElapsedMs(timings[key], stageFreezeAt);
           const initScanning = idx === 0 && current && m.initTotal <= 0;
           const inProgress = percent > 0 && !complete;
           return (

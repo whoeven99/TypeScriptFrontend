@@ -1,19 +1,11 @@
 import { Input } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { useEditor } from "@tiptap/react";
-import TextAlign from "@tiptap/extension-text-align";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import { Table } from "@tiptap/extension-table";
-import Color from "@tiptap/extension-color";
-import { TextStyle } from "@tiptap/extension-text-style";
-import StarterKit from "@tiptap/starter-kit";
-import Highlight from "@tiptap/extension-highlight";
-import Tiptap from "app/components/richTextInput/richTextInput";
-import Image from "@tiptap/extension-image";
 import "./styles.css";
+
+// tiptap 富文本编辑器（约 468K，含 prosemirror）单独拆成 chunk，
+// 仅在渲染 HTML 字段时按需加载，纯文本字段不会引入它。
+const ManageTableInputEditor = lazy(() => import("./manageTableInputEditor"));
 
 const { TextArea } = Input;
 
@@ -50,6 +42,41 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
 
   const locale = useSelector((state: any) => state.userConfig.locale);
 
+  // 客户端挂载后再加载编辑器：当前为 renderToString 的非流式 SSR，
+  // 服务端与首次客户端渲染都用占位符，避免 hydration 不一致，
+  // 编辑器 chunk 仅在浏览器按需下载。
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const renderEditor = (mode: "edit" | "readonly") => {
+    const fallback = (
+      <TextArea
+        rows={4}
+        disabled
+        value={
+          mode === "edit" ? translatedValues?.[record?.key] : defaultValue
+        }
+        className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
+      />
+    );
+    if (!mounted) return fallback;
+    return (
+      <Suspense fallback={fallback}>
+        <ManageTableInputEditor
+          mode={mode}
+          record={record}
+          translatedValues={translatedValues}
+          handleInputChange={handleInputChange}
+          isSuccess={isSuccess}
+          isRtl={isRtl}
+          defaultValue={defaultValue}
+        />
+      </Suspense>
+    );
+  };
+
   useEffect(() => {
     if (setTranslatedValues && record?.key) {
       setTranslatedValues((prev) => {
@@ -73,64 +100,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     setTranslatedValues !== undefined
   ) {
     if (isHtml) {
-      const [isInitialized, setIsInitialized] = useState(false);
-      const [htmlContent, setHtmlContent] = useState<string>("");
-
-      const targetEditor = useEditor(
-        {
-          extensions: [
-            StarterKit,
-            TextStyle,
-            Color,
-            Highlight,
-            Image,
-            Table.configure({ resizable: true }),
-            TableRow,
-            TableHeader,
-            TableCell,
-            TextAlign.configure({ types: ["heading", "paragraph"] }),
-          ],
-          content: translatedValues[record?.key] || "",
-          immediatelyRender: false,
-          onUpdate: ({ editor }) => {
-            if (!isInitialized) return;
-            const html = editor.getHTML(); // 原始 HTML
-            handleInputChange(record, html);
-          },
-        },
-        [],
-      );
-
-      useEffect(() => {
-        if (!targetEditor) return;
-
-        const externalHtml = translatedValues[record?.key] || "";
-
-        // 只在首次加载或内容真的不同的时候才更新
-        if (!isInitialized) {
-          targetEditor.commands.setContent(externalHtml, { emitUpdate: false });
-          setIsInitialized(true);
-        } else {
-          // 如果外部内容变了但和当前内容不同，再更新
-          const currentHtml = targetEditor.getHTML();
-          if (currentHtml !== externalHtml) {
-            targetEditor.commands.setContent(externalHtml, {
-              emitUpdate: false,
-            });
-            setHtmlContent(externalHtml);
-          }
-        }
-      }, [targetEditor, translatedValues, record.key]);
-
-      return (
-        <Tiptap
-          editor={targetEditor}
-          htmlContent={translatedValues[record?.key]}
-          setHtmlContent={(e) => handleInputChange(record, e)}
-          isSuccess={isSuccess}
-          isrtl={isRtl}
-        />
-      );
+      return renderEditor("edit");
     }
     return (
       <TextArea
@@ -142,44 +112,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     );
   } else {
     if (isHtml) {
-      const [htmlContent, setHtmlContent] = useState<string>(defaultValue);
-
-      const originalEditor = useEditor({
-        editable: false,
-        extensions: [
-          StarterKit,
-          TextStyle,
-          Color,
-          Highlight,
-          Image,
-          Table.configure({
-            resizable: true, // 允许拖动调整列宽
-          }),
-          TableRow,
-          TableHeader,
-          TableCell,
-          TextAlign.configure({
-            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
-          }),
-          // Underline
-        ], // define your extension array
-        content: defaultValue || "", // initial content
-        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
-      });
-
-      useEffect(() => {
-        originalEditor?.commands.setContent(defaultValue);
-      }, [defaultValue]);
-
-      return (
-        <Tiptap
-          editor={originalEditor}
-          htmlContent={htmlContent}
-          setHtmlContent={setHtmlContent}
-          isrtl={isRtl}
-          readOnly={true}
-        />
-      );
+      return renderEditor("readonly");
     }
     return (
       <TextArea
@@ -192,4 +125,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   }
 };
 
-export default ManageTableInput;
+// memo：props 浅比较未变时跳过重渲染。配合调用方用 useCallback 稳定
+// handleInputChange，可避免无关状态变化引起的整表单元格重渲染。
+export default memo(ManageTableInput);

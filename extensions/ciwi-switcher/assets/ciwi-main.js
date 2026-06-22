@@ -1,6 +1,6 @@
 // main.js
 import * as API from "./ciwi-api.js";
-import { useCacheThenRefresh, setWithTTL } from "./ciwi-storage.js";
+import { useCacheThenRefresh, setWithTTL, getWithTTL } from "./ciwi-storage.js";
 import {
   CiwiswitcherForm,
   updateDisplayText,
@@ -10,12 +10,10 @@ import {
   HomeImageTranslate,
   CustomLiquidTextTranslate,
   PageFlyTextTranslate,
+  renderLanguageFlags,
+  ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
-
-// 在 window.onload 里
-
-console.log("welcome to use Ciwi.ai Language Switcher (modular)");
 
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
@@ -61,8 +59,6 @@ const rtlLanguages = [
 ];
 
 async function ciwiOnload() {
-  console.log("onload start (modular+full)");
-
   //超过7天清理缓存
   const expireAt = Number(localStorage.getItem("ciwi_iplocation_expire_at"));
   const now = Date.now();
@@ -87,7 +83,6 @@ async function ciwiOnload() {
           mutation.type === "attributes" &&
           mutation.attributeName === "value"
         ) {
-          console.log(`value has changed: `, inputElement.value);
           localStorage.setItem(storageKey, inputElement.value);
         }
       });
@@ -141,6 +136,9 @@ async function ciwiOnload() {
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
+  // 记录本次是否命中缓存：仅命中缓存时才在末尾后台刷新，
+  // 避免首次访问（无缓存）背靠背发两次相同的 config 请求
+  const hadConfigCache = !!getWithTTL(configKey);
   const fetchSwitcherConfig = await useCacheThenRefresh(
     configKey,
     async () => API.fetchSwitcherConfig({ blockId, shop: shop.value }),
@@ -296,21 +294,6 @@ async function ciwiOnload() {
     "shopify-design-mode",
   );
 
-  console.log("detectedCountry: ", detectedCountry);
-  console.log("detectedLanguage: ", detectedLanguage);
-  console.log("countryValue: ", countryValue);
-  console.log("languageValue: ", languageValue);
-  console.log(
-    "detectedCountry !== countryValue: ",
-    detectedCountry !== countryValue,
-  );
-  console.log(
-    "detectedLanguage !== languageValue: ",
-    detectedLanguage !== languageValue,
-  );
-  console.log("isInThemeEditor: ", isInThemeEditor);
-  console.log("needRedirection: ", needRedirection);
-
   //不在主题编辑器内
   if (!isInThemeEditor && configData?.ipOpen) {
     //需要定位逻辑
@@ -340,6 +323,22 @@ async function ciwiOnload() {
     configData,
     ciwiBlock,
   );
+
+  // 国旗数据（24KB）按需加载：浏览器空闲时加载并渲染国旗；
+  // 若用户在此之前先接触切换器，则立即加载（先于 idle）。两条路径都只渲染一次。
+  if (isLanguageSelectorTakeEffect && configData?.includedFlag) {
+    const loadFlags = () =>
+      ensureLanguageLocaleData().then(() =>
+        renderLanguageFlags(configData, ciwiBlock),
+      );
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadFlags, { timeout: 3000 });
+    } else {
+      setTimeout(loadFlags, 1200);
+    }
+    const mainBox = ciwiBlock.querySelector("#main-box");
+    mainBox?.addEventListener("mouseenter", loadFlags, { once: true });
+  }
 
   CurrencySelectorTakeEffect(
     blockId,
@@ -442,14 +441,17 @@ async function ciwiOnload() {
     selectorBox.style.right = "0";
   }
 
-  // 最后一次刷新 config（异步，不阻塞）
-  API.fetchSwitcherConfig({ blockId, shop: shop.value })
-    .then((fresh) => {
-      if (fresh) {
-        setWithTTL("ciwi_switcher_config", fresh);
-      }
-    })
-    .catch(() => {});
+  // 仅在命中缓存时后台刷新 config（异步，不阻塞）；
+  // 首次无缓存时 useCacheThenRefresh 已经拉取并缓存，无需再请求一次
+  if (hadConfigCache) {
+    API.fetchSwitcherConfig({ blockId, shop: shop.value })
+      .then((fresh) => {
+        if (fresh) {
+          setWithTTL("ciwi_switcher_config", fresh);
+        }
+      })
+      .catch(() => {});
+  }
 
   if (isCurrencySelectorTakeEffect) {
     API.fetchCurrencies({ blockId, shop: shop.value })
@@ -461,8 +463,13 @@ async function ciwiOnload() {
       .catch(() => {});
   }
 
-  // 刷新缓存
-  console.log("onload end (modular+full)");
 }
 
-window.addEventListener("load", ciwiOnload);
+// 尽早初始化：DOM 就绪即可运行，无需等待整页所有图片/字体等资源（原 window load）。
+// 三个数据脚本在 liquid 中改用 defer，保证在 DOMContentLoaded 前按序加载完，
+// 因此此处运行时 window.countryCurMap 等已就绪。
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", ciwiOnload);
+} else {
+  ciwiOnload();
+}

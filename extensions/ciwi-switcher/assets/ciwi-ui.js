@@ -93,8 +93,6 @@ export async function initializeCurrency({
     } else {
       rate = selectedCurrency.exchangeRate;
     }
-    console.log("selectedCurrency: ", selectedCurrency);
-
     // 初始执行一次
     transformPrices({ rate, moneyFormat, selectedCurrency });
 
@@ -217,11 +215,8 @@ export async function LanguageSelectorTakeEffect(
   ciwiBlock,
 ) {
   if (!isLanguageSelectorTakeEffect) {
-    console.log("languageSelector function false");
     return;
   }
-  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
-  const language = languageInput.value;
   const languageSelector = ciwiBlock.querySelector(
     "#language-switcher-container",
   );
@@ -231,42 +226,104 @@ export async function LanguageSelectorTakeEffect(
   );
   languageSelectorHeader.style.backgroundColor = data.backgroundColor;
   languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  const languageSelectorSelectedOption = ciwiBlock.querySelector(
+    ".options-container[data-type='language']",
+  );
+  if (languageSelectorSelectedOption) {
+    languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
+    languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+  }
+}
 
+// 语言国旗渲染（依赖 24KB 的 languageLocaleData）。
+// 从 LanguageSelectorTakeEffect 拆出，便于按需（空闲/交互）延迟渲染，
+// 把 24KB 数据移出每页关键路径。
+let _languageFlagsRendered = false;
+
+export function renderLanguageFlags(data, ciwiBlock) {
+  if (_languageFlagsRendered) return;
+  if (!data?.includedFlag) return;
+  const languageLocaleData = window.languageLocaleData || null;
+  if (!languageLocaleData) return; // 数据尚未加载，稍后重试
+
+  const language = ciwiBlock.querySelector('input[name="language_code"]')?.value;
+  const countryCode = languageLocaleData?.[language]?.countries?.[0];
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
   const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
   const translateFloatBtnIcon = ciwiBlock.querySelector(
     "#translate-float-btn-icon",
   );
-  if (data?.includedFlag) {
-    const languageLocaleData = window.languageLocaleData
-      ? window.languageLocaleData
-      : null;
-    const countryCode = languageLocaleData?.[language]?.countries?.[0];
+
+  //获取所有语言代码
+  const languageOptions = ciwiBlock.querySelectorAll(
+    ".option-item[data-type='language']",
+  );
+  languageOptions.forEach((option) => {
+    const langCode = option.dataset.value;
+    const countryCode = languageLocaleData[langCode]?.countries[0];
     if (countryCode) {
-      if (
-        mainLanguageFlag &&
-        (data.languageSelector || data.currencySelector)
-      ) {
-        mainLanguageFlag.src = countryCode;
-        mainLanguageFlag.hidden = false;
-      }
-      if (
-        translateFloatBtnIcon &&
-        !data.languageSelector &&
-        !data.currencySelector
-      ) {
-        translateFloatBtnIcon.src = countryCode;
-        translateFloatBtnIcon.hidden = false;
-      }
+      // 创建并插入国旗图片
+      const flagImg = document.createElement("img");
+      flagImg.className = "option-country-flag";
+      flagImg.src = countryCode;
+      flagImg.alt = "";
+      // 将图片插入到选项的最前面
+      option.insertBefore(flagImg, option.firstChild);
     }
-    if (languageSelect) {
-      languageSelect.style.paddingLeft = "12px";
+  });
+  // 为当前选中的语言添加国旗
+  const selectedOption = ciwiBlock.querySelector(
+    ".language_selector_header[data-type='language'] .selected-option",
+  );
+  if (selectedOption) {
+    const optionFlagImg = document.createElement("img");
+    optionFlagImg.className = "option-country-flag";
+    optionFlagImg.src = countryCode;
+    optionFlagImg.alt = "";
+    if (countryCode) {
+      selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
     }
-    const mainBoxText = ciwiBlock.querySelector(".main_box_text");
-    if (mainBoxText && countryCode) {
-      mainBoxText.style.margin = "0 20px 0px 25px";
+    if (mainLanguageFlag && (data.languageSelector || data.currencySelector)) {
+      mainLanguageFlag.src = countryCode;
+      mainLanguageFlag.hidden = false;
+    }
+    if (
+      translateFloatBtnIcon &&
+      !data.languageSelector &&
+      !data.currencySelector
+    ) {
+      translateFloatBtnIcon.src = countryCode;
+      translateFloatBtnIcon.hidden = false;
     }
   }
+  if (languageSelect && countryCode) {
+    languageSelect.style.paddingLeft = "12px";
+  }
+  const mainBoxText = ciwiBlock.querySelector(".main_box_text");
+  if (mainBoxText && countryCode) {
+    mainBoxText.style.margin = "0 20px 0px 25px";
+  }
+
+  _languageFlagsRendered = true;
+}
+
+// 按需注入 language-locale-data.js（单例 Promise）。URL 由 liquid 的 #ciwiLocaleDataUrl 提供。
+let _localeDataPromise = null;
+
+export function ensureLanguageLocaleData() {
+  if (window.languageLocaleData)
+    return Promise.resolve(window.languageLocaleData);
+  if (_localeDataPromise) return _localeDataPromise;
+  const url = document.querySelector("#ciwiLocaleDataUrl")?.value;
+  if (!url) return Promise.resolve(null);
+  _localeDataPromise = new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = url;
+    s.onload = () => resolve(window.languageLocaleData || null);
+    s.onerror = () => resolve(null);
+    document.head.appendChild(s);
+  });
+  return _localeDataPromise;
 }
 
 // 保存所有我们替换过的 img 以及“替换后的最终值”
@@ -333,7 +390,6 @@ export function initProductImgObserver({
         });
 
         if (matched && matched.imageAfterUrl) {
-          console.log("🕓 延迟替换图片:", matched.imageAfterUrl);
           // 延迟执行替换
           observer.disconnect(); // 暂停观察以防止重复触发
           // 预加载替换图，等加载完成再替换 DOM
@@ -424,17 +480,30 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 /**
  * 根据数据库数据替换网页文本（安全版）
  */
+// 按语言缓存 liquid 翻译数据：CustomLiquidTextTranslate 会被调用两次
+// （立即一次 + 5s 后再一次以覆盖延迟注入的内容），缓存可避免第二次重复请求网络。
+let _liquidTranslationCache = null;
+
 export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
   const language = languageInput?.value;
 
-  // 🧩 获取数据库翻译数据
-  const parseLiquidDataByShopNameAndLanguage =
-    await ParseLiquidDataByShopNameAndLanguage({
-      blockId,
-      shopName: shop.value,
-      languageCode: language,
-    });
+  // 🧩 获取数据库翻译数据（命中同语言缓存则复用，不再发请求）
+  let parseLiquidDataByShopNameAndLanguage;
+  if (_liquidTranslationCache && _liquidTranslationCache.language === language) {
+    parseLiquidDataByShopNameAndLanguage = _liquidTranslationCache.data;
+  } else {
+    parseLiquidDataByShopNameAndLanguage =
+      await ParseLiquidDataByShopNameAndLanguage({
+        blockId,
+        shopName: shop.value,
+        languageCode: language,
+      });
+    _liquidTranslationCache = {
+      language,
+      data: parseLiquidDataByShopNameAndLanguage,
+    };
+  }
 
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
   if (!translations || Object.keys(translations).length === 0) return;
@@ -1039,7 +1108,6 @@ export async function HomeImageTranslate(blockId) {
     languageCode: language,
   });
   if (!translatedImages?.response?.length) {
-    console.log("ℹ️ [HomeImageTranslate] no translated images found");
     return;
   }
   // Step 3: 替换
@@ -1207,7 +1275,6 @@ export class CiwiswitcherForm extends HTMLElement {
 
   toggleSelector(event) {
     event.preventDefault();
-    console.log("点击block");
     const ciwiBlock = this.elements.ciwiBlock;
     if (!ciwiBlock) {
       console.error("ciwiBlock not found");

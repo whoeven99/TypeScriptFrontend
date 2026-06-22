@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from "react";
-import * as echarts from "echarts";
+// 按需引入 echarts，避免整包（约 1MB）进入打包：只注册折线图 + 直角坐标系 + tooltip + canvas 渲染器
+import * as echarts from "echarts/core";
+import { LineChart } from "echarts/charts";
+import { GridComponent, TooltipComponent } from "echarts/components";
+import { CanvasRenderer } from "echarts/renderers";
+
+echarts.use([GridComponent, TooltipComponent, LineChart, CanvasRenderer]);
 
 interface Props {
   data: any[];
