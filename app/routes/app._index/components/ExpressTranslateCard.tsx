@@ -8,7 +8,6 @@ import {
   Progress,
   Select,
   Space,
-  Tag,
   Typography,
   message,
 } from "antd";
@@ -53,6 +52,9 @@ type MigrationSummary = {
 /** 极速翻译默认翻译的模块（与 api.translate-v4.tasks 的默认保持一致）。 */
 const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
 
+/** 折叠时默认展示的任务条数 */
+const COLLAPSED_JOB_COUNT = 2;
+
 function progressStatus(job: ExpressV4Job): "success" | "exception" | "active" | "normal" {
   if (job.status === "FAILED") return "exception";
   if (job.isTerminal) return "success";
@@ -74,12 +76,21 @@ const ExpressTranslateCard = ({
   const [migratedState, setMigratedState] = useState(migrated);
   const [migrating, setMigrating] = useState(false);
   const [summary, setSummary] = useState<MigrationSummary | null>(null);
+  const [jobsExpanded, setJobsExpanded] = useState(false);
 
   const source = primaryLocale || "zh-CN";
   const targetOptions = useMemo<ShopLocaleOption[]>(
     () => locales.filter((l) => l.value !== source),
     [locales, source],
   );
+  const visibleJobs = useMemo(
+    () =>
+      jobsExpanded || jobs.length <= COLLAPSED_JOB_COUNT
+        ? jobs
+        : jobs.slice(0, COLLAPSED_JOB_COUNT),
+    [jobs, jobsExpanded],
+  );
+  const hasMoreJobs = jobs.length > COLLAPSED_JOB_COUNT;
 
   // 已迁移的店：进卡片时拉一次迁移摘要，持续展示「迁移了哪些数据」。
   useEffect(() => {
@@ -214,14 +225,11 @@ const ExpressTranslateCard = ({
       styles={{ body: { padding: "12px 24px" } }}
     >
       <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
-        <Flex align="center" gap={8}>
-          <Title level={4} style={{ margin: 0, fontWeight: 600 }}>
-            极速翻译
-          </Title>
-          <Tag color="geekblue">v4</Tag>
-        </Flex>
-        <Button type="primary" onClick={() => navigate("/app/translate-v4")}>
-          高级设置
+        <Title level={4} style={{ margin: 0, fontWeight: 600 }}>
+          极速翻译
+        </Title>
+        <Button type="link" onClick={() => navigate("/app/translate-v4")}>
+          更多设置
         </Button>
       </Flex>
 
@@ -286,26 +294,42 @@ const ExpressTranslateCard = ({
           description="当前没有翻译任务"
         />
       ) : (
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          {jobs.map((job) => (
-            <div key={job.taskId}>
-              <Flex justify="space-between" align="center">
-                <Text strong>
-                  {job.source} → {job.target}
-                </Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {job.statusLabel}
-                  {job.stageSummary ? ` · ${job.stageSummary}` : ""}
-                </Text>
-              </Flex>
-              <Progress
-                percent={job.progressPercent ?? 0}
-                status={progressStatus(job)}
-                size="small"
-              />
-            </div>
-          ))}
-        </Space>
+        <div>
+          <Space direction="vertical" size="small" style={{ display: "flex" }}>
+            {visibleJobs.map((job) => (
+              <div key={job.taskId}>
+                <Flex justify="space-between" align="center">
+                  <Text strong style={{ fontSize: 13 }}>
+                    {job.source} → {job.target}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {job.statusLabel}
+                    {job.stageSummary ? ` · ${job.stageSummary}` : ""}
+                  </Text>
+                </Flex>
+                <Progress
+                  percent={job.progressPercent ?? 0}
+                  status={progressStatus(job)}
+                  size="small"
+                  strokeWidth={4}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+            ))}
+          </Space>
+          {hasMoreJobs ? (
+            <Button
+              type="link"
+              size="small"
+              style={{ padding: "4px 0 0", height: "auto" }}
+              onClick={() => setJobsExpanded((v) => !v)}
+            >
+              {jobsExpanded
+                ? "收起"
+                : `展开全部（${jobs.length}）`}
+            </Button>
+          ) : null}
+        </div>
       )}
     </Card>
   );
