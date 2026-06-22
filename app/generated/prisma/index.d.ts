@@ -24,6 +24,11 @@ export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
  */
 export type ShopTranslationSettings = $Result.DefaultSelection<Prisma.$ShopTranslationSettingsPayload>
 /**
+ * Model ShopTargetLocale
+ * 
+ */
+export type ShopTargetLocale = $Result.DefaultSelection<Prisma.$ShopTargetLocalePayload>
+/**
  * Model Glossary
  * 
  */
@@ -171,6 +176,16 @@ export class PrismaClient<
     * ```
     */
   get shopTranslationSettings(): Prisma.ShopTranslationSettingsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.shopTargetLocale`: Exposes CRUD operations for the **ShopTargetLocale** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ShopTargetLocales
+    * const shopTargetLocales = await prisma.shopTargetLocale.findMany()
+    * ```
+    */
+  get shopTargetLocale(): Prisma.ShopTargetLocaleDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.glossary`: Exposes CRUD operations for the **Glossary** model.
@@ -634,6 +649,7 @@ export namespace Prisma {
   export const ModelName: {
     Session: 'Session',
     ShopTranslationSettings: 'ShopTranslationSettings',
+    ShopTargetLocale: 'ShopTargetLocale',
     Glossary: 'Glossary',
     LiquidRule: 'LiquidRule'
   };
@@ -654,7 +670,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "session" | "shopTranslationSettings" | "glossary" | "liquidRule"
+      modelProps: "session" | "shopTranslationSettings" | "shopTargetLocale" | "glossary" | "liquidRule"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -803,6 +819,80 @@ export namespace Prisma {
           count: {
             args: Prisma.ShopTranslationSettingsCountArgs<ExtArgs>
             result: $Utils.Optional<ShopTranslationSettingsCountAggregateOutputType> | number
+          }
+        }
+      }
+      ShopTargetLocale: {
+        payload: Prisma.$ShopTargetLocalePayload<ExtArgs>
+        fields: Prisma.ShopTargetLocaleFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ShopTargetLocaleFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ShopTargetLocaleFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          findFirst: {
+            args: Prisma.ShopTargetLocaleFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ShopTargetLocaleFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          findMany: {
+            args: Prisma.ShopTargetLocaleFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>[]
+          }
+          create: {
+            args: Prisma.ShopTargetLocaleCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          createMany: {
+            args: Prisma.ShopTargetLocaleCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ShopTargetLocaleCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>[]
+          }
+          delete: {
+            args: Prisma.ShopTargetLocaleDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          update: {
+            args: Prisma.ShopTargetLocaleUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          deleteMany: {
+            args: Prisma.ShopTargetLocaleDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ShopTargetLocaleUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ShopTargetLocaleUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>[]
+          }
+          upsert: {
+            args: Prisma.ShopTargetLocaleUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTargetLocalePayload>
+          }
+          aggregate: {
+            args: Prisma.ShopTargetLocaleAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateShopTargetLocale>
+          }
+          groupBy: {
+            args: Prisma.ShopTargetLocaleGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ShopTargetLocaleGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ShopTargetLocaleCountArgs<ExtArgs>
+            result: $Utils.Optional<ShopTargetLocaleCountAggregateOutputType> | number
           }
         }
       }
@@ -1052,6 +1142,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     session?: SessionOmit
     shopTranslationSettings?: ShopTranslationSettingsOmit
+    shopTargetLocale?: ShopTargetLocaleOmit
     glossary?: GlossaryOmit
     liquidRule?: LiquidRuleOmit
   }
@@ -3346,32 +3437,1103 @@ export namespace Prisma {
 
 
   /**
+   * Model ShopTargetLocale
+   */
+
+  export type AggregateShopTargetLocale = {
+    _count: ShopTargetLocaleCountAggregateOutputType | null
+    _avg: ShopTargetLocaleAvgAggregateOutputType | null
+    _sum: ShopTargetLocaleSumAggregateOutputType | null
+    _min: ShopTargetLocaleMinAggregateOutputType | null
+    _max: ShopTargetLocaleMaxAggregateOutputType | null
+  }
+
+  export type ShopTargetLocaleAvgAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
+  export type ShopTargetLocaleSumAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
+  export type ShopTargetLocaleMinAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    locale: string | null
+    autoTranslate: boolean | null
+    status: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ShopTargetLocaleMaxAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    locale: string | null
+    autoTranslate: boolean | null
+    status: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ShopTargetLocaleCountAggregateOutputType = {
+    id: number
+    shop: number
+    locale: number
+    autoTranslate: number
+    status: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ShopTargetLocaleAvgAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type ShopTargetLocaleSumAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type ShopTargetLocaleMinAggregateInputType = {
+    id?: true
+    shop?: true
+    locale?: true
+    autoTranslate?: true
+    status?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ShopTargetLocaleMaxAggregateInputType = {
+    id?: true
+    shop?: true
+    locale?: true
+    autoTranslate?: true
+    status?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ShopTargetLocaleCountAggregateInputType = {
+    id?: true
+    shop?: true
+    locale?: true
+    autoTranslate?: true
+    status?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ShopTargetLocaleAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ShopTargetLocale to aggregate.
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTargetLocales to fetch.
+     */
+    orderBy?: ShopTargetLocaleOrderByWithRelationInput | ShopTargetLocaleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ShopTargetLocaleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTargetLocales from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTargetLocales.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ShopTargetLocales
+    **/
+    _count?: true | ShopTargetLocaleCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ShopTargetLocaleAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ShopTargetLocaleSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ShopTargetLocaleMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ShopTargetLocaleMaxAggregateInputType
+  }
+
+  export type GetShopTargetLocaleAggregateType<T extends ShopTargetLocaleAggregateArgs> = {
+        [P in keyof T & keyof AggregateShopTargetLocale]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateShopTargetLocale[P]>
+      : GetScalarType<T[P], AggregateShopTargetLocale[P]>
+  }
+
+
+
+
+  export type ShopTargetLocaleGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ShopTargetLocaleWhereInput
+    orderBy?: ShopTargetLocaleOrderByWithAggregationInput | ShopTargetLocaleOrderByWithAggregationInput[]
+    by: ShopTargetLocaleScalarFieldEnum[] | ShopTargetLocaleScalarFieldEnum
+    having?: ShopTargetLocaleScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ShopTargetLocaleCountAggregateInputType | true
+    _avg?: ShopTargetLocaleAvgAggregateInputType
+    _sum?: ShopTargetLocaleSumAggregateInputType
+    _min?: ShopTargetLocaleMinAggregateInputType
+    _max?: ShopTargetLocaleMaxAggregateInputType
+  }
+
+  export type ShopTargetLocaleGroupByOutputType = {
+    id: number
+    shop: string
+    locale: string
+    autoTranslate: boolean
+    status: number
+    createdAt: Date
+    updatedAt: Date
+    _count: ShopTargetLocaleCountAggregateOutputType | null
+    _avg: ShopTargetLocaleAvgAggregateOutputType | null
+    _sum: ShopTargetLocaleSumAggregateOutputType | null
+    _min: ShopTargetLocaleMinAggregateOutputType | null
+    _max: ShopTargetLocaleMaxAggregateOutputType | null
+  }
+
+  type GetShopTargetLocaleGroupByPayload<T extends ShopTargetLocaleGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ShopTargetLocaleGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ShopTargetLocaleGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ShopTargetLocaleGroupByOutputType[P]>
+            : GetScalarType<T[P], ShopTargetLocaleGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ShopTargetLocaleSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    locale?: boolean
+    autoTranslate?: boolean
+    status?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTargetLocale"]>
+
+  export type ShopTargetLocaleSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    locale?: boolean
+    autoTranslate?: boolean
+    status?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTargetLocale"]>
+
+  export type ShopTargetLocaleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    locale?: boolean
+    autoTranslate?: boolean
+    status?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTargetLocale"]>
+
+  export type ShopTargetLocaleSelectScalar = {
+    id?: boolean
+    shop?: boolean
+    locale?: boolean
+    autoTranslate?: boolean
+    status?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type ShopTargetLocaleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "locale" | "autoTranslate" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["shopTargetLocale"]>
+
+  export type $ShopTargetLocalePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ShopTargetLocale"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      shop: string
+      locale: string
+      autoTranslate: boolean
+      status: number
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["shopTargetLocale"]>
+    composites: {}
+  }
+
+  type ShopTargetLocaleGetPayload<S extends boolean | null | undefined | ShopTargetLocaleDefaultArgs> = $Result.GetResult<Prisma.$ShopTargetLocalePayload, S>
+
+  type ShopTargetLocaleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ShopTargetLocaleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ShopTargetLocaleCountAggregateInputType | true
+    }
+
+  export interface ShopTargetLocaleDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ShopTargetLocale'], meta: { name: 'ShopTargetLocale' } }
+    /**
+     * Find zero or one ShopTargetLocale that matches the filter.
+     * @param {ShopTargetLocaleFindUniqueArgs} args - Arguments to find a ShopTargetLocale
+     * @example
+     * // Get one ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ShopTargetLocaleFindUniqueArgs>(args: SelectSubset<T, ShopTargetLocaleFindUniqueArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ShopTargetLocale that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ShopTargetLocaleFindUniqueOrThrowArgs} args - Arguments to find a ShopTargetLocale
+     * @example
+     * // Get one ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ShopTargetLocaleFindUniqueOrThrowArgs>(args: SelectSubset<T, ShopTargetLocaleFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ShopTargetLocale that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleFindFirstArgs} args - Arguments to find a ShopTargetLocale
+     * @example
+     * // Get one ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ShopTargetLocaleFindFirstArgs>(args?: SelectSubset<T, ShopTargetLocaleFindFirstArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ShopTargetLocale that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleFindFirstOrThrowArgs} args - Arguments to find a ShopTargetLocale
+     * @example
+     * // Get one ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ShopTargetLocaleFindFirstOrThrowArgs>(args?: SelectSubset<T, ShopTargetLocaleFindFirstOrThrowArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ShopTargetLocales that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ShopTargetLocales
+     * const shopTargetLocales = await prisma.shopTargetLocale.findMany()
+     * 
+     * // Get first 10 ShopTargetLocales
+     * const shopTargetLocales = await prisma.shopTargetLocale.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const shopTargetLocaleWithIdOnly = await prisma.shopTargetLocale.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ShopTargetLocaleFindManyArgs>(args?: SelectSubset<T, ShopTargetLocaleFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ShopTargetLocale.
+     * @param {ShopTargetLocaleCreateArgs} args - Arguments to create a ShopTargetLocale.
+     * @example
+     * // Create one ShopTargetLocale
+     * const ShopTargetLocale = await prisma.shopTargetLocale.create({
+     *   data: {
+     *     // ... data to create a ShopTargetLocale
+     *   }
+     * })
+     * 
+     */
+    create<T extends ShopTargetLocaleCreateArgs>(args: SelectSubset<T, ShopTargetLocaleCreateArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ShopTargetLocales.
+     * @param {ShopTargetLocaleCreateManyArgs} args - Arguments to create many ShopTargetLocales.
+     * @example
+     * // Create many ShopTargetLocales
+     * const shopTargetLocale = await prisma.shopTargetLocale.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ShopTargetLocaleCreateManyArgs>(args?: SelectSubset<T, ShopTargetLocaleCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ShopTargetLocales and returns the data saved in the database.
+     * @param {ShopTargetLocaleCreateManyAndReturnArgs} args - Arguments to create many ShopTargetLocales.
+     * @example
+     * // Create many ShopTargetLocales
+     * const shopTargetLocale = await prisma.shopTargetLocale.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ShopTargetLocales and only return the `id`
+     * const shopTargetLocaleWithIdOnly = await prisma.shopTargetLocale.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ShopTargetLocaleCreateManyAndReturnArgs>(args?: SelectSubset<T, ShopTargetLocaleCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ShopTargetLocale.
+     * @param {ShopTargetLocaleDeleteArgs} args - Arguments to delete one ShopTargetLocale.
+     * @example
+     * // Delete one ShopTargetLocale
+     * const ShopTargetLocale = await prisma.shopTargetLocale.delete({
+     *   where: {
+     *     // ... filter to delete one ShopTargetLocale
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ShopTargetLocaleDeleteArgs>(args: SelectSubset<T, ShopTargetLocaleDeleteArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ShopTargetLocale.
+     * @param {ShopTargetLocaleUpdateArgs} args - Arguments to update one ShopTargetLocale.
+     * @example
+     * // Update one ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ShopTargetLocaleUpdateArgs>(args: SelectSubset<T, ShopTargetLocaleUpdateArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ShopTargetLocales.
+     * @param {ShopTargetLocaleDeleteManyArgs} args - Arguments to filter ShopTargetLocales to delete.
+     * @example
+     * // Delete a few ShopTargetLocales
+     * const { count } = await prisma.shopTargetLocale.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ShopTargetLocaleDeleteManyArgs>(args?: SelectSubset<T, ShopTargetLocaleDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ShopTargetLocales.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ShopTargetLocales
+     * const shopTargetLocale = await prisma.shopTargetLocale.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ShopTargetLocaleUpdateManyArgs>(args: SelectSubset<T, ShopTargetLocaleUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ShopTargetLocales and returns the data updated in the database.
+     * @param {ShopTargetLocaleUpdateManyAndReturnArgs} args - Arguments to update many ShopTargetLocales.
+     * @example
+     * // Update many ShopTargetLocales
+     * const shopTargetLocale = await prisma.shopTargetLocale.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ShopTargetLocales and only return the `id`
+     * const shopTargetLocaleWithIdOnly = await prisma.shopTargetLocale.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ShopTargetLocaleUpdateManyAndReturnArgs>(args: SelectSubset<T, ShopTargetLocaleUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ShopTargetLocale.
+     * @param {ShopTargetLocaleUpsertArgs} args - Arguments to update or create a ShopTargetLocale.
+     * @example
+     * // Update or create a ShopTargetLocale
+     * const shopTargetLocale = await prisma.shopTargetLocale.upsert({
+     *   create: {
+     *     // ... data to create a ShopTargetLocale
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ShopTargetLocale we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ShopTargetLocaleUpsertArgs>(args: SelectSubset<T, ShopTargetLocaleUpsertArgs<ExtArgs>>): Prisma__ShopTargetLocaleClient<$Result.GetResult<Prisma.$ShopTargetLocalePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ShopTargetLocales.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleCountArgs} args - Arguments to filter ShopTargetLocales to count.
+     * @example
+     * // Count the number of ShopTargetLocales
+     * const count = await prisma.shopTargetLocale.count({
+     *   where: {
+     *     // ... the filter for the ShopTargetLocales we want to count
+     *   }
+     * })
+    **/
+    count<T extends ShopTargetLocaleCountArgs>(
+      args?: Subset<T, ShopTargetLocaleCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ShopTargetLocaleCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ShopTargetLocale.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ShopTargetLocaleAggregateArgs>(args: Subset<T, ShopTargetLocaleAggregateArgs>): Prisma.PrismaPromise<GetShopTargetLocaleAggregateType<T>>
+
+    /**
+     * Group by ShopTargetLocale.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTargetLocaleGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ShopTargetLocaleGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ShopTargetLocaleGroupByArgs['orderBy'] }
+        : { orderBy?: ShopTargetLocaleGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ShopTargetLocaleGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetShopTargetLocaleGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ShopTargetLocale model
+   */
+  readonly fields: ShopTargetLocaleFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ShopTargetLocale.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ShopTargetLocaleClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ShopTargetLocale model
+   */
+  interface ShopTargetLocaleFieldRefs {
+    readonly id: FieldRef<"ShopTargetLocale", 'Int'>
+    readonly shop: FieldRef<"ShopTargetLocale", 'String'>
+    readonly locale: FieldRef<"ShopTargetLocale", 'String'>
+    readonly autoTranslate: FieldRef<"ShopTargetLocale", 'Boolean'>
+    readonly status: FieldRef<"ShopTargetLocale", 'Int'>
+    readonly createdAt: FieldRef<"ShopTargetLocale", 'DateTime'>
+    readonly updatedAt: FieldRef<"ShopTargetLocale", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ShopTargetLocale findUnique
+   */
+  export type ShopTargetLocaleFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTargetLocale to fetch.
+     */
+    where: ShopTargetLocaleWhereUniqueInput
+  }
+
+  /**
+   * ShopTargetLocale findUniqueOrThrow
+   */
+  export type ShopTargetLocaleFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTargetLocale to fetch.
+     */
+    where: ShopTargetLocaleWhereUniqueInput
+  }
+
+  /**
+   * ShopTargetLocale findFirst
+   */
+  export type ShopTargetLocaleFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTargetLocale to fetch.
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTargetLocales to fetch.
+     */
+    orderBy?: ShopTargetLocaleOrderByWithRelationInput | ShopTargetLocaleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ShopTargetLocales.
+     */
+    cursor?: ShopTargetLocaleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTargetLocales from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTargetLocales.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ShopTargetLocales.
+     */
+    distinct?: ShopTargetLocaleScalarFieldEnum | ShopTargetLocaleScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTargetLocale findFirstOrThrow
+   */
+  export type ShopTargetLocaleFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTargetLocale to fetch.
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTargetLocales to fetch.
+     */
+    orderBy?: ShopTargetLocaleOrderByWithRelationInput | ShopTargetLocaleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ShopTargetLocales.
+     */
+    cursor?: ShopTargetLocaleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTargetLocales from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTargetLocales.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ShopTargetLocales.
+     */
+    distinct?: ShopTargetLocaleScalarFieldEnum | ShopTargetLocaleScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTargetLocale findMany
+   */
+  export type ShopTargetLocaleFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTargetLocales to fetch.
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTargetLocales to fetch.
+     */
+    orderBy?: ShopTargetLocaleOrderByWithRelationInput | ShopTargetLocaleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ShopTargetLocales.
+     */
+    cursor?: ShopTargetLocaleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTargetLocales from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTargetLocales.
+     */
+    skip?: number
+    distinct?: ShopTargetLocaleScalarFieldEnum | ShopTargetLocaleScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTargetLocale create
+   */
+  export type ShopTargetLocaleCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ShopTargetLocale.
+     */
+    data: XOR<ShopTargetLocaleCreateInput, ShopTargetLocaleUncheckedCreateInput>
+  }
+
+  /**
+   * ShopTargetLocale createMany
+   */
+  export type ShopTargetLocaleCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ShopTargetLocales.
+     */
+    data: ShopTargetLocaleCreateManyInput | ShopTargetLocaleCreateManyInput[]
+  }
+
+  /**
+   * ShopTargetLocale createManyAndReturn
+   */
+  export type ShopTargetLocaleCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * The data used to create many ShopTargetLocales.
+     */
+    data: ShopTargetLocaleCreateManyInput | ShopTargetLocaleCreateManyInput[]
+  }
+
+  /**
+   * ShopTargetLocale update
+   */
+  export type ShopTargetLocaleUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ShopTargetLocale.
+     */
+    data: XOR<ShopTargetLocaleUpdateInput, ShopTargetLocaleUncheckedUpdateInput>
+    /**
+     * Choose, which ShopTargetLocale to update.
+     */
+    where: ShopTargetLocaleWhereUniqueInput
+  }
+
+  /**
+   * ShopTargetLocale updateMany
+   */
+  export type ShopTargetLocaleUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ShopTargetLocales.
+     */
+    data: XOR<ShopTargetLocaleUpdateManyMutationInput, ShopTargetLocaleUncheckedUpdateManyInput>
+    /**
+     * Filter which ShopTargetLocales to update
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * Limit how many ShopTargetLocales to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTargetLocale updateManyAndReturn
+   */
+  export type ShopTargetLocaleUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * The data used to update ShopTargetLocales.
+     */
+    data: XOR<ShopTargetLocaleUpdateManyMutationInput, ShopTargetLocaleUncheckedUpdateManyInput>
+    /**
+     * Filter which ShopTargetLocales to update
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * Limit how many ShopTargetLocales to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTargetLocale upsert
+   */
+  export type ShopTargetLocaleUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ShopTargetLocale to update in case it exists.
+     */
+    where: ShopTargetLocaleWhereUniqueInput
+    /**
+     * In case the ShopTargetLocale found by the `where` argument doesn't exist, create a new ShopTargetLocale with this data.
+     */
+    create: XOR<ShopTargetLocaleCreateInput, ShopTargetLocaleUncheckedCreateInput>
+    /**
+     * In case the ShopTargetLocale was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ShopTargetLocaleUpdateInput, ShopTargetLocaleUncheckedUpdateInput>
+  }
+
+  /**
+   * ShopTargetLocale delete
+   */
+  export type ShopTargetLocaleDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+    /**
+     * Filter which ShopTargetLocale to delete.
+     */
+    where: ShopTargetLocaleWhereUniqueInput
+  }
+
+  /**
+   * ShopTargetLocale deleteMany
+   */
+  export type ShopTargetLocaleDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ShopTargetLocales to delete
+     */
+    where?: ShopTargetLocaleWhereInput
+    /**
+     * Limit how many ShopTargetLocales to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTargetLocale without action
+   */
+  export type ShopTargetLocaleDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTargetLocale
+     */
+    select?: ShopTargetLocaleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTargetLocale
+     */
+    omit?: ShopTargetLocaleOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Model Glossary
    */
 
   export type AggregateGlossary = {
     _count: GlossaryCountAggregateOutputType | null
+    _avg: GlossaryAvgAggregateOutputType | null
+    _sum: GlossarySumAggregateOutputType | null
     _min: GlossaryMinAggregateOutputType | null
     _max: GlossaryMaxAggregateOutputType | null
   }
 
+  export type GlossaryAvgAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
+  export type GlossarySumAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
   export type GlossaryMinAggregateOutputType = {
-    id: string | null
+    id: number | null
     shop: string | null
     sourceText: string | null
     targetText: string | null
     rangeCode: string | null
     caseSensitive: boolean | null
+    status: number | null
     createdAt: Date | null
   }
 
   export type GlossaryMaxAggregateOutputType = {
-    id: string | null
+    id: number | null
     shop: string | null
     sourceText: string | null
     targetText: string | null
     rangeCode: string | null
     caseSensitive: boolean | null
+    status: number | null
     createdAt: Date | null
   }
 
@@ -3382,10 +4544,21 @@ export namespace Prisma {
     targetText: number
     rangeCode: number
     caseSensitive: number
+    status: number
     createdAt: number
     _all: number
   }
 
+
+  export type GlossaryAvgAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type GlossarySumAggregateInputType = {
+    id?: true
+    status?: true
+  }
 
   export type GlossaryMinAggregateInputType = {
     id?: true
@@ -3394,6 +4567,7 @@ export namespace Prisma {
     targetText?: true
     rangeCode?: true
     caseSensitive?: true
+    status?: true
     createdAt?: true
   }
 
@@ -3404,6 +4578,7 @@ export namespace Prisma {
     targetText?: true
     rangeCode?: true
     caseSensitive?: true
+    status?: true
     createdAt?: true
   }
 
@@ -3414,6 +4589,7 @@ export namespace Prisma {
     targetText?: true
     rangeCode?: true
     caseSensitive?: true
+    status?: true
     createdAt?: true
     _all?: true
   }
@@ -3456,6 +4632,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: GlossaryAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: GlossarySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: GlossaryMinAggregateInputType
@@ -3486,19 +4674,24 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: GlossaryCountAggregateInputType | true
+    _avg?: GlossaryAvgAggregateInputType
+    _sum?: GlossarySumAggregateInputType
     _min?: GlossaryMinAggregateInputType
     _max?: GlossaryMaxAggregateInputType
   }
 
   export type GlossaryGroupByOutputType = {
-    id: string
+    id: number
     shop: string
     sourceText: string
     targetText: string
     rangeCode: string | null
     caseSensitive: boolean
+    status: number
     createdAt: Date
     _count: GlossaryCountAggregateOutputType | null
+    _avg: GlossaryAvgAggregateOutputType | null
+    _sum: GlossarySumAggregateOutputType | null
     _min: GlossaryMinAggregateOutputType | null
     _max: GlossaryMaxAggregateOutputType | null
   }
@@ -3524,6 +4717,7 @@ export namespace Prisma {
     targetText?: boolean
     rangeCode?: boolean
     caseSensitive?: boolean
+    status?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["glossary"]>
 
@@ -3534,6 +4728,7 @@ export namespace Prisma {
     targetText?: boolean
     rangeCode?: boolean
     caseSensitive?: boolean
+    status?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["glossary"]>
 
@@ -3544,6 +4739,7 @@ export namespace Prisma {
     targetText?: boolean
     rangeCode?: boolean
     caseSensitive?: boolean
+    status?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["glossary"]>
 
@@ -3554,21 +4750,23 @@ export namespace Prisma {
     targetText?: boolean
     rangeCode?: boolean
     caseSensitive?: boolean
+    status?: boolean
     createdAt?: boolean
   }
 
-  export type GlossaryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "sourceText" | "targetText" | "rangeCode" | "caseSensitive" | "createdAt", ExtArgs["result"]["glossary"]>
+  export type GlossaryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "sourceText" | "targetText" | "rangeCode" | "caseSensitive" | "status" | "createdAt", ExtArgs["result"]["glossary"]>
 
   export type $GlossaryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Glossary"
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
-      id: string
+      id: number
       shop: string
       sourceText: string
       targetText: string
       rangeCode: string | null
       caseSensitive: boolean
+      status: number
       createdAt: Date
     }, ExtArgs["result"]["glossary"]>
     composites: {}
@@ -3993,12 +5191,13 @@ export namespace Prisma {
    * Fields of the Glossary model
    */
   interface GlossaryFieldRefs {
-    readonly id: FieldRef<"Glossary", 'String'>
+    readonly id: FieldRef<"Glossary", 'Int'>
     readonly shop: FieldRef<"Glossary", 'String'>
     readonly sourceText: FieldRef<"Glossary", 'String'>
     readonly targetText: FieldRef<"Glossary", 'String'>
     readonly rangeCode: FieldRef<"Glossary", 'String'>
     readonly caseSensitive: FieldRef<"Glossary", 'Boolean'>
+    readonly status: FieldRef<"Glossary", 'Int'>
     readonly createdAt: FieldRef<"Glossary", 'DateTime'>
   }
     
@@ -5444,6 +6643,19 @@ export namespace Prisma {
   export type ShopTranslationSettingsScalarFieldEnum = (typeof ShopTranslationSettingsScalarFieldEnum)[keyof typeof ShopTranslationSettingsScalarFieldEnum]
 
 
+  export const ShopTargetLocaleScalarFieldEnum: {
+    id: 'id',
+    shop: 'shop',
+    locale: 'locale',
+    autoTranslate: 'autoTranslate',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ShopTargetLocaleScalarFieldEnum = (typeof ShopTargetLocaleScalarFieldEnum)[keyof typeof ShopTargetLocaleScalarFieldEnum]
+
+
   export const GlossaryScalarFieldEnum: {
     id: 'id',
     shop: 'shop',
@@ -5451,6 +6663,7 @@ export namespace Prisma {
     targetText: 'targetText',
     rangeCode: 'rangeCode',
     caseSensitive: 'caseSensitive',
+    status: 'status',
     createdAt: 'createdAt'
   };
 
@@ -5756,16 +6969,82 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"ShopTranslationSettings"> | Date | string
   }
 
+  export type ShopTargetLocaleWhereInput = {
+    AND?: ShopTargetLocaleWhereInput | ShopTargetLocaleWhereInput[]
+    OR?: ShopTargetLocaleWhereInput[]
+    NOT?: ShopTargetLocaleWhereInput | ShopTargetLocaleWhereInput[]
+    id?: IntFilter<"ShopTargetLocale"> | number
+    shop?: StringFilter<"ShopTargetLocale"> | string
+    locale?: StringFilter<"ShopTargetLocale"> | string
+    autoTranslate?: BoolFilter<"ShopTargetLocale"> | boolean
+    status?: IntFilter<"ShopTargetLocale"> | number
+    createdAt?: DateTimeFilter<"ShopTargetLocale"> | Date | string
+    updatedAt?: DateTimeFilter<"ShopTargetLocale"> | Date | string
+  }
+
+  export type ShopTargetLocaleOrderByWithRelationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    locale?: SortOrder
+    autoTranslate?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTargetLocaleWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    shop_locale?: ShopTargetLocaleShopLocaleCompoundUniqueInput
+    AND?: ShopTargetLocaleWhereInput | ShopTargetLocaleWhereInput[]
+    OR?: ShopTargetLocaleWhereInput[]
+    NOT?: ShopTargetLocaleWhereInput | ShopTargetLocaleWhereInput[]
+    shop?: StringFilter<"ShopTargetLocale"> | string
+    locale?: StringFilter<"ShopTargetLocale"> | string
+    autoTranslate?: BoolFilter<"ShopTargetLocale"> | boolean
+    status?: IntFilter<"ShopTargetLocale"> | number
+    createdAt?: DateTimeFilter<"ShopTargetLocale"> | Date | string
+    updatedAt?: DateTimeFilter<"ShopTargetLocale"> | Date | string
+  }, "id" | "shop_locale">
+
+  export type ShopTargetLocaleOrderByWithAggregationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    locale?: SortOrder
+    autoTranslate?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ShopTargetLocaleCountOrderByAggregateInput
+    _avg?: ShopTargetLocaleAvgOrderByAggregateInput
+    _max?: ShopTargetLocaleMaxOrderByAggregateInput
+    _min?: ShopTargetLocaleMinOrderByAggregateInput
+    _sum?: ShopTargetLocaleSumOrderByAggregateInput
+  }
+
+  export type ShopTargetLocaleScalarWhereWithAggregatesInput = {
+    AND?: ShopTargetLocaleScalarWhereWithAggregatesInput | ShopTargetLocaleScalarWhereWithAggregatesInput[]
+    OR?: ShopTargetLocaleScalarWhereWithAggregatesInput[]
+    NOT?: ShopTargetLocaleScalarWhereWithAggregatesInput | ShopTargetLocaleScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"ShopTargetLocale"> | number
+    shop?: StringWithAggregatesFilter<"ShopTargetLocale"> | string
+    locale?: StringWithAggregatesFilter<"ShopTargetLocale"> | string
+    autoTranslate?: BoolWithAggregatesFilter<"ShopTargetLocale"> | boolean
+    status?: IntWithAggregatesFilter<"ShopTargetLocale"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"ShopTargetLocale"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"ShopTargetLocale"> | Date | string
+  }
+
   export type GlossaryWhereInput = {
     AND?: GlossaryWhereInput | GlossaryWhereInput[]
     OR?: GlossaryWhereInput[]
     NOT?: GlossaryWhereInput | GlossaryWhereInput[]
-    id?: StringFilter<"Glossary"> | string
+    id?: IntFilter<"Glossary"> | number
     shop?: StringFilter<"Glossary"> | string
     sourceText?: StringFilter<"Glossary"> | string
     targetText?: StringFilter<"Glossary"> | string
     rangeCode?: StringNullableFilter<"Glossary"> | string | null
     caseSensitive?: BoolFilter<"Glossary"> | boolean
+    status?: IntFilter<"Glossary"> | number
     createdAt?: DateTimeFilter<"Glossary"> | Date | string
   }
 
@@ -5776,11 +7055,12 @@ export namespace Prisma {
     targetText?: SortOrder
     rangeCode?: SortOrderInput | SortOrder
     caseSensitive?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
   }
 
   export type GlossaryWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
+    id?: number
     AND?: GlossaryWhereInput | GlossaryWhereInput[]
     OR?: GlossaryWhereInput[]
     NOT?: GlossaryWhereInput | GlossaryWhereInput[]
@@ -5789,6 +7069,7 @@ export namespace Prisma {
     targetText?: StringFilter<"Glossary"> | string
     rangeCode?: StringNullableFilter<"Glossary"> | string | null
     caseSensitive?: BoolFilter<"Glossary"> | boolean
+    status?: IntFilter<"Glossary"> | number
     createdAt?: DateTimeFilter<"Glossary"> | Date | string
   }, "id">
 
@@ -5799,22 +7080,26 @@ export namespace Prisma {
     targetText?: SortOrder
     rangeCode?: SortOrderInput | SortOrder
     caseSensitive?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
     _count?: GlossaryCountOrderByAggregateInput
+    _avg?: GlossaryAvgOrderByAggregateInput
     _max?: GlossaryMaxOrderByAggregateInput
     _min?: GlossaryMinOrderByAggregateInput
+    _sum?: GlossarySumOrderByAggregateInput
   }
 
   export type GlossaryScalarWhereWithAggregatesInput = {
     AND?: GlossaryScalarWhereWithAggregatesInput | GlossaryScalarWhereWithAggregatesInput[]
     OR?: GlossaryScalarWhereWithAggregatesInput[]
     NOT?: GlossaryScalarWhereWithAggregatesInput | GlossaryScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Glossary"> | string
+    id?: IntWithAggregatesFilter<"Glossary"> | number
     shop?: StringWithAggregatesFilter<"Glossary"> | string
     sourceText?: StringWithAggregatesFilter<"Glossary"> | string
     targetText?: StringWithAggregatesFilter<"Glossary"> | string
     rangeCode?: StringNullableWithAggregatesFilter<"Glossary"> | string | null
     caseSensitive?: BoolWithAggregatesFilter<"Glossary"> | boolean
+    status?: IntWithAggregatesFilter<"Glossary"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Glossary"> | Date | string
   }
 
@@ -6102,73 +7387,144 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ShopTargetLocaleCreateInput = {
+    shop: string
+    locale: string
+    autoTranslate?: boolean
+    status?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTargetLocaleUncheckedCreateInput = {
+    id?: number
+    shop: string
+    locale: string
+    autoTranslate?: boolean
+    status?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTargetLocaleUpdateInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    locale?: StringFieldUpdateOperationsInput | string
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTargetLocaleUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    locale?: StringFieldUpdateOperationsInput | string
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTargetLocaleCreateManyInput = {
+    id?: number
+    shop: string
+    locale: string
+    autoTranslate?: boolean
+    status?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTargetLocaleUpdateManyMutationInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    locale?: StringFieldUpdateOperationsInput | string
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTargetLocaleUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    locale?: StringFieldUpdateOperationsInput | string
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type GlossaryCreateInput = {
-    id?: string
     shop: string
     sourceText: string
     targetText: string
     rangeCode?: string | null
     caseSensitive?: boolean
+    status?: number
     createdAt?: Date | string
   }
 
   export type GlossaryUncheckedCreateInput = {
-    id?: string
+    id?: number
     shop: string
     sourceText: string
     targetText: string
     rangeCode?: string | null
     caseSensitive?: boolean
+    status?: number
     createdAt?: Date | string
   }
 
   export type GlossaryUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
     shop?: StringFieldUpdateOperationsInput | string
     sourceText?: StringFieldUpdateOperationsInput | string
     targetText?: StringFieldUpdateOperationsInput | string
     rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type GlossaryUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
+    id?: IntFieldUpdateOperationsInput | number
     shop?: StringFieldUpdateOperationsInput | string
     sourceText?: StringFieldUpdateOperationsInput | string
     targetText?: StringFieldUpdateOperationsInput | string
     rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type GlossaryCreateManyInput = {
-    id?: string
+    id?: number
     shop: string
     sourceText: string
     targetText: string
     rangeCode?: string | null
     caseSensitive?: boolean
+    status?: number
     createdAt?: Date | string
   }
 
   export type GlossaryUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
     shop?: StringFieldUpdateOperationsInput | string
     sourceText?: StringFieldUpdateOperationsInput | string
     targetText?: StringFieldUpdateOperationsInput | string
     rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type GlossaryUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
+    id?: IntFieldUpdateOperationsInput | number
     shop?: StringFieldUpdateOperationsInput | string
     sourceText?: StringFieldUpdateOperationsInput | string
     targetText?: StringFieldUpdateOperationsInput | string
     rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -6557,6 +7913,78 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type ShopTargetLocaleShopLocaleCompoundUniqueInput = {
+    shop: string
+    locale: string
+  }
+
+  export type ShopTargetLocaleCountOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    locale?: SortOrder
+    autoTranslate?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTargetLocaleAvgOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
+  }
+
+  export type ShopTargetLocaleMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    locale?: SortOrder
+    autoTranslate?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTargetLocaleMinOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    locale?: SortOrder
+    autoTranslate?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTargetLocaleSumOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
   export type GlossaryCountOrderByAggregateInput = {
     id?: SortOrder
     shop?: SortOrder
@@ -6564,7 +7992,13 @@ export namespace Prisma {
     targetText?: SortOrder
     rangeCode?: SortOrder
     caseSensitive?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type GlossaryAvgOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
   }
 
   export type GlossaryMaxOrderByAggregateInput = {
@@ -6574,6 +8008,7 @@ export namespace Prisma {
     targetText?: SortOrder
     rangeCode?: SortOrder
     caseSensitive?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -6584,7 +8019,13 @@ export namespace Prisma {
     targetText?: SortOrder
     rangeCode?: SortOrder
     caseSensitive?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type GlossarySumOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
   }
 
   export type LiquidRuleCountOrderByAggregateInput = {
@@ -6650,6 +8091,14 @@ export namespace Prisma {
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -6866,6 +8315,33 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
 

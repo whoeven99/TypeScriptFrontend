@@ -22,9 +22,10 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
   GetGlossaryByShopNameLoading,
-  InsertGlossaryInfo,
-  UpdateTargetTextById,
 } from "~/api/JavaServer";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { listGlossaryDo, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
+import { updateGlossaryCompat } from "./glossaryClient";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setGLossaryStatusLoadingState,
@@ -62,11 +63,14 @@ export const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+  const migrated = await isShopMigrated(session.shop);
 
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
+    migrated,
   };
 };
 
@@ -80,9 +84,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const deleteInfo: number[] = JSON.parse(
       formData.get("deleteInfo") as string,
     );
+    const migrated = await isShopMigrated(shop);
     switch (true) {
       case !!loading:
         try {
+          if (migrated) {
+            const response = await listGlossaryDo(shop);
+            return { success: true, errorCode: null, errorMsg: null, response };
+          }
           const data = await GetGlossaryByShopNameLoading({
             shop,
             accessToken: accessToken as string,
@@ -100,6 +109,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!deleteInfo:
         try {
           if (deleteInfo.length > 0) {
+            if (migrated) {
+              const count = await deleteGlossaryDo(shop, deleteInfo.map((x) => Number(x)));
+              return json({ data: count });
+            }
             const promise = deleteInfo.map(async (item: number) => {
               return DeleteGlossaryInfo({ id: item });
             });
@@ -119,7 +132,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { server, mobile, migrated } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -255,7 +268,8 @@ const Index = () => {
       status: row.status === 0 ? 1 : 0,
     };
 
-    const data = await UpdateTargetTextById({
+    const data = await updateGlossaryCompat({
+      migrated,
       shop: globalStore?.shop || "",
       data: updateInfo,
       server: server as string,
@@ -620,6 +634,7 @@ const Index = () => {
         shopLocales={shopLocales}
         shop={globalStore?.shop || ""}
         server={server as string}
+        migrated={migrated}
       />
       <Modal
         title={upgradeModalContent?.title}

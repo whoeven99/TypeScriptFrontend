@@ -5,6 +5,8 @@ import {
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
+import { invalidateMigrationCache } from "~/server/translateV4/migration.server";
+import { upsertTargetLocales } from "~/server/translateV4/targetLocale.server";
 import {
   GetGlossaryByShopName,
   SelectShopNameLiquidData,
@@ -69,17 +71,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ ok: true, migrated: true, summary });
 };
 
-/** 从 Java Translates 读自动翻译开关（best-effort，读不到则 false）。 */
-async function readAutoTranslate(shop: string, source: string): Promise<boolean> {
+/** 从 Java Translates 读「每目标语言的自动翻译开关」（best-effort，读不到则空 Map）。 */
+async function readAutoTranslateByTarget(
+  shop: string,
+  source: string,
+): Promise<Map<string, boolean>> {
+  const map = new Map<string, boolean>();
   try {
     const res = await GetTranslateDOByShopNameAndSource({ shop, source });
     const data = (res as { response?: unknown })?.response ?? res;
-    if (Array.isArray(data)) return data.some((r) => Boolean(r?.autoTranslate));
-    return Boolean((data as { autoTranslate?: boolean })?.autoTranslate);
+    const arr = Array.isArray(data) ? data : data ? [data] : [];
+    for (const r of arr) {
+      const target = (r as { target?: string })?.target;
+      if (target) map.set(String(target), Boolean((r as { autoTranslate?: boolean })?.autoTranslate));
+    }
   } catch (err) {
     console.error(`[migrate] ${shop} read autoTranslate failed:`, err);
-    return false;
   }
+  return map;
 }
 
 /**
@@ -127,11 +136,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     // 1) 从 Java 读旧数据
-    const [glossaryRes, liquidRes, autoTranslate] = await Promise.all([
+    const [glossaryRes, liquidRes, autoByTarget] = await Promise.all([
       GetGlossaryByShopName({ shop, server }),
       SelectShopNameLiquidData({ shop, server }),
-      readAutoTranslate(shop, primaryLocale),
+      readAutoTranslateByTarget(shop, primaryLocale),
     ]);
+    const anyAuto = [...autoByTarget.values()].some(Boolean);
 
     const glossaryRows = asArray((glossaryRes as { response?: unknown })?.response);
     const liquidRows = asArray((liquidRes as { response?: unknown })?.response).filter(
@@ -144,6 +154,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       targetText: String(g?.targetText ?? ""),
       rangeCode: g?.rangeCode != null ? String(g.rangeCode) : null,
       caseSensitive: Number(g?.caseSensitive) === 1,
+      status: g?.status != null ? Number(g.status) : 1,
     }));
 
     const liquidData = liquidRows.map((l) => ({
@@ -170,31 +181,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           primaryLocale,
           targets,
-          autoTranslate,
+          autoTranslate: anyAuto,
           migratedToTsf: true,
           migratedAt: new Date(),
         },
         update: {
           primaryLocale,
           targets,
-          autoTranslate,
+          autoTranslate: anyAuto,
           migratedToTsf: true,
           migratedAt: new Date(),
         },
       }),
     ]);
 
+    // 每目标语言一行（带各自的自动翻译开关），供语言页和 worker 按语言精确处理
+    await upsertTargetLocales(
+      shop,
+      targets.map((t) => ({ locale: t, autoTranslate: autoByTarget.get(t) ?? false })),
+    );
+
     // 通知 Java 跳过本店的自动翻译（避免双翻译）
     await notifyJavaShopMigrated(shop, server);
+    invalidateMigrationCache(shop); // 让术语表/语言页立刻按已迁移分流
 
     const summary: MigrationSummary = {
       already: false,
       glossaryCount: glossaryData.length,
       liquidCount: liquidData.length,
-      settings: { primaryLocale, targets, autoTranslate },
+      settings: { primaryLocale, targets, autoTranslate: anyAuto },
     };
     console.log(
-      `[migrate] ${shop} done: glossary=${summary.glossaryCount} liquid=${summary.liquidCount} auto=${autoTranslate} targets=${targets.join(",")}`,
+      `[migrate] ${shop} done: glossary=${summary.glossaryCount} liquid=${summary.liquidCount} auto=${anyAuto} targets=${targets.join(",")}`,
     );
     return json({ ok: true, summary });
   } catch (err) {

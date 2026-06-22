@@ -48,14 +48,29 @@ model ShopTranslationSettings {
   @@index([autoTranslate, migratedToTsf]) // worker 自动扫描用
 }
 
-// 取代 Java `Glossary`
+// 每店每目标语言一行 —— 语言页的「按语言自动翻译开关」。worker 据此精确按语言建任务。
+model ShopTargetLocale {
+  id            Int      @id @default(autoincrement())
+  shop          String // myshopify 域名
+  locale        String // 目标语言（Shopify locale，如 "fr"）
+  autoTranslate Boolean  @default(false)
+  status        Int      @default(1) // 预留：1=启用
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([shop, locale])
+  @@index([shop, autoTranslate])
+}
+
+// 取代 Java `Glossary`（字段对齐 Java GlossaryDO，便于术语表页面直接复用）
 model Glossary {
-  id            String   @id @default(cuid())
+  id            Int      @id @default(autoincrement()) // 与 Java 自增 id 一致，前端按数字 id 选择/删除
   shop          String // Java shopName
   sourceText    String
   targetText    String
   rangeCode     String? // 适用语言范围（Java rangeCode）
   caseSensitive Boolean  @default(false) // Java Integer(0/1) → Boolean
+  status        Int      @default(1) // 1=启用 0=停用（Java status），worker 只注入启用的
   createdAt     DateTime @default(now())
 
   @@index([shop])

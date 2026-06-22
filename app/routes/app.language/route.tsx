@@ -30,11 +30,13 @@ import {
   setStatusState,
   setLanguageTableData,
 } from "~/store/modules/languageTableData";
+import { GetTranslate } from "~/api/JavaServer";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { deleteTargetLocales } from "~/server/translateV4/targetLocale.server";
 import {
-  GetLanguageList,
-  GetTranslate,
-  UpdateAutoTranslateByData,
-} from "~/api/JavaServer";
+  setAutoTranslateCompat,
+  listLanguageStatusCompat,
+} from "./languageClient";
 import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
@@ -89,11 +91,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop } = adminAuthResult.session;
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+  const migrated = await isShopMigrated(shop);
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
+    migrated,
   });
 };
 
@@ -266,6 +270,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           );
           const data = await Promise.allSettled(promise);
 
+          // 迁移过的店：同步清掉 TSF 的目标语言行，避免 worker 继续给已删语言建任务
+          if (await isShopMigrated(shop)) {
+            await deleteTargetLocales(
+              shop,
+              deleteData.targets.map((t: LanguagesDataType) => t.locale),
+            );
+          }
+
           return json({ data: data });
         }
       } catch (error) {
@@ -279,7 +291,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const { shop, mobile, server, migrated } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -439,7 +451,8 @@ const Index = () => {
           autoTranslateLoading: false,
         }));
         const GetLanguageLocaleInfoFront = async () => {
-          const languageList = await GetLanguageList({
+          const languageList = await listLanguageStatusCompat({
+            migrated,
             shop,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
@@ -747,7 +760,8 @@ const Index = () => {
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
-      const data = await UpdateAutoTranslateByData({
+      const data = await setAutoTranslateCompat({
+        migrated,
         shopName: shop,
         source: source?.code,
         target: row.locale,

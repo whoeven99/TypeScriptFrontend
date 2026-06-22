@@ -149,6 +149,16 @@ exports.Prisma.ShopTranslationSettingsScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ShopTargetLocaleScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  locale: 'locale',
+  autoTranslate: 'autoTranslate',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.GlossaryScalarFieldEnum = {
   id: 'id',
   shop: 'shop',
@@ -156,6 +166,7 @@ exports.Prisma.GlossaryScalarFieldEnum = {
   targetText: 'targetText',
   rangeCode: 'rangeCode',
   caseSensitive: 'caseSensitive',
+  status: 'status',
   createdAt: 'createdAt'
 };
 
@@ -199,6 +210,7 @@ exports.Prisma.QueryMode = {
 exports.Prisma.ModelName = {
   Session: 'Session',
   ShopTranslationSettings: 'ShopTranslationSettings',
+  ShopTargetLocale: 'ShopTargetLocale',
   Glossary: 'Glossary',
   LiquidRule: 'LiquidRule'
 };
