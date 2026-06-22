@@ -13,6 +13,7 @@ import {
   GetTranslateDOByShopNameAndSource,
   MarkShopMigratedToTsf,
 } from "~/api/JavaServer";
+import { isTranslateV4ExpressBetaEnabled } from "~/server/translateV4/feature.server";
 
 /**
  * 通知 Java：本店已迁移到 TSF。Java 自己记录，后续自动翻译任务跳过该店，
@@ -47,6 +48,10 @@ function asArray(value: unknown): any[] {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+
+  if (!isTranslateV4ExpressBetaEnabled(shop)) {
+    return json({ ok: false, error: "not_allowed" }, { status: 403 });
+  }
 
   const existing = await prisma.shopTranslationSettings.findUnique({
     where: { shop },
@@ -101,6 +106,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
   const server = process.env.SERVER_URL ?? "";
+
+  if (!isTranslateV4ExpressBetaEnabled(shop)) {
+    return json({ ok: false, error: "not_allowed" }, { status: 403 });
+  }
 
   const body = (await request.json().catch(() => ({}))) as {
     primaryLocale?: string;

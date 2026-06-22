@@ -623,17 +623,7 @@ export const GetUserValue = async ({
 //   }
 // };
 
-export const SingleTextTranslate = async ({
-  shopName,
-  source,
-  target,
-  resourceType,
-  context,
-  key,
-  type,
-  server,
-  resourceId,
-}: {
+type SingleTextTranslateArgs = {
   shopName: string;
   source: string;
   target: string;
@@ -643,31 +633,64 @@ export const SingleTextTranslate = async ({
   type: string;
   server: string;
   resourceId: string | null; // 必传，但可 null
-}) => {
+};
+
+/**
+ * 单字段手动翻译(页面调用)。统一走 TSF 端点 /api/translate-v4/single，
+ * 由 TSF 决定:迁移店 → LLM 翻译；未迁移店 → 代理回 Java。返回 { success, response }。
+ */
+export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
+  try {
+    const res = await fetch("/api/translate-v4/single", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error SingleTextTranslate:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
+/** 直连 Java singleTextTranslateV2（仅供 TSF 端点在未迁移分支代理调用，服务端使用）。 */
+export const singleTextTranslateV2ViaJava = async ({
+  shopName,
+  source,
+  target,
+  resourceType,
+  context,
+  key,
+  type,
+  server,
+  resourceId,
+}: SingleTextTranslateArgs) => {
   try {
     const response = await axios({
       url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
       method: "POST",
       data: {
-        shopName: shopName,
-        source: source,
-        target: target,
-        resourceType: resourceType,
-        context: context,
-        key: key,
-        type: type,
-        resourceId: resourceId,
+        shopName,
+        source,
+        target,
+        resourceType,
+        context,
+        key,
+        type,
+        resourceId,
       },
     });
-
-    console.log(`${shopName} SingleTextTranslate: `, response.data);
-
     return {
       ...response.data,
       response: response.data?.response?.targetText || "",
     };
   } catch (error) {
-    console.error("Error SingleTextTranslate:", error);
+    console.error("Error singleTextTranslateV2ViaJava:", error);
     return {
       success: false,
       errorCode: 10001,

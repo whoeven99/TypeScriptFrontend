@@ -30,7 +30,7 @@ import TranslationPanel from "./components/TranslationPanel";
 import ExpressTranslateCard from "./components/ExpressTranslateCard";
 import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
-import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
+import { isTranslateV4Enabled, isTranslateV4ExpressBetaEnabled } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import { TS_FRONTEND_TASK_SOURCE } from "~/server/translateV4/types";
 
@@ -59,7 +59,7 @@ async function loadExpressV4Data(
   admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"],
   shop: string,
 ) {
-  if (!isTranslateV4Enabled()) {
+  if (!isTranslateV4Enabled() || !isTranslateV4ExpressBetaEnabled(shop)) {
     return { enabled: false, locales: [], primaryLocale: "zh-CN", jobs: [], migrated: false };
   }
 

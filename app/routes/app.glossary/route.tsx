@@ -95,7 +95,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               accessToken: accessToken as string,
             });
             const shopLocalesWithoutPrimary = shopLanguages.filter(
-              (language) => !language.primary,
+              (language: { locale: string; name: string; primary?: boolean }) =>
+                !language.primary,
             );
             const response = await listGlossaryPagePayload(
               shop,
