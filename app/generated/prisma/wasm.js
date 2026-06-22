@@ -110,9 +110,45 @@ exports.Prisma.SessionScalarFieldEnum = {
   refreshTokenExpires: 'refreshTokenExpires'
 };
 
+exports.Prisma.ShopTranslationSettingsScalarFieldEnum = {
+  shop: 'shop',
+  primaryLocale: 'primaryLocale',
+  targets: 'targets',
+  autoTranslate: 'autoTranslate',
+  migratedToTsf: 'migratedToTsf',
+  migratedAt: 'migratedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GlossaryScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  sourceText: 'sourceText',
+  targetText: 'targetText',
+  rangeCode: 'rangeCode',
+  caseSensitive: 'caseSensitive',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LiquidRuleScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  beforeTranslation: 'beforeTranslation',
+  afterTranslation: 'afterTranslation',
+  languageCode: 'languageCode',
+  replacementMethod: 'replacementMethod',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.NullsOrder = {
@@ -120,9 +156,23 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 
 exports.Prisma.ModelName = {
-  Session: 'Session'
+  Session: 'Session',
+  ShopTranslationSettings: 'ShopTranslationSettings',
+  Glossary: 'Glossary',
+  LiquidRule: 'LiquidRule'
 };
 /**
  * Create the Client
@@ -172,13 +222,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:dev.sqlite\"\n}\n\nmodel Session {\n  id                  String    @id\n  shop                String\n  state               String\n  isOnline            Boolean   @default(false)\n  scope               String?\n  expires             DateTime?\n  accessToken         String\n  userId              BigInt?\n  firstName           String?\n  lastName            String?\n  email               String?\n  accountOwner        Boolean   @default(false)\n  locale              String?\n  collaborator        Boolean?  @default(false)\n  emailVerified       Boolean?  @default(false)\n  refreshToken        String?\n  refreshTokenExpires DateTime?\n}\n",
-  "inlineSchemaHash": "3a0f9b92c6e7ce940346ac6eec01a168b33477c8125f48f453bd7e5d98504918",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:dev.sqlite\"\n}\n\nmodel Session {\n  id                  String    @id\n  shop                String\n  state               String\n  isOnline            Boolean   @default(false)\n  scope               String?\n  expires             DateTime?\n  accessToken         String\n  userId              BigInt?\n  firstName           String?\n  lastName            String?\n  email               String?\n  accountOwner        Boolean   @default(false)\n  locale              String?\n  collaborator        Boolean?  @default(false)\n  emailVerified       Boolean?  @default(false)\n  refreshToken        String?\n  refreshTokenExpires DateTime?\n}\n\n// 取代 Java `Translates` —— 每店一行的翻译配置 + 迁移开关\nmodel ShopTranslationSettings {\n  shop          String    @id // myshopify 域名（Java shopName）\n  primaryLocale String // 源语言（Java source），ex \"en\"\n  targets       Json // 目标语言数组 string[]（Java 每 target 一行 → 合并）\n  autoTranslate Boolean   @default(false) // 自动增量翻译总开关（Java autoTranslate）\n  migratedToTsf Boolean   @default(false) // 不可逆：true 后只走 TSF\n  migratedAt    DateTime?\n  createdAt     DateTime  @default(now())\n  updatedAt     DateTime  @updatedAt\n\n  @@index([autoTranslate, migratedToTsf]) // worker 自动扫描用\n}\n\n// 取代 Java `Glossary`\nmodel Glossary {\n  id            String   @id @default(cuid())\n  shop          String // Java shopName\n  sourceText    String\n  targetText    String\n  rangeCode     String? // 适用语言范围（Java rangeCode）\n  caseSensitive Boolean  @default(false) // Java Integer(0/1) → Boolean\n  createdAt     DateTime @default(now())\n\n  @@index([shop])\n}\n\n// 取代 Java `User_Liquid`\nmodel LiquidRule {\n  id                String   @id @default(cuid())\n  shop              String // Java shopName\n  beforeTranslation String // liquidBeforeTranslation\n  afterTranslation  String // liquidAfterTranslation\n  languageCode      String?\n  replacementMethod Boolean  @default(false)\n  createdAt         DateTime @default(now())\n  updatedAt         DateTime @updatedAt\n\n  @@index([shop])\n}\n",
+  "inlineSchemaHash": "dbff9639c51bbad73b9b54e085f9e623e3d02b342189de409b90df158f21d5bc",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"isOnline\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"accessToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"BigInt\"},{\"name\":\"firstName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"accountOwner\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"collaborator\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"emailVerified\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"refreshToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"refreshTokenExpires\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"isOnline\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"accessToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"BigInt\"},{\"name\":\"firstName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"accountOwner\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"collaborator\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"emailVerified\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"refreshToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"refreshTokenExpires\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"ShopTranslationSettings\":{\"fields\":[{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"primaryLocale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"targets\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"autoTranslate\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"migratedToTsf\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"migratedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Glossary\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sourceText\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"targetText\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rangeCode\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"caseSensitive\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"LiquidRule\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"shop\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"beforeTranslation\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"afterTranslation\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"languageCode\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"replacementMethod\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),

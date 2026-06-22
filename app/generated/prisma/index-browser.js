@@ -138,9 +138,45 @@ exports.Prisma.SessionScalarFieldEnum = {
   refreshTokenExpires: 'refreshTokenExpires'
 };
 
+exports.Prisma.ShopTranslationSettingsScalarFieldEnum = {
+  shop: 'shop',
+  primaryLocale: 'primaryLocale',
+  targets: 'targets',
+  autoTranslate: 'autoTranslate',
+  migratedToTsf: 'migratedToTsf',
+  migratedAt: 'migratedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GlossaryScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  sourceText: 'sourceText',
+  targetText: 'targetText',
+  rangeCode: 'rangeCode',
+  caseSensitive: 'caseSensitive',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LiquidRuleScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  beforeTranslation: 'beforeTranslation',
+  afterTranslation: 'afterTranslation',
+  languageCode: 'languageCode',
+  replacementMethod: 'replacementMethod',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.NullsOrder = {
@@ -148,9 +184,23 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 
 exports.Prisma.ModelName = {
-  Session: 'Session'
+  Session: 'Session',
+  ShopTranslationSettings: 'ShopTranslationSettings',
+  Glossary: 'Glossary',
+  LiquidRule: 'LiquidRule'
 };
 
 /**

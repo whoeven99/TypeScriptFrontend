@@ -22,6 +22,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
+import prisma from "~/db.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
@@ -59,7 +60,7 @@ async function loadExpressV4Data(
   shop: string,
 ) {
   if (!isTranslateV4Enabled()) {
-    return { enabled: false, locales: [], primaryLocale: "zh-CN", jobs: [] };
+    return { enabled: false, locales: [], primaryLocale: "zh-CN", jobs: [], migrated: false };
   }
 
   let locales: ShopLocaleOption[] = [];
@@ -95,7 +96,18 @@ async function loadExpressV4Data(
     console.error("[expressV4] load jobs failed:", err);
   }
 
-  return { enabled: true, locales, primaryLocale, jobs };
+  let migrated = false;
+  try {
+    const settings = await prisma.shopTranslationSettings.findUnique({
+      where: { shop },
+      select: { migratedToTsf: true },
+    });
+    migrated = settings?.migratedToTsf ?? false;
+  } catch (err) {
+    console.error("[expressV4] load migration status failed:", err);
+  }
+
+  return { enabled: true, locales, primaryLocale, jobs, migrated };
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -463,6 +475,7 @@ const Index = () => {
               locales={expressV4.locales}
               primaryLocale={expressV4.primaryLocale}
               initialJobs={expressV4.jobs as any}
+              migrated={expressV4.migrated}
             />
           ) : null}
 

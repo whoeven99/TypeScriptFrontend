@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Button,
   Card,
   Empty,
@@ -37,6 +38,16 @@ type Props = {
   locales: ShopLocaleOption[];
   primaryLocale: string;
   initialJobs: ExpressV4Job[];
+  /** 本店是否已迁移到新版翻译（来自 ShopTranslationSettings.migratedToTsf）。 */
+  migrated: boolean;
+};
+
+/** 迁移摘要——卡片展示「迁移了哪些数据」。与 api.translate-v4.migrate 返回一致。 */
+type MigrationSummary = {
+  already: boolean;
+  glossaryCount: number;
+  liquidCount: number;
+  settings: { primaryLocale: string; targets: string[]; autoTranslate: boolean };
 };
 
 /** 极速翻译默认翻译的模块（与 api.translate-v4.tasks 的默认保持一致）。 */
@@ -48,18 +59,72 @@ function progressStatus(job: ExpressV4Job): "success" | "exception" | "active" |
   return "active";
 }
 
-const ExpressTranslateCard = ({ shop, locales, primaryLocale, initialJobs }: Props) => {
+const ExpressTranslateCard = ({
+  shop,
+  locales,
+  primaryLocale,
+  initialJobs,
+  migrated,
+}: Props) => {
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState<ExpressV4Job[]>(initialJobs);
   const [targets, setTargets] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  const [migratedState, setMigratedState] = useState(migrated);
+  const [migrating, setMigrating] = useState(false);
+  const [summary, setSummary] = useState<MigrationSummary | null>(null);
 
   const source = primaryLocale || "zh-CN";
   const targetOptions = useMemo<ShopLocaleOption[]>(
     () => locales.filter((l) => l.value !== source),
     [locales, source],
   );
+
+  // 已迁移的店：进卡片时拉一次迁移摘要，持续展示「迁移了哪些数据」。
+  useEffect(() => {
+    if (!migratedState || summary) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/translate-v4/migrate");
+        const data = await res.json();
+        if (!cancelled && data?.ok && data.summary) setSummary(data.summary);
+      } catch (err) {
+        console.error("[expressV4] load migration summary failed:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [migratedState, summary]);
+
+  const handleMigrate = useCallback(async () => {
+    setMigrating(true);
+    try {
+      const res = await fetch("/api/translate-v4/migrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primaryLocale: source,
+          targets: targetOptions.map((o) => o.value),
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok && data.summary) {
+        setSummary(data.summary as MigrationSummary);
+        setMigratedState(true);
+        message.success("已迁移到新版翻译");
+      } else {
+        message.error(data?.error || "迁移失败，请稍后重试");
+      }
+    } catch (err) {
+      console.error("[expressV4] migrate failed:", err);
+      message.error("迁移失败，请稍后重试");
+    } finally {
+      setMigrating(false);
+    }
+  }, [source, targetOptions]);
 
   const refreshList = useCallback(async () => {
     try {
@@ -159,6 +224,39 @@ const ExpressTranslateCard = ({ shop, locales, primaryLocale, initialJobs }: Pro
           高级设置
         </Button>
       </Flex>
+
+      {!migratedState ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="升级到新版翻译"
+          description="把你的术语表、Liquid 规则和自动翻译配置迁移到新版翻译引擎。迁移后由新版接管，不可回退。"
+          action={
+            <Button
+              type="primary"
+              size="small"
+              loading={migrating}
+              onClick={handleMigrate}
+            >
+              一键迁移
+            </Button>
+          }
+        />
+      ) : summary ? (
+        <Alert
+          type="success"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="已迁移到新版翻译"
+          description={
+            `术语表 ${summary.glossaryCount} 条 · Liquid 规则 ${summary.liquidCount} 条 · ` +
+            `自动翻译 ${summary.settings.primaryLocale} → ${
+              summary.settings.targets.join("、") || "（未设目标语言）"
+            }（自动更新：${summary.settings.autoTranslate ? "开" : "关"}）`
+          }
+        />
+      ) : null}
 
       <Flex gap={8} wrap="wrap" align="center" style={{ marginBottom: 16 }}>
         <Text type="secondary">源语言：{source}</Text>

@@ -18,6 +18,21 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  * 
  */
 export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
+/**
+ * Model ShopTranslationSettings
+ * 
+ */
+export type ShopTranslationSettings = $Result.DefaultSelection<Prisma.$ShopTranslationSettingsPayload>
+/**
+ * Model Glossary
+ * 
+ */
+export type Glossary = $Result.DefaultSelection<Prisma.$GlossaryPayload>
+/**
+ * Model LiquidRule
+ * 
+ */
+export type LiquidRule = $Result.DefaultSelection<Prisma.$LiquidRulePayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -146,6 +161,36 @@ export class PrismaClient<
     * ```
     */
   get session(): Prisma.SessionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.shopTranslationSettings`: Exposes CRUD operations for the **ShopTranslationSettings** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ShopTranslationSettings
+    * const shopTranslationSettings = await prisma.shopTranslationSettings.findMany()
+    * ```
+    */
+  get shopTranslationSettings(): Prisma.ShopTranslationSettingsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.glossary`: Exposes CRUD operations for the **Glossary** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Glossaries
+    * const glossaries = await prisma.glossary.findMany()
+    * ```
+    */
+  get glossary(): Prisma.GlossaryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.liquidRule`: Exposes CRUD operations for the **LiquidRule** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LiquidRules
+    * const liquidRules = await prisma.liquidRule.findMany()
+    * ```
+    */
+  get liquidRule(): Prisma.LiquidRuleDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -587,7 +632,10 @@ export namespace Prisma {
 
 
   export const ModelName: {
-    Session: 'Session'
+    Session: 'Session',
+    ShopTranslationSettings: 'ShopTranslationSettings',
+    Glossary: 'Glossary',
+    LiquidRule: 'LiquidRule'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -606,7 +654,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "session"
+      modelProps: "session" | "shopTranslationSettings" | "glossary" | "liquidRule"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -681,6 +729,228 @@ export namespace Prisma {
           count: {
             args: Prisma.SessionCountArgs<ExtArgs>
             result: $Utils.Optional<SessionCountAggregateOutputType> | number
+          }
+        }
+      }
+      ShopTranslationSettings: {
+        payload: Prisma.$ShopTranslationSettingsPayload<ExtArgs>
+        fields: Prisma.ShopTranslationSettingsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ShopTranslationSettingsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ShopTranslationSettingsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          findFirst: {
+            args: Prisma.ShopTranslationSettingsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ShopTranslationSettingsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          findMany: {
+            args: Prisma.ShopTranslationSettingsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>[]
+          }
+          create: {
+            args: Prisma.ShopTranslationSettingsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          createMany: {
+            args: Prisma.ShopTranslationSettingsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ShopTranslationSettingsCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>[]
+          }
+          delete: {
+            args: Prisma.ShopTranslationSettingsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          update: {
+            args: Prisma.ShopTranslationSettingsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          deleteMany: {
+            args: Prisma.ShopTranslationSettingsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ShopTranslationSettingsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ShopTranslationSettingsUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>[]
+          }
+          upsert: {
+            args: Prisma.ShopTranslationSettingsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ShopTranslationSettingsPayload>
+          }
+          aggregate: {
+            args: Prisma.ShopTranslationSettingsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateShopTranslationSettings>
+          }
+          groupBy: {
+            args: Prisma.ShopTranslationSettingsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ShopTranslationSettingsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ShopTranslationSettingsCountArgs<ExtArgs>
+            result: $Utils.Optional<ShopTranslationSettingsCountAggregateOutputType> | number
+          }
+        }
+      }
+      Glossary: {
+        payload: Prisma.$GlossaryPayload<ExtArgs>
+        fields: Prisma.GlossaryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.GlossaryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.GlossaryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          findFirst: {
+            args: Prisma.GlossaryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.GlossaryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          findMany: {
+            args: Prisma.GlossaryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>[]
+          }
+          create: {
+            args: Prisma.GlossaryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          createMany: {
+            args: Prisma.GlossaryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.GlossaryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>[]
+          }
+          delete: {
+            args: Prisma.GlossaryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          update: {
+            args: Prisma.GlossaryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          deleteMany: {
+            args: Prisma.GlossaryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.GlossaryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.GlossaryUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>[]
+          }
+          upsert: {
+            args: Prisma.GlossaryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GlossaryPayload>
+          }
+          aggregate: {
+            args: Prisma.GlossaryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateGlossary>
+          }
+          groupBy: {
+            args: Prisma.GlossaryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<GlossaryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.GlossaryCountArgs<ExtArgs>
+            result: $Utils.Optional<GlossaryCountAggregateOutputType> | number
+          }
+        }
+      }
+      LiquidRule: {
+        payload: Prisma.$LiquidRulePayload<ExtArgs>
+        fields: Prisma.LiquidRuleFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LiquidRuleFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LiquidRuleFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          findFirst: {
+            args: Prisma.LiquidRuleFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LiquidRuleFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          findMany: {
+            args: Prisma.LiquidRuleFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>[]
+          }
+          create: {
+            args: Prisma.LiquidRuleCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          createMany: {
+            args: Prisma.LiquidRuleCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LiquidRuleCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>[]
+          }
+          delete: {
+            args: Prisma.LiquidRuleDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          update: {
+            args: Prisma.LiquidRuleUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          deleteMany: {
+            args: Prisma.LiquidRuleDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LiquidRuleUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LiquidRuleUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>[]
+          }
+          upsert: {
+            args: Prisma.LiquidRuleUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LiquidRulePayload>
+          }
+          aggregate: {
+            args: Prisma.LiquidRuleAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLiquidRule>
+          }
+          groupBy: {
+            args: Prisma.LiquidRuleGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LiquidRuleGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LiquidRuleCountArgs<ExtArgs>
+            result: $Utils.Optional<LiquidRuleCountAggregateOutputType> | number
           }
         }
       }
@@ -781,6 +1051,9 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     session?: SessionOmit
+    shopTranslationSettings?: ShopTranslationSettingsOmit
+    glossary?: GlossaryOmit
+    liquidRule?: LiquidRuleOmit
   }
 
   /* Types for Logging */
@@ -2045,6 +2318,3085 @@ export namespace Prisma {
 
 
   /**
+   * Model ShopTranslationSettings
+   */
+
+  export type AggregateShopTranslationSettings = {
+    _count: ShopTranslationSettingsCountAggregateOutputType | null
+    _min: ShopTranslationSettingsMinAggregateOutputType | null
+    _max: ShopTranslationSettingsMaxAggregateOutputType | null
+  }
+
+  export type ShopTranslationSettingsMinAggregateOutputType = {
+    shop: string | null
+    primaryLocale: string | null
+    autoTranslate: boolean | null
+    migratedToTsf: boolean | null
+    migratedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ShopTranslationSettingsMaxAggregateOutputType = {
+    shop: string | null
+    primaryLocale: string | null
+    autoTranslate: boolean | null
+    migratedToTsf: boolean | null
+    migratedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ShopTranslationSettingsCountAggregateOutputType = {
+    shop: number
+    primaryLocale: number
+    targets: number
+    autoTranslate: number
+    migratedToTsf: number
+    migratedAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ShopTranslationSettingsMinAggregateInputType = {
+    shop?: true
+    primaryLocale?: true
+    autoTranslate?: true
+    migratedToTsf?: true
+    migratedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ShopTranslationSettingsMaxAggregateInputType = {
+    shop?: true
+    primaryLocale?: true
+    autoTranslate?: true
+    migratedToTsf?: true
+    migratedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ShopTranslationSettingsCountAggregateInputType = {
+    shop?: true
+    primaryLocale?: true
+    targets?: true
+    autoTranslate?: true
+    migratedToTsf?: true
+    migratedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ShopTranslationSettingsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ShopTranslationSettings to aggregate.
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTranslationSettings to fetch.
+     */
+    orderBy?: ShopTranslationSettingsOrderByWithRelationInput | ShopTranslationSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ShopTranslationSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTranslationSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTranslationSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ShopTranslationSettings
+    **/
+    _count?: true | ShopTranslationSettingsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ShopTranslationSettingsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ShopTranslationSettingsMaxAggregateInputType
+  }
+
+  export type GetShopTranslationSettingsAggregateType<T extends ShopTranslationSettingsAggregateArgs> = {
+        [P in keyof T & keyof AggregateShopTranslationSettings]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateShopTranslationSettings[P]>
+      : GetScalarType<T[P], AggregateShopTranslationSettings[P]>
+  }
+
+
+
+
+  export type ShopTranslationSettingsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ShopTranslationSettingsWhereInput
+    orderBy?: ShopTranslationSettingsOrderByWithAggregationInput | ShopTranslationSettingsOrderByWithAggregationInput[]
+    by: ShopTranslationSettingsScalarFieldEnum[] | ShopTranslationSettingsScalarFieldEnum
+    having?: ShopTranslationSettingsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ShopTranslationSettingsCountAggregateInputType | true
+    _min?: ShopTranslationSettingsMinAggregateInputType
+    _max?: ShopTranslationSettingsMaxAggregateInputType
+  }
+
+  export type ShopTranslationSettingsGroupByOutputType = {
+    shop: string
+    primaryLocale: string
+    targets: JsonValue
+    autoTranslate: boolean
+    migratedToTsf: boolean
+    migratedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    _count: ShopTranslationSettingsCountAggregateOutputType | null
+    _min: ShopTranslationSettingsMinAggregateOutputType | null
+    _max: ShopTranslationSettingsMaxAggregateOutputType | null
+  }
+
+  type GetShopTranslationSettingsGroupByPayload<T extends ShopTranslationSettingsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ShopTranslationSettingsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ShopTranslationSettingsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ShopTranslationSettingsGroupByOutputType[P]>
+            : GetScalarType<T[P], ShopTranslationSettingsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ShopTranslationSettingsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    primaryLocale?: boolean
+    targets?: boolean
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTranslationSettings"]>
+
+  export type ShopTranslationSettingsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    primaryLocale?: boolean
+    targets?: boolean
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTranslationSettings"]>
+
+  export type ShopTranslationSettingsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    primaryLocale?: boolean
+    targets?: boolean
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["shopTranslationSettings"]>
+
+  export type ShopTranslationSettingsSelectScalar = {
+    shop?: boolean
+    primaryLocale?: boolean
+    targets?: boolean
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type ShopTranslationSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"shop" | "primaryLocale" | "targets" | "autoTranslate" | "migratedToTsf" | "migratedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["shopTranslationSettings"]>
+
+  export type $ShopTranslationSettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ShopTranslationSettings"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      shop: string
+      primaryLocale: string
+      targets: Prisma.JsonValue
+      autoTranslate: boolean
+      migratedToTsf: boolean
+      migratedAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["shopTranslationSettings"]>
+    composites: {}
+  }
+
+  type ShopTranslationSettingsGetPayload<S extends boolean | null | undefined | ShopTranslationSettingsDefaultArgs> = $Result.GetResult<Prisma.$ShopTranslationSettingsPayload, S>
+
+  type ShopTranslationSettingsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ShopTranslationSettingsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ShopTranslationSettingsCountAggregateInputType | true
+    }
+
+  export interface ShopTranslationSettingsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ShopTranslationSettings'], meta: { name: 'ShopTranslationSettings' } }
+    /**
+     * Find zero or one ShopTranslationSettings that matches the filter.
+     * @param {ShopTranslationSettingsFindUniqueArgs} args - Arguments to find a ShopTranslationSettings
+     * @example
+     * // Get one ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ShopTranslationSettingsFindUniqueArgs>(args: SelectSubset<T, ShopTranslationSettingsFindUniqueArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ShopTranslationSettings that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ShopTranslationSettingsFindUniqueOrThrowArgs} args - Arguments to find a ShopTranslationSettings
+     * @example
+     * // Get one ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ShopTranslationSettingsFindUniqueOrThrowArgs>(args: SelectSubset<T, ShopTranslationSettingsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ShopTranslationSettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsFindFirstArgs} args - Arguments to find a ShopTranslationSettings
+     * @example
+     * // Get one ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ShopTranslationSettingsFindFirstArgs>(args?: SelectSubset<T, ShopTranslationSettingsFindFirstArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ShopTranslationSettings that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsFindFirstOrThrowArgs} args - Arguments to find a ShopTranslationSettings
+     * @example
+     * // Get one ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ShopTranslationSettingsFindFirstOrThrowArgs>(args?: SelectSubset<T, ShopTranslationSettingsFindFirstOrThrowArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ShopTranslationSettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findMany()
+     * 
+     * // Get first 10 ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.findMany({ take: 10 })
+     * 
+     * // Only select the `shop`
+     * const shopTranslationSettingsWithShopOnly = await prisma.shopTranslationSettings.findMany({ select: { shop: true } })
+     * 
+     */
+    findMany<T extends ShopTranslationSettingsFindManyArgs>(args?: SelectSubset<T, ShopTranslationSettingsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ShopTranslationSettings.
+     * @param {ShopTranslationSettingsCreateArgs} args - Arguments to create a ShopTranslationSettings.
+     * @example
+     * // Create one ShopTranslationSettings
+     * const ShopTranslationSettings = await prisma.shopTranslationSettings.create({
+     *   data: {
+     *     // ... data to create a ShopTranslationSettings
+     *   }
+     * })
+     * 
+     */
+    create<T extends ShopTranslationSettingsCreateArgs>(args: SelectSubset<T, ShopTranslationSettingsCreateArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ShopTranslationSettings.
+     * @param {ShopTranslationSettingsCreateManyArgs} args - Arguments to create many ShopTranslationSettings.
+     * @example
+     * // Create many ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ShopTranslationSettingsCreateManyArgs>(args?: SelectSubset<T, ShopTranslationSettingsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ShopTranslationSettings and returns the data saved in the database.
+     * @param {ShopTranslationSettingsCreateManyAndReturnArgs} args - Arguments to create many ShopTranslationSettings.
+     * @example
+     * // Create many ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ShopTranslationSettings and only return the `shop`
+     * const shopTranslationSettingsWithShopOnly = await prisma.shopTranslationSettings.createManyAndReturn({
+     *   select: { shop: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ShopTranslationSettingsCreateManyAndReturnArgs>(args?: SelectSubset<T, ShopTranslationSettingsCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ShopTranslationSettings.
+     * @param {ShopTranslationSettingsDeleteArgs} args - Arguments to delete one ShopTranslationSettings.
+     * @example
+     * // Delete one ShopTranslationSettings
+     * const ShopTranslationSettings = await prisma.shopTranslationSettings.delete({
+     *   where: {
+     *     // ... filter to delete one ShopTranslationSettings
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ShopTranslationSettingsDeleteArgs>(args: SelectSubset<T, ShopTranslationSettingsDeleteArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ShopTranslationSettings.
+     * @param {ShopTranslationSettingsUpdateArgs} args - Arguments to update one ShopTranslationSettings.
+     * @example
+     * // Update one ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ShopTranslationSettingsUpdateArgs>(args: SelectSubset<T, ShopTranslationSettingsUpdateArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ShopTranslationSettings.
+     * @param {ShopTranslationSettingsDeleteManyArgs} args - Arguments to filter ShopTranslationSettings to delete.
+     * @example
+     * // Delete a few ShopTranslationSettings
+     * const { count } = await prisma.shopTranslationSettings.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ShopTranslationSettingsDeleteManyArgs>(args?: SelectSubset<T, ShopTranslationSettingsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ShopTranslationSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ShopTranslationSettingsUpdateManyArgs>(args: SelectSubset<T, ShopTranslationSettingsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ShopTranslationSettings and returns the data updated in the database.
+     * @param {ShopTranslationSettingsUpdateManyAndReturnArgs} args - Arguments to update many ShopTranslationSettings.
+     * @example
+     * // Update many ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ShopTranslationSettings and only return the `shop`
+     * const shopTranslationSettingsWithShopOnly = await prisma.shopTranslationSettings.updateManyAndReturn({
+     *   select: { shop: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ShopTranslationSettingsUpdateManyAndReturnArgs>(args: SelectSubset<T, ShopTranslationSettingsUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ShopTranslationSettings.
+     * @param {ShopTranslationSettingsUpsertArgs} args - Arguments to update or create a ShopTranslationSettings.
+     * @example
+     * // Update or create a ShopTranslationSettings
+     * const shopTranslationSettings = await prisma.shopTranslationSettings.upsert({
+     *   create: {
+     *     // ... data to create a ShopTranslationSettings
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ShopTranslationSettings we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ShopTranslationSettingsUpsertArgs>(args: SelectSubset<T, ShopTranslationSettingsUpsertArgs<ExtArgs>>): Prisma__ShopTranslationSettingsClient<$Result.GetResult<Prisma.$ShopTranslationSettingsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ShopTranslationSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsCountArgs} args - Arguments to filter ShopTranslationSettings to count.
+     * @example
+     * // Count the number of ShopTranslationSettings
+     * const count = await prisma.shopTranslationSettings.count({
+     *   where: {
+     *     // ... the filter for the ShopTranslationSettings we want to count
+     *   }
+     * })
+    **/
+    count<T extends ShopTranslationSettingsCountArgs>(
+      args?: Subset<T, ShopTranslationSettingsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ShopTranslationSettingsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ShopTranslationSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ShopTranslationSettingsAggregateArgs>(args: Subset<T, ShopTranslationSettingsAggregateArgs>): Prisma.PrismaPromise<GetShopTranslationSettingsAggregateType<T>>
+
+    /**
+     * Group by ShopTranslationSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ShopTranslationSettingsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ShopTranslationSettingsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ShopTranslationSettingsGroupByArgs['orderBy'] }
+        : { orderBy?: ShopTranslationSettingsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ShopTranslationSettingsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetShopTranslationSettingsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ShopTranslationSettings model
+   */
+  readonly fields: ShopTranslationSettingsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ShopTranslationSettings.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ShopTranslationSettingsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ShopTranslationSettings model
+   */
+  interface ShopTranslationSettingsFieldRefs {
+    readonly shop: FieldRef<"ShopTranslationSettings", 'String'>
+    readonly primaryLocale: FieldRef<"ShopTranslationSettings", 'String'>
+    readonly targets: FieldRef<"ShopTranslationSettings", 'Json'>
+    readonly autoTranslate: FieldRef<"ShopTranslationSettings", 'Boolean'>
+    readonly migratedToTsf: FieldRef<"ShopTranslationSettings", 'Boolean'>
+    readonly migratedAt: FieldRef<"ShopTranslationSettings", 'DateTime'>
+    readonly createdAt: FieldRef<"ShopTranslationSettings", 'DateTime'>
+    readonly updatedAt: FieldRef<"ShopTranslationSettings", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ShopTranslationSettings findUnique
+   */
+  export type ShopTranslationSettingsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTranslationSettings to fetch.
+     */
+    where: ShopTranslationSettingsWhereUniqueInput
+  }
+
+  /**
+   * ShopTranslationSettings findUniqueOrThrow
+   */
+  export type ShopTranslationSettingsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTranslationSettings to fetch.
+     */
+    where: ShopTranslationSettingsWhereUniqueInput
+  }
+
+  /**
+   * ShopTranslationSettings findFirst
+   */
+  export type ShopTranslationSettingsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTranslationSettings to fetch.
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTranslationSettings to fetch.
+     */
+    orderBy?: ShopTranslationSettingsOrderByWithRelationInput | ShopTranslationSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ShopTranslationSettings.
+     */
+    cursor?: ShopTranslationSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTranslationSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTranslationSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ShopTranslationSettings.
+     */
+    distinct?: ShopTranslationSettingsScalarFieldEnum | ShopTranslationSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTranslationSettings findFirstOrThrow
+   */
+  export type ShopTranslationSettingsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTranslationSettings to fetch.
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTranslationSettings to fetch.
+     */
+    orderBy?: ShopTranslationSettingsOrderByWithRelationInput | ShopTranslationSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ShopTranslationSettings.
+     */
+    cursor?: ShopTranslationSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTranslationSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTranslationSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ShopTranslationSettings.
+     */
+    distinct?: ShopTranslationSettingsScalarFieldEnum | ShopTranslationSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTranslationSettings findMany
+   */
+  export type ShopTranslationSettingsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which ShopTranslationSettings to fetch.
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ShopTranslationSettings to fetch.
+     */
+    orderBy?: ShopTranslationSettingsOrderByWithRelationInput | ShopTranslationSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ShopTranslationSettings.
+     */
+    cursor?: ShopTranslationSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ShopTranslationSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ShopTranslationSettings.
+     */
+    skip?: number
+    distinct?: ShopTranslationSettingsScalarFieldEnum | ShopTranslationSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * ShopTranslationSettings create
+   */
+  export type ShopTranslationSettingsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ShopTranslationSettings.
+     */
+    data: XOR<ShopTranslationSettingsCreateInput, ShopTranslationSettingsUncheckedCreateInput>
+  }
+
+  /**
+   * ShopTranslationSettings createMany
+   */
+  export type ShopTranslationSettingsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ShopTranslationSettings.
+     */
+    data: ShopTranslationSettingsCreateManyInput | ShopTranslationSettingsCreateManyInput[]
+  }
+
+  /**
+   * ShopTranslationSettings createManyAndReturn
+   */
+  export type ShopTranslationSettingsCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * The data used to create many ShopTranslationSettings.
+     */
+    data: ShopTranslationSettingsCreateManyInput | ShopTranslationSettingsCreateManyInput[]
+  }
+
+  /**
+   * ShopTranslationSettings update
+   */
+  export type ShopTranslationSettingsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ShopTranslationSettings.
+     */
+    data: XOR<ShopTranslationSettingsUpdateInput, ShopTranslationSettingsUncheckedUpdateInput>
+    /**
+     * Choose, which ShopTranslationSettings to update.
+     */
+    where: ShopTranslationSettingsWhereUniqueInput
+  }
+
+  /**
+   * ShopTranslationSettings updateMany
+   */
+  export type ShopTranslationSettingsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ShopTranslationSettings.
+     */
+    data: XOR<ShopTranslationSettingsUpdateManyMutationInput, ShopTranslationSettingsUncheckedUpdateManyInput>
+    /**
+     * Filter which ShopTranslationSettings to update
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * Limit how many ShopTranslationSettings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTranslationSettings updateManyAndReturn
+   */
+  export type ShopTranslationSettingsUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * The data used to update ShopTranslationSettings.
+     */
+    data: XOR<ShopTranslationSettingsUpdateManyMutationInput, ShopTranslationSettingsUncheckedUpdateManyInput>
+    /**
+     * Filter which ShopTranslationSettings to update
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * Limit how many ShopTranslationSettings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTranslationSettings upsert
+   */
+  export type ShopTranslationSettingsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ShopTranslationSettings to update in case it exists.
+     */
+    where: ShopTranslationSettingsWhereUniqueInput
+    /**
+     * In case the ShopTranslationSettings found by the `where` argument doesn't exist, create a new ShopTranslationSettings with this data.
+     */
+    create: XOR<ShopTranslationSettingsCreateInput, ShopTranslationSettingsUncheckedCreateInput>
+    /**
+     * In case the ShopTranslationSettings was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ShopTranslationSettingsUpdateInput, ShopTranslationSettingsUncheckedUpdateInput>
+  }
+
+  /**
+   * ShopTranslationSettings delete
+   */
+  export type ShopTranslationSettingsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+    /**
+     * Filter which ShopTranslationSettings to delete.
+     */
+    where: ShopTranslationSettingsWhereUniqueInput
+  }
+
+  /**
+   * ShopTranslationSettings deleteMany
+   */
+  export type ShopTranslationSettingsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ShopTranslationSettings to delete
+     */
+    where?: ShopTranslationSettingsWhereInput
+    /**
+     * Limit how many ShopTranslationSettings to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ShopTranslationSettings without action
+   */
+  export type ShopTranslationSettingsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ShopTranslationSettings
+     */
+    select?: ShopTranslationSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ShopTranslationSettings
+     */
+    omit?: ShopTranslationSettingsOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Glossary
+   */
+
+  export type AggregateGlossary = {
+    _count: GlossaryCountAggregateOutputType | null
+    _min: GlossaryMinAggregateOutputType | null
+    _max: GlossaryMaxAggregateOutputType | null
+  }
+
+  export type GlossaryMinAggregateOutputType = {
+    id: string | null
+    shop: string | null
+    sourceText: string | null
+    targetText: string | null
+    rangeCode: string | null
+    caseSensitive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type GlossaryMaxAggregateOutputType = {
+    id: string | null
+    shop: string | null
+    sourceText: string | null
+    targetText: string | null
+    rangeCode: string | null
+    caseSensitive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type GlossaryCountAggregateOutputType = {
+    id: number
+    shop: number
+    sourceText: number
+    targetText: number
+    rangeCode: number
+    caseSensitive: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type GlossaryMinAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    rangeCode?: true
+    caseSensitive?: true
+    createdAt?: true
+  }
+
+  export type GlossaryMaxAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    rangeCode?: true
+    caseSensitive?: true
+    createdAt?: true
+  }
+
+  export type GlossaryCountAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    rangeCode?: true
+    caseSensitive?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type GlossaryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Glossary to aggregate.
+     */
+    where?: GlossaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Glossaries to fetch.
+     */
+    orderBy?: GlossaryOrderByWithRelationInput | GlossaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: GlossaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Glossaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Glossaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Glossaries
+    **/
+    _count?: true | GlossaryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: GlossaryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: GlossaryMaxAggregateInputType
+  }
+
+  export type GetGlossaryAggregateType<T extends GlossaryAggregateArgs> = {
+        [P in keyof T & keyof AggregateGlossary]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateGlossary[P]>
+      : GetScalarType<T[P], AggregateGlossary[P]>
+  }
+
+
+
+
+  export type GlossaryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: GlossaryWhereInput
+    orderBy?: GlossaryOrderByWithAggregationInput | GlossaryOrderByWithAggregationInput[]
+    by: GlossaryScalarFieldEnum[] | GlossaryScalarFieldEnum
+    having?: GlossaryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: GlossaryCountAggregateInputType | true
+    _min?: GlossaryMinAggregateInputType
+    _max?: GlossaryMaxAggregateInputType
+  }
+
+  export type GlossaryGroupByOutputType = {
+    id: string
+    shop: string
+    sourceText: string
+    targetText: string
+    rangeCode: string | null
+    caseSensitive: boolean
+    createdAt: Date
+    _count: GlossaryCountAggregateOutputType | null
+    _min: GlossaryMinAggregateOutputType | null
+    _max: GlossaryMaxAggregateOutputType | null
+  }
+
+  type GetGlossaryGroupByPayload<T extends GlossaryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<GlossaryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof GlossaryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], GlossaryGroupByOutputType[P]>
+            : GetScalarType<T[P], GlossaryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type GlossarySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    rangeCode?: boolean
+    caseSensitive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["glossary"]>
+
+  export type GlossarySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    rangeCode?: boolean
+    caseSensitive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["glossary"]>
+
+  export type GlossarySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    rangeCode?: boolean
+    caseSensitive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["glossary"]>
+
+  export type GlossarySelectScalar = {
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    rangeCode?: boolean
+    caseSensitive?: boolean
+    createdAt?: boolean
+  }
+
+  export type GlossaryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "sourceText" | "targetText" | "rangeCode" | "caseSensitive" | "createdAt", ExtArgs["result"]["glossary"]>
+
+  export type $GlossaryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Glossary"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      shop: string
+      sourceText: string
+      targetText: string
+      rangeCode: string | null
+      caseSensitive: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["glossary"]>
+    composites: {}
+  }
+
+  type GlossaryGetPayload<S extends boolean | null | undefined | GlossaryDefaultArgs> = $Result.GetResult<Prisma.$GlossaryPayload, S>
+
+  type GlossaryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<GlossaryFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: GlossaryCountAggregateInputType | true
+    }
+
+  export interface GlossaryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Glossary'], meta: { name: 'Glossary' } }
+    /**
+     * Find zero or one Glossary that matches the filter.
+     * @param {GlossaryFindUniqueArgs} args - Arguments to find a Glossary
+     * @example
+     * // Get one Glossary
+     * const glossary = await prisma.glossary.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends GlossaryFindUniqueArgs>(args: SelectSubset<T, GlossaryFindUniqueArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Glossary that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {GlossaryFindUniqueOrThrowArgs} args - Arguments to find a Glossary
+     * @example
+     * // Get one Glossary
+     * const glossary = await prisma.glossary.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends GlossaryFindUniqueOrThrowArgs>(args: SelectSubset<T, GlossaryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Glossary that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryFindFirstArgs} args - Arguments to find a Glossary
+     * @example
+     * // Get one Glossary
+     * const glossary = await prisma.glossary.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends GlossaryFindFirstArgs>(args?: SelectSubset<T, GlossaryFindFirstArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Glossary that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryFindFirstOrThrowArgs} args - Arguments to find a Glossary
+     * @example
+     * // Get one Glossary
+     * const glossary = await prisma.glossary.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends GlossaryFindFirstOrThrowArgs>(args?: SelectSubset<T, GlossaryFindFirstOrThrowArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Glossaries that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Glossaries
+     * const glossaries = await prisma.glossary.findMany()
+     * 
+     * // Get first 10 Glossaries
+     * const glossaries = await prisma.glossary.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const glossaryWithIdOnly = await prisma.glossary.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends GlossaryFindManyArgs>(args?: SelectSubset<T, GlossaryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Glossary.
+     * @param {GlossaryCreateArgs} args - Arguments to create a Glossary.
+     * @example
+     * // Create one Glossary
+     * const Glossary = await prisma.glossary.create({
+     *   data: {
+     *     // ... data to create a Glossary
+     *   }
+     * })
+     * 
+     */
+    create<T extends GlossaryCreateArgs>(args: SelectSubset<T, GlossaryCreateArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Glossaries.
+     * @param {GlossaryCreateManyArgs} args - Arguments to create many Glossaries.
+     * @example
+     * // Create many Glossaries
+     * const glossary = await prisma.glossary.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends GlossaryCreateManyArgs>(args?: SelectSubset<T, GlossaryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Glossaries and returns the data saved in the database.
+     * @param {GlossaryCreateManyAndReturnArgs} args - Arguments to create many Glossaries.
+     * @example
+     * // Create many Glossaries
+     * const glossary = await prisma.glossary.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Glossaries and only return the `id`
+     * const glossaryWithIdOnly = await prisma.glossary.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends GlossaryCreateManyAndReturnArgs>(args?: SelectSubset<T, GlossaryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Glossary.
+     * @param {GlossaryDeleteArgs} args - Arguments to delete one Glossary.
+     * @example
+     * // Delete one Glossary
+     * const Glossary = await prisma.glossary.delete({
+     *   where: {
+     *     // ... filter to delete one Glossary
+     *   }
+     * })
+     * 
+     */
+    delete<T extends GlossaryDeleteArgs>(args: SelectSubset<T, GlossaryDeleteArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Glossary.
+     * @param {GlossaryUpdateArgs} args - Arguments to update one Glossary.
+     * @example
+     * // Update one Glossary
+     * const glossary = await prisma.glossary.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends GlossaryUpdateArgs>(args: SelectSubset<T, GlossaryUpdateArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Glossaries.
+     * @param {GlossaryDeleteManyArgs} args - Arguments to filter Glossaries to delete.
+     * @example
+     * // Delete a few Glossaries
+     * const { count } = await prisma.glossary.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends GlossaryDeleteManyArgs>(args?: SelectSubset<T, GlossaryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Glossaries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Glossaries
+     * const glossary = await prisma.glossary.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends GlossaryUpdateManyArgs>(args: SelectSubset<T, GlossaryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Glossaries and returns the data updated in the database.
+     * @param {GlossaryUpdateManyAndReturnArgs} args - Arguments to update many Glossaries.
+     * @example
+     * // Update many Glossaries
+     * const glossary = await prisma.glossary.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Glossaries and only return the `id`
+     * const glossaryWithIdOnly = await prisma.glossary.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends GlossaryUpdateManyAndReturnArgs>(args: SelectSubset<T, GlossaryUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Glossary.
+     * @param {GlossaryUpsertArgs} args - Arguments to update or create a Glossary.
+     * @example
+     * // Update or create a Glossary
+     * const glossary = await prisma.glossary.upsert({
+     *   create: {
+     *     // ... data to create a Glossary
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Glossary we want to update
+     *   }
+     * })
+     */
+    upsert<T extends GlossaryUpsertArgs>(args: SelectSubset<T, GlossaryUpsertArgs<ExtArgs>>): Prisma__GlossaryClient<$Result.GetResult<Prisma.$GlossaryPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Glossaries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryCountArgs} args - Arguments to filter Glossaries to count.
+     * @example
+     * // Count the number of Glossaries
+     * const count = await prisma.glossary.count({
+     *   where: {
+     *     // ... the filter for the Glossaries we want to count
+     *   }
+     * })
+    **/
+    count<T extends GlossaryCountArgs>(
+      args?: Subset<T, GlossaryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], GlossaryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Glossary.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends GlossaryAggregateArgs>(args: Subset<T, GlossaryAggregateArgs>): Prisma.PrismaPromise<GetGlossaryAggregateType<T>>
+
+    /**
+     * Group by Glossary.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GlossaryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends GlossaryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: GlossaryGroupByArgs['orderBy'] }
+        : { orderBy?: GlossaryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, GlossaryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetGlossaryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Glossary model
+   */
+  readonly fields: GlossaryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Glossary.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__GlossaryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Glossary model
+   */
+  interface GlossaryFieldRefs {
+    readonly id: FieldRef<"Glossary", 'String'>
+    readonly shop: FieldRef<"Glossary", 'String'>
+    readonly sourceText: FieldRef<"Glossary", 'String'>
+    readonly targetText: FieldRef<"Glossary", 'String'>
+    readonly rangeCode: FieldRef<"Glossary", 'String'>
+    readonly caseSensitive: FieldRef<"Glossary", 'Boolean'>
+    readonly createdAt: FieldRef<"Glossary", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Glossary findUnique
+   */
+  export type GlossaryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter, which Glossary to fetch.
+     */
+    where: GlossaryWhereUniqueInput
+  }
+
+  /**
+   * Glossary findUniqueOrThrow
+   */
+  export type GlossaryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter, which Glossary to fetch.
+     */
+    where: GlossaryWhereUniqueInput
+  }
+
+  /**
+   * Glossary findFirst
+   */
+  export type GlossaryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter, which Glossary to fetch.
+     */
+    where?: GlossaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Glossaries to fetch.
+     */
+    orderBy?: GlossaryOrderByWithRelationInput | GlossaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Glossaries.
+     */
+    cursor?: GlossaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Glossaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Glossaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Glossaries.
+     */
+    distinct?: GlossaryScalarFieldEnum | GlossaryScalarFieldEnum[]
+  }
+
+  /**
+   * Glossary findFirstOrThrow
+   */
+  export type GlossaryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter, which Glossary to fetch.
+     */
+    where?: GlossaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Glossaries to fetch.
+     */
+    orderBy?: GlossaryOrderByWithRelationInput | GlossaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Glossaries.
+     */
+    cursor?: GlossaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Glossaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Glossaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Glossaries.
+     */
+    distinct?: GlossaryScalarFieldEnum | GlossaryScalarFieldEnum[]
+  }
+
+  /**
+   * Glossary findMany
+   */
+  export type GlossaryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter, which Glossaries to fetch.
+     */
+    where?: GlossaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Glossaries to fetch.
+     */
+    orderBy?: GlossaryOrderByWithRelationInput | GlossaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Glossaries.
+     */
+    cursor?: GlossaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Glossaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Glossaries.
+     */
+    skip?: number
+    distinct?: GlossaryScalarFieldEnum | GlossaryScalarFieldEnum[]
+  }
+
+  /**
+   * Glossary create
+   */
+  export type GlossaryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * The data needed to create a Glossary.
+     */
+    data: XOR<GlossaryCreateInput, GlossaryUncheckedCreateInput>
+  }
+
+  /**
+   * Glossary createMany
+   */
+  export type GlossaryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Glossaries.
+     */
+    data: GlossaryCreateManyInput | GlossaryCreateManyInput[]
+  }
+
+  /**
+   * Glossary createManyAndReturn
+   */
+  export type GlossaryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * The data used to create many Glossaries.
+     */
+    data: GlossaryCreateManyInput | GlossaryCreateManyInput[]
+  }
+
+  /**
+   * Glossary update
+   */
+  export type GlossaryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * The data needed to update a Glossary.
+     */
+    data: XOR<GlossaryUpdateInput, GlossaryUncheckedUpdateInput>
+    /**
+     * Choose, which Glossary to update.
+     */
+    where: GlossaryWhereUniqueInput
+  }
+
+  /**
+   * Glossary updateMany
+   */
+  export type GlossaryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Glossaries.
+     */
+    data: XOR<GlossaryUpdateManyMutationInput, GlossaryUncheckedUpdateManyInput>
+    /**
+     * Filter which Glossaries to update
+     */
+    where?: GlossaryWhereInput
+    /**
+     * Limit how many Glossaries to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Glossary updateManyAndReturn
+   */
+  export type GlossaryUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * The data used to update Glossaries.
+     */
+    data: XOR<GlossaryUpdateManyMutationInput, GlossaryUncheckedUpdateManyInput>
+    /**
+     * Filter which Glossaries to update
+     */
+    where?: GlossaryWhereInput
+    /**
+     * Limit how many Glossaries to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Glossary upsert
+   */
+  export type GlossaryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * The filter to search for the Glossary to update in case it exists.
+     */
+    where: GlossaryWhereUniqueInput
+    /**
+     * In case the Glossary found by the `where` argument doesn't exist, create a new Glossary with this data.
+     */
+    create: XOR<GlossaryCreateInput, GlossaryUncheckedCreateInput>
+    /**
+     * In case the Glossary was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<GlossaryUpdateInput, GlossaryUncheckedUpdateInput>
+  }
+
+  /**
+   * Glossary delete
+   */
+  export type GlossaryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+    /**
+     * Filter which Glossary to delete.
+     */
+    where: GlossaryWhereUniqueInput
+  }
+
+  /**
+   * Glossary deleteMany
+   */
+  export type GlossaryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Glossaries to delete
+     */
+    where?: GlossaryWhereInput
+    /**
+     * Limit how many Glossaries to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Glossary without action
+   */
+  export type GlossaryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Glossary
+     */
+    select?: GlossarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Glossary
+     */
+    omit?: GlossaryOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LiquidRule
+   */
+
+  export type AggregateLiquidRule = {
+    _count: LiquidRuleCountAggregateOutputType | null
+    _min: LiquidRuleMinAggregateOutputType | null
+    _max: LiquidRuleMaxAggregateOutputType | null
+  }
+
+  export type LiquidRuleMinAggregateOutputType = {
+    id: string | null
+    shop: string | null
+    beforeTranslation: string | null
+    afterTranslation: string | null
+    languageCode: string | null
+    replacementMethod: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LiquidRuleMaxAggregateOutputType = {
+    id: string | null
+    shop: string | null
+    beforeTranslation: string | null
+    afterTranslation: string | null
+    languageCode: string | null
+    replacementMethod: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LiquidRuleCountAggregateOutputType = {
+    id: number
+    shop: number
+    beforeTranslation: number
+    afterTranslation: number
+    languageCode: number
+    replacementMethod: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type LiquidRuleMinAggregateInputType = {
+    id?: true
+    shop?: true
+    beforeTranslation?: true
+    afterTranslation?: true
+    languageCode?: true
+    replacementMethod?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LiquidRuleMaxAggregateInputType = {
+    id?: true
+    shop?: true
+    beforeTranslation?: true
+    afterTranslation?: true
+    languageCode?: true
+    replacementMethod?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LiquidRuleCountAggregateInputType = {
+    id?: true
+    shop?: true
+    beforeTranslation?: true
+    afterTranslation?: true
+    languageCode?: true
+    replacementMethod?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type LiquidRuleAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LiquidRule to aggregate.
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LiquidRules to fetch.
+     */
+    orderBy?: LiquidRuleOrderByWithRelationInput | LiquidRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LiquidRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LiquidRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LiquidRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LiquidRules
+    **/
+    _count?: true | LiquidRuleCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LiquidRuleMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LiquidRuleMaxAggregateInputType
+  }
+
+  export type GetLiquidRuleAggregateType<T extends LiquidRuleAggregateArgs> = {
+        [P in keyof T & keyof AggregateLiquidRule]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLiquidRule[P]>
+      : GetScalarType<T[P], AggregateLiquidRule[P]>
+  }
+
+
+
+
+  export type LiquidRuleGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LiquidRuleWhereInput
+    orderBy?: LiquidRuleOrderByWithAggregationInput | LiquidRuleOrderByWithAggregationInput[]
+    by: LiquidRuleScalarFieldEnum[] | LiquidRuleScalarFieldEnum
+    having?: LiquidRuleScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LiquidRuleCountAggregateInputType | true
+    _min?: LiquidRuleMinAggregateInputType
+    _max?: LiquidRuleMaxAggregateInputType
+  }
+
+  export type LiquidRuleGroupByOutputType = {
+    id: string
+    shop: string
+    beforeTranslation: string
+    afterTranslation: string
+    languageCode: string | null
+    replacementMethod: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: LiquidRuleCountAggregateOutputType | null
+    _min: LiquidRuleMinAggregateOutputType | null
+    _max: LiquidRuleMaxAggregateOutputType | null
+  }
+
+  type GetLiquidRuleGroupByPayload<T extends LiquidRuleGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LiquidRuleGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LiquidRuleGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LiquidRuleGroupByOutputType[P]>
+            : GetScalarType<T[P], LiquidRuleGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LiquidRuleSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    beforeTranslation?: boolean
+    afterTranslation?: boolean
+    languageCode?: boolean
+    replacementMethod?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["liquidRule"]>
+
+  export type LiquidRuleSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    beforeTranslation?: boolean
+    afterTranslation?: boolean
+    languageCode?: boolean
+    replacementMethod?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["liquidRule"]>
+
+  export type LiquidRuleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    beforeTranslation?: boolean
+    afterTranslation?: boolean
+    languageCode?: boolean
+    replacementMethod?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["liquidRule"]>
+
+  export type LiquidRuleSelectScalar = {
+    id?: boolean
+    shop?: boolean
+    beforeTranslation?: boolean
+    afterTranslation?: boolean
+    languageCode?: boolean
+    replacementMethod?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type LiquidRuleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "beforeTranslation" | "afterTranslation" | "languageCode" | "replacementMethod" | "createdAt" | "updatedAt", ExtArgs["result"]["liquidRule"]>
+
+  export type $LiquidRulePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LiquidRule"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      shop: string
+      beforeTranslation: string
+      afterTranslation: string
+      languageCode: string | null
+      replacementMethod: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["liquidRule"]>
+    composites: {}
+  }
+
+  type LiquidRuleGetPayload<S extends boolean | null | undefined | LiquidRuleDefaultArgs> = $Result.GetResult<Prisma.$LiquidRulePayload, S>
+
+  type LiquidRuleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LiquidRuleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LiquidRuleCountAggregateInputType | true
+    }
+
+  export interface LiquidRuleDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LiquidRule'], meta: { name: 'LiquidRule' } }
+    /**
+     * Find zero or one LiquidRule that matches the filter.
+     * @param {LiquidRuleFindUniqueArgs} args - Arguments to find a LiquidRule
+     * @example
+     * // Get one LiquidRule
+     * const liquidRule = await prisma.liquidRule.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LiquidRuleFindUniqueArgs>(args: SelectSubset<T, LiquidRuleFindUniqueArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one LiquidRule that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LiquidRuleFindUniqueOrThrowArgs} args - Arguments to find a LiquidRule
+     * @example
+     * // Get one LiquidRule
+     * const liquidRule = await prisma.liquidRule.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LiquidRuleFindUniqueOrThrowArgs>(args: SelectSubset<T, LiquidRuleFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LiquidRule that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleFindFirstArgs} args - Arguments to find a LiquidRule
+     * @example
+     * // Get one LiquidRule
+     * const liquidRule = await prisma.liquidRule.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LiquidRuleFindFirstArgs>(args?: SelectSubset<T, LiquidRuleFindFirstArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LiquidRule that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleFindFirstOrThrowArgs} args - Arguments to find a LiquidRule
+     * @example
+     * // Get one LiquidRule
+     * const liquidRule = await prisma.liquidRule.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LiquidRuleFindFirstOrThrowArgs>(args?: SelectSubset<T, LiquidRuleFindFirstOrThrowArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more LiquidRules that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LiquidRules
+     * const liquidRules = await prisma.liquidRule.findMany()
+     * 
+     * // Get first 10 LiquidRules
+     * const liquidRules = await prisma.liquidRule.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const liquidRuleWithIdOnly = await prisma.liquidRule.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LiquidRuleFindManyArgs>(args?: SelectSubset<T, LiquidRuleFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a LiquidRule.
+     * @param {LiquidRuleCreateArgs} args - Arguments to create a LiquidRule.
+     * @example
+     * // Create one LiquidRule
+     * const LiquidRule = await prisma.liquidRule.create({
+     *   data: {
+     *     // ... data to create a LiquidRule
+     *   }
+     * })
+     * 
+     */
+    create<T extends LiquidRuleCreateArgs>(args: SelectSubset<T, LiquidRuleCreateArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many LiquidRules.
+     * @param {LiquidRuleCreateManyArgs} args - Arguments to create many LiquidRules.
+     * @example
+     * // Create many LiquidRules
+     * const liquidRule = await prisma.liquidRule.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LiquidRuleCreateManyArgs>(args?: SelectSubset<T, LiquidRuleCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LiquidRules and returns the data saved in the database.
+     * @param {LiquidRuleCreateManyAndReturnArgs} args - Arguments to create many LiquidRules.
+     * @example
+     * // Create many LiquidRules
+     * const liquidRule = await prisma.liquidRule.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LiquidRules and only return the `id`
+     * const liquidRuleWithIdOnly = await prisma.liquidRule.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LiquidRuleCreateManyAndReturnArgs>(args?: SelectSubset<T, LiquidRuleCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a LiquidRule.
+     * @param {LiquidRuleDeleteArgs} args - Arguments to delete one LiquidRule.
+     * @example
+     * // Delete one LiquidRule
+     * const LiquidRule = await prisma.liquidRule.delete({
+     *   where: {
+     *     // ... filter to delete one LiquidRule
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LiquidRuleDeleteArgs>(args: SelectSubset<T, LiquidRuleDeleteArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one LiquidRule.
+     * @param {LiquidRuleUpdateArgs} args - Arguments to update one LiquidRule.
+     * @example
+     * // Update one LiquidRule
+     * const liquidRule = await prisma.liquidRule.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LiquidRuleUpdateArgs>(args: SelectSubset<T, LiquidRuleUpdateArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more LiquidRules.
+     * @param {LiquidRuleDeleteManyArgs} args - Arguments to filter LiquidRules to delete.
+     * @example
+     * // Delete a few LiquidRules
+     * const { count } = await prisma.liquidRule.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LiquidRuleDeleteManyArgs>(args?: SelectSubset<T, LiquidRuleDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LiquidRules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LiquidRules
+     * const liquidRule = await prisma.liquidRule.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LiquidRuleUpdateManyArgs>(args: SelectSubset<T, LiquidRuleUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LiquidRules and returns the data updated in the database.
+     * @param {LiquidRuleUpdateManyAndReturnArgs} args - Arguments to update many LiquidRules.
+     * @example
+     * // Update many LiquidRules
+     * const liquidRule = await prisma.liquidRule.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more LiquidRules and only return the `id`
+     * const liquidRuleWithIdOnly = await prisma.liquidRule.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LiquidRuleUpdateManyAndReturnArgs>(args: SelectSubset<T, LiquidRuleUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one LiquidRule.
+     * @param {LiquidRuleUpsertArgs} args - Arguments to update or create a LiquidRule.
+     * @example
+     * // Update or create a LiquidRule
+     * const liquidRule = await prisma.liquidRule.upsert({
+     *   create: {
+     *     // ... data to create a LiquidRule
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LiquidRule we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LiquidRuleUpsertArgs>(args: SelectSubset<T, LiquidRuleUpsertArgs<ExtArgs>>): Prisma__LiquidRuleClient<$Result.GetResult<Prisma.$LiquidRulePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of LiquidRules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleCountArgs} args - Arguments to filter LiquidRules to count.
+     * @example
+     * // Count the number of LiquidRules
+     * const count = await prisma.liquidRule.count({
+     *   where: {
+     *     // ... the filter for the LiquidRules we want to count
+     *   }
+     * })
+    **/
+    count<T extends LiquidRuleCountArgs>(
+      args?: Subset<T, LiquidRuleCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LiquidRuleCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LiquidRule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LiquidRuleAggregateArgs>(args: Subset<T, LiquidRuleAggregateArgs>): Prisma.PrismaPromise<GetLiquidRuleAggregateType<T>>
+
+    /**
+     * Group by LiquidRule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LiquidRuleGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LiquidRuleGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LiquidRuleGroupByArgs['orderBy'] }
+        : { orderBy?: LiquidRuleGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LiquidRuleGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLiquidRuleGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LiquidRule model
+   */
+  readonly fields: LiquidRuleFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LiquidRule.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LiquidRuleClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LiquidRule model
+   */
+  interface LiquidRuleFieldRefs {
+    readonly id: FieldRef<"LiquidRule", 'String'>
+    readonly shop: FieldRef<"LiquidRule", 'String'>
+    readonly beforeTranslation: FieldRef<"LiquidRule", 'String'>
+    readonly afterTranslation: FieldRef<"LiquidRule", 'String'>
+    readonly languageCode: FieldRef<"LiquidRule", 'String'>
+    readonly replacementMethod: FieldRef<"LiquidRule", 'Boolean'>
+    readonly createdAt: FieldRef<"LiquidRule", 'DateTime'>
+    readonly updatedAt: FieldRef<"LiquidRule", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LiquidRule findUnique
+   */
+  export type LiquidRuleFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter, which LiquidRule to fetch.
+     */
+    where: LiquidRuleWhereUniqueInput
+  }
+
+  /**
+   * LiquidRule findUniqueOrThrow
+   */
+  export type LiquidRuleFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter, which LiquidRule to fetch.
+     */
+    where: LiquidRuleWhereUniqueInput
+  }
+
+  /**
+   * LiquidRule findFirst
+   */
+  export type LiquidRuleFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter, which LiquidRule to fetch.
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LiquidRules to fetch.
+     */
+    orderBy?: LiquidRuleOrderByWithRelationInput | LiquidRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LiquidRules.
+     */
+    cursor?: LiquidRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LiquidRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LiquidRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LiquidRules.
+     */
+    distinct?: LiquidRuleScalarFieldEnum | LiquidRuleScalarFieldEnum[]
+  }
+
+  /**
+   * LiquidRule findFirstOrThrow
+   */
+  export type LiquidRuleFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter, which LiquidRule to fetch.
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LiquidRules to fetch.
+     */
+    orderBy?: LiquidRuleOrderByWithRelationInput | LiquidRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LiquidRules.
+     */
+    cursor?: LiquidRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LiquidRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LiquidRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LiquidRules.
+     */
+    distinct?: LiquidRuleScalarFieldEnum | LiquidRuleScalarFieldEnum[]
+  }
+
+  /**
+   * LiquidRule findMany
+   */
+  export type LiquidRuleFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter, which LiquidRules to fetch.
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LiquidRules to fetch.
+     */
+    orderBy?: LiquidRuleOrderByWithRelationInput | LiquidRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LiquidRules.
+     */
+    cursor?: LiquidRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LiquidRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LiquidRules.
+     */
+    skip?: number
+    distinct?: LiquidRuleScalarFieldEnum | LiquidRuleScalarFieldEnum[]
+  }
+
+  /**
+   * LiquidRule create
+   */
+  export type LiquidRuleCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * The data needed to create a LiquidRule.
+     */
+    data: XOR<LiquidRuleCreateInput, LiquidRuleUncheckedCreateInput>
+  }
+
+  /**
+   * LiquidRule createMany
+   */
+  export type LiquidRuleCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LiquidRules.
+     */
+    data: LiquidRuleCreateManyInput | LiquidRuleCreateManyInput[]
+  }
+
+  /**
+   * LiquidRule createManyAndReturn
+   */
+  export type LiquidRuleCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * The data used to create many LiquidRules.
+     */
+    data: LiquidRuleCreateManyInput | LiquidRuleCreateManyInput[]
+  }
+
+  /**
+   * LiquidRule update
+   */
+  export type LiquidRuleUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * The data needed to update a LiquidRule.
+     */
+    data: XOR<LiquidRuleUpdateInput, LiquidRuleUncheckedUpdateInput>
+    /**
+     * Choose, which LiquidRule to update.
+     */
+    where: LiquidRuleWhereUniqueInput
+  }
+
+  /**
+   * LiquidRule updateMany
+   */
+  export type LiquidRuleUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LiquidRules.
+     */
+    data: XOR<LiquidRuleUpdateManyMutationInput, LiquidRuleUncheckedUpdateManyInput>
+    /**
+     * Filter which LiquidRules to update
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * Limit how many LiquidRules to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LiquidRule updateManyAndReturn
+   */
+  export type LiquidRuleUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * The data used to update LiquidRules.
+     */
+    data: XOR<LiquidRuleUpdateManyMutationInput, LiquidRuleUncheckedUpdateManyInput>
+    /**
+     * Filter which LiquidRules to update
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * Limit how many LiquidRules to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LiquidRule upsert
+   */
+  export type LiquidRuleUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * The filter to search for the LiquidRule to update in case it exists.
+     */
+    where: LiquidRuleWhereUniqueInput
+    /**
+     * In case the LiquidRule found by the `where` argument doesn't exist, create a new LiquidRule with this data.
+     */
+    create: XOR<LiquidRuleCreateInput, LiquidRuleUncheckedCreateInput>
+    /**
+     * In case the LiquidRule was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LiquidRuleUpdateInput, LiquidRuleUncheckedUpdateInput>
+  }
+
+  /**
+   * LiquidRule delete
+   */
+  export type LiquidRuleDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+    /**
+     * Filter which LiquidRule to delete.
+     */
+    where: LiquidRuleWhereUniqueInput
+  }
+
+  /**
+   * LiquidRule deleteMany
+   */
+  export type LiquidRuleDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LiquidRules to delete
+     */
+    where?: LiquidRuleWhereInput
+    /**
+     * Limit how many LiquidRules to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * LiquidRule without action
+   */
+  export type LiquidRuleDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LiquidRule
+     */
+    select?: LiquidRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LiquidRule
+     */
+    omit?: LiquidRuleOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -2078,6 +5430,47 @@ export namespace Prisma {
   export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
+  export const ShopTranslationSettingsScalarFieldEnum: {
+    shop: 'shop',
+    primaryLocale: 'primaryLocale',
+    targets: 'targets',
+    autoTranslate: 'autoTranslate',
+    migratedToTsf: 'migratedToTsf',
+    migratedAt: 'migratedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ShopTranslationSettingsScalarFieldEnum = (typeof ShopTranslationSettingsScalarFieldEnum)[keyof typeof ShopTranslationSettingsScalarFieldEnum]
+
+
+  export const GlossaryScalarFieldEnum: {
+    id: 'id',
+    shop: 'shop',
+    sourceText: 'sourceText',
+    targetText: 'targetText',
+    rangeCode: 'rangeCode',
+    caseSensitive: 'caseSensitive',
+    createdAt: 'createdAt'
+  };
+
+  export type GlossaryScalarFieldEnum = (typeof GlossaryScalarFieldEnum)[keyof typeof GlossaryScalarFieldEnum]
+
+
+  export const LiquidRuleScalarFieldEnum: {
+    id: 'id',
+    shop: 'shop',
+    beforeTranslation: 'beforeTranslation',
+    afterTranslation: 'afterTranslation',
+    languageCode: 'languageCode',
+    replacementMethod: 'replacementMethod',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type LiquidRuleScalarFieldEnum = (typeof LiquidRuleScalarFieldEnum)[keyof typeof LiquidRuleScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -2086,12 +5479,36 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const JsonNullValueInput: {
+    JsonNull: typeof JsonNull
+  };
+
+  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
   export const NullsOrder: {
     first: 'first',
     last: 'last'
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+  export const QueryMode: {
+    default: 'default',
+    insensitive: 'insensitive'
+  };
+
+  export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
   /**
@@ -2124,6 +5541,20 @@ export namespace Prisma {
    * Reference to a field of type 'BigInt'
    */
   export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -2256,6 +5687,202 @@ export namespace Prisma {
     emailVerified?: BoolNullableWithAggregatesFilter<"Session"> | boolean | null
     refreshToken?: StringNullableWithAggregatesFilter<"Session"> | string | null
     refreshTokenExpires?: DateTimeNullableWithAggregatesFilter<"Session"> | Date | string | null
+  }
+
+  export type ShopTranslationSettingsWhereInput = {
+    AND?: ShopTranslationSettingsWhereInput | ShopTranslationSettingsWhereInput[]
+    OR?: ShopTranslationSettingsWhereInput[]
+    NOT?: ShopTranslationSettingsWhereInput | ShopTranslationSettingsWhereInput[]
+    shop?: StringFilter<"ShopTranslationSettings"> | string
+    primaryLocale?: StringFilter<"ShopTranslationSettings"> | string
+    targets?: JsonFilter<"ShopTranslationSettings">
+    autoTranslate?: BoolFilter<"ShopTranslationSettings"> | boolean
+    migratedToTsf?: BoolFilter<"ShopTranslationSettings"> | boolean
+    migratedAt?: DateTimeNullableFilter<"ShopTranslationSettings"> | Date | string | null
+    createdAt?: DateTimeFilter<"ShopTranslationSettings"> | Date | string
+    updatedAt?: DateTimeFilter<"ShopTranslationSettings"> | Date | string
+  }
+
+  export type ShopTranslationSettingsOrderByWithRelationInput = {
+    shop?: SortOrder
+    primaryLocale?: SortOrder
+    targets?: SortOrder
+    autoTranslate?: SortOrder
+    migratedToTsf?: SortOrder
+    migratedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTranslationSettingsWhereUniqueInput = Prisma.AtLeast<{
+    shop?: string
+    AND?: ShopTranslationSettingsWhereInput | ShopTranslationSettingsWhereInput[]
+    OR?: ShopTranslationSettingsWhereInput[]
+    NOT?: ShopTranslationSettingsWhereInput | ShopTranslationSettingsWhereInput[]
+    primaryLocale?: StringFilter<"ShopTranslationSettings"> | string
+    targets?: JsonFilter<"ShopTranslationSettings">
+    autoTranslate?: BoolFilter<"ShopTranslationSettings"> | boolean
+    migratedToTsf?: BoolFilter<"ShopTranslationSettings"> | boolean
+    migratedAt?: DateTimeNullableFilter<"ShopTranslationSettings"> | Date | string | null
+    createdAt?: DateTimeFilter<"ShopTranslationSettings"> | Date | string
+    updatedAt?: DateTimeFilter<"ShopTranslationSettings"> | Date | string
+  }, "shop">
+
+  export type ShopTranslationSettingsOrderByWithAggregationInput = {
+    shop?: SortOrder
+    primaryLocale?: SortOrder
+    targets?: SortOrder
+    autoTranslate?: SortOrder
+    migratedToTsf?: SortOrder
+    migratedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ShopTranslationSettingsCountOrderByAggregateInput
+    _max?: ShopTranslationSettingsMaxOrderByAggregateInput
+    _min?: ShopTranslationSettingsMinOrderByAggregateInput
+  }
+
+  export type ShopTranslationSettingsScalarWhereWithAggregatesInput = {
+    AND?: ShopTranslationSettingsScalarWhereWithAggregatesInput | ShopTranslationSettingsScalarWhereWithAggregatesInput[]
+    OR?: ShopTranslationSettingsScalarWhereWithAggregatesInput[]
+    NOT?: ShopTranslationSettingsScalarWhereWithAggregatesInput | ShopTranslationSettingsScalarWhereWithAggregatesInput[]
+    shop?: StringWithAggregatesFilter<"ShopTranslationSettings"> | string
+    primaryLocale?: StringWithAggregatesFilter<"ShopTranslationSettings"> | string
+    targets?: JsonWithAggregatesFilter<"ShopTranslationSettings">
+    autoTranslate?: BoolWithAggregatesFilter<"ShopTranslationSettings"> | boolean
+    migratedToTsf?: BoolWithAggregatesFilter<"ShopTranslationSettings"> | boolean
+    migratedAt?: DateTimeNullableWithAggregatesFilter<"ShopTranslationSettings"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"ShopTranslationSettings"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"ShopTranslationSettings"> | Date | string
+  }
+
+  export type GlossaryWhereInput = {
+    AND?: GlossaryWhereInput | GlossaryWhereInput[]
+    OR?: GlossaryWhereInput[]
+    NOT?: GlossaryWhereInput | GlossaryWhereInput[]
+    id?: StringFilter<"Glossary"> | string
+    shop?: StringFilter<"Glossary"> | string
+    sourceText?: StringFilter<"Glossary"> | string
+    targetText?: StringFilter<"Glossary"> | string
+    rangeCode?: StringNullableFilter<"Glossary"> | string | null
+    caseSensitive?: BoolFilter<"Glossary"> | boolean
+    createdAt?: DateTimeFilter<"Glossary"> | Date | string
+  }
+
+  export type GlossaryOrderByWithRelationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    rangeCode?: SortOrderInput | SortOrder
+    caseSensitive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type GlossaryWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: GlossaryWhereInput | GlossaryWhereInput[]
+    OR?: GlossaryWhereInput[]
+    NOT?: GlossaryWhereInput | GlossaryWhereInput[]
+    shop?: StringFilter<"Glossary"> | string
+    sourceText?: StringFilter<"Glossary"> | string
+    targetText?: StringFilter<"Glossary"> | string
+    rangeCode?: StringNullableFilter<"Glossary"> | string | null
+    caseSensitive?: BoolFilter<"Glossary"> | boolean
+    createdAt?: DateTimeFilter<"Glossary"> | Date | string
+  }, "id">
+
+  export type GlossaryOrderByWithAggregationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    rangeCode?: SortOrderInput | SortOrder
+    caseSensitive?: SortOrder
+    createdAt?: SortOrder
+    _count?: GlossaryCountOrderByAggregateInput
+    _max?: GlossaryMaxOrderByAggregateInput
+    _min?: GlossaryMinOrderByAggregateInput
+  }
+
+  export type GlossaryScalarWhereWithAggregatesInput = {
+    AND?: GlossaryScalarWhereWithAggregatesInput | GlossaryScalarWhereWithAggregatesInput[]
+    OR?: GlossaryScalarWhereWithAggregatesInput[]
+    NOT?: GlossaryScalarWhereWithAggregatesInput | GlossaryScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Glossary"> | string
+    shop?: StringWithAggregatesFilter<"Glossary"> | string
+    sourceText?: StringWithAggregatesFilter<"Glossary"> | string
+    targetText?: StringWithAggregatesFilter<"Glossary"> | string
+    rangeCode?: StringNullableWithAggregatesFilter<"Glossary"> | string | null
+    caseSensitive?: BoolWithAggregatesFilter<"Glossary"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"Glossary"> | Date | string
+  }
+
+  export type LiquidRuleWhereInput = {
+    AND?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
+    OR?: LiquidRuleWhereInput[]
+    NOT?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
+    id?: StringFilter<"LiquidRule"> | string
+    shop?: StringFilter<"LiquidRule"> | string
+    beforeTranslation?: StringFilter<"LiquidRule"> | string
+    afterTranslation?: StringFilter<"LiquidRule"> | string
+    languageCode?: StringNullableFilter<"LiquidRule"> | string | null
+    replacementMethod?: BoolFilter<"LiquidRule"> | boolean
+    createdAt?: DateTimeFilter<"LiquidRule"> | Date | string
+    updatedAt?: DateTimeFilter<"LiquidRule"> | Date | string
+  }
+
+  export type LiquidRuleOrderByWithRelationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    beforeTranslation?: SortOrder
+    afterTranslation?: SortOrder
+    languageCode?: SortOrderInput | SortOrder
+    replacementMethod?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LiquidRuleWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
+    OR?: LiquidRuleWhereInput[]
+    NOT?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
+    shop?: StringFilter<"LiquidRule"> | string
+    beforeTranslation?: StringFilter<"LiquidRule"> | string
+    afterTranslation?: StringFilter<"LiquidRule"> | string
+    languageCode?: StringNullableFilter<"LiquidRule"> | string | null
+    replacementMethod?: BoolFilter<"LiquidRule"> | boolean
+    createdAt?: DateTimeFilter<"LiquidRule"> | Date | string
+    updatedAt?: DateTimeFilter<"LiquidRule"> | Date | string
+  }, "id">
+
+  export type LiquidRuleOrderByWithAggregationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    beforeTranslation?: SortOrder
+    afterTranslation?: SortOrder
+    languageCode?: SortOrderInput | SortOrder
+    replacementMethod?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: LiquidRuleCountOrderByAggregateInput
+    _max?: LiquidRuleMaxOrderByAggregateInput
+    _min?: LiquidRuleMinOrderByAggregateInput
+  }
+
+  export type LiquidRuleScalarWhereWithAggregatesInput = {
+    AND?: LiquidRuleScalarWhereWithAggregatesInput | LiquidRuleScalarWhereWithAggregatesInput[]
+    OR?: LiquidRuleScalarWhereWithAggregatesInput[]
+    NOT?: LiquidRuleScalarWhereWithAggregatesInput | LiquidRuleScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"LiquidRule"> | string
+    shop?: StringWithAggregatesFilter<"LiquidRule"> | string
+    beforeTranslation?: StringWithAggregatesFilter<"LiquidRule"> | string
+    afterTranslation?: StringWithAggregatesFilter<"LiquidRule"> | string
+    languageCode?: StringNullableWithAggregatesFilter<"LiquidRule"> | string | null
+    replacementMethod?: BoolWithAggregatesFilter<"LiquidRule"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"LiquidRule"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"LiquidRule"> | Date | string
   }
 
   export type SessionCreateInput = {
@@ -2396,6 +6023,230 @@ export namespace Prisma {
     emailVerified?: NullableBoolFieldUpdateOperationsInput | boolean | null
     refreshToken?: NullableStringFieldUpdateOperationsInput | string | null
     refreshTokenExpires?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ShopTranslationSettingsCreateInput = {
+    shop: string
+    primaryLocale: string
+    targets: JsonNullValueInput | InputJsonValue
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTranslationSettingsUncheckedCreateInput = {
+    shop: string
+    primaryLocale: string
+    targets: JsonNullValueInput | InputJsonValue
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTranslationSettingsUpdateInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    primaryLocale?: StringFieldUpdateOperationsInput | string
+    targets?: JsonNullValueInput | InputJsonValue
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    migratedToTsf?: BoolFieldUpdateOperationsInput | boolean
+    migratedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTranslationSettingsUncheckedUpdateInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    primaryLocale?: StringFieldUpdateOperationsInput | string
+    targets?: JsonNullValueInput | InputJsonValue
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    migratedToTsf?: BoolFieldUpdateOperationsInput | boolean
+    migratedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTranslationSettingsCreateManyInput = {
+    shop: string
+    primaryLocale: string
+    targets: JsonNullValueInput | InputJsonValue
+    autoTranslate?: boolean
+    migratedToTsf?: boolean
+    migratedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ShopTranslationSettingsUpdateManyMutationInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    primaryLocale?: StringFieldUpdateOperationsInput | string
+    targets?: JsonNullValueInput | InputJsonValue
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    migratedToTsf?: BoolFieldUpdateOperationsInput | boolean
+    migratedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ShopTranslationSettingsUncheckedUpdateManyInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    primaryLocale?: StringFieldUpdateOperationsInput | string
+    targets?: JsonNullValueInput | InputJsonValue
+    autoTranslate?: BoolFieldUpdateOperationsInput | boolean
+    migratedToTsf?: BoolFieldUpdateOperationsInput | boolean
+    migratedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GlossaryCreateInput = {
+    id?: string
+    shop: string
+    sourceText: string
+    targetText: string
+    rangeCode?: string | null
+    caseSensitive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type GlossaryUncheckedCreateInput = {
+    id?: string
+    shop: string
+    sourceText: string
+    targetText: string
+    rangeCode?: string | null
+    caseSensitive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type GlossaryUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
+    caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GlossaryUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
+    caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GlossaryCreateManyInput = {
+    id?: string
+    shop: string
+    sourceText: string
+    targetText: string
+    rangeCode?: string | null
+    caseSensitive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type GlossaryUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
+    caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GlossaryUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    rangeCode?: NullableStringFieldUpdateOperationsInput | string | null
+    caseSensitive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LiquidRuleCreateInput = {
+    id?: string
+    shop: string
+    beforeTranslation: string
+    afterTranslation: string
+    languageCode?: string | null
+    replacementMethod?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LiquidRuleUncheckedCreateInput = {
+    id?: string
+    shop: string
+    beforeTranslation: string
+    afterTranslation: string
+    languageCode?: string | null
+    replacementMethod?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LiquidRuleUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    beforeTranslation?: StringFieldUpdateOperationsInput | string
+    afterTranslation?: StringFieldUpdateOperationsInput | string
+    languageCode?: NullableStringFieldUpdateOperationsInput | string | null
+    replacementMethod?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LiquidRuleUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    beforeTranslation?: StringFieldUpdateOperationsInput | string
+    afterTranslation?: StringFieldUpdateOperationsInput | string
+    languageCode?: NullableStringFieldUpdateOperationsInput | string | null
+    replacementMethod?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LiquidRuleCreateManyInput = {
+    id?: string
+    shop: string
+    beforeTranslation: string
+    afterTranslation: string
+    languageCode?: string | null
+    replacementMethod?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LiquidRuleUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    beforeTranslation?: StringFieldUpdateOperationsInput | string
+    afterTranslation?: StringFieldUpdateOperationsInput | string
+    languageCode?: NullableStringFieldUpdateOperationsInput | string | null
+    replacementMethod?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LiquidRuleUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    shop?: StringFieldUpdateOperationsInput | string
+    beforeTranslation?: StringFieldUpdateOperationsInput | string
+    afterTranslation?: StringFieldUpdateOperationsInput | string
+    languageCode?: NullableStringFieldUpdateOperationsInput | string | null
+    replacementMethod?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -2610,6 +6461,164 @@ export namespace Prisma {
     _min?: NestedBoolNullableFilter<$PrismaModel>
     _max?: NestedBoolNullableFilter<$PrismaModel>
   }
+  export type JsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type ShopTranslationSettingsCountOrderByAggregateInput = {
+    shop?: SortOrder
+    primaryLocale?: SortOrder
+    targets?: SortOrder
+    autoTranslate?: SortOrder
+    migratedToTsf?: SortOrder
+    migratedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTranslationSettingsMaxOrderByAggregateInput = {
+    shop?: SortOrder
+    primaryLocale?: SortOrder
+    autoTranslate?: SortOrder
+    migratedToTsf?: SortOrder
+    migratedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ShopTranslationSettingsMinOrderByAggregateInput = {
+    shop?: SortOrder
+    primaryLocale?: SortOrder
+    autoTranslate?: SortOrder
+    migratedToTsf?: SortOrder
+    migratedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+  export type JsonWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedJsonFilter<$PrismaModel>
+    _max?: NestedJsonFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type GlossaryCountOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    rangeCode?: SortOrder
+    caseSensitive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type GlossaryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    rangeCode?: SortOrder
+    caseSensitive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type GlossaryMinOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    rangeCode?: SortOrder
+    caseSensitive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LiquidRuleCountOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    beforeTranslation?: SortOrder
+    afterTranslation?: SortOrder
+    languageCode?: SortOrder
+    replacementMethod?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LiquidRuleMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    beforeTranslation?: SortOrder
+    afterTranslation?: SortOrder
+    languageCode?: SortOrder
+    replacementMethod?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LiquidRuleMinOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    beforeTranslation?: SortOrder
+    afterTranslation?: SortOrder
+    languageCode?: SortOrder
+    replacementMethod?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
 
   export type StringFieldUpdateOperationsInput = {
     set?: string
@@ -2637,6 +6646,10 @@ export namespace Prisma {
 
   export type NullableBoolFieldUpdateOperationsInput = {
     set?: boolean | null
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -2810,6 +6823,49 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedBoolNullableFilter<$PrismaModel>
     _max?: NestedBoolNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+  export type NestedJsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
 

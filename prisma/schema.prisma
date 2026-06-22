@@ -33,3 +33,44 @@ model Session {
   refreshToken            String?
   refreshTokenExpires     DateTime?
 }
+
+// 取代 Java `Translates` —— 每店一行的翻译配置 + 迁移开关
+model ShopTranslationSettings {
+  shop          String    @id              // myshopify 域名（Java shopName）
+  primaryLocale String                     // 源语言（Java source），ex "en"
+  targets       Json                       // 目标语言数组 string[]（Java 每 target 一行 → 合并）
+  autoTranslate Boolean   @default(false)  // 自动增量翻译总开关（Java autoTranslate）
+  migratedToTsf Boolean   @default(false)  // 不可逆：true 后只走 TSF
+  migratedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([autoTranslate, migratedToTsf]) // worker 自动扫描用
+}
+
+// 取代 Java `Glossary`
+model Glossary {
+  id            String   @id @default(cuid())
+  shop          String                     // Java shopName
+  sourceText    String
+  targetText    String
+  rangeCode     String?                    // 适用语言范围（Java rangeCode）
+  caseSensitive Boolean  @default(false)   // Java Integer(0/1) → Boolean
+  createdAt     DateTime @default(now())
+
+  @@index([shop])
+}
+
+// 取代 Java `User_Liquid`
+model LiquidRule {
+  id                String   @id @default(cuid())
+  shop              String                 // Java shopName
+  beforeTranslation String                 // liquidBeforeTranslation
+  afterTranslation  String                 // liquidAfterTranslation
+  languageCode      String?
+  replacementMethod Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([shop])
+}
