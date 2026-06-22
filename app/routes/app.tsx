@@ -46,7 +46,6 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setChars,
@@ -653,54 +652,27 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "var(--p-color-bg-fill-brand)",
-            fontSize: 16,
-          },
-          components: {
-            Table: {
-              rowSelectedBg: "rgba(217, 217, 217, 0.7)",
-              rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Button: {
-              primaryShadow: "none",
-            },
-            Select: {
-              optionSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Menu: {
-              itemSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Card: {
-              headerHeight: 42,
-            },
-          },
-        }}
-      >
-        <NavMenu>
-          <Link to="/app" rel="home">
-            Home
-          </Link>
-          {isClient && (
-            <>
-              <Link to="/app/language">{t("Language")}</Link>
-              <Link to="/app/manage_translation">
-                {t("Manage Translation")}
-              </Link>
-              <Link to="/app/currency">{t("Currency")}</Link>
-              <Link to="/app/switcher">{t("Switcher")}</Link>
-              <Link to="/app/glossary">{t("Glossary")}</Link>
-              {translateV4Enabled && (
-                <Link to="/app/translate-v4">智能翻译 (v4)</Link>
-              )}
-              <Link to="/app/pricing">{t("Pricing")}</Link>
-            </>
-          )}
-        </NavMenu>
-        <Outlet />
-      </ConfigProvider>
+      <NavMenu>
+        <Link to="/app" rel="home">
+          Home
+        </Link>
+        {isClient && (
+          <>
+            <Link to="/app/language">{t("Language")}</Link>
+            <Link to="/app/manage_translation">
+              {t("Manage Translation")}
+            </Link>
+            <Link to="/app/currency">{t("Currency")}</Link>
+            <Link to="/app/switcher">{t("Switcher")}</Link>
+            <Link to="/app/glossary">{t("Glossary")}</Link>
+            {translateV4Enabled && (
+              <Link to="/app/translate-v4">智能翻译 (v4)</Link>
+            )}
+            <Link to="/app/pricing">{t("Pricing")}</Link>
+          </>
+        )}
+      </NavMenu>
+      <Outlet />
     </AppProvider>
   );
 }

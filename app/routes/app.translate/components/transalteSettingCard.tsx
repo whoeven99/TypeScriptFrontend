@@ -20,6 +20,7 @@ import defaultStyles from "../../styles/defaultStyles.module.css";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "@remix-run/react";
 import { apiKeyConfiguration } from "../route";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Title, Text } = Typography;
 
@@ -183,7 +184,10 @@ const TransalteSettingCard = ({
   ];
 
   return (
-    <Card
+    <AppSectionCard
+      title={t("translateSettings.title2")}
+      description={t("Choose what to translate, how updates should run, and which model should process the content.")}
+      bodyPadding="16px"
       style={{
         width: "100%",
         minHeight: "222px",
@@ -246,8 +250,8 @@ const TransalteSettingCard = ({
                 width: "100%",
                 marginRight: 0,
                 padding: "8px 12px",
-                border: "1px solid #f0f0f0",
-                borderRadius: "4px",
+                border: "1px solid var(--app-color-border)",
+                borderRadius: "var(--app-radius-small)",
                 alignItems: "center",
                 cursor: "pointer",
               }}
@@ -291,8 +295,8 @@ const TransalteSettingCard = ({
                 width: "100%",
                 marginRight: 0,
                 padding: "8px 12px",
-                border: "1px solid #f0f0f0",
-                borderRadius: "4px",
+                border: "1px solid var(--app-color-border)",
+                borderRadius: "var(--app-radius-small)",
                 alignItems: "center",
                 cursor: "pointer",
               }}
@@ -432,7 +436,7 @@ const TransalteSettingCard = ({
             )} */}
         </Space>
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 

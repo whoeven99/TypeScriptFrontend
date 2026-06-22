@@ -14,6 +14,7 @@ import { ConfigProvider } from "antd";
 import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root'
+import { appAntdTheme } from "./ui/theme";
 
 export default async function handleRequest(
   request: Request,
@@ -97,13 +98,7 @@ export default async function handleRequest(
     return (
       <I18nextProvider i18n={instance}>
         <StyleProvider cache={cache}>
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: "#007F61", // 设置主色
-              },
-            }}
-          >
+          <ConfigProvider theme={appAntdTheme}>
             <RemixServer
               context={remixContext}
               url={request.url}

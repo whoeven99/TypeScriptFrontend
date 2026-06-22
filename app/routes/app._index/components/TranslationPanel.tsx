@@ -5,10 +5,10 @@ import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
 import languageLocaleData from "../../../../scripts/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const TranslationPanel = () => {
   const { t } = useTranslation();
-  const { Text, Title } = Typography;
   const { reportClick } = useReport();
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,23 +61,11 @@ const TranslationPanel = () => {
   }, [LanguageFetcher.data]);
 
   return (
-    <Card
-      style={{ width: "100%", padding: "0px" }}
-      styles={{
-        body: {
-          padding: "12px 24px",
-        },
-      }}
+    <AppSectionCard
+      title={t("Translation tools")}
+      description={t("Quick access to language setup, translation management, and glossary tools.")}
     >
-      <Flex justify="space-between" style={{ marginBottom: "10px" }}>
-        <Title
-          level={4}
-          style={{ display: "flex", alignItems: "center", fontWeight: 600 }}
-        >
-          {t("Translation tools")}
-        </Title>
-      </Flex>
-      <Row gutter={[10, 10]} style={{ marginTop: "20px" }}>
+      <Row gutter={[16, 16]}>
         {/* Add Language & Auto Translate */}
         <Col sm={24} md={12} lg={8} xs={24}>
           <Card
@@ -106,7 +94,7 @@ const TranslationPanel = () => {
                       preview={false}
                       style={{
                         cursor: "pointer",
-                        border: "1px solid #333",
+                        border: "1px solid var(--app-color-border)",
                       }}
                       onClick={() => {
                         navigate("/app/language");
@@ -119,8 +107,8 @@ const TranslationPanel = () => {
                 <Button
                   type="default"
                   style={{
-                    color: "#999",
-                    fontSize: "12px",
+                    color: "var(--app-color-text-secondary)",
+                    fontSize: "var(--app-font-size-caption)",
                   }}
                   onClick={() => navigate("/app/language")}
                 >
@@ -164,19 +152,28 @@ const TranslationPanel = () => {
                 type="default"
                 style={{ color: "#999", fontSize: "12px" }}
                 onClick={() => navigate("/app/manage_translation")}
+                  fontSize: "var(--app-font-size-caption)",
+                }}
+                onClick={() => navigate("/app/manage_translation")}
               >
                 {t("Theme")}
               </Button>
               <Button
                 type="default"
-                style={{ color: "#999", fontSize: "12px" }}
+                style={{
+                  color: "var(--app-color-text-secondary)",
+                  fontSize: "var(--app-font-size-caption)",
+                }}
                 onClick={() => navigate("/app/manage_translation")}
               >
                 {t("Product")}
               </Button>
               <Button
                 type="default"
-                style={{ color: "#999", fontSize: "12px" }}
+                style={{
+                  color: "var(--app-color-text-secondary)",
+                  fontSize: "var(--app-font-size-caption)",
+                }}
                 onClick={() => navigate("/app/manage_translation")}
               >
                 {t("And More")}
@@ -218,7 +215,7 @@ const TranslationPanel = () => {
                   navigate("/app/glossary"),
                     reportClick("dashboard_translate_tool_glossary");
                 }}
-                style={{ fontSize: "12px" }}
+                style={{ fontSize: "var(--app-font-size-caption)" }}
               >
                 {t("Glossary")}
               </Button>
@@ -230,7 +227,7 @@ const TranslationPanel = () => {
                     "_blank",
                   )
                 }
-                style={{ fontSize: "12px" }}
+                style={{ fontSize: "var(--app-font-size-caption)" }}
               >
                 {t("Image & Alt Text Translation")}
               </Button>
@@ -238,7 +235,7 @@ const TranslationPanel = () => {
           </Card>
         </Col>
       </Row>
-    </Card>
+    </AppSectionCard>
   );
 };
 

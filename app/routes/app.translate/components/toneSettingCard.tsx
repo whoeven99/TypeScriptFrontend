@@ -1,26 +1,6 @@
-import { Icon, Page } from "@shopify/polaris";
-import {
-  Flex,
-  Card,
-  Checkbox,
-  CheckboxChangeEvent,
-  Divider,
-  Space,
-  Typography,
-  Radio,
-  Popconfirm,
-  Button,
-  Badge,
-  Popover,
-  Select,
-} from "antd";
+import { Checkbox, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { LanguagesDataType } from "~/routes/app.language/route";
-import { PlusIcon } from "@shopify/polaris-icons";
-import defaultStyles from "../../styles/defaultStyles.module.css";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { useNavigate } from "@remix-run/react";
-import { apiKeyConfiguration } from "../route";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Title, Text } = Typography;
 
@@ -123,7 +103,10 @@ const ToneSettingCard = ({
   ];
 
   return (
-    <Card
+    <AppSectionCard
+      title={t("translateSettings.title3")}
+      description={t("Optional tone and industry guidance for AI models that support richer writing instructions.")}
+      bodyPadding="16px"
       style={{
         width: "100%",
         minHeight: "222px",
@@ -433,7 +416,7 @@ const ToneSettingCard = ({
           />
         </Space>
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 

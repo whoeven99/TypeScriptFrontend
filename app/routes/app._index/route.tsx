@@ -35,6 +35,8 @@ import TranslationPanel from "./components/TranslationPanel";
 import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Title, Text } = Typography;
 
@@ -398,6 +400,12 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
+        <AppPageHeader
+          title={t("Dashboard")}
+          description={t(
+            "Monitor translation progress, review key storefront metrics, and jump into the next localization task.",
+          )}
+        />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
@@ -418,24 +426,14 @@ const Index = () => {
 
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                }}
-                styles={{
-                  body: {
-                    height: "100%",
-                    padding: "12px 24px",
-                  },
-                }}
-              >
+              <AppSectionCard style={{ height: "100%" }} bodyPadding="12px 16px">
                 <Space direction="vertical" style={{ display: "flex" }}>
                   <Text strong>{t("transLanguageCard3.title")}</Text>
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "row-reverse",
-                      gap: "10px",
+                      gap: "var(--app-space-300)",
                       justifyContent: "flex-start",
                     }}
                   >
@@ -445,7 +443,7 @@ const Index = () => {
                       style={{
                         width: "50px",
                         height: "50px",
-                        borderRadius: "4px",
+                        borderRadius: "var(--app-radius-small)",
                       }}
                     />
                     <div style={{ marginRight: "auto" }}>
@@ -477,29 +475,20 @@ const Index = () => {
                     </div>
                   </div>
                 </Space>
-              </Card>
+              </AppSectionCard>
             </Col>
             <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                }}
-                styles={{
-                  body: {
-                    height: "100%",
-                    padding: "12px 24px",
-                  },
-                }}
+              <AppSectionCard
+                style={{ height: "100%" }}
+                bodyPadding="12px 16px"
+                title={t("transCurrencyCard1.title")}
+                description={t("transCurrencyCard1.description")}
               >
                 <Flex
                   vertical
                   style={{ height: "100%" }}
                   justify="space-between"
                 >
-                  <Space direction="vertical" style={{ display: "flex" }}>
-                    <Text strong>{t("transCurrencyCard1.title")}</Text>
-                    <Text>{t("transCurrencyCard1.description")}</Text>
-                  </Space>
                   <div
                     style={{
                       display: "flex",
@@ -519,27 +508,21 @@ const Index = () => {
                     )}
                   </div>
                 </Flex>
-              </Card>
+              </AppSectionCard>
             </Col>
           </Row>
         </Space>
         <Space direction="vertical" size="small" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={4}>{t("dashboard.title3")}</Title>
-          </div>
-          <Card
-            styles={{
-              body: {
-                padding: "12px 24px",
-              },
-            }}
+          <AppSectionCard
+            title={t("dashboard.title3")}
+            bodyPadding="12px 16px"
           >
             <Space
               direction="vertical"
               size="small"
               style={{ display: "flex" }}
             >
-              <Title style={{ fontSize: "14px" }}>{t("planCard.title")}</Title>
+              <Text strong>{t("planCard.title")}</Text>
               <Flex justify="space-between" align="center">
                 <Text>{t("planCard.description")}</Text>
                 {isLoading ? (
@@ -553,7 +536,7 @@ const Index = () => {
 
               <Table columns={columns} dataSource={data} pagination={false} />
             </Space>
-          </Card>
+          </AppSectionCard>
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <ContactCard
@@ -572,15 +555,18 @@ const Index = () => {
         </Space>
         <Text
           style={{
-            display: "flex", // 使用 flexbox 来布局
-            justifyContent: "center", // 水平居中
+            display: "flex",
+            justifyContent: "center",
+            color: "var(--app-color-text-secondary)",
+            gap: "4px",
+            flexWrap: "wrap",
           }}
         >
           {t("Learn more in")}
           <Link
             to="https://ciwi.ai/help-center/ShopifyApp/about-ciwi-ai-translator-shopify-app"
             target="_blank"
-            style={{ margin: "0 5px" }}
+            style={{ color: "var(--app-color-brand)" }}
             onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
@@ -589,7 +575,7 @@ const Index = () => {
           <Link
             to={"https://ciwi.ai"}
             target="_blank"
-            style={{ margin: "0 5px" }}
+            style={{ color: "var(--app-color-brand)" }}
           >
             {t("Ciwi.ai")}
           </Link>

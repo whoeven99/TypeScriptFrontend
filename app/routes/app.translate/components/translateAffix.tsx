@@ -33,11 +33,18 @@ const TranslateAffix = ({
           justifyContent: "space-between",
           alignItems: "center",
           zIndex: 10,
-          backgroundColor: "rgb(241, 241, 241)",
-          padding: "16px 0",
+          backgroundColor: "var(--app-color-bg)",
+          padding: "12px 0",
+          borderBottom: "1px solid var(--app-color-border-secondary)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--app-space-200)",
+          }}
+        >
           <Button
             type="text"
             variant="outlined"
@@ -49,8 +56,9 @@ const TranslateAffix = ({
           <Title
             style={{
               margin: "0",
-              fontSize: "1.25rem",
-              fontWeight: 700,
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "var(--app-color-text)",
             }}
           >
             {t("Translate Store")}

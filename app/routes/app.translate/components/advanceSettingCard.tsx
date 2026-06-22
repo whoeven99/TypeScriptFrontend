@@ -1,29 +1,9 @@
-import { Icon, Page } from "@shopify/polaris";
-import {
-  Flex,
-  Card,
-  Checkbox,
-  CheckboxChangeEvent,
-  Divider,
-  Space,
-  Typography,
-  Radio,
-  Popconfirm,
-  Button,
-  Badge,
-  Popover,
-  Select,
-  Switch,
-} from "antd";
+import { Button, Flex, Space, Switch, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { LanguagesDataType } from "~/routes/app.language/route";
-import { PlusIcon } from "@shopify/polaris-icons";
-import defaultStyles from "../../styles/defaultStyles.module.css";
-import { CaretDownOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { useNavigate } from "@remix-run/react";
-import { apiKeyConfiguration } from "../route";
+import { CaretDownOutlined } from "@ant-design/icons";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ToneSettingCardProps {
   rotate: boolean;
@@ -43,8 +23,9 @@ const AdvanceSettingCard = ({
   const { t } = useTranslation();
 
   return (
-    <Card
+    <AppSectionCard
       title={t("Advance Setting")}
+      description={t("Enable glossary support and other optional helpers when they are available for this store.")}
       extra={
         <Button type="text" onClick={() => setRotate(!rotate)}>
           <CaretDownOutlined rotate={rotate ? 180 : 0} />
@@ -54,11 +35,7 @@ const AdvanceSettingCard = ({
         width: "100%",
         marginBottom: "16px",
       }}
-      styles={{
-        body: {
-          padding: rotate ? "24px" : "0",
-        },
-      }}
+      bodyPadding={rotate ? "16px" : "0"}
     >
       {rotate && (
         <Space
@@ -76,7 +53,7 @@ const AdvanceSettingCard = ({
           </Flex>
         </Space>
       )}
-    </Card>
+    </AppSectionCard>
   );
 };
 

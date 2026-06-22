@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useFetcher, useLocation } from "@remix-run/react";
 import {
-  Card,
   Button,
   Statistic,
   Row,
@@ -21,8 +20,9 @@ import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
 import { globalStore } from "~/globalStore";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
@@ -405,41 +405,28 @@ const AnalyticsCard = ({ isLoading }: any) => {
   }, []);
 
   return (
-    <Card
-      style={{ width: "100%", padding: "0px" }}
-      styles={{
-        body: {
-          padding: "12px 24px",
-        },
-      }}
-    >
-      <Flex justify="space-between" style={{ marginBottom: "10px" }}>
-        <Title
-          level={4}
-          style={{ display: "flex", alignItems: "center", fontWeight: 600 }}
-        >
-          {t("Dashboard")}
-        </Title>
-        {isLoading ? (
+    <AppSectionCard
+      title={t("Dashboard")}
+      extra={
+        isLoading ? (
           <Skeleton.Button />
         ) : (
-          <Text
-            strong
+          <Button
+            type="link"
             onClick={() => navigate("/app/pricing")}
-            style={{ fontSize: "14px", color: "#007F61", cursor: "pointer" }}
+            style={{ paddingInline: 0, color: "var(--app-color-brand)" }}
           >
             {plan ? getPlanName(plan.id) : ""}
-          </Text>
-        )}
-      </Flex>
-
+          </Button>
+        )
+      }
+    >
       <Row gutter={[16, 16]}>
         <Col
-          xs={24} // 移动端：独占一行
-          sm={12} // 平板：两列
-          md={8} // 桌面：三列
+          xs={24}
+          sm={12}
+          md={8}
         >
-          {/* Translation Score */}
           <Flex
             vertical
             justify="space-between"
@@ -470,9 +457,9 @@ const AnalyticsCard = ({ isLoading }: any) => {
               strokeColor={
                 translateScoreData >= 60
                   ? translateScoreData >= 80
-                    ? "#52c41a"
-                    : "#faad14"
-                  : "#ff4d4f"
+                    ? "var(--p-color-text-success)"
+                    : "var(--p-color-text-caution)"
+                  : "var(--p-color-text-critical)"
               }
             />
             <Button
@@ -486,7 +473,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
         </Col>
 
         <Col xs={24} sm={12} md={8}>
-          {/* Untranslated */}
           <Flex
             vertical
             align="center"
@@ -555,7 +541,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
             >
               {t("Details")}
             </Button>
-            {/* <Button onClick={handleCancelScope}>取消授权</Button> */}
           </Flex>
         </Col>
       </Row>
@@ -584,7 +569,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
           )}
         </p>
       </Modal>
-    </Card>
+    </AppSectionCard>
   );
 };
 
