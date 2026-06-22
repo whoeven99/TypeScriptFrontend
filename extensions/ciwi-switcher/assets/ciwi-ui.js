@@ -198,9 +198,14 @@ export async function CurrencySelectorTakeEffect(
   const currencySelectorHeader = ciwiBlock.querySelector(
     ".currency_selector_header",
   );
+  const currencySelectorWrapper = currencySelectorHeader?.closest(".native-selector");
 
-  currencySelectorHeader.style.backgroundColor = data.backgroundColor;
-  currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+  if (currencySelectorWrapper) {
+    currencySelectorWrapper.style.backgroundColor = data.backgroundColor;
+    currencySelectorWrapper.style.border = `1px solid ${data.optionBorderColor}`;
+  }
+  currencySelectorHeader.style.backgroundColor = "transparent";
+  currencySelectorHeader.style.border = "none";
   currencySelector.style.display = "block";
 
   initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
@@ -224,8 +229,13 @@ export async function LanguageSelectorTakeEffect(
   const languageSelectorHeader = ciwiBlock.querySelector(
     ".language_selector_header",
   );
-  languageSelectorHeader.style.backgroundColor = data.backgroundColor;
-  languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+  const languageSelectorWrapper = languageSelectorHeader?.closest(".native-selector");
+  if (languageSelectorWrapper) {
+    languageSelectorWrapper.style.backgroundColor = data.backgroundColor;
+    languageSelectorWrapper.style.border = `1px solid ${data.optionBorderColor}`;
+  }
+  languageSelectorHeader.style.backgroundColor = "transparent";
+  languageSelectorHeader.style.border = "none";
   const languageSelectorSelectedOption = ciwiBlock.querySelector(
     ".options-container[data-type='language']",
   );
@@ -233,12 +243,44 @@ export async function LanguageSelectorTakeEffect(
     languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
     languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
   }
+  const selectorFlag = ciwiBlock.querySelector("#language-selector-flag");
+  if (selectorFlag) {
+    selectorFlag.dataset.enabled = data?.includedFlag ? "true" : "false";
+  }
+  if (data?.includedFlag) {
+    const languageCode = ciwiBlock.querySelector('input[name="language_code"]')?.value;
+    const flagUrl = window.languageLocaleData?.[languageCode]?.countries?.[0];
+    updateLanguageSelectorFlag(ciwiBlock, flagUrl);
+  } else {
+    updateLanguageSelectorFlag(ciwiBlock, "");
+  }
 }
 
 // 语言国旗渲染（依赖 24KB 的 languageLocaleData）。
 // 从 LanguageSelectorTakeEffect 拆出，便于按需（空闲/交互）延迟渲染，
 // 把 24KB 数据移出每页关键路径。
 let _languageFlagsRendered = false;
+
+export function updateLanguageSelectorFlag(ciwiBlock, flagUrl) {
+  const selectorFlag = ciwiBlock.querySelector("#language-selector-flag");
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  if (!selectorFlag || !languageSelect) return;
+
+  if (selectorFlag.dataset.enabled !== "true") {
+    selectorFlag.hidden = true;
+    languageSelect.style.paddingLeft = "12px";
+    return;
+  }
+
+  if (flagUrl) {
+    selectorFlag.src = flagUrl;
+    selectorFlag.hidden = false;
+    languageSelect.style.paddingLeft = "40px";
+  } else {
+    selectorFlag.hidden = true;
+    languageSelect.style.paddingLeft = "12px";
+  }
+}
 
 export function renderLanguageFlags(data, ciwiBlock) {
   if (_languageFlagsRendered) return;
@@ -248,56 +290,31 @@ export function renderLanguageFlags(data, ciwiBlock) {
 
   const language = ciwiBlock.querySelector('input[name="language_code"]')?.value;
   const countryCode = languageLocaleData?.[language]?.countries?.[0];
-  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
   const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
   const translateFloatBtnIcon = ciwiBlock.querySelector(
     "#translate-float-btn-icon",
   );
 
-  //获取所有语言代码
-  const languageOptions = ciwiBlock.querySelectorAll(
-    ".option-item[data-type='language']",
-  );
-  languageOptions.forEach((option) => {
-    const langCode = option.dataset.value;
-    const countryCode = languageLocaleData[langCode]?.countries[0];
-    if (countryCode) {
-      // 创建并插入国旗图片
-      const flagImg = document.createElement("img");
-      flagImg.className = "option-country-flag";
-      flagImg.src = countryCode;
-      flagImg.alt = "";
-      // 将图片插入到选项的最前面
-      option.insertBefore(flagImg, option.firstChild);
-    }
-  });
-  // 为当前选中的语言添加国旗
-  const selectedOption = ciwiBlock.querySelector(
-    ".language_selector_header[data-type='language'] .selected-option",
-  );
-  if (selectedOption) {
-    const optionFlagImg = document.createElement("img");
-    optionFlagImg.className = "option-country-flag";
-    optionFlagImg.src = countryCode;
-    optionFlagImg.alt = "";
-    if (countryCode) {
-      selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
-    }
-    if (mainLanguageFlag && (data.languageSelector || data.currencySelector)) {
-      mainLanguageFlag.src = countryCode;
-      mainLanguageFlag.hidden = false;
-    }
-    if (
-      translateFloatBtnIcon &&
-      !data.languageSelector &&
-      !data.currencySelector
-    ) {
-      translateFloatBtnIcon.src = countryCode;
-      translateFloatBtnIcon.hidden = false;
-    }
+  updateLanguageSelectorFlag(ciwiBlock, countryCode);
+
+  if (
+    data?.includedFlag &&
+    mainLanguageFlag &&
+    countryCode &&
+    (data.languageSelector || data.currencySelector)
+  ) {
+    mainLanguageFlag.src = countryCode;
+    mainLanguageFlag.hidden = false;
   }
-  if (languageSelect && countryCode) {
-    languageSelect.style.paddingLeft = "12px";
+  if (
+    data?.includedFlag &&
+    translateFloatBtnIcon &&
+    countryCode &&
+    !data.languageSelector &&
+    !data.currencySelector
+  ) {
+    translateFloatBtnIcon.src = countryCode;
+    translateFloatBtnIcon.hidden = false;
   }
   const mainBoxText = ciwiBlock.querySelector(".main_box_text");
   if (mainBoxText && countryCode) {
@@ -1234,6 +1251,7 @@ export class CiwiswitcherForm extends HTMLElement {
       this.elements.languageInput.value = value;
       localStorage.setItem("ciwi_selected_language", value);
       const flag = languageLocaleData?.[value]?.countries?.[0];
+      updateLanguageSelectorFlag(this.elements.ciwiBlock, flag);
       const mainBoxFlag = this.querySelector("#main-language-flag");
       const translateFloatBtnIcon = this.querySelector("#translate-float-btn-icon");
       if (mainBoxFlag && flag) {

@@ -342,7 +342,10 @@ async function ciwiOnload() {
       setTimeout(loadFlags, 1200);
     }
     const mainBox = ciwiBlock.querySelector("#main-box");
+    const languageSelect = ciwiBlock.querySelector(".language_selector_header");
     mainBox?.addEventListener("mouseenter", loadFlags, { once: true });
+    languageSelect?.addEventListener("mouseenter", loadFlags, { once: true });
+    languageSelect?.addEventListener("focus", loadFlags, { once: true });
   }
 
   CurrencySelectorTakeEffect(
@@ -425,7 +428,7 @@ async function ciwiOnload() {
       }
 
       if (isDirectSelectorMode) {
-        selectorBox.style.width = "150px";
+        selectorBox.style.width = "168px";
         selectorBox.style.border = "none";
         selectorBox.style.display = "flex";
         mainBox.style.display = "none";
@@ -440,7 +443,7 @@ async function ciwiOnload() {
         );
         mainBox.style.display = "flex";
       } else {
-        selectorBox.style.width = "150px";
+        selectorBox.style.width = "168px";
         translateFloatBtnText.style.backgroundColor =
           configData.backgroundColor;
         translateFloatBtn.style.display = "flex";
