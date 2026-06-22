@@ -1,6 +1,40 @@
-# 这里是shopify配置默认文件
-# 需要获取自己的配置文件，使用命令 shopify app config link
-# 选择自己的本地应用
-# 命名使用自己名称的首字母或英文名.eg
-# 回车后会生成对应的shopify.app.eg.toml配置文件
-# 后续运行项目需要加上 --c “shopify.app.eg.toml“
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
+application_url = "https://typescriptfrontendprod.onrender.com"
+embedded = true
+name = "Ciwi-Translator"
+handle = "ciwi-translator"
+
+[pos]
+embedded = false
+
+[webhooks]
+api_version = "2025-04"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks"
+  topics = [
+  "app_purchases_one_time/update",
+  "app/uninstalled",
+  "themes/publish",
+  "app_subscriptions/update"
+]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks"
+  topics = [ "shop/update" ]
+  include_fields = [ "primary_locale" ]
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,read_themes,read_translations,unauthenticated_read_metaobjects,unauthenticated_read_product_listings,write_locales,write_markets,write_metaobjects,write_products,write_translations"
+optional_scopes = [ "read_customer_events", "write_pixels" ]
+
+[auth]
+redirect_urls = [
+  "https://typescriptfrontendprod.onrender.com/auth/callback",
+  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
+]

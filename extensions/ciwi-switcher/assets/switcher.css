@@ -21,6 +21,11 @@
 
 .selector_box.direct-select-mode {
   position: static;
+  padding: 0;
+  border: none !important;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .close_button_wrapper {

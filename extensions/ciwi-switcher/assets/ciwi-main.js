@@ -424,6 +424,7 @@ async function ciwiOnload() {
 
       if (isDirectSelectorMode) {
         selectorBox.style.width = "150px";
+        selectorBox.style.border = "none";
         selectorBox.style.display = "flex";
         mainBox.style.display = "none";
         translateFloatBtn.style.display = "none";
