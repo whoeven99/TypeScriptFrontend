@@ -22,14 +22,93 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
+import prisma from "~/db.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
 import TranslationPanel from "./components/TranslationPanel";
+import ExpressTranslateCard from "./components/ExpressTranslateCard";
 import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { isTranslateV4Enabled, isTranslateV4ExpressBetaEnabled } from "~/server/translateV4/feature.server";
+import { listV4JobSummaries } from "~/server/translateV4/progress.server";
+import { TS_FRONTEND_TASK_SOURCE } from "~/server/translateV4/types";
 
 const { Title, Text } = Typography;
+
+type ShopLocaleOption = {
+  value: string;
+  label: string;
+  primary: boolean;
+  published: boolean;
+};
+
+const SHOP_LOCALES_QUERY = `#graphql
+  query HomeExpressShopLocales {
+    shopLocales {
+      locale
+      name
+      primary
+      published
+    }
+  }
+`;
+
+/** 首页「极速翻译」卡片所需的 v4 数据，仅在功能开关开启时拉取。 */
+async function loadExpressV4Data(
+  admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"],
+  shop: string,
+) {
+  if (!isTranslateV4Enabled() || !isTranslateV4ExpressBetaEnabled(shop)) {
+    return { enabled: false, locales: [], primaryLocale: "zh-CN", jobs: [], migrated: false };
+  }
+
+  let locales: ShopLocaleOption[] = [];
+  let primaryLocale = "zh-CN";
+  try {
+    const res = await admin.graphql(SHOP_LOCALES_QUERY);
+    const payload = (await res.json()) as {
+      data?: {
+        shopLocales?: Array<{
+          locale: string;
+          name: string;
+          primary: boolean;
+          published: boolean;
+        }> | null;
+      };
+    };
+    const rows = payload.data?.shopLocales ?? [];
+    locales = rows.map((r) => ({
+      value: r.locale,
+      label: `${r.name} (${r.locale})`,
+      primary: r.primary,
+      published: r.published,
+    }));
+    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+  } catch (err) {
+    console.error("[expressV4] load shopLocales failed:", err);
+  }
+
+  let jobs: Awaited<ReturnType<typeof listV4JobSummaries>> = [];
+  try {
+    jobs = await listV4JobSummaries(shop, { taskSource: TS_FRONTEND_TASK_SOURCE });
+  } catch (err) {
+    console.error("[expressV4] load jobs failed:", err);
+  }
+
+  let migrated = false;
+  try {
+    const settings = await prisma.shopTranslationSettings.findUnique({
+      where: { shop },
+      select: { migratedToTsf: true },
+    });
+    migrated = settings?.migratedToTsf ?? false;
+  } catch (err) {
+    console.error("[expressV4] load migration status failed:", err);
+  }
+
+  return { enabled: true, locales, primaryLocale, jobs, migrated };
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -37,31 +116,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
-  if (languageCode === "zh" || languageCode === "zh-CN") {
-    return {
-      language,
-      isChinese: true,
-      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-      ciwiSwitcherBlocksId: process.env
-        .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-      server: process.env.SERVER_URL,
-      shop: shop,
-    };
-  } else {
-    return {
-      language,
-      isChinese: false,
-      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-      ciwiSwitcherBlocksId: process.env
-        .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-      server: process.env.SERVER_URL,
-      shop: shop,
-    };
-  }
+
+  const expressV4 = await loadExpressV4Data(adminAuthResult.admin, shop);
+
+  return {
+    language,
+    isChinese: languageCode === "zh" || languageCode === "zh-CN",
+    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
+    server: process.env.SERVER_URL,
+    shop: shop,
+    expressV4,
+  };
 };
 
 const Index = () => {
-  const { language, isChinese, shop, server, ciwiSwitcherBlocksId, ciwiSwitcherId } =
+  const { language, isChinese, shop, server, ciwiSwitcherBlocksId, ciwiSwitcherId, expressV4 } =
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -399,6 +469,16 @@ const Index = () => {
             setProgressingModalOpen={setProgressingModalOpen}
             updateProgressDataSourceStatus={updateProgressDataSourceStatus}
           />
+          {expressV4.enabled ? (
+            <ExpressTranslateCard
+              shop={shop}
+              locales={expressV4.locales}
+              primaryLocale={expressV4.primaryLocale}
+              initialJobs={expressV4.jobs as any}
+              migrated={expressV4.migrated}
+            />
+          ) : null}
+
           <TranslationPanel />
 
           <WelcomeCard

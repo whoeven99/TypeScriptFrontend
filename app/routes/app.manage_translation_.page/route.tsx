@@ -14,7 +14,8 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // �
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/JavaServer";
+import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -61,7 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           resourceType: "PAGE",
           startCursor: startCursor.cursor,
           locale: searchTerm || "",
-        }); // 处理逻辑
+        });
         console.log(`应用日志: ${shop} 翻译管理-页面页面翻到上一页`);
 
         return {
@@ -87,7 +88,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           resourceType: "PAGE",
           endCursor: endCursor.cursor,
           locale: searchTerm || "",
-        }); // 处理逻辑
+        });
         console.log(`应用日志: ${shop} 翻译管理-页面页面翻到下一页`);
 
         return {
@@ -156,9 +157,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!confirmData:
-      const data = await updateManageTranslation({
+      const data = await registerManageTranslations({
+        admin,
         shop,
-        accessToken: accessToken as string,
         confirmData,
       });
 

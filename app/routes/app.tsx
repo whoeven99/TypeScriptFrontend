@@ -17,6 +17,7 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
+import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
 import {
   GetUserWords,
   GetLanguageStatus,
@@ -103,7 +104,7 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(
     `[${context}] graphQLErrors_full=${JSON.stringify(graphQLErrors, null, 2)}`,
   );
-  graphQLErrors.forEach((item, index) => {
+  graphQLErrors.forEach((item: any, index: number) => {
     console.error(`[${context}] graphQLError[${index}]`, item);
   });
   console.error(
@@ -124,6 +125,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
+    translateV4Enabled: isTranslateV4Enabled(),
   });
 };
 
@@ -475,7 +477,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server } = useLoaderData<typeof loader>();
+  const { apiKey, shop, server, translateV4Enabled } =
+    useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
@@ -689,6 +692,9 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
+              {translateV4Enabled && (
+                <Link to="/app/translate-v4">智能翻译 (v4)</Link>
+              )}
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}

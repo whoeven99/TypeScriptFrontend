@@ -10,11 +10,12 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/JavaServer";
+import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -108,7 +109,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const url = new URL(request.url);
@@ -451,9 +452,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!confirmData:
-      const data = await updateManageTranslation({
+      const data = await registerManageTranslations({
+        admin,
         shop,
-        accessToken: accessToken as string,
         confirmData,
       });
 
@@ -729,147 +730,51 @@ const Index = () => {
   useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
+        const response = productFetcher.data.response;
+        const resourceId = response?.resourceId;
+        // 先把 translatableContent / translations 建成按 key 索引的查找表，
+        // 避免每个字段都对同一数组反复 .find()（原来每行扫 4 次）
+        const contentByKey = new Map<string, any>(
+          (response?.translatableContent ?? []).map((c: any) => [c.key, c]),
+        );
+        const translationByKey = new Map<string, any>(
+          (response?.translations ?? []).map((tr: any) => [tr.key, tr]),
+        );
+        // emptyTranslated=true 时缺失译文回退为 ""（SEO 行的原行为），否则保留 undefined（基础行的原行为）
+        const buildRow = (
+          shopifyKey: string,
+          resource: string,
+          idx: number,
+          emptyTranslated = false,
+        ) => {
+          const content = contentByKey.get(shopifyKey);
+          const translation = translationByKey.get(shopifyKey);
+          return {
+            key: `${shopifyKey}_${resourceId}_${idx}`,
+            resourceId,
+            shopifyKey,
+            index: 4,
+            resource,
+            digest: content?.digest || "",
+            type: content?.type || "",
+            default_language: content?.value || "",
+            translated: emptyTranslated
+              ? translation?.value || ""
+              : translation?.value,
+          };
+        };
         setProductBaseData(
           [
-            {
-              key: `title_${productFetcher.data.response?.resourceId}_0`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "title",
-              index: 4,
-              resource: t("Title"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "title",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "title",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "title",
-                )?.value || "",
-              translated: productFetcher.data.response?.translations?.find(
-                (item: any) => item.key == "title",
-              )?.value,
-            },
-            {
-              key: `body_html_${productFetcher.data.response?.resourceId}_1`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "body_html",
-              index: 4,
-              resource: t("Description"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "body_html",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "body_html",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "body_html",
-                )?.value || "",
-              translated: productFetcher.data.response?.translations?.find(
-                (item: any) => item.key == "body_html",
-              )?.value,
-            },
-            {
-              key: `product_type_${productFetcher.data.response?.resourceId}_2`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "product_type",
-              index: 4,
-              resource: t("ProductType"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "product_type",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "product_type",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "product_type",
-                )?.value || "",
-              translated: productFetcher.data.response?.translations?.find(
-                (item: any) => item.key == "product_type",
-              )?.value,
-            },
+            buildRow("title", t("Title"), 0),
+            buildRow("body_html", t("Description"), 1),
+            buildRow("product_type", t("ProductType"), 2),
           ].filter((item) => item.default_language),
         );
         setProductSeoData(
           [
-            {
-              key: `handle_${productFetcher.data.response?.resourceId}_0`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "handle",
-              index: 4,
-              resource: t("URL handle"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "handle",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "handle",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "handle",
-                )?.value || "",
-              translated:
-                productFetcher.data.response?.translations?.find(
-                  (item: any) => item.key == "handle",
-                )?.value || "",
-            },
-            {
-              key: `meta_title_${productFetcher.data.response?.resourceId}_1`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "meta_title",
-              index: 4,
-              resource: t("Meta title"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_title",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_title",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_title",
-                )?.value || "",
-              translated:
-                productFetcher.data.response?.translations?.find(
-                  (item: any) => item.key == "meta_title",
-                )?.value || "",
-            },
-            {
-              key: `meta_description_${productFetcher.data.response?.resourceId}_2`,
-              resourceId: productFetcher.data.response?.resourceId,
-              shopifyKey: "meta_description",
-              index: 4,
-              resource: t("Meta description"),
-              digest:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_description",
-                )?.digest || "",
-              type:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_description",
-                )?.type || "",
-              default_language:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_description",
-                )?.value || "",
-              translated:
-                productFetcher.data.response?.translations?.find(
-                  (item: any) => item.key == "meta_description",
-                )?.value || "",
-            },
+            buildRow("handle", t("URL handle"), 0, true),
+            buildRow("meta_title", t("Meta title"), 1, true),
+            buildRow("meta_description", t("Meta description"), 2, true),
           ].filter((item) => item.default_language),
         );
         const optionsData = productFetcher.data.response?.options?.nodes
@@ -1356,7 +1261,9 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (record: any, value: string) => {
+  // useCallback 稳定函数引用，配合 ManageTableInput 的 React.memo，
+  // 避免 loadingItems/分页/菜单等无关状态变化时整表单元格重渲染
+  const handleInputChange = useCallback((record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [record?.key]: value, // 更新对应的 key
@@ -1387,7 +1294,7 @@ const Index = () => {
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
-  };
+  }, [searchTerm]);
 
   const handleTranslate = async ({
     resourceType,
