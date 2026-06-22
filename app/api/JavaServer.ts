@@ -3,6 +3,7 @@ import { queryShopBaseConfigData, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
+import { globalStore } from "~/globalStore";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -636,10 +637,14 @@ type SingleTextTranslateArgs = {
 };
 
 /**
- * 单字段手动翻译(页面调用)。统一走 TSF 端点 /api/translate-v4/single，
- * 由 TSF 决定:迁移店 → LLM 翻译；未迁移店 → 代理回 Java。返回 { success, response }。
+ * 单字段手动翻译(页面调用)。
+ * - 灰度白名单店 → 走 TSF 端点 /api/translate-v4/single(迁移店 LLM / 未迁移店端点内代理 Java)。
+ * - 非白名单店 → 直连 Java(原行为不变),完全不经过 TSF 端点,灰度风险被关住。
  */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
+  if (!globalStore.translateV4ExpressBeta) {
+    return singleTextTranslateV2ViaJava(args);
+  }
   try {
     const res = await fetch("/api/translate-v4/single", {
       method: "POST",

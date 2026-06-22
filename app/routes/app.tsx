@@ -17,7 +17,10 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
+import {
+  isTranslateV4Enabled,
+  isTranslateV4ExpressBetaEnabled,
+} from "~/server/translateV4/feature.server";
 import {
   GetUserWords,
   GetLanguageStatus,
@@ -126,6 +129,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     translateV4Enabled: isTranslateV4Enabled(),
+    translateV4ExpressBeta: isTranslateV4ExpressBetaEnabled(shop),
   });
 };
 
@@ -477,7 +481,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Enabled } =
+  const { apiKey, shop, server, translateV4Enabled, translateV4ExpressBeta } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
@@ -514,6 +518,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
+    globalStore.translateV4ExpressBeta = Boolean(translateV4ExpressBeta);
   }, []);
 
   useEffect(() => {
