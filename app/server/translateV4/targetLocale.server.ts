@@ -11,12 +11,35 @@ export type TargetLocaleRow = {
 };
 
 export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]> {
+  await ensureTargetLocalesBackfilled(shop);
   const rows = await prisma.shopTargetLocale.findMany({ where: { shop } });
   return rows.map((r) => ({
     locale: r.locale,
     autoTranslate: r.autoTranslate,
     status: r.status,
   }));
+}
+
+/** 早期迁移只写了 ShopTranslationSettings.targets，补建每语言行供语言页读取。 */
+async function ensureTargetLocalesBackfilled(shop: string): Promise<void> {
+  const count = await prisma.shopTargetLocale.count({ where: { shop } });
+  if (count > 0) return;
+
+  const settings = await prisma.shopTranslationSettings.findUnique({
+    where: { shop },
+    select: { targets: true, migratedToTsf: true },
+  });
+  if (!settings?.migratedToTsf) return;
+
+  const targets = Array.isArray(settings.targets)
+    ? (settings.targets as string[]).filter(Boolean)
+    : [];
+  if (!targets.length) return;
+
+  await upsertTargetLocales(
+    shop,
+    targets.map((locale) => ({ locale, autoTranslate: false })),
+  );
 }
 
 /** 同步整店开关：任一语言开启即 ShopTranslationSettings.autoTranslate=true（卡片摘要用）。 */

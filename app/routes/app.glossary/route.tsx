@@ -23,8 +23,9 @@ import {
   DeleteGlossaryInfo,
   GetGlossaryByShopNameLoading,
 } from "~/api/JavaServer";
+import { queryShopLanguages } from "~/api/admin";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
-import { listGlossaryDo, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
+import { listGlossaryPagePayload, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
 import { updateGlossaryCompat } from "./glossaryClient";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -89,7 +90,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!loading:
         try {
           if (migrated) {
-            const response = await listGlossaryDo(shop);
+            const shopLanguages = await queryShopLanguages({
+              shop,
+              accessToken: accessToken as string,
+            });
+            const shopLocalesWithoutPrimary = shopLanguages.filter(
+              (language) => !language.primary,
+            );
+            const response = await listGlossaryPagePayload(
+              shop,
+              shopLocalesWithoutPrimary,
+            );
             return { success: true, errorCode: null, errorMsg: null, response };
           }
           const data = await GetGlossaryByShopNameLoading({
@@ -110,8 +121,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           if (deleteInfo.length > 0) {
             if (migrated) {
-              const count = await deleteGlossaryDo(shop, deleteInfo.map((x) => Number(x)));
-              return json({ data: count });
+              const ids = deleteInfo.map((x) => Number(x));
+              await deleteGlossaryDo(shop, ids);
+              return json({
+                data: ids.map((id) => ({
+                  status: "fulfilled",
+                  value: { success: true, response: { id } },
+                })),
+              });
             }
             const promise = deleteInfo.map(async (item: number) => {
               return DeleteGlossaryInfo({ id: item });

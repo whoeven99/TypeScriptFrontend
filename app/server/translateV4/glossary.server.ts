@@ -16,6 +16,21 @@ export type GlossaryDoShape = {
   createdDate: string;
 };
 
+/** 术语表页表格行（对齐 Java GetGlossaryByShopNameLoading 的 glossaryTableData 项）。 */
+export type GlossaryTableRow = {
+  key: number;
+  status: number;
+  sourceText: string;
+  targetText: string;
+  language: string;
+  rangeCode: string | null;
+  type: number;
+  loading: boolean;
+  createdDate: string;
+};
+
+type ShopLocaleLike = { locale: string; name: string; primary?: boolean };
+
 type GlossaryRow = {
   id: number;
   shop: string;
@@ -42,12 +57,54 @@ function toDo(g: GlossaryRow): GlossaryDoShape {
   };
 }
 
+/** 把 Prisma 术语行映射为表格行，语言名与 Java 加载逻辑一致。 */
+export function toGlossaryTableRows(
+  rows: GlossaryDoShape[],
+  shopLocalesWithoutPrimary: ShopLocaleLike[],
+): GlossaryTableRow[] {
+  const mapped = rows.map((item) => {
+    const localeMatch = shopLocalesWithoutPrimary.find(
+      (language) => language.locale === item.rangeCode,
+    );
+    const applies =
+      localeMatch != null || item.rangeCode === "ALL";
+    return {
+      key: item.id,
+      status: item.status,
+      sourceText: item.sourceText,
+      targetText: item.targetText,
+      language: applies ? localeMatch?.name || "All Languages" : "",
+      rangeCode: item.rangeCode,
+      type: item.caseSensitive,
+      loading: false,
+      createdDate: item.createdDate,
+    };
+  });
+
+  return mapped.sort(
+    (a, b) =>
+      new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
+  );
+}
+
 export async function listGlossaryDo(shop: string): Promise<GlossaryDoShape[]> {
   const rows = await prisma.glossary.findMany({
     where: { shop },
     orderBy: { id: "asc" },
   });
   return rows.map(toDo);
+}
+
+/** 术语表页 loader/action 用的完整 payload，对齐 Java GetGlossaryByShopNameLoading。 */
+export async function listGlossaryPagePayload(
+  shop: string,
+  shopLocalesWithoutPrimary: ShopLocaleLike[],
+): Promise<{ glossaryTableData: GlossaryTableRow[]; shopLocales: ShopLocaleLike[] }> {
+  const rows = await listGlossaryDo(shop);
+  return {
+    glossaryTableData: toGlossaryTableRows(rows, shopLocalesWithoutPrimary),
+    shopLocales: shopLocalesWithoutPrimary,
+  };
 }
 
 export type GlossaryInput = {
