@@ -41,8 +41,20 @@ const PRESERVE_WHEN_SET_KEYS = new Set([
   "SCOPES",
 ]);
 
+/** Redis URL 中脱敏密码，仅展示协议与 host */
+function maskRedisUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const auth = parsed.password || parsed.username ? "***@" : "";
+    return `${parsed.protocol}//${auth}${parsed.host}${parsed.pathname}`;
+  } catch {
+    return url.length > 40 ? `${url.slice(0, 40)}…` : url;
+  }
+}
+
 function maskValue(key: string, value: string): string {
   if (!value) return "(空)";
+  if (key === "REDIS_URL_V4") return maskRedisUrl(value);
   if (/token|secret|key|password|auth/i.test(key)) {
     return `(已设置,len=${value.length})`;
   }
@@ -146,6 +158,35 @@ function tursoPairOk(urlKey: string, tokenKey: string): boolean {
   return Boolean(process.env[urlKey]?.trim() && process.env[tokenKey]?.trim());
 }
 
+function cosmosV4Ok(): boolean {
+  return Boolean(
+    process.env.COSMOS_ENDPOINT_V4?.trim() && process.env.COSMOS_KEY_V4?.trim(),
+  );
+}
+
+function redisV4Ok(): boolean {
+  if (process.env.REDIS_URL_V4?.trim()) return true;
+  return Boolean(
+    process.env.REDIS_HOSTNAME_V4?.trim() && process.env.REDIS_PASSWORD_V4?.trim(),
+  );
+}
+
+/** 打印 process.env 中匹配的 V4 基础设施键（如 Blob 相关，若已配置） */
+function logOptionalV4InfraKeys(pattern: RegExp, label: string): void {
+  const keys = Object.keys(process.env)
+    .filter((k) => pattern.test(k))
+    .sort();
+  if (keys.length === 0) {
+    console.info(`${ENV_LOG}   [—] ${label} (无相关 *_V4 环境变量)`);
+    return;
+  }
+  const ok = keys.every((k) => Boolean(process.env[k]?.trim()));
+  console.info(`${ENV_LOG}   [${ok ? "✅" : "❌"}] ${label}`);
+  for (const key of keys) {
+    console.info(`${ENV_LOG}       ${formatEnvField([key, process.env[key]])}`);
+  }
+}
+
 /** 排错：按服务分组打印关键环境变量 */
 function logCriticalEnvStatus(): void {
   console.info(`${ENV_LOG} ===== 关键变量 =====`);
@@ -169,6 +210,31 @@ function logCriticalEnvStatus(): void {
       ["SHOPIFY_APP_URL", process.env.SHOPIFY_APP_URL],
     ],
   );
+
+  logEnvCheck("Cosmos (V4)", cosmosV4Ok(), [
+    ["COSMOS_ENDPOINT_V4", process.env.COSMOS_ENDPOINT_V4],
+    ["COSMOS_KEY_V4", process.env.COSMOS_KEY_V4],
+    [
+      "COSMOS_TRANSLATION_DATABASE_ID_V4",
+      process.env.COSMOS_TRANSLATION_DATABASE_ID_V4,
+      "translation",
+    ],
+    [
+      "COSMOS_TRANSLATION_V4_JOBS_CONTAINER_V4",
+      process.env.COSMOS_TRANSLATION_V4_JOBS_CONTAINER_V4,
+      "translation_v4_jobs",
+    ],
+  ]);
+
+  logEnvCheck("Redis (V4)", redisV4Ok(), [
+    ["REDIS_URL_V4", process.env.REDIS_URL_V4],
+    ["REDIS_HOSTNAME_V4", process.env.REDIS_HOSTNAME_V4],
+    ["REDIS_PASSWORD_V4", process.env.REDIS_PASSWORD_V4],
+    ["REDIS_PORT_V4", process.env.REDIS_PORT_V4, "6380"],
+    ["REDIS_TLS_V4", process.env.REDIS_TLS_V4, "true"],
+  ]);
+
+  logOptionalV4InfraKeys(/^(AZURE_STORAGE|AZURE_BLOB|BLOB_).*_V4$/i, "Blob (V4)");
 
   console.info(`${ENV_LOG} process.env 总键数: ${Object.keys(process.env).length}`);
   console.info(`${ENV_LOG} =================`);

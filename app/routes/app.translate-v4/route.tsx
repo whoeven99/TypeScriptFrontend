@@ -9,6 +9,7 @@ import {
   Divider,
   Flex,
   InputNumber,
+  Popconfirm,
   Progress,
   Select,
   Space,
@@ -311,6 +312,33 @@ function InitScanIndicator({
   );
 }
 
+/** 翻译阶段首批 LLM 结果返回前：子节点进度仍为 0，用不确定条避免「长时间 0% 后突然跳满」。 */
+function TranslateWorkingIndicator({
+  moduleLabel,
+  usedTokens,
+}: {
+  moduleLabel: string | null;
+  usedTokens: number;
+}) {
+  return (
+    <>
+      <style>{INIT_SCAN_CSS}</style>
+      <div className="v4-indet-track" style={{ flex: 1 }}>
+        <div className="v4-indet-fill" />
+      </div>
+      <Text
+        type="secondary"
+        style={{ fontSize: 12, minWidth: 170, textAlign: "right", flexShrink: 0 }}
+      >
+        正在调用模型
+        {moduleLabel ? ` · ${moduleLabel}` : ""}
+        {usedTokens > 0 ? ` · ${usedTokens.toLocaleString()} tokens` : ""}
+        <span className="v4-dots" />
+      </Text>
+    </>
+  );
+}
+
 function JobCard({
   job,
   onAction,
@@ -319,7 +347,7 @@ function JobCard({
   job: TranslationJobProgressSummary;
   onAction: (
     taskId: string,
-    action: "pause" | "resume" | "cancel",
+    action: "pause" | "resume" | "cancel" | "delete",
   ) => Promise<boolean>;
   translateSlotBusy: boolean;
 }) {
@@ -333,9 +361,9 @@ function JobCard({
   const timings = job.stageTimings ?? {};
 
   // 本地「刚点击」态：点击到 worker 落定前给按钮即时 loading + 禁用，避免误以为没反应。
-  const [pending, setPending] = useState<null | "pause" | "resume" | "cancel">(
-    null,
-  );
+  const [pending, setPending] = useState<
+    null | "pause" | "resume" | "cancel" | "delete"
+  >(null);
   // worker 已把动作落定（进入停止/写回过渡 或 离开 PAUSED）→ 清掉本地 pending。
   useEffect(() => {
     if (!pending) return;
@@ -347,7 +375,7 @@ function JobCard({
     if (pending === "resume" && resumeSettled) setPending(null);
   }, [pending, job.status, job.isStopping]);
 
-  const runAction = (action: "pause" | "resume" | "cancel") => {
+  const runAction = (action: "pause" | "resume" | "cancel" | "delete") => {
     setPending(action);
     void (async () => {
       const ok = await onAction(job.taskId, action);
@@ -355,6 +383,14 @@ function JobCard({
     })();
   };
   const busy = pending !== null;
+
+  // 终态/已暂停的任务可删除（彻底清 Cosmos + Blob + Redis）。
+  const canDelete =
+    job.isTerminal ||
+    job.status === "PAUSED" ||
+    job.status === "CANCELLED" ||
+    job.status === "FAILED" ||
+    job.status === "COMPLETED";
 
   // 可恢复（暂停/失败）→ 继续；翻译阶段且未在停止中 → 暂停；非终态且未在停止中 → 取消。
   const canResume = job.status === "PAUSED" || job.status === "FAILED";
@@ -437,6 +473,20 @@ function JobCard({
               取消
             </Button>
           ) : null}
+          {canDelete ? (
+            <Popconfirm
+              title="删除该任务？"
+              description="会清除任务记录及其翻译内容数据，不可恢复。"
+              okText="删除"
+              okButtonProps={{ danger: true }}
+              cancelText="取消"
+              onConfirm={() => runAction("delete")}
+            >
+              <Button size="small" danger loading={pending === "delete"} disabled={busy}>
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
           <Text type="secondary" style={{ fontSize: 12 }}>
             <span
               style={{
@@ -469,6 +519,12 @@ function JobCard({
               : undefined;
           const ms = stageElapsedMs(timings[key], stageFreezeAt);
           const initScanning = idx === 0 && current && m.initTotal <= 0;
+          const translateWarmingUp =
+            idx === 1 &&
+            current &&
+            job.status === "TRANSLATING" &&
+            m.translateUnitTotal > 0 &&
+            m.translateUnitDone <= 0;
           const inProgress = percent > 0 && !complete;
           return (
             <Flex key={key} align="center" gap={10} style={{ marginBottom: 6 }}>
@@ -494,6 +550,15 @@ function JobCard({
                       ? MODULE_LABELS[m.currentModule] ?? m.currentModule
                       : null
                   }
+                />
+              ) : translateWarmingUp ? (
+                <TranslateWorkingIndicator
+                  moduleLabel={
+                    m.currentModule
+                      ? MODULE_LABELS[m.currentModule] ?? m.currentModule
+                      : null
+                  }
+                  usedTokens={job.usedTokens}
                 />
               ) : (
                 <>
@@ -610,7 +675,10 @@ export default function AppTranslateV4() {
   }, [shop]);
 
   const handleAction = useCallback(
-    async (taskId: string, actionType: "pause" | "resume" | "cancel") => {
+    async (
+      taskId: string,
+      actionType: "pause" | "resume" | "cancel" | "delete",
+    ) => {
       try {
         const res = await fetch("/api/translate-v4/task-action", {
           method: "POST",
@@ -621,15 +689,17 @@ export default function AppTranslateV4() {
         if (data?.ok) {
           // pending=true：worker 还要先把已翻译的写回，过程态用「正在…」表述。
           const label =
-            actionType === "resume"
-              ? "正在继续…"
-              : actionType === "pause"
-                ? data.pending
-                  ? "正在暂停…"
-                  : "已暂停"
-                : data.pending
-                  ? "正在取消…"
-                  : "已取消";
+            actionType === "delete"
+              ? "已删除"
+              : actionType === "resume"
+                ? "正在继续…"
+                : actionType === "pause"
+                  ? data.pending
+                    ? "正在暂停…"
+                    : "已暂停"
+                  : data.pending
+                    ? "正在取消…"
+                    : "已取消";
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
           return true;
