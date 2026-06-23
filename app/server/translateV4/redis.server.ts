@@ -73,6 +73,15 @@ export async function setV4Control(
   }
 }
 
+/** 删除任务时清掉该任务在 Redis 的进度键 + 控制键。best-effort。 */
+export async function clearV4TaskRedis(taskId: string): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().del(v4ProgressKey(taskId), v4ControlKey(taskId));
+  } catch {
+    // non-fatal
+  }
+}
+
 export async function clearV4Control(taskId: string): Promise<void> {
   try {
     await getTranslateV4RedisClient().del(v4ControlKey(taskId));

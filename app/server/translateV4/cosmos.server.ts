@@ -90,6 +90,17 @@ export async function getV4Job(
   }
 }
 
+/** 删除一个 v4 任务文档（partition key = shopName）。不存在视为成功。 */
+export async function deleteV4Job(shopName: string, jobId: string): Promise<void> {
+  try {
+    await getContainer().item(jobId, shopName).delete();
+  } catch (err) {
+    // 404（已不存在）视为成功；其它错误抛出
+    const code = (err as { code?: number })?.code;
+    if (code !== 404) throw err;
+  }
+}
+
 /** 同 shop + source + target 是否存在阻塞态任务（用于创建前互斥）。 */
 export async function existsBlockingV4Job(
   shopName: string,

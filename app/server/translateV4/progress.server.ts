@@ -129,6 +129,9 @@ export function computeTranslationV4ProgressPercent(
         return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
       case "TRANSLATE":
       default:
+        if (metrics.translateUnitTotal > 0) {
+          return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+        }
         return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
     }
   }
@@ -147,6 +150,9 @@ export function computeTranslationV4ProgressPercent(
     status === "TRANSLATING" ||
     status === "TRANSLATE_DONE"
   ) {
+    if (metrics.translateUnitTotal > 0) {
+      return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+    }
     return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
   }
 

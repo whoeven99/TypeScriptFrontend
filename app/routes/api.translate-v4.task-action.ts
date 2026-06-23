@@ -1,6 +1,11 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { getV4Job, updateV4Job } from "~/server/translateV4/cosmos.server";
+import {
+  getV4Job,
+  updateV4Job,
+  deleteV4Job,
+} from "~/server/translateV4/cosmos.server";
+import { deleteV4JobBlobs } from "~/server/translateV4/blob.server";
 import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
 import {
   getTranslateV4RedisClient,
@@ -8,6 +13,7 @@ import {
   setV4Control,
   setV4PausePending,
   clearV4Control,
+  clearV4TaskRedis,
 } from "~/server/translateV4/redis.server";
 import {
   resolveResumeV4JobStatus,
@@ -32,6 +38,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const job = await getV4Job(shopName, taskId);
   if (!job) return json({ ok: false, error: "task not found" }, { status: 404 });
+
+  if (actionType === "delete") {
+    // 安全：只允许删本店的任务
+    if (job.shopName !== session.shop) {
+      return json({ ok: false, error: "无权删除" }, { status: 403 });
+    }
+    // 只删终态/已暂停的任务，避免删正在处理中的（worker 还在写它）
+    const deletable = new Set(["COMPLETED", "FAILED", "CANCELLED", "PAUSED"]);
+    if (!deletable.has(job.status)) {
+      return json({ ok: false, error: "任务进行中，请先取消再删除" }, { status: 400 });
+    }
+    // 清 Blob（内容 chunk）+ Cosmos（任务文档）+ Redis（进度/控制键）
+    await deleteV4JobBlobs(job.blobPrefix);
+    await deleteV4Job(job.shopName, taskId);
+    await clearV4TaskRedis(taskId);
+    return json({ ok: true, deleted: true });
+  }
 
   if (actionType === "cancel") {
     // 翻译执行中取消：不乐观置 CANCELLED（终态会让前端停止轮询、却看不到「正在写入」
