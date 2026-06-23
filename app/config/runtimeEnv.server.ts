@@ -165,7 +165,7 @@ function cosmosV4Ok(): boolean {
 }
 
 function redisV4Ok(): boolean {
-  if (process.env.REDIS_URL_V4?.trim()) return true;
+  if (process.env.REDIS_URL_V4?.trim() || process.env.REDIS_URL?.trim()) return true;
   return Boolean(
     process.env.REDIS_HOSTNAME_V4?.trim() && process.env.REDIS_PASSWORD_V4?.trim(),
   );

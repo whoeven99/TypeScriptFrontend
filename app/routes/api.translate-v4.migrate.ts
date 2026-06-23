@@ -13,7 +13,7 @@ import {
   GetTranslateDOByShopNameAndSource,
   MarkShopMigratedToTsf,
 } from "~/api/JavaServer";
-import { isTranslateV4ExpressBetaEnabled } from "~/server/translateV4/feature.server";
+import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 
 /**
  * 通知 Java：本店已迁移到 TSF。Java 自己记录，后续自动翻译任务跳过该店，
@@ -49,7 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
-  if (!isTranslateV4ExpressBetaEnabled(shop)) {
+  if (!isTranslateV4ShopAllowed(shop)) {
     return json({ ok: false, error: "not_allowed" }, { status: 403 });
   }
 
@@ -107,7 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shop = session.shop;
   const server = process.env.SERVER_URL ?? "";
 
-  if (!isTranslateV4ExpressBetaEnabled(shop)) {
+  if (!isTranslateV4ShopAllowed(shop)) {
     return json({ ok: false, error: "not_allowed" }, { status: 403 });
   }
 

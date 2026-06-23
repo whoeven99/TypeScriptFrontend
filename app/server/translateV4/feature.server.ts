@@ -35,13 +35,13 @@ export function parseTranslateV4ShopAllowlist(): Set<string> {
 }
 
 /**
- * 首页「极速翻译」卡片 +「一键迁移」是否对本店开放。
+ * 本店是否允许使用 v4（导航/页面/批量 API/首页极速翻译/迁移等）。
  *
  * - 需 `TRANSLATE_V4_ENABLED=true`
  * - `TRANSLATE_V4_SHOP_ALLOWLIST_OPEN=true` 时全员开放（验证完成后放开）
  * - 否则仅 `TRANSLATE_V4_SHOP_ALLOWLIST` 中的店可见；未配置 allowlist 时默认全员关闭
  */
-export function isTranslateV4ExpressBetaEnabled(shop: string): boolean {
+export function isTranslateV4ShopAllowed(shop: string): boolean {
   if (!isTranslateV4Enabled()) return false;
   if (isTruthyEnv("TRANSLATE_V4_SHOP_ALLOWLIST_OPEN")) return true;
 
@@ -49,4 +49,9 @@ export function isTranslateV4ExpressBetaEnabled(shop: string): boolean {
   if (allowlist.size === 0) return false;
 
   return allowlist.has(normalizeShopDomain(shop));
+}
+
+/** @deprecated 使用 {@link isTranslateV4ShopAllowed}；保留别名供既有调用方。 */
+export function isTranslateV4ExpressBetaEnabled(shop: string): boolean {
+  return isTranslateV4ShopAllowed(shop);
 }
