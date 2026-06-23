@@ -21,7 +21,7 @@ import {
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
-import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
+import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
@@ -102,6 +102,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const { admin, session } = await authenticate.admin(request);
+
+  if (!isTranslateV4ShopAllowed(session.shop)) {
+    throw redirect("/app");
+  }
 
   let locales: ShopLocaleOption[] = [];
   let primaryLocale = "zh-CN";

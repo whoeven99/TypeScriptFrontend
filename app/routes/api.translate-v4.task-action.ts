@@ -20,6 +20,7 @@ import {
   stageFromStatus,
 } from "~/server/translateV4/resumeStatus";
 import { canPauseV4Job } from "~/server/translateV4/types";
+import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 
 /** POST /api/translate-v4/task-action —— pause / resume / cancel 一个 TsFrontend 任务。 */
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -33,6 +34,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const taskId = body.taskId?.trim() || "";
   const shopName = body.shopName?.trim() || session.shop;
   const actionType = body.action?.trim();
+
+  if (!isTranslateV4ShopAllowed(shopName)) {
+    return json({ ok: false, error: "功能未开放" }, { status: 403 });
+  }
 
   if (!taskId) return json({ ok: false, error: "taskId required" }, { status: 400 });
 

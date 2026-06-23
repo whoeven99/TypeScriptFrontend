@@ -19,7 +19,7 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import {
   isTranslateV4Enabled,
-  isTranslateV4ExpressBetaEnabled,
+  isTranslateV4ShopAllowed,
 } from "~/server/translateV4/feature.server";
 import {
   GetUserWords,
@@ -129,7 +129,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     translateV4Enabled: isTranslateV4Enabled(),
-    translateV4ExpressBeta: isTranslateV4ExpressBetaEnabled(shop),
+    translateV4ShopAllowed: isTranslateV4ShopAllowed(shop),
   });
 };
 
@@ -481,7 +481,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Enabled, translateV4ExpressBeta } =
+  const { apiKey, shop, server, translateV4Enabled, translateV4ShopAllowed } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
@@ -518,7 +518,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
-    globalStore.translateV4ExpressBeta = Boolean(translateV4ExpressBeta);
+    globalStore.translateV4ExpressBeta = Boolean(translateV4ShopAllowed);
   }, []);
 
   useEffect(() => {
@@ -697,7 +697,7 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
-              {translateV4Enabled && (
+              {translateV4Enabled && translateV4ShopAllowed && (
                 <Link to="/app/translate-v4">智能翻译 (v4)</Link>
               )}
               <Link to="/app/pricing">{t("Pricing")}</Link>
