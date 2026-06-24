@@ -33,7 +33,7 @@ import {
 } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import { updateData } from "~/store/modules/languageItemsData";
+import { updateData, clearLocaleStats } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -296,6 +296,8 @@ const Index = () => {
 
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const pendingRefreshStatsRef = useRef(false);
+  /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
+  const refreshAwaitingProductsRef = useRef(false);
   /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
   const itemsCountLoadTokenRef = useRef(0);
   const loadedItemsCountLocaleRef = useRef<string | null>(null);
@@ -935,21 +937,35 @@ const Index = () => {
     }
     pendingRefreshStatsRef.current = false;
     if (refreshStatsFetcher.data.success && currentLocale && source?.code) {
+      dispatch(clearLocaleStats(currentLocale));
       loadedItemsCountLocaleRef.current = null;
+      refreshAwaitingProductsRef.current = true;
       fetchAllItemsCounts(currentLocale, source.code, true);
-      shopify.toast.show(t("Translation statistics refreshed"));
     } else {
       shopify.toast.show(t("Failed to refresh statistics"));
+      setIsRefreshingStats(false);
     }
-    setIsRefreshingStats(false);
   }, [
     refreshStatsFetcher.data,
     refreshStatsFetcher.state,
     currentLocale,
     source?.code,
     fetchAllItemsCounts,
+    dispatch,
     t,
   ]);
+
+  useEffect(() => {
+    if (!refreshAwaitingProductsRef.current) return;
+    if (productsFetcher.state !== "idle") return;
+    refreshAwaitingProductsRef.current = false;
+    setIsRefreshingStats(false);
+    if (productsFetcher.data?.success) {
+      shopify.toast.show(t("Translation statistics refreshed"));
+    } else {
+      shopify.toast.show(t("Failed to refresh statistics"));
+    }
+  }, [productsFetcher.state, productsFetcher.data, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
