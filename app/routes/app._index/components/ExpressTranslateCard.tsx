@@ -129,7 +129,6 @@ const ExpressTranslateCard = ({
         targets,
         modules: DEFAULT_MODULES,
         aiModel: "deepseek-v4-flash",
-        limitPerType: 0, // 0 = 全部
         isCover: false,
         isHandle: false,
         targetOptions,

@@ -38,6 +38,9 @@ export type TranslationV4Module = (typeof TRANSLATION_V4_MODULES)[number];
 /** 任务来源标识：TsFrontend 创建的任务统一打此标记，便于 worker / 运营区分。 */
 export const TS_FRONTEND_TASK_SOURCE = "TsFrontend";
 
+/** 每类资源不设上限（worker init 全量枚举）。 */
+export const V4_LIMIT_UNLIMITED = Number.MAX_SAFE_INTEGER;
+
 export type TranslationV4Status =
   | "CREATED"
   | "INIT_QUEUED"
@@ -110,6 +113,7 @@ export type TranslationV4Job = {
   aiModelUsed: string | null;
   aiProvider: string | null;
   engineUsage: Record<string, { units: number; chars: number }> | null;
+  /** 每类资源上限；新任务固定为 {@link V4_LIMIT_UNLIMITED}。 */
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;

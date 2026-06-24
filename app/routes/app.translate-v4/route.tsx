@@ -113,7 +113,6 @@ export default function AppTranslateV4() {
   const [targets, setTargets] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
   const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
-  const [limitPerType, setLimitPerType] = useState<number>(20);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -228,7 +227,6 @@ export default function AppTranslateV4() {
         targets,
         modules,
         aiModel,
-        limitPerType,
         isCover,
         isHandle,
         targetOptions,
@@ -264,7 +262,6 @@ export default function AppTranslateV4() {
     targets,
     modules,
     aiModel,
-    limitPerType,
     isCover,
     isHandle,
     targetOptions,
@@ -365,8 +362,6 @@ export default function AppTranslateV4() {
           onCreate={handleCreate}
           aiModel={aiModel}
           onAiModelChange={setAiModel}
-          limitPerType={limitPerType}
-          onLimitPerTypeChange={setLimitPerType}
           isCover={isCover}
           onIsCoverChange={setIsCover}
           isHandle={isHandle}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { Button, InputNumber, Select, Switch } from "antd";
+import { Button } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -23,8 +23,6 @@ type Props = {
   onCreate: () => void;
   aiModel: string;
   onAiModelChange: (v: string) => void;
-  limitPerType: number;
-  onLimitPerTypeChange: (v: number) => void;
   isCover: boolean;
   onIsCoverChange: (v: boolean) => void;
   isHandle: boolean;
@@ -44,8 +42,6 @@ export function CreateTaskCard({
   onCreate,
   aiModel,
   onAiModelChange,
-  limitPerType,
-  onLimitPerTypeChange,
   isCover,
   onIsCoverChange,
   isHandle,
@@ -83,29 +79,19 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 8 }}>源语言</div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: `1px solid ${v4Colors.cardBorder}`,
-            background: "#f8fafc",
-            fontWeight: 600,
-            fontSize: 14,
-          }}
-        >
-          <span style={{ fontSize: 12, color: v4Colors.textMuted, fontWeight: 700 }}>
-            {localeRegionCode(source)}
+        <SectionLabel>源语言</SectionLabel>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <span style={{ ...chipStyle(true), cursor: "default" }}>
+            <span style={{ fontSize: 11, opacity: 0.75, fontWeight: 700 }}>
+              {localeRegionCode(source)}
+            </span>
+            {localeShortName(source, sourceLabel)}
           </span>
-          {localeShortName(source, sourceLabel)}
         </div>
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 8 }}>目标语言</div>
+        <SectionLabel>目标语言</SectionLabel>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {targetOptions.map((opt) => {
             const selected = targets.includes(opt.value);
@@ -127,7 +113,7 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 8 }}>包含的内容</div>
+        <SectionLabel>包含的内容</SectionLabel>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {CREATE_TASK_MODULE_OPTIONS.map((mod) => {
             const selected = modules.includes(mod);
@@ -164,46 +150,51 @@ export function CreateTaskCard({
           {advancedOpen ? "收起高级设置" : "高级设置"}
         </button>
         {advancedOpen ? (
-          <div
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 10,
-              background: "#f8fafc",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 16,
-              alignItems: "center",
-            }}
-          >
-            <div style={{ minWidth: 160 }}>
-              <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 4 }}>AI 模型</div>
-              <Select
-                size="small"
-                style={{ width: "100%" }}
-                value={aiModel}
-                options={AI_MODEL_OPTIONS}
-                onChange={onAiModelChange}
-              />
+          <div style={{ marginTop: 14 }}>
+            <SectionLabel>AI 模型</SectionLabel>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {AI_MODEL_OPTIONS.map((opt) => {
+                const selected = aiModel === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => onAiModelChange(opt.value)}
+                    style={chipStyle(selected)}
+                  >
+                    <span style={{ fontSize: 14, lineHeight: 1 }}>
+                      {selected ? "✓" : "+"}
+                    </span>
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
-            <div style={{ minWidth: 120 }}>
-              <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 4 }}>
-                每类上限（0=全部）
+
+            <div style={{ marginTop: 16 }}>
+              <SectionLabel>翻译选项</SectionLabel>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => onIsCoverChange(!isCover)}
+                  style={chipStyle(isCover)}
+                >
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>
+                    {isCover ? "✓" : "+"}
+                  </span>
+                  覆盖已有译文
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onIsHandleChange(!isHandle)}
+                  style={chipStyle(isHandle)}
+                >
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>
+                    {isHandle ? "✓" : "+"}
+                  </span>
+                  翻译 handle
+                </button>
               </div>
-              <InputNumber
-                size="small"
-                min={0}
-                value={limitPerType}
-                onChange={(v) => onLimitPerTypeChange(Number(v ?? 0))}
-              />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Switch size="small" checked={isCover} onChange={onIsCoverChange} />
-              <span style={{ fontSize: 13 }}>覆盖已有译文</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Switch size="small" checked={isHandle} onChange={onIsHandleChange} />
-              <span style={{ fontSize: 13 }}>翻译 handle</span>
             </div>
           </div>
         ) : null}
@@ -239,6 +230,14 @@ export function CreateTaskCard({
             : "创建任务 →"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 8 }}>
+      {children}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
+  V4_LIMIT_UNLIMITED,
   type TranslationV4Module,
 } from "~/server/translateV4/types";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
@@ -41,7 +42,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     source?: string;
     target?: string;
     modules?: string[];
-    limitPerType?: number;
     isCover?: boolean;
     isHandle?: boolean;
     aiModel?: string;
@@ -73,11 +73,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
   }
 
-  // 0 表示「全部」——不设上限；其余正数原样使用（最小 1）
-  const rawLimit = Number(body.limitPerType);
-  const limitPerType =
-    rawLimit === 0 ? Number.MAX_SAFE_INTEGER : Math.max(rawLimit || 20, 1);
-
   const jobId = crypto.randomUUID();
 
   // worker 写回译文用的长效 offline token，建任务时落到 job 上
@@ -92,7 +87,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     target,
     modules,
     aiModel: body.aiModel?.trim() || "deepseek-v4-flash",
-    limitPerType,
+    limitPerType: V4_LIMIT_UNLIMITED,
     isCover: body.isCover ?? false,
     isHandle: body.isHandle ?? false,
     taskSource: TS_FRONTEND_TASK_SOURCE,
