@@ -1,0 +1,200 @@
+import type { CSSProperties } from "react";
+import { v4Colors } from "../v4Styles";
+import { formatCredits } from "../localeDisplay";
+import type { CoverageSummary } from "~/server/translateV4/coverage.server";
+
+type Props = {
+  summary: CoverageSummary;
+};
+
+export function SummaryDonutCard({ summary }: Props) {
+  const percent = summary.overallPercent ?? 0;
+  const dash = `${percent} 100`;
+
+  return (
+    <div
+      style={{
+        background: v4Colors.summaryBg,
+        borderRadius: 16,
+        padding: "28px 24px 20px",
+        color: "#fff",
+        minHeight: 280,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "relative", width: 168, height: 168 }}>
+          <svg viewBox="0 0 36 36" style={{ width: 168, height: 168, transform: "rotate(-90deg)" }}>
+            <circle
+              cx="18"
+              cy="18"
+              r="15.5"
+              fill="none"
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="18"
+              cy="18"
+              r="15.5"
+              fill="none"
+              stroke="#8b7cf8"
+              strokeWidth="3"
+              strokeDasharray={dash}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }}>
+              {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
+            </span>
+            <span style={{ fontSize: 13, color: v4Colors.textLight, marginTop: 4 }}>已翻译</span>
+          </div>
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          borderTop: "1px solid rgba(255,255,255,0.12)",
+          paddingTop: 16,
+          marginTop: 8,
+        }}
+      >
+        <StatFoot label="语言" value={`${summary.languageCount} 语言`} />
+        <StatFoot
+          label="已译条目"
+          value={`${formatLargeCount(summary.translatedItems)} 已译条目`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatFoot({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: v4Colors.textLight }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function formatLargeCount(n: number): string {
+  if (n >= 10_000) return n.toLocaleString();
+  return n.toLocaleString();
+}
+
+export function PageHeaderBar({
+  shop,
+  credits,
+}: {
+  shop: string;
+  credits: number | null;
+}) {
+  const avatarLetter = (shop[0] ?? "C").toUpperCase();
+
+  return (
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 20,
+        gap: 16,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            background: v4Colors.primary,
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: 18,
+          }}
+        >
+          C
+        </div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: v4Colors.text }}>Ciwi Localize</div>
+          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{shop}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {credits != null ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 14px",
+              borderRadius: 999,
+              background: "#fff",
+              border: `1px solid ${v4Colors.cardBorder}`,
+              fontSize: 13,
+              fontWeight: 600,
+              color: v4Colors.text,
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: v4Colors.successSoft,
+                boxShadow: `0 0 0 3px rgba(34, 197, 94, 0.2)`,
+              }}
+            />
+            {formatCredits(credits)} 积分可用
+          </span>
+        ) : null}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            background: v4Colors.primarySoft,
+            color: v4Colors.primary,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+          }}
+        >
+          {avatarLetter}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function coverageBarColor(percent: number | null): string {
+  if (percent == null) return v4Colors.textMuted;
+  if (percent >= 100) return v4Colors.successSoft;
+  if (percent >= 60) return "#8b7cf8";
+  return v4Colors.warning;
+}
+
+export const segmentBarStyle = (filled: boolean, color: string): CSSProperties => ({
+  flex: 1,
+  height: 6,
+  borderRadius: 3,
+  background: filled ? color : "#e2e8f0",
+  transition: "background 0.2s",
+});
