@@ -19,7 +19,7 @@ import {
 import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 
-/** GET /api/translate-v4/tasks —— 列出本店 TsFrontend 创建的任务。 */
+/** GET /api/translate-v4/tasks —— 列出本店 v4 任务（手动 + 自动）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
@@ -29,9 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json({ ok: false, error: "功能未开放" }, { status: 403 });
   }
 
-  const jobs = await listV4JobSummaries(shopName, {
-    taskSource: TS_FRONTEND_TASK_SOURCE,
-  });
+  const jobs = await listV4JobSummaries(shopName, { limit: 50 });
   return json({ ok: true, jobs });
 };
 

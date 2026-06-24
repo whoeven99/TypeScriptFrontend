@@ -10,6 +10,12 @@ import {
   sumItemsCountByLabelsFromCache,
 } from "./itemsCount.server";
 import type { AdminGraphqlClient } from "./itemsCount.server";
+import { sameTranslationLocale } from "./locale";
+import { listTargetLocales } from "./targetLocale.server";
+import {
+  resolveNextAutoUpdateAt,
+  formatNextAutoUpdateHint,
+} from "./autoScanSchedule.server";
 
 export type LocaleCoverageRow = {
   locale: string;
@@ -19,6 +25,12 @@ export type LocaleCoverageRow = {
   percent: number | null;
   /** 缓存未命中时为 true */
   cacheMissing: boolean;
+  /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
+  autoTranslate: boolean;
+  /** 下一轮 Worker 自动扫描时刻（ISO） */
+  nextAutoUpdateAt: string | null;
+  /** 覆盖率行：「下次更新时间 HH:mm」 */
+  nextAutoUpdateHint: string | null;
 };
 
 export type CoverageSummary = {
@@ -36,12 +48,39 @@ function ratioPercent(translated: number, total: number): number | null {
 
 type LocaleInput = { value: string; label: string };
 
+/** 合并语言页「按语言自动翻译」开关（Prisma ShopTargetLocale）。 */
+async function enrichCoverageWithAutoTranslate(
+  shop: string,
+  summary: CoverageSummary,
+): Promise<CoverageSummary> {
+  const targetRows = await listTargetLocales(shop);
+  const locales = await Promise.all(
+    summary.locales.map(async (row) => {
+      const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
+      const autoTranslate = match?.autoTranslate ?? false;
+      const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
+      const nextAutoUpdateHint = autoTranslate
+        ? formatNextAutoUpdateHint(nextAutoUpdateAt)
+        : null;
+      return {
+        ...row,
+        autoTranslate,
+        nextAutoUpdateAt,
+        nextAutoUpdateHint,
+      };
+    }),
+  );
+  return { ...summary, locales };
+}
+
 /** 仅从 Redis 读缓存，适合 loader 快速路径。 */
 export async function getCoverageSummaryFromCache({
   shop,
+  primaryLocale,
   targetLocales,
 }: {
   shop: string;
+  primaryLocale: string;
   targetLocales: LocaleInput[];
 }): Promise<CoverageSummary> {
   const locales: LocaleCoverageRow[] = [];
@@ -58,29 +97,34 @@ export async function getCoverageSummaryFromCache({
       total: agg.total,
       percent: ratioPercent(agg.translated, agg.total),
       cacheMissing: agg.cacheMissing,
+      autoTranslate: false,
+      nextAutoUpdateAt: null,
+      nextAutoUpdateHint: null,
     });
     translatedItems += agg.translated;
     totalItems += agg.total;
   }
 
-  return {
+  return enrichCoverageWithAutoTranslate(shop, {
     languageCount: targetLocales.length,
     translatedItems,
     totalItems,
     overallPercent: ratioPercent(translatedItems, totalItems),
     locales,
-  };
+  });
 }
 
 /** 现算 Shopify 并回写缓存（API 或需要完整数据时调用）。 */
 export async function computeCoverageSummary({
   admin,
   shop,
+  primaryLocale,
   targetLocales,
   forceRefresh = false,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
+  primaryLocale: string;
   targetLocales: LocaleInput[];
   /** true：与管理翻译「刷新统计」同效 —— invalidate 后强制现算并写 Redis */
   forceRefresh?: boolean;
@@ -130,16 +174,19 @@ export async function computeCoverageSummary({
       total,
       percent: ratioPercent(translated, total),
       cacheMissing,
+      autoTranslate: false,
+      nextAutoUpdateAt: null,
+      nextAutoUpdateHint: null,
     });
     translatedItems += translated;
     totalItems += total;
   }
 
-  return {
+  return enrichCoverageWithAutoTranslate(shop, {
     languageCount: targetLocales.length,
     translatedItems,
     totalItems,
     overallPercent: ratioPercent(translatedItems, totalItems),
     locales,
-  };
+  });
 }

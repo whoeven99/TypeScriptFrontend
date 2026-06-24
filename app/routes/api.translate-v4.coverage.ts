@@ -41,6 +41,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       };
     };
     const rows = payload.data?.shopLocales ?? [];
+    const primaryLocale = rows.find((r) => r.primary)?.locale ?? "en";
     targetLocales = rows
       .filter((r) => !r.primary && r.published)
       .map((r) => ({
@@ -57,6 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const summary = await computeCoverageSummary({
       admin,
       shop: shopName,
+      primaryLocale,
       targetLocales,
       forceRefresh,
     });
