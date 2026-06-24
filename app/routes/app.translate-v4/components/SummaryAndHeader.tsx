@@ -87,10 +87,10 @@ export function SummaryDonutCard({ summary }: Props) {
               justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: 44, fontWeight: 700, lineHeight: 1 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
               {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 22, color: v4Colors.textLight, marginTop: 4 }}>已翻译</span>
+            <span style={{ fontSize: 11, color: v4Colors.textLight, marginTop: 2 }}>已翻译</span>
           </div>
         </div>
       </div>
@@ -126,12 +126,12 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 20, color: v4Colors.textLight }}>{label}</div>
+      <div style={{ fontSize: 10, color: v4Colors.textLight }}>{label}</div>
       <div
         style={{
-          fontSize: 22,
+          fontSize: 11,
           fontWeight: 600,
-          marginTop: 2,
+          marginTop: 1,
           lineHeight: 1.25,
           wordBreak: "break-word",
         }}
