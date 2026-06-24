@@ -170,10 +170,30 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
             <span style={{ opacity: 0.75 }}>
               （{job.usedTokens.toLocaleString()} tokens）
             </span>
+            <TaskIdSuffix taskId={job.taskId} />
           </span>
-        ) : null}
+        ) : (
+          <TaskIdSuffix taskId={job.taskId} />
+        )}
       </div>
     </div>
+  );
+}
+
+function TaskIdSuffix({ taskId }: { taskId: string }) {
+  const prefix = taskId.split("-")[0] ?? taskId.slice(0, 8);
+  return (
+    <span
+      style={{
+        marginLeft: 8,
+        color: "#cbd5e1",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 11,
+        letterSpacing: "0.02em",
+      }}
+    >
+      #{prefix}
+    </span>
   );
 }
 

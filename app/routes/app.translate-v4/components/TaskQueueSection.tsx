@@ -179,28 +179,8 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
               {job.errorMessage}
             </div>
           ) : null}
-
-          <TaskIdHint taskId={job.taskId} />
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function TaskIdHint({ taskId }: { taskId: string }) {
-  const prefix = taskId.split("-")[0] ?? taskId.slice(0, 8);
-  return (
-    <div
-      style={{
-        marginTop: 10,
-        fontSize: 11,
-        color: "#cbd5e1",
-        textAlign: "right",
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        letterSpacing: "0.02em",
-      }}
-    >
-      #{prefix}
     </div>
   );
 }
