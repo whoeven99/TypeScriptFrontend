@@ -41,14 +41,6 @@ type Props = {
   migrated: boolean;
 };
 
-/** 迁移摘要——卡片展示「迁移了哪些数据」。与 api.translate-v4.migrate 返回一致。 */
-type MigrationSummary = {
-  already: boolean;
-  glossaryCount: number;
-  liquidCount: number;
-  settings: { primaryLocale: string; targets: string[]; autoTranslate: boolean };
-};
-
 /** 极速翻译默认翻译的模块（与 api.translate-v4.tasks 的默认保持一致）。 */
 const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
 
@@ -75,7 +67,6 @@ const ExpressTranslateCard = ({
   const [creating, setCreating] = useState(false);
   const [migratedState, setMigratedState] = useState(migrated);
   const [migrating, setMigrating] = useState(false);
-  const [summary, setSummary] = useState<MigrationSummary | null>(null);
   const [jobsExpanded, setJobsExpanded] = useState(false);
 
   const source = primaryLocale || "zh-CN";
@@ -92,24 +83,6 @@ const ExpressTranslateCard = ({
   );
   const hasMoreJobs = jobs.length > COLLAPSED_JOB_COUNT;
 
-  // 已迁移的店：进卡片时拉一次迁移摘要，持续展示「迁移了哪些数据」。
-  useEffect(() => {
-    if (!migratedState || summary) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/translate-v4/migrate");
-        const data = await res.json();
-        if (!cancelled && data?.ok && data.summary) setSummary(data.summary);
-      } catch (err) {
-        console.error("[expressV4] load migration summary failed:", err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [migratedState, summary]);
-
   const handleMigrate = useCallback(async () => {
     setMigrating(true);
     try {
@@ -123,7 +96,6 @@ const ExpressTranslateCard = ({
       });
       const data = await res.json();
       if (data?.ok && data.summary) {
-        setSummary(data.summary as MigrationSummary);
         setMigratedState(true);
         message.success("已迁移到新版翻译");
       } else {
@@ -249,19 +221,6 @@ const ExpressTranslateCard = ({
             >
               一键迁移
             </Button>
-          }
-        />
-      ) : summary ? (
-        <Alert
-          type="success"
-          showIcon
-          style={{ marginBottom: 12 }}
-          message="已迁移到新版翻译"
-          description={
-            `术语表 ${summary.glossaryCount} 条 · Liquid 规则 ${summary.liquidCount} 条 · ` +
-            `自动翻译 ${summary.settings.primaryLocale} → ${
-              summary.settings.targets.join("、") || "（未设目标语言）"
-            }（自动更新：${summary.settings.autoTranslate ? "开" : "关"}）`
           }
         />
       ) : null}
