@@ -227,6 +227,19 @@ export async function invalidateItemsCount(
   }
 }
 
+/** 失效某语言下全部 module 统计缓存（汇总页「刷新统计」）。best-effort。 */
+export async function invalidateAllItemsCountForLocale(
+  shop: string,
+  locale: string,
+): Promise<void> {
+  if (!locale) return;
+  try {
+    await getTranslateV4RedisClient().del(itemsCountKey(shop, locale));
+  } catch {
+    // best-effort
+  }
+}
+
 /** 现算后回写缓存，让后续刷新走缓存（best-effort）。 */
 async function writeStoredModuleCount(
   shop: string,
@@ -258,11 +271,14 @@ export async function getItemsCountByLabel({
   shop,
   target,
   resourceTypeLabel,
+  skipCache = false,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
   target: string;
   resourceTypeLabel: string;
+  /** true：跳过 Redis，现查 Shopify 并回写缓存。 */
+  skipCache?: boolean;
 }): Promise<ItemsCountRow[]> {
   const spec = LOCAL_COUNT_SPEC[resourceTypeLabel];
   if (!spec) return [];
@@ -270,7 +286,7 @@ export async function getItemsCountByLabel({
   let total = 0;
   let translated = 0;
   for (const module of spec.modules) {
-    let r = await readStoredModuleCount(shop, target, module);
+    let r = skipCache ? null : await readStoredModuleCount(shop, target, module);
     if (!r) {
       r = await countModuleItems({ admin, module, target });
       await writeStoredModuleCount(shop, target, module, r);

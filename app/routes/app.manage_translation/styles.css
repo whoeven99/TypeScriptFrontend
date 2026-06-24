@@ -9,7 +9,7 @@
 .manage-header-left {
     display: flex;
     align-items: center;
-    /* 如果需要垂直居中 */
+    gap: 8px;
 }
 
 .manage-action {
