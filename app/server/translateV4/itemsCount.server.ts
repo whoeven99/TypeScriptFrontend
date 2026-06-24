@@ -7,11 +7,27 @@
  *
  * 数据源仍是 Shopify（与 Java 一样需翻页拉取），本模块不提速，只保证去 Java + 口径一致。
  *
- * 覆盖范围（见 LOCAL_COUNT_SPEC）：v4 有对应 module 的类型；id-based 的
- * COLLECTION/PAGE/ARTICLE 亦用同一 translatableResources 枚举口径。
+ * 覆盖范围（见 LOCAL_COUNT_SPEC + COVERAGE_COUNT_LABELS）：与管理翻译汇总页
+ * 各卡片累加口径一致（不含 Policies）；id-based 类型亦用 translatableResources 枚举。
  */
 import { shouldIncludeFieldV2 } from "./translationFilter";
 import { getTranslateV4RedisClient } from "./redis.server";
+
+/**
+ * 与管理翻译汇总、v4 覆盖率、worker 校验写入 **共用** 的 Redis 统计缓存。
+ *
+ * - Key: `tsf:items_count:{shop}:{locale}`（与 Spark worker `redisV4.itemsCountKey` 一致）
+ * - Hash field: Shopify module（如 `PRODUCT`、`MENU`）
+ * - Hash value: `{ total, translated, updatedAt }`
+ *
+ * 刷新入口：
+ * - **管理翻译**「刷新统计」：invalidate 该语言 → 逐卡片 `forceRefresh` 写回（15 类，含 Policies）
+ * - **v4 智能翻译**「刷新统计」：`refreshItemsCountForLocale` × 各目标语言（14 类，不含 Policies）
+ * - **worker** 任务完成：仅更新该 job 的 modules 对应 field
+ */
+export function itemsCountRedisKey(shop: string, locale: string): string {
+  return `tsf:items_count:${shop}:${locale}`;
+}
 
 /** 仅依赖 admin.graphql，避免与 SDK 版本耦合。 */
 export type AdminGraphqlClient = {
@@ -39,8 +55,12 @@ export type ItemsCountRow = {
 const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
   Products: { type: "PRODUCT", modules: ["PRODUCT"] },
   Collections: { type: "COLLECTION", modules: ["COLLECTION"] },
+  /** 与管理翻译页 ITEMS_COUNT 的 `Collection` label 对齐。 */
+  Collection: { type: "COLLECTION", modules: ["COLLECTION"] },
   Pages: { type: "PAGE", modules: ["PAGE"] },
   Articles: { type: "ARTICLE", modules: ["ARTICLE"] },
+  /** 与管理翻译页 ITEMS_COUNT 的 `Article` label 对齐。 */
+  Article: { type: "ARTICLE", modules: ["ARTICLE"] },
   "Blog titles": { type: "BLOG", modules: ["BLOG"] },
   Filters: { type: "FILTER", modules: ["FILTER"] },
   Metaobjects: { type: "METAOBJECT", modules: ["METAOBJECT"] },
@@ -62,6 +82,30 @@ const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
     ],
   },
 };
+
+/** 管理翻译汇总页各卡片 resourceType label（与 manage_translation 路由一致）。 */
+export const MANAGE_TRANSLATION_COUNT_LABELS = [
+  "Products",
+  "Collection",
+  "Article",
+  "Blog titles",
+  "Pages",
+  "Filters",
+  "Metaobjects",
+  "Navigation",
+  "Notifications",
+  "Policies",
+  "Shop",
+  "Store metadata",
+  "Theme",
+  "Delivery",
+  "Shipping",
+] as const;
+
+/** 语言覆盖率：与管理翻译各卡片累加口径一致，不含 Policies（handle 非独立统计项）。 */
+export const COVERAGE_COUNT_LABELS = MANAGE_TRANSLATION_COUNT_LABELS.filter(
+  (label) => label !== "Policies",
+);
 
 const TRANSLATABLE_RESOURCES_QUERY = `#graphql
   query CountTranslatableResources(
@@ -173,7 +217,7 @@ export function isLocalItemsCountSupported(resourceTypeLabel: string): boolean {
 
 /** 与 worker redisV4.itemsCountKey 一致的缓存键（field=module，value=JSON）。 */
 function itemsCountKey(shop: string, locale: string): string {
-  return `tsf:items_count:${shop}:${locale}`;
+  return itemsCountRedisKey(shop, locale);
 }
 
 const ITEMS_COUNT_TTL = 7 * 24 * 3600; // 与 worker PROGRESS_TTL 一致
@@ -319,4 +363,111 @@ export async function getItemsCountByLabel({
       totalNumber: total,
     },
   ];
+}
+
+/** 从 Redis 缓存累加多个汇总卡片（Navigation/Theme 等多 module 卡片与单卡逻辑一致）。 */
+export async function sumItemsCountByLabelsFromCache(
+  shop: string,
+  locale: string,
+  labels: readonly string[] = COVERAGE_COUNT_LABELS,
+): Promise<{ translated: number; total: number; cacheMissing: boolean }> {
+  let translated = 0;
+  let total = 0;
+  let cacheMissing = false;
+
+  for (const label of labels) {
+    const spec = LOCAL_COUNT_SPEC[label];
+    if (!spec) {
+      cacheMissing = true;
+      continue;
+    }
+    for (const module of spec.modules) {
+      const cached = await readStoredModuleCount(shop, locale, module);
+      if (!cached) {
+        cacheMissing = true;
+        continue;
+      }
+      translated += cached.translated;
+      total += cached.total;
+    }
+  }
+
+  return { translated, total, cacheMissing };
+}
+
+/** 现算 Shopify 并累加多个汇总卡片（与管理翻译汇总页同口径）。 */
+export async function sumItemsCountByLabels({
+  admin,
+  shop,
+  target,
+  labels = COVERAGE_COUNT_LABELS,
+  skipCache = false,
+}: {
+  admin: AdminGraphqlClient;
+  shop: string;
+  target: string;
+  labels?: readonly string[];
+  skipCache?: boolean;
+}): Promise<{ translated: number; total: number }> {
+  let translated = 0;
+  let total = 0;
+
+  for (const label of labels) {
+    if (!isLocalItemsCountSupported(label)) continue;
+    const rows = await getItemsCountByLabel({
+      admin,
+      shop,
+      target,
+      resourceTypeLabel: label,
+      skipCache,
+    });
+    for (const row of rows) {
+      translated += row.translatedNumber;
+      total += row.totalNumber;
+    }
+  }
+
+  return { translated, total };
+}
+
+/**
+ * 强制刷新某一语言的统计缓存（invalidate + 现算 Shopify + 写 Redis）。
+ * 管理翻译/v4 覆盖率共用同一 Redis key；`labels` 决定刷新哪些卡片/module。
+ */
+export async function refreshItemsCountForLocale({
+  admin,
+  shop,
+  locale,
+  labels = MANAGE_TRANSLATION_COUNT_LABELS,
+}: {
+  admin: AdminGraphqlClient;
+  shop: string;
+  locale: string;
+  labels?: readonly string[];
+}): Promise<{ translated: number; total: number }> {
+  await invalidateAllItemsCountForLocale(shop, locale);
+  return sumItemsCountByLabels({
+    admin,
+    shop,
+    target: locale,
+    labels,
+    skipCache: true,
+  });
+}
+
+/** 批量刷新多语言（v4 覆盖率「刷新统计」）。 */
+export async function refreshItemsCountForLocales({
+  admin,
+  shop,
+  locales,
+  labels = COVERAGE_COUNT_LABELS,
+}: {
+  admin: AdminGraphqlClient;
+  shop: string;
+  locales: string[];
+  labels?: readonly string[];
+}): Promise<void> {
+  for (const locale of locales) {
+    await refreshItemsCountForLocale({ admin, shop, locale, labels });
+  }
 }

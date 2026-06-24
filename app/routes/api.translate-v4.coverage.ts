@@ -53,10 +53,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   try {
+    const forceRefresh = url.searchParams.get("refresh") === "1";
     const summary = await computeCoverageSummary({
       admin,
       shop: shopName,
       targetLocales,
+      forceRefresh,
     });
     return json({ ok: true, summary });
   } catch (err) {

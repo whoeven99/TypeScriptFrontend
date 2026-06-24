@@ -1,17 +1,15 @@
 /**
- * v4 页「语言覆盖率」与汇总统计 —— 默认模块 PRODUCT/COLLECTION/PAGE/ARTICLE，口径与 countModuleItems 一致。
- * 优先读 Redis 缓存（worker 或汇总页写入）；缺失时返回 null 覆盖率，由 API 触发现算。
+ * v4 页「语言覆盖率」与左上汇总 —— 口径与管理翻译汇总页各卡片累加一致
+ * （COVERAGE_COUNT_LABELS，不含 Policies / handle）。
+ * 优先读 Redis 缓存；缺失时由 API 触发现算。
  */
-import { getTranslateV4RedisClient } from "./redis.server";
-import { countModuleItems } from "./itemsCount.server";
+import {
+  COVERAGE_COUNT_LABELS,
+  refreshItemsCountForLocales,
+  sumItemsCountByLabels,
+  sumItemsCountByLabelsFromCache,
+} from "./itemsCount.server";
 import type { AdminGraphqlClient } from "./itemsCount.server";
-
-export const COVERAGE_DEFAULT_MODULES = [
-  "PRODUCT",
-  "COLLECTION",
-  "PAGE",
-  "ARTICLE",
-] as const;
 
 export type LocaleCoverageRow = {
   locale: string;
@@ -30,53 +28,6 @@ export type CoverageSummary = {
   overallPercent: number | null;
   locales: LocaleCoverageRow[];
 };
-
-const ITEMS_COUNT_TTL = 7 * 24 * 3600;
-
-function itemsCountKey(shop: string, locale: string): string {
-  return `tsf:items_count:${shop}:${locale}`;
-}
-
-async function readCachedModuleCount(
-  shop: string,
-  locale: string,
-  module: string,
-): Promise<{ total: number; translated: number } | null> {
-  try {
-    const raw = await getTranslateV4RedisClient().hget(
-      itemsCountKey(shop, locale),
-      module,
-    );
-    if (!raw) return null;
-    const v = JSON.parse(raw);
-    if (typeof v?.total === "number" && typeof v?.translated === "number") {
-      return { total: v.total, translated: v.translated };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-async function writeCachedModuleCount(
-  shop: string,
-  locale: string,
-  module: string,
-  value: { total: number; translated: number },
-): Promise<void> {
-  try {
-    const redis = getTranslateV4RedisClient();
-    const key = itemsCountKey(shop, locale);
-    await redis.hset(
-      key,
-      module,
-      JSON.stringify({ ...value, updatedAt: new Date().toISOString() }),
-    );
-    await redis.expire(key, ITEMS_COUNT_TTL);
-  } catch {
-    // best-effort
-  }
-}
 
 function ratioPercent(translated: number, total: number): number | null {
   if (total <= 0) return null;
@@ -98,30 +49,18 @@ export async function getCoverageSummaryFromCache({
   let totalItems = 0;
 
   for (const loc of targetLocales) {
-    let translated = 0;
-    let total = 0;
-    let cacheMissing = false;
-
-    for (const module of COVERAGE_DEFAULT_MODULES) {
-      const cached = await readCachedModuleCount(shop, loc.value, module);
-      if (!cached) {
-        cacheMissing = true;
-        continue;
-      }
-      translated += cached.translated;
-      total += cached.total;
-    }
+    const agg = await sumItemsCountByLabelsFromCache(shop, loc.value, COVERAGE_COUNT_LABELS);
 
     locales.push({
       locale: loc.value,
       label: loc.label,
-      translated,
-      total,
-      percent: ratioPercent(translated, total),
-      cacheMissing,
+      translated: agg.translated,
+      total: agg.total,
+      percent: ratioPercent(agg.translated, agg.total),
+      cacheMissing: agg.cacheMissing,
     });
-    translatedItems += translated;
-    totalItems += total;
+    translatedItems += agg.translated;
+    totalItems += agg.total;
   }
 
   return {
@@ -138,27 +77,50 @@ export async function computeCoverageSummary({
   admin,
   shop,
   targetLocales,
+  forceRefresh = false,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
   targetLocales: LocaleInput[];
+  /** true：与管理翻译「刷新统计」同效 —— invalidate 后强制现算并写 Redis */
+  forceRefresh?: boolean;
 }): Promise<CoverageSummary> {
+  if (forceRefresh && targetLocales.length > 0) {
+    await refreshItemsCountForLocales({
+      admin,
+      shop,
+      locales: targetLocales.map((l) => l.value),
+      labels: COVERAGE_COUNT_LABELS,
+    });
+  }
+
   const locales: LocaleCoverageRow[] = [];
   let translatedItems = 0;
   let totalItems = 0;
 
   for (const loc of targetLocales) {
-    let translated = 0;
-    let total = 0;
+    let translated: number;
+    let total: number;
+    let cacheMissing = false;
 
-    for (const module of COVERAGE_DEFAULT_MODULES) {
-      let cached = await readCachedModuleCount(shop, loc.value, module);
-      if (!cached) {
-        cached = await countModuleItems({ admin, module, target: loc.value });
-        await writeCachedModuleCount(shop, loc.value, module, cached);
-      }
-      translated += cached.translated;
-      total += cached.total;
+    if (forceRefresh) {
+      const cached = await sumItemsCountByLabelsFromCache(
+        shop,
+        loc.value,
+        COVERAGE_COUNT_LABELS,
+      );
+      translated = cached.translated;
+      total = cached.total;
+      cacheMissing = cached.cacheMissing;
+    } else {
+      const computed = await sumItemsCountByLabels({
+        admin,
+        shop,
+        target: loc.value,
+        labels: COVERAGE_COUNT_LABELS,
+      });
+      translated = computed.translated;
+      total = computed.total;
     }
 
     locales.push({
@@ -167,7 +129,7 @@ export async function computeCoverageSummary({
       translated,
       total,
       percent: ratioPercent(translated, total),
-      cacheMissing: false,
+      cacheMissing,
     });
     translatedItems += translated;
     totalItems += total;

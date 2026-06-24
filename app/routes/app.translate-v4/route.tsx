@@ -160,11 +160,12 @@ export default function AppTranslateV4() {
     }
   }, [shop]);
 
-  const refreshCoverage = useCallback(async () => {
+  const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
     try {
+      const refreshParam = forceRefresh ? "&refresh=1" : "";
       const res = await fetch(
-        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}${refreshParam}`,
       );
       const data = await res.json();
       if (data?.ok) {
@@ -307,7 +308,7 @@ export default function AppTranslateV4() {
     if (coverageAutoRefreshDone.current) return;
     if (!initialCoverage.locales.some((l) => l.cacheMissing)) return;
     coverageAutoRefreshDone.current = true;
-    void refreshCoverage();
+    void refreshCoverage(true);
   }, [initialCoverage.locales, refreshCoverage]);
 
   const translateSlotBusy = useMemo(
