@@ -13,6 +13,7 @@ import {
   setV4Control,
   setV4PausePending,
   clearV4Control,
+  clearV4PausePending,
   clearV4TaskRedis,
 } from "~/server/translateV4/redis.server";
 import {
@@ -121,6 +122,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       shopifyAccessToken: freshToken,
     });
     await clearV4Control(taskId); // 清除暂停/取消键，避免 resume 后立即再次中断
+    await clearV4PausePending(taskId); // 清掉「额度不足/暂停待落盘」标记，避免续跑后仍显示旧提示
 
     // 推 hint 让 worker 立即拾取
     const hintStage = resumeStatus.replace("_QUEUED", "").toLowerCase();

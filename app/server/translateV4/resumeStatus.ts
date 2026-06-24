@@ -1,5 +1,13 @@
 import type { TranslationV4Metrics, TranslationV4Status } from "./types";
 
+/** 翻译是否尚未覆盖全部资源（如额度中途暂停只翻了一部分，仍有未触及资源）。 */
+export function translateIncomplete(metrics: TranslationV4Metrics): boolean {
+  const total = metrics.translateTotal ?? 0;
+  if (total <= 0) return false;
+  const attempted = (metrics.translateDone ?? 0) + (metrics.translateFailed ?? 0);
+  return attempted < total;
+}
+
 /** 回写阶段是否仍有资源需要写入（含曾失败待重试的条目）。 */
 export function writebackNeedsRetry(metrics: TranslationV4Metrics): boolean {
   const total = metrics.writebackTotal ?? 0;
@@ -21,6 +29,12 @@ export function resolveResumeV4JobStatus(
   metrics: TranslationV4Metrics,
 ): TranslationV4Status | null {
   if (currentStatus !== "PAUSED" && currentStatus !== "FAILED") return null;
+
+  // 翻译还没覆盖全部资源（如额度中途暂停）→ 优先回到翻译，补译剩余资源。
+  // 必须在 writebackNeedsRetry 之前：否则会卡在写回循环（未翻译的资源永远写不出去）。
+  if (translateIncomplete(metrics)) {
+    return "TRANSLATE_QUEUED";
+  }
 
   if (writebackNeedsRetry(metrics)) {
     return "WRITEBACK_QUEUED";
