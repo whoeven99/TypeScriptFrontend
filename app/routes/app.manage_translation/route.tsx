@@ -41,6 +41,7 @@ import { InfoCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { shouldRevalidateManageTranslation } from "~/lib/routeShouldRevalidate";
 
 const { Text, Title } = Typography;
 interface TableDataType {
@@ -72,6 +73,18 @@ const ITEMS_COUNT_RESOURCE_TYPES = [
   "Shipping",
 ] as const;
 
+/** 避免 15 路并行 itemsCount 压满 Render 单实例（大店 Products 统计耗时长）。 */
+const ITEMS_COUNT_SUBMIT_GAP_MS = 400;
+
+function safeParseFormJson(value: FormDataEntryValue | null): unknown {
+  if (value == null || value === "") return null;
+  try {
+    return JSON.parse(String(value));
+  } catch {
+    return null;
+  }
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -80,6 +93,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     searchTerm: searchTerm || "",
   });
 };
+
+export const shouldRevalidate = shouldRevalidateManageTranslation;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -103,11 +118,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
-  const appInstalls = JSON.parse(formData.get("appInstalls") as string);
-  const itemsCount = JSON.parse(formData.get("itemsCount") as string);
-  const translateImage = JSON.parse(formData.get("translateImage") as string);
-  const replaceTranslateImage = JSON.parse(
-    formData.get("replaceTranslateImage") as string,
+  const appInstalls = safeParseFormJson(formData.get("appInstalls"));
+  const itemsCount = safeParseFormJson(formData.get("itemsCount"));
+  const translateImage = safeParseFormJson(formData.get("translateImage"));
+  const replaceTranslateImage = safeParseFormJson(
+    formData.get("replaceTranslateImage"),
   );
   switch (true) {
     case !!appInstalls:
@@ -281,6 +296,9 @@ const Index = () => {
 
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const pendingRefreshStatsRef = useRef(false);
+  /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
+  const itemsCountLoadTokenRef = useRef(0);
+  const loadedItemsCountLocaleRef = useRef<string | null>(null);
 
   const itemsCountFetcherByType = useMemo(
     () => ({
@@ -322,26 +340,36 @@ const Index = () => {
   const fetchAllItemsCounts = useCallback(
     (target: string, sourceCode: string, forceRefresh = false) => {
       if (!target || !sourceCode) return;
-      for (const resourceType of ITEMS_COUNT_RESOURCE_TYPES) {
-        const fetcher =
-          itemsCountFetcherByType[
-            resourceType as keyof typeof itemsCountFetcherByType
-          ];
-        const formData = new FormData();
-        formData.append(
-          "itemsCount",
-          JSON.stringify({
-            source: sourceCode,
-            target,
-            resourceType,
-            ...(forceRefresh ? { forceRefresh: true } : {}),
-          }),
-        );
-        fetcher.submit(formData, {
-          method: "post",
-          action: "/app/manage_translation",
-        });
-      }
+      const loadToken = ++itemsCountLoadTokenRef.current;
+
+      void (async () => {
+        for (const resourceType of ITEMS_COUNT_RESOURCE_TYPES) {
+          if (itemsCountLoadTokenRef.current !== loadToken) return;
+
+          const fetcher =
+            itemsCountFetcherByType[
+              resourceType as keyof typeof itemsCountFetcherByType
+            ];
+          const formData = new FormData();
+          formData.append(
+            "itemsCount",
+            JSON.stringify({
+              source: sourceCode,
+              target,
+              resourceType,
+              ...(forceRefresh ? { forceRefresh: true } : {}),
+            }),
+          );
+          fetcher.submit(formData, {
+            method: "post",
+            action: "/app/manage_translation",
+          });
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, ITEMS_COUNT_SUBMIT_GAP_MS),
+          );
+        }
+      })();
     },
     [itemsCountFetcherByType],
   );
@@ -893,14 +921,12 @@ const Index = () => {
   }, [shippingFetcher.data]);
 
   useEffect(() => {
-    const findItem = languageItemsData.find(
-      (item: any) => item?.language === currentLocale,
-    );
     const sourceCode = source?.code;
-    if (!findItem && sourceCode && currentLocale) {
-      fetchAllItemsCounts(currentLocale, sourceCode);
-    }
-  }, [currentLocale, source?.code, fetchAllItemsCounts, languageItemsData]);
+    if (!sourceCode || !currentLocale) return;
+    if (loadedItemsCountLocaleRef.current === currentLocale) return;
+    loadedItemsCountLocaleRef.current = currentLocale;
+    fetchAllItemsCounts(currentLocale, sourceCode);
+  }, [currentLocale, source?.code, fetchAllItemsCounts]);
 
   useEffect(() => {
     if (!pendingRefreshStatsRef.current) return;
@@ -909,6 +935,7 @@ const Index = () => {
     }
     pendingRefreshStatsRef.current = false;
     if (refreshStatsFetcher.data.success && currentLocale && source?.code) {
+      loadedItemsCountLocaleRef.current = null;
       fetchAllItemsCounts(currentLocale, source.code, true);
       shopify.toast.show(t("Translation statistics refreshed"));
     } else {
