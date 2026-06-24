@@ -10,22 +10,34 @@ type Props = {
 export function SummaryDonutCard({ summary }: Props) {
   const percent = summary.overallPercent ?? 0;
   const dash = `${percent} 100`;
+  const ringSize = 120;
 
   return (
     <div
       style={{
         background: v4Colors.summaryBg,
         borderRadius: 16,
-        padding: "28px 24px 20px",
+        padding: "20px 16px 16px",
         color: "#fff",
-        minHeight: 280,
         display: "flex",
         flexDirection: "column",
+        alignSelf: "stretch",
       }}
     >
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ position: "relative", width: 168, height: 168 }}>
-          <svg viewBox="0 0 36 36" style={{ width: 168, height: 168, transform: "rotate(-90deg)" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "8px 0 12px",
+        }}
+      >
+        <div style={{ position: "relative", width: ringSize, height: ringSize }}>
+          <svg
+            viewBox="0 0 36 36"
+            style={{ width: ringSize, height: ringSize, transform: "rotate(-90deg)" }}
+          >
             <circle
               cx="18"
               cy="18"
@@ -55,10 +67,10 @@ export function SummaryDonutCard({ summary }: Props) {
               justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }}>
+            <span style={{ fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
               {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 13, color: v4Colors.textLight, marginTop: 4 }}>已翻译</span>
+            <span style={{ fontSize: 12, color: v4Colors.textLight, marginTop: 3 }}>已翻译</span>
           </div>
         </div>
       </div>
@@ -66,26 +78,45 @@ export function SummaryDonutCard({ summary }: Props) {
         style={{
           display: "flex",
           justifyContent: "space-between",
+          gap: 8,
           borderTop: "1px solid rgba(255,255,255,0.12)",
-          paddingTop: 16,
-          marginTop: 8,
+          paddingTop: 12,
         }}
       >
         <StatFoot label="语言" value={`${summary.languageCount} 语言`} />
         <StatFoot
           label="已译条目"
           value={`${formatLargeCount(summary.translatedItems)} 已译条目`}
+          align="right"
         />
       </div>
     </div>
   );
 }
 
-function StatFoot({ label, value }: { label: string; value: string }) {
+function StatFoot({
+  label,
+  value,
+  align = "left",
+}: {
+  label: string;
+  value: string;
+  align?: "left" | "right";
+}) {
   return (
-    <div>
-      <div style={{ fontSize: 12, color: v4Colors.textLight }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    <div style={{ textAlign: align, minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: v4Colors.textLight }}>{label}</div>
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          marginTop: 2,
+          lineHeight: 1.3,
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }

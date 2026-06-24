@@ -343,9 +343,10 @@ export default function AppTranslateV4() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.15fr)",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 3fr)",
           gap: 16,
           marginBottom: 16,
+          alignItems: "stretch",
         }}
       >
         <SummaryDonutCard summary={coverage} />

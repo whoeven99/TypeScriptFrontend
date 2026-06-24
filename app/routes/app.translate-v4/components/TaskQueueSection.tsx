@@ -3,13 +3,8 @@ import { Button, Popconfirm } from "antd";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
-import { MODULE_LABELS } from "../constants";
-import {
-  jobDisplayPercent,
-  isStageBarComplete,
-  stageBarPercent,
-} from "../jobStageUtils";
-import { coverageBarColor, segmentBarStyle } from "./SummaryAndHeader";
+import { jobDisplayPercent } from "../jobStageUtils";
+import { JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -32,9 +27,6 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
       : job.statusLabel;
 
   const percent = jobDisplayPercent(job);
-  const m = job.metrics;
-  const stageColor =
-    job.status === "COMPLETED" ? v4Colors.successSoft : v4Colors.primary;
 
   const canResume = job.status === "PAUSED" || job.status === "FAILED";
   const canPause = canPauseV4Job(job.status) && !job.isStopping;
@@ -55,8 +47,6 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
     })();
   };
 
-  const moduleText = job.modules.map((mod) => MODULE_LABELS[mod] ?? mod).join(" · ");
-
   return (
     <div
       style={{
@@ -74,29 +64,6 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
             </span>
             <StatusTag status={job.status} label={displayStatusLabel} />
           </div>
-          <div
-            style={{
-              fontSize: 12,
-              color: v4Colors.textMuted,
-              marginTop: 4,
-              lineHeight: 1.4,
-            }}
-          >
-            {job.stageSummary || displayStatusLabel}
-            {moduleText ? ` · ${moduleText}` : ""}
-          </div>
-          <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
-            {[0, 1, 2, 3].map((idx) => {
-              const complete = isStageBarComplete(idx, m, job.status);
-              const filled = complete || stageBarPercent(idx, m, job.status) > 0;
-              return (
-                <div
-                  key={idx}
-                  style={segmentBarStyle(filled, complete ? v4Colors.successSoft : stageColor)}
-                />
-              );
-            })}
-          </div>
         </div>
         <Button size="small" onClick={() => setExpanded((e) => !e)}>
           {expanded ? "收起" : "查看"}
@@ -106,12 +73,15 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
       {expanded ? (
         <div
           style={{
-            marginTop: 12,
-            paddingTop: 12,
+            marginTop: 14,
+            paddingTop: 14,
             borderTop: `1px solid ${v4Colors.cardBorder}`,
           }}
         >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+          <JobSummaryStats job={job} />
+          <JobStageProgressList job={job} />
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
             {canResume ? (
               <Button
                 size="small"
@@ -156,8 +126,11 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
               </Popconfirm>
             ) : null}
           </div>
+
           {job.errorMessage ? (
-            <div style={{ fontSize: 12, color: "#dc2626" }}>{job.errorMessage}</div>
+            <div style={{ fontSize: 12, color: "#dc2626", marginTop: 8 }}>
+              {job.errorMessage}
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -219,7 +192,11 @@ function StatusTag({
 }) {
   const isDone = status === "COMPLETED";
   const isFail = status === "FAILED" || status === "CANCELLED";
-  const bg = isDone ? "rgba(34, 197, 94, 0.12)" : isFail ? "rgba(239, 68, 68, 0.1)" : v4Colors.primarySoft;
+  const bg = isDone
+    ? "rgba(34, 197, 94, 0.12)"
+    : isFail
+      ? "rgba(239, 68, 68, 0.1)"
+      : v4Colors.primarySoft;
   const color = isDone ? v4Colors.success : isFail ? "#dc2626" : v4Colors.primary;
 
   return (
@@ -258,7 +235,15 @@ export function TaskQueueSection({
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: v4Colors.text }}>
             任务队列 · {jobs.length}
           </h2>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: v4Colors.textMuted }}>
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              color: v4Colors.textMuted,
+            }}
+          >
             <span
               style={{
                 width: 6,
