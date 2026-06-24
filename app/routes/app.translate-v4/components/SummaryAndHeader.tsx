@@ -8,8 +8,8 @@ type Props = {
 };
 
 /** 固定正方形尺寸，不随右侧创建任务卡高度拉伸。 */
-const SUMMARY_CARD_SIZE = 148;
-const SUMMARY_RING_SIZE = 72;
+const SUMMARY_CARD_SIZE = 296;
+const SUMMARY_RING_SIZE = 144;
 
 export function SummaryDonutCard({ summary }: Props) {
   const percent = summary.overallPercent ?? 0;
@@ -19,8 +19,8 @@ export function SummaryDonutCard({ summary }: Props) {
     <div
       style={{
         background: v4Colors.summaryBg,
-        borderRadius: 16,
-        padding: "10px 12px 10px",
+        borderRadius: 20,
+        padding: "20px 24px 18px",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -87,10 +87,10 @@ export function SummaryDonutCard({ summary }: Props) {
               justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
+            <span style={{ fontSize: 44, fontWeight: 700, lineHeight: 1 }}>
               {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 11, color: v4Colors.textLight, marginTop: 2 }}>已翻译</span>
+            <span style={{ fontSize: 22, color: v4Colors.textLight, marginTop: 4 }}>已翻译</span>
           </div>
         </div>
       </div>
@@ -98,9 +98,9 @@ export function SummaryDonutCard({ summary }: Props) {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: 6,
+          gap: 12,
           borderTop: "1px solid rgba(255,255,255,0.12)",
-          paddingTop: 8,
+          paddingTop: 16,
           flexShrink: 0,
         }}
       >
@@ -126,12 +126,12 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 10, color: v4Colors.textLight }}>{label}</div>
+      <div style={{ fontSize: 20, color: v4Colors.textLight }}>{label}</div>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 22,
           fontWeight: 600,
-          marginTop: 1,
+          marginTop: 2,
           lineHeight: 1.25,
           wordBreak: "break-word",
         }}
