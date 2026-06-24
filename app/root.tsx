@@ -16,12 +16,22 @@ import { createHead } from "remix-island";
 
 import "./styles.css";
 
+function isNetworkFetchError(error: unknown): boolean {
+  return (
+    error instanceof TypeError &&
+    typeof error.message === "string" &&
+    /failed to fetch/i.test(error.message)
+  );
+}
+
 export function ErrorBoundary() {
   const error = useRouteError();
   console.error("Root Error:", error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
+  } else if (isNetworkFetchError(error)) {
+    errorCode = "503";
   }
 
   // 错误信息映射

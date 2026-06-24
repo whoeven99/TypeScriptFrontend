@@ -61,8 +61,9 @@ import {
   setUpdateTime,
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
-import { globalStore } from "~/globalStore";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
+import { globalStore } from "~/globalStore";
+import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -132,6 +133,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     translateV4ShopAllowed: isTranslateV4ShopAllowed(shop),
   });
 };
+
+export const shouldRevalidate = shouldRevalidateAppShell;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
