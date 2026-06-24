@@ -16,6 +16,7 @@ import {
   V4_LIMIT_UNLIMITED,
   type TranslationV4Module,
 } from "~/server/translateV4/types";
+import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 
 /** GET /api/translate-v4/tasks —— 列出本店 TsFrontend 创建的任务。 */
@@ -54,7 +55,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ ok: false, error: "目标语言不能和源语言相同" }, { status: 400 });
 
   const allowedSet = new Set<string>(TRANSLATION_V4_MODULES);
-  const modules = (body.modules ?? ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"])
+  const modules = (body.modules ?? defaultManualV4Modules())
     .map((m) => m.trim().toUpperCase())
     .filter((m) => allowedSet.has(m)) as TranslationV4Module[];
 

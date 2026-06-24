@@ -32,6 +32,8 @@ import {
 } from "~/store/modules/languageTableData";
 import { GetTranslate } from "~/api/JavaServer";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
+import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales } from "~/server/translateV4/targetLocale.server";
 import {
   setAutoTranslateCompat,
@@ -92,12 +94,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   const migrated = await isShopMigrated(shop);
+  const translateV4Allowed = isTranslateV4ShopAllowed(shop);
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
     migrated,
+    translateV4Allowed,
   });
 };
 
@@ -291,7 +295,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server, migrated } = useLoaderData<typeof loader>();
+  const { shop, mobile, server, migrated, translateV4Allowed } =
+    useLoaderData<typeof loader>();
+  const useV4LanguageStatus = migrated || translateV4Allowed;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -453,6 +459,7 @@ const Index = () => {
         const GetLanguageLocaleInfoFront = async () => {
           const languageList = await listLanguageStatusCompat({
             migrated,
+            translateV4Allowed,
             shop,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
@@ -461,16 +468,16 @@ const Index = () => {
           data = data.map((lang: any) => ({
             ...lang,
             status:
-              languageList.response?.find(
-                (language: any) => language.target === lang.locale,
-              )?.status || 0,
+              languageList.response?.find((language: any) =>
+                sameTranslationLocale(language.target, lang.locale),
+              )?.status ?? 0,
             autoTranslate:
-              languageList.response?.find(
-                (language: any) => language.target === lang.locale,
-              )?.autoTranslate || false,
+              languageList.response?.find((language: any) =>
+                sameTranslationLocale(language.target, lang.locale),
+              )?.autoTranslate ?? false,
           }));
           const findItem = data.find((data: any) => data.status === 2);
-          if (findItem && shopPrimaryLanguageData) {
+          if (findItem && shopPrimaryLanguageData && !useV4LanguageStatus) {
             const formData = new FormData();
             formData.append(
               "statusData",
@@ -530,6 +537,7 @@ const Index = () => {
   }, [deleteFetcher.data]);
 
   useEffect(() => {
+    if (useV4LanguageStatus) return;
     if (statusFetcher.data) {
       if (statusFetcher.data?.success) {
         const items = statusFetcher.data?.response?.translatesDOResult?.map(
@@ -566,9 +574,49 @@ const Index = () => {
         }
       }
     }
-  }, [statusFetcher.data]);
+  }, [statusFetcher.data, useV4LanguageStatus]);
 
   useEffect(() => {
+    if (!useV4LanguageStatus) return;
+    if (!dataSource?.some((item: any) => item.status === 2)) return;
+    if (!source?.code) return;
+
+    const pollV4LanguageStatus = async () => {
+      const languageList = await listLanguageStatusCompat({
+        migrated,
+        translateV4Allowed,
+        shop,
+        server: server as string,
+        source: source.code,
+      });
+      const rows = languageList?.response ?? [];
+      for (const lang of dataSource) {
+        const row = rows.find((r: { target: string }) =>
+          sameTranslationLocale(r.target, lang.locale),
+        );
+        if (row) {
+          dispatch(setStatusState({ target: lang.locale, status: row.status }));
+        }
+      }
+    };
+
+    const intervalId = setInterval(() => {
+      void pollV4LanguageStatus();
+    }, 3000);
+    return () => clearInterval(intervalId);
+  }, [
+    dataSource,
+    useV4LanguageStatus,
+    source?.code,
+    shop,
+    server,
+    migrated,
+    translateV4Allowed,
+    dispatch,
+  ]);
+
+  useEffect(() => {
+    if (useV4LanguageStatus) return;
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
       if (source?.code) {
         const formData = new FormData();
@@ -589,7 +637,7 @@ const Index = () => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [dataSource]);
+  }, [dataSource, useV4LanguageStatus, source?.code]);
 
   const columns = [
     {
@@ -762,6 +810,7 @@ const Index = () => {
     if (row) {
       const data = await setAutoTranslateCompat({
         migrated,
+        translateV4Allowed,
         shopName: shop,
         source: source?.code,
         target: row.locale,

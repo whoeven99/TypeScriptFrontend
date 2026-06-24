@@ -4,8 +4,8 @@ import { Button } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
+  CREATE_TASK_MODULE_LABELS,
   CREATE_TASK_MODULE_OPTIONS,
-  MODULE_LABELS,
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
@@ -127,7 +127,7 @@ export function CreateTaskCard({
                 <span style={{ fontSize: 14, lineHeight: 1 }}>
                   {selected ? "✓" : "+"}
                 </span>
-                {MODULE_LABELS[mod] ?? mod}
+                {CREATE_TASK_MODULE_LABELS[mod] ?? mod}
               </button>
             );
           })}

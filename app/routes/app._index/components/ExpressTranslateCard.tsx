@@ -17,6 +17,7 @@ import {
   formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
 
 const { Title, Text } = Typography;
 
@@ -41,8 +42,8 @@ type Props = {
   migrated: boolean;
 };
 
-/** 极速翻译默认翻译的模块（与 api.translate-v4.tasks 的默认保持一致）。 */
-const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
+/** 极速翻译默认模块（与 v2 手动创建默认、api.translate-v4.tasks 一致）。 */
+const DEFAULT_MODULES = defaultManualV4Modules();
 
 /** 折叠时默认展示的任务条数 */
 const COLLAPSED_JOB_COUNT = 2;

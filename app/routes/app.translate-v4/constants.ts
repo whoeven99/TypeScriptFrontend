@@ -1,28 +1,19 @@
-export const MODULE_LABELS: Record<string, string> = {
-  PRODUCT: "商品",
-  PRODUCT_OPTION: "商品选项",
-  PRODUCT_OPTION_VALUE: "商品选项值",
-  COLLECTION: "商品系列",
-  ONLINE_STORE_THEME_APP_EMBED: "主题 App 嵌入",
-  ONLINE_STORE_THEME_JSON_TEMPLATE: "主题模板",
-  ONLINE_STORE_THEME_SECTION_GROUP: "主题区块组",
-  ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS: "主题设置",
-  MENU: "导航菜单",
-  LINK: "链接",
-  DELIVERY_METHOD_DEFINITION: "配送方式",
-  FILTER: "筛选器",
-  METAFIELD: "元字段",
-  METAOBJECT: "元对象",
-  PAYMENT_GATEWAY: "支付网关",
-  SELLING_PLAN: "销售计划",
-  SELLING_PLAN_GROUP: "销售计划组",
-  SHOP: "店铺信息",
-  ARTICLE: "博客文章",
-  BLOG: "博客",
-  PAGE: "页面",
-};
+import {
+  DEFAULT_V2_MODULE_KEYS,
+  V2_MODULE_LABELS,
+  V2_MODULE_OPTION_KEYS,
+  V4_MODULE_LABELS,
+  defaultManualV4Modules,
+} from "~/server/translateV4/moduleCatalog";
 
-export const DEFAULT_MODULES = ["PRODUCT", "COLLECTION", "PAGE", "ARTICLE"];
+/** v4 Shopify resource module 展示名。 */
+export const MODULE_LABELS: Record<string, string> = V4_MODULE_LABELS;
+
+/** 创建任务默认勾选的 v2 模块 key（对齐 v2 translateSettings3）。 */
+export const DEFAULT_MODULE_KEYS = [...DEFAULT_V2_MODULE_KEYS];
+
+/** 创建任务时默认展开的 v4 modules（供 API / 快捷创建使用）。 */
+export const DEFAULT_MODULES = defaultManualV4Modules();
 
 export const QUOTA_TOKEN_MULTIPLIER = 1.5;
 
@@ -31,13 +22,8 @@ export const AI_MODEL_OPTIONS = [
   { value: "deepseek-v4-pro", label: "deepseek-v4-pro" },
 ];
 
-/** 创建任务卡片上展示的模块（与设计稿一致 + 其余可切换）。 */
-export const CREATE_TASK_MODULE_OPTIONS = [
-  "PRODUCT",
-  "COLLECTION",
-  "PAGE",
-  "ARTICLE",
-  "MENU",
-  "ONLINE_STORE_THEME_JSON_TEMPLATE",
-  "FILTER",
-] as const;
+/** 创建任务卡片 — v2 对齐的模块选项（不含 handle）。 */
+export const CREATE_TASK_MODULE_OPTIONS = [...V2_MODULE_OPTION_KEYS];
+
+/** v2 模块 key 展示名。 */
+export const CREATE_TASK_MODULE_LABELS: Record<string, string> = V2_MODULE_LABELS;

@@ -19,7 +19,8 @@ import {
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
-import { DEFAULT_MODULES } from "./constants";
+import { DEFAULT_MODULE_KEYS } from "./constants";
+import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4PageStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
@@ -111,7 +112,7 @@ export default function AppTranslateV4() {
   const [coverageLoading, setCoverageLoading] = useState(false);
   const source = primaryLocale || "zh-CN";
   const [targets, setTargets] = useState<string[]>([]);
-  const [modules, setModules] = useState<string[]>(DEFAULT_MODULES);
+  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
   const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
@@ -225,7 +226,7 @@ export default function AppTranslateV4() {
       const result = await createTranslateV4Tasks({
         source,
         targets,
-        modules,
+        modules: expandV2ModuleKeys(moduleKeys),
         aiModel,
         isCover,
         isHandle,
@@ -260,7 +261,7 @@ export default function AppTranslateV4() {
   }, [
     source,
     targets,
-    modules,
+    moduleKeys,
     aiModel,
     isCover,
     isHandle,
@@ -323,7 +324,7 @@ export default function AppTranslateV4() {
 
   return (
     <div style={v4PageStyle}>
-      <TitleBar title="智能翻译 (v4)" />
+      <TitleBar title="智能翻译" />
 
       <PageHeaderBar shop={shop} credits={remainingCredits} />
 
@@ -343,10 +344,10 @@ export default function AppTranslateV4() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 3fr)",
+          gridTemplateColumns: "auto minmax(0, 1fr)",
           gap: 16,
           marginBottom: 16,
-          alignItems: "stretch",
+          alignItems: "start",
         }}
       >
         <SummaryDonutCard summary={coverage} />
@@ -356,8 +357,8 @@ export default function AppTranslateV4() {
           targetOptions={targetOptions}
           targets={targets}
           onTargetsChange={setTargets}
-          modules={modules}
-          onModulesChange={setModules}
+          modules={moduleKeys}
+          onModulesChange={setModuleKeys}
           remainingCredits={remainingCredits}
           creating={creating}
           onCreate={handleCreate}

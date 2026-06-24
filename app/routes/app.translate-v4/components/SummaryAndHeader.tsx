@@ -7,21 +7,31 @@ type Props = {
   summary: CoverageSummary;
 };
 
+/** 固定正方形尺寸，不随右侧创建任务卡高度拉伸。 */
+const SUMMARY_CARD_SIZE = 148;
+const SUMMARY_RING_SIZE = 72;
+
 export function SummaryDonutCard({ summary }: Props) {
   const percent = summary.overallPercent ?? 0;
   const dash = `${percent} 100`;
-  const ringSize = 120;
 
   return (
     <div
       style={{
         background: v4Colors.summaryBg,
         borderRadius: 16,
-        padding: "20px 16px 16px",
+        padding: "10px 12px 10px",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
-        alignSelf: "stretch",
+        width: SUMMARY_CARD_SIZE,
+        height: SUMMARY_CARD_SIZE,
+        minWidth: SUMMARY_CARD_SIZE,
+        minHeight: SUMMARY_CARD_SIZE,
+        maxWidth: SUMMARY_CARD_SIZE,
+        maxHeight: SUMMARY_CARD_SIZE,
+        boxSizing: "border-box",
+        flexShrink: 0,
       }}
     >
       <div
@@ -30,13 +40,23 @@ export function SummaryDonutCard({ summary }: Props) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "8px 0 12px",
+          minHeight: 0,
         }}
       >
-        <div style={{ position: "relative", width: ringSize, height: ringSize }}>
+        <div
+          style={{
+            position: "relative",
+            width: SUMMARY_RING_SIZE,
+            height: SUMMARY_RING_SIZE,
+          }}
+        >
           <svg
             viewBox="0 0 36 36"
-            style={{ width: ringSize, height: ringSize, transform: "rotate(-90deg)" }}
+            style={{
+              width: SUMMARY_RING_SIZE,
+              height: SUMMARY_RING_SIZE,
+              transform: "rotate(-90deg)",
+            }}
           >
             <circle
               cx="18"
@@ -67,10 +87,10 @@ export function SummaryDonutCard({ summary }: Props) {
               justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
               {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 12, color: v4Colors.textLight, marginTop: 3 }}>已翻译</span>
+            <span style={{ fontSize: 11, color: v4Colors.textLight, marginTop: 2 }}>已翻译</span>
           </div>
         </div>
       </div>
@@ -78,9 +98,10 @@ export function SummaryDonutCard({ summary }: Props) {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: 8,
+          gap: 6,
           borderTop: "1px solid rgba(255,255,255,0.12)",
-          paddingTop: 12,
+          paddingTop: 8,
+          flexShrink: 0,
         }}
       >
         <StatFoot label="语言" value={`${summary.languageCount} 语言`} />
@@ -105,13 +126,13 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: v4Colors.textLight }}>{label}</div>
+      <div style={{ fontSize: 10, color: v4Colors.textLight }}>{label}</div>
       <div
         style={{
-          fontSize: 13,
+          fontSize: 11,
           fontWeight: 600,
-          marginTop: 2,
-          lineHeight: 1.3,
+          marginTop: 1,
+          lineHeight: 1.25,
           wordBreak: "break-word",
         }}
       >

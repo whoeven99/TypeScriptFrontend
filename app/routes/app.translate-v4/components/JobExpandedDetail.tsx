@@ -1,7 +1,13 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { StageName, TranslationV4Status } from "~/server/translateV4/types";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
-import { stageOf } from "../jobStageUtils";
+import {
+  formatElapsed,
+  formatJobStartTime,
+  jobElapsedMs,
+  jobQuotaCredits,
+  stageOf,
+} from "../jobStageUtils";
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
@@ -125,24 +131,12 @@ function stageElapsedMs(
   return Number.isFinite(ms) && ms >= 0 ? ms : null;
 }
 
-function jobElapsedMs(job: TranslationJobProgressSummary): number | null {
-  const freezeAt =
-    job.status === "PAUSED" || job.status === "CANCELLED" || job.isTerminal
-      ? job.updatedAt
-      : null;
-  const ms = stageElapsedMs({ startedAt: job.createdAt, endedAt: freezeAt });
-  return ms;
-}
-
 export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary }) {
   const m = job.metrics;
   const translatedResources = m.translateDone;
   const resourceTotal = m.translateTotal || taskResourceTotal(m);
   const elapsed = jobElapsedMs(job);
-  const credits =
-    job.usedTokens > 0
-      ? Math.round(job.usedTokens * QUOTA_TOKEN_MULTIPLIER)
-      : 0;
+  const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -173,10 +167,54 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
             <strong style={{ color: "#0f172a" }}>
               {credits.toLocaleString()} 积分
             </strong>
-            <span style={{ opacity: 0.75 }}>（{job.usedTokens.toLocaleString()} tokens）</span>
+            <span style={{ opacity: 0.75 }}>
+              （{job.usedTokens.toLocaleString()} tokens）
+            </span>
           </span>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** 收起态：启动时间、耗时、积分一行摘要。 */
+export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }) {
+  const elapsed = jobElapsedMs(job);
+  const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
+  const startTime = formatJobStartTime(job.createdAt);
+
+  const items: string[] = [];
+  if (startTime) items.push(`启动 ${startTime}`);
+  if (elapsed != null) items.push(`耗时 ${formatElapsed(elapsed)}`);
+  if (job.usedTokens > 0) {
+    items.push(`消耗 ${credits.toLocaleString()} 积分`);
+  } else if (!job.isTerminal) {
+    items.push("积分统计中");
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        color: "#64748b",
+        lineHeight: 1.4,
+      }}
+    >
+      {items.map((text, i) => (
+        <span key={text} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          {i > 0 ? (
+            <span style={{ color: "#cbd5e1", userSelect: "none" }}>·</span>
+          ) : null}
+          <span>{text}</span>
+        </span>
+      ))}
     </div>
   );
 }

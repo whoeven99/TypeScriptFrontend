@@ -97,3 +97,41 @@ export function jobDisplayPercent(job: TranslationJobProgressSummary): number {
   if (job.status === "COMPLETED") return 100;
   return 0;
 }
+
+export function formatElapsed(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return `${s}秒`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  if (m < 60) return rs ? `${m}分${rs}秒` : `${m}分`;
+  const h = Math.floor(m / 60);
+  return `${h}时${m % 60}分`;
+}
+
+export function jobElapsedMs(job: TranslationJobProgressSummary): number | null {
+  const freezeAt =
+    job.status === "PAUSED" || job.status === "CANCELLED" || job.isTerminal
+      ? job.updatedAt
+      : null;
+  if (!job.createdAt) return null;
+  const end = freezeAt ? new Date(freezeAt).getTime() : Date.now();
+  const ms = end - new Date(job.createdAt).getTime();
+  return Number.isFinite(ms) && ms >= 0 ? ms : null;
+}
+
+export function formatJobStartTime(createdAt: string): string | null {
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+export function jobQuotaCredits(usedTokens: number, multiplier = 1.5): number {
+  return usedTokens > 0 ? Math.round(usedTokens * multiplier) : 0;
+}

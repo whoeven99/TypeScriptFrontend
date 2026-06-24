@@ -7,9 +7,8 @@
  *
  * 数据源仍是 Shopify（与 Java 一样需翻页拉取），本模块不提速，只保证去 Java + 口径一致。
  *
- * 覆盖范围（见 LOCAL_COUNT_SPEC）：仅纳入「v4 有对应 module」且「非 id-based 发布过滤」
- * 的类型。COLLECTION/PAGE/ARTICLE、无 v4 module 的 Notifications/Policies/Shipping、
- * 以及 Theme，暂仍走 Java。
+ * 覆盖范围（见 LOCAL_COUNT_SPEC）：v4 有对应 module 的类型；id-based 的
+ * COLLECTION/PAGE/ARTICLE 亦用同一 translatableResources 枚举口径。
  */
 import { shouldIncludeFieldV2 } from "./translationFilter";
 import { getTranslateV4RedisClient } from "./redis.server";
@@ -39,12 +38,29 @@ export type ItemsCountRow = {
  */
 const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
   Products: { type: "PRODUCT", modules: ["PRODUCT"] },
+  Collections: { type: "COLLECTION", modules: ["COLLECTION"] },
+  Pages: { type: "PAGE", modules: ["PAGE"] },
+  Articles: { type: "ARTICLE", modules: ["ARTICLE"] },
   "Blog titles": { type: "BLOG", modules: ["BLOG"] },
+  Filters: { type: "FILTER", modules: ["FILTER"] },
   Metaobjects: { type: "METAOBJECT", modules: ["METAOBJECT"] },
   "Store metadata": { type: "METAFIELD", modules: ["METAFIELD"] },
   Delivery: { type: "DELIVERY_METHOD_DEFINITION", modules: ["DELIVERY_METHOD_DEFINITION"] },
   Shop: { type: "SHOP", modules: ["SHOP"] },
   Navigation: { type: "LINK", modules: ["MENU", "LINK"] },
+  Notifications: { type: "EMAIL_TEMPLATE", modules: ["EMAIL_TEMPLATE"] },
+  Policies: { type: "SHOP_POLICY", modules: ["SHOP_POLICY"] },
+  Shipping: { type: "PACKING_SLIP_TEMPLATE", modules: ["PACKING_SLIP_TEMPLATE"] },
+  Theme: {
+    type: "ONLINE_STORE_THEME_JSON_TEMPLATE",
+    modules: [
+      "ONLINE_STORE_THEME_JSON_TEMPLATE",
+      "ONLINE_STORE_THEME_SECTION_GROUP",
+      "ONLINE_STORE_THEME_SETTINGS_CATEGORY",
+      "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+      "ONLINE_STORE_THEME_LOCALE_CONTENT",
+    ],
+  },
 };
 
 const TRANSLATABLE_RESOURCES_QUERY = `#graphql

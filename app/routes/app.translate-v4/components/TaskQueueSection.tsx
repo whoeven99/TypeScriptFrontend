@@ -4,7 +4,11 @@ import type { TranslationJobProgressSummary } from "~/server/translateV4/progres
 import { canPauseV4Job } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { jobDisplayPercent } from "../jobStageUtils";
-import { JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
+import {
+  JobCollapsedMeta,
+  JobSummaryStats,
+  JobStageProgressList,
+} from "./JobExpandedDetail";
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -55,19 +59,73 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
         marginBottom: 10,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
         <ProgressRing percent={percent} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
             <span style={{ fontWeight: 700, fontSize: 14, color: v4Colors.text }}>
               {job.source} → {job.target}
             </span>
             <StatusTag status={job.status} label={displayStatusLabel} />
           </div>
+          {!expanded ? <JobCollapsedMeta job={job} /> : null}
         </div>
-        <Button size="small" onClick={() => setExpanded((e) => !e)}>
-          {expanded ? "收起" : "查看"}
-        </Button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            flexShrink: 0,
+          }}
+        >
+          {canDelete ? (
+            <Popconfirm
+              title="删除该任务？"
+              description="会清除任务记录及其翻译内容数据，不可恢复。"
+              okText="删除"
+              okButtonProps={{ danger: true }}
+              cancelText="取消"
+              onConfirm={() => runAction("delete")}
+            >
+              <Button
+                type="text"
+                size="small"
+                loading={pending === "delete"}
+                style={{
+                  color: v4Colors.textMuted,
+                  fontSize: 12,
+                  height: 28,
+                  paddingInline: 8,
+                }}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
+          <Button
+            size="small"
+            type="text"
+            onClick={() => setExpanded((e) => !e)}
+            style={{
+              color: v4Colors.primary,
+              fontSize: 12,
+              fontWeight: 600,
+              height: 28,
+              paddingInline: 10,
+              background: expanded ? v4Colors.primarySoft : "transparent",
+              borderRadius: 8,
+            }}
+          >
+            {expanded ? "收起" : "查看"}
+          </Button>
+        </div>
       </div>
 
       {expanded ? (
@@ -81,51 +139,40 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
           <JobSummaryStats job={job} />
           <JobStageProgressList job={job} />
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-            {canResume ? (
-              <Button
-                size="small"
-                type="primary"
-                loading={pending === "resume"}
-                onClick={() => runAction("resume")}
-              >
-                继续
-              </Button>
-            ) : null}
-            {canPause ? (
-              <Button
-                size="small"
-                loading={pending === "pause"}
-                onClick={() => runAction("pause")}
-              >
-                暂停
-              </Button>
-            ) : null}
-            {canCancel ? (
-              <Button
-                size="small"
-                danger
-                loading={pending === "cancel"}
-                onClick={() => runAction("cancel")}
-              >
-                取消
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Popconfirm
-                title="删除该任务？"
-                description="会清除任务记录及其翻译内容数据，不可恢复。"
-                okText="删除"
-                okButtonProps={{ danger: true }}
-                cancelText="取消"
-                onConfirm={() => runAction("delete")}
-              >
-                <Button size="small" danger loading={pending === "delete"}>
-                  删除
-                </Button>
-              </Popconfirm>
-            ) : null}
-          </div>
+          {(canResume || canPause || canCancel) ? (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginTop: 12,
+              }}
+            >
+              {canResume ? (
+                <ActionChip
+                  label="继续"
+                  primary
+                  loading={pending === "resume"}
+                  onClick={() => runAction("resume")}
+                />
+              ) : null}
+              {canPause ? (
+                <ActionChip
+                  label="暂停"
+                  loading={pending === "pause"}
+                  onClick={() => runAction("pause")}
+                />
+              ) : null}
+              {canCancel ? (
+                <ActionChip
+                  label="取消"
+                  danger
+                  loading={pending === "cancel"}
+                  onClick={() => runAction("cancel")}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           {job.errorMessage ? (
             <div style={{ fontSize: 12, color: "#dc2626", marginTop: 8 }}>
@@ -135,6 +182,48 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function ActionChip({
+  label,
+  onClick,
+  loading,
+  primary,
+  danger,
+}: {
+  label: string;
+  onClick: () => void;
+  loading?: boolean;
+  primary?: boolean;
+  danger?: boolean;
+}) {
+  const border = danger ? "#fecaca" : primary ? v4Colors.primary : "#e2e8f0";
+  const bg = danger ? "rgba(239, 68, 68, 0.06)" : primary ? v4Colors.primarySoft : "#fff";
+  const color = danger ? "#dc2626" : primary ? v4Colors.primary : v4Colors.text;
+
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 12px",
+        borderRadius: 8,
+        border: `1px solid ${border}`,
+        background: bg,
+        color,
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: loading ? "default" : "pointer",
+        opacity: loading ? 0.7 : 1,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
