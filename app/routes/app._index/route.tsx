@@ -136,6 +136,9 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  /** 已迁移到 v4 的店：首页只展示「极速翻译」，隐藏 v2 仪表盘与翻译进度卡。 */
+  const v4MigratedHome = expressV4.enabled && expressV4.migrated;
+
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasStoppedTaskIds = useRef<number[]>([]);
 
@@ -186,7 +189,11 @@ const Index = () => {
         action: "/log",
       },
     );
-    getAllProgressDataFromEnd({ active: false });
+    if (!v4MigratedHome) {
+      getAllProgressDataFromEnd({ active: false });
+    } else {
+      setIsProgressLoading(false);
+    }
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -217,6 +224,8 @@ const Index = () => {
   }, [themeFetcher.data]);
 
   useEffect(() => {
+    if (v4MigratedHome) return;
+
     console.log("needRepoll: ", needRepoll);
 
     if (needRepoll) {
@@ -225,7 +234,7 @@ const Index = () => {
       clearTimeout(pollingTimerRef.current);
       pollingTimerRef.current = null;
     }
-  }, [needRepoll]);
+  }, [needRepoll, v4MigratedHome]);
 
   const columns = [
     {
@@ -461,14 +470,18 @@ const Index = () => {
         }}
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
-          <ProgressingCard
-            dataSource={progressDataSource}
-            isProgressLoading={isProgressLoading}
-            isMobile={isMobile}
-            setProgressingModalOpen={setProgressingModalOpen}
-            updateProgressDataSourceStatus={updateProgressDataSourceStatus}
-          />
+          {!v4MigratedHome ? (
+            <>
+              <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
+              <ProgressingCard
+                dataSource={progressDataSource}
+                isProgressLoading={isProgressLoading}
+                isMobile={isMobile}
+                setProgressingModalOpen={setProgressingModalOpen}
+                updateProgressDataSourceStatus={updateProgressDataSourceStatus}
+              />
+            </>
+          ) : null}
           {expressV4.enabled ? (
             <ExpressTranslateCard
               shop={shop}
@@ -667,13 +680,15 @@ const Index = () => {
           </Link>
         </Text>
       </Space>
-      <ProgressingModal
-        open={progressingModalOpen}
-        onCancel={() => setProgressingModalOpen(false)}
-        dataSource={progressDataSource}
-        isMobile={isMobile}
-        updateProgressDataSourceStatus={updateProgressDataSourceStatus}
-      />
+      {!v4MigratedHome ? (
+        <ProgressingModal
+          open={progressingModalOpen}
+          onCancel={() => setProgressingModalOpen(false)}
+          dataSource={progressDataSource}
+          isMobile={isMobile}
+          updateProgressDataSourceStatus={updateProgressDataSourceStatus}
+        />
+      ) : null}
     </Page>
   );
 };

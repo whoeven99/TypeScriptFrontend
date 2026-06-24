@@ -105,6 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshItemsCountTarget = formData.get("refreshItemsCountTarget");
   if (typeof refreshItemsCountTarget === "string" && refreshItemsCountTarget) {
     try {
+      // 与管理翻译/v4 共用 Redis：tsf:items_count:{shop}:{locale}（见 itemsCountRedisKey）
       await invalidateAllItemsCountForLocale(shop, refreshItemsCountTarget);
       return { success: true, errorCode: 0, errorMsg: "", response: null };
     } catch (error) {

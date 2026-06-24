@@ -8,6 +8,14 @@ import {
   setAutoTranslate,
   listTargetLocales,
 } from "~/server/translateV4/targetLocale.server";
+import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { listLanguageStatusFromV4 } from "~/server/translateV4/languageStatus.server";
+
+async function shouldUseV4LanguageStatus(shop: string): Promise<boolean> {
+  if (isTranslateV4ShopAllowed(shop)) return true;
+  return await isShopMigrated(shop);
+}
 
 /**
  * GET /api/translate-v4/target-locale —— 列出本店每语言状态（仅迁移后的店）。
@@ -16,14 +24,22 @@ import {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   try {
-    const rows = await listTargetLocales(session.shop);
+    if (!(await shouldUseV4LanguageStatus(session.shop))) {
+      const rows = await listTargetLocales(session.shop);
+      return json({
+        success: true,
+        response: rows.map((r) => ({
+          target: r.locale,
+          status: r.status,
+          autoTranslate: r.autoTranslate,
+        })),
+      });
+    }
+
+    const rows = await listLanguageStatusFromV4(session.shop);
     return json({
       success: true,
-      response: rows.map((r) => ({
-        target: r.locale,
-        status: r.status,
-        autoTranslate: r.autoTranslate,
-      })),
+      response: rows,
     });
   } catch (err) {
     console.error("[target-locale] list failed:", err);
