@@ -150,8 +150,8 @@ const TranslationPanel = () => {
             <Flex justify="space-between" gap="8px">
               <Button
                 type="default"
-                style={{ color: "#999", fontSize: "12px" }}
-                onClick={() => navigate("/app/manage_translation")}
+                style={{
+                  color: "var(--app-color-text-secondary)",
                   fontSize: "var(--app-font-size-caption)",
                 }}
                 onClick={() => navigate("/app/manage_translation")}

@@ -198,7 +198,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\repo\\TypeScriptFrontend\\app\\generated\\prisma",
+      "value": "/Users/cedric/Documents/GitHub/TypeScriptFrontend/app/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -207,17 +207,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\repo\\TypeScriptFrontend\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/cedric/Documents/GitHub/TypeScriptFrontend/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.19.3",
@@ -226,6 +225,7 @@ const config = {
     "db"
   ],
   "activeProvider": "sqlite",
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -274,8 +274,8 @@ exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
-path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "app/generated/prisma/query_engine-windows.dll.node")
+path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
+path.join(process.cwd(), "app/generated/prisma/libquery_engine-darwin-arm64.dylib.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "app/generated/prisma/schema.prisma")

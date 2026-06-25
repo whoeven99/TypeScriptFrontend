@@ -197,7 +197,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\repo\\TypeScriptFrontend\\app\\generated\\prisma",
+      "value": "/Users/cedric/Documents/GitHub/TypeScriptFrontend/app/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -206,17 +206,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\repo\\TypeScriptFrontend\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/cedric/Documents/GitHub/TypeScriptFrontend/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.19.3",
@@ -225,6 +224,7 @@ const config = {
     "db"
   ],
   "activeProvider": "sqlite",
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {
