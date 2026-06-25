@@ -182,7 +182,7 @@ const ExpressTranslateCard = ({
         source,
         targets,
         modules: DEFAULT_MODULES,
-        aiModel: "deepseek-v4-flash",
+        aiModel: "gpt-4.1-nano",
         isCover: false,
         isHandle: false,
         targetOptions,

@@ -8,18 +8,16 @@ import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/transla
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
-import {
-  getCoverageSummaryFromCache,
+import { getCoverageSummaryFromCache,
   type CoverageSummary,
 } from "~/server/translateV4/coverage.server";
-import { TS_FRONTEND_TASK_SOURCE } from "~/server/translateV4/types";
 import {
   createTranslateV4Tasks,
   formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
-import { DEFAULT_MODULE_KEYS } from "./constants";
+import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4PageStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
@@ -79,7 +77,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const targetLocales = locales.filter((l) => !l.primary && l.published);
 
   const [jobs, quota, coverage] = await Promise.all([
-    listV4JobSummaries(session.shop, { taskSource: TS_FRONTEND_TASK_SOURCE }),
+    listV4JobSummaries(session.shop),
     getShopQuota(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
@@ -115,7 +113,7 @@ export default function AppTranslateV4() {
   const source = primaryLocale || "zh-CN";
   const [targets, setTargets] = useState<string[]>([]);
   const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
-  const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
+  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);

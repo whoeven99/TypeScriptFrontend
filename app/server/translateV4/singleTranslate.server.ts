@@ -65,33 +65,55 @@ export async function translateSingleText(args: {
   const text = args.text ?? "";
   if (!text.trim()) return { translatedText: text, usedTokens: 0 };
 
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
-  if (!apiKey) throw new Error("DEEPSEEK_API_KEY 未配置");
-  const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
-
   const glossaryLines = await loadGlossaryPromptLines(args.shop, args.target);
   const systemPrompt = buildSystemPrompt(args.target, glossaryLines);
   const userPayload = JSON.stringify([{ key: "f0", value: text }]);
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPayload },
+  ];
 
-  const resp = await fetch(deepSeekChatUrl(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPayload },
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-    }),
-  });
+  // 配了 Gpt_ApiKey → 默认走 GPT / Azure OpenAI（对齐 worker + Java），否则回退 DeepSeek。
+  const gptKey = process.env.Gpt_ApiKey?.trim();
+  let resp: Response;
+  if (gptKey) {
+    const endpoint = (
+      process.env.Gpt_Endpoint?.trim() || "https://eastus.api.cognitive.microsoft.com"
+    ).replace(/\/+$/, "");
+    const apiVersion = process.env.Gpt_ApiVersion?.trim() || "2024-10-21";
+    const gptModel = process.env.Gpt_Model?.trim() || "gpt-4.1-nano";
+    resp = await fetch(
+      `${endpoint}/openai/deployments/${encodeURIComponent(gptModel)}/chat/completions?api-version=${apiVersion}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "api-key": gptKey },
+        body: JSON.stringify({
+          messages,
+          temperature: 0.1,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+          response_format: { type: "json_object" },
+        }),
+      },
+    );
+  } else {
+    const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
+    if (!apiKey) throw new Error("未配置 Gpt_ApiKey 或 DEEPSEEK_API_KEY");
+    const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    resp = await fetch(deepSeekChatUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      }),
+    });
+  }
 
   if (!resp.ok) {
-    throw new Error(`DeepSeek ${resp.status}: ${await resp.text().catch(() => "")}`);
+    throw new Error(`LLM ${resp.status}: ${await resp.text().catch(() => "")}`);
   }
   const data = (await resp.json()) as {
     choices?: { message?: { content?: string } }[];
