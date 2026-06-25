@@ -18,9 +18,14 @@ export const DEFAULT_MODULES = defaultManualV4Modules();
 export const QUOTA_TOKEN_MULTIPLIER = 1.5;
 
 export const AI_MODEL_OPTIONS = [
+  { value: "gpt-4.1-nano", label: "GPT-4.1 nano（推荐）" },
+  { value: "gpt-4.1-mini", label: "GPT-4.1 mini" },
   { value: "deepseek-v4-flash", label: "deepseek-v4-flash" },
   { value: "deepseek-v4-pro", label: "deepseek-v4-pro" },
 ];
+
+/** 默认选中的翻译模型。 */
+export const DEFAULT_AI_MODEL = "gpt-4.1-nano";
 
 /** 创建任务卡片 — v2 对齐的模块选项（不含 handle）。 */
 export const CREATE_TASK_MODULE_OPTIONS = [...V2_MODULE_OPTION_KEYS];

@@ -85,7 +85,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     source,
     target,
     modules,
-    aiModel: body.aiModel?.trim() || "deepseek-v4-flash",
+    aiModel: body.aiModel?.trim() || "gpt-4.1-nano",
     limitPerType: V4_LIMIT_UNLIMITED,
     isCover: body.isCover ?? false,
     isHandle: body.isHandle ?? false,

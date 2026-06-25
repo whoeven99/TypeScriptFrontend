@@ -29,3 +29,20 @@ export const v4CardStyle: CSSProperties = {
   border: `1px solid ${v4Colors.cardBorder}`,
   boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
 };
+
+export function v4ChipStyle(selected: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 12px",
+    borderRadius: 10,
+    border: selected ? `1px solid ${v4Colors.primary}` : `1px solid #e2e8f0`,
+    background: selected ? v4Colors.primarySoft : "#fff",
+    color: selected ? v4Colors.primary : v4Colors.text,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.15s",
+  };
+}

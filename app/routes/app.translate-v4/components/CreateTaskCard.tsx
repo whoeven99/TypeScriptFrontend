@@ -18,7 +18,6 @@ type Props = {
   onTargetsChange: (values: string[]) => void;
   modules: string[];
   onModulesChange: (values: string[]) => void;
-  remainingCredits: number | null;
   creating: boolean;
   onCreate: () => void;
   aiModel: string;
@@ -37,7 +36,6 @@ export function CreateTaskCard({
   onTargetsChange,
   modules,
   onModulesChange,
-  remainingCredits,
   creating,
   onCreate,
   aiModel,
@@ -71,11 +69,6 @@ export function CreateTaskCard({
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: v4Colors.text }}>
           新建翻译任务
         </h2>
-        {remainingCredits != null ? (
-          <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
-            剩余 {remainingCredits.toLocaleString()} 积分
-          </span>
-        ) : null}
       </div>
 
       <div style={{ marginTop: 20 }}>

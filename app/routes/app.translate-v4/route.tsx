@@ -8,24 +8,23 @@ import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/transla
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
-import {
-  getCoverageSummaryFromCache,
+import { getCoverageSummaryFromCache,
   type CoverageSummary,
 } from "~/server/translateV4/coverage.server";
-import { TS_FRONTEND_TASK_SOURCE } from "~/server/translateV4/types";
 import {
   createTranslateV4Tasks,
   formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
-import { DEFAULT_MODULE_KEYS } from "./constants";
+import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4PageStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
+import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 
 const SHOP_LOCALES_QUERY = `#graphql
   query TranslateV4ShopLocales {
@@ -78,7 +77,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const targetLocales = locales.filter((l) => !l.primary && l.published);
 
   const [jobs, quota, coverage] = await Promise.all([
-    listV4JobSummaries(session.shop, { taskSource: TS_FRONTEND_TASK_SOURCE }),
+    listV4JobSummaries(session.shop),
     getShopQuota(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
@@ -114,7 +113,7 @@ export default function AppTranslateV4() {
   const source = primaryLocale || "zh-CN";
   const [targets, setTargets] = useState<string[]>([]);
   const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
-  const [aiModel, setAiModel] = useState<string>("deepseek-v4-flash");
+  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -137,30 +136,6 @@ export default function AppTranslateV4() {
     [localeOptions, source],
   );
 
-  const refreshList = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
-      );
-      const data = await res.json();
-      if (data?.ok) setJobs(data.jobs as TranslationJobProgressSummary[]);
-    } catch (err) {
-      console.error("[translateV4] refresh list failed:", err);
-    }
-  }, [shop]);
-
-  const refreshQuota = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
-      );
-      const data = await res.json();
-      if (data?.ok) setQuota(data.quota as ShopQuota | null);
-    } catch (err) {
-      console.error("[translateV4] refresh quota failed:", err);
-    }
-  }, [shop]);
-
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
     try {
@@ -171,14 +146,75 @@ export default function AppTranslateV4() {
       const data = await res.json();
       if (data?.ok) {
         setCoverage(data.summary as CoverageSummary);
-      } else {
+      } else if (forceRefresh) {
         message.error(data?.error || "刷新统计失败");
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
-      message.error("刷新统计失败");
+      if (forceRefresh) message.error("刷新统计失败");
     } finally {
       setCoverageLoading(false);
+    }
+  }, [shop]);
+
+  const refreshCoverageFromCache = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) setCoverage(data.summary as CoverageSummary);
+    } catch (err) {
+      console.error("[translateV4] refresh coverage from cache failed:", err);
+    }
+  }, [shop]);
+
+  const jobStatusRef = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const map = new Map<string, string>();
+    for (const j of initialJobs) map.set(j.taskId, j.status);
+    jobStatusRef.current = map;
+  }, [initialJobs]);
+
+  const applyJobsUpdate = useCallback(
+    (newJobs: TranslationJobProgressSummary[]) => {
+      for (const j of newJobs) {
+        const prev = jobStatusRef.current.get(j.taskId);
+        if (j.status === "COMPLETED" && prev !== "COMPLETED") {
+          void refreshCoverageFromCache();
+          notifyTranslationStatsUpdated({ target: j.target, source: j.source });
+        }
+        jobStatusRef.current.set(j.taskId, j.status);
+      }
+      setJobs(newJobs);
+    },
+    [refreshCoverageFromCache],
+  );
+
+  const refreshList = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) {
+        applyJobsUpdate(data.jobs as TranslationJobProgressSummary[]);
+      }
+    } catch (err) {
+      console.error("[translateV4] refresh list failed:", err);
+    }
+  }, [shop, applyJobsUpdate]);
+
+  const refreshQuota = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+    } catch (err) {
+      console.error("[translateV4] refresh quota failed:", err);
     }
   }, [shop]);
 
@@ -342,7 +378,6 @@ export default function AppTranslateV4() {
           onTargetsChange={setTargets}
           modules={moduleKeys}
           onModulesChange={setModuleKeys}
-          remainingCredits={remainingCredits}
           creating={creating}
           onCreate={handleCreate}
           aiModel={aiModel}

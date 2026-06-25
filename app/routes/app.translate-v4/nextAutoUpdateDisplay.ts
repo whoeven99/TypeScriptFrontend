@@ -9,12 +9,12 @@ export function formatNextAutoUpdateDisplay(
   const t = new Date(nextAutoUpdateAt).getTime();
   if (Number.isNaN(t)) return null;
 
-  if (t <= nowMs + 60_000) return "下次更新时间 即将开始";
+  if (t <= nowMs + 60_000) return "下次自动扫描 即将开始";
 
   const time = new Date(t).toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   });
-  return `下次更新时间 ${time}`;
+  return `下次自动扫描 ${time}`;
 }
