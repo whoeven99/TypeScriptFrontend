@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "antd";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
@@ -15,23 +14,36 @@ type Props = {
 
 export function CoverageCard({ locales, loading, onRefresh }: Props) {
   return (
-    <div style={{ ...v4CardStyle, padding: "18px 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: v4Colors.text }}>
+    <div style={{ ...v4CardStyle, padding: "20px", position: "sticky", top: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em", color: v4Colors.text }}>
           语言覆盖率
         </h2>
-        <Button size="small" type="text" loading={loading} onClick={onRefresh}>
-          刷新统计
-        </Button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          style={{
+            background: "none",
+            border: "none",
+            color: v4Colors.textMuted,
+            fontSize: 12.5,
+            fontWeight: 600,
+            cursor: loading ? "default" : "pointer",
+            opacity: loading ? 0.6 : 1,
+            fontFamily: "inherit",
+            padding: "4px 6px",
+          }}
+        >
+          {loading ? "刷新中…" : "刷新统计"}
+        </button>
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
           <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无已发布的目标语言。</div>
         ) : (
-          locales.map((row) => (
-            <CoverageRow key={row.locale} row={row} />
-          ))
+          locales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
       </div>
     </div>
@@ -51,51 +63,39 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   const barColor = coverageBarColor(percent);
   const width = percent != null ? `${percent}%` : "0%";
   const label = localeShortName(row.locale, row.label);
-  const nextHint = row.autoTranslate
-    ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt)
-    : null;
+  const nextHint = row.autoTranslate ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt) : null;
 
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 6,
+          gap: 10,
           fontSize: 13,
         }}
       >
-        <span style={{ fontWeight: 600, color: v4Colors.text }}>
-          <span style={{ color: v4Colors.textMuted, marginRight: 6, fontSize: 11 }}>
-            {localeRegionCode(row.locale)}
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, color: v4Colors.text, minWidth: 0 }}>
+          <span style={{ flexShrink: 0 }}>
+            <span style={{ color: v4Colors.textFaint, marginRight: 6, fontSize: 11 }}>{localeRegionCode(row.locale)}</span>
+            {label}
           </span>
-          {label}
-          {row.autoTranslate ? (
-            <span style={{ marginLeft: 8 }}>
-              <AutoTranslateBadge nextUpdateHint={nextHint} />
-            </span>
-          ) : null}
+          {row.autoTranslate ? <AutoTranslateBadge nextUpdateHint={nextHint} /> : null}
         </span>
-        <span style={{ fontWeight: 700, color: v4Colors.text }}>
+        <span style={{ fontFamily: v4Colors.mono, fontWeight: 700, fontSize: 12.5, color: v4Colors.text, flexShrink: 0 }}>
           {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}
         </span>
       </div>
-      <div
-        style={{
-          height: 6,
-          borderRadius: 3,
-          background: "#e2e8f0",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ height: 6, borderRadius: 4, background: "#e2e8f0", overflow: "hidden" }}>
         <div
           style={{
             height: "100%",
             width,
             background: barColor,
-            borderRadius: 3,
-            transition: "width 0.3s",
+            borderRadius: 4,
+            transition: "width 0.6s ease",
           }}
         />
       </div>
