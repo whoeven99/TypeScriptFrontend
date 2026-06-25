@@ -87,7 +87,11 @@ export const V2_MODULE_TO_V4: Record<TranslateV2ModuleKey, TranslationV4Module[]
   shipping: ["PACKING_SLIP_TEMPLATE"],
 };
 
-/** v2 自动翻译 resource 列表（对齐 TaskService.AUTO_TRANSLATE_MAP）。 */
+/**
+ * v4 定时自动翻译模块（不含 EMAIL_TEMPLATE — 邮件请用手动任务勾选「电子邮件」）。
+ * 权威 JSON：Spark/worker/scripts/v4-auto-translate-modules.json
+ * 注：Spring v2 AUTO_TRANSLATE_MAP 仍含 EMAIL_TEMPLATE。
+ */
 export const AUTO_TRANSLATE_V4_MODULES: TranslationV4Module[] = [
   "SHOP",
   "MENU",
@@ -109,10 +113,12 @@ export const AUTO_TRANSLATE_V4_MODULES: TranslationV4Module[] = [
   "PAGE",
   "METAFIELD",
   "SHOP_POLICY",
-  "EMAIL_TEMPLATE",
   "SELLING_PLAN",
   "SELLING_PLAN_GROUP",
 ];
+
+/** @deprecated 使用 AUTO_TRANSLATE_V4_MODULES */
+export const V2_AUTO_TRANSLATE_MODULES = AUTO_TRANSLATE_V4_MODULES;
 
 /** v4 module 展示名（任务详情、进度条等）。 */
 export const V4_MODULE_LABELS: Record<TranslationV4Module, string> = {

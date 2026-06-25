@@ -62,7 +62,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
   });
   const stageSummary = job.isTerminal
     ? job.status === "COMPLETED"
-      ? "全部阶段完成"
+      ? ""
       : job.status === "CANCELLED"
         ? "已取消"
         : "已结束"
@@ -79,7 +79,11 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
-            <span style={{ fontSize: 11.5, color: v4Colors.textFaint, fontWeight: 500 }}>{stageSummary}</span>
+            {stageSummary ? (
+              <span style={{ fontSize: 11.5, color: v4Colors.textFaint, fontWeight: 500 }}>
+                {stageSummary}
+              </span>
+            ) : null}
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {miniStages.map((s, i) => (
