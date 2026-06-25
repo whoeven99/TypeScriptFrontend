@@ -33,6 +33,7 @@
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@azure/cosmos": "^4.9.3",
+    "@azure/storage-blob": "^12.32.0",
     "@google-cloud/translate": "^9.2.0",
     "@libsql/client": "^0.17.3",
     "@prisma/adapter-libsql": "^6.19.3",

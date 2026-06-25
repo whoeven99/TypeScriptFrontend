@@ -5,8 +5,8 @@
  * `app/server/translateV4/` 与 `app/routes/api.translate-v4.*`、
  * `app/routes/app.translate-v4/` 下，未来可整体删除而不影响旧链路。
  *
- * 数据结构与 Spark worker(`worker/src/services/cosmosV4.ts`)读取的 job 文档保持一致，
- * 这样 TsFrontend 写入同一个 Cosmos 容器后，现有 worker 流水线可直接消费。
+ * 数据结构与 Spark 仓库 `Spark/worker` 读取的 job 文档保持一致，
+ * 这样 TsFrontend 写入同一个 Cosmos 容器后，Spark worker 流水线可直接消费。
  */
 
 export const TRANSLATION_V4_MODULES = [
@@ -31,12 +31,27 @@ export const TRANSLATION_V4_MODULES = [
   "ARTICLE",
   "BLOG",
   "PAGE",
+  "SHOP_POLICY",
+  "EMAIL_TEMPLATE",
+  "PACKING_SLIP_TEMPLATE",
+  "ONLINE_STORE_THEME_SETTINGS_CATEGORY",
+  "ONLINE_STORE_THEME_LOCALE_CONTENT",
 ] as const;
 
 export type TranslationV4Module = (typeof TRANSLATION_V4_MODULES)[number];
 
 /** 任务来源标识：TsFrontend 创建的任务统一打此标记，便于 worker / 运营区分。 */
 export const TS_FRONTEND_TASK_SOURCE = "TsFrontend";
+
+/** Worker 定时扫描创建的自动增量任务（与 Spark worker TSF_AUTO_TASK_SOURCE 一致）。 */
+export const TSF_AUTO_TASK_SOURCE = "TsFrontend-Auto";
+
+export function isAutoV4TaskSource(taskSource: string | null | undefined): boolean {
+  return taskSource === TSF_AUTO_TASK_SOURCE;
+}
+
+/** 每类资源不设上限（worker init 全量枚举）。 */
+export const V4_LIMIT_UNLIMITED = Number.MAX_SAFE_INTEGER;
 
 export type TranslationV4Status =
   | "CREATED"
@@ -110,6 +125,7 @@ export type TranslationV4Job = {
   aiModelUsed: string | null;
   aiProvider: string | null;
   engineUsage: Record<string, { units: number; chars: number }> | null;
+  /** 每类资源上限；新任务固定为 {@link V4_LIMIT_UNLIMITED}。 */
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;

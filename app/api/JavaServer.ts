@@ -3,6 +3,7 @@ import { queryShopBaseConfigData, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
+import { globalStore } from "~/globalStore";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -623,17 +624,7 @@ export const GetUserValue = async ({
 //   }
 // };
 
-export const SingleTextTranslate = async ({
-  shopName,
-  source,
-  target,
-  resourceType,
-  context,
-  key,
-  type,
-  server,
-  resourceId,
-}: {
+type SingleTextTranslateArgs = {
   shopName: string;
   source: string;
   target: string;
@@ -643,31 +634,68 @@ export const SingleTextTranslate = async ({
   type: string;
   server: string;
   resourceId: string | null; // 必传，但可 null
-}) => {
+};
+
+/**
+ * 单字段手动翻译(页面调用)。
+ * - 灰度白名单店 → 走 TSF 端点 /api/translate-v4/single(迁移店 LLM / 未迁移店端点内代理 Java)。
+ * - 非白名单店 → 直连 Java(原行为不变),完全不经过 TSF 端点,灰度风险被关住。
+ */
+export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
+  if (!globalStore.translateV4ExpressBeta) {
+    return singleTextTranslateV2ViaJava(args);
+  }
+  try {
+    const res = await fetch("/api/translate-v4/single", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error SingleTextTranslate:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
+/** 直连 Java singleTextTranslateV2（仅供 TSF 端点在未迁移分支代理调用，服务端使用）。 */
+export const singleTextTranslateV2ViaJava = async ({
+  shopName,
+  source,
+  target,
+  resourceType,
+  context,
+  key,
+  type,
+  server,
+  resourceId,
+}: SingleTextTranslateArgs) => {
   try {
     const response = await axios({
       url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
       method: "POST",
       data: {
-        shopName: shopName,
-        source: source,
-        target: target,
-        resourceType: resourceType,
-        context: context,
-        key: key,
-        type: type,
-        resourceId: resourceId,
+        shopName,
+        source,
+        target,
+        resourceType,
+        context,
+        key,
+        type,
+        resourceId,
       },
     });
-
-    console.log(`${shopName} SingleTextTranslate: `, response.data);
-
     return {
       ...response.data,
       response: response.data?.response?.targetText || "",
     };
   } catch (error) {
-    console.error("Error SingleTextTranslate:", error);
+    console.error("Error singleTextTranslateV2ViaJava:", error);
     return {
       success: false,
       errorCode: 10001,
@@ -732,6 +760,26 @@ export const UpdateAutoTranslateByData = async ({
         target: target,
         autoTranslate: autoTranslate,
       },
+    },
+    { fallback: undefined },
+  );
+};
+
+/**
+ * 通知 Java 本店已迁移到 TSF 新版翻译。Java 自行记录，自动翻译任务后续跳过该店。
+ */
+export const MarkShopMigratedToTsf = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  return javaApiRequest(
+    `${shop} MarkShopMigratedToTsf`,
+    {
+      url: `${server}/translate/markShopMigratedToTsf?shopName=${encodeURIComponent(shop)}`,
+      method: "POST",
     },
     { fallback: undefined },
   );

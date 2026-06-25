@@ -77,9 +77,20 @@ export function resolveV4DisplayStatus(
 export function translationV4StatusLabel(
   status: TranslationV4Status,
   errorMessage?: string | null,
+  metrics?: TranslationV4Metrics,
 ): string {
   if (status === "PAUSED" && errorMessage?.trim()) {
     return errorMessage.trim();
+  }
+  if (status === "TRANSLATE_QUEUED" && metrics) {
+    const started =
+      metrics.translateDone > 0 ||
+      metrics.translateUnitDone > 0 ||
+      metrics.translateTotal > 0;
+    if (started) return "排队续译";
+  }
+  if (status === "WRITEBACK_QUEUED" && metrics && metrics.writebackDone > 0) {
+    return "排队写回";
   }
   const labels: Record<TranslationV4Status, string> = {
     CREATED: "已创建",
@@ -129,6 +140,9 @@ export function computeTranslationV4ProgressPercent(
         return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
       case "TRANSLATE":
       default:
+        if (metrics.translateUnitTotal > 0) {
+          return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+        }
         return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
     }
   }
@@ -147,6 +161,9 @@ export function computeTranslationV4ProgressPercent(
     status === "TRANSLATING" ||
     status === "TRANSLATE_DONE"
   ) {
+    if (metrics.translateUnitTotal > 0) {
+      return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+    }
     return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
   }
 
@@ -323,7 +340,7 @@ function toProgressSummary(
     status: displayStatus,
     statusLabel:
       writebackPauseLabel ??
-      (isStopping ? stoppingLabel : translationV4StatusLabel(displayStatus, errorMessage)),
+      (isStopping ? stoppingLabel : translationV4StatusLabel(displayStatus, errorMessage, metrics)),
     isStopping,
     isActive:
       ACTIVE_V4_STATUSES.includes(job.status) &&

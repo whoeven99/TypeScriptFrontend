@@ -25,10 +25,15 @@ const languageItemsDataSlice = createSlice({
         state.push(action.payload[0]);
       }
     },
+    /** 刷新统计前清空某语言缓存，让汇总页显示 Syncing 而非旧数字。 */
+    clearLocaleStats: (state, action: PayloadAction<string>) => {
+      const locale = action.payload;
+      return state.filter((item) => item.language !== locale);
+    },
   },
 });
 
-export const { updateData } = languageItemsDataSlice.actions;
+export const { updateData, clearLocaleStats } = languageItemsDataSlice.actions;
 
 const reducer = languageItemsDataSlice.reducer;
 export default reducer;

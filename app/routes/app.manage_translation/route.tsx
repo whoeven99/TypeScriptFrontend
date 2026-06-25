@@ -9,7 +9,7 @@ import {
   Flex,
   Modal,
 } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryAppByHandle, queryShopLanguages } from "~/api/admin";
@@ -28,18 +28,22 @@ import {
 } from "~/api/JavaServer";
 import {
   getItemsCountByLabel,
+  invalidateAllItemsCountForLocale,
   isLocalItemsCountSupported,
 } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import { updateData } from "~/store/modules/languageItemsData";
+import { updateData, clearLocaleStats } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { shouldRevalidateManageTranslation } from "~/lib/routeShouldRevalidate";
+import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
+import { sameTranslationLocale } from "~/server/translateV4/locale";
 
 const { Text, Title } = Typography;
 interface TableDataType {
@@ -52,6 +56,37 @@ interface TableDataType {
   withoutCount: boolean;
 }
 
+/** 汇总页各卡片对应的 itemsCount resourceType（与 action 请求一致）。 */
+const ITEMS_COUNT_RESOURCE_TYPES = [
+  "Products",
+  "Collection",
+  "Article",
+  "Blog titles",
+  "Pages",
+  "Filters",
+  "Metaobjects",
+  "Navigation",
+  "Notifications",
+  "Policies",
+  "Shop",
+  "Store metadata",
+  "Theme",
+  "Delivery",
+  "Shipping",
+] as const;
+
+/** 避免 15 路并行 itemsCount 压满 Render 单实例（大店 Products 统计耗时长）。 */
+const ITEMS_COUNT_SUBMIT_GAP_MS = 400;
+
+function safeParseFormJson(value: FormDataEntryValue | null): unknown {
+  if (value == null || value === "") return null;
+  try {
+    return JSON.parse(String(value));
+  } catch {
+    return null;
+  }
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -61,17 +96,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
+export const shouldRevalidate = shouldRevalidateManageTranslation;
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
-  const appInstalls = JSON.parse(formData.get("appInstalls") as string);
-  const itemsCount = JSON.parse(formData.get("itemsCount") as string);
-  const translateImage = JSON.parse(formData.get("translateImage") as string);
-  const replaceTranslateImage = JSON.parse(
-    formData.get("replaceTranslateImage") as string,
+  const refreshItemsCountTarget = formData.get("refreshItemsCountTarget");
+  if (typeof refreshItemsCountTarget === "string" && refreshItemsCountTarget) {
+    try {
+      // 与管理翻译/v4 共用 Redis：tsf:items_count:{shop}:{locale}（见 itemsCountRedisKey）
+      await invalidateAllItemsCountForLocale(shop, refreshItemsCountTarget);
+      return { success: true, errorCode: 0, errorMsg: "", response: null };
+    } catch (error) {
+      console.error("Error manage_translation refreshItemsCount:", error);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
+    }
+  }
+
+  const appInstalls = safeParseFormJson(formData.get("appInstalls"));
+  const itemsCount = safeParseFormJson(formData.get("itemsCount"));
+  const translateImage = safeParseFormJson(formData.get("translateImage"));
+  const replaceTranslateImage = safeParseFormJson(
+    formData.get("replaceTranslateImage"),
   );
   switch (true) {
     case !!appInstalls:
@@ -105,6 +159,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             target: itemsCount.target,
             resourceTypeLabel: itemsCount.resourceType,
+            skipCache: itemsCount.forceRefresh === true,
           });
           return { success: true, errorCode: 0, errorMsg: "", response };
         }
@@ -240,6 +295,89 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
+  const refreshStatsFetcher = useFetcher<any>();
+
+  const [isRefreshingStats, setIsRefreshingStats] = useState(false);
+  const pendingRefreshStatsRef = useRef(false);
+  /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
+  const refreshAwaitingProductsRef = useRef(false);
+  /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
+  const itemsCountLoadTokenRef = useRef(0);
+  const loadedItemsCountLocaleRef = useRef<string | null>(null);
+
+  const itemsCountFetcherByType = useMemo(
+    () => ({
+      Products: productsFetcher,
+      Collection: collectionsFetcher,
+      Article: articlesFetcher,
+      "Blog titles": blog_titlesFetcher,
+      Pages: pagesFetcher,
+      Filters: filtersFetcher,
+      Metaobjects: metaobjectsFetcher,
+      Navigation: navigationFetcher,
+      Notifications: emailFetcher,
+      Policies: policiesFetcher,
+      Shop: shopFetcher,
+      "Store metadata": store_metadataFetcher,
+      Theme: themeFetcher,
+      Delivery: deliveryFetcher,
+      Shipping: shippingFetcher,
+    }),
+    [
+      productsFetcher,
+      collectionsFetcher,
+      articlesFetcher,
+      blog_titlesFetcher,
+      pagesFetcher,
+      filtersFetcher,
+      metaobjectsFetcher,
+      navigationFetcher,
+      emailFetcher,
+      policiesFetcher,
+      shopFetcher,
+      store_metadataFetcher,
+      themeFetcher,
+      deliveryFetcher,
+      shippingFetcher,
+    ],
+  );
+
+  const fetchAllItemsCounts = useCallback(
+    (target: string, sourceCode: string, forceRefresh = false) => {
+      if (!target || !sourceCode) return;
+      const loadToken = ++itemsCountLoadTokenRef.current;
+
+      void (async () => {
+        for (const resourceType of ITEMS_COUNT_RESOURCE_TYPES) {
+          if (itemsCountLoadTokenRef.current !== loadToken) return;
+
+          const fetcher =
+            itemsCountFetcherByType[
+              resourceType as keyof typeof itemsCountFetcherByType
+            ];
+          const formData = new FormData();
+          formData.append(
+            "itemsCount",
+            JSON.stringify({
+              source: sourceCode,
+              target,
+              resourceType,
+              ...(forceRefresh ? { forceRefresh: true } : {}),
+            }),
+          );
+          fetcher.submit(formData, {
+            method: "post",
+            action: "/app/manage_translation",
+          });
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, ITEMS_COUNT_SUBMIT_GAP_MS),
+          );
+        }
+      })();
+    },
+    [itemsCountFetcherByType],
+  );
 
   const productsDataSource: TableDataType[] = [
     {
@@ -788,208 +926,61 @@ const Index = () => {
   }, [shippingFetcher.data]);
 
   useEffect(() => {
-    const findItem = languageItemsData.find(
-      (item: any) => item?.language === currentLocale,
-    );
     const sourceCode = source?.code;
-    if (!findItem && sourceCode) {
-      const productsFormData = new FormData();
-      productsFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Products",
-        }),
-      );
-      productsFetcher.submit(productsFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const collectionsFormData = new FormData();
-      collectionsFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Collection",
-        }),
-      );
-      collectionsFetcher.submit(collectionsFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const articlesFormData = new FormData();
-      articlesFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Article",
-        }),
-      );
-      articlesFetcher.submit(articlesFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const blog_titlesFormData = new FormData();
-      blog_titlesFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Blog titles",
-        }),
-      );
-      blog_titlesFetcher.submit(blog_titlesFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const pagesFormData = new FormData();
-      pagesFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Pages",
-        }),
-      );
-      pagesFetcher.submit(pagesFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const filtersFormData = new FormData();
-      filtersFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Filters",
-        }),
-      );
-      filtersFetcher.submit(filtersFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const metaobjectsFormData = new FormData();
-      metaobjectsFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Metaobjects",
-        }),
-      );
-      metaobjectsFetcher.submit(metaobjectsFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const navigationFormData = new FormData();
-      navigationFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Navigation",
-        }),
-      );
-      navigationFetcher.submit(navigationFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const emailFormData = new FormData();
-      emailFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Notifications",
-        }),
-      );
-      emailFetcher.submit(emailFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const policiesFormData = new FormData();
-      policiesFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Policies",
-        }),
-      );
-      policiesFetcher.submit(policiesFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const shopFormData = new FormData();
-      shopFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Shop",
-        }),
-      );
-      shopFetcher.submit(shopFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const store_metadataFormData = new FormData();
-      store_metadataFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Store metadata",
-        }),
-      );
-      store_metadataFetcher.submit(store_metadataFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const themeFormData = new FormData();
-      themeFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Theme",
-        }),
-      );
-      themeFetcher.submit(themeFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const deliveryFormData = new FormData();
-      deliveryFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Delivery",
-        }),
-      );
-      deliveryFetcher.submit(deliveryFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
-      const shippingFormData = new FormData();
-      shippingFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: sourceCode,
-          target: currentLocale,
-          resourceType: "Shipping",
-        }),
-      );
-      shippingFetcher.submit(shippingFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
+    if (!sourceCode || !currentLocale) return;
+    if (loadedItemsCountLocaleRef.current === currentLocale) return;
+    loadedItemsCountLocaleRef.current = currentLocale;
+    fetchAllItemsCounts(currentLocale, sourceCode);
+  }, [currentLocale, source?.code, fetchAllItemsCounts]);
+
+  /** v4 任务完成后读 Redis 缓存刷新当前语言统计（无需点「刷新统计」）。 */
+  useEffect(() => {
+    const sourceCode = source?.code;
+    if (!sourceCode) return;
+    return onTranslationStatsUpdated((detail) => {
+      if (!currentLocale || !sameTranslationLocale(detail.target, currentLocale)) {
+        return;
+      }
+      fetchAllItemsCounts(currentLocale, sourceCode, false);
+    });
+  }, [currentLocale, source?.code, fetchAllItemsCounts]);
+
+  useEffect(() => {
+    if (!pendingRefreshStatsRef.current) return;
+    if (refreshStatsFetcher.state !== "idle" || !refreshStatsFetcher.data) {
+      return;
     }
-  }, [currentLocale, source?.code]);
+    pendingRefreshStatsRef.current = false;
+    if (refreshStatsFetcher.data.success && currentLocale && source?.code) {
+      dispatch(clearLocaleStats(currentLocale));
+      loadedItemsCountLocaleRef.current = null;
+      refreshAwaitingProductsRef.current = true;
+      fetchAllItemsCounts(currentLocale, source.code, true);
+    } else {
+      shopify.toast.show(t("Failed to refresh statistics"));
+      setIsRefreshingStats(false);
+    }
+  }, [
+    refreshStatsFetcher.data,
+    refreshStatsFetcher.state,
+    currentLocale,
+    source?.code,
+    fetchAllItemsCounts,
+    dispatch,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (!refreshAwaitingProductsRef.current) return;
+    if (productsFetcher.state !== "idle") return;
+    refreshAwaitingProductsRef.current = false;
+    setIsRefreshingStats(false);
+    if (productsFetcher.data?.success) {
+      shopify.toast.show(t("Translation statistics refreshed"));
+    } else {
+      shopify.toast.show(t("Failed to refresh statistics"));
+    }
+  }, [productsFetcher.state, productsFetcher.data, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -1012,6 +1003,19 @@ const Index = () => {
         action: "/log",
       },
     );
+  };
+
+  const handleRefreshStats = () => {
+    if (!currentLocale || !source?.code) return;
+    setIsRefreshingStats(true);
+    pendingRefreshStatsRef.current = true;
+    reportClick("manage_refresh_stats");
+    const formData = new FormData();
+    formData.append("refreshItemsCountTarget", currentLocale);
+    refreshStatsFetcher.submit(formData, {
+      method: "post",
+      action: "/app/manage_translation",
+    });
   };
 
   return (
@@ -1038,6 +1042,16 @@ const Index = () => {
                 onChange={(value) => setCurrentLocale(value)}
                 style={{ minWidth: "200px" }}
               />
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleRefreshStats}
+                loading={
+                  isRefreshingStats || refreshStatsFetcher.state !== "idle"
+                }
+                disabled={!currentLocale || !source?.code}
+              >
+                {t("Refresh statistics")}
+              </Button>
             </div>
             <div className="manage-header-right">
               {plan?.type == "Free" ||

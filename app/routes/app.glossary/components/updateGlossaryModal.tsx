@@ -15,7 +15,7 @@ import { planMapping } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { InsertGlossaryInfo, UpdateTargetTextById } from "~/api/JavaServer";
+import { insertGlossaryCompat, updateGlossaryCompat } from "../glossaryClient";
 
 const { Text } = Typography;
 
@@ -27,6 +27,7 @@ interface GlossaryModalProps {
   shopLocales: ShopLocalesType[];
   shop: string;
   server: string;
+  migrated: boolean;
 }
 
 const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
@@ -37,6 +38,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   shopLocales,
   shop,
   server,
+  migrated,
 }) => {
   const [sourceText, setSourceText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
@@ -169,7 +171,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       const item = dataSource.find((item: any) => item.key === id);
       let data;
       if (item) {
-        data = await UpdateTargetTextById({
+        data = await updateGlossaryCompat({
+          migrated,
           shop: shop,
           data: {
             key: id,
@@ -182,7 +185,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           server: server as string,
         });
       } else {
-        data = await InsertGlossaryInfo({
+        data = await insertGlossaryCompat({
+          migrated,
           shop: shop,
           sourceText: sourceText,
           targetText: targetText,

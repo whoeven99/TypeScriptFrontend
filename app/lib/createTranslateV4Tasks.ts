@@ -8,7 +8,6 @@ export type CreateTranslateV4TasksParams = {
   targets: string[];
   modules: string[];
   aiModel: string;
-  limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
   targetOptions: ShopLocaleOption[];
@@ -105,7 +104,6 @@ export async function createTranslateV4Tasks(
     source,
     modules: params.modules,
     aiModel: params.aiModel,
-    limitPerType: params.limitPerType,
     isCover: params.isCover,
     isHandle: params.isHandle,
   };

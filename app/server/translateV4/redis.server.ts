@@ -5,6 +5,7 @@ import Redis from "ioredis";
  *
  * 环境变量统一带 `_V4` 后缀，与 TSF 既有配置隔离：
  *   REDIS_URL_V4                 （优先；形如 rediss://:password@host:port/0）
+ *   REDIS_URL                    （未设 REDIS_URL_V4 时的回退；prod 须与 worker 同一实例）
  *   REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4 [+ REDIS_PORT_V4 + REDIS_TLS_V4]
  */
 let singleton: Redis | undefined;
@@ -12,7 +13,9 @@ let singleton: Redis | undefined;
 export function getTranslateV4RedisClient(): Redis {
   if (singleton) return singleton;
 
-  const url = process.env.REDIS_URL_V4?.trim();
+  const url =
+    process.env.REDIS_URL_V4?.trim() ||
+    process.env.REDIS_URL?.trim();
   if (url) {
     singleton = new Redis(url, {
       maxRetriesPerRequest: 2,
@@ -70,6 +73,15 @@ export async function setV4Control(
     await getTranslateV4RedisClient().set(v4ControlKey(taskId), action, "EX", 24 * 3600);
   } catch {
     // 尽力而为；即便失败，阶段结束后仍会依据 Cosmos 状态停止
+  }
+}
+
+/** 删除任务时清掉该任务在 Redis 的进度键 + 控制键。best-effort。 */
+export async function clearV4TaskRedis(taskId: string): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().del(v4ProgressKey(taskId), v4ControlKey(taskId));
+  } catch {
+    // non-fatal
   }
 }
 

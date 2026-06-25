@@ -17,7 +17,10 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import { isTranslateV4Enabled } from "~/server/translateV4/feature.server";
+import {
+  isTranslateV4Enabled,
+  isTranslateV4ShopAllowed,
+} from "~/server/translateV4/feature.server";
 import {
   GetUserWords,
   GetLanguageStatus,
@@ -46,6 +49,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setChars,
@@ -57,8 +61,9 @@ import {
   setUpdateTime,
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
-import { globalStore } from "~/globalStore";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
+import { globalStore } from "~/globalStore";
+import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -125,8 +130,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     translateV4Enabled: isTranslateV4Enabled(),
+    translateV4ShopAllowed: isTranslateV4ShopAllowed(shop),
   });
 };
+
+export const shouldRevalidate = shouldRevalidateAppShell;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -476,7 +484,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Enabled } =
+  const { apiKey, shop, server, translateV4Enabled, translateV4ShopAllowed } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
@@ -513,6 +521,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
+    globalStore.translateV4ExpressBeta = Boolean(translateV4ShopAllowed);
   }, []);
 
   useEffect(() => {
@@ -652,27 +661,54 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <NavMenu>
-        <Link to="/app" rel="home">
-          Home
-        </Link>
-        {isClient && (
-          <>
-            <Link to="/app/language">{t("Language")}</Link>
-            <Link to="/app/manage_translation">
-              {t("Manage Translation")}
-            </Link>
-            <Link to="/app/currency">{t("Currency")}</Link>
-            <Link to="/app/switcher">{t("Switcher")}</Link>
-            <Link to="/app/glossary">{t("Glossary")}</Link>
-            {translateV4Enabled && (
-              <Link to="/app/translate-v4">智能翻译 (v4)</Link>
-            )}
-            <Link to="/app/pricing">{t("Pricing")}</Link>
-          </>
-        )}
-      </NavMenu>
-      <Outlet />
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "var(--p-color-bg-fill-brand)",
+            fontSize: 16,
+          },
+          components: {
+            Table: {
+              rowSelectedBg: "rgba(217, 217, 217, 0.7)",
+              rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
+            },
+            Button: {
+              primaryShadow: "none",
+            },
+            Select: {
+              optionSelectedBg: "rgba(217, 217, 217, 0.7)",
+            },
+            Menu: {
+              itemSelectedBg: "rgba(217, 217, 217, 0.7)",
+            },
+            Card: {
+              headerHeight: 42,
+            },
+          },
+        }}
+      >
+        <NavMenu>
+          <Link to="/app" rel="home">
+            Home
+          </Link>
+          {isClient && (
+            <>
+              <Link to="/app/language">{t("Language")}</Link>
+              <Link to="/app/manage_translation">
+                {t("Manage Translation")}
+              </Link>
+              <Link to="/app/currency">{t("Currency")}</Link>
+              <Link to="/app/switcher">{t("Switcher")}</Link>
+              <Link to="/app/glossary">{t("Glossary")}</Link>
+              {translateV4Enabled && translateV4ShopAllowed && (
+                <Link to="/app/translate-v4">智能翻译 (v4)</Link>
+              )}
+              <Link to="/app/pricing">{t("Pricing")}</Link>
+            </>
+          )}
+        </NavMenu>
+        <Outlet />
+      </ConfigProvider>
     </AppProvider>
   );
 }
