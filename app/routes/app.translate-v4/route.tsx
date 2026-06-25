@@ -380,7 +380,6 @@ export default function AppTranslateV4() {
           onTargetsChange={setTargets}
           modules={moduleKeys}
           onModulesChange={setModuleKeys}
-          remainingCredits={remainingCredits}
           creating={creating}
           onCreate={handleCreate}
           aiModel={aiModel}

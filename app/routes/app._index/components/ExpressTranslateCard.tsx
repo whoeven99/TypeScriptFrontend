@@ -311,24 +311,35 @@ const ExpressTranslateCard = ({
       </div>
 
       <div style={{ marginTop: 18, display: "flex", justifyContent: "flex-end" }}>
-        <Button
-          type="primary"
-          size="large"
-          className="express-start-btn"
-          loading={creating}
-          disabled={targets.length === 0}
+        <button
+          type="button"
+          disabled={targets.length === 0 || creating}
           onClick={handleCreate}
           style={{
-            background: v4Colors.primary,
-            borderColor: v4Colors.primary,
             borderRadius: 10,
             fontWeight: 700,
             height: 42,
             paddingInline: 24,
+            fontSize: 14,
+            border: "1px solid",
+            transition: "all 0.15s",
+            cursor:
+              targets.length === 0 || creating ? "not-allowed" : "pointer",
+            ...(targets.length > 0 && !creating
+              ? {
+                  background: v4Colors.primary,
+                  borderColor: v4Colors.primary,
+                  color: "#fff",
+                }
+              : {
+                  background: "#f8fafc",
+                  borderColor: "#e2e8f0",
+                  color: "#64748b",
+                }),
           }}
         >
           {creating ? "创建中…" : "开始翻译 →"}
-        </Button>
+        </button>
       </div>
 
       {jobs.length > 0 ? (

@@ -65,14 +65,3 @@
   gap: 10px;
   /* 设置图片间距 */
 }
-
-/* 极速翻译 - 开始翻译按钮禁用状态 */
-.express-start-btn.ant-btn-primary[disabled],
-.express-start-btn.ant-btn-primary[disabled]:hover,
-.express-start-btn.ant-btn-primary[disabled]:focus,
-.express-start-btn.ant-btn-primary[disabled]:active {
-  background: #8b82db !important;
-  border-color: #8b82db !important;
-  color: rgba(255, 255, 255, 0.85) !important;
-  opacity: 1;
-}
