@@ -37,7 +37,10 @@ Rules:
 - Be accurate and natural for e-commerce
 - Translate ALL content into "${target}", no matter what language the input is in (English, Chinese, Spanish, etc.)
 - If a value is already entirely in "${target}", return it unchanged
+- translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
+- Each value is a plain-text leaf extracted from HTML: never include HTML tags (<td>, <tr>, <table>, etc.) in translatedValue
 - Keep any ⟦number⟧ tokens exactly as they appear; never translate, modify, reorder, or drop them
+- ⟦number⟧ tokens may represent URLs or site paths (e.g. /blogs/news/article) — always preserve them verbatim
 - Output literal characters; do NOT HTML-escape. Use ' and " directly — never &#39; or &quot;
 - Do NOT add or remove leading or trailing whitespace
 - If the value is empty, return it unchanged

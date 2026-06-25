@@ -31,7 +31,7 @@ export function AutoTranslateBadge({ nextUpdateHint }: BadgeProps = {}) {
   );
 }
 
-/** 任务队列：仅自动任务展示。 */
+/** 任务队列：仅自动任务展示（中性色，避免与绿色状态标签重复）。 */
 export function AutoTaskBadge() {
   return (
     <span
@@ -40,8 +40,9 @@ export function AutoTaskBadge() {
         fontSize: 10,
         fontWeight: 600,
         lineHeight: 1.5,
-        color: v4Colors.success,
-        background: "rgba(22, 163, 74, 0.1)",
+        color: "#475569",
+        background: "#f1f5f9",
+        border: "1px solid #e2e8f0",
         borderRadius: 999,
       }}
     >
