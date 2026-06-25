@@ -6,9 +6,30 @@ export const AUTO_SCAN_LAST_AT_KEY = "translate:v4:auto_scan:last_at";
 /** 与 Spark worker scheduler 一致：未配置环境变量时默认 1 小时。 */
 export const AUTO_TRANSLATE_INTERVAL_MS_DEFAULT = 60 * 60_000;
 
+/** 自动扫描对齐的时区（展示与调度一致，默认北京时间）。 */
+export const AUTO_TRANSLATE_SCHEDULE_TZ_DEFAULT = "Asia/Shanghai";
+
+/** 整点分钟（0 = 每小时 :00，如 11:00、12:00）。 */
+export const AUTO_TRANSLATE_SCHEDULE_MINUTE_DEFAULT = 0;
+
 export function getAutoTranslateIntervalMs(): number {
   const n = Number(process.env.AUTO_TRANSLATE_INTERVAL_MS);
   return n > 0 ? n : AUTO_TRANSLATE_INTERVAL_MS_DEFAULT;
+}
+
+export function getAutoTranslateScheduleTimezone(): string {
+  return (
+    process.env.AUTO_TRANSLATE_SCHEDULE_TZ?.trim() ||
+    AUTO_TRANSLATE_SCHEDULE_TZ_DEFAULT
+  );
+}
+
+export function getAutoTranslateScheduleMinute(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_SCHEDULE_MINUTE);
+  if (!Number.isFinite(n) || n < 0 || n > 59) {
+    return AUTO_TRANSLATE_SCHEDULE_MINUTE_DEFAULT;
+  }
+  return Math.floor(n);
 }
 
 export async function readAutoScanLastAt(): Promise<string | null> {
@@ -20,30 +41,103 @@ export async function readAutoScanLastAt(): Promise<string | null> {
   }
 }
 
-/**
- * 估算下一轮 Worker 自动扫描时刻（全局，与语言无关）。
- * 若已过点则顺延到下一个间隔槽（任务进行中时展示下一档时间，如 14:00→15:00）。
- */
-export function resolveNextAutoScanAt(
-  lastScanAt: string | null,
-  intervalMs: number,
-): Date {
-  const now = Date.now();
-  if (!lastScanAt) return new Date(now + intervalMs);
-
-  let next = new Date(lastScanAt).getTime() + intervalMs;
-  if (Number.isNaN(next)) return new Date(now + intervalMs);
-
-  while (next <= now) next += intervalMs;
-  return new Date(next);
+function timezoneOffsetMs(at: Date, timeZone: string): number {
+  const utc = Date.parse(at.toLocaleString("en-US", { timeZone: "UTC" }));
+  const tz = Date.parse(at.toLocaleString("en-US", { timeZone }));
+  return tz - utc;
 }
 
-/** 已开自动翻译的语言：返回下次扫描 ISO 时间。 */
+function tzYmdHm(
+  at: Date,
+  timeZone: string,
+): { y: number; m: number; d: number; h: number; min: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(at);
+  const pick = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+  return {
+    y: pick("year"),
+    m: pick("month"),
+    d: pick("day"),
+    h: pick("hour"),
+    min: pick("minute"),
+  };
+}
+
+function utcFromTzLocal(
+  y: number,
+  m: number,
+  d: number,
+  h: number,
+  min: number,
+  timeZone: string,
+): Date {
+  let guess = Date.UTC(y, m - 1, d, h, min, 0, 0);
+  for (let i = 0; i < 4; i++) {
+    const p = tzYmdHm(new Date(guess), timeZone);
+    if (p.y === y && p.m === m && p.d === d && p.h === h && p.min === min) {
+      return new Date(guess);
+    }
+    const offset = timezoneOffsetMs(new Date(guess), timeZone);
+    guess = Date.UTC(y, m - 1, d, h, min, 0, 0) - offset;
+  }
+  return new Date(guess);
+}
+
+/**
+ * 下一轮自动扫描时刻：按配置时区对齐到整点（默认每小时 :00）。
+ * 不依赖 Worker 上次扫描 / 部署时间，避免发布重启后「下次时间」跟着漂移。
+ */
+export function resolveNextClockAlignedScanAt(
+  now = new Date(),
+  intervalMs = getAutoTranslateIntervalMs(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+  scheduleMinute = getAutoTranslateScheduleMinute(),
+): Date {
+  const interval = Math.max(60_000, intervalMs);
+  const cur = tzYmdHm(now, timeZone);
+  let slot = utcFromTzLocal(
+    cur.y,
+    cur.m,
+    cur.d,
+    cur.h,
+    scheduleMinute,
+    timeZone,
+  );
+
+  while (slot.getTime() <= now.getTime() + 1000) {
+    const p = tzYmdHm(new Date(slot.getTime() + interval), timeZone);
+    slot = utcFromTzLocal(p.y, p.m, p.d, p.h, scheduleMinute, timeZone);
+  }
+
+  return slot;
+}
+
+export function msUntilNextClockAlignedScan(
+  now = new Date(),
+  intervalMs = getAutoTranslateIntervalMs(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+  scheduleMinute = getAutoTranslateScheduleMinute(),
+): number {
+  const next = resolveNextClockAlignedScanAt(
+    now,
+    intervalMs,
+    timeZone,
+    scheduleMinute,
+  );
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
+/** 已开自动翻译的语言：返回下次扫描 ISO 时间（整点对齐，与 Worker 调度一致）。 */
 export async function resolveNextAutoUpdateAt(
   autoTranslate: boolean,
 ): Promise<string | null> {
   if (!autoTranslate) return null;
-  const lastScanAt = await readAutoScanLastAt();
-  const intervalMs = getAutoTranslateIntervalMs();
-  return resolveNextAutoScanAt(lastScanAt, intervalMs).toISOString();
+  return resolveNextClockAlignedScanAt().toISOString();
 }
