@@ -14,7 +14,6 @@ import { sameTranslationLocale } from "./locale";
 import { listTargetLocales } from "./targetLocale.server";
 import {
   resolveNextAutoUpdateAt,
-  formatNextAutoUpdateHint,
 } from "./autoScanSchedule.server";
 
 export type LocaleCoverageRow = {
@@ -27,10 +26,8 @@ export type LocaleCoverageRow = {
   cacheMissing: boolean;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
-  /** 下一轮 Worker 自动扫描时刻（ISO） */
+  /** 下一轮 Worker 自动扫描时刻（ISO，由前端按本地时区/相对时间展示） */
   nextAutoUpdateAt: string | null;
-  /** 覆盖率行：「下次更新时间 HH:mm」 */
-  nextAutoUpdateHint: string | null;
 };
 
 export type CoverageSummary = {
@@ -59,14 +56,10 @@ async function enrichCoverageWithAutoTranslate(
       const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
       const autoTranslate = match?.autoTranslate ?? false;
       const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
-      const nextAutoUpdateHint = autoTranslate
-        ? formatNextAutoUpdateHint(nextAutoUpdateAt)
-        : null;
       return {
         ...row,
         autoTranslate,
         nextAutoUpdateAt,
-        nextAutoUpdateHint,
       };
     }),
   );
@@ -99,7 +92,6 @@ export async function getCoverageSummaryFromCache({
       cacheMissing: agg.cacheMissing,
       autoTranslate: false,
       nextAutoUpdateAt: null,
-      nextAutoUpdateHint: null,
     });
     translatedItems += agg.translated;
     totalItems += agg.total;
@@ -176,7 +168,6 @@ export async function computeCoverageSummary({
       cacheMissing,
       autoTranslate: false,
       nextAutoUpdateAt: null,
-      nextAutoUpdateHint: null,
     });
     translatedItems += translated;
     totalItems += total;

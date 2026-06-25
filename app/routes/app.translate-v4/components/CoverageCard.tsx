@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { Button } from "antd";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
+import { formatNextAutoUpdateDisplay } from "../nextAutoUpdateDisplay";
 
 type Props = {
   locales: LocaleCoverageRow[];
@@ -37,10 +39,21 @@ export function CoverageCard({ locales, loading, onRefresh }: Props) {
 }
 
 function CoverageRow({ row }: { row: LocaleCoverageRow }) {
+  const [, setMinuteTick] = useState(0);
+
+  useEffect(() => {
+    if (!row.autoTranslate || !row.nextAutoUpdateAt) return;
+    const id = setInterval(() => setMinuteTick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, [row.autoTranslate, row.nextAutoUpdateAt]);
+
   const percent = row.percent;
   const barColor = coverageBarColor(percent);
   const width = percent != null ? `${percent}%` : "0%";
   const label = localeShortName(row.locale, row.label);
+  const nextHint = row.autoTranslate
+    ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt)
+    : null;
 
   return (
     <div style={{ marginBottom: 14 }}>
@@ -60,7 +73,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
           {label}
           {row.autoTranslate ? (
             <span style={{ marginLeft: 8 }}>
-              <AutoTranslateBadge nextUpdateHint={row.nextAutoUpdateHint} />
+              <AutoTranslateBadge nextUpdateHint={nextHint} />
             </span>
           ) : null}
         </span>

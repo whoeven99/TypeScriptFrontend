@@ -47,15 +47,3 @@ export async function resolveNextAutoUpdateAt(
   const intervalMs = getAutoTranslateIntervalMs();
   return resolveNextAutoScanAt(lastScanAt, intervalMs).toISOString();
 }
-
-export function formatNextAutoUpdateHint(nextAutoUpdateAt: string | null): string | null {
-  if (!nextAutoUpdateAt) return null;
-  const t = new Date(nextAutoUpdateAt).getTime();
-  if (Number.isNaN(t)) return null;
-  const time = new Date(t).toLocaleTimeString("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  return `下次更新时间 ${time}`;
-}
