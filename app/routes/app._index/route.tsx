@@ -32,7 +32,6 @@ import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
-import { TS_FRONTEND_TASK_SOURCE } from "~/server/translateV4/types";
 
 const { Title, Text } = Typography;
 
@@ -91,7 +90,7 @@ async function loadExpressV4Data(
 
   let jobs: Awaited<ReturnType<typeof listV4JobSummaries>> = [];
   try {
-    jobs = await listV4JobSummaries(shop, { taskSource: TS_FRONTEND_TASK_SOURCE });
+    jobs = await listV4JobSummaries(shop);
   } catch (err) {
     console.error("[expressV4] load jobs failed:", err);
   }
@@ -487,7 +486,7 @@ const Index = () => {
               shop={shop}
               locales={expressV4.locales}
               primaryLocale={expressV4.primaryLocale}
-              initialJobs={expressV4.jobs as any}
+              initialJobs={expressV4.jobs}
               migrated={expressV4.migrated}
             />
           ) : null}

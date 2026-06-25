@@ -1,43 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  Button,
-  Card,
-  Empty,
-  Flex,
-  Progress,
-  Select,
-  Space,
-  Typography,
-  message,
-} from "antd";
+import { Alert, Button, message } from "antd";
 import { useNavigate } from "@remix-run/react";
 import {
   createTranslateV4Tasks,
   formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
-
-const { Title, Text } = Typography;
-
-/** 首页「极速翻译」卡片用到的任务进度形状（与 TranslationJobProgressSummary 对齐的子集）。 */
-export type ExpressV4Job = {
-  taskId: string;
-  status: string;
-  statusLabel: string;
-  isTerminal: boolean;
-  source: string;
-  target: string;
-  stageSummary: string;
-  progressPercent: number | null;
-};
+import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import { isAutoV4TaskSource } from "~/server/translateV4/types";
+import { localeRegionCode, localeShortName } from "~/routes/app.translate-v4/localeDisplay";
+import { jobDisplayPercent } from "~/routes/app.translate-v4/jobStageUtils";
+import { v4CardStyle, v4ChipStyle, v4Colors } from "~/routes/app.translate-v4/v4Styles";
+import { AutoTaskBadge } from "~/routes/app.translate-v4/components/AutoTranslateMarkers";
+import { JobCollapsedMeta } from "~/routes/app.translate-v4/components/JobExpandedDetail";
+import { ProgressRing, StatusTag } from "~/routes/app.translate-v4/components/V4JobCardParts";
 
 type Props = {
   shop: string;
   locales: ShopLocaleOption[];
   primaryLocale: string;
-  initialJobs: ExpressV4Job[];
+  initialJobs: TranslationJobProgressSummary[];
   /** 本店是否已迁移到新版翻译（来自 ShopTranslationSettings.migratedToTsf）。 */
   migrated: boolean;
 };
@@ -46,12 +30,49 @@ type Props = {
 const DEFAULT_MODULES = defaultManualV4Modules();
 
 /** 折叠时默认展示的任务条数 */
-const COLLAPSED_JOB_COUNT = 2;
+const COLLAPSED_JOB_COUNT = 3;
 
-function progressStatus(job: ExpressV4Job): "success" | "exception" | "active" | "normal" {
-  if (job.status === "FAILED") return "exception";
-  if (job.isTerminal) return "success";
-  return "active";
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div style={{ fontSize: 12, color: v4Colors.textMuted, marginBottom: 8 }}>
+      {children}
+    </div>
+  );
+}
+
+function ExpressJobRow({ job }: { job: TranslationJobProgressSummary }) {
+  const percent = jobDisplayPercent(job);
+
+  return (
+    <div
+      style={{
+        ...v4CardStyle,
+        padding: "12px 14px",
+        marginBottom: 8,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <ProgressRing percent={percent} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 14, color: v4Colors.text }}>
+              {job.source} → {job.target}
+            </span>
+            {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
+            <StatusTag status={job.status} label={job.statusLabel} />
+          </div>
+          <JobCollapsedMeta job={job} />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const ExpressTranslateCard = ({
@@ -63,7 +84,7 @@ const ExpressTranslateCard = ({
 }: Props) => {
   const navigate = useNavigate();
 
-  const [jobs, setJobs] = useState<ExpressV4Job[]>(initialJobs);
+  const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [targets, setTargets] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [migratedState, setMigratedState] = useState(migrated);
@@ -71,6 +92,8 @@ const ExpressTranslateCard = ({
   const [jobsExpanded, setJobsExpanded] = useState(false);
 
   const source = primaryLocale || "zh-CN";
+  const sourceLabel =
+    locales.find((l) => l.value === source)?.label ?? source;
   const targetOptions = useMemo<ShopLocaleOption[]>(
     () => locales.filter((l) => l.value !== source),
     [locales, source],
@@ -83,6 +106,38 @@ const ExpressTranslateCard = ({
     [jobs, jobsExpanded],
   );
   const hasMoreJobs = jobs.length > COLLAPSED_JOB_COUNT;
+
+  const jobStatusRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    const map = new Map<string, string>();
+    for (const j of initialJobs) map.set(j.taskId, j.status);
+    jobStatusRef.current = map;
+  }, [initialJobs]);
+
+  const applyJobsUpdate = useCallback((newJobs: TranslationJobProgressSummary[]) => {
+    for (const j of newJobs) {
+      const prev = jobStatusRef.current.get(j.taskId);
+      if (j.status === "COMPLETED" && prev !== "COMPLETED") {
+        notifyTranslationStatsUpdated({ target: j.target, source: j.source });
+      }
+      jobStatusRef.current.set(j.taskId, j.status);
+    }
+    setJobs(newJobs);
+  }, []);
+
+  const refreshList = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) {
+        applyJobsUpdate(data.jobs as TranslationJobProgressSummary[]);
+      }
+    } catch (err) {
+      console.error("[expressV4] refresh list failed:", err);
+    }
+  }, [shop, applyJobsUpdate]);
 
   const handleMigrate = useCallback(async () => {
     setMigrating(true);
@@ -110,17 +165,13 @@ const ExpressTranslateCard = ({
     }
   }, [source, targetOptions]);
 
-  const refreshList = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
-      );
-      const data = await res.json();
-      if (data?.ok) setJobs(data.jobs as ExpressV4Job[]);
-    } catch (err) {
-      console.error("[expressV4] refresh list failed:", err);
+  const toggleTarget = (value: string) => {
+    if (targets.includes(value)) {
+      setTargets(targets.filter((t) => t !== value));
+    } else {
+      setTargets([...targets, value]);
     }
-  }, [shop]);
+  };
 
   const handleCreate = useCallback(async () => {
     setCreating(true);
@@ -162,54 +213,52 @@ const ExpressTranslateCard = ({
     }
   }, [source, targets, targetOptions, refreshList]);
 
-  // 轮询活跃任务的实时进度（逐条 task-progress）。
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
   useEffect(() => {
-    const timer = setInterval(async () => {
-      const active = jobsRef.current.filter((j) => !j.isTerminal);
-      if (!active.length) return;
-      const updated = await Promise.all(
-        active.map(async (j) => {
-          try {
-            const res = await fetch(
-              `/api/translate-v4/task-progress?taskId=${encodeURIComponent(
-                j.taskId,
-              )}&shopName=${encodeURIComponent(shop)}`,
-            );
-            const data = await res.json();
-            return data?.ok ? (data.summary as ExpressV4Job) : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      setJobs((prev) =>
-        prev.map((j) => updated.find((u) => u && u.taskId === j.taskId) ?? j),
-      );
+    const timer = setInterval(() => {
+      const hasActive = jobsRef.current.some((j) => !j.isTerminal);
+      if (!hasActive) return;
+      void refreshList();
     }, 3000);
     return () => clearInterval(timer);
-  }, [shop]);
+  }, [refreshList]);
 
   return (
-    <Card
-      style={{ width: "100%" }}
-      styles={{ body: { padding: "12px 24px" } }}
-    >
-      <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
-        <Title level={4} style={{ margin: 0, fontWeight: 600 }}>
+    <div style={{ ...v4CardStyle, padding: "20px 22px", width: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: v4Colors.text }}>
           极速翻译
-        </Title>
-        <Button type="link" onClick={() => navigate("/app/translate-v4")}>
-          更多设置
-        </Button>
-      </Flex>
+        </h2>
+        <button
+          type="button"
+          onClick={() => navigate("/app/translate-v4")}
+          style={{
+            background: "none",
+            border: "none",
+            color: v4Colors.primary,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          更多设置 →
+        </button>
+      </div>
 
       {!migratedState ? (
         <Alert
           type="warning"
           showIcon
-          style={{ marginBottom: 12 }}
+          style={{ marginTop: 16, marginBottom: 0 }}
           message="升级到新版翻译"
           description="把你的术语表、Liquid 规则和自动翻译配置迁移到新版翻译引擎。迁移后由新版接管，不可回退。"
           action={
@@ -225,72 +274,140 @@ const ExpressTranslateCard = ({
         />
       ) : null}
 
-      <Flex gap={8} wrap="wrap" align="center" style={{ marginBottom: 16 }}>
-        <Text type="secondary">源语言：{source}</Text>
-        <Select
-          mode="multiple"
-          allowClear
-          placeholder="选择目标语言"
-          value={targets}
-          onChange={setTargets}
-          options={targetOptions}
-          style={{ minWidth: 260, flex: 1 }}
-          maxTagCount="responsive"
-        />
+      <div style={{ marginTop: migratedState ? 20 : 16 }}>
+        <SectionLabel>源语言</SectionLabel>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <span style={{ ...v4ChipStyle(true), cursor: "default" }}>
+            <span style={{ fontSize: 11, opacity: 0.75, fontWeight: 700 }}>
+              {localeRegionCode(source)}
+            </span>
+            {localeShortName(source, sourceLabel)}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <SectionLabel>目标语言</SectionLabel>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {targetOptions.map((opt) => {
+            const selected = targets.includes(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => toggleTarget(opt.value)}
+                style={v4ChipStyle(selected)}
+              >
+                <span style={{ fontSize: 11, opacity: 0.75, fontWeight: 700 }}>
+                  {localeRegionCode(opt.value)}
+                </span>
+                {localeShortName(opt.value, opt.label)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 18, display: "flex", justifyContent: "flex-end" }}>
         <Button
           type="primary"
+          size="large"
           loading={creating}
           disabled={targets.length === 0}
           onClick={handleCreate}
+          style={{
+            background: v4Colors.primary,
+            borderColor: v4Colors.primary,
+            borderRadius: 10,
+            fontWeight: 700,
+            height: 42,
+            paddingInline: 24,
+          }}
         >
-          翻译
+          {creating ? "创建中…" : "开始翻译 →"}
         </Button>
-      </Flex>
+      </div>
 
-      {jobs.length === 0 ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="当前没有翻译任务"
-        />
-      ) : (
-        <div>
-          <Space direction="vertical" size="small" style={{ display: "flex" }}>
-            {visibleJobs.map((job) => (
-              <div key={job.taskId}>
-                <Flex justify="space-between" align="center">
-                  <Text strong style={{ fontSize: 13 }}>
-                    {job.source} → {job.target}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: 11 }}>
-                    {job.statusLabel}
-                    {job.stageSummary ? ` · ${job.stageSummary}` : ""}
-                  </Text>
-                </Flex>
-                <Progress
-                  percent={job.progressPercent ?? 0}
-                  status={progressStatus(job)}
-                  size="small"
-                  strokeWidth={4}
-                  style={{ marginBottom: 0 }}
-                />
-              </div>
-            ))}
-          </Space>
-          {hasMoreJobs ? (
-            <Button
-              type="link"
-              size="small"
-              style={{ padding: "4px 0 0", height: "auto" }}
-              onClick={() => setJobsExpanded((v) => !v)}
+      {jobs.length > 0 ? (
+        <div style={{ marginTop: 22 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: v4Colors.text,
+              }}
             >
-              {jobsExpanded
-                ? "收起"
-                : `展开全部（${jobs.length}）`}
-            </Button>
+              最近任务
+            </span>
+            {jobs.some((j) => !j.isTerminal) ? (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: v4Colors.textMuted,
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: v4Colors.successSoft,
+                    flexShrink: 0,
+                  }}
+                />
+                实时同步
+              </span>
+            ) : null}
+          </div>
+          {visibleJobs.map((job) => (
+            <ExpressJobRow key={job.taskId} job={job} />
+          ))}
+          {hasMoreJobs ? (
+            <button
+              type="button"
+              onClick={() => setJobsExpanded((v) => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                color: v4Colors.primary,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: "4px 0 0",
+              }}
+            >
+              {jobsExpanded ? "收起" : `展开全部（${jobs.length}）`}
+            </button>
           ) : null}
         </div>
+      ) : (
+        <div
+          style={{
+            marginTop: 22,
+            padding: "20px 16px",
+            textAlign: "center",
+            fontSize: 13,
+            color: v4Colors.textMuted,
+            borderRadius: 12,
+            background: "#f8fafc",
+            border: `1px dashed ${v4Colors.cardBorder}`,
+          }}
+        >
+          当前没有翻译任务，选择目标语言后即可开始
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

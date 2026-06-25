@@ -42,6 +42,8 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateManageTranslation } from "~/lib/routeShouldRevalidate";
+import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
+import { sameTranslationLocale } from "~/server/translateV4/locale";
 
 const { Text, Title } = Typography;
 interface TableDataType {
@@ -929,6 +931,18 @@ const Index = () => {
     if (loadedItemsCountLocaleRef.current === currentLocale) return;
     loadedItemsCountLocaleRef.current = currentLocale;
     fetchAllItemsCounts(currentLocale, sourceCode);
+  }, [currentLocale, source?.code, fetchAllItemsCounts]);
+
+  /** v4 任务完成后读 Redis 缓存刷新当前语言统计（无需点「刷新统计」）。 */
+  useEffect(() => {
+    const sourceCode = source?.code;
+    if (!sourceCode) return;
+    return onTranslationStatsUpdated((detail) => {
+      if (!currentLocale || !sameTranslationLocale(detail.target, currentLocale)) {
+        return;
+      }
+      fetchAllItemsCounts(currentLocale, sourceCode, false);
+    });
   }, [currentLocale, source?.code, fetchAllItemsCounts]);
 
   useEffect(() => {
