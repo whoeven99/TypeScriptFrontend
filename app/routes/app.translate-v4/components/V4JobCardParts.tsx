@@ -1,20 +1,23 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { v4Colors } from "../v4Styles";
 
-export function ProgressRing({ percent }: { percent: number }) {
+export function ProgressRing({ percent, size = "md" }: { percent: number; size?: "md" | "sm" }) {
   const dash = `${percent} 100`;
   const done = percent >= 100;
+  const dim = size === "sm" ? 44 : 58;
+  const fontSize = size === "sm" ? 10 : 12;
+  const strokeWidth = size === "sm" ? 2.8 : 3.2;
   return (
-    <div style={{ position: "relative", width: 58, height: 58, flexShrink: 0 }}>
-      <svg viewBox="0 0 36 36" style={{ width: 58, height: 58, transform: "rotate(-90deg)" }}>
-        <circle cx="18" cy="18" r="15.5" fill="none" stroke="#ece9f6" strokeWidth="3.2" />
+    <div style={{ position: "relative", width: dim, height: dim, flexShrink: 0 }}>
+      <svg viewBox="0 0 36 36" style={{ width: dim, height: dim, transform: "rotate(-90deg)" }}>
+        <circle cx="18" cy="18" r="15.5" fill="none" stroke="#ece9f6" strokeWidth={strokeWidth} />
         <circle
           cx="18"
           cy="18"
           r="15.5"
           fill="none"
           stroke={done ? v4Colors.success : v4Colors.primary}
-          strokeWidth="3.2"
+          strokeWidth={strokeWidth}
           strokeDasharray={dash}
           strokeLinecap="round"
         />
@@ -27,7 +30,7 @@ export function ProgressRing({ percent }: { percent: number }) {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: v4Colors.mono,
-          fontSize: 12,
+          fontSize,
           fontWeight: 600,
           color: v4Colors.text,
         }}
@@ -64,10 +67,10 @@ export function StatusTag({
   return (
     <span
       style={{
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: 700,
-        padding: "3px 9px",
-        borderRadius: 7,
+        padding: "2px 7px",
+        borderRadius: 6,
         background: bg,
         color,
       }}

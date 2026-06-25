@@ -69,29 +69,27 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
     : `进行中：${STAGE_NAMES[activeIdx] ?? "等待"}`;
 
   return (
-    <div style={{ ...v4CardStyle, padding: "18px 20px", marginBottom: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <ProgressRing percent={percent} />
+    <div style={{ ...v4CardStyle, padding: "10px 14px", marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <ProgressRing percent={percent} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 800, fontSize: 15, color: v4Colors.text }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
               {job.source} → {job.target}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
+            <span style={{ fontSize: 11.5, color: v4Colors.textFaint, fontWeight: 500 }}>{stageSummary}</span>
           </div>
-          <div style={{ fontSize: 12.5, color: v4Colors.textFaint, fontWeight: 500, marginBottom: 9 }}>
-            {stageSummary}
-          </div>
-          <div style={{ display: "flex", gap: 5 }}>
+          <div style={{ display: "flex", gap: 4 }}>
             {miniStages.map((s, i) => (
-              <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: "#f0efe9", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${s.pct}%`, background: s.color, borderRadius: 3, transition: "width 0.5s" }} />
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "#f0efe9", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${s.pct}%`, background: s.color, borderRadius: 2, transition: "width 0.5s" }} />
               </div>
             ))}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
           {canDelete ? (
             <Popconfirm
               title="删除该任务？"
@@ -114,8 +112,8 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
               fontFamily: "inherit",
               cursor: "pointer",
               border: "none",
-              borderRadius: 8,
-              padding: "6px 12px",
+              borderRadius: 6,
+              padding: "4px 10px",
               background: expanded ? "rgba(91,79,207,0.1)" : "transparent",
             }}
           >
@@ -160,7 +158,7 @@ const ghostTextBtn: CSSProperties = {
   cursor: "pointer",
   border: "none",
   background: "none",
-  padding: "6px 8px",
+  padding: "4px 6px",
 };
 
 function ActionChip({
@@ -215,8 +213,8 @@ export function TaskQueueSection({
   const displayJobs = jobs.slice(0, 10);
 
   return (
-    <div style={{ ...v4CardStyle, padding: "18px 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+    <div style={{ ...v4CardStyle, padding: "14px 16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: v4Colors.text }}>
             任务列表 · {jobs.length}
