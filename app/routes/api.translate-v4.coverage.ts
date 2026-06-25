@@ -28,6 +28,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
 
   let targetLocales: Array<{ value: string; label: string }> = [];
+  let primaryLocale = "zh-CN";
   try {
     const res = await admin.graphql(SHOP_LOCALES_QUERY);
     const payload = (await res.json()) as {
@@ -41,7 +42,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       };
     };
     const rows = payload.data?.shopLocales ?? [];
-    const primaryLocale = rows.find((r) => r.primary)?.locale ?? "en";
+    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
     targetLocales = rows
       .filter((r) => !r.primary && r.published)
       .map((r) => ({
