@@ -82,6 +82,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     getShopQuota(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
+      primaryLocale,
       targetLocales,
     }),
   ]);
@@ -275,33 +276,14 @@ export default function AppTranslateV4() {
   jobsRef.current = jobs;
 
   useEffect(() => {
-    const timer = setInterval(async () => {
-      const active = jobsRef.current.filter((j) => !j.isTerminal);
-      if (!active.length) return;
-      const updated = await Promise.all(
-        active.map(async (j) => {
-          try {
-            const res = await fetch(
-              `/api/translate-v4/task-progress?taskId=${encodeURIComponent(
-                j.taskId,
-              )}&shopName=${encodeURIComponent(shop)}`,
-            );
-            const data = await res.json();
-            return data?.ok
-              ? (data.summary as TranslationJobProgressSummary)
-              : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      setJobs((prev) =>
-        prev.map((j) => updated.find((u) => u && u.taskId === j.taskId) ?? j),
-      );
+    const timer = setInterval(() => {
+      const hasActive = jobsRef.current.some((j) => !j.isTerminal);
+      if (!hasActive) return;
+      void refreshList();
       void refreshQuota();
     }, 3000);
     return () => clearInterval(timer);
-  }, [shop, refreshQuota]);
+  }, [refreshList, refreshQuota]);
 
   const coverageAutoRefreshDone = useRef(false);
   useEffect(() => {
@@ -383,7 +365,6 @@ export default function AppTranslateV4() {
           jobs={jobs}
           translateSlotBusy={translateSlotBusy}
           onAction={handleAction}
-          onRefresh={refreshList}
         />
         <CoverageCard
           locales={coverage.locales}

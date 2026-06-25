@@ -43,6 +43,13 @@ export type TranslationV4Module = (typeof TRANSLATION_V4_MODULES)[number];
 /** 任务来源标识：TsFrontend 创建的任务统一打此标记，便于 worker / 运营区分。 */
 export const TS_FRONTEND_TASK_SOURCE = "TsFrontend";
 
+/** Worker 定时扫描创建的自动增量任务（与 Spark worker TSF_AUTO_TASK_SOURCE 一致）。 */
+export const TSF_AUTO_TASK_SOURCE = "TsFrontend-Auto";
+
+export function isAutoV4TaskSource(taskSource: string | null | undefined): boolean {
+  return taskSource === TSF_AUTO_TASK_SOURCE;
+}
+
 /** 每类资源不设上限（worker init 全量枚举）。 */
 export const V4_LIMIT_UNLIMITED = Number.MAX_SAFE_INTEGER;
 

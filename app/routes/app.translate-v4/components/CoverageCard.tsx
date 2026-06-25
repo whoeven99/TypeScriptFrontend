@@ -3,6 +3,7 @@ import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
+import { AutoTranslateBadge } from "./AutoTranslateMarkers";
 
 type Props = {
   locales: LocaleCoverageRow[];
@@ -57,6 +58,11 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
             {localeRegionCode(row.locale)}
           </span>
           {label}
+          {row.autoTranslate ? (
+            <span style={{ marginLeft: 8 }}>
+              <AutoTranslateBadge nextUpdateHint={row.nextAutoUpdateHint} />
+            </span>
+          ) : null}
         </span>
         <span style={{ fontWeight: 700, color: v4Colors.text }}>
           {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}

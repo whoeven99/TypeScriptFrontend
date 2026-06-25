@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button, Popconfirm } from "antd";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
-import { canPauseV4Job } from "~/server/translateV4/types";
+import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { jobDisplayPercent } from "../jobStageUtils";
+import { AutoTaskBadge } from "./AutoTranslateMarkers";
 import {
   JobCollapsedMeta,
   JobSummaryStats,
@@ -73,6 +74,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
             <span style={{ fontWeight: 700, fontSize: 14, color: v4Colors.text }}>
               {job.source} → {job.target}
             </span>
+            {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
           </div>
           {!expanded ? <JobCollapsedMeta job={job} /> : null}
@@ -308,12 +310,10 @@ export function TaskQueueSection({
   jobs,
   translateSlotBusy,
   onAction,
-  onRefresh,
 }: {
   jobs: TranslationJobProgressSummary[];
   translateSlotBusy: boolean;
   onAction: Props["onAction"];
-  onRefresh: () => void;
 }) {
   const displayJobs = jobs.slice(0, 10);
 
@@ -322,7 +322,7 @@ export function TaskQueueSection({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: v4Colors.text }}>
-            任务队列 · {jobs.length}
+            任务列表 · {jobs.length}
           </h2>
           <span
             style={{
@@ -344,7 +344,6 @@ export function TaskQueueSection({
             实时同步
           </span>
         </div>
-        <Button size="small" type="text" onClick={onRefresh}>刷新</Button>
       </div>
 
       <div style={{ marginTop: 14 }}>
