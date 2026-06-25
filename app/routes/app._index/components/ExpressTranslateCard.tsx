@@ -17,9 +17,11 @@ import { AutoTaskBadge } from "~/routes/app.translate-v4/components/AutoTranslat
 import { JobCollapsedMeta } from "~/routes/app.translate-v4/components/JobExpandedDetail";
 import { ProgressRing, StatusTag } from "~/routes/app.translate-v4/components/V4JobCardParts";
 
+type ExpressLocaleOption = ShopLocaleOption & { published?: boolean };
+
 type Props = {
   shop: string;
-  locales: ShopLocaleOption[];
+  locales: ExpressLocaleOption[];
   primaryLocale: string;
   initialJobs: TranslationJobProgressSummary[];
   /** 本店是否已迁移到新版翻译（来自 ShopTranslationSettings.migratedToTsf）。 */
@@ -95,7 +97,7 @@ const ExpressTranslateCard = ({
   const sourceLabel =
     locales.find((l) => l.value === source)?.label ?? source;
   const targetOptions = useMemo<ShopLocaleOption[]>(
-    () => locales.filter((l) => l.value !== source),
+    () => locales.filter((l) => l.value !== source && l.published),
     [locales, source],
   );
   const visibleJobs = useMemo(
@@ -312,6 +314,7 @@ const ExpressTranslateCard = ({
         <Button
           type="primary"
           size="large"
+          className="express-start-btn"
           loading={creating}
           disabled={targets.length === 0}
           onClick={handleCreate}
