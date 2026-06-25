@@ -71,6 +71,7 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
   const resourceTotal = m.translateTotal || taskResourceTotal(m);
   const elapsed = jobElapsedMs(job);
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
+  const startTime = formatJobStartTime(job.createdAt);
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -83,6 +84,11 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
           color: "#64748b",
         }}
       >
+        {startTime ? (
+          <span>
+            开始时间 <strong style={{ color: "#0f172a" }}>{startTime}</strong>
+          </span>
+        ) : null}
         <span>
           已翻译资源{" "}
           <strong style={{ color: "#0f172a" }}>
