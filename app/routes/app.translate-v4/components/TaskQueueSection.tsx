@@ -6,15 +6,12 @@ import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   jobDisplayPercent,
-  stageBarPercent,
-  isStageBarComplete,
-  stageOf,
+  visibleStageIndex,
+  VISIBLE_STAGE_LABELS,
 } from "../jobStageUtils";
-import { ProgressRing, StatusTag } from "./V4JobCardParts";
+import { ProgressRing, StatusTag, MiniStageTrack } from "./V4JobCardParts";
 import { AutoTaskBadge } from "./AutoTranslateMarkers";
 import { JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
-
-const STAGE_NAMES = ["初始化", "翻译", "写回", "校验"];
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -52,21 +49,16 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
     })();
   };
 
-  // 顶部四段迷你进度条
-  const activeIdx = stageOf(job.status, job.errorStage);
-  const miniStages = [0, 1, 2, 3].map((idx) => {
-    const pct = stageBarPercent(idx, job.metrics, job.status);
-    const complete = isStageBarComplete(idx, job.metrics, job.status);
-    const color = complete ? v4Colors.successSoft : pct > 0 ? v4Colors.primary : "#e2e8f0";
-    return { pct, color };
-  });
+  // 顶部三阶段迷你进度（不含 verify）
   const stageSummary = job.isTerminal
     ? job.status === "COMPLETED"
       ? ""
       : job.status === "CANCELLED"
         ? "已取消"
         : "已结束"
-    : `进行中：${STAGE_NAMES[activeIdx] ?? "等待"}`;
+    : ["VERIFY_QUEUED", "VERIFYING"].includes(job.status)
+      ? ""
+      : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage)] ?? "等待"}`;
 
   return (
     <div style={{ ...v4CardStyle, padding: "10px 14px", marginBottom: 8 }}>
@@ -85,13 +77,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
               </span>
             ) : null}
           </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {miniStages.map((s, i) => (
-              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "#f0efe9", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${s.pct}%`, background: s.color, borderRadius: 2, transition: "width 0.5s" }} />
-              </div>
-            ))}
-          </div>
+          <MiniStageTrack job={job} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
           {canDelete ? (
