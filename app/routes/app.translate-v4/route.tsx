@@ -366,7 +366,7 @@ export default function AppTranslateV4() {
           gridTemplateColumns: "auto minmax(0, 1fr)",
           gap: 16,
           marginBottom: 16,
-          alignItems: "stretch",
+          alignItems: "start",
         }}
       >
         <SummaryDonutCard summary={coverage} />
