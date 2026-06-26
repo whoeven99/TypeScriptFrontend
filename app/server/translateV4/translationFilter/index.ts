@@ -11,4 +11,4 @@ export { shouldIncludeFieldV3 as shouldIncludeField } from "./v3Base";
 export { translationRuleJudgment, shouldTranslateThemeKey, whiteListTranslate, metaTranslate } from "./judgeTranslateUtils";
 export { passesThemeModuleRules } from "./themeRules";
 export { passesMetafieldModuleRules } from "./metafieldRules";
-export { passesCoverAndOutdatedRules } from "./v3Base";
+export { passesCoverAndOutdatedRules, translationNeedsRefresh } from "./v3Base";

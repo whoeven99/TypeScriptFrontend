@@ -1,11 +1,14 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
-import type { StageName, TranslationV4Status } from "~/server/translateV4/types";
+import type { StageName } from "~/server/translateV4/types";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
+import { v4Colors } from "../v4Styles";
 import {
   formatElapsed,
   formatJobStartTime,
+  isStageBarComplete,
   jobElapsedMs,
   jobQuotaCredits,
+  stageBarPercent,
   stageOf,
 } from "../jobStageUtils";
 
@@ -18,78 +21,19 @@ const STAGE_DEFS: { name: string; key: StageName }[] = [
   { name: "校验", key: "VERIFY" },
 ];
 
+// 进度色与品牌统一：进行中用主题紫 v4Colors.primary，完成用绿色。
 const INIT_SCAN_CSS = `
 @keyframes v4-indet { 0% { left: -42%; } 100% { left: 100%; } }
 @keyframes v4-dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%,100% { content: "..."; } }
 .v4-indet-track { position: relative; height: 6px; border-radius: 3px; background: #f0f0f0; overflow: hidden; }
 .v4-indet-fill { position: absolute; top: 0; height: 100%; width: 42%; border-radius: 3px;
-  background: linear-gradient(90deg, rgba(22,119,255,0.15), #1677ff, rgba(22,119,255,0.15));
+  background: linear-gradient(90deg, rgba(91,79,207,0.15), #5b4fcf, rgba(91,79,207,0.15));
   animation: v4-indet 1.1s ease-in-out infinite; }
 .v4-dots::after { content: ""; animation: v4-dots 1.2s steps(1) infinite; }
 `;
 
-function ratioPercent(done: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.min(100, Math.round((done / total) * 100));
-}
-
 function taskResourceTotal(m: StageMetrics): number {
   return m.translateTotal || m.initTotal || 0;
-}
-
-function translateStageProgress(m: StageMetrics): { done: number; total: number } {
-  if (m.translateUnitTotal > 0) {
-    return { done: m.translateUnitDone, total: m.translateUnitTotal };
-  }
-  return { done: m.translateDone, total: taskResourceTotal(m) };
-}
-
-function stageBarPercent(
-  idx: number,
-  m: StageMetrics,
-  jobStatus: TranslationV4Status,
-): number {
-  if (jobStatus === "COMPLETED") return 100;
-  switch (idx) {
-    case 0:
-      return ratioPercent(m.initDone, m.initTotal);
-    case 1: {
-      const { done, total } = translateStageProgress(m);
-      return ratioPercent(done, total);
-    }
-    case 2: {
-      const total = taskResourceTotal(m);
-      return total > 0 ? ratioPercent(m.writebackDone, total) : 0;
-    }
-    case 3:
-      return ratioPercent(m.verifyDone, m.verifyTotal);
-    default:
-      return 0;
-  }
-}
-
-function isStageBarComplete(
-  idx: number,
-  m: StageMetrics,
-  jobStatus: TranslationV4Status,
-): boolean {
-  if (jobStatus === "COMPLETED") return true;
-  switch (idx) {
-    case 0:
-      return m.initTotal > 0 && m.initDone >= m.initTotal;
-    case 1: {
-      const { done, total } = translateStageProgress(m);
-      return total > 0 && done >= total;
-    }
-    case 2: {
-      const total = taskResourceTotal(m);
-      return total > 0 && m.writebackDone >= total;
-    }
-    case 3:
-      return m.verifyTotal > 0 && m.verifyDone >= m.verifyTotal;
-    default:
-      return false;
-  }
 }
 
 function stageDetail(idx: number, m: StageMetrics): string {
@@ -105,16 +49,6 @@ function stageDetail(idx: number, m: StageMetrics): string {
     return `${m.writebackDone}/${total || m.writebackTotal}`;
   }
   return `${m.verifyDone}/${m.verifyTotal}`;
-}
-
-function formatElapsed(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return `${s}秒`;
-  const m = Math.floor(s / 60);
-  const rs = s % 60;
-  if (m < 60) return rs ? `${m}分${rs}秒` : `${m}分`;
-  const h = Math.floor(m / 60);
-  return `${h}时${m % 60}分`;
 }
 
 function stageElapsedMs(
@@ -137,6 +71,7 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
   const resourceTotal = m.translateTotal || taskResourceTotal(m);
   const elapsed = jobElapsedMs(job);
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
+  const startTime = formatJobStartTime(job.createdAt);
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -149,6 +84,11 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
           color: "#64748b",
         }}
       >
+        {startTime ? (
+          <span>
+            开始时间 <strong style={{ color: "#0f172a" }}>{startTime}</strong>
+          </span>
+        ) : null}
         <span>
           已翻译资源{" "}
           <strong style={{ color: "#0f172a" }}>
@@ -335,7 +275,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                           : complete
                             ? "#22c55e"
                             : inProgress
-                              ? "#1677ff"
+                              ? v4Colors.primary
                               : "#e2e8f0",
                       transition: "width 0.2s",
                     }}

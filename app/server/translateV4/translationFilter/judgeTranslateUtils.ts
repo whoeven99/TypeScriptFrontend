@@ -11,18 +11,21 @@ import {
   URL_PREFIXES,
   WHITELIST_WORDS,
 } from "./constants";
+import { isHtmlContent, isJsonObject } from "./jsonUtils";
 import { matchesRejectRule } from "./rejectRules";
 
 /**
  * General rules (JudgeTranslateUtils.translationRuleJudgment).
- * PHASE2: HTML early-return and key=value+JSON pass are deferred.
+ * HTML/Rich-text bodies skip scalar heuristics (px/url/hash) that target theme tokens.
  */
 export function translationRuleJudgment(key: string, value: string): boolean {
   if (value == null || value.trim() === "") {
     return false;
   }
 
-  // PHASE2: key === "value" && isJson(value) → return true
+  if (key === "value" && isJsonObject(value)) {
+    return true;
+  }
 
   if (ISO_OFFSET_DATETIME_PATTERN.test(value)) {
     return false;
@@ -32,7 +35,9 @@ export function translationRuleJudgment(key: string, value: string): boolean {
     return false;
   }
 
-  // PHASE2: isHtml(value) → return true
+  if (isHtmlContent(value)) {
+    return true;
+  }
 
   if (/\d+px\b/.test(value)) {
     return false;
@@ -61,7 +66,6 @@ export function translationRuleJudgment(key: string, value: string): boolean {
 
 /**
  * Theme general/section keys (JudgeTranslateUtils.shouldTranslate).
- * PHASE2: key contains "color" && !isHtml(value) is deferred.
  */
 export function shouldTranslateThemeKey(key: string, value: string): boolean {
   if (value == null || value.trim() === "") {
@@ -108,7 +112,9 @@ export function shouldTranslateThemeKey(key: string, value: string): boolean {
     }
   }
 
-  // PHASE2: key.includes("color") && !isHtml(value) → return false
+  if (key.includes("color") && !isHtmlContent(value)) {
+    return false;
+  }
 
   return true;
 }
@@ -118,11 +124,12 @@ export function whiteListTranslate(key: string): boolean {
   return WHITELIST_WORDS.some((word) => prefix.endsWith(word));
 }
 
-// CSS/config enum identifiers: all-lowercase ASCII letters/hyphens/underscores,
-// no whitespace, < 20 chars — these are layout/style config values, not UI text.
-const CSS_ENUM_RE = /^[a-z][a-z_-]*$/;
-
+/** Java JudgeTranslateUtils.metaTranslate — left/right/top/bottom only. */
 export function metaTranslate(value: string): boolean {
-  if (value.length < 20 && CSS_ENUM_RE.test(value)) return false;
-  return true;
+  return (
+    value !== "left" &&
+    value !== "right" &&
+    value !== "top" &&
+    value !== "bottom"
+  );
 }

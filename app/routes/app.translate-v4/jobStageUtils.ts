@@ -47,9 +47,8 @@ function translateStageProgress(m: StageMetrics): { done: number; total: number 
 export function stageBarPercent(
   idx: number,
   m: StageMetrics,
-  jobStatus: TranslationV4Status,
+  _jobStatus: TranslationV4Status,
 ): number {
-  if (jobStatus === "COMPLETED") return 100;
   switch (idx) {
     case 0:
       return ratioPercent(m.initDone, m.initTotal);
@@ -71,9 +70,8 @@ export function stageBarPercent(
 export function isStageBarComplete(
   idx: number,
   m: StageMetrics,
-  jobStatus: TranslationV4Status,
+  _jobStatus: TranslationV4Status,
 ): boolean {
-  if (jobStatus === "COMPLETED") return true;
   switch (idx) {
     case 0:
       return m.initTotal > 0 && m.initDone >= m.initTotal;
@@ -93,9 +91,7 @@ export function isStageBarComplete(
 }
 
 export function jobDisplayPercent(job: TranslationJobProgressSummary): number {
-  if (job.progressPercent != null) return job.progressPercent;
-  if (job.status === "COMPLETED") return 100;
-  return 0;
+  return job.progressPercent ?? 0;
 }
 
 export function formatElapsed(ms: number): string {

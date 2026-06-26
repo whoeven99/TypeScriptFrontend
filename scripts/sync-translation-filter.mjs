@@ -76,6 +76,7 @@ if (checkMode) {
   const recorded = JSON.parse(readFileSync(PROVENANCE, "utf8"));
   let drift = false;
   for (const file of listTsFiles(DEST_DIR)) {
+    if (file === ".synced-from-spark.json") continue;
     const actual = sha256(readFileSync(join(DEST_DIR, file), "utf8"));
     const expected = recorded.files?.[file];
     if (actual !== expected) {
@@ -84,7 +85,7 @@ if (checkMode) {
     }
   }
   const recordedNames = Object.keys(recorded.files ?? {}).sort();
-  const actualNames = listTsFiles(DEST_DIR);
+  const actualNames = listTsFiles(DEST_DIR).filter((f) => f !== ".synced-from-spark.json");
   if (recordedNames.join(",") !== actualNames.join(",")) {
     console.error("[sync-filter] 副本文件清单与 provenance 不符");
     drift = true;
@@ -108,7 +109,7 @@ mkdirSync(DEST_DIR, { recursive: true });
 
 const files = {};
 for (const file of listTsFiles(SRC_DIR)) {
-  const transformed = transform(readFileSync(join(SRC_DIR, file), "utf8"));
+  const transformed = transform(readFileSync(join(SPARK_ROOT, SRC_REL, file), "utf8"));
   writeFileSync(join(DEST_DIR, file), transformed);
   files[file] = sha256(transformed);
 }
@@ -124,5 +125,5 @@ const provenance = {
 writeFileSync(PROVENANCE, JSON.stringify(provenance, null, 2) + "\n");
 
 console.log(
-  `[sync-filter] 已同步 ${Object.keys(files).length} 个文件 ← ${SRC_DIR}\n  sparkCommit=${provenance.sparkCommit}`,
+  `[sync-filter] 已同步 ${Object.keys(files).length} 个 filter 文件 ← ${SRC_DIR}\n  sparkCommit=${provenance.sparkCommit}`,
 );
