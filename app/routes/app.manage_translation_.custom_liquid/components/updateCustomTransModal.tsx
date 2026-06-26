@@ -3,48 +3,27 @@ import { Modal, Input, Space, Button, Typography, Select, Flex } from "antd";
 import { useSelector } from "react-redux";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import { InsertShopNameLiquidData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import {
+  insertLiquidCompat,
+  type LiquidTableRow,
+} from "../liquidClient";
 
 const { Text } = Typography;
 
 interface UpdateCustomTransModalProps {
+  migrated: boolean;
   server: string;
-  dataSource: {
-    key: number;
-    sourceText: string;
-    targetText: string;
-    replacementMethod: boolean;
-    languageCode: string;
-  }[];
-  defaultData?:
-  | {
-    key: number;
-    sourceText: string;
-    targetText: string;
-    replacementMethod: boolean;
-    languageCode: string;
-  }
-  | undefined;
-  handleUpdateDataSource: ({
-    key,
-    sourceText,
-    targetText,
-    replacementMethod,
-    languageCode,
-  }: {
-    key?: number;
-    sourceText: string;
-    targetText: string;
-    replacementMethod: boolean;
-    languageCode: string;
-  }) => void;
+  dataSource: LiquidTableRow[];
+  defaultData?: LiquidTableRow | undefined;
+  handleUpdateDataSource: (row: LiquidTableRow & { key?: string }) => void;
   title: string;
   open: boolean;
   setIsModalHide: () => void;
 }
 
 const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
+  migrated,
   server,
   dataSource,
   defaultData,
@@ -55,12 +34,10 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  //语言源数据
   const languageTableData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
 
-  //语言数据
   const options = useMemo(() => {
     if (languageTableData.length > 0) {
       return languageTableData.map((item) => ({
@@ -70,7 +47,6 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     }
   }, [languageTableData]);
 
-  //表单数据依据
   const [formData, setFormData] = useState<{
     sourceText: string;
     targetText: string;
@@ -83,20 +59,17 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     languageCode: "",
   });
 
-  //存在数据为空时禁用提交
   const confirmButtonDisable = useMemo<boolean>(
     () =>
       !formData.languageCode ||
       !formData.sourceText ||
       !formData.targetText ||
       JSON.stringify(formData) == JSON.stringify(defaultData),
-    [formData],
+    [formData, defaultData],
   );
 
-  //加载状态数组，目前submitting表示正在提交
   const [loadingStatusArray, setLoadingStatusArray] = useState<string[]>([]);
 
-  //初始化表单数据
   useEffect(() => {
     if (defaultData) {
       setFormData(defaultData);
@@ -110,55 +83,48 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     }
   }, [defaultData]);
 
-  //提交表单数据方法
-  const handleConfirm = async (id?: number) => {
+  const handleConfirm = async (id?: string) => {
     let isSameRuleError = true;
 
     const source = formData.sourceText + formData.languageCode;
-    dataSource.map((item: any) => {
+    for (const item of dataSource) {
       const string = item.sourceText + item.languageCode;
       if (title === "Create rule") {
         if (source == string) {
           isSameRuleError = false;
         }
-      } else {
-        if (source == string && item.key !== id) {
-          isSameRuleError = false;
-        }
+      } else if (source == string && item.key !== id) {
+        isSameRuleError = false;
       }
-    });
+    }
 
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
-      let data;
-      if (defaultData) {
-        data = await InsertShopNameLiquidData({
-          id: defaultData.key,
-          shop: globalStore?.shop || "",
-          server: server,
-          sourceText: formData.sourceText,
-          targetText: formData.targetText,
-          replacementMethod: formData.replacementMethod,
-          languageCode: formData.languageCode,
-        });
-      } else {
-        data = await InsertShopNameLiquidData({
-          shop: globalStore?.shop || "",
-          server: server,
-          sourceText: formData.sourceText,
-          targetText: formData.targetText,
-          replacementMethod: formData.replacementMethod,
-          languageCode: formData.languageCode,
-        });
-      }
+      const data = await insertLiquidCompat({
+        migrated,
+        id: defaultData?.key,
+        shop: globalStore?.shop || "",
+        server,
+        sourceText: formData.sourceText,
+        targetText: formData.targetText,
+        replacementMethod: formData.replacementMethod,
+        languageCode: formData.languageCode,
+      });
 
       if (data.success) {
-        const newData = {
-          key: data.response?.id || defaultData?.key,
-          sourceText: data.response?.liquidBeforeTranslation,
-          targetText: data.response?.liquidAfterTranslation,
-          replacementMethod: true,
-          languageCode: data.response?.languageCode,
+        const newData: LiquidTableRow = {
+          key: String(data.response?.id ?? defaultData?.key ?? ""),
+          sourceText: String(
+            data.response?.liquidBeforeTranslation ?? formData.sourceText,
+          ),
+          targetText: String(
+            data.response?.liquidAfterTranslation ?? formData.targetText,
+          ),
+          replacementMethod:
+            data.response?.replacementMethod ?? formData.replacementMethod,
+          languageCode: String(
+            data.response?.languageCode ?? formData.languageCode,
+          ),
         };
         handleUpdateDataSource(newData);
         shopify.toast.show("Saved successfully");
@@ -171,8 +137,8 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
       } else {
         shopify.toast.show(data.errorMsg);
       }
-      setLoadingStatusArray(
-        loadingStatusArray.filter((item) => item == "submitting"),
+      setLoadingStatusArray((prev) =>
+        prev.filter((item) => item !== "submitting"),
       );
     } else {
       shopify.toast.show(t("You cannot add two conflicting rules."));
