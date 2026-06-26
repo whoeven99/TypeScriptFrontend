@@ -102,8 +102,12 @@ export async function ParseLiquidDataByShopNameAndLanguage({
   languageCode,
 }) {
   try {
+    // 优先使用 App Proxy（由 Liquid 块注入的 ciwiAppProxyBase）；
+    // 未注入时降级到 Java 直连（switchUrl 保留，不删除 Java 代码）
+    const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
+    const baseUrl = appProxyBase || switchUrl(blockId);
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
+      `${baseUrl}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
       {
         method: "POST",
       },
