@@ -15,9 +15,6 @@ import { fail } from "~/server/storefront/response.server";
  *   false → 透明代理到 Java（保留 Java 代码）
  */
 
-// 开发环境可设 STOREFRONT_SKIP_HMAC=true 跳过签名校验
-const SKIP_HMAC = process.env.STOREFRONT_SKIP_HMAC === "true";
-
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -32,7 +29,11 @@ function authenticate(
   const shop = url.searchParams.get("shop") ?? "";
   if (!shop) return { ok: false };
 
-  if (SKIP_HMAC) return { ok: true, shop };
+  const timestampRaw = url.searchParams.get("timestamp");
+  const timestamp = timestampRaw ? Number(timestampRaw) : Number.NaN;
+  if (!Number.isFinite(timestamp)) return { ok: false };
+  const MAX_SKEW_MS = 5 * 60 * 1000;
+  if (Math.abs(Date.now() - timestamp * 1000) > MAX_SKEW_MS) return { ok: false };
 
   const apiSecret = process.env.SHOPIFY_API_SECRET ?? "";
   if (!apiSecret) {
@@ -74,8 +75,16 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
     }
 
-    const result = await parseLiquidTranslations(shopName, languageCode);
-    return json(result, { headers: CORS_HEADERS });
+    try {
+      const result = await parseLiquidTranslations(shopName, languageCode);
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] liquid parse failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
   }
 
   return json(fail(404, "not found"), { status: 404, headers: CORS_HEADERS });
