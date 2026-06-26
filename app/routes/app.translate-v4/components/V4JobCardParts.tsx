@@ -51,8 +51,8 @@ export function StatusTag({
   let bg = v4Colors.primarySoft;
   let color = v4Colors.primary;
   if (status === "COMPLETED") {
-    bg = "rgba(31, 157, 107, 0.12)";
-    color = v4Colors.success;
+    bg = "rgba(37, 99, 235, 0.1)";
+    color = "#2563eb";
   } else if (status === "PAUSED") {
     bg = "#fcf0d9";
     color = "#b87a00";
