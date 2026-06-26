@@ -1,14 +1,16 @@
 import { v4Colors } from "../v4Styles";
 
 type BadgeProps = {
-  /** 覆盖率行：在徽章后展示下次更新时间 */
+  lastUpdateHint?: string | null;
   nextUpdateHint?: string | null;
 };
 
 /** 与语言页自动翻译开关同源（ShopTargetLocale.autoTranslate）。 */
-export function AutoTranslateBadge({ nextUpdateHint }: BadgeProps = {}) {
+export function AutoTranslateBadge({ lastUpdateHint, nextUpdateHint }: BadgeProps = {}) {
+  const hasHints = Boolean(lastUpdateHint || nextUpdateHint);
+
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, verticalAlign: "middle" }}>
+    <span className="v4-auto-badge-wrap">
       <span
         style={{
           padding: "1px 7px",
@@ -22,9 +24,10 @@ export function AutoTranslateBadge({ nextUpdateHint }: BadgeProps = {}) {
       >
         自动翻译
       </span>
-      {nextUpdateHint ? (
-        <span style={{ fontSize: 10, color: v4Colors.textMuted, fontWeight: 500 }}>
-          {nextUpdateHint}
+      {hasHints ? (
+        <span className="v4-auto-badge-hints" aria-hidden>
+          {lastUpdateHint ? <span>{lastUpdateHint}</span> : null}
+          {nextUpdateHint ? <span>{nextUpdateHint}</span> : null}
         </span>
       ) : null}
     </span>

@@ -13,6 +13,7 @@ import type { AdminGraphqlClient } from "./itemsCount.server";
 import { sameTranslationLocale } from "./locale";
 import { listTargetLocales } from "./targetLocale.server";
 import {
+  readAutoScanLastAt,
   resolveNextAutoUpdateAt,
 } from "./autoScanSchedule.server";
 
@@ -26,6 +27,8 @@ export type LocaleCoverageRow = {
   cacheMissing: boolean;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
+  /** Worker 最近一次自动扫描时刻（ISO，全店共用） */
+  lastAutoUpdateAt: string | null;
   /** 下一轮 Worker 自动扫描时刻（ISO，由前端按本地时区/相对时间展示） */
   nextAutoUpdateAt: string | null;
 };
@@ -51,6 +54,7 @@ async function enrichCoverageWithAutoTranslate(
   summary: CoverageSummary,
 ): Promise<CoverageSummary> {
   const targetRows = await listTargetLocales(shop);
+  const lastAutoUpdateAt = await readAutoScanLastAt();
   const locales = await Promise.all(
     summary.locales.map(async (row) => {
       const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
@@ -59,6 +63,7 @@ async function enrichCoverageWithAutoTranslate(
       return {
         ...row,
         autoTranslate,
+        lastAutoUpdateAt: autoTranslate ? lastAutoUpdateAt : null,
         nextAutoUpdateAt,
       };
     }),
@@ -91,6 +96,7 @@ export async function getCoverageSummaryFromCache({
       percent: ratioPercent(agg.translated, agg.total),
       cacheMissing: agg.cacheMissing,
       autoTranslate: false,
+      lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
     translatedItems += agg.translated;
@@ -167,6 +173,7 @@ export async function computeCoverageSummary({
       percent: ratioPercent(translated, total),
       cacheMissing,
       autoTranslate: false,
+      lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
     translatedItems += translated;
