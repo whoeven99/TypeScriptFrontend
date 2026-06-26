@@ -10,9 +10,9 @@ import { fail } from "~/server/storefront/response.server";
  * Shopify App Proxy 将 `https://{shop}/apps/ciwi/*` 转发到
  * `https://{tsf-host}/api/storefront/*`，并附带 shop/timestamp/signature。
  *
- * 灰度策略（migratedToTsf）：
- *   true  → 从 Prisma 读取
- *   false → 透明代理到 Java（保留 Java 代码）
+ * 灰度策略（migratedToTsf + TRANSLATE_V4_SHOP_ALLOWLIST）：
+ *   两者均满足 → 从 Prisma 读取
+ *   否则       → 透明代理到 Java（保留 Java 代码）
  */
 
 const CORS_HEADERS = {
