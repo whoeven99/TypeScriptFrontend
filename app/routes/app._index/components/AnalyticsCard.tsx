@@ -65,7 +65,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "SHOP",
     "PAGE",
     // "ONLINE_STORE_THEME", // 注释掉
-    "ONLINE_STORE_THEME_LOCALE_CONTENT", 
+    // "ONLINE_STORE_THEME_LOCALE_CONTENT", 
     "PRODUCT",
     "PRODUCT_OPTION",
     "PRODUCT_OPTION_VALUE",
