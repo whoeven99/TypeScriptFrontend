@@ -3,22 +3,27 @@ import crypto from "node:crypto";
 /**
  * 校验 Shopify App Proxy 的 HMAC 签名。
  *
- * Shopify 将请求转发给 TSF 时附带 `signature` query param，
- * 值为所有其他 query params（按 key 排序后拼 `k=v&k=v`）的 HMAC-SHA256 hex。
+ * @see https://shopify.dev/docs/apps/build/online-store/app-proxies/authenticate-app-proxies
+ * 与其他 Shopify HMAC 不同：各 param 格式化为 `key=value`（同 key 多值用逗号拼接）后
+ * 按字典序排序，再**无分隔符**直接拼接，最后 HMAC-SHA256 hex。
  */
 export function verifyAppProxyHmac(url: URL, apiSecret: string): boolean {
   const signature = url.searchParams.get("signature");
   if (!signature) return false;
 
-  const pairs: string[] = [];
+  const grouped = new Map<string, string[]>();
   for (const [key, value] of url.searchParams.entries()) {
-    if (key !== "signature") {
-      pairs.push(`${key}=${value}`);
-    }
+    if (key === "signature") continue;
+    const list = grouped.get(key) ?? [];
+    list.push(value);
+    grouped.set(key, list);
   }
-  pairs.sort();
 
-  const message = pairs.join("&");
+  const pairs = [...grouped.entries()]
+    .map(([key, values]) => `${key}=${values.join(",")}`)
+    .sort();
+
+  const message = pairs.join("");
   const expected = crypto
     .createHmac("sha256", apiSecret)
     .update(message, "utf8")
