@@ -187,8 +187,8 @@ async function ciwiOnload() {
 
   //所有可用语言
   const availableLanguages = Array.from(
-    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-  ).map((opt) => opt.dataset.value);
+    ciwiBlock.querySelectorAll(".language_selector_header option"),
+  ).map((opt) => opt.value);
 
   //所有可用地区
   const availableCountries = Array.from(
@@ -318,6 +318,10 @@ async function ciwiOnload() {
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
 
+  const activeSelectorCount =
+    Number(Boolean(isLanguageSelectorTakeEffect)) +
+    Number(Boolean(isCurrencySelectorTakeEffect));
+
   LanguageSelectorTakeEffect(
     isLanguageSelectorTakeEffect,
     configData,
@@ -337,7 +341,10 @@ async function ciwiOnload() {
       setTimeout(loadFlags, 1200);
     }
     const mainBox = ciwiBlock.querySelector("#main-box");
+    const languageSelect = ciwiBlock.querySelector(".language_selector_header");
     mainBox?.addEventListener("mouseenter", loadFlags, { once: true });
+    languageSelect?.addEventListener("mouseenter", loadFlags, { once: true });
+    languageSelect?.addEventListener("focus", loadFlags, { once: true });
   }
 
   CurrencySelectorTakeEffect(
@@ -359,15 +366,28 @@ async function ciwiOnload() {
     "#translate-float-btn-icon",
   );
   const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const selectorBackdrop = ciwiBlock.querySelector("#selector-backdrop");
+  const closeButtonWrapper = ciwiBlock.querySelector(".close_button_wrapper");
+  const shouldUseSidebarWidget =
+    !configData.languageSelector && !configData.currencySelector;
+  const isDirectSelectorMode = activeSelectorCount === 1 && !shouldUseSidebarWidget;
+  const isTransparentMode = Boolean(configData?.isTransparent);
 
   if (switcher) {
+    switcher.style.visibility = isTransparentMode ? "hidden" : "visible";
+    switcher.style.opacity = isTransparentMode ? "0" : "1";
+    switcher.style.pointerEvents = isTransparentMode ? "none" : "auto";
+    if (selectorBackdrop) {
+      selectorBackdrop.style.display = "none";
+    }
+
     if (!configData?.isTransparent) {
       const translateFloatBtnText = ciwiBlock.querySelector(
         "#translate-float-btn-text",
       );
-      const optionsContainer = ciwiBlock.querySelectorAll(".options-container");
       selectorBox.style.backgroundColor = configData.backgroundColor;
       switcher.style.color = configData.fontColor;
+      translateFloatBtn.style.pointerEvents = "auto";
 
       // 四个方向处理（保持原始逻辑）
       switch (configData.selectorPosition) {
@@ -381,10 +401,6 @@ async function ciwiOnload() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_left":
-          optionsContainer.forEach((item) => {
-            item.style.top = "-135px";
-            item.style.marginTop = "-4px";
-          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.top = "auto";
           translateFloatBtnText.style.borderRadius = "8px 8px 0 0";
@@ -404,10 +420,6 @@ async function ciwiOnload() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_right":
-          optionsContainer.forEach((item) => {
-            item.style.top = "-135px";
-            item.style.marginTop = "-4px";
-          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.right = "0";
           switcher.style.top = "auto";
@@ -419,8 +431,40 @@ async function ciwiOnload() {
           break;
       }
       selectorBox.style.border = `1px solid ${configData.optionBorderColor}`;
+      selectorBox.dataset.mode = isDirectSelectorMode ? "direct" : "overlay";
+      selectorBox.dataset.layout = shouldUseSidebarWidget
+        ? "sidebar-widget"
+        : "floating";
+      selectorBox.dataset.preferredPlacement =
+        configData.selectorPosition?.startsWith("bottom") ? "up" : "down";
+      selectorBox.classList.toggle("direct-select-mode", isDirectSelectorMode);
+      selectorBox.classList.remove("mobile-sidebar-mode");
+      switcher.classList.remove("mobile-sidebar-widget");
+      if (selectorBackdrop) {
+        selectorBackdrop.classList.remove("mobile-sidebar-backdrop");
+        selectorBackdrop.style.display = "none";
+      }
+      if (closeButtonWrapper) {
+        closeButtonWrapper.style.display = isDirectSelectorMode ? "none" : "flex";
+      }
 
-      if (configData.languageSelector || configData.currencySelector) {
+      if (isDirectSelectorMode) {
+        selectorBox.style.width = "168px";
+        selectorBox.style.border = "none";
+        selectorBox.style.backgroundColor = "transparent";
+        selectorBox.style.display = "flex";
+        mainBox.style.display = "none";
+        translateFloatBtn.style.display = "none";
+      } else if (shouldUseSidebarWidget) {
+        selectorBox.style.width = "168px";
+        selectorBox.style.backgroundColor = configData.backgroundColor;
+        selectorBox.style.display = "none";
+        mainBox.style.display = "none";
+        translateFloatBtnText.style.backgroundColor =
+          configData.backgroundColor;
+        translateFloatBtn.style.display = "flex";
+      } else if (activeSelectorCount > 0) {
+        selectorBox.style.backgroundColor = configData.backgroundColor;
         mainBox.style.backgroundColor = configData.backgroundColor;
         mainBox.style.border = `1px solid ${configData.optionBorderColor}`;
         updateDisplayText(
@@ -430,19 +474,17 @@ async function ciwiOnload() {
         );
         mainBox.style.display = "flex";
       } else {
-        selectorBox.style.width = "150px";
-        translateFloatBtnText.style.backgroundColor =
-          configData.backgroundColor;
-        translateFloatBtn.style.display = "flex";
+        selectorBox.style.width = "168px";
+        selectorBox.style.display = "none";
+        mainBox.style.display = "none";
+        translateFloatBtn.style.display = "none";
       }
     }
   }
 
   // RTL 判断
-  const selectedTextElement = ciwiBlock.querySelector(
-    '.selected-option[data-type="language"] .selected-text',
-  );
-  const currentLanguage = selectedTextElement?.textContent?.trim();
+  const selectedTextElement = ciwiBlock.querySelector(".language_selector_header");
+  const currentLanguage = selectedTextElement?.selectedOptions?.[0]?.textContent?.trim();
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
 
   if (isRtlLanguage && selectedLanguageText) {
