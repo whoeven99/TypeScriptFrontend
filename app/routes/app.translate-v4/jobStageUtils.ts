@@ -10,7 +10,15 @@ export type VisibleStageIndex = 0 | 1 | 2;
 export function stageOf(
   status: TranslationV4Status,
   errorStage?: string | null,
+  metrics?: StageMetrics,
 ): VisibleStageIndex {
+  if (
+    metrics &&
+    (status === "TRANSLATING" || status === "TRANSLATE_QUEUED") &&
+    isStageBarComplete(1, metrics, status)
+  ) {
+    return 2;
+  }
   if (status === "PAUSED" || status === "FAILED" || status === "CANCELLED") {
     switch (errorStage) {
       case "WRITEBACK":
@@ -36,8 +44,9 @@ export function stageOf(
 export function visibleStageIndex(
   status: TranslationV4Status,
   errorStage?: string | null,
+  metrics?: StageMetrics,
 ): VisibleStageIndex {
-  return stageOf(status, errorStage) as VisibleStageIndex;
+  return stageOf(status, errorStage, metrics) as VisibleStageIndex;
 }
 
 function isVerifyHiddenComplete(status: TranslationV4Status): boolean {
@@ -56,7 +65,7 @@ export function miniStageSegmentState(
 
   const complete = isStageBarComplete(idx, metrics, status);
   const percent = complete ? 100 : stageBarPercent(idx, metrics, status);
-  const activeIdx = visibleStageIndex(status, errorStage);
+  const activeIdx = visibleStageIndex(status, errorStage, metrics);
   const active =
     !isTerminal &&
     !isStopping &&
@@ -163,6 +172,6 @@ export function formatJobStartTime(createdAt: string): string | null {
   });
 }
 
-export function jobQuotaCredits(usedTokens: number, multiplier = 1.5): number {
+export function jobQuotaCredits(usedTokens: number, multiplier = 1): number {
   return usedTokens > 0 ? Math.round(usedTokens * multiplier) : 0;
 }

@@ -2,15 +2,29 @@ import type { TranslationV4Metrics, TranslationV4Status } from "./types";
 
 /** 翻译是否尚未覆盖全部资源（如额度中途暂停只翻了一部分，仍有未触及资源）。 */
 export function translateIncomplete(metrics: TranslationV4Metrics): boolean {
-  const total = metrics.translateTotal ?? 0;
+  const total = metrics.translateTotal ?? metrics.initTotal ?? 0;
   if (total <= 0) return false;
   const attempted = (metrics.translateDone ?? 0) + (metrics.translateFailed ?? 0);
   return attempted < total;
 }
 
+/** 全部资源均已翻译或标记失败（无剩余待译资源）。 */
+export function translateResourcesComplete(metrics: TranslationV4Metrics): boolean {
+  return !translateIncomplete(metrics) && (metrics.translateTotal ?? metrics.initTotal ?? 0) > 0;
+}
+
+/** 写回分母：优先 writebackTotal，否则在翻译已完成时用 translateDone。 */
+export function writebackResourceTotal(metrics: TranslationV4Metrics): number {
+  if (metrics.writebackTotal > 0) return metrics.writebackTotal;
+  if (translateResourcesComplete(metrics) && metrics.translateDone > 0) {
+    return metrics.translateDone;
+  }
+  return metrics.translateTotal || metrics.initTotal || 0;
+}
+
 /** 回写阶段是否仍有资源需要写入（含曾失败待重试的条目）。 */
 export function writebackNeedsRetry(metrics: TranslationV4Metrics): boolean {
-  const total = metrics.writebackTotal ?? 0;
+  const total = writebackResourceTotal(metrics);
   if (total <= 0) return false;
   const done = metrics.writebackDone ?? 0;
   const failed = metrics.writebackFailed ?? 0;

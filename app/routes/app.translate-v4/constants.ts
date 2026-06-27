@@ -15,7 +15,8 @@ export const DEFAULT_MODULE_KEYS = [...DEFAULT_V2_MODULE_KEYS];
 /** 创建任务时默认展开的 v4 modules（供 API / 快捷创建使用）。 */
 export const DEFAULT_MODULES = defaultManualV4Modules();
 
-export const QUOTA_TOKEN_MULTIPLIER = 1.5;
+/** 任务消耗积分 = usedTokens × 此系数（与 Worker QUOTA_TOKEN_MULTIPLIER 对齐，1 = 与 API tokens 1:1）。 */
+export const QUOTA_TOKEN_MULTIPLIER = 1;
 
 export const AI_MODEL_OPTIONS = [
   { value: "gpt-4.1-nano", label: "GPT-4.1 nano（推荐）" },
