@@ -3,9 +3,9 @@ export function localeRegionCode(locale: string): string {
   const map: Record<string, string> = {
     "zh-CN": "CN",
     "zh-TW": "TW",
-    en: "GB",
-    "en-US": "US",
-    "en-GB": "GB",
+    en: "EN",
+    "en-US": "EN",
+    "en-GB": "EN",
     ja: "JP",
     fr: "FR",
     de: "DE",
