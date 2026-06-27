@@ -14,6 +14,7 @@ import {
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
+import { getCiwiPageContext } from "./ciwi-page.js";
 
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
@@ -119,20 +120,25 @@ async function ciwiOnload() {
     return;
   }
 
-  // 产品图片翻译（非阻塞）
-  ProductImgTranslate(blockId, shop, ciwiBlock);
+  // 按页面类型门控翻译请求，避免 cart/collection 等页面发起无关 API 调用
+  const pageContext = getCiwiPageContext(ciwiBlock);
 
-  // 网页custom liquid 文本翻译
+  // 主题 custom liquid 文本：全站需要
   CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
 
-  //延时5s后再次执行
-  setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
-
-  //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock);
-
-  // 主页图片替换
-  HomeImageTranslate(blockId);
+  const translationTasks = [];
+  if (pageContext.isProductPage) {
+    translationTasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
+  }
+  if (pageContext.hasPageFly) {
+    translationTasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
+  }
+  if (pageContext.isHomePage) {
+    translationTasks.push(HomeImageTranslate(blockId));
+  }
+  if (translationTasks.length > 0) {
+    Promise.allSettled(translationTasks).catch(() => {});
+  }
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
