@@ -73,6 +73,17 @@ export function hasPromptSentinelLeakage(text: string): boolean {
   return /\[number\]/i.test(text);
 }
 
+/** Reject slot translations that leak JSON structure into plain text leaves. */
+export function sanitizeJsonSlotTranslation(original: string, translated: string): string {
+  if (
+    (/"type"\s*:|"children"\s*:|]\s*,\s*"type"/.test(translated)) &&
+    !/"type"\s*:/.test(original)
+  ) {
+    return original;
+  }
+  return translated;
+}
+
 export function glossaryTargetMatchesLocale(
   targetText: string,
   sourceText: string,
@@ -102,4 +113,32 @@ export function acceptLeafTranslation(
     return source;
   }
   return translated;
+}
+
+/** Restore masked paths/URLs then run quality checks. */
+export function finalizeLeafTranslation(
+  source: string,
+  translated: string,
+  target: string,
+  placeholderTokens: string[] = [],
+  restoreFn?: (text: string, tokens: string[]) => string,
+): string {
+  const restored =
+    placeholderTokens.length > 0 && restoreFn
+      ? restoreFn(translated, placeholderTokens)
+      : translated;
+  if (
+    placeholderTokens.length > 0 &&
+    !protectedLiteralsPreserved(placeholderTokens, restored)
+  ) {
+    return source;
+  }
+  return acceptLeafTranslation(source, restored, target);
+}
+
+function protectedLiteralsPreserved(tokens: string[], translated: string): boolean {
+  const protectedOnes = tokens.filter(
+    (t) => t.startsWith("/") || /^https?:\/\//i.test(t),
+  );
+  return protectedOnes.every((t) => translated.includes(t));
 }

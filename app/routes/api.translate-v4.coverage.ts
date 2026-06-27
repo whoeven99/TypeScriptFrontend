@@ -1,7 +1,7 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
-import { computeCoverageSummary } from "~/server/translateV4/coverage.server";
+import { computeCoverageSummary, getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
 
 const SHOP_LOCALES_QUERY = `#graphql
   query CoverageShopLocales {
@@ -56,16 +56,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     const forceRefresh = url.searchParams.get("refresh") === "1";
+    const localesToRefresh = url.searchParams
+      .get("locales")
+      ?.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const summary = await computeCoverageSummary({
       admin,
       shop: shopName,
       primaryLocale,
       targetLocales,
       forceRefresh,
+      localesToRefresh,
     });
     return json({ ok: true, summary });
   } catch (err) {
     console.error("[translateV4] coverage compute failed:", err);
-    return json({ ok: false, error: "coverage compute failed" }, { status: 500 });
+    try {
+      const summary = await getCoverageSummaryFromCache({
+        shop: shopName,
+        primaryLocale,
+        targetLocales,
+      });
+      return json({ ok: true, summary, degraded: true });
+    } catch (fallbackErr) {
+      console.error("[translateV4] coverage cache fallback failed:", fallbackErr);
+      return json({ ok: false, error: "coverage compute failed" }, { status: 500 });
+    }
   }
 };

@@ -53,22 +53,27 @@ async function enrichCoverageWithAutoTranslate(
   shop: string,
   summary: CoverageSummary,
 ): Promise<CoverageSummary> {
-  const targetRows = await listTargetLocales(shop);
-  const lastAutoUpdateAt = await readAutoScanLastAt();
-  const locales = await Promise.all(
-    summary.locales.map(async (row) => {
-      const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
-      const autoTranslate = match?.autoTranslate ?? false;
-      const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
-      return {
-        ...row,
-        autoTranslate,
-        lastAutoUpdateAt: autoTranslate ? lastAutoUpdateAt : null,
-        nextAutoUpdateAt,
-      };
-    }),
-  );
-  return { ...summary, locales };
+  try {
+    const targetRows = await listTargetLocales(shop);
+    const lastAutoUpdateAt = await readAutoScanLastAt();
+    const locales = await Promise.all(
+      summary.locales.map(async (row) => {
+        const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
+        const autoTranslate = match?.autoTranslate ?? false;
+        const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
+        return {
+          ...row,
+          autoTranslate,
+          lastAutoUpdateAt: autoTranslate ? lastAutoUpdateAt : null,
+          nextAutoUpdateAt,
+        };
+      }),
+    );
+    return { ...summary, locales };
+  } catch (err) {
+    console.error("[translateV4] enrichCoverageWithAutoTranslate failed:", err);
+    return summary;
+  }
 }
 
 /** 仅从 Redis 读缓存，适合 loader 快速路径。 */
@@ -119,19 +124,37 @@ export async function computeCoverageSummary({
   primaryLocale,
   targetLocales,
   forceRefresh = false,
+  localesToRefresh,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
   primaryLocale: string;
   targetLocales: LocaleInput[];
-  /** true：与管理翻译「刷新统计」同效 —— invalidate 后强制现算并写 Redis */
+  /** true：与管理翻译「刷新统计」同效 —— 现算并写 Redis（不 invalidate，避免翻译进行中清空缓存） */
   forceRefresh?: boolean;
+  /** 指定要刷新的语言；省略时 forceRefresh 仅刷新 cacheMissing 的语言 */
+  localesToRefresh?: string[];
 }): Promise<CoverageSummary> {
   if (forceRefresh && targetLocales.length > 0) {
+    let refreshLocales: string[];
+    if (localesToRefresh?.length) {
+      refreshLocales = localesToRefresh;
+    } else {
+      const missing: string[] = [];
+      for (const loc of targetLocales) {
+        const agg = await sumItemsCountByLabelsFromCache(
+          shop,
+          loc.value,
+          COVERAGE_COUNT_LABELS,
+        );
+        if (agg.cacheMissing) missing.push(loc.value);
+      }
+      refreshLocales = missing.length > 0 ? missing : targetLocales.map((l) => l.value);
+    }
     await refreshItemsCountForLocales({
       admin,
       shop,
-      locales: targetLocales.map((l) => l.value),
+      locales: refreshLocales,
       labels: COVERAGE_COUNT_LABELS,
     });
   }
@@ -145,7 +168,31 @@ export async function computeCoverageSummary({
     let total: number;
     let cacheMissing = false;
 
-    if (forceRefresh) {
+    try {
+      if (forceRefresh) {
+        const cached = await sumItemsCountByLabelsFromCache(
+          shop,
+          loc.value,
+          COVERAGE_COUNT_LABELS,
+        );
+        translated = cached.translated;
+        total = cached.total;
+        cacheMissing = cached.cacheMissing;
+      } else {
+        const computed = await sumItemsCountByLabels({
+          admin,
+          shop,
+          target: loc.value,
+          labels: COVERAGE_COUNT_LABELS,
+        });
+        translated = computed.translated;
+        total = computed.total;
+      }
+    } catch (err) {
+      console.error(
+        `[translateV4] coverage locale failed shop=${shop} locale=${loc.value}:`,
+        err,
+      );
       const cached = await sumItemsCountByLabelsFromCache(
         shop,
         loc.value,
@@ -153,16 +200,7 @@ export async function computeCoverageSummary({
       );
       translated = cached.translated;
       total = cached.total;
-      cacheMissing = cached.cacheMissing;
-    } else {
-      const computed = await sumItemsCountByLabels({
-        admin,
-        shop,
-        target: loc.value,
-        labels: COVERAGE_COUNT_LABELS,
-      });
-      translated = computed.translated;
-      total = computed.total;
+      cacheMissing = cached.cacheMissing || cached.total === 0;
     }
 
     locales.push({

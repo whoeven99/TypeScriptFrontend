@@ -1,7 +1,10 @@
 /**
  * HTML text-node extraction and reassembly for translation.
+ * Parser-based (node-html-parser), aligned with Spring HtmlTranslateStrategyService + Jsoup.
  * Keep in sync with Spark/worker/src/services/htmlTranslate.ts
  */
+
+import { parse, HTMLElement, NodeType, type Node } from "node-html-parser";
 
 const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
 
@@ -19,8 +22,6 @@ const LONG_TEXT_CHUNK_CHARS = Math.max(
   Number(process.env.TRANSLATE_LONG_TEXT_CHUNK_CHARS) || 2_500,
 );
 
-const SKIP_BLOCK_RE = /<(script|style|pre|code)(\s[^>]*)?>[\s\S]*?<\/\1>/gi;
-const TRANSLATABLE_ATTR_RE = /\b(alt|title|aria-label|placeholder)=("([^"]*)"|(\'([^\']*)\'))/g;
 const ATTR_URL_RE = /^https?:\/\//;
 const ATTR_HASH_FILENAME_RE =
   /^[a-fA-F0-9]{8,}(-[a-zA-Z0-9]+)*$|^\S+\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|pdf)$/i;
@@ -30,6 +31,10 @@ const HTML_BLOCK_COALESCE_TAGS = "p|li|h[1-6]|dt|dd|blockquote|figcaption";
 const HTML_NESTED_BLOCK_RE =
   /<(p|li|h[1-6]|td|th|dt|dd|blockquote|figcaption|div|ul|ol|table|thead|tbody|tr)\b/i;
 const HTML_TABLE_RE = /<table\b[\s\S]*?<\/table>/gi;
+const INLINE_PRESERVE_RE = /<(a|strong|b|em|i|u)\b/i;
+
+const SKIP_TAGS = new Set(["script", "style", "pre", "code", "noscript"]);
+const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder"] as const;
 
 function isTranslatableAttrValue(value: string): boolean {
   const v = value.trim();
@@ -41,8 +46,7 @@ function isTranslatableAttrValue(value: string): boolean {
 
 function preprocessHtmlForTranslation(html: string): string {
   let s = html.replace(/<br\s*\/?>/gi, BR_PLACEHOLDER);
-  s = s.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1");
-  s = s.replace(/<\/?(?:span|strong|em|b|i|u|mark|small|sub|sup|label|font)(?:\s[^>]*)?>/gi, "");
+  s = s.replace(/<\/?(?:span|mark|small|sub|sup|label|font)(?:\s[^>]*)?>/gi, "");
   return s;
 }
 
@@ -56,42 +60,75 @@ function effectiveTranslation(original: string, translated: string | undefined):
   return translated;
 }
 
+function elementTagName(el: HTMLElement): string {
+  return (el.rawTagName ?? el.tagName ?? "").toLowerCase();
+}
+
 function extractHtmlTextNodes(html: string): { template: string; texts: string[] } {
   const texts: string[] = [];
-  const skipped = new Map<string, string>();
-  let sIdx = 0;
-
-  const withSkips = html.replace(SKIP_BLOCK_RE, (match) => {
-    const key = `\x00S${sIdx++}\x00`;
-    skipped.set(key, match);
-    return key;
-  });
-
-  const withAttrs = withSkips.replace(
-    TRANSLATABLE_ATTR_RE,
-    (_match, attrName: string, _quotedFull: string, dqVal: string, _sqFull: string, sqVal: string) => {
-      const attrValue = dqVal ?? sqVal ?? "";
-      const quote = dqVal !== undefined ? '"' : "'";
-      if (!isTranslatableAttrValue(attrValue)) return _match;
-      const idx = texts.length;
-      texts.push(attrValue.trim());
-      return `${attrName}=${quote}\x00T${idx}\x00${quote}`;
+  const root = parse(html, {
+    lowerCaseTagName: false,
+    comment: false,
+    voidTag: {
+      area: true,
+      base: true,
+      br: true,
+      col: true,
+      embed: true,
+      hr: true,
+      img: true,
+      input: true,
+      link: true,
+      meta: true,
+      param: true,
+      source: true,
+      track: true,
+      wbr: true,
     },
-  );
-
-  const template = withAttrs.replace(/>([^<]+)</g, (_match, raw: string) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return `>${raw}<`;
-    const idx = texts.length;
-    texts.push(trimmed);
-    const start = raw.indexOf(trimmed);
-    const end = start + trimmed.length;
-    return `>${raw.slice(0, start)}\x00T${idx}\x00${raw.slice(end)}<`;
+    blockTextElements: {
+      script: true,
+      noscript: true,
+      style: true,
+      pre: true,
+    },
   });
 
-  let out = template;
-  for (const [k, v] of skipped) out = out.replaceAll(k, v);
-  return { template: out, texts };
+  for (const el of root.querySelectorAll("*")) {
+    for (const attr of TRANSLATABLE_ATTRS) {
+      const val = el.getAttribute(attr);
+      if (val == null || !isTranslatableAttrValue(val)) continue;
+      const idx = texts.length;
+      texts.push(val.trim());
+      el.setAttribute(attr, `\x00T${idx}\x00`);
+    }
+  }
+
+  function walkTextNodes(node: Node): void {
+    if (node.nodeType === NodeType.TEXT_NODE) {
+      const raw = node.rawText ?? "";
+      if (!raw.trim()) return;
+      const leading = raw.match(/^[\s\u00a0]*/)?.[0] ?? "";
+      const trailing = raw.match(/[\s\u00a0]*$/)?.[0] ?? "";
+      const core = raw.slice(leading.length, raw.length - trailing.length);
+      if (!core.trim()) return;
+      const idx = texts.length;
+      texts.push(core.trim());
+      node.rawText = `${leading}\x00T${idx}\x00${trailing}`;
+      return;
+    }
+    if (node.nodeType !== NodeType.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    if (SKIP_TAGS.has(elementTagName(el))) return;
+    for (const child of [...node.childNodes]) {
+      walkTextNodes(child);
+    }
+  }
+
+  for (const child of [...root.childNodes]) {
+    walkTextNodes(child);
+  }
+
+  return { template: root.toString(), texts };
 }
 
 function restoreHtmlTextNodes(template: string, translations: string[]): string {
@@ -127,6 +164,7 @@ function coalesceBlockTextNodesInner(
       return "";
     });
     if (indices.length <= 1) return full;
+    if (INLINE_PRESERVE_RE.test(inner)) return full;
 
     const merged = indices
       .map((i) => texts[i])
@@ -210,6 +248,12 @@ export function htmlNodePartsOf(value: string): HtmlNodePlan {
     t.length > LONG_TEXT_THRESHOLD ? splitPlainText(t) : [t],
   );
   return { template, nodeParts };
+}
+
+export function isTranslatableHtmlContent(value: string): boolean {
+  if (!isHtmlContent(value)) return false;
+  const { nodeParts } = htmlNodePartsOf(value);
+  return nodeParts.some((parts) => parts.some((p) => p.trim().length > 0));
 }
 
 export function flattenHtmlNodeTranslations(
