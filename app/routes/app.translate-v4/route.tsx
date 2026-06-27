@@ -25,56 +25,47 @@ import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
-
-const SHOP_LOCALES_QUERY = `#graphql
-  query TranslateV4ShopLocales {
-    shopLocales {
-      locale
-      name
-      primary
-      published
-    }
-  }
-`;
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
+import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4Enabled()) {
     throw redirect("/app");
   }
 
-  const { admin, session } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
 
   if (!isTranslateV4ShopAllowed(session.shop)) {
     throw redirect("/app");
   }
 
   let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "zh-CN";
+  let primaryLocale = "en";
+  let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
   try {
-    const res = await admin.graphql(SHOP_LOCALES_QUERY);
-    const payload = (await res.json()) as {
-      data?: {
-        shopLocales?: Array<{
-          locale: string;
-          name: string;
-          primary: boolean;
-          published: boolean;
-        }> | null;
-      };
-    };
-    const rows = payload.data?.shopLocales ?? [];
-    locales = rows.map((r) => ({
-      value: r.locale,
-      label: `${r.name} (${r.locale})`,
-      primary: r.primary,
-      published: r.published,
-    }));
-    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+    const loaded = await loadShopLocalesForTranslation({
+      shop: session.shop,
+      accessToken: session.accessToken,
+    });
+    shopLocaleRows = loaded.rows;
+    locales = loaded.localeOptions;
+    primaryLocale = loaded.primaryLocale;
   } catch (err) {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  const targetLocales = locales.filter((l) => !l.primary && l.published);
+  try {
+    await syncShopTargetLocalesFromShopify(
+      session.shop,
+      shopLocaleRows,
+      primaryLocale,
+    );
+  } catch (syncErr) {
+    console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
+  }
+
+  const targetLocales = selectShopTargetLocales(locales, primaryLocale);
 
   const [jobs, quota, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
@@ -110,7 +101,7 @@ export default function AppTranslateV4() {
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
-  const source = primaryLocale || "zh-CN";
+  const source = primaryLocale || "en";
   const [targets, setTargets] = useState<string[]>([]);
   const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
   const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
@@ -132,7 +123,7 @@ export default function AppTranslateV4() {
   );
 
   const targetOptions = useMemo(
-    () => localeOptions.filter((l) => l.value !== source && l.published),
+    () => selectShopTargetLocales(localeOptions, source),
     [localeOptions, source],
   );
 

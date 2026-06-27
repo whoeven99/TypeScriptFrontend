@@ -61,7 +61,7 @@ export function CoverageCard({ locales, loading, onRefresh }: Props) {
       <style>{AUTO_BADGE_HOVER_CSS}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
-          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无已发布的目标语言。</div>
+          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无目标语言，请先在语言页添加。</div>
         ) : (
           locales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}

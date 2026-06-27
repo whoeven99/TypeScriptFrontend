@@ -2,17 +2,8 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { computeCoverageSummary, getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
-
-const SHOP_LOCALES_QUERY = `#graphql
-  query CoverageShopLocales {
-    shopLocales {
-      locale
-      name
-      primary
-      published
-    }
-  }
-`;
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4Enabled()) {
@@ -28,27 +19,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
 
   let targetLocales: Array<{ value: string; label: string }> = [];
-  let primaryLocale = "zh-CN";
+  let primaryLocale = "en";
   try {
-    const res = await admin.graphql(SHOP_LOCALES_QUERY);
-    const payload = (await res.json()) as {
-      data?: {
-        shopLocales?: Array<{
-          locale: string;
-          name: string;
-          primary: boolean;
-          published: boolean;
-        }> | null;
-      };
-    };
-    const rows = payload.data?.shopLocales ?? [];
-    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
-    targetLocales = rows
-      .filter((r) => !r.primary && r.published)
-      .map((r) => ({
-        value: r.locale,
-        label: `${r.name} (${r.locale})`,
-      }));
+    const loaded = await loadShopLocalesForTranslation({
+      shop: session.shop,
+      accessToken: session.accessToken,
+    });
+    primaryLocale = loaded.primaryLocale;
+    targetLocales = selectShopTargetLocales(loaded.localeOptions, primaryLocale);
   } catch (err) {
     console.error("[translateV4] coverage locales failed:", err);
     return json({ ok: false, error: "failed to load locales" }, { status: 500 });
