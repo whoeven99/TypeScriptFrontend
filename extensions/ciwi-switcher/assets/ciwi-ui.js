@@ -363,6 +363,109 @@ export function renderLanguageFlags(data, ciwiBlock) {
   _languageFlagsRendered = true;
 }
 
+// 自定义下拉框中的国旗渲染（每个 option 旁边显示国旗）
+let _languageDropdownFlagsRendered = false;
+
+export function renderLanguageDropdownFlags(data, ciwiBlock) {
+  if (_languageDropdownFlagsRendered) return;
+  if (!data?.includedFlag) return;
+  const languageLocaleData = window.languageLocaleData || null;
+  if (!languageLocaleData) return;
+
+  const dropdown = ciwiBlock.querySelector("#language-custom-dropdown");
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  if (!dropdown || !languageSelect) return;
+
+  const wrapper = languageSelect.closest(".language-native-selector");
+  if (wrapper) {
+    wrapper.classList.add("has-custom-dropdown");
+  }
+
+  // 清空并重建自定义下拉选项
+  dropdown.innerHTML = "";
+  const options = languageSelect.querySelectorAll("option");
+  const currentValue = languageSelect.value;
+
+  options.forEach((option) => {
+    const isoCode = option.value;
+    const localeInfo = languageLocaleData[isoCode];
+    const flagUrl = localeInfo?.countries?.[0] || "";
+    const name = option.textContent?.trim() || isoCode;
+
+    const li = document.createElement("li");
+    li.className = "ciwi-custom-option";
+    li.setAttribute("role", "option");
+    li.setAttribute("data-value", isoCode);
+    if (isoCode === currentValue) {
+      li.classList.add("is-selected");
+      li.setAttribute("aria-selected", "true");
+    }
+
+    if (flagUrl) {
+      const flagImg = document.createElement("img");
+      flagImg.className = "ciwi-custom-option-flag";
+      flagImg.src = flagUrl;
+      flagImg.alt = "";
+      flagImg.width = 18;
+      flagImg.height = 13;
+      flagImg.loading = "lazy";
+      li.appendChild(flagImg);
+    }
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "ciwi-custom-option-text";
+    textSpan.textContent = name;
+    li.appendChild(textSpan);
+
+    // 点击自定义选项 → 同步到原生 select 并触发 change
+    li.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isoCode === languageSelect.value) {
+        dropdown.style.display = "none";
+        return;
+      }
+      // 更新选中态
+      dropdown.querySelectorAll(".ciwi-custom-option").forEach((opt) => {
+        opt.classList.remove("is-selected");
+        opt.removeAttribute("aria-selected");
+      });
+      li.classList.add("is-selected");
+      li.setAttribute("aria-selected", "true");
+
+      languageSelect.value = isoCode;
+      languageSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      dropdown.style.display = "none";
+    });
+
+    dropdown.appendChild(li);
+  });
+
+  // 点击 wrapper 区域时切换自定义下拉的显示
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.style.display === "block";
+    dropdown.style.display = isOpen ? "none" : "block";
+  };
+
+  wrapper?.addEventListener("click", toggleDropdown);
+
+  // 点击外部关闭下拉
+  document.addEventListener("click", (e) => {
+    if (wrapper && !wrapper.contains(e.target)) {
+      dropdown.style.display = "none";
+    }
+  });
+
+  // 键盘操作：Escape 关闭
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && dropdown.style.display === "block") {
+      dropdown.style.display = "none";
+    }
+  });
+
+  _languageDropdownFlagsRendered = true;
+}
+
 // 按需注入 language-locale-data.js（单例 Promise）。URL 由 liquid 的 #ciwiLocaleDataUrl 提供。
 let _localeDataPromise = null;
 
@@ -1446,6 +1549,19 @@ export class CiwiswitcherForm extends HTMLElement {
       if (translateFloatBtnIcon && flag) {
         translateFloatBtnIcon.src = flag;
         translateFloatBtnIcon.hidden = false;
+      }
+      // 同步自定义下拉框的选中态
+      const dropdown = this.elements.ciwiBlock.querySelector("#language-custom-dropdown");
+      if (dropdown) {
+        dropdown.querySelectorAll(".ciwi-custom-option").forEach((opt) => {
+          const isSelected = opt.getAttribute("data-value") === value;
+          opt.classList.toggle("is-selected", isSelected);
+          if (isSelected) {
+            opt.setAttribute("aria-selected", "true");
+          } else {
+            opt.removeAttribute("aria-selected");
+          }
+        });
       }
     } else if (selectorType === "currency") {
       if (!value || this.elements.currencyInput.value == value) return;
