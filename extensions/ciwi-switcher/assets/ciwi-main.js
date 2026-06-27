@@ -11,7 +11,6 @@ import {
   CustomLiquidTextTranslate,
   PageFlyTextTranslate,
   renderLanguageFlags,
-  renderLanguageDropdownFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
@@ -339,10 +338,9 @@ async function ciwiOnload() {
   // 若用户在此之前先接触切换器，则立即加载（先于 idle）。两条路径都只渲染一次。
   if (isLanguageSelectorTakeEffect && configData?.includedFlag) {
     const loadFlags = () =>
-      ensureLanguageLocaleData().then(() => {
-        renderLanguageFlags(configData, ciwiBlock);
-        renderLanguageDropdownFlags(configData, ciwiBlock);
-      });
+      ensureLanguageLocaleData().then(() =>
+        renderLanguageFlags(configData, ciwiBlock),
+      );
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(loadFlags, { timeout: 3000 });
     } else {
