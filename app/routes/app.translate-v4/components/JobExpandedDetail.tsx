@@ -1,5 +1,6 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { StageName } from "~/server/translateV4/types";
+import { capTranslateUnitsByResources } from "~/server/translateV4/metricsUtils";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
 import { v4Colors } from "../v4Styles";
 import {
@@ -40,7 +41,7 @@ function stageDetail(idx: number, m: StageMetrics): string {
   if (idx === 1) {
     const res = `资源 ${m.translateDone}/${m.translateTotal}`;
     return m.translateUnitTotal > 0
-      ? `${res} · 节点 ${m.translateUnitDone}/${m.translateUnitTotal}`
+      ? `${res} · 节点 ${capTranslateUnitsByResources(m).toLocaleString()}/${m.translateUnitTotal.toLocaleString()}`
       : res;
   }
   const total = taskResourceTotal(m);

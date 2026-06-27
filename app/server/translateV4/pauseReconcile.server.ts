@@ -5,6 +5,7 @@ import {
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
 import type { TranslationV4Job } from "./types";
+import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 
 /** worker 未能在该时长内收尾暂停 → TSF 直接落 PAUSED（不再先写回）。 */
 const STUCK_PAUSE_ESCALATE_MS = 120_000;
@@ -47,7 +48,8 @@ export async function escalateStuckPauseIfNeeded(
     status: "PAUSED",
     claimedBy: null,
     pauseAfterWriteback: null,
-    errorMessage: metrics.pauseReason ?? "已手动暂停",
+    errorMessage:
+      sanitizeV4UserErrorMessage(metrics.pauseReason) ?? "已手动暂停",
     errorStage: "TRANSLATE",
     metrics: {
       ...job.metrics,

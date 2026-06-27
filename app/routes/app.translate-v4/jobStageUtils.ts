@@ -1,5 +1,10 @@
 import type { TranslationV4Status } from "~/server/translateV4/types";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import {
+  capTranslateUnitsByResources,
+  isTranslateResourceComplete,
+  translateResourceTotal,
+} from "~/server/translateV4/metricsUtils";
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
@@ -50,7 +55,7 @@ export function visibleStageIndex(
 }
 
 function isVerifyHiddenComplete(status: TranslationV4Status): boolean {
-  return status === "COMPLETED" || ["VERIFY_QUEUED", "VERIFYING"].includes(status);
+  return status === "COMPLETED";
 }
 
 export function miniStageSegmentState(
@@ -82,14 +87,22 @@ function ratioPercent(done: number, total: number): number {
 }
 
 function taskResourceTotal(m: StageMetrics): number {
-  return m.translateTotal || m.initTotal || 0;
+  return translateResourceTotal(m);
+}
+
+function cappedUnitDone(m: StageMetrics): number {
+  return capTranslateUnitsByResources(m);
 }
 
 function translateStageProgress(m: StageMetrics): { done: number; total: number } {
-  if (m.translateUnitTotal > 0) {
-    return { done: m.translateUnitDone, total: m.translateUnitTotal };
+  const resourceTotal = taskResourceTotal(m);
+  if (resourceTotal > 0) {
+    return { done: m.translateDone, total: resourceTotal };
   }
-  return { done: m.translateDone, total: taskResourceTotal(m) };
+  if (m.translateUnitTotal > 0) {
+    return { done: cappedUnitDone(m), total: m.translateUnitTotal };
+  }
+  return { done: m.translateDone, total: 0 };
 }
 
 export function stageBarPercent(
@@ -122,6 +135,9 @@ export function isStageBarComplete(
     case 0:
       return m.initTotal > 0 && m.initDone >= m.initTotal;
     case 1: {
+      if (isTranslateResourceComplete(m)) return true;
+      const resourceTotal = taskResourceTotal(m);
+      if (resourceTotal > 0) return false;
       const { done, total } = translateStageProgress(m);
       return total > 0 && done >= total;
     }
