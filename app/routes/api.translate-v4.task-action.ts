@@ -15,6 +15,8 @@ import {
   clearV4Control,
   clearV4PausePending,
   clearV4TaskRedis,
+  v4ControlKey,
+  v4ProgressKey,
 } from "~/server/translateV4/redis.server";
 import {
   resolveResumeV4JobStatus,
@@ -63,8 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (actionType === "cancel") {
-    // 翻译执行中取消：不乐观置 CANCELLED（终态会让前端停止轮询、却看不到「正在写入」
-    // 过程）。仅设控制信号，由 worker 把已翻译的先写回再落 CANCELLED。
+    // 翻译执行中取消：设控制信号，worker 等在飞 LLM 收尾后直接 CANCELLED（不写回）。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "cancel");
       await setV4PausePending(taskId, "已取消");
@@ -79,8 +80,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!canPauseV4Job(job.status)) {
       return json({ ok: false, error: "仅翻译阶段可暂停" }, { status: 400 });
     }
-    // 翻译执行中暂停：不乐观置 PAUSED，交给 worker 先把已翻译的写回再落 PAUSED，
-    // 状态单调推进，避免 PAUSED 闪现导致「继续」按钮提前出现又消失。仅设控制信号。
+    // 翻译执行中暂停：不乐观置 PAUSED，worker 等在飞 LLM 收尾后直接 PAUSED（不写回）。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "pause");
       await setV4PausePending(taskId, "已手动暂停");
@@ -97,6 +97,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (actionType === "resume") {
+    if (job.status !== "PAUSED" && job.status !== "FAILED") {
+      return json(
+        { ok: false, error: `cannot resume from status ${job.status}` },
+        { status: 400 },
+      );
+    }
+
+    try {
+      const redis = getTranslateV4RedisClient();
+      const [pausePending, controlRaw] = await Promise.all([
+        redis.hget(v4ProgressKey(taskId), "pausePending"),
+        redis.get(v4ControlKey(taskId)),
+      ]);
+      if (
+        pausePending === "1" ||
+        controlRaw === "pause" ||
+        controlRaw === "cancel"
+      ) {
+        return json(
+          { ok: false, error: "任务仍在收尾，请稍后再继续" },
+          { status: 409 },
+        );
+      }
+    } catch {
+      // non-fatal — Cosmos 状态已是 PAUSED 时通常可继续
+    }
+
     const resumeStatus = resolveResumeV4JobStatus(
       job.status,
       job.errorStage,

@@ -31,7 +31,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
 
   const percent = jobDisplayPercent(job);
 
-  const canResume = job.status === "PAUSED" || job.status === "FAILED";
+  const canResume = job.canResume;
   const canPause = canPauseV4Job(job.status) && !job.isStopping;
   const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED" && !job.isStopping;
   const canDelete =
@@ -58,7 +58,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
         : "已结束"
     : ["VERIFY_QUEUED", "VERIFYING"].includes(job.status)
       ? ""
-      : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage)] ?? "等待"}`;
+      : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage, job.metrics)] ?? "等待"}`;
 
   return (
     <div style={{ ...v4CardStyle, padding: "10px 14px", marginBottom: 8 }}>
