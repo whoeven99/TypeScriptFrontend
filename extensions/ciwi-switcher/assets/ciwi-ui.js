@@ -1351,26 +1351,47 @@ export class CiwiswitcherForm extends HTMLElement {
   }
 
   openSelectorPanel() {
-    this.elements.selectorBox.style.display = "flex";
+    const box = this.elements.selectorBox;
+    // 取消可能仍在等待的关闭隐藏定时器
+    if (this._closeTimer) {
+      clearTimeout(this._closeTimer);
+      this._closeTimer = null;
+    }
+    box.style.display = "flex";
     if (this.isSidebarWidgetMode()) {
       this.elements.ciwiContainer?.classList.add("expanded");
     } else {
       this.updateSelectorPlacement();
     }
+    // 先把元素切到 display:flex，等下一帧再加 is-open，确保淡入过渡能触发
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => box.classList.add("is-open"));
+    });
     this.rotateArrow("#mainbox-arrow-icon", 180);
   }
 
   closeSelectorPanel() {
+    const box = this.elements.selectorBox;
     if (this.isSidebarWidgetMode()) {
       this.elements.ciwiContainer?.classList.remove("expanded");
     }
-    this.elements.selectorBox.style.display = this.isDirectSelectorMode()
-      ? "flex"
-      : "none";
+    box.classList.remove("is-open");
     if (this.elements.selectorBackdrop) {
       this.elements.selectorBackdrop.style.display = "none";
     }
     this.rotateArrow("#mainbox-arrow-icon", 0);
+
+    // direct 模式常驻显示，不隐藏
+    if (this.isDirectSelectorMode()) {
+      box.style.display = "flex";
+      return;
+    }
+    // 等淡出过渡结束再 display:none；定时器兜底，避免 transitionend 偶发不触发
+    if (this._closeTimer) clearTimeout(this._closeTimer);
+    this._closeTimer = setTimeout(() => {
+      box.style.display = "none";
+      this._closeTimer = null;
+    }, 220);
   }
 
   updateSelectorPlacement() {
@@ -1480,8 +1501,9 @@ export class CiwiswitcherForm extends HTMLElement {
       return;
     }
 
-    const isVisible = this.elements.selectorBox.style.display !== "none";
-    if (isVisible) {
+    // 以 is-open 类判断开合状态，避免与关闭时延迟 200ms 的 display:none 抢节奏
+    const isOpen = this.elements.selectorBox.classList.contains("is-open");
+    if (isOpen) {
       this.closeSelectorPanel();
     } else {
       this.openSelectorPanel();
