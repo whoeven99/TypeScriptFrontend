@@ -1,4 +1,4 @@
-import { Card, Col, Row, Typography } from "antd";
+import { Button, Card, Col, Row, Typography } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "../style.css";

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
+  DEFAULT_MODULE_KEYS,
   CREATE_TASK_MODULE_LABELS,
   CREATE_TASK_MODULE_OPTIONS,
 } from "../constants";
@@ -45,6 +46,8 @@ export function CreateTaskCard({
   onIsHandleChange,
 }: Props) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [targetsExpanded, setTargetsExpanded] = useState(false);
+  const [modulesExpanded, setModulesExpanded] = useState(false);
 
   const toggleTarget = (value: string) => {
     onTargetsChange(
@@ -58,50 +61,135 @@ export function CreateTaskCard({
   };
 
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
+  const visibleTargetLimit = 8;
+  const visibleModuleLimit = 6;
+
+  const sortedTargetOptions = useMemo(() => {
+    return [...targetOptions].sort((a, b) => {
+      const aSelected = targets.includes(a.value) ? 0 : 1;
+      const bSelected = targets.includes(b.value) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      return a.label.localeCompare(b.label);
+    });
+  }, [targetOptions, targets]);
+
+  const visibleTargetOptions = targetsExpanded
+    ? sortedTargetOptions
+    : sortedTargetOptions.slice(0, visibleTargetLimit);
+  const hiddenTargetCount = Math.max(sortedTargetOptions.length - visibleTargetOptions.length, 0);
+
+  const sortedModules = useMemo(() => {
+    return [...CREATE_TASK_MODULE_OPTIONS].sort((a, b) => {
+      const aSelected = modules.includes(a) ? 0 : 1;
+      const bSelected = modules.includes(b) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
+        CREATE_TASK_MODULE_LABELS[b] ?? b,
+      );
+    });
+  }, [modules]);
+
+  const visibleModules = modulesExpanded
+    ? sortedModules
+    : sortedModules.slice(0, visibleModuleLimit);
+  const hiddenModuleCount = Math.max(sortedModules.length - visibleModules.length, 0);
+
+  const selectedModelLabel =
+    AI_MODEL_OPTIONS.find((opt) => opt.value === aiModel)?.label ?? aiModel;
+  const advancedSummary = [
+    selectedModelLabel,
+    isCover ? "覆盖已有译文" : "保留已有译文",
+    isHandle ? "翻译 handle" : "不翻译 handle",
+  ].join(" · ");
+
+  const applyRecommendedModules = () => {
+    onModulesChange(
+      DEFAULT_MODULE_KEYS.filter((key) =>
+        CREATE_TASK_MODULE_OPTIONS.includes(key),
+      ),
+    );
+  };
+
+  const clearModules = () => onModulesChange([]);
 
   return (
-    <div style={{ ...v4CardStyle, borderRadius: 20, padding: "24px 26px", boxShadow: "0 10px 30px rgba(27,24,48,0.05)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: v4Colors.text }}>
+    <div style={{ ...v4CardStyle, padding: "16px" }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
           新建翻译任务
         </h2>
+        <div style={{ marginTop: 4, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
+          先选目标语言，再确认翻译内容。高级设置默认收起，避免一次看到太多信息。
+        </div>
       </div>
 
-      {/* 源语言 → 目标语言 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            background: "#f6f5fc",
-            border: "1px solid #e7e6f3",
-            borderRadius: 11,
-            padding: "9px 13px",
-            fontWeight: 700,
-            fontSize: 13.5,
-          }}
-        >
-          <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(source)}</span>
-          {localeShortName(source, sourceLabel)}
-        </span>
-        <span style={{ color: "#c2c2c8", fontSize: 18 }}>→</span>
-        {targetOptions.map((opt) => {
-          const selected = targets.includes(opt.value);
-          return (
-            <button key={opt.value} type="button" onClick={() => toggleTarget(opt.value)} style={targetChipStyle(selected)}>
-              <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(opt.value)}</span>
-              {localeShortName(opt.value, opt.label)}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 包含的内容 */}
-      <div style={{ borderTop: "1px solid #f0efe9", paddingTop: 16, marginBottom: 18 }}>
-        <SectionLabel>包含的内容</SectionLabel>
+      <div style={{ marginBottom: 16 }}>
+        <StepHeader
+          index="01"
+          title="选择目标语言"
+          description={targets.length > 0 ? `已选择 ${targets.length} 种语言` : "至少选择 1 种目标语言"}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: v4Colors.cardSubdued,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              borderRadius: 999,
+              padding: "8px 12px",
+              fontWeight: 600,
+              fontSize: 13,
+              color: v4Colors.text,
+            }}
+          >
+            <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(source)}</span>
+            {localeShortName(source, sourceLabel)}
+          </span>
+          <span style={{ color: v4Colors.textFaint, fontSize: 14 }}>→</span>
+          <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
+            目标语言
+          </span>
+        </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {CREATE_TASK_MODULE_OPTIONS.map((mod) => {
+          {visibleTargetOptions.map((opt) => {
+            const selected = targets.includes(opt.value);
+            return (
+              <button key={opt.value} type="button" onClick={() => toggleTarget(opt.value)} style={targetChipStyle(selected)}>
+                <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(opt.value)}</span>
+                {localeShortName(opt.value, opt.label)}
+              </button>
+            );
+          })}
+        </div>
+        {sortedTargetOptions.length > visibleTargetLimit ? (
+          <button
+            type="button"
+            onClick={() => setTargetsExpanded((v) => !v)}
+            style={inlineActionStyle}
+          >
+            {targetsExpanded ? "收起语言" : `展开更多语言（+${hiddenTargetCount}）`}
+          </button>
+        ) : null}
+      </div>
+
+      <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
+        <StepHeader
+          index="02"
+          title="选择翻译内容"
+          description={modules.length > 0 ? `当前包含 ${modules.length} 个模块` : "请至少选择 1 个翻译模块"}
+        />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          <button type="button" onClick={applyRecommendedModules} style={inlineActionChipStyle}>
+            恢复推荐
+          </button>
+          <button type="button" onClick={clearModules} style={inlineActionChipStyle}>
+            清空选择
+          </button>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {visibleModules.map((mod) => {
             const selected = modules.includes(mod);
             return (
               <button key={mod} type="button" onClick={() => toggleModule(mod)} style={moduleChipStyle(selected)}>
@@ -111,34 +199,35 @@ export function CreateTaskCard({
             );
           })}
         </div>
+        {sortedModules.length > visibleModuleLimit ? (
+          <button
+            type="button"
+            onClick={() => setModulesExpanded((v) => !v)}
+            style={inlineActionStyle}
+          >
+            {modulesExpanded ? "收起模块" : `展开更多模块（+${hiddenModuleCount}）`}
+          </button>
+        ) : null}
       </div>
 
       {/* 高级设置 */}
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 16 }}>
+        <StepHeader index="03" title="高级设置" description={advancedSummary} />
         <button
           type="button"
           onClick={() => setAdvancedOpen((o) => !o)}
-          style={{
-            background: "none",
-            border: "none",
-            color: v4Colors.primary,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-            padding: 0,
-            fontFamily: "inherit",
-          }}
+          style={inlineActionStyle}
         >
-          {advancedOpen ? "收起高级设置" : "高级设置"}
+          {advancedOpen ? "收起高级设置" : "展开高级设置"}
         </button>
         {advancedOpen ? (
           <div
             style={{
-              marginTop: 14,
-              padding: "16px 18px",
-              borderRadius: 14,
-              background: "#faf9fc",
-              border: "1px solid #eceaf5",
+              marginTop: 12,
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: v4Colors.cardSubdued,
+              border: `1px solid ${v4Colors.cardBorder}`,
             }}
           >
             <SectionLabel>AI 模型</SectionLabel>
@@ -176,7 +265,7 @@ export function CreateTaskCard({
           alignItems: "center",
           gap: 12,
           paddingTop: 16,
-          borderTop: "1px solid #f0efe9",
+          borderTop: `1px solid ${v4Colors.divider}`,
         }}
       >
         <span style={{ fontSize: 13, color: v4Colors.textFaint, fontWeight: 600 }}>
@@ -187,13 +276,13 @@ export function CreateTaskCard({
           disabled={!canCreate}
           onClick={onCreate}
           style={{
-            background: canCreate ? v4Colors.primary : "#cfcde6",
-            color: "#fff",
-            border: "none",
-            borderRadius: 12,
-            padding: "12px 24px",
-            fontSize: 14.5,
-            fontWeight: 700,
+            background: canCreate ? v4Colors.primary : v4Colors.disabledBg,
+            color: canCreate ? v4Colors.primaryTextOnFill : v4Colors.disabledText,
+            border: `1px solid ${canCreate ? v4Colors.primary : v4Colors.cardBorder}`,
+            borderRadius: 8,
+            padding: "10px 16px",
+            fontSize: 14,
+            fontWeight: 600,
             fontFamily: "inherit",
             cursor: canCreate ? "pointer" : "not-allowed",
           }}
@@ -205,16 +294,81 @@ export function CreateTaskCard({
   );
 }
 
-function SectionLabel({ children }: { children: string }) {
-  return <div style={{ fontSize: 11.5, fontWeight: 700, color: v4Colors.textMuted, marginBottom: 10 }}>{children}</div>;
+function StepHeader({
+  index,
+  title,
+  description,
+}: {
+  index: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+      <span
+        style={{
+          minWidth: 28,
+          height: 28,
+          borderRadius: "50%",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: v4Colors.cardSubdued,
+          border: `1px solid ${v4Colors.cardBorder}`,
+          color: v4Colors.textMuted,
+          fontSize: 11,
+          fontWeight: 700,
+          fontFamily: v4Colors.mono,
+        }}
+      >
+        {index}
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
+          {title}
+        </div>
+        <div style={{ marginTop: 2, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
+          {description}
+        </div>
+      </div>
+    </div>
+  );
 }
+
+function SectionLabel({ children }: { children: string }) {
+  return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
+}
+
+const inlineActionStyle: CSSProperties = {
+  background: "none",
+  border: "none",
+  color: v4Colors.primary,
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "inherit",
+  marginTop: 12,
+};
+
+const inlineActionChipStyle: CSSProperties = {
+  background: v4Colors.cardBg,
+  color: v4Colors.textMuted,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  borderRadius: 999,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
 
 const chipBase: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
   padding: "8px 12px",
-  borderRadius: 10,
+  borderRadius: 999,
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -226,26 +380,26 @@ const chipBase: CSSProperties = {
 function targetChipStyle(selected: boolean): CSSProperties {
   return {
     ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.primary : "#e7e6e0"}`,
-    background: selected ? v4Colors.primary : "#fff",
-    color: selected ? "#fff" : v4Colors.textMuted,
+    border: `1px solid ${selected ? v4Colors.primary : v4Colors.cardBorder}`,
+    background: selected ? v4Colors.primarySoft : v4Colors.cardBg,
+    color: selected ? v4Colors.primary : v4Colors.text,
   };
 }
 /** 模块：选中=深色描边浅底 + ✓。 */
 function moduleChipStyle(selected: boolean): CSSProperties {
   return {
     ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.text : "#e7e6e0"}`,
-    background: selected ? "#fbfbfa" : "#fff",
-    color: selected ? v4Colors.text : v4Colors.textFaint,
+    border: `1px solid ${selected ? v4Colors.text : v4Colors.cardBorder}`,
+    background: selected ? v4Colors.cardSubdued : v4Colors.cardBg,
+    color: selected ? v4Colors.text : v4Colors.textMuted,
   };
 }
 /** AI 模型：选中=紫色浅底。 */
 function aiChipStyle(selected: boolean): CSSProperties {
   return {
     ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.primary : "#e7e6e0"}`,
-    background: selected ? "#f1f0fb" : "#fff",
+    border: `1px solid ${selected ? v4Colors.primary : v4Colors.cardBorder}`,
+    background: selected ? v4Colors.primarySoft : v4Colors.cardBg,
     color: selected ? v4Colors.primary : v4Colors.textMuted,
   };
 }

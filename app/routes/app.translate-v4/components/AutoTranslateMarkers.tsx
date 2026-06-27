@@ -1,12 +1,12 @@
 import { v4Colors } from "../v4Styles";
 
 const autoMarkerBadgeStyle = {
-  padding: "1px 7px",
-  fontSize: 10,
-  fontWeight: 600,
+  padding: "2px 8px",
+  fontSize: 12,
+  fontWeight: 500,
   lineHeight: 1.5,
   color: v4Colors.success,
-  background: "rgba(22, 163, 74, 0.1)",
+  background: v4Colors.successBg,
   borderRadius: 999,
 } as const;
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, message } from "antd";
+import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
@@ -347,51 +347,92 @@ export default function AppTranslateV4() {
       <PageHeaderBar shop={shop} credits={remainingCredits} />
 
       {translateQueue.length > 0 ? (
-        <Alert
-          type="info"
-          showIcon
-          style={{ marginBottom: 16, borderRadius: 12 }}
-          message={
-            translateSlotBusy
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "var(--p-color-bg-surface-info)",
+            color: "var(--p-color-text-info)",
+            border: "1px solid var(--p-color-border-secondary)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 13,
+            lineHeight: "20px",
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 8,
+              height: 8,
+              marginTop: 6,
+              borderRadius: "50%",
+              background: "currentColor",
+              flexShrink: 0,
+            }}
+          />
+          <span>
+            {translateSlotBusy
               ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
-              : `${translateQueue.length} 个语言任务等待开始翻译。`
-          }
-        />
+              : `${translateQueue.length} 个语言任务等待开始翻译。`}
+          </span>
+        </div>
       ) : null}
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "auto minmax(0, 1fr)",
+          display: "flex",
+          flexWrap: "wrap",
           gap: 16,
           marginBottom: 16,
-          alignItems: "start",
+          alignItems: "stretch",
         }}
       >
-        <SummaryDonutCard summary={coverage} />
-        <CreateTaskCard
-          source={source}
-          sourceLabel={sourceLocaleOption?.label ?? source}
-          targetOptions={targetOptions}
-          targets={targets}
-          onTargetsChange={setTargets}
-          modules={moduleKeys}
-          onModulesChange={setModuleKeys}
-          creating={creating}
-          onCreate={handleCreate}
-          aiModel={aiModel}
-          onAiModelChange={setAiModel}
-          isCover={isCover}
-          onIsCoverChange={setIsCover}
-          isHandle={isHandle}
-          onIsHandleChange={setIsHandle}
-        />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
+            gap: 16,
+            flex: "0 1 608px",
+            width: "100%",
+            maxWidth: 608,
+          }}
+        >
+          <SummaryDonutCard summary={coverage} compact />
+          <CoverageCard
+            locales={coverage.locales}
+            loading={coverageLoading}
+            onRefresh={refreshCoverage}
+            compact
+          />
+        </div>
+        <div style={{ flex: "1 1 420px", minWidth: 320 }}>
+          <CreateTaskCard
+            source={source}
+            sourceLabel={sourceLocaleOption?.label ?? source}
+            targetOptions={targetOptions}
+            targets={targets}
+            onTargetsChange={setTargets}
+            modules={moduleKeys}
+            onModulesChange={setModuleKeys}
+            creating={creating}
+            onCreate={handleCreate}
+            aiModel={aiModel}
+            onAiModelChange={setAiModel}
+            isCover={isCover}
+            onIsCoverChange={setIsCover}
+            isHandle={isHandle}
+            onIsHandleChange={setIsHandle}
+          />
+        </div>
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+          gridTemplateColumns: "minmax(0, 1fr)",
           gap: 16,
         }}
       >
@@ -399,11 +440,6 @@ export default function AppTranslateV4() {
           jobs={jobs}
           translateSlotBusy={translateSlotBusy}
           onAction={handleAction}
-        />
-        <CoverageCard
-          locales={coverage.locales}
-          loading={coverageLoading}
-          onRefresh={refreshCoverage}
         />
       </div>
 
