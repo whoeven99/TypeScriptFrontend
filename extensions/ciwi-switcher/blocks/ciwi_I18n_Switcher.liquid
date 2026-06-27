@@ -1,6 +1,17 @@
 {% assign language_iso = localization.language.iso_code %}
 <link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
+{% comment %}
+  预连接 Java 后端：域名与 ciwi-api.js switchUrl(blockId) 保持一致。
+  仅 preconnect 当前 block 实际会请求的源，避免线上误连 Test 域名。
+{% endcomment %}
+{% assign ciwi_java_backend = 'https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net' %}
+{% if block.id == 'AZnlHVkxkZDMwNDg2Q__13411448604249213220' %}
+  {% assign ciwi_java_backend = 'https://springbackendprod.azurewebsites.net' %}
+{% endif %}
+<link rel="preconnect" href="{{ ciwi_java_backend }}" crossorigin>
+<link rel="dns-prefetch" href="{{ ciwi_java_backend }}">
+
 <div dir="{% if language_iso == 'ar' or language_iso == 'fa' or language_iso == 'ur' or language_iso == 'he' %}rtl{% else %}ltr{% endif %}">
   <ciwiswitcher-form>
     {% form 'localization' %}
