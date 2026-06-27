@@ -4,6 +4,7 @@ import {
   clearV4PausePending,
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
+import { reconcileTranslateUnitMetrics } from "./metricsUtils";
 import type { TranslationV4Job } from "./types";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 
@@ -38,11 +39,13 @@ export async function escalateStuckPauseIfNeeded(
     metrics.translateDone,
     Number(job.metrics.translateDone) || 0,
   );
-  const translateUnitTotal = metrics.translateUnitTotal;
-  const translateUnitDone =
-    translateUnitTotal > 0
-      ? Math.min(metrics.translateUnitDone, translateUnitTotal)
-      : metrics.translateUnitDone;
+  const units = reconcileTranslateUnitMetrics({
+    translateDone,
+    translateTotal: metrics.translateTotal,
+    translateUnitDone: metrics.translateUnitDone,
+    translateUnitTotal: metrics.translateUnitTotal,
+    initTotal: metrics.initTotal,
+  });
 
   const updated = await updateV4Job(shopName, job.id, {
     status: "PAUSED",
@@ -59,8 +62,8 @@ export async function escalateStuckPauseIfNeeded(
       translateDone,
       translateFailed: metrics.translateFailed,
       translateFallback: metrics.translateFallback,
-      translateUnitTotal,
-      translateUnitDone,
+      translateUnitTotal: units.translateUnitTotal,
+      translateUnitDone: units.translateUnitDone,
       usedTokens: metrics.usedTokens,
     },
   });

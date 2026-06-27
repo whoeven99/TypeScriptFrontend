@@ -8,12 +8,13 @@ import {
 import {
   capTranslateUnitsByResources,
   isTranslateResourceComplete,
+  reconcileTranslateUnitMetrics,
   translateResourceTotal,
 } from "./metricsUtils";
+import { ACTIVE_V4_STATUSES } from "./types";
 import { writebackResourceTotal } from "./resumeStatus";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 import {
-  ACTIVE_V4_STATUSES,
   TERMINAL_V4_STATUSES,
   type StageTimings,
   type TranslationV4Job,
@@ -47,14 +48,13 @@ export function mergeV4JobMetrics(
   // 为 0/空（pause/resume 切换、Redis 与 Cosmos 短暂不一致）时进度回退闪 0。
   const merge = (key: keyof TranslationV4Metrics): number =>
     Math.max(Number(redisProgress[key]) || 0, Number(job.metrics[key]) || 0);
-  const translateUnitTotal = merge("translateUnitTotal");
   const translateDone = merge("translateDone");
   const translateTotal = merge("translateTotal");
-  const translateUnitDone = capTranslateUnitsByResources({
+  const mergedUnits = reconcileTranslateUnitMetrics({
     translateDone,
     translateTotal,
     translateUnitDone: merge("translateUnitDone"),
-    translateUnitTotal,
+    translateUnitTotal: merge("translateUnitTotal"),
   });
   return {
     initTotal: merge("initTotal"),
@@ -62,9 +62,12 @@ export function mergeV4JobMetrics(
     translateTotal,
     translateDone,
     translateFailed: merge("translateFailed"),
-    translateFallback: job.metrics.translateFallback,
-    translateUnitTotal,
-    translateUnitDone,
+    translateFallback: Math.max(
+      Number(redisProgress.translateFallback) || 0,
+      Number(job.metrics.translateFallback) || 0,
+    ),
+    translateUnitTotal: mergedUnits.translateUnitTotal,
+    translateUnitDone: mergedUnits.translateUnitDone,
     writebackTotal: merge("writebackTotal"),
     writebackDone: merge("writebackDone"),
     writebackFailed: merge("writebackFailed"),
@@ -468,13 +471,11 @@ async function readRedisProgress(
   }
 }
 
-/** 列表页批量读取活跃翻译任务的 Redis 进度 + 控制键（避免 refresh 后丢失「正在暂停…」）。 */
+/** 列表页批量读取活跃任务的 Redis 进度 + 控制键（含写回/校验阶段，保证写回进度实时）。 */
 async function batchReadRedisForJobs(
   jobs: TranslationV4Job[],
 ): Promise<Map<string, { progress: Record<string, string>; control: V4ControlAction | null }>> {
-  const activeIds = jobs
-    .filter((j) => j.status === "TRANSLATING" || j.status === "TRANSLATE_QUEUED")
-    .map((j) => j.id);
+  const activeIds = jobs.filter((j) => ACTIVE_V4_STATUSES.includes(j.status)).map((j) => j.id);
   const out = new Map<
     string,
     { progress: Record<string, string>; control: V4ControlAction | null }

@@ -1,4 +1,7 @@
-/** locale 代码 → 设计稿中的地区缩写（用于语言标签）。 */
+/**
+ * 语言简写唯一来源：新建任务 targets、任务列表、语言覆盖率须都用 localeRegionCode。
+ * Shopify locale（如 ko）→ 设计稿缩写（如 KR）。
+ */
 export function localeRegionCode(locale: string): string {
   const map: Record<string, string> = {
     "zh-CN": "CN",
@@ -14,11 +17,17 @@ export function localeRegionCode(locale: string): string {
     ar: "SA",
     it: "IT",
     pt: "PT",
+    "pt-BR": "PT",
+    "pt-PT": "PT",
     nl: "NL",
     ru: "RU",
     sv: "SE",
     tr: "TR",
     uk: "UA",
+    id: "ID",
+    pl: "PL",
+    th: "TH",
+    vi: "VI",
   };
   if (map[locale]) return map[locale];
   const base = locale.split("-")[0];
@@ -37,6 +46,10 @@ export function localeShortName(locale: string, label?: string): string {
     de: "德语",
     es: "西班牙语",
     ko: "韩语",
+    id: "印尼语",
+    pl: "波兰语",
+    th: "泰语",
+    vi: "越南语",
     ar: "阿拉伯语",
     it: "意大利语",
     pt: "葡萄牙语",
@@ -49,6 +62,10 @@ export function localeShortName(locale: string, label?: string): string {
     if (name) return name;
   }
   return locale;
+}
+
+export function formatLocaleRoute(source: string, target: string): string {
+  return `${localeRegionCode(source)} → ${localeRegionCode(target)}`;
 }
 
 export function formatCredits(n: number): string {
