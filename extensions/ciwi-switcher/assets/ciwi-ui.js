@@ -26,6 +26,29 @@ const isElementHiddenForTranslation = (element) => {
   return element.offsetParent === null && element !== document.body;
 };
 
+// 文本翻译共享工具（CustomLiquidTextTranslate / PageFlyTextTranslate 共用）
+
+// 不应替换文本内容的标签
+const skipTags = new Set([
+  "SCRIPT",
+  "STYLE",
+  "NOSCRIPT",
+  "CODE",
+  "PRE",
+  "TEXTAREA",
+  "SVG",
+  "META",
+  "LINK",
+  "TITLE",
+]);
+
+// 去除首尾空白与成对的外层引号
+const normalizeText = (text) =>
+  text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+
+// 文本是否被一对外层引号包裹
+const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
+
 /**
  * 渲染货币选项
  */
@@ -96,7 +119,7 @@ export async function initializeCurrency({
           shop: shop,
           currencyCode: selectedCurrency.currencyCode,
         });
-        if (typeof rate == "number") {
+        if (typeof autoRate == "number") {
           rate = autoRate;
         }
         localStorage.setItem(
@@ -121,22 +144,23 @@ export async function initializeCurrency({
  */
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
   const observer = new MutationObserver((mutationsList) => {
+    // 只收集本次新增的 .ciwi-money 节点做增量转换，
+    // 避免每次 DOM 变化都重扫整个文档的全部价格。
+    const pending = new Set();
     for (const mutation of mutationsList) {
-      if (mutation.type === "childList") {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1 && node.matches?.(".ciwi-money")) {
-            transformPrices({ rate, moneyFormat, selectedCurrency });
-          } else if (node.querySelectorAll) {
-            if (node.querySelectorAll(".ciwi-money").length > 0) {
-              transformPrices({ rate, moneyFormat, selectedCurrency });
-            }
-          }
-        });
-      }
+      if (mutation.type !== "childList") continue;
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType !== 1) return;
+        if (node.matches?.(".ciwi-money")) pending.add(node);
+        node.querySelectorAll?.(".ciwi-money").forEach((el) => pending.add(el));
+      });
+    }
+    if (pending.size > 0) {
+      transformPrices({ rate, moneyFormat, selectedCurrency, nodes: pending });
     }
   });
 
-  // 初始执行一次
+  // 初始执行一次（全量）
   transformPrices({ rate, moneyFormat, selectedCurrency });
 
   // 开始观察
@@ -392,6 +416,23 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
 }
 
 /**
+ * 把图片翻译响应预处理成 [{ key, item }]：
+ * key 只从 imageBeforeUrl 解析一次，避免在图片×条目的双重循环里反复 split。
+ * 传入 language 时只保留该语言的条目。
+ */
+function buildImageKeyEntries(response, language) {
+  const entries = [];
+  if (!Array.isArray(response)) return entries;
+  for (const item of response) {
+    if (language && item?.languageCode !== language) continue;
+    const key = item?.imageBeforeUrl?.split("/files/")[2];
+    if (!key) continue;
+    entries.push({ key, item });
+  }
+  return entries;
+}
+
+/**
  * 观察 DOM 变化，动态处理新图片
  */
 export function initProductImgObserver({
@@ -399,6 +440,10 @@ export function initProductImgObserver({
   languageCode,
 }) {
   if (!Array.isArray(translateSourceArray) || !languageCode) return;
+
+  // 预计算一次 key 列表，观察回调里只做 includes 命中判断
+  const keyedEntries = buildImageKeyEntries(translateSourceArray, languageCode);
+  if (keyedEntries.length === 0) return;
 
   // 只监控图片相关节点的变化
   const observer = new MutationObserver((mutationsList) => {
@@ -413,20 +458,18 @@ export function initProductImgObserver({
         const { src = "", srcset = "" } = node;
         if (!src && !srcset) return;
 
-        // 在翻译数组中查找匹配项
-        const matched = translateSourceArray.find((item) => {
-          const key = item?.imageBeforeUrl?.split("/files/")[2];
-          if (!key || item.languageCode !== languageCode) return false;
+        // 在预计算的 key 列表中查找匹配项
+        const matched = keyedEntries.find(
+          ({ key }) => src.includes(key) || srcset.includes(key),
+        );
+        const afterUrl = matched?.item?.imageAfterUrl;
 
-          return src.includes(key) || srcset.includes(key);
-        });
-
-        if (matched && matched.imageAfterUrl) {
+        if (afterUrl) {
           // 延迟执行替换
           observer.disconnect(); // 暂停观察以防止重复触发
           // 预加载替换图，等加载完成再替换 DOM
           const newImg = new Image();
-          newImg.src = matched.imageAfterUrl;
+          newImg.src = afterUrl;
           // 复制原节点的属性
           newImg.className = node.className;
           newImg.alt = node.alt || "";
@@ -437,7 +480,7 @@ export function initProductImgObserver({
           observer.observe(document.body, { childList: true, subtree: true });
 
           newImg.onerror = () => {
-            console.warn("❌ 图片加载失败:", matched.imageAfterUrl);
+            console.warn("❌ 图片加载失败:", afterUrl);
             observer.observe(document.body, { childList: true, subtree: true });
           };
         }
@@ -485,31 +528,34 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 
   if (!productImageData?.response?.length) return;
 
+  // 预计算 key 列表，避免对每张 img 都重新 split 整个 response
+  const keyedEntries = buildImageKeyEntries(productImageData.response, language);
+  if (keyedEntries.length === 0) return;
+
   const imageDomList = document.querySelectorAll("img");
   imageDomList.forEach((img) => {
-    const match = productImageData.response.find((item) => {
-      const key = item?.imageBeforeUrl?.split("/files/")[2];
-      if (!key || item.languageCode !== language) return false;
+    const src = img?.src || "";
+    const srcset = img?.srcset || "";
+    const matched = keyedEntries.find(
+      ({ key }) => src.includes(key) || srcset.includes(key),
+    );
+    if (!matched) return;
 
-      return img?.src.includes(key) || img?.srcset.includes(key);
-    });
-
-    if (match) {
-      if (match?.imageAfterUrl) {
-        img.src = match?.imageAfterUrl;
-        img.srcset = match?.imageAfterUrl;
-      }
-      if (match?.altAfterTranslation) {
-        img.alt = match?.altAfterTranslation;
-      }
-
-      monitorImage(
-        img,
-        match?.imageAfterUrl,
-        match?.imageAfterUrl,
-        match?.altAfterTranslation,
-      );
+    const { item } = matched;
+    if (item?.imageAfterUrl) {
+      img.src = item.imageAfterUrl;
+      img.srcset = item.imageAfterUrl;
     }
+    if (item?.altAfterTranslation) {
+      img.alt = item.altAfterTranslation;
+    }
+
+    monitorImage(
+      img,
+      item?.imageAfterUrl,
+      item?.imageAfterUrl,
+      item?.altAfterTranslation,
+    );
   });
 
   initProductImgObserver({
@@ -546,28 +592,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
   if (!translations || Object.keys(translations).length === 0) return;
 
-  // 🧮 辅助函数
+  // 🧮 辅助函数（normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义）
   const escapeRegExp = (string) =>
     string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  const normalizeText = (text) =>
-    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
-
-  const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
-
-  // ❌ 不应替换内容的标签
-  const skipTags = new Set([
-    "SCRIPT",
-    "STYLE",
-    "NOSCRIPT",
-    "CODE",
-    "PRE",
-    "TEXTAREA",
-    "SVG",
-    "META",
-    "LINK",
-    "TITLE",
-  ]);
 
   // 将 translations 拆分成精准匹配和模糊匹配
   const entries = Object.entries(translations).map(
@@ -1157,68 +1184,41 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const translations = readTranslatedText?.response || [];
   if (!Array.isArray(translations) || translations.length === 0) return;
 
-  const normalizeText = (text) =>
-    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+  // normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义
 
-  const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
-
-  // ❌ 不应替换内容的标签
-  const skipTags = new Set([
-    "SCRIPT",
-    "STYLE",
-    "NOSCRIPT",
-    "CODE",
-    "PRE",
-    "TEXTAREA",
-    "SVG",
-    "META",
-    "LINK",
-    "TITLE",
-  ]);
-
-  // 🔄 遍历所有翻译项
+  // 原逻辑：文本节点的归一化内容“完全等于”某条 sourceText 时才替换
+  //（.includes 只是预筛）。这里改为先建 归一化源文本 -> 目标文本 的 Map，
+  // 然后只遍历一次整个文档，避免对每条翻译都各走一遍 DOM（原 O(条数 × 全页)）。
+  const exactMap = new Map();
   translations.forEach((item) => {
     const trimmedBefore = normalizeText(item?.sourceText);
     const trimmedAfter = normalizeText(item?.targetText);
     if (!trimmedBefore || !trimmedAfter) return;
+    if (!exactMap.has(trimmedBefore)) exactMap.set(trimmedBefore, trimmedAfter);
+  });
+  if (exactMap.size === 0) return;
 
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          const parentTag = node.parentNode?.nodeName;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parentTag = node.parentNode?.nodeName;
+      if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+      return exactMap.has(normalizeText(node.nodeValue))
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    },
+  });
 
-          // ⛔ 跳过不应替换的标签
-          if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+  const nodesToReplace = [];
+  while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
 
-          const normalized = normalizeText(node.nodeValue);
-
-          // ❗ 未包含待替换内容 → 跳过
-          if (!normalized.includes(trimmedBefore)) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // ✅ 可以替换
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      },
-    );
-
-    const nodesToReplace = [];
-    while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
-
-    // ✏精准替换
-    nodesToReplace.forEach((node) => {
-      if (isElementHiddenForTranslation(node.parentElement)) return;
-      const original = node.nodeValue;
-      const normalized = normalizeText(original);
-
-      if (normalized === trimmedBefore) {
-        const keepQuote = hasOuterQuote(original);
-        node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
-      }
-    });
+  // ✏ 精准替换
+  nodesToReplace.forEach((node) => {
+    if (isElementHiddenForTranslation(node.parentElement)) return;
+    const original = node.nodeValue;
+    const trimmedAfter = exactMap.get(normalizeText(original));
+    if (!trimmedAfter) return;
+    const keepQuote = hasOuterQuote(original);
+    node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
   });
 }
 
@@ -1276,10 +1276,16 @@ export class CiwiswitcherForm extends HTMLElement {
     this.elements = {}; // 空对象，等 connectedCallback 再赋值
   }
   connectedCallback() {
+    const blockId = this.querySelector('input[name="block_id"]')?.value;
+    const ciwiBlock = blockId
+      ? document.querySelector(`#shopify-block-${blockId}`)
+      : null;
+    // 第二个 <ciwiswitcher-form> 只含隐藏国家列表、没有 block_id，
+    // 解析不到 ciwiBlock，无需绑定任何交互（否则会白挂一个全局 click 监听）。
+    if (!ciwiBlock) return;
+
     this.elements = {
-      ciwiBlock: document.querySelector(
-        `#shopify-block-${this.querySelector('input[name="block_id"]')?.value}`,
-      ),
+      ciwiBlock,
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
       selectorBackdrop: this.querySelector("#selector-backdrop"),

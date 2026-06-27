@@ -184,8 +184,8 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
 
-  //获取地区对应货币数据
-  const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
+  //获取地区对应货币数据（country-cur-map.js 加载失败时兜底为空表，避免后续索引报错）
+  const countryCurMap = window.countryCurMap || {};
 
   let detectedCountry = countryValue;
   let detectedLanguage = browserLanguage;
@@ -290,8 +290,8 @@ async function ciwiOnload() {
       ? countryCurMap[detectedCountry]
       : ipRedirectionCurrencyValue;
 
-  //缓存货币数据
-  if (detectedCurrency != storedCountry && detectedCurrency) {
+  //缓存货币数据（与已存货币比较，变化时才写入）
+  if (detectedCurrency != storedCurrency && detectedCurrency) {
     localStorage.setItem("ciwi_selected_currency", detectedCurrency);
   }
 
