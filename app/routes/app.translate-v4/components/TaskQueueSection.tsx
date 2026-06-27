@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
+import { formatLocaleRoute } from "../localeDisplay";
 import {
   jobDisplayPercent,
   visibleStageIndex,
@@ -67,7 +68,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
             <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
-              {job.source} → {job.target}
+              {formatLocaleRoute(job.source, job.target)}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />

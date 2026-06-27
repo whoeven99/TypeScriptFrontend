@@ -43,3 +43,20 @@ export function isTranslateResourceComplete(
   const total = translateResourceTotal(metrics);
   return total > 0 && metrics.translateDone >= total;
 }
+
+/**
+ * 节点进度展示/落库对齐：资源全部完成后，分母必须与最终分子一致。
+ * INIT 预估值在 dedup / 跳过路径下常大于运行时 onProgress 累计值。
+ */
+export function reconcileTranslateUnitMetrics(
+  metrics: TranslateProgressMetrics & { initTotal?: number },
+): { translateUnitDone: number; translateUnitTotal: number } {
+  const done = capTranslateUnitsByResources(metrics);
+  let total = metrics.translateUnitTotal ?? 0;
+  if (isTranslateResourceComplete(metrics)) {
+    if (done > 0) total = done;
+  } else if (done > total) {
+    total = done;
+  }
+  return { translateUnitDone: done, translateUnitTotal: total };
+}

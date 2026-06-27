@@ -24,6 +24,7 @@ import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
+import { localeRegionCode } from "./localeDisplay";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
@@ -284,7 +285,7 @@ export default function AppTranslateV4() {
 
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
-          result.failed.map((f) => `${f.target}: ${f.error}`).join("；"),
+          result.failed.map((f) => `${localeRegionCode(f.target)}: ${f.error}`).join("；"),
           6,
         );
       }

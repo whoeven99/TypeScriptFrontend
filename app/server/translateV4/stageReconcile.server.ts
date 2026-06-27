@@ -10,13 +10,8 @@ import {
   writebackNeedsRetry,
   writebackResourceTotal,
 } from "./resumeStatus";
-import type { TranslationV4Job, TranslationV4Metrics } from "./types";
-
-function cappedUnitDone(metrics: TranslationV4Metrics): number {
-  const total = metrics.translateUnitTotal ?? 0;
-  const done = metrics.translateUnitDone ?? 0;
-  return total > 0 ? Math.min(done, total) : done;
-}
+import { reconcileTranslateUnitMetrics } from "./metricsUtils";
+import type { TranslationV4Job } from "./types";
 
 /**
  * 翻译资源已全部完成，但 Cosmos 仍停在 TRANSLATING/TRANSLATE_QUEUED（常见于额度暂停→
@@ -45,6 +40,7 @@ export async function escalateStuckTranslatingToWritebackIfNeeded(
   }
 
   const translateDone = metrics.translateDone;
+  const units = reconcileTranslateUnitMetrics(metrics);
   const updated = await updateV4Job(shopName, job.id, {
     status: "WRITEBACK_QUEUED",
     claimedBy: null,
@@ -59,8 +55,8 @@ export async function escalateStuckTranslatingToWritebackIfNeeded(
       translateDone,
       translateFailed: metrics.translateFailed,
       translateFallback: metrics.translateFallback,
-      translateUnitTotal: metrics.translateUnitTotal,
-      translateUnitDone: cappedUnitDone(metrics),
+      translateUnitTotal: units.translateUnitTotal,
+      translateUnitDone: units.translateUnitDone,
       writebackTotal,
       writebackDone: metrics.writebackDone,
       writebackFailed: metrics.writebackFailed,
