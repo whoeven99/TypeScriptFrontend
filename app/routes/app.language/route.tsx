@@ -34,7 +34,8 @@ import { GetTranslate } from "~/api/JavaServer";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
-import { deleteTargetLocales } from "~/server/translateV4/targetLocale.server";
+import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 import {
   setAutoTranslateCompat,
   listLanguageStatusCompat,
@@ -124,6 +125,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop: shop,
           accessToken: accessToken as string,
         });
+        const primaryLocale = data.find((lang) => lang.primary)?.locale;
+        if (primaryLocale && (await isShopMigrated(shop))) {
+          try {
+            await syncShopTargetLocalesFromShopify(
+              shop,
+              data.map((lang) => ({ locale: lang.locale, primary: lang.primary })),
+              primaryLocale,
+            );
+          } catch (syncErr) {
+            console.error("[language] syncShopTargetLocales failed:", syncErr);
+          }
+        }
         return {
           success: true,
           errorCode: 0,
