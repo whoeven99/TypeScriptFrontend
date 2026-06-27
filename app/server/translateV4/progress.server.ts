@@ -1,11 +1,17 @@
 import { getTranslateV4RedisClient, v4ControlKey, v4ProgressKey, type V4ControlAction } from "./redis.server";
-import { getV4Job, listV4Jobs } from "./cosmos.server";
+import { getV4Job, listV4Jobs, updateV4Job } from "./cosmos.server";
 import { escalateStuckPauseIfNeeded } from "./pauseReconcile.server";
 import {
   escalateStuckTranslatingToWritebackIfNeeded,
   isTranslateCompleteButWritebackPending,
 } from "./stageReconcile.server";
-import { translateResourcesComplete, writebackResourceTotal } from "./resumeStatus";
+import {
+  capTranslateUnitsByResources,
+  isTranslateResourceComplete,
+  translateResourceTotal,
+} from "./metricsUtils";
+import { writebackResourceTotal } from "./resumeStatus";
+import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 import {
   ACTIVE_V4_STATUSES,
   TERMINAL_V4_STATUSES,
@@ -42,16 +48,19 @@ export function mergeV4JobMetrics(
   const merge = (key: keyof TranslationV4Metrics): number =>
     Math.max(Number(redisProgress[key]) || 0, Number(job.metrics[key]) || 0);
   const translateUnitTotal = merge("translateUnitTotal");
-  const translateUnitDoneRaw = merge("translateUnitDone");
-  const translateUnitDone =
-    translateUnitTotal > 0
-      ? Math.min(translateUnitDoneRaw, translateUnitTotal)
-      : translateUnitDoneRaw;
+  const translateDone = merge("translateDone");
+  const translateTotal = merge("translateTotal");
+  const translateUnitDone = capTranslateUnitsByResources({
+    translateDone,
+    translateTotal,
+    translateUnitDone: merge("translateUnitDone"),
+    translateUnitTotal,
+  });
   return {
     initTotal: merge("initTotal"),
     initDone: merge("initDone"),
-    translateTotal: merge("translateTotal"),
-    translateDone: merge("translateDone"),
+    translateTotal,
+    translateDone,
     translateFailed: merge("translateFailed"),
     translateFallback: job.metrics.translateFallback,
     translateUnitTotal,
@@ -164,7 +173,10 @@ export function computeTranslationV4ProgressPercent(
       case "TRANSLATE":
       default:
         if (metrics.translateUnitTotal > 0) {
-          return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+          return ratioPercent(
+            capTranslateUnitsByResources(metrics),
+            metrics.translateUnitTotal,
+          );
         }
         return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
     }
@@ -184,14 +196,21 @@ export function computeTranslationV4ProgressPercent(
     status === "TRANSLATING" ||
     status === "TRANSLATE_DONE"
   ) {
-    if (translateResourcesComplete(metrics)) {
+    if (isTranslateResourceComplete(metrics)) {
       const total = writebackResourceTotal(metrics);
       return total > 0 ? ratioPercent(metrics.writebackDone, total) : 100;
     }
-    if (metrics.translateUnitTotal > 0) {
-      return ratioPercent(metrics.translateUnitDone, metrics.translateUnitTotal);
+    const resourceTotal = taskResourceTotal(metrics);
+    if (resourceTotal > 0) {
+      return ratioPercent(metrics.translateDone, resourceTotal);
     }
-    return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
+    if (metrics.translateUnitTotal > 0) {
+      return ratioPercent(
+        capTranslateUnitsByResources(metrics),
+        metrics.translateUnitTotal,
+      );
+    }
+    return null;
   }
 
   if (status === "WRITEBACK_QUEUED" || status === "WRITING_BACK") {
@@ -369,8 +388,9 @@ function toProgressSummary(
       : "正在暂停…";
   // 过渡态不把 pauseReason 当作 errorMessage 暴露——否则顶部「正在暂停…」与底部
   // 「已手动暂停」同时出现，语义重复且像两个矛盾状态。
-  const errorMessage =
-    job.errorMessage ?? (isStopping ? null : metrics.pauseReason);
+  const errorMessage = sanitizeV4UserErrorMessage(
+    job.errorMessage ?? (isStopping ? null : metrics.pauseReason),
+  );
   const canResume =
     (job.status === "PAUSED" || job.status === "FAILED") &&
     !isStopping &&
@@ -489,6 +509,22 @@ async function batchReadRedisForJobs(
   return out;
 }
 
+/** 清掉历史上误写入 Cosmos 的 worker 内部文案。 */
+async function healInternalErrorMessageIfNeeded(
+  shopName: string,
+  job: TranslationV4Job,
+): Promise<TranslationV4Job> {
+  if (
+    !job.errorMessage ||
+    sanitizeV4UserErrorMessage(job.errorMessage) ||
+    (job.status !== "PAUSED" && job.status !== "FAILED")
+  ) {
+    return job;
+  }
+  const healed = await updateV4Job(shopName, job.id, { errorMessage: null });
+  return healed ?? { ...job, errorMessage: null };
+}
+
 /** 单个任务的实时进度摘要（Cosmos + Redis 合并）。 */
 export async function getV4JobProgressSummary(
   shopName: string,
@@ -496,6 +532,7 @@ export async function getV4JobProgressSummary(
 ): Promise<TranslationJobProgressSummary | null> {
   let job = await getV4Job(shopName, taskId);
   if (!job) return null;
+  job = await healInternalErrorMessageIfNeeded(shopName, job);
   const { progress, control } = await readRedisProgress(taskId);
   const metrics = mergeV4JobMetrics(job, progress, control);
   const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
