@@ -1,6 +1,30 @@
 /* .ant-modal-title {
-    font-size: 24px !important; 
+    font-size: 24px !important;
 } */
+
+:root {
+  --app-color-bg: var(--p-color-bg);
+  --app-color-surface: var(--p-color-bg-surface);
+  --app-color-surface-secondary: var(--p-color-bg-surface-secondary);
+  --app-color-surface-selected: var(--p-color-bg-surface-selected);
+  --app-color-border: var(--p-color-border);
+  --app-color-border-secondary: var(--p-color-border-secondary);
+  --app-color-text: var(--p-color-text);
+  --app-color-text-secondary: var(--p-color-text-secondary);
+  --app-color-text-tertiary: var(--p-color-text-tertiary);
+  --app-color-brand: var(--p-color-bg-fill-brand);
+  --app-color-brand-on-fill: var(--p-color-text-brand-on-bg-fill);
+  --app-font-size-body: 14px;
+  --app-font-size-body-small: 13px;
+  --app-font-size-caption: 12px;
+  --app-space-100: var(--p-space-100);
+  --app-space-200: var(--p-space-200);
+  --app-space-300: var(--p-space-300);
+  --app-space-400: var(--p-space-400);
+  --app-space-500: var(--p-space-500);
+  --app-space-600: var(--p-space-600);
+  --app-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
 
 @media (min-width: 48em) {
   .Polaris-Page__Content {
@@ -14,4 +38,7 @@
 
 body {
   margin: 0;
+  background: var(--app-color-bg);
+  color: var(--app-color-text);
+  font-size: var(--app-font-size-body);
 }

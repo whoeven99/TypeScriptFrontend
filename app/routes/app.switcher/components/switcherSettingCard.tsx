@@ -1,18 +1,18 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
 import {
-  Card,
   Space,
   Button,
   Typography,
   Skeleton,
-  ConfigProvider,
   Divider,
 } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-const { Text, Paragraph, Title } = Typography;
+import AppSectionCard from "~/ui/components/AppSectionCard";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
+const { Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
   step1Visible: boolean | undefined;
@@ -63,17 +63,22 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
     reportClick("switcher_guide_click_theme");
   };
   return (
-    <Card
+    <AppSectionCard
       style={{ display: visible ? "block" : "none" }}
       title={t("Switcher Configuration Guide")}
+      description={t("Follow these two steps to make the storefront switcher available and styled correctly.")}
       extra={
         <Button type="text" onClick={handleClose}>
           <CloseOutlined />
         </Button>
       }
-      loading={loading}
     >
-      <Title level={5}>{t("Step 1: Set up Currency Format")}</Title>
+      {loading ? <Skeleton active paragraph={{ rows: 6 }} /> : null}
+      {!loading ? (
+      <>
+      <Text strong style={{ color: "var(--app-color-text)" }}>
+        {t("Step 1: Set up Currency Format")}
+      </Text>
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div
           style={{
@@ -83,29 +88,9 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           }}
         >
           {step1Visible ? (
-            <Text
-              strong
-              style={{
-                backgroundColor: "rgb(254,211,209)",
-                color: "rgb(142, 31, 11)",
-                padding: "2px 10px",
-                borderRadius: "20px",
-              }}
-            >
-              {t("Uncompleted")}
-            </Text>
+            <AppStatusBadge tone="critical">{t("Uncompleted")}</AppStatusBadge>
           ) : (
-            <Text
-              strong
-              style={{
-                backgroundColor: "rgb(224,247,224)",
-                color: "rgb(76,175,80)",
-                padding: "2px 10px",
-                borderRadius: "20px",
-              }}
-            >
-              {t("Completed")}
-            </Text>
+            <AppStatusBadge tone="success">{t("Completed")}</AppStatusBadge>
           )}
           <Link url={settingUrl} target="_blank">
             <Button
@@ -169,33 +154,15 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         </div>
       </Space>
       <Divider />
-      <Title level={5}>{t("Step 2: Enable switcher")}</Title>
+      <Text strong style={{ color: "var(--app-color-text)" }}>
+        {t("Step 2: Enable switcher")}
+      </Text>
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div className="card-header">
           {step2Visible ? (
-            <Text
-              strong
-              style={{
-                backgroundColor: "rgb(254,211,209)",
-                color: "rgb(142, 31, 11)",
-                padding: "2px 10px",
-                borderRadius: "20px",
-              }}
-            >
-              {t("Uncompleted")}
-            </Text>
+            <AppStatusBadge tone="critical">{t("Uncompleted")}</AppStatusBadge>
           ) : (
-            <Text
-              strong
-              style={{
-                backgroundColor: "rgb(224,247,224)",
-                color: "rgb(76,175,80)",
-                padding: "2px 10px",
-                borderRadius: "20px",
-              }}
-            >
-              {t("Completed")}
-            </Text>
+            <AppStatusBadge tone="success">{t("Completed")}</AppStatusBadge>
           )}
         </div>
         <Text>
@@ -214,7 +181,9 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           </Link>
         </Text>
       </Space>
-    </Card>
+      </>
+      ) : null}
+    </AppSectionCard>
   );
 };
 
