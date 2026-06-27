@@ -8,7 +8,7 @@ type Props = {
   summary: CoverageSummary;
 };
 
-/** 左侧摘要卡固定宽度；高度随右侧创建任务卡拉伸对齐。 */
+/** 左侧摘要卡固定宽度与高度，不随右侧表单展开而拉伸。 */
 const SUMMARY_CARD_WIDTH = 296;
 const SUMMARY_RING_SIZE = 148;
 
@@ -26,20 +26,17 @@ export function SummaryDonutCard({ summary }: Props) {
         display: "flex",
         flexDirection: "column",
         width: SUMMARY_CARD_WIDTH,
-        height: "100%",
         minWidth: SUMMARY_CARD_WIDTH,
         boxSizing: "border-box",
         flexShrink: 0,
-        alignSelf: "stretch",
       }}
     >
       <div
         style={{
-          flex: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: 0,
+          padding: "8px 0 20px",
         }}
       >
         <div style={{ position: "relative", width: SUMMARY_RING_SIZE, height: SUMMARY_RING_SIZE }}>

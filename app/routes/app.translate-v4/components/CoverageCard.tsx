@@ -4,7 +4,26 @@ import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
-import { formatNextAutoUpdateDisplay } from "../nextAutoUpdateDisplay";
+import { formatLastAutoUpdateDisplay, formatNextAutoUpdateDisplay } from "../nextAutoUpdateDisplay";
+
+const AUTO_BADGE_HOVER_CSS = `
+.v4-auto-badge-wrap { position: relative; display: inline-flex; vertical-align: middle; cursor: default; }
+.v4-auto-badge-hints {
+  position: absolute; left: 0; top: calc(100% + 4px);
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 8px; border-radius: 6px;
+  background: #fff; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  font-size: 10px; font-weight: 500; color: #64748b;
+  white-space: nowrap; z-index: 20;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.12s ease, visibility 0.12s;
+}
+.v4-auto-badge-wrap:hover .v4-auto-badge-hints,
+.v4-auto-badge-wrap:focus-within .v4-auto-badge-hints {
+  opacity: 1; visibility: visible;
+}
+`;
 
 type Props = {
   locales: LocaleCoverageRow[];
@@ -39,6 +58,7 @@ export function CoverageCard({ locales, loading, onRefresh }: Props) {
         </button>
       </div>
 
+      <style>{AUTO_BADGE_HOVER_CSS}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
           <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无已发布的目标语言。</div>
@@ -54,15 +74,16 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   const [, setMinuteTick] = useState(0);
 
   useEffect(() => {
-    if (!row.autoTranslate || !row.nextAutoUpdateAt) return;
+    if (!row.autoTranslate) return;
     const id = setInterval(() => setMinuteTick((n) => n + 1), 60_000);
     return () => clearInterval(id);
-  }, [row.autoTranslate, row.nextAutoUpdateAt]);
+  }, [row.autoTranslate, row.lastAutoUpdateAt, row.nextAutoUpdateAt]);
 
   const percent = row.percent;
   const barColor = coverageBarColor(percent);
   const width = percent != null ? `${percent}%` : "0%";
   const label = localeShortName(row.locale, row.label);
+  const lastHint = row.autoTranslate ? formatLastAutoUpdateDisplay(row.lastAutoUpdateAt) : null;
   const nextHint = row.autoTranslate ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt) : null;
 
   return (
@@ -82,7 +103,9 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
             <span style={{ color: v4Colors.textFaint, marginRight: 6, fontSize: 11 }}>{localeRegionCode(row.locale)}</span>
             {label}
           </span>
-          {row.autoTranslate ? <AutoTranslateBadge nextUpdateHint={nextHint} /> : null}
+          {row.autoTranslate ? (
+            <AutoTranslateBadge lastUpdateHint={lastHint} nextUpdateHint={nextHint} />
+          ) : null}
         </span>
         <span style={{ fontFamily: v4Colors.mono, fontWeight: 700, fontSize: 12.5, color: v4Colors.text, flexShrink: 0 }}>
           {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}

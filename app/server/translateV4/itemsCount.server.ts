@@ -137,7 +137,45 @@ const TRANSLATABLE_RESOURCES_QUERY = `#graphql
     }
   }`;
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 250;
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Shopify GraphQL with light retry (throttle / transient errors during active jobs). */
+async function adminGraphqlJson(
+  admin: AdminGraphqlClient,
+  query: string,
+  variables: Record<string, unknown>,
+  retries = 2,
+): Promise<any> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await admin.graphql(query, { variables });
+      const data = await response.json();
+      const errors = data?.errors as Array<{ message?: string }> | undefined;
+      if (errors?.length) {
+        const msg = errors.map((e) => e.message ?? "GraphQL error").join("; ");
+        const throttled = /throttl|rate limit|429/i.test(msg);
+        if (throttled && attempt < retries) {
+          await sleep(1200 * (attempt + 1));
+          continue;
+        }
+        throw new Error(msg);
+      }
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await sleep(1200 * (attempt + 1));
+        continue;
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
 
 type TranslatableNode = {
   translations?: Array<{
@@ -188,10 +226,12 @@ export async function countModuleItems({
   let after: string | null = null;
 
   for (;;) {
-    const response = await admin.graphql(TRANSLATABLE_RESOURCES_QUERY, {
-      variables: { resourceType: module, first: PAGE_SIZE, locale: target, after },
+    const data = await adminGraphqlJson(admin, TRANSLATABLE_RESOURCES_QUERY, {
+      resourceType: module,
+      first: PAGE_SIZE,
+      locale: target,
+      after,
     });
-    const data = await response.json();
     const conn = data?.data?.translatableResources;
     const edges: Array<{ node: TranslatableNode }> = conn?.edges ?? [];
 
@@ -356,8 +396,16 @@ export async function getItemsCountByLabel({
   for (const module of spec.modules) {
     let r = skipCache ? null : await readStoredModuleCount(shop, target, module);
     if (!r) {
-      r = await countModuleItems({ admin, module, target });
-      await writeStoredModuleCount(shop, target, module, r);
+      try {
+        r = await countModuleItems({ admin, module, target });
+        await writeStoredModuleCount(shop, target, module, r);
+      } catch (err) {
+        console.error(
+          `[itemsCount] compute failed shop=${shop} locale=${target} module=${module}:`,
+          err,
+        );
+        r = (await readStoredModuleCount(shop, target, module)) ?? { total: 0, translated: 0 };
+      }
     }
     total += r.total;
     translated += r.translated;
@@ -439,7 +487,7 @@ export async function sumItemsCountByLabels({
 }
 
 /**
- * 强制刷新某一语言的统计缓存（invalidate + 现算 Shopify + 写 Redis）。
+ * 强制刷新某一语言的统计缓存（现算 Shopify + 写 Redis，不先 invalidate —— 避免翻译进行中清空 worker 写入）。
  * 管理翻译/v4 覆盖率共用同一 Redis key；`labels` 决定刷新哪些卡片/module。
  */
 export async function refreshItemsCountForLocale({
@@ -453,7 +501,6 @@ export async function refreshItemsCountForLocale({
   locale: string;
   labels?: readonly string[];
 }): Promise<{ translated: number; total: number }> {
-  await invalidateAllItemsCountForLocale(shop, locale);
   return sumItemsCountByLabels({
     admin,
     shop,
@@ -463,7 +510,7 @@ export async function refreshItemsCountForLocale({
   });
 }
 
-/** 批量刷新多语言（v4 覆盖率「刷新统计」）。 */
+/** 批量刷新多语言（v4 覆盖率「刷新统计」）；单语言失败不阻断其余语言。 */
 export async function refreshItemsCountForLocales({
   admin,
   shop,
@@ -476,6 +523,10 @@ export async function refreshItemsCountForLocales({
   labels?: readonly string[];
 }): Promise<void> {
   for (const locale of locales) {
-    await refreshItemsCountForLocale({ admin, shop, locale, labels });
+    try {
+      await refreshItemsCountForLocale({ admin, shop, locale, labels });
+    } catch (err) {
+      console.error(`[itemsCount] refresh locale failed shop=${shop} locale=${locale}:`, err);
+    }
   }
 }

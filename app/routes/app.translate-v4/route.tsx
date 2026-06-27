@@ -139,15 +139,22 @@ export default function AppTranslateV4() {
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
     try {
-      const refreshParam = forceRefresh ? "&refresh=1" : "";
-      const res = await fetch(
-        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}${refreshParam}`,
-      );
-      const data = await res.json();
-      if (data?.ok) {
-        setCoverage(data.summary as CoverageSummary);
-      } else if (forceRefresh) {
-        message.error(data?.error || "刷新统计失败");
+      if (!forceRefresh) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
+        return;
+      }
+
+      // 按语言逐个刷新，避免一次请求扫全店导致超时 / 与翻译任务争抢 Shopify 限流
+      for (const loc of targetOptions) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
@@ -155,7 +162,7 @@ export default function AppTranslateV4() {
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop]);
+  }, [shop, targetOptions]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -326,8 +333,9 @@ export default function AppTranslateV4() {
     if (coverageAutoRefreshDone.current) return;
     if (!initialCoverage.locales.some((l) => l.cacheMissing)) return;
     coverageAutoRefreshDone.current = true;
-    void refreshCoverage(true);
-  }, [initialCoverage.locales, refreshCoverage]);
+    // 翻译进行中勿全量扫 Shopify；仅读 Redis 缓存，用户可手动「刷新统计」
+    void refreshCoverageFromCache();
+  }, [initialCoverage.locales, refreshCoverageFromCache]);
 
   const translateSlotBusy = useMemo(
     () => jobs.some((j) => j.status === "TRANSLATING" || j.isStopping),
@@ -366,7 +374,7 @@ export default function AppTranslateV4() {
           gridTemplateColumns: "auto minmax(0, 1fr)",
           gap: 16,
           marginBottom: 16,
-          alignItems: "stretch",
+          alignItems: "start",
         }}
       >
         <SummaryDonutCard summary={coverage} />

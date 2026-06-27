@@ -18,7 +18,6 @@ const STAGE_DEFS: { name: string; key: StageName }[] = [
   { name: "初始化", key: "INIT" },
   { name: "翻译", key: "TRANSLATE" },
   { name: "写回", key: "WRITEBACK" },
-  { name: "校验", key: "VERIFY" },
 ];
 
 // 进度色与品牌统一：进行中用主题紫 v4Colors.primary，完成用绿色。
@@ -44,11 +43,8 @@ function stageDetail(idx: number, m: StageMetrics): string {
       ? `${res} · 节点 ${m.translateUnitDone}/${m.translateUnitTotal}`
       : res;
   }
-  if (idx === 2) {
-    const total = taskResourceTotal(m);
-    return `${m.writebackDone}/${total || m.writebackTotal}`;
-  }
-  return `${m.verifyDone}/${m.verifyTotal}`;
+  const total = taskResourceTotal(m);
+  return `${m.writebackDone}/${total || m.writebackTotal}`;
 }
 
 function stageElapsedMs(
