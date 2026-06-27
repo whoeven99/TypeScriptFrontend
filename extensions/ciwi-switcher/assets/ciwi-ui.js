@@ -110,10 +110,8 @@ export async function initializeCurrency({
     } else {
       rate = selectedCurrency.exchangeRate;
     }
-    // 初始执行一次
-    transformPrices({ rate, moneyFormat, selectedCurrency });
-
-    // 开始观察整个文档 body
+    // 转换现有价格并开始观察整个文档 body
+    // （initPriceObserver 内部会先执行一次全量转换，避免这里重复扫描整个文档）
     initPriceObserver({ rate, moneyFormat, selectedCurrency });
   }
 }
@@ -712,8 +710,17 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const htmlMap = new Map();
     const innerMap = new Map();
     const textCandidatesByKey = new Map();
+    // 廉价预筛用的候选集合：任意 outer/inner/text 命中都要求
+    //   node.nodeName === 某条 before 元素的标签名，且节点折叠文本 === 某条源文本。
+    // hasEmptyBeforeTextCandidate 覆盖“含元素但无文本”(如仅图片)的内联条目这一例外。
+    const candidateTags = new Set();
+    const candidateTexts = new Set();
+    let hasEmptyBeforeTextCandidate = false;
     htmlEntries.forEach((e) => {
       htmlMap.set(e.normalizedBefore, e);
+      if (e.beforeTag) candidateTags.add(e.beforeTag);
+      if (e.beforeText) candidateTexts.add(e.beforeText);
+      else if (e.beforeEl) hasEmptyBeforeTextCandidate = true;
       if (e.beforeEl && e.afterEl && e.normalizedBeforeInner) {
         const innerKey = `${e.beforeEl.nodeName}\0${e.normalizedBeforeInner}`;
         if (!innerMap.has(innerKey)) innerMap.set(innerKey, e);
@@ -760,6 +767,19 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const replacements = [];
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node)) return;
+
+      // 预筛 1：标签名。任意命中都要求 node.nodeName 等于某条 before 元素标签名。
+      if (candidateTags.size > 0 && !candidateTags.has(node.nodeName)) return;
+
+      // 预筛 2：折叠文本。有文本时必须命中某条源文本；无文本时仅放行“仅含元素”的条目。
+      // 通过后才做昂贵的 normalizeHtml，避免对全页每个元素都重解析 HTML。
+      const nodeText = normalizeCollapsedText(node.textContent);
+      if (nodeText) {
+        if (!candidateTexts.has(nodeText)) return;
+      } else if (!hasEmptyBeforeTextCandidate) {
+        return;
+      }
+
       const normalizedOuter = normalizeHtml(node.outerHTML);
       if (!normalizedOuter) return;
       const entry = htmlMap.get(normalizedOuter);
@@ -795,7 +815,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         }
       }
 
-      const nodeText = normalizeCollapsedText(node.textContent);
+      // nodeText 已在循环开头算好（且必为非空才能走到这里时命中文本路径）
       if (!nodeText) return;
 
       const textCandidates = textCandidatesByKey.get(`${node.nodeName}\0${nodeText}`);
@@ -893,11 +913,19 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node.parentElement)) return;
 
+      // 这些派生值只跟当前节点内容有关、与 entry 无关，因此每个节点只算一次；
+      // collapsed 仅在遇到 flexibleWhitespace 的 entry 时按需计算。
+      // 仅当本节点真正被替换后，才刷新缓存，保证多条 entry 命中同一节点时的级联替换行为不变。
+      let original = node.nodeValue;
+      let normalized = normalizeText(original);
+      let collapsed = null;
+
       for (const entry of preparedEntries) {
-        const original = node.nodeValue;
-        const normalized = normalizeText(original);
+        if (entry.flexibleWhitespace && collapsed === null) {
+          collapsed = normalizeCollapsedText(normalized);
+        }
         const matches = entry.flexibleWhitespace
-          ? normalizeCollapsedText(normalized).includes(entry.collapsedBefore)
+          ? collapsed.includes(entry.collapsedBefore)
           : normalized.includes(entry.trimmedBefore);
         if (!matches) continue;
 
@@ -912,6 +940,11 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           });
         }
         node.nodeValue = keepQuote ? `"${newValueWithWhitespace}"` : newValueWithWhitespace;
+
+        // 节点内容已变，刷新派生值供后续 entry 使用
+        original = node.nodeValue;
+        normalized = normalizeText(original);
+        collapsed = null;
       }
     });
   };
