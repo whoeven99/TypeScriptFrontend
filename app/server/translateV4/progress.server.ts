@@ -125,8 +125,8 @@ export function translationV4StatusLabel(
     TRANSLATE_DONE: "翻译完成",
     WRITEBACK_QUEUED: "等待写回",
     WRITING_BACK: "写回 Shopify 中",
-    VERIFY_QUEUED: "等待校验",
-    VERIFYING: "校验中",
+    VERIFY_QUEUED: "写回完成",
+    VERIFYING: "写回完成",
     COMPLETED: "已完成",
     FAILED: "失败",
     PAUSED: "已暂停",
@@ -144,11 +144,8 @@ function taskResourceTotal(metrics: TranslationV4Metrics): number {
   return metrics.translateTotal || metrics.initTotal || 0;
 }
 
-/** 任务已结束时的整体进度：按校验/写回实际成功比例，避免写回仅一半仍显示 100%。 */
+/** 任务已结束时的整体进度：按写回实际成功比例，避免写回仅一半仍显示 100%。 */
 function completedJobProgressPercent(metrics: TranslationV4Metrics): number {
-  if (metrics.verifyTotal > 0) {
-    return ratioPercent(metrics.verifyDone, metrics.verifyTotal) ?? 0;
-  }
   const total = taskResourceTotal(metrics);
   if (total > 0) {
     return ratioPercent(metrics.writebackDone, total) ?? 0;
@@ -171,8 +168,6 @@ export function computeTranslationV4ProgressPercent(
         const total = taskResourceTotal(metrics);
         return total > 0 ? ratioPercent(metrics.writebackDone, total) : null;
       }
-      case "VERIFY":
-        return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
       case "TRANSLATE":
       default:
         if (metrics.translateUnitTotal > 0) {
@@ -222,7 +217,8 @@ export function computeTranslationV4ProgressPercent(
   }
 
   if (status === "VERIFY_QUEUED" || status === "VERIFYING") {
-    return ratioPercent(metrics.verifyDone, metrics.verifyTotal);
+    const total = taskResourceTotal(metrics);
+    return total > 0 ? ratioPercent(metrics.writebackDone, total) : 100;
   }
 
   return null;
@@ -266,9 +262,6 @@ export function buildTranslationV4StageSummary(
         return `${label} · ${metrics.writebackDone}/${taskTotal}`;
       }
     }
-    if (errorStage === "VERIFY" && metrics.verifyTotal > 0) {
-      return `${label} · ${metrics.verifyDone}/${metrics.verifyTotal}`;
-    }
     return label;
   }
 
@@ -302,8 +295,10 @@ export function buildTranslationV4StageSummary(
   }
 
   if (status === "VERIFYING" || status === "VERIFY_QUEUED") {
-    if (metrics.verifyTotal > 0)
-      return `${label} · ${metrics.verifyDone}/${metrics.verifyTotal}`;
+    const taskTotal = taskResourceTotal(metrics);
+    if (taskTotal > 0) {
+      return `${label} · ${metrics.writebackDone}/${taskTotal}`;
+    }
     return label;
   }
 

@@ -35,7 +35,7 @@ export function writebackNeedsRetry(metrics: TranslationV4Metrics): boolean {
 
 /**
  * 从 PAUSED / FAILED 恢复时应进入的队列状态。
- * 回写未完成时优先 WRITEBACK，避免 errorStage=VERIFY 时跳过未回写资源。
+ * 回写未完成时优先 WRITEBACK。
  */
 export function resolveResumeV4JobStatus(
   currentStatus: TranslationV4Status,
@@ -60,7 +60,7 @@ export function resolveResumeV4JobStatus(
     case "WRITEBACK":
       return "WRITEBACK_QUEUED";
     case "VERIFY":
-      return "VERIFY_QUEUED";
+      return null;
     default:
       return "INIT_QUEUED";
   }
@@ -71,6 +71,6 @@ export function stageFromStatus(status: TranslationV4Status): string {
   if (["INIT_QUEUED", "INITIALIZING", "INIT_DONE"].includes(status)) return "INIT";
   if (["TRANSLATE_QUEUED", "TRANSLATING", "TRANSLATE_DONE"].includes(status)) return "TRANSLATE";
   if (["WRITEBACK_QUEUED", "WRITING_BACK"].includes(status)) return "WRITEBACK";
-  if (["VERIFY_QUEUED", "VERIFYING"].includes(status)) return "VERIFY";
+  if (["VERIFY_QUEUED", "VERIFYING"].includes(status)) return "WRITEBACK";
   return "INIT";
 }
