@@ -36,6 +36,7 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
 interface EditData {
   shopName: string;
   includedFlag: boolean;
@@ -169,9 +170,9 @@ const Index = () => {
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
   const [languageSelector, setLanguageSelector] = useState(true);
   const [currencySelector, setCurrencySelector] = useState(true);
-  const [fontColor, setFontColor] = useState("#000000");
+  const [fontColor, setFontColor] = useState("#303030");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
+  const [optionBorderColor, setOptionBorderColor] = useState("#d4d4d8");
   const [selectorPosition, setSelectorPosition] = useState("top_left");
   const [positionData, setPositionData] = useState<string>("0");
   const [isTransparent, setIsTransparent] = useState(false);
@@ -271,11 +272,11 @@ const Index = () => {
         languageSelector: true,
         currencySelector: true,
         ipOpen: false,
-        fontColor: "#000000",
+        fontColor: "#303030",
         backgroundColor: "#ffffff",
         buttonColor: "#ffffff",
-        buttonBackgroundColor: "#000000",
-        optionBorderColor: "#ccc",
+        buttonBackgroundColor: "#f6f6f7",
+        optionBorderColor: "#d4d4d8",
         selectorPosition: "bottom_left",
         positionData: "10",
         isTransparent: false,
@@ -740,6 +741,12 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <AppPageHeader
+          title={t("Switcher")}
+          description={t(
+            "Configure the storefront language and currency switcher with a lighter admin-style layout and a live preview.",
+          )}
+        />
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
@@ -756,14 +763,17 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
-              <Card loading={isLoading}>
+              <Card
+                loading={isLoading}
+                style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+              >
                 <Space
                   direction="vertical"
                   size="middle"
                   style={{ display: "flex" }}
                 >
                   <Flex justify="space-between">
-                    <Title level={5}>
+                    <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
                       {t("Selector Auto IP position configuration:")}
                     </Title>
                     {(plan?.type == "Free" ||
@@ -838,9 +848,15 @@ const Index = () => {
               </Card>
               <Card
                 loading={isLoading}
-                style={{ display: isTransparent ? "none" : "block" }}
+                style={{
+                  display: isTransparent ? "none" : "block",
+                  border: "none",
+                  boxShadow: "var(--app-shadow-card)",
+                }}
               >
-                <Title level={5}>{t("Selector type configuration:")}</Title>
+                <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                  {t("Selector type configuration:")}
+                </Title>
                 <Select
                   options={switcherOptions}
                   style={{ width: "100%" }}
@@ -858,14 +874,20 @@ const Index = () => {
               </Card>
               <Card
                 loading={isLoading}
-                style={{ display: isTransparent ? "none" : "block" }}
+                style={{
+                  display: isTransparent ? "none" : "block",
+                  border: "none",
+                  boxShadow: "var(--app-shadow-card)",
+                }}
               >
                 <Space
                   direction="vertical"
                   size="middle"
                   style={{ display: "flex" }}
                 >
-                  <Title level={5}>{t("Selector style configuration:")}</Title>
+                  <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                    {t("Selector style configuration:")}
+                  </Title>
                   <div
                     style={{
                       display: "flex",
@@ -984,23 +1006,32 @@ const Index = () => {
             </Space>
           </div>
           <div className={styles.switcher_preview}>
-            <Card loading={isLoading} style={{ height: "100%" }}>
-              <Title level={5}>{t("Preview")}</Title>
+            <Card
+              loading={isLoading}
+              style={{
+                height: "100%",
+                border: "none",
+                boxShadow: "var(--app-shadow-card)",
+              }}
+            >
+              <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                {t("Preview")}
+              </Title>
               <div
                 style={{
                   position: "relative",
                   width: "100%",
                   height: "400px",
-                  border: "1px solid #eee",
+                  border: "1px solid var(--app-color-border-secondary)",
                   borderRadius: "8px",
-                  background: "#f5f5f5",
+                  background: "var(--app-color-surface-secondary)",
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
                     height: "32px",
-                    background: "#e8e8e8",
+                    background: "rgba(15, 23, 42, 0.04)",
                     display: "flex",
                     alignItems: "center",
                     padding: "0 12px",
@@ -1066,7 +1097,7 @@ const Index = () => {
                           : "auto",
                       background: backgroundColor,
                       border: `1px solid ${optionBorderColor}`,
-                      borderRadius: "5px",
+                      borderRadius: "8px",
                       transform: "none", // 移除transform，使用left/right定位
                       height: "auto",
                       display: isTransparent ? "none" : "block",
@@ -1091,7 +1122,7 @@ const Index = () => {
                           background: backgroundColor,
                           border: `1px solid ${optionBorderColor}`,
                           padding: "10px",
-                          borderRadius: "5px",
+                          borderRadius: "8px",
                           height:
                             languageSelector === currencySelector
                               ? "140px"

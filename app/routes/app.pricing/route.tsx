@@ -48,6 +48,9 @@ import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import BuyCreditsOuterCard from "./components/buyCreditsOuterCard";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 const { Title, Text } = Typography;
 
@@ -885,18 +888,19 @@ const Index = () => {
             "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
           )}
         />
+        <AppPageHeader
+          title={t("Pricing")}
+          description={t(
+            "Review your current plan, compare tiers, and purchase extra credits in a calmer admin-style layout.",
+          )}
+        />
         <Flex gap={3} style={{ flexDirection: "column", width: "100%" }}>
           <Flex justify="space-between" align="center">
-            <Title level={4} style={{ margin: 0 }}>
+            <Title level={4} style={{ margin: 0, fontSize: 20 }}>
               {t("Your translation quota")}
             </Title>
             {plan.type ? (
-              <Title
-                level={4}
-                style={{ margin: 0, fontSize: 16, color: "#007F61" }}
-              >
-                {t(plan.type)} Plan
-              </Title>
+              <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
             ) : (
               <Skeleton.Button />
             )}
@@ -933,7 +937,7 @@ const Index = () => {
           />
         )}
         <Flex vertical align="center" style={{ width: "100%" }}>
-          <Title level={3} style={{ fontWeight: 700 }}>
+          <Title level={3} style={{ fontWeight: 700, fontSize: 24 }}>
             {t("Choose the right plan for you")}
           </Title>
           <Row style={{ width: "100%" }}>
@@ -998,8 +1002,13 @@ const Index = () => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                borderColor: plan.type === "Free" ? "#007F61" : undefined,
+                borderColor: "transparent",
+                background:
+                  plan.type === "Free"
+                    ? "var(--app-color-surface-selected)"
+                    : "var(--app-color-surface)",
                 minWidth: "220px",
+                boxShadow: "var(--app-shadow-card)",
               }}
               styles={{
                 body: {
@@ -1011,9 +1020,9 @@ const Index = () => {
               }}
               loading={!plan.id}
             >
-              <Title level={5}>Free</Title>
+              <Title level={5} style={{ fontSize: 16 }}>Free</Title>
               <div style={{ margin: yearly ? "12px 0 46px 0" : "12px  0" }}>
-                <Text style={{ fontSize: "28px", fontWeight: "bold" }}>$0</Text>
+                <Text style={{ fontSize: "24px", fontWeight: 700 }}>$0</Text>
                 <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
               </div>
 
@@ -1043,7 +1052,7 @@ const Index = () => {
                 >
                   <CheckOutlined
                     style={{
-                      color: "#52c41a",
+                      color: "var(--p-color-text-success)",
                       fontSize: "12px",
                     }}
                   />
@@ -1062,7 +1071,7 @@ const Index = () => {
                 >
                   <CheckOutlined
                     style={{
-                      color: "#52c41a",
+                      color: "var(--p-color-text-success)",
                       fontSize: "12px",
                     }}
                   />
@@ -1081,7 +1090,7 @@ const Index = () => {
                 >
                   <CheckOutlined
                     style={{
-                      color: "#52c41a",
+                      color: "var(--p-color-text-success)",
                       fontSize: "12px",
                     }}
                   />
@@ -1106,7 +1115,7 @@ const Index = () => {
             >
               <Badge.Ribbon
                 text={t("pricing.recommended")}
-                color="#1890ff"
+                color="var(--p-color-text-info)"
                 style={{
                   display:
                     item.isRecommended && plan.type === "Free" && plan.id
@@ -1123,12 +1132,13 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     position: "relative",
-                    borderColor: item.disabled
-                      ? "#007F61"
-                      : item.isRecommended && plan.type === "Free" && plan.id
-                        ? "#1890ff"
-                        : undefined,
+                    borderColor: "transparent",
+                    background:
+                      item.disabled || (item.isRecommended && plan.type === "Free" && plan.id)
+                        ? "var(--app-color-surface-selected)"
+                        : "var(--app-color-surface)",
                     minWidth: "220px",
+                    boxShadow: "var(--app-shadow-card)",
                   }}
                   styles={{
                     body: {
@@ -1140,11 +1150,11 @@ const Index = () => {
                   }}
                   loading={!plan.id}
                 >
-                  <Title level={5}>
+                  <Title level={5} style={{ fontSize: 16 }}>
                     {yearly ? item.yearlyTitle : item.title}
                   </Title>
                   <div style={{ margin: "12px 0" }}>
-                    <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
+                    <Text style={{ fontSize: "24px", fontWeight: 700 }}>
                       ${yearly ? item.yearlyPrice : item.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
@@ -1210,7 +1220,7 @@ const Index = () => {
                       >
                         <CheckOutlined
                           style={{
-                            color: "#52c41a",
+                            color: "var(--p-color-text-success)",
                             fontSize: "12px",
                           }}
                         />
@@ -1230,21 +1240,14 @@ const Index = () => {
             display: "flex",
           }}
         >
-          <Title
-            level={3}
-            style={{
-              fontWeight: 700,
-              textAlign: "center",
-            }}
-          >
-            {t("Compare plans")}
-          </Title>
-          <Table dataSource={tableData} columns={columns} pagination={false} />
+          <AppSectionCard title={t("Compare plans")} bodyPadding="16px">
+            <Table dataSource={tableData} columns={columns} pagination={false} />
+          </AppSectionCard>
         </Space>
-        <Row>
+        <Row gutter={[24, 24]}>
           <Col span={6}>
-            <Space direction="vertical" size="small">
-              <Title level={3} style={{ fontWeight: 700 }}>
+            <Space direction="vertical" size="small" style={{ display: "flex" }}>
+              <Title level={3} style={{ fontWeight: 700, fontSize: 24 }}>
                 {t("FAQs")}
               </Title>
               <Text type="secondary">
@@ -1253,12 +1256,14 @@ const Index = () => {
             </Space>
           </Col>
           <Col span={18}>
-            <Collapse
-              items={collapseData}
-              onChange={() => {
-                reportClick("pricing_faq_click");
-              }}
-            />
+            <AppSectionCard bodyPadding="8px 16px">
+              <Collapse
+                items={collapseData}
+                onChange={() => {
+                  reportClick("pricing_faq_click");
+                }}
+              />
+            </AppSectionCard>
           </Col>
         </Row>
       </Space>
@@ -1300,22 +1305,19 @@ const Index = () => {
                   hoverable
                   style={{
                     textAlign: "center",
-                    borderColor:
-                      JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
-                        ? "#007F61"
-                        : undefined,
-                    borderWidth:
-                      JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
-                        ? "2px"
-                        : "1px",
+                    borderColor: "transparent",
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
                     height: "150px",
+                    background:
+                      JSON.stringify(selectedOptionKey) ===
+                      JSON.stringify(option.key)
+                        ? "var(--app-color-surface-selected)"
+                        : "var(--app-color-surface)",
+                    boxShadow: "var(--app-shadow-card)",
                   }}
                   onClick={() => setSelectedOption(option.key)}
                 >
@@ -1338,7 +1340,7 @@ const Index = () => {
                         level={3}
                         style={{
                           margin: 0,
-                          color: "#007F61",
+                          color: "var(--app-color-text)",
                           fontWeight: 700,
                         }}
                       >
@@ -1355,7 +1357,7 @@ const Index = () => {
                   ) : (
                     <Title
                       level={3}
-                      style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                      style={{ margin: 0, color: "var(--app-color-text)", fontWeight: 700 }}
                     >
                       ${option.price.currentPrice.toFixed(2)}
                     </Title>
@@ -1418,7 +1420,7 @@ const Index = () => {
       <Modal
         centered
         title={
-          <span style={{ fontSize: "24px", fontWeight: 700 }}>
+          <span style={{ fontSize: "20px", fontWeight: 700 }}>
             {t("Shared Plan: How to Set Up")}
           </span>
         } // 标题加粗
@@ -1432,10 +1434,11 @@ const Index = () => {
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            boxShadow: "var(--app-shadow-card)",
             marginBottom: 16,
-            fontSize: "16px",
+            fontSize: "14px",
             lineHeight: "1.5",
+            border: "none",
           }}
         >
           {/* <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan: How to Set Up')}</strong></h2> */}
@@ -1454,10 +1457,11 @@ const Index = () => {
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            boxShadow: "var(--app-shadow-card)",
             marginBottom: 16,
-            fontSize: "16px",
+            fontSize: "14px",
             lineHeight: "1.5",
+            border: "none",
           }}
         >
           <div
@@ -1468,7 +1472,7 @@ const Index = () => {
               marginBottom: "16px",
             }}
           >
-            <h2 style={{ fontSize: "18px" }}>
+            <h2 style={{ fontSize: "16px", margin: 0 }}>
               <strong>{t("Steps to Bind a Sub-Account")}</strong>
             </h2>
             <div>

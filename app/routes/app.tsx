@@ -64,6 +64,7 @@ import {
 import { setLanguageTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
+import { appAntdTheme } from "~/ui/theme";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -661,32 +662,7 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "var(--p-color-bg-fill-brand)",
-            fontSize: 16,
-          },
-          components: {
-            Table: {
-              rowSelectedBg: "rgba(217, 217, 217, 0.7)",
-              rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Button: {
-              primaryShadow: "none",
-            },
-            Select: {
-              optionSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Menu: {
-              itemSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Card: {
-              headerHeight: 42,
-            },
-          },
-        }}
-      >
+      <ConfigProvider theme={appAntdTheme}>
         <NavMenu>
           <Link to="/app" rel="home">
             Home

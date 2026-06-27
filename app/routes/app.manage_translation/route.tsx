@@ -44,6 +44,8 @@ import { globalStore } from "~/globalStore";
 import { shouldRevalidateManageTranslation } from "~/lib/routeShouldRevalidate";
 import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Text, Title } = Typography;
 interface TableDataType {
@@ -1028,14 +1030,16 @@ const Index = () => {
       />
       {loading || !!selectOptions?.length ? (
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div className="manage-header">
-            <div className="manage-header-left">
-              <Title
-                level={3}
-                style={{ marginRight: "10px", marginBottom: "5px" }}
-              >
-                {t("Localized content:")}
-              </Title>
+          <AppPageHeader
+            title={t("Manage Translation")}
+            description={t(
+              "Choose a locale, review translation coverage, and jump into each content area from one consistent dashboard.",
+            )}
+          />
+          <AppSectionCard bodyPadding="16px">
+            <div className="manage-header">
+              <div className="manage-header-left">
+              <Text strong>{t("Localized content:")}</Text>
               <Select
                 options={selectOptions}
                 value={currentLocale}
@@ -1052,8 +1056,8 @@ const Index = () => {
               >
                 {t("Refresh statistics")}
               </Button>
-            </div>
-            <div className="manage-header-right">
+              </div>
+              <div className="manage-header-right">
               {plan?.type == "Free" ||
                 plan?.type == "Basic" ||
                 typeof plan === "undefined" ? (
@@ -1080,8 +1084,9 @@ const Index = () => {
               ) : (
                 <Button onClick={handleShowImportModal}>{t("Import")}</Button>
               )}
+              </div>
             </div>
-          </div>
+          </AppSectionCard>
           <div className="manage-content-wrap">
             <div className="manage-content-left">
               <Space

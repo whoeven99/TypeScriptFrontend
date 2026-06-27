@@ -1,9 +1,10 @@
 import { useNavigate } from "@remix-run/react";
-import { Card, Space, Button, Typography, Table } from "antd";
+import { Space, Button, Typography, Table } from "antd";
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-const { Title } = Typography;
+import AppSectionCard from "~/ui/components/AppSectionCard";
+const { Text } = Typography;
 
 interface SwitcherSettingCardProps {
   cardTitle: string;
@@ -88,14 +89,11 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
     [dataSource, currentLocale],
   );
   return (
-    <Card>
+    <AppSectionCard title={cardTitle} bodyPadding="12px 16px">
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
-        <Title style={{ fontSize: "1.5rem", display: "inline" }}>
-          {cardTitle}
-        </Title>
         <Table columns={columns} dataSource={dataSource} pagination={false} />
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 

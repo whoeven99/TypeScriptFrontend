@@ -45,7 +45,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
       {isProgressLoading ? (
         <Skeleton.Button active style={{ height: "130px" }} block />
       ) : dataSource?.length !== 0 ? (
-        <Card>
+        <Card
+          style={{
+            border: "none",
+            boxShadow: "none",
+            background: "var(--app-color-surface-secondary)",
+          }}
+        >
           <ProgressBlock
             taskId={dataSource[0]?.taskId}
             key={dataSource[0]?.target}
@@ -61,7 +67,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
           />
         </Card>
       ) : (
-        <Card styles={{ body: { padding: "16px" } }}>
+        <Card
+          style={{
+            border: "none",
+            boxShadow: "none",
+            background: "var(--app-color-surface-secondary)",
+          }}
+          styles={{ body: { padding: "16px" } }}
+        >
           <Text
             style={{
               display: "flex",

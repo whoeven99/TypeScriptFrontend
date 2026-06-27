@@ -52,14 +52,16 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
   };
 
   return (
-    // 添加 Modal 组件
-    <Card>
+    <Card
+      style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+      styles={{ body: { padding: 16 } }}
+    >
       <Flex justify="space-between">
         <Flex gap={8}>
           {planType ? (
             <>
               <Button
-                style={{ color: "#007F61" }}
+                style={{ color: "var(--app-color-text)" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-1")
                 }
@@ -67,7 +69,7 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
                 500,000/ ${optionPrices.priceForOption1}
               </Button>
               <Button
-                style={{ color: "#007F61" }}
+                style={{ color: "var(--app-color-text)" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-2")
                 }
@@ -75,7 +77,7 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
                 1,000,000/ ${optionPrices.priceForOption2}
               </Button>
               <Button
-                style={{ color: "#007F61" }}
+                style={{ color: "var(--app-color-text)" }}
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-3")
                 }

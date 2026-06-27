@@ -1,5 +1,5 @@
-import { Button, Card, Col, ConfigProvider, Row, Typography } from "antd";
-import { useMemo, useState } from "react";
+import { Card, Col, Row, Typography } from "antd";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "../style.css";
 
@@ -29,53 +29,53 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
   );
 
   return (
-    // 添加 Modal 组件
-    <ConfigProvider
-      theme={{
-        components: {
-          Card: {
-            /* 这里是你的组件 token */
-            headerBg: "#007F61",
-          },
+    <Card
+      loading={loading}
+      style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+      styles={{
+        body: {
+          padding: 16,
         },
       }}
     >
-      <Card
-        title={
-          <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
-            <div className="marquee-wrapper">
-              <div className="marquee-content">
-                <span className="marquee-text">
-                  {t(
-                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                  )}
-                </span>
-                <span className="marquee-text">
-                  {t(
-                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                  )}
-                </span>
-              </div>
-
-              {/* 第二份内容，用于无缝拼接 */}
-              <div className="marquee-content">
-                <span className="marquee-text">
-                  {t(
-                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                  )}
-                </span>
-                <span className="marquee-text">
-                  {t(
-                    "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-        }
-        loading={loading}
+      <div
+        style={{
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          padding: "8px 12px",
+          borderRadius: 8,
+          background: "var(--app-color-surface-secondary)",
+          marginBottom: 16,
+        }}
       >
-        <Row gutter={[16, 16]}>
+        <div className="marquee-wrapper">
+          <div className="marquee-content">
+            <span className="marquee-text">
+              {t(
+                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+              )}
+            </span>
+            <span className="marquee-text">
+              {t(
+                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+              )}
+            </span>
+          </div>
+          <div className="marquee-content">
+            <span className="marquee-text">
+              {t(
+                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+              )}
+            </span>
+            <span className="marquee-text">
+              {t(
+                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+      <Row gutter={[16, 16]}>
           <Col
             // key={t("Free")}
             xs={24}
@@ -91,11 +91,11 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
               gap: 4,
             }}
           >
-            <Text>{t("Translation quota")}</Text>
-            <Title style={{ margin: 0, fontSize: 20 }}>
+            <Text type="secondary">{t("Translation quota")}</Text>
+            <Title style={{ margin: 0, fontSize: 24, color: "var(--app-color-text)" }}>
               {componentData.translation_balance?.toLocaleString()}
             </Title>
-            <Text>{t("Credits")}</Text>
+            <Text type="secondary">{t("Credits")}</Text>
           </Col>
           <Col
             // key={t("Free")}
@@ -112,11 +112,11 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
               gap: 4,
             }}
           >
-            <Text>{t("IP geo quota")}</Text>
-            <Title style={{ margin: 0, fontSize: 20 }}>
+            <Text type="secondary">{t("IP geo quota")}</Text>
+            <Title style={{ margin: 0, fontSize: 24, color: "var(--app-color-text)" }}>
               {componentData.ip_balance?.toLocaleString()}
             </Title>
-            <Text>{t("requests")}</Text>
+            <Text type="secondary">{t("requests")}</Text>
           </Col>
           <Col
             // key={t("Free")}
@@ -158,9 +158,8 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
             <Title style={{ margin: 0 }}>{componentData.other_rights}</Title>
             <Button>{t("picture")}</Button>
           </Col>
-        </Row>
-      </Card>
-    </ConfigProvider>
+      </Row>
+    </Card>
   );
 };
 

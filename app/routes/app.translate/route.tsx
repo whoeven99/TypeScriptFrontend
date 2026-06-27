@@ -579,7 +579,14 @@ const Index = () => {
                 gap: "var(--app-space-100)",
               }}
             >
-              <Text strong style={{ fontSize: 20, color: "var(--app-color-text)" }}>
+              <Text
+                strong
+                style={{
+                  fontSize: 14,
+                  lineHeight: "20px",
+                  color: "var(--app-color-text)",
+                }}
+              >
                 {t("translateSettings.title1")}
               </Text>
               <Text style={{ color: "var(--app-color-text-secondary)" }}>
@@ -615,7 +622,14 @@ const Index = () => {
                 gap: "var(--app-space-100)",
               }}
             >
-              <Text strong style={{ fontSize: 20, color: "var(--app-color-text)" }}>
+              <Text
+                strong
+                style={{
+                  fontSize: 14,
+                  lineHeight: "20px",
+                  color: "var(--app-color-text)",
+                }}
+              >
                 {t("translateSettings.title2")}
               </Text>
               <Text style={{ color: "var(--app-color-text-secondary)" }}>

@@ -56,6 +56,9 @@ import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
 import languageLocaleData from "~/utils/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 const { Title, Text } = Typography;
 
@@ -896,13 +899,15 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            {t("Languages")}
-          </Title>
-          <PrimaryLanguage />
-        </div>
-        <div className={styles.languageTable_action}>
+        <AppPageHeader
+          title={t("Languages")}
+          description={t(
+            "Manage published locales, auto-translation behavior, and jump into translation or editing flows.",
+          )}
+          extra={<PrimaryLanguage />}
+        />
+        <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
+          <div className={styles.languageTable_action}>
           <Flex
             align="center"
             justify="space-between" // 使按钮左右分布
@@ -922,7 +927,7 @@ const Index = () => {
               >
                 {t("Delete")}
               </Button>
-              <Text style={{ color: "#007F61" }}>
+              <Text style={{ color: "var(--app-color-text-secondary)" }}>
                 {hasSelected
                   ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
                   : null}
@@ -966,6 +971,7 @@ const Index = () => {
                 </Checkbox>
               }
               loading={loading}
+              style={{ border: "none", boxShadow: "none" }}
             >
               {dataSource.map((item: any) => (
                 <Card.Grid key={item.key} style={{ width: "100%" }}>
@@ -986,7 +992,9 @@ const Index = () => {
                     >
                       {item.name}
                     </Checkbox>
-                    <TranslatedIcon status={item.status} />
+                    <div>
+                      <TranslatedIcon status={item.status} />
+                    </div>
                     <Flex justify="space-between">
                       <Text>{t("Publish")}</Text>
                       <Switch
@@ -1045,7 +1053,8 @@ const Index = () => {
               loading={deleteloading || loading}
             />
           )}
-        </div>
+          </div>
+        </AppSectionCard>
       </Space>
       <AddLanguageModal
         shop={shop}

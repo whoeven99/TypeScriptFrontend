@@ -2,7 +2,7 @@ import { Checkbox, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ToneSettingCardProps {
   toneSettingCardShow: boolean;
@@ -116,9 +116,9 @@ const ToneSettingCard = ({
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Space direction="vertical" size={16} style={{ display: "flex" }}>
           <div>
-            <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+            <Text strong style={{ color: "var(--app-color-text)" }}>
               {t("translateSettings4.title")}
-            </Title>
+            </Text>
             <Text type="secondary">{t("translateSettings4.description")}</Text>
           </div>
           <Space direction="vertical" style={{ width: "100%" }}>
@@ -401,9 +401,9 @@ const ToneSettingCard = ({
           </Space>
         </Space>
         <Space direction="vertical" size={16} style={{ display: "flex" }}>
-          <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+          <Text strong style={{ color: "var(--app-color-text)" }}>
             {t("translateSettings2.title")}
-          </Title>
+          </Text>
           <Checkbox.Group
             value={translateSettings2}
             options={translateSettings2Options}

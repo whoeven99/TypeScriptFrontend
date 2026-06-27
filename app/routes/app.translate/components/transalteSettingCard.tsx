@@ -196,9 +196,9 @@ const TransalteSettingCard = ({
     >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Space direction="vertical" size={16} style={{ display: "flex" }}>
-          <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+          <Text strong style={{ color: "var(--app-color-text)" }}>
             {t("translateSettings3.title")}
-          </Title>
+          </Text>
           <Checkbox
             indeterminate={
               translateSettings3.length > 0 &&
@@ -231,9 +231,9 @@ const TransalteSettingCard = ({
               justifyContent: "space-between",
             }}
           >
-            <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+            <Text strong style={{ color: "var(--app-color-text)" }}>
               {t("translateSettings5.title")}
-            </Title>
+            </Text>
           </Space>
           {/* <div
           style={{
@@ -250,10 +250,14 @@ const TransalteSettingCard = ({
                 width: "100%",
                 marginRight: 0,
                 padding: "8px 12px",
-                border: "1px solid var(--app-color-border)",
+                border: `1px solid ${translateSettings5 === item.value ? "var(--app-color-brand)" : "var(--app-color-border-secondary)"}`,
                 borderRadius: "var(--app-radius-small)",
                 alignItems: "center",
                 cursor: "pointer",
+                background:
+                  translateSettings5 === item.value
+                    ? "var(--app-color-surface-selected)"
+                    : "var(--app-color-surface)",
               }}
               onClick={() => setTranslateSettings5(item.value)}
             >
@@ -276,9 +280,9 @@ const TransalteSettingCard = ({
               justifyContent: "space-between",
             }}
           >
-            <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+            <Text strong style={{ color: "var(--app-color-text)" }}>
               {t("translateSettings1.title")}
-            </Title>
+            </Text>
 
             {/* 注释私有key入口 */}
             {/* <Button
@@ -295,10 +299,14 @@ const TransalteSettingCard = ({
                 width: "100%",
                 marginRight: 0,
                 padding: "8px 12px",
-                border: "1px solid var(--app-color-border)",
+                border: `1px solid ${translateSettings1 === item.value ? "var(--app-color-brand)" : "var(--app-color-border-secondary)"}`,
                 borderRadius: "var(--app-radius-small)",
                 alignItems: "center",
                 cursor: "pointer",
+                background:
+                  translateSettings1 === item.value
+                    ? "var(--app-color-surface-selected)"
+                    : "var(--app-color-surface)",
               }}
               onClick={() => setTranslateSettings1(item.value)}
             >

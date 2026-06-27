@@ -3,8 +3,8 @@
 }
 
 .yearly_save {
-  background-color: rgb(255, 230, 0);
-  color: #fff;
+  background-color: var(--p-color-bg-surface-info);
+  color: var(--p-color-text-info);
   padding: 4px 12px;
   border-radius: 100px;
   text-align: center;
@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to right, rgb(254, 247, 246), rgb(253, 223, 217));
+  background: var(--p-color-bg-surface-success);
   padding: 4px 8px;
   border-radius: 8px;
   gap: 4px;
@@ -30,7 +30,7 @@
 
 .blodSharedPlan {
   font-weight: 500;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .marquee-wrapper {
@@ -47,8 +47,8 @@
 .marquee-text {
   padding-right: 150px;
   font-weight: 450;
-  font-size: 16px;
-  color: #fff;
+  font-size: 13px;
+  color: var(--app-color-text-secondary);
 }
 
 @keyframes marquee {

@@ -1,15 +1,16 @@
 .manage-header {
     display: flex;
     justify-content: space-between;
-    /* 确保左右分布 */
     align-items: center;
-    /* 如果需要垂直居中 */
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .manage-header-left {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .manage-action {
@@ -32,11 +33,11 @@
 }
 
 .items-scroll-item.selected {
-    background-color: #e0f7e0;
-    color: #29845a;
+    background-color: var(--app-color-surface-selected);
+    color: var(--app-color-text);
 }
 
 .items-scroll-item:hover {
-    background-color: #e0f7e0;
-    color: #29845a;
+    background-color: var(--app-color-surface-secondary);
+    color: var(--app-color-text);
 }

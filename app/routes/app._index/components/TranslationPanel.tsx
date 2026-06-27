@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Row, Col, Button, Card, Flex, Image, Typography } from "antd";
+import { Row, Col, Button, Card, Flex, Image } from "antd";
 import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
@@ -70,11 +70,18 @@ const TranslationPanel = () => {
         <Col sm={24} md={12} lg={8} xs={24}>
           <Card
             title={t("Add Language & Auto Translate")}
-            style={{ width: "100%", height: "100%" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              boxShadow: "none",
+              background: "var(--app-color-surface-secondary)",
+            }}
             styles={{
               header: {
                 borderBottom: "none",
                 fontSize: "14px",
+                color: "var(--app-color-text)",
               },
               body: {
                 paddingTop: 0,
@@ -135,11 +142,17 @@ const TranslationPanel = () => {
         <Col sm={24} md={12} lg={8} xs={24}>
           <Card
             title={t("Manage Translation & Edit")}
-            style={{ width: "100%" }}
+            style={{
+              width: "100%",
+              border: "none",
+              boxShadow: "none",
+              background: "var(--app-color-surface-secondary)",
+            }}
             styles={{
               header: {
                 borderBottom: "none",
                 fontSize: "14px",
+                color: "var(--app-color-text)",
               },
               body: {
                 paddingTop: 0,
@@ -195,12 +208,19 @@ const TranslationPanel = () => {
         {/* More Translation Tools */}
         <Col sm={24} md={12} lg={8} xs={24}>
           <Card
-            style={{ height: "100%", width: "100%" }}
+            style={{
+              height: "100%",
+              width: "100%",
+              border: "none",
+              boxShadow: "none",
+              background: "var(--app-color-surface-secondary)",
+            }}
             title={t("More Translation Tools")}
             styles={{
               header: {
                 borderBottom: "none",
                 fontSize: "14px",
+                color: "var(--app-color-text)",
               },
               body: {
                 paddingTop: 0,

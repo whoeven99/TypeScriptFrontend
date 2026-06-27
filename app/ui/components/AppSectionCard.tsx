@@ -53,7 +53,13 @@ export default function AppSectionCard({
 
   return (
     <Card
-      style={{ width: "100%", ...style }}
+      style={{
+        width: "100%",
+        border: "none",
+        boxShadow: "var(--app-shadow-card)",
+        background: "var(--app-color-surface)",
+        ...style,
+      }}
       styles={{
         body: {
           padding: bodyPadding,

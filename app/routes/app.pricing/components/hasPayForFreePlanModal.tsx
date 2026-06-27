@@ -1,5 +1,4 @@
-import { useFetcher, useNavigate } from "@remix-run/react";
-import { Button, ConfigProvider, Flex, Modal, Space, Typography } from "antd";
+import { Button, Flex, Modal, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -50,7 +49,6 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({ }) => {
   };
 
   return (
-    // 添加 Modal 组件
     <Modal
       open={content.show}
       onCancel={() =>
@@ -71,9 +69,9 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({ }) => {
         <Title
           style={{
             margin: "0",
-            fontSize: "1.25rem",
+            fontSize: "1.125rem",
             fontWeight: 700,
-            marginBottom: 24,
+            marginBottom: 16,
           }}
         >
           {t("Got a 5-day free trial")}
@@ -87,9 +85,10 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({ }) => {
           direction="vertical"
           style={{
             width: "100%",
-            padding: "8px 4px",
-            border: "1px solid #f0f0f0",
+            padding: "12px",
+            border: "1px solid var(--app-color-border-secondary)",
             borderRadius: "8px",
+            background: "var(--app-color-surface-secondary)",
           }}
         >
           <Text>{t("✅ 1,000,000 free credits for translation")}</Text>
