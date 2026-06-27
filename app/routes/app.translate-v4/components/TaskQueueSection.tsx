@@ -57,9 +57,7 @@ export function CompactJobCard({ job, translateSlotBusy, onAction }: Props) {
       : job.status === "CANCELLED"
         ? "已取消"
         : "已结束"
-    : ["VERIFY_QUEUED", "VERIFYING"].includes(job.status)
-      ? ""
-      : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage, job.metrics)] ?? "等待"}`;
+    : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage, job.metrics)] ?? "等待"}`;
 
   return (
     <div style={{ ...v4CardStyle, padding: "10px 14px", marginBottom: 8 }}>
