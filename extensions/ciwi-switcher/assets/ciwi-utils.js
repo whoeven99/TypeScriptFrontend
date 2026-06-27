@@ -170,20 +170,16 @@ export function transformSinglePriceNode(
   }
 }
 
-export function transformPrices({ rate, moneyFormat, selectedCurrency }) {
-  const pricesDoc = document.querySelectorAll(".ciwi-money");
+/**
+ * 转换价格节点。默认扫描全文档的 .ciwi-money；
+ * 传入 nodes（NodeList/Set/数组）时只转换这些节点，供 MutationObserver 增量调用。
+ * transformSinglePriceNode 直接改写节点 innerHTML，自身已对已转换节点幂等。
+ */
+export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) {
+  const pricesDoc = nodes || document.querySelectorAll(".ciwi-money");
 
   pricesDoc.forEach((price) => {
-    const transformedPrice = transformSinglePriceNode(
-      price,
-      rate,
-      moneyFormat,
-      selectedCurrency,
-    );
-
-    if (transformedPrice) {
-      price.innerHTML = transformedPrice;
-    }
+    transformSinglePriceNode(price, rate, moneyFormat, selectedCurrency);
   });
 }
 

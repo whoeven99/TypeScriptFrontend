@@ -14,6 +14,7 @@ import {
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
+import { getCiwiPageContext } from "./ciwi-page.js";
 
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
@@ -119,20 +120,25 @@ async function ciwiOnload() {
     return;
   }
 
-  // 产品图片翻译（非阻塞）
-  ProductImgTranslate(blockId, shop, ciwiBlock);
+  // 按页面类型门控翻译请求，避免 cart/collection 等页面发起无关 API 调用
+  const pageContext = getCiwiPageContext(ciwiBlock);
 
-  // 网页custom liquid 文本翻译
+  // 主题 custom liquid 文本：全站需要
   CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
 
-  //延时5s后再次执行
-  setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
-
-  //PageFly翻译
-  PageFlyTextTranslate(blockId, shop, ciwiBlock);
-
-  // 主页图片替换
-  HomeImageTranslate(blockId);
+  const translationTasks = [];
+  if (pageContext.isProductPage) {
+    translationTasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
+  }
+  if (pageContext.hasPageFly) {
+    translationTasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
+  }
+  if (pageContext.isHomePage) {
+    translationTasks.push(HomeImageTranslate(blockId));
+  }
+  if (translationTasks.length > 0) {
+    Promise.allSettled(translationTasks).catch(() => {});
+  }
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
@@ -178,8 +184,8 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
 
-  //获取地区对应货币数据
-  const countryCurMap = window.countryCurMap ? window.countryCurMap : null;
+  //获取地区对应货币数据（country-cur-map.js 加载失败时兜底为空表，避免后续索引报错）
+  const countryCurMap = window.countryCurMap || {};
 
   let detectedCountry = countryValue;
   let detectedLanguage = browserLanguage;
@@ -284,8 +290,8 @@ async function ciwiOnload() {
       ? countryCurMap[detectedCountry]
       : ipRedirectionCurrencyValue;
 
-  //缓存货币数据
-  if (detectedCurrency != storedCountry && detectedCurrency) {
+  //缓存货币数据（与已存货币比较，变化时才写入）
+  if (detectedCurrency != storedCurrency && detectedCurrency) {
     localStorage.setItem("ciwi_selected_currency", detectedCurrency);
   }
 

@@ -132,7 +132,15 @@ export function CreateTaskCard({
           {advancedOpen ? "收起高级设置" : "高级设置"}
         </button>
         {advancedOpen ? (
-          <div style={{ marginTop: 14 }}>
+          <div
+            style={{
+              marginTop: 14,
+              padding: "16px 18px",
+              borderRadius: 14,
+              background: "#faf9fc",
+              border: "1px solid #eceaf5",
+            }}
+          >
             <SectionLabel>AI 模型</SectionLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {AI_MODEL_OPTIONS.map((opt) => {

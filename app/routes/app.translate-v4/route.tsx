@@ -25,56 +25,47 @@ import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
-
-const SHOP_LOCALES_QUERY = `#graphql
-  query TranslateV4ShopLocales {
-    shopLocales {
-      locale
-      name
-      primary
-      published
-    }
-  }
-`;
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
+import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4Enabled()) {
     throw redirect("/app");
   }
 
-  const { admin, session } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
 
   if (!isTranslateV4ShopAllowed(session.shop)) {
     throw redirect("/app");
   }
 
   let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "zh-CN";
+  let primaryLocale = "en";
+  let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
   try {
-    const res = await admin.graphql(SHOP_LOCALES_QUERY);
-    const payload = (await res.json()) as {
-      data?: {
-        shopLocales?: Array<{
-          locale: string;
-          name: string;
-          primary: boolean;
-          published: boolean;
-        }> | null;
-      };
-    };
-    const rows = payload.data?.shopLocales ?? [];
-    locales = rows.map((r) => ({
-      value: r.locale,
-      label: `${r.name} (${r.locale})`,
-      primary: r.primary,
-      published: r.published,
-    }));
-    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+    const loaded = await loadShopLocalesForTranslation({
+      shop: session.shop,
+      accessToken: session.accessToken,
+    });
+    shopLocaleRows = loaded.rows;
+    locales = loaded.localeOptions;
+    primaryLocale = loaded.primaryLocale;
   } catch (err) {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  const targetLocales = locales.filter((l) => !l.primary && l.published);
+  try {
+    await syncShopTargetLocalesFromShopify(
+      session.shop,
+      shopLocaleRows,
+      primaryLocale,
+    );
+  } catch (syncErr) {
+    console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
+  }
+
+  const targetLocales = selectShopTargetLocales(locales, primaryLocale);
 
   const [jobs, quota, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
@@ -110,7 +101,7 @@ export default function AppTranslateV4() {
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
-  const source = primaryLocale || "zh-CN";
+  const source = primaryLocale || "en";
   const [targets, setTargets] = useState<string[]>([]);
   const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
   const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
@@ -132,22 +123,29 @@ export default function AppTranslateV4() {
   );
 
   const targetOptions = useMemo(
-    () => localeOptions.filter((l) => l.value !== source && l.published),
+    () => selectShopTargetLocales(localeOptions, source),
     [localeOptions, source],
   );
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
     try {
-      const refreshParam = forceRefresh ? "&refresh=1" : "";
-      const res = await fetch(
-        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}${refreshParam}`,
-      );
-      const data = await res.json();
-      if (data?.ok) {
-        setCoverage(data.summary as CoverageSummary);
-      } else if (forceRefresh) {
-        message.error(data?.error || "刷新统计失败");
+      if (!forceRefresh) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
+        return;
+      }
+
+      // 按语言逐个刷新，避免一次请求扫全店导致超时 / 与翻译任务争抢 Shopify 限流
+      for (const loc of targetOptions) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
@@ -155,7 +153,7 @@ export default function AppTranslateV4() {
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop]);
+  }, [shop, targetOptions]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -326,8 +324,9 @@ export default function AppTranslateV4() {
     if (coverageAutoRefreshDone.current) return;
     if (!initialCoverage.locales.some((l) => l.cacheMissing)) return;
     coverageAutoRefreshDone.current = true;
-    void refreshCoverage(true);
-  }, [initialCoverage.locales, refreshCoverage]);
+    // 翻译进行中勿全量扫 Shopify；仅读 Redis 缓存，用户可手动「刷新统计」
+    void refreshCoverageFromCache();
+  }, [initialCoverage.locales, refreshCoverageFromCache]);
 
   const translateSlotBusy = useMemo(
     () => jobs.some((j) => j.status === "TRANSLATING" || j.isStopping),
@@ -366,7 +365,7 @@ export default function AppTranslateV4() {
           gridTemplateColumns: "auto minmax(0, 1fr)",
           gap: 16,
           marginBottom: 16,
-          alignItems: "stretch",
+          alignItems: "start",
         }}
       >
         <SummaryDonutCard summary={coverage} />

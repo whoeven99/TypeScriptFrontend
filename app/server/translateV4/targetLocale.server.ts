@@ -1,4 +1,6 @@
 import prisma from "~/db.server";
+import { sameTranslationLocale } from "./locale";
+import { hasShopMigratedToTsf } from "./migration.server";
 
 /**
  * 语言页「按语言自动翻译开关」的 TSF Prisma 读写（迁移后的店用）。
@@ -73,6 +75,49 @@ export async function deleteTargetLocales(shop: string, locales: string[]): Prom
   });
   await syncShopAutoFlag(shop);
   return res.count;
+}
+
+/**
+ * 将 Shopify 店铺语言同步到 TSF（ShopTargetLocale + settings.targets）。
+ * 仅已迁移店执行；新增语言默认 autoTranslate=false，已有行保留原开关。
+ */
+export async function syncShopTargetLocalesFromShopify(
+  shop: string,
+  shopLocales: Array<{ locale: string; primary?: boolean }>,
+  primaryLocale: string,
+): Promise<void> {
+  if (!(await hasShopMigratedToTsf(shop))) return;
+
+  const targetCodes = shopLocales
+    .filter((l) => !l.primary && l.locale.trim())
+    .filter((l) => !sameTranslationLocale(l.locale, primaryLocale))
+    .map((l) => l.locale.trim());
+
+  const uniqueLocales = [...new Set(targetCodes)];
+  if (uniqueLocales.length === 0) return;
+
+  const existing = await prisma.shopTargetLocale.findMany({ where: { shop } });
+
+  for (const locale of uniqueLocales) {
+    const prev = existing.find((r) => sameTranslationLocale(r.locale, locale));
+    await prisma.shopTargetLocale.upsert({
+      where: { shop_locale: { shop, locale: prev?.locale ?? locale } },
+      create: { shop, locale, autoTranslate: false },
+      update: {},
+    });
+  }
+
+  const toDelete = existing
+    .filter((r) => !uniqueLocales.some((loc) => sameTranslationLocale(loc, r.locale)))
+    .map((r) => r.locale);
+  if (toDelete.length > 0) {
+    await deleteTargetLocales(shop, toDelete);
+  }
+
+  await prisma.shopTranslationSettings.updateMany({
+    where: { shop, migratedToTsf: true },
+    data: { targets: uniqueLocales },
+  });
 }
 
 /** 迁移时批量写入每目标语言的自动开关。 */

@@ -14,6 +14,7 @@ import { localeRegionCode, localeShortName } from "~/routes/app.translate-v4/loc
 import { jobDisplayPercent } from "~/routes/app.translate-v4/jobStageUtils";
 import { v4CardStyle, v4ChipStyle, v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import { AutoTaskBadge } from "~/routes/app.translate-v4/components/AutoTranslateMarkers";
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { JobCollapsedMeta } from "~/routes/app.translate-v4/components/JobExpandedDetail";
 import { ProgressRing, StatusTag } from "~/routes/app.translate-v4/components/V4JobCardParts";
 
@@ -97,7 +98,7 @@ const ExpressTranslateCard = ({
   const sourceLabel =
     locales.find((l) => l.value === source)?.label ?? source;
   const targetOptions = useMemo<ShopLocaleOption[]>(
-    () => locales.filter((l) => l.value !== source && l.published),
+    () => selectShopTargetLocales(locales, source),
     [locales, source],
   );
   const visibleJobs = useMemo(

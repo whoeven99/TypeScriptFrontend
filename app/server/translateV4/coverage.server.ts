@@ -13,6 +13,7 @@ import type { AdminGraphqlClient } from "./itemsCount.server";
 import { sameTranslationLocale } from "./locale";
 import { listTargetLocales } from "./targetLocale.server";
 import {
+  readAutoScanLastAt,
   resolveNextAutoUpdateAt,
 } from "./autoScanSchedule.server";
 
@@ -26,6 +27,8 @@ export type LocaleCoverageRow = {
   cacheMissing: boolean;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
+  /** Worker 最近一次自动扫描时刻（ISO，全店共用） */
+  lastAutoUpdateAt: string | null;
   /** 下一轮 Worker 自动扫描时刻（ISO，由前端按本地时区/相对时间展示） */
   nextAutoUpdateAt: string | null;
 };
@@ -50,20 +53,27 @@ async function enrichCoverageWithAutoTranslate(
   shop: string,
   summary: CoverageSummary,
 ): Promise<CoverageSummary> {
-  const targetRows = await listTargetLocales(shop);
-  const locales = await Promise.all(
-    summary.locales.map(async (row) => {
-      const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
-      const autoTranslate = match?.autoTranslate ?? false;
-      const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
-      return {
-        ...row,
-        autoTranslate,
-        nextAutoUpdateAt,
-      };
-    }),
-  );
-  return { ...summary, locales };
+  try {
+    const targetRows = await listTargetLocales(shop);
+    const lastAutoUpdateAt = await readAutoScanLastAt();
+    const locales = await Promise.all(
+      summary.locales.map(async (row) => {
+        const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
+        const autoTranslate = match?.autoTranslate ?? false;
+        const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
+        return {
+          ...row,
+          autoTranslate,
+          lastAutoUpdateAt: autoTranslate ? lastAutoUpdateAt : null,
+          nextAutoUpdateAt,
+        };
+      }),
+    );
+    return { ...summary, locales };
+  } catch (err) {
+    console.error("[translateV4] enrichCoverageWithAutoTranslate failed:", err);
+    return summary;
+  }
 }
 
 /** 仅从 Redis 读缓存，适合 loader 快速路径。 */
@@ -91,6 +101,7 @@ export async function getCoverageSummaryFromCache({
       percent: ratioPercent(agg.translated, agg.total),
       cacheMissing: agg.cacheMissing,
       autoTranslate: false,
+      lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
     translatedItems += agg.translated;
@@ -113,19 +124,37 @@ export async function computeCoverageSummary({
   primaryLocale,
   targetLocales,
   forceRefresh = false,
+  localesToRefresh,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
   primaryLocale: string;
   targetLocales: LocaleInput[];
-  /** true：与管理翻译「刷新统计」同效 —— invalidate 后强制现算并写 Redis */
+  /** true：与管理翻译「刷新统计」同效 —— 现算并写 Redis（不 invalidate，避免翻译进行中清空缓存） */
   forceRefresh?: boolean;
+  /** 指定要刷新的语言；省略时 forceRefresh 仅刷新 cacheMissing 的语言 */
+  localesToRefresh?: string[];
 }): Promise<CoverageSummary> {
   if (forceRefresh && targetLocales.length > 0) {
+    let refreshLocales: string[];
+    if (localesToRefresh?.length) {
+      refreshLocales = localesToRefresh;
+    } else {
+      const missing: string[] = [];
+      for (const loc of targetLocales) {
+        const agg = await sumItemsCountByLabelsFromCache(
+          shop,
+          loc.value,
+          COVERAGE_COUNT_LABELS,
+        );
+        if (agg.cacheMissing) missing.push(loc.value);
+      }
+      refreshLocales = missing.length > 0 ? missing : targetLocales.map((l) => l.value);
+    }
     await refreshItemsCountForLocales({
       admin,
       shop,
-      locales: targetLocales.map((l) => l.value),
+      locales: refreshLocales,
       labels: COVERAGE_COUNT_LABELS,
     });
   }
@@ -139,7 +168,31 @@ export async function computeCoverageSummary({
     let total: number;
     let cacheMissing = false;
 
-    if (forceRefresh) {
+    try {
+      if (forceRefresh) {
+        const cached = await sumItemsCountByLabelsFromCache(
+          shop,
+          loc.value,
+          COVERAGE_COUNT_LABELS,
+        );
+        translated = cached.translated;
+        total = cached.total;
+        cacheMissing = cached.cacheMissing;
+      } else {
+        const computed = await sumItemsCountByLabels({
+          admin,
+          shop,
+          target: loc.value,
+          labels: COVERAGE_COUNT_LABELS,
+        });
+        translated = computed.translated;
+        total = computed.total;
+      }
+    } catch (err) {
+      console.error(
+        `[translateV4] coverage locale failed shop=${shop} locale=${loc.value}:`,
+        err,
+      );
       const cached = await sumItemsCountByLabelsFromCache(
         shop,
         loc.value,
@@ -147,16 +200,7 @@ export async function computeCoverageSummary({
       );
       translated = cached.translated;
       total = cached.total;
-      cacheMissing = cached.cacheMissing;
-    } else {
-      const computed = await sumItemsCountByLabels({
-        admin,
-        shop,
-        target: loc.value,
-        labels: COVERAGE_COUNT_LABELS,
-      });
-      translated = computed.translated;
-      total = computed.total;
+      cacheMissing = cached.cacheMissing || cached.total === 0;
     }
 
     locales.push({
@@ -167,6 +211,7 @@ export async function computeCoverageSummary({
       percent: ratioPercent(translated, total),
       cacheMissing,
       autoTranslate: false,
+      lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
     translatedItems += translated;

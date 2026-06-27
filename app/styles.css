@@ -1,3 +1,7 @@
+/* .ant-modal-title {
+    font-size: 24px !important;
+} */
+
 :root {
   --app-color-bg: var(--p-color-bg);
   --app-color-surface: var(--p-color-bg-surface);
@@ -13,8 +17,6 @@
   --app-font-size-body: 14px;
   --app-font-size-body-small: 13px;
   --app-font-size-caption: 12px;
-  --app-radius: 8px;
-  --app-radius-small: 6px;
   --app-space-100: var(--p-space-100);
   --app-space-200: var(--p-space-200);
   --app-space-300: var(--p-space-300);
@@ -39,66 +41,4 @@ body {
   background: var(--app-color-bg);
   color: var(--app-color-text);
   font-size: var(--app-font-size-body);
-}
-
-.ant-card {
-  border-color: transparent !important;
-  box-shadow: var(--app-shadow-card);
-}
-
-.ant-card .ant-card-head {
-  border-bottom: none;
-}
-
-.ant-card .ant-card-head-title,
-.ant-typography,
-.ant-form-item-label > label,
-.ant-modal-title {
-  color: var(--app-color-text);
-}
-
-.ant-input-outlined,
-.ant-input-affix-wrapper,
-.ant-select-outlined .ant-select-selector,
-.ant-picker,
-.ant-input-number,
-.ant-color-picker-trigger {
-  border-color: var(--app-color-border-secondary) !important;
-  box-shadow: none !important;
-}
-
-.ant-input-outlined:hover,
-.ant-input-affix-wrapper:hover,
-.ant-select-outlined:hover .ant-select-selector,
-.ant-picker:hover,
-.ant-input-number:hover,
-.ant-color-picker-trigger:hover {
-  border-color: var(--app-color-border) !important;
-}
-
-.ant-input-outlined:focus,
-.ant-input-outlined:focus-within,
-.ant-input-affix-wrapper:focus,
-.ant-input-affix-wrapper:focus-within,
-.ant-select-focused.ant-select-outlined .ant-select-selector,
-.ant-picker-focused,
-.ant-input-number-focused {
-  border-color: var(--app-color-brand) !important;
-  box-shadow: 0 0 0 1px rgba(0, 127, 97, 0.12) !important;
-}
-
-.ant-table-thead > tr > th {
-  color: var(--app-color-text-secondary) !important;
-  font-weight: 600;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-a {
-  color: inherit;
 }

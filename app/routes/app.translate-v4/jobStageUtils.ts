@@ -3,16 +3,20 @@ import type { TranslationJobProgressSummary } from "~/server/translateV4/progres
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
+export const VISIBLE_STAGE_LABELS = ["初始化", "翻译", "写回"] as const;
+
+export type VisibleStageIndex = 0 | 1 | 2;
+
 export function stageOf(
   status: TranslationV4Status,
   errorStage?: string | null,
-): 0 | 1 | 2 | 3 | 4 {
+): VisibleStageIndex {
   if (status === "PAUSED" || status === "FAILED" || status === "CANCELLED") {
     switch (errorStage) {
       case "WRITEBACK":
         return 2;
       case "VERIFY":
-        return 3;
+        return 2;
       case "TRANSLATE":
       default:
         return 1;
@@ -23,9 +27,44 @@ export function stageOf(
   if (["TRANSLATE_QUEUED", "TRANSLATING"].includes(status)) return 1;
   if (status === "TRANSLATE_DONE") return 2;
   if (["WRITEBACK_QUEUED", "WRITING_BACK"].includes(status)) return 2;
-  if (["VERIFY_QUEUED", "VERIFYING"].includes(status)) return 3;
-  if (status === "COMPLETED") return 4;
+  if (["VERIFY_QUEUED", "VERIFYING"].includes(status)) return 2;
+  if (status === "COMPLETED") return 2;
   return 0;
+}
+
+/** 列表迷你进度条使用的阶段索引（仅 INIT / TRANSLATE / WRITEBACK）。 */
+export function visibleStageIndex(
+  status: TranslationV4Status,
+  errorStage?: string | null,
+): VisibleStageIndex {
+  return stageOf(status, errorStage) as VisibleStageIndex;
+}
+
+function isVerifyHiddenComplete(status: TranslationV4Status): boolean {
+  return status === "COMPLETED" || ["VERIFY_QUEUED", "VERIFYING"].includes(status);
+}
+
+export function miniStageSegmentState(
+  idx: VisibleStageIndex,
+  job: TranslationJobProgressSummary,
+): { percent: number; complete: boolean; active: boolean } {
+  const { status, metrics, errorStage, isTerminal, isStopping } = job;
+
+  if (isVerifyHiddenComplete(status)) {
+    return { percent: 100, complete: true, active: false };
+  }
+
+  const complete = isStageBarComplete(idx, metrics, status);
+  const percent = complete ? 100 : stageBarPercent(idx, metrics, status);
+  const activeIdx = visibleStageIndex(status, errorStage);
+  const active =
+    !isTerminal &&
+    !isStopping &&
+    status !== "PAUSED" &&
+    idx === activeIdx &&
+    !complete;
+
+  return { percent, complete, active };
 }
 
 function ratioPercent(done: number, total: number): number {
@@ -60,8 +99,6 @@ export function stageBarPercent(
       const total = taskResourceTotal(m);
       return total > 0 ? ratioPercent(m.writebackDone, total) : 0;
     }
-    case 3:
-      return ratioPercent(m.verifyDone, m.verifyTotal);
     default:
       return 0;
   }
@@ -83,8 +120,6 @@ export function isStageBarComplete(
       const total = taskResourceTotal(m);
       return total > 0 && m.writebackDone >= total;
     }
-    case 3:
-      return m.verifyTotal > 0 && m.verifyDone >= m.verifyTotal;
     default:
       return false;
   }

@@ -24,7 +24,8 @@
     "shopify": "shopify",
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
-    "vite": "vite"
+    "vite": "vite",
+    "push:pr": "node scripts/cursor-push-pr.mjs"
   },
   "type": "module",
   "engines": {
@@ -73,6 +74,7 @@
     "i18next-http-backend": "^3.0.1",
     "ioredis": "^5.11.1",
     "isbot": "^5.1.0",
+    "node-html-parser": "^6.1.13",
     "openssl": "^2.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -1,5 +1,10 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { v4Colors } from "../v4Styles";
+import {
+  VISIBLE_STAGE_LABELS,
+  miniStageSegmentState,
+  type VisibleStageIndex,
+} from "../jobStageUtils";
 
 export function ProgressRing({ percent, size = "md" }: { percent: number; size?: "md" | "sm" }) {
   const dash = `${percent} 100`;
@@ -41,6 +46,87 @@ export function ProgressRing({ percent, size = "md" }: { percent: number; size?:
   );
 }
 
+const MINI_STAGE_INDICES: VisibleStageIndex[] = [0, 1, 2];
+
+/** 列表卡片：三阶段迷你进度（初始化 → 翻译 → 写回，不含 verify）。 */
+export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) {
+  const segments = MINI_STAGE_INDICES.map((idx) => ({
+    idx,
+    label: VISIBLE_STAGE_LABELS[idx],
+    ...miniStageSegmentState(idx, job),
+  }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {segments.map((seg, i) => (
+          <div key={seg.idx} style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 0 }}>
+            {i > 0 ? (
+              <span
+                aria-hidden
+                style={{
+                  width: 8,
+                  height: 1,
+                  flexShrink: 0,
+                  marginRight: 6,
+                  background:
+                    segments[i - 1]!.complete ? v4Colors.successSoft : "#e2e1da",
+                }}
+              />
+            ) : null}
+            <div
+              style={{
+                flex: 1,
+                height: 5,
+                borderRadius: 999,
+                background: "#edecea",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${seg.percent}%`,
+                  borderRadius: 999,
+                  background: seg.complete
+                    ? v4Colors.successSoft
+                    : seg.active
+                      ? v4Colors.primary
+                      : "#d8d7d0",
+                  transition: "width 0.45s ease, background 0.2s",
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {segments.map((seg) => (
+          <span
+            key={seg.idx}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              textAlign: "center",
+              fontSize: 10,
+              fontWeight: seg.active ? 700 : 500,
+              color: seg.complete
+                ? v4Colors.success
+                : seg.active
+                  ? v4Colors.primary
+                  : v4Colors.textFaint,
+              lineHeight: 1.2,
+              letterSpacing: "0.01em",
+            }}
+          >
+            {seg.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StatusTag({
   status,
   label,
@@ -51,8 +137,8 @@ export function StatusTag({
   let bg = v4Colors.primarySoft;
   let color = v4Colors.primary;
   if (status === "COMPLETED") {
-    bg = "rgba(31, 157, 107, 0.12)";
-    color = v4Colors.success;
+    bg = "rgba(37, 99, 235, 0.1)";
+    color = "#2563eb";
   } else if (status === "PAUSED") {
     bg = "#fcf0d9";
     color = "#b87a00";
