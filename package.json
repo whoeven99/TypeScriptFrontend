@@ -24,7 +24,8 @@
     "shopify": "shopify",
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
-    "vite": "vite"
+    "vite": "vite",
+    "push:pr": "node scripts/cursor-push-pr.mjs"
   },
   "type": "module",
   "engines": {

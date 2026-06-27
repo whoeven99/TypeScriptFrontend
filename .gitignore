@@ -21,3 +21,4 @@ shopify.app.wgw.toml
 .shopify/*
 .shopify.lock
 /.vscode
+scripts/force-migrate.mjs
