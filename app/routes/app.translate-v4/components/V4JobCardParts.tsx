@@ -69,7 +69,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                   height: 1,
                   flexShrink: 0,
                   marginRight: 6,
-                  background: segments[i - 1]!.complete ? v4Colors.success : v4Colors.progressTrack,
+                  background: segments[i - 1]!.complete ? v4Colors.successSoft : v4Colors.progressTrack,
                 }}
               />
             ) : null}
@@ -88,7 +88,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                   width: `${seg.percent}%`,
                   borderRadius: 999,
                   background: seg.complete
-                    ? v4Colors.success
+                    ? v4Colors.successSoft
                     : seg.active
                       ? v4Colors.primary
                       : v4Colors.ringTrack,
@@ -158,6 +158,15 @@ export function StatusTag({
         borderRadius: 999,
         background: bg,
         color,
+        border: `1px solid ${status === "COMPLETED"
+          ? "#d9f7be"
+          : status === "PAUSED"
+            ? "#ffe58f"
+            : status === "FAILED"
+              ? "#ffccc7"
+              : status === "CANCELLED"
+                ? v4Colors.cardBorder
+                : "#bae0ff"}`,
       }}
     >
       {label}

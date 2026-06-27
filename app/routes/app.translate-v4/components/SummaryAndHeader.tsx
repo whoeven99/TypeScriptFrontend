@@ -35,6 +35,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
           alignItems: "center",
           gap: 16,
           border: `1px solid ${v4Colors.cardBorder}`,
+          boxShadow: "0 4px 14px rgba(22, 119, 255, 0.06)",
         }}
       >
         <div
@@ -97,7 +98,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
             <span
               style={{
                 fontSize: 10,
-                color: v4Colors.textMuted,
+                color: v4Colors.primaryHover ?? v4Colors.primary,
                 marginTop: 4,
                 fontWeight: 600,
               }}
@@ -125,7 +126,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
                 color: v4Colors.text,
               }}
             >
-              功能覆盖率
+              站点翻译状态
             </div>
             <div
               style={{
@@ -135,7 +136,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
                 lineHeight: "20px",
               }}
             >
-              当前店铺多语言翻译完成度
+              当前店铺多语言翻译完成情况
             </div>
           </div>
           <div
@@ -174,6 +175,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
         boxSizing: "border-box",
         flexShrink: 0,
         border: `1px solid ${v4Colors.cardBorder}`,
+        boxShadow: "0 4px 14px rgba(22, 119, 255, 0.06)",
       }}
     >
       <div
@@ -214,7 +216,7 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
             <span style={{ fontFamily: v4Colors.mono, fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1, color: v4Colors.text }}>
               {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 11, color: v4Colors.textMuted, marginTop: 4, fontWeight: 600 }}>已翻译</span>
+            <span style={{ fontSize: 11, color: v4Colors.primaryHover ?? v4Colors.primary, marginTop: 4, fontWeight: 600 }}>已翻译</span>
           </div>
         </div>
       </div>

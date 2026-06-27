@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Popconfirm } from "antd";
+import { Button, Empty, Popconfirm, Segmented } from "antd";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
@@ -96,26 +96,23 @@ export function CompactJobCard({
               cancelText="取消"
               onConfirm={() => runAction("delete")}
             >
-              <button type="button" style={ghostTextBtn}>删除</button>
+              <Button type="text" size="small" danger style={textActionButtonStyle}>
+                删除
+              </Button>
             </Popconfirm>
           ) : null}
-          <button
-            type="button"
+          <Button
+            type="text"
+            size="small"
             onClick={onToggleExpand}
             style={{
               color: v4Colors.primary,
-              fontSize: 12,
               fontWeight: 600,
-              fontFamily: "inherit",
-              cursor: "pointer",
-              border: "none",
-              borderRadius: 999,
-              padding: "4px 10px",
               background: expanded ? v4Colors.primarySoft : "transparent",
             }}
           >
             {expanded ? "收起" : "查看"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -147,15 +144,8 @@ export function CompactJobCard({
   );
 }
 
-const ghostTextBtn: CSSProperties = {
-  color: v4Colors.textFaint,
-  fontSize: 12,
-  fontWeight: 600,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  border: "none",
-  background: "none",
-  padding: "4px 6px",
+const textActionButtonStyle: CSSProperties = {
+  paddingInline: 8,
 };
 
 function ActionChip({
@@ -169,32 +159,29 @@ function ActionChip({
   loading?: boolean;
   kind: "primary" | "ghost" | "danger";
 }) {
-  const map: Record<"primary" | "ghost" | "danger", CSSProperties> = {
-    primary: { border: `1px solid ${v4Colors.primary}`, background: v4Colors.primarySoft, color: v4Colors.primary },
-    ghost: { border: `1px solid ${v4Colors.cardBorder}`, background: v4Colors.cardBg, color: v4Colors.text },
-    danger: { border: `1px solid ${v4Colors.danger}`, background: v4Colors.dangerBg, color: v4Colors.danger },
-  } as const;
+  const typeMap: Record<"primary" | "ghost" | "danger", "primary" | "default" | "text"> = {
+    primary: "primary",
+    ghost: "default",
+    danger: "text",
+  };
   return (
-    <button
-      type="button"
+    <Button
+      type={typeMap[kind]}
+      danger={kind === "danger"}
+      size="small"
       disabled={loading}
       onClick={onClick}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "6px 14px",
-        borderRadius: 999,
-        fontSize: 12,
         fontWeight: 600,
-        fontFamily: "inherit",
-        cursor: loading ? "default" : "pointer",
-        opacity: loading ? 0.7 : 1,
-        ...map[kind],
+        ...(kind === "primary"
+          ? {
+              boxShadow: "none",
+            }
+          : {}),
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -268,48 +255,30 @@ export function TaskQueueSection({
         </span>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <button
-          type="button"
-          onClick={() => setTab("current")}
-          style={filterChipStyle(tab === "current")}
-        >
-          进行中 {currentJobs.length}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("history")}
-          style={filterChipStyle(tab === "history")}
-        >
-          历史记录 {historyJobs.length}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("all")}
-          style={filterChipStyle(tab === "all")}
-        >
-          全部 {jobs.length}
-        </button>
+      <div style={{ marginBottom: 12 }}>
+        <Segmented
+          value={tab}
+          onChange={(value) => setTab(value as "current" | "history" | "all")}
+          options={[
+            { label: `进行中 ${currentJobs.length}`, value: "current" },
+            { label: `历史记录 ${historyJobs.length}`, value: "history" },
+            { label: `全部 ${jobs.length}`, value: "all" },
+          ]}
+        />
       </div>
 
       {displayJobs.length === 0 ? (
-        <div
-          style={{
-            border: `1px dashed ${v4Colors.cardBorder}`,
-            borderRadius: 8,
-            padding: "40px 24px",
-            textAlign: "center",
-            background: v4Colors.cardSubdued,
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8, color: v4Colors.text }}>
-            {tab === "history" ? "暂无历史记录" : "队列为空"}
-          </div>
-          <div style={{ fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
-            {tab === "history"
-              ? "已完成或已取消的任务会显示在这里。"
-              : "选好语言和内容后，点击上方按钮创建第一个翻译任务。"}
-          </div>
+        <div style={{ borderRadius: 8, background: v4Colors.cardSubdued, padding: "32px 16px" }}>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
+                {tab === "history"
+                  ? "已完成或已取消的任务会显示在这里。"
+                  : "选好语言和内容后，点击上方按钮创建第一个翻译任务。"}
+              </span>
+            }
+          />
         </div>
       ) : (
         <>
@@ -328,15 +297,16 @@ export function TaskQueueSection({
             />
           ))}
           {tab === "history" && historyJobs.length > 6 ? (
-            <button
-              type="button"
+            <Button
+              type="link"
+              size="small"
               onClick={() => setHistoryExpanded((v) => !v)}
               style={historyToggleStyle}
             >
               {historyExpanded
                 ? "收起历史记录"
                 : `显示更多历史记录（剩余 ${historyJobs.length - displayJobs.length} 条）`}
-            </button>
+            </Button>
           ) : null}
         </>
       )}
@@ -344,27 +314,8 @@ export function TaskQueueSection({
   );
 }
 
-function filterChipStyle(active: boolean): CSSProperties {
-  return {
-    border: `1px solid ${active ? v4Colors.primary : v4Colors.cardBorder}`,
-    background: active ? v4Colors.primarySoft : v4Colors.cardBg,
-    color: active ? v4Colors.primary : v4Colors.textMuted,
-    borderRadius: 999,
-    padding: "6px 12px",
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  };
-}
-
 const historyToggleStyle: CSSProperties = {
-  background: "none",
-  border: "none",
-  color: v4Colors.primary,
-  fontSize: 13,
+  paddingInline: 0,
   fontWeight: 600,
-  cursor: "pointer",
-  padding: "4px 0 0",
-  fontFamily: "inherit",
+  marginTop: 4,
 };

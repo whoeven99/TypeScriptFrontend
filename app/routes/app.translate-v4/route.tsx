@@ -383,50 +383,40 @@ export default function AppTranslateV4() {
 
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
           gap: 16,
           marginBottom: 16,
-          alignItems: "stretch",
+          maxWidth: 608,
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
-            gap: 16,
-            flex: "0 1 608px",
-            width: "100%",
-            maxWidth: 608,
-          }}
-        >
-          <SummaryDonutCard summary={coverage} compact />
-          <CoverageCard
-            locales={coverage.locales}
-            loading={coverageLoading}
-            onRefresh={refreshCoverage}
-            compact
-          />
-        </div>
-        <div style={{ flex: "1 1 420px", minWidth: 320 }}>
-          <CreateTaskCard
-            source={source}
-            sourceLabel={sourceLocaleOption?.label ?? source}
-            targetOptions={targetOptions}
-            targets={targets}
-            onTargetsChange={setTargets}
-            modules={moduleKeys}
-            onModulesChange={setModuleKeys}
-            creating={creating}
-            onCreate={handleCreate}
-            aiModel={aiModel}
-            onAiModelChange={setAiModel}
-            isCover={isCover}
-            onIsCoverChange={setIsCover}
-            isHandle={isHandle}
-            onIsHandleChange={setIsHandle}
-          />
-        </div>
+        <SummaryDonutCard summary={coverage} compact />
+        <CoverageCard
+          locales={coverage.locales}
+          loading={coverageLoading}
+          onRefresh={refreshCoverage}
+          compact
+        />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <CreateTaskCard
+          source={source}
+          sourceLabel={sourceLocaleOption?.label ?? source}
+          targetOptions={targetOptions}
+          targets={targets}
+          onTargetsChange={setTargets}
+          modules={moduleKeys}
+          onModulesChange={setModuleKeys}
+          creating={creating}
+          onCreate={handleCreate}
+          aiModel={aiModel}
+          onAiModelChange={setAiModel}
+          isCover={isCover}
+          onIsCoverChange={setIsCover}
+          isHandle={isHandle}
+          onIsHandleChange={setIsHandle}
+        />
       </div>
 
       <div

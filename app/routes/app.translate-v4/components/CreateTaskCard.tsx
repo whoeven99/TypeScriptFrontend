@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { Button } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -114,20 +115,16 @@ export function CreateTaskCard({
 
   return (
     <div style={{ ...v4CardStyle, padding: "16px" }}>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 12 }}>
         <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
           新建翻译任务
         </h2>
-        <div style={{ marginTop: 4, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
-          先选目标语言，再确认翻译内容。高级设置默认收起，避免一次看到太多信息。
-        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <StepHeader
-          index="01"
-          title="选择目标语言"
-          description={targets.length > 0 ? `已选择 ${targets.length} 种语言` : "至少选择 1 种目标语言"}
+        <SectionHeader
+          title="目标语言"
+          extra={targets.length > 0 ? `已选 ${targets.length} 种` : undefined}
         />
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
           <span
@@ -148,9 +145,6 @@ export function CreateTaskCard({
             {localeShortName(source, sourceLabel)}
           </span>
           <span style={{ color: v4Colors.textFaint, fontSize: 14 }}>→</span>
-          <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
-            目标语言
-          </span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {visibleTargetOptions.map((opt) => {
@@ -164,29 +158,26 @@ export function CreateTaskCard({
           })}
         </div>
         {sortedTargetOptions.length > visibleTargetLimit ? (
-          <button
-            type="button"
-            onClick={() => setTargetsExpanded((v) => !v)}
-            style={inlineActionStyle}
-          >
-            {targetsExpanded ? "收起语言" : `展开更多语言（+${hiddenTargetCount}）`}
-          </button>
+          <div style={{ marginTop: 12 }}>
+            <Button type="link" size="small" onClick={() => setTargetsExpanded((v) => !v)} style={linkButtonStyle}>
+              {targetsExpanded ? "收起语言" : `展开更多语言（+${hiddenTargetCount}）`}
+            </Button>
+          </div>
         ) : null}
       </div>
 
       <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
-        <StepHeader
-          index="02"
-          title="选择翻译内容"
-          description={modules.length > 0 ? `当前包含 ${modules.length} 个模块` : "请至少选择 1 个翻译模块"}
+        <SectionHeader
+          title="翻译内容"
+          extra={modules.length > 0 ? `已选 ${modules.length} 个模块` : undefined}
         />
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-          <button type="button" onClick={applyRecommendedModules} style={inlineActionChipStyle}>
+          <Button size="small" onClick={applyRecommendedModules}>
             恢复推荐
-          </button>
-          <button type="button" onClick={clearModules} style={inlineActionChipStyle}>
+          </Button>
+          <Button size="small" onClick={clearModules}>
             清空选择
-          </button>
+          </Button>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {visibleModules.map((mod) => {
@@ -200,26 +191,19 @@ export function CreateTaskCard({
           })}
         </div>
         {sortedModules.length > visibleModuleLimit ? (
-          <button
-            type="button"
-            onClick={() => setModulesExpanded((v) => !v)}
-            style={inlineActionStyle}
-          >
-            {modulesExpanded ? "收起模块" : `展开更多模块（+${hiddenModuleCount}）`}
-          </button>
+          <div style={{ marginTop: 12 }}>
+            <Button type="link" size="small" onClick={() => setModulesExpanded((v) => !v)} style={linkButtonStyle}>
+              {modulesExpanded ? "收起模块" : `展开更多模块（+${hiddenModuleCount}）`}
+            </Button>
+          </div>
         ) : null}
       </div>
 
-      {/* 高级设置 */}
       <div style={{ marginBottom: 16 }}>
-        <StepHeader index="03" title="高级设置" description={advancedSummary} />
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((o) => !o)}
-          style={inlineActionStyle}
-        >
+        <SectionHeader title="高级设置" extra={advancedSummary} />
+        <Button type="link" size="small" onClick={() => setAdvancedOpen((o) => !o)} style={linkButtonStyle}>
           {advancedOpen ? "收起高级设置" : "展开高级设置"}
-        </button>
+        </Button>
         {advancedOpen ? (
           <div
             style={{
@@ -271,66 +255,31 @@ export function CreateTaskCard({
         <span style={{ fontSize: 13, color: v4Colors.textFaint, fontWeight: 600 }}>
           {targets.length} 种语言 · {modules.length} 个模块
         </span>
-        <button
-          type="button"
-          disabled={!canCreate}
-          onClick={onCreate}
-          style={{
-            background: canCreate ? v4Colors.primary : v4Colors.disabledBg,
-            color: canCreate ? v4Colors.primaryTextOnFill : v4Colors.disabledText,
-            border: `1px solid ${canCreate ? v4Colors.primary : v4Colors.cardBorder}`,
-            borderRadius: 8,
-            padding: "10px 16px",
-            fontSize: 14,
-            fontWeight: 600,
-            fontFamily: "inherit",
-            cursor: canCreate ? "pointer" : "not-allowed",
-          }}
-        >
+        <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
           {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务 →` : "创建任务 →"}
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
 
-function StepHeader({
-  index,
+function SectionHeader({
   title,
-  description,
+  extra,
 }: {
-  index: string;
   title: string;
-  description: string;
+  extra?: string;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
-      <span
-        style={{
-          minWidth: 28,
-          height: 28,
-          borderRadius: "50%",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: v4Colors.cardSubdued,
-          border: `1px solid ${v4Colors.cardBorder}`,
-          color: v4Colors.textMuted,
-          fontSize: 11,
-          fontWeight: 700,
-          fontFamily: v4Colors.mono,
-        }}
-      >
-        {index}
-      </span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
-          {title}
-        </div>
-        <div style={{ marginTop: 2, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
-          {description}
-        </div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text }}>
+        {title}
       </div>
+      {extra ? (
+        <div style={{ fontSize: 12, color: v4Colors.textMuted, whiteSpace: "nowrap" }}>
+          {extra}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -339,28 +288,9 @@ function SectionLabel({ children }: { children: string }) {
   return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
 }
 
-const inlineActionStyle: CSSProperties = {
-  background: "none",
-  border: "none",
-  color: v4Colors.primary,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-  padding: 0,
-  fontFamily: "inherit",
-  marginTop: 12,
-};
-
-const inlineActionChipStyle: CSSProperties = {
-  background: v4Colors.cardBg,
-  color: v4Colors.textMuted,
-  border: `1px solid ${v4Colors.cardBorder}`,
-  borderRadius: 999,
-  padding: "6px 10px",
-  fontSize: 12,
-  fontWeight: 600,
-  cursor: "pointer",
-  fontFamily: "inherit",
+const linkButtonStyle: CSSProperties = {
+  paddingInline: 0,
+  height: "auto",
 };
 
 const chipBase: CSSProperties = {
