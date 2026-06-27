@@ -7,19 +7,24 @@ import {
   PATH_PATTERN,
   TRANSLATABLE_RESOURCE_TYPES,
 } from "./constants";
+import { isHtmlContent, isJsonObject } from "./jsonUtils";
 import { shouldTranslateThemeKey, whiteListTranslate } from "./judgeTranslateUtils";
 
 /**
  * Theme module branch (TranslateV2Service.needTranslate).
- * PHASE2: HTML include (E1) and JSON value exclude (E2) deferred.
  */
 export function passesThemeModuleRules(module: string, key: string, value: string): boolean {
   if (!TRANSLATABLE_RESOURCE_TYPES.has(module)) {
     return true;
   }
 
-  // PHASE2: isHtml(value) → return true (include)
-  // PHASE2: isJson(value) → return false (exclude)
+  if (isHtmlContent(value)) {
+    return true;
+  }
+
+  if (isJsonObject(value)) {
+    return false;
+  }
 
   if (key.includes("general.lange")) {
     return false;

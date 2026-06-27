@@ -2,6 +2,8 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { useEffect, useMemo, useState } from "react";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import { authenticate } from "~/shopify.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 import {
   Button,
   Card,
@@ -27,24 +29,28 @@ import styles from "../app.language/styles.module.css";
 import { LanguagesDataType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import {
-  DeleteLiquidDataByIds,
-  SelectShopNameLiquidData,
-  UpdateLiquidReplacementMethod,
-} from "~/api/JavaServer";
+  deleteLiquidCompat,
+  selectLiquidCompat,
+  toggleLiquidReplacementMethodCompat,
+  type LiquidTableRow,
+} from "./liquidClient";
 import UpdateCustomTransModal from "./components/updateCustomTransModal";
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+  const migrated = await isShopMigrated(session.shop);
 
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
+    migrated,
   };
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { server, mobile, migrated } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -56,28 +62,20 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
 
   //表格数据源
-  const [dataSource, setDataSource] = useState<
-    {
-      key: number;
-      sourceText: string;
-      targetText: string;
-      replacementMethod: boolean;
-      languageCode: string;
-    }[]
-  >([]);
+  const [dataSource, setDataSource] = useState<LiquidTableRow[]>([]);
 
   //表格多选控制key
-  const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
   //编辑表单类型及数据控制
   const [createOrEditModal, setCreateOrEditModal] = useState<{
     open: boolean;
     type: "create" | "edit";
-    key: number;
+    key: string;
   }>({
     open: false,
     type: "create",
-    key: 0,
+    key: "",
   });
 
   //编辑表单数据源
@@ -125,32 +123,14 @@ const Index = () => {
 
     //表格数据初始化方法
     setTimeout(async () => {
-      const selectShopNameLiquidData = await SelectShopNameLiquidData({
+      const selectShopNameLiquidData = await selectLiquidCompat({
+        migrated,
         shop: globalStore?.shop || "",
         server: server || "",
       });
 
       if (selectShopNameLiquidData.success) {
-        let newData: {
-          key: number;
-          sourceText: string;
-          targetText: string;
-          replacementMethod: boolean;
-          languageCode: string;
-        }[] = [];
-        if (
-          Array.isArray(selectShopNameLiquidData.response) &&
-          selectShopNameLiquidData.response?.length
-        ) {
-          newData = selectShopNameLiquidData.response.map((item: any) => ({
-            key: item?.id,
-            sourceText: item?.liquidBeforeTranslation,
-            targetText: item?.liquidAfterTranslation,
-            replacementMethod: item?.replacementMethod,
-            languageCode: item?.languageCode,
-          }));
-        }
-        setDataSource(newData);
+        setDataSource(selectShopNameLiquidData.response ?? []);
         setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
       }
     }, 100);
@@ -163,18 +143,20 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [migrated, server]);
 
   //表格数据删除方法
   const handleDelete = async () => {
-    const data = await DeleteLiquidDataByIds({
+    const data = await deleteLiquidCompat({
+      migrated,
       shop: globalStore?.shop || "",
       server: server || "",
       ids: selectedRowKeys,
     });
     if (data.success) {
+      const deletedIds = (data.response ?? []).map(String);
       const newData = dataSource.filter(
-        (prev) => !data.response.includes(prev.key),
+        (prev) => !deletedIds.includes(prev.key),
       );
       setDataSource(newData);
       shopify.toast.show("Delete successfully");
@@ -259,12 +241,14 @@ const Index = () => {
   };
 
   //编辑替换方式
-  const handleSwitchReplaceMethod = async ({ id }: { id: number }) => {
-    const updateLiquidReplacementMethod = await UpdateLiquidReplacementMethod({
-      shop: globalStore?.shop || "",
-      server: server || "",
-      id,
-    });
+  const handleSwitchReplaceMethod = async ({ id }: { id: string }) => {
+    const updateLiquidReplacementMethod =
+      await toggleLiquidReplacementMethodCompat({
+        migrated,
+        shop: globalStore?.shop || "",
+        server: server || "",
+        id,
+      });
     if (updateLiquidReplacementMethod?.success) {
       const newData = dataSource.map((item) =>
         item.key === id
@@ -287,13 +271,7 @@ const Index = () => {
     targetText,
     replacementMethod,
     languageCode,
-  }: {
-    key?: number;
-    sourceText: string;
-    targetText: string;
-    replacementMethod: boolean;
-    languageCode: string;
-  }) => {
+  }: LiquidTableRow & { key?: string }) => {
     setDataSource((prev) => {
       // 查找是否已有该项
       const index =
@@ -312,8 +290,8 @@ const Index = () => {
         return updated;
       } else {
         // ✅ 新增到数组最前面
-        const newItem = {
-          key: key || 0,
+        const newItem: LiquidTableRow = {
+          key: key || "",
           sourceText,
           targetText,
           replacementMethod,
@@ -366,7 +344,7 @@ const Index = () => {
                 setCreateOrEditModal({
                   open: true,
                   type: "create",
-                  key: -1,
+                  key: "",
                 })
               }
             >
@@ -492,29 +470,10 @@ const Index = () => {
         )}
       </Space>
       <UpdateCustomTransModal
+        migrated={migrated}
         server={server || ""}
         dataSource={dataSource}
-        handleUpdateDataSource={({
-          key,
-          sourceText,
-          targetText,
-          replacementMethod,
-          languageCode,
-        }: {
-          key?: number;
-          sourceText: string;
-          targetText: string;
-          replacementMethod: boolean;
-          languageCode: string;
-        }) =>
-          handleUpdateDataSource({
-            key,
-            sourceText,
-            targetText,
-            replacementMethod,
-            languageCode,
-          })
-        }
+        handleUpdateDataSource={handleUpdateDataSource}
         defaultData={editData}
         open={createOrEditModal.open}
         title={t(

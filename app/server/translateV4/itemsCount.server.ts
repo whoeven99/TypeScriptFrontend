@@ -11,6 +11,7 @@
  * 各卡片累加口径一致（不含 Policies）；id-based 类型亦用 translatableResources 枚举。
  */
 import { shouldIncludeFieldV2 } from "./translationFilter";
+import { isBlankValue } from "./translationFilter/v3Base";
 import { getTranslateV4RedisClient } from "./redis.server";
 
 /**
@@ -117,9 +118,9 @@ const TRANSLATABLE_RESOURCES_QUERY = `#graphql
     translatableResources(resourceType: $resourceType, first: $first, after: $after) {
       edges {
         node {
-          resourceId
           translations(locale: $locale) {
             key
+            value
             outdated
           }
           translatableContent {
@@ -139,7 +140,11 @@ const TRANSLATABLE_RESOURCES_QUERY = `#graphql
 const PAGE_SIZE = 50;
 
 type TranslatableNode = {
-  translations?: Array<{ key: string; outdated?: boolean | null }> | null;
+  translations?: Array<{
+    key: string;
+    value?: string | null;
+    outdated?: boolean | null;
+  }> | null;
   translatableContent?: Array<{
     key: string;
     value: string;
@@ -147,12 +152,15 @@ type TranslatableNode = {
   }> | null;
 };
 
-/** 某字段是否已有「当前译文」（非过期）。 */
+/** 某字段是否已有「当前译文」（非过期且非空）。 */
 function hasCurrentTranslation(
   translations: TranslatableNode["translations"],
   key: string,
 ): boolean {
-  return (translations ?? []).some((t) => t.key === key && t.outdated !== true);
+  const row = (translations ?? []).find((t) => t.key === key);
+  if (!row) return false;
+  if (row.outdated === true) return false;
+  return !isBlankValue(row.value);
 }
 
 /**
@@ -193,7 +201,7 @@ export async function countModuleItems({
       for (const content of node.translatableContent ?? []) {
         const includable = shouldIncludeFieldV2(
           { key: content.key, value: content.value, type: content.type },
-          undefined, // 分母不受现有译文影响
+          undefined,
           { module, isCover: true, isHandle },
         );
         if (!includable) continue;

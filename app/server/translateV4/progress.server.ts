@@ -121,13 +121,25 @@ function taskResourceTotal(metrics: TranslationV4Metrics): number {
   return metrics.translateTotal || metrics.initTotal || 0;
 }
 
+/** 任务已结束时的整体进度：按校验/写回实际成功比例，避免写回仅一半仍显示 100%。 */
+function completedJobProgressPercent(metrics: TranslationV4Metrics): number {
+  if (metrics.verifyTotal > 0) {
+    return ratioPercent(metrics.verifyDone, metrics.verifyTotal) ?? 0;
+  }
+  const total = taskResourceTotal(metrics);
+  if (total > 0) {
+    return ratioPercent(metrics.writebackDone, total) ?? 0;
+  }
+  return 100;
+}
+
 /** 当前阶段的进度百分比；终态(非完成)返回 null。 */
 export function computeTranslationV4ProgressPercent(
   status: TranslationV4Status,
   metrics: TranslationV4Metrics,
   errorStage?: string | null,
 ): number | null {
-  if (status === "COMPLETED") return 100;
+  if (status === "COMPLETED") return completedJobProgressPercent(metrics);
   if (TERMINAL_V4_STATUSES.includes(status)) return null;
 
   if (status === "PAUSED") {

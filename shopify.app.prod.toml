@@ -41,5 +41,10 @@ compliance_topics = [
     "shop/redact"
 ]
 
+[app_proxy]
+url = "https://typescriptfrontendprod.onrender.com/api/storefront"
+subpath = "ciwi"
+prefix = "apps"
+
 [pos]
 embedded = false
