@@ -29,147 +29,60 @@ import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
-async function reportTranslateV4Debug(
-  hypothesisId: "A" | "B" | "C" | "D",
-  location: string,
-  msg: string,
-  data: Record<string, unknown>,
-) {
-  // #region debug-point A:translate-v4-loader
-  await fetch("http://127.0.0.1:7777/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "translate-v4-500",
-      runId: "pre-fix",
-      hypothesisId,
-      location,
-      msg: `[DEBUG] ${msg}`,
-      data,
-      ts: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  try {
-    if (!isTranslateV4Enabled()) {
-      throw redirect("/app");
-    }
-
-    const { session } = await authenticate.admin(request);
-    await reportTranslateV4Debug("A", "app.translate-v4.loader:auth", "loader authenticated", {
-      shop: session.shop,
-      url: request.url,
-    });
-
-    if (!isTranslateV4ShopAllowed(session.shop)) {
-      throw redirect("/app");
-    }
-
-    let locales: ShopLocaleOption[] = [];
-    let primaryLocale = "en";
-    let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
-    try {
-      const loaded = await loadShopLocalesForTranslation({
-        shop: session.shop,
-        accessToken: session.accessToken as string,
-      });
-      shopLocaleRows = loaded.rows;
-      locales = loaded.localeOptions;
-      primaryLocale = loaded.primaryLocale;
-      await reportTranslateV4Debug("B", "app.translate-v4.loader:locales", "shop locales loaded", {
-        shop: session.shop,
-        localeCount: locales.length,
-        primaryLocale,
-        rowCount: shopLocaleRows.length,
-      });
-    } catch (err) {
-      console.error("[translateV4] load shopLocales failed:", err);
-      await reportTranslateV4Debug("B", "app.translate-v4.loader:locales-error", "shop locales load failed", {
-        shop: session.shop,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-
-    try {
-      await syncShopTargetLocalesFromShopify(
-        session.shop,
-        shopLocaleRows,
-        primaryLocale,
-      );
-    } catch (syncErr) {
-      console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
-      await reportTranslateV4Debug("D", "app.translate-v4.loader:sync-target-locales", "sync target locales failed", {
-        shop: session.shop,
-        primaryLocale,
-        rowCount: shopLocaleRows.length,
-        error: syncErr instanceof Error ? syncErr.message : String(syncErr),
-      });
-    }
-
-    const targetLocales = selectShopTargetLocales(locales, primaryLocale);
-    await reportTranslateV4Debug("A", "app.translate-v4.loader:promise-all-start", "starting loader promise-all", {
-      shop: session.shop,
-      targetLocaleCount: targetLocales.length,
-      primaryLocale,
-    });
-
-    const [jobs, quota, coverage] = await Promise.all([
-      listV4JobSummaries(session.shop).catch(async (err) => {
-        await reportTranslateV4Debug("A", "app.translate-v4.loader:list-jobs", "listV4JobSummaries failed", {
-          shop: session.shop,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw err;
-      }),
-      getShopQuota(session.shop).catch(async (err) => {
-        await reportTranslateV4Debug("A", "app.translate-v4.loader:get-quota", "getShopQuota failed", {
-          shop: session.shop,
-          error: err instanceof Error ? err.message : String(err),
-          serverUrlConfigured: Boolean(process.env.SERVER_URL?.trim()),
-        });
-        throw err;
-      }),
-      getCoverageSummaryFromCache({
-        shop: session.shop,
-        primaryLocale,
-        targetLocales,
-      }).catch(async (err) => {
-        await reportTranslateV4Debug("A", "app.translate-v4.loader:get-coverage", "getCoverageSummaryFromCache failed", {
-          shop: session.shop,
-          primaryLocale,
-          targetLocaleCount: targetLocales.length,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw err;
-      }),
-    ]);
-
-    await reportTranslateV4Debug("A", "app.translate-v4.loader:success", "loader completed", {
-      shop: session.shop,
-      jobCount: jobs.length,
-      hasQuota: quota != null,
-      coverageLanguages: coverage.languageCount,
-    });
-
-    return json({
-      shop: session.shop,
-      locales,
-      primaryLocale,
-      jobs,
-      quota,
-      coverage,
-    });
-  } catch (err) {
-    await reportTranslateV4Debug("A", "app.translate-v4.loader:unhandled", "loader threw unhandled error", {
-      url: request.url,
-      error: err instanceof Error ? err.message : String(err),
-      name: err instanceof Error ? err.name : typeof err,
-    });
-    throw err;
+  if (!isTranslateV4Enabled()) {
+    throw redirect("/app");
   }
+
+  const { session } = await authenticate.admin(request);
+  if (!isTranslateV4ShopAllowed(session.shop)) {
+    throw redirect("/app");
+  }
+
+  let locales: ShopLocaleOption[] = [];
+  let primaryLocale = "en";
+  let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
+  try {
+    const loaded = await loadShopLocalesForTranslation({
+      shop: session.shop,
+      accessToken: session.accessToken as string,
+    });
+    shopLocaleRows = loaded.rows;
+    locales = loaded.localeOptions;
+    primaryLocale = loaded.primaryLocale;
+  } catch (err) {
+    console.error("[translateV4] load shopLocales failed:", err);
+  }
+
+  try {
+    await syncShopTargetLocalesFromShopify(
+      session.shop,
+      shopLocaleRows,
+      primaryLocale,
+    );
+  } catch (syncErr) {
+    console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
+  }
+
+  const targetLocales = selectShopTargetLocales(locales, primaryLocale);
+  const [jobs, quota, coverage] = await Promise.all([
+    listV4JobSummaries(session.shop),
+    getShopQuota(session.shop),
+    getCoverageSummaryFromCache({
+      shop: session.shop,
+      primaryLocale,
+      targetLocales,
+    }),
+  ]);
+
+  return json({
+    shop: session.shop,
+    locales,
+    primaryLocale,
+    jobs,
+    quota,
+    coverage,
+  });
 };
 
 export default function AppTranslateV4() {

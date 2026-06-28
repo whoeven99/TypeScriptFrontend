@@ -14,29 +14,6 @@ import {
 /** 翻译进度里「字段/HTML 片段」级计数的展示名。 */
 const TRANSLATION_V4_UNIT_LABEL = "子节点";
 
-async function reportTranslateV4ProgressDebug(
-  hypothesisId: "A" | "B",
-  location: string,
-  msg: string,
-  data: Record<string, unknown>,
-) {
-  // #region debug-point A:translate-v4-progress
-  await fetch("http://127.0.0.1:7777/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "translate-v4-500",
-      runId: "pre-fix",
-      hypothesisId,
-      location,
-      msg: `[DEBUG] ${msg}`,
-      data,
-      ts: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   currentModule: string | null;
   translateStartedAt: string | null;
@@ -517,20 +494,6 @@ export async function listV4JobSummaries(
   const summaries: TranslationJobProgressSummary[] = [];
   for (const job of filtered) {
     try {
-      await reportTranslateV4ProgressDebug(
-        "B",
-        "progress.listV4JobSummaries:job-shape",
-        "processing v4 job summary",
-        {
-          shopName,
-          jobId: (job as Partial<TranslationV4Job>)?.id ?? null,
-          status: (job as Partial<TranslationV4Job>)?.status ?? null,
-          hasMetrics: Boolean((job as Partial<TranslationV4Job>)?.metrics),
-          hasModules: Array.isArray((job as Partial<TranslationV4Job>)?.modules),
-          hasCreatedAt: Boolean((job as Partial<TranslationV4Job>)?.createdAt),
-          hasUpdatedAt: Boolean((job as Partial<TranslationV4Job>)?.updatedAt),
-        },
-      );
       const redis = redisByTaskId.get(job.id);
       const metrics = mergeV4JobMetrics(
         job,
@@ -545,20 +508,7 @@ export async function listV4JobSummaries(
           escalated ? mergeV4JobMetrics(finalJob, {}, null) : metrics,
         ),
       );
-    } catch (err) {
-      await reportTranslateV4ProgressDebug(
-        "A",
-        "progress.listV4JobSummaries:job-error",
-        "failed while building v4 job summary",
-        {
-          shopName,
-          jobId: (job as Partial<TranslationV4Job>)?.id ?? null,
-          status: (job as Partial<TranslationV4Job>)?.status ?? null,
-          hasMetrics: Boolean((job as Partial<TranslationV4Job>)?.metrics),
-          hasModules: Array.isArray((job as Partial<TranslationV4Job>)?.modules),
-          error: err instanceof Error ? err.message : String(err),
-        },
-      );
+    } catch {
       continue;
     }
   }
