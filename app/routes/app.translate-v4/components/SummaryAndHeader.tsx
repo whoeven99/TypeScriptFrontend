@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { Button } from "antd";
 import { v4Colors } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
@@ -7,25 +6,15 @@ import type { CoverageSummary } from "~/server/translateV4/coverage.server";
 type Props = {
   summary: CoverageSummary;
   compact?: boolean;
-  activeJobsCount?: number;
-  queueCount?: number;
-  onCreateTask?: () => void;
-  onViewTasks?: () => void;
 };
 
 /** 左侧摘要卡固定宽度与高度，不随右侧表单展开而拉伸。 */
 const SUMMARY_CARD_WIDTH = 296;
 const SUMMARY_RING_SIZE = 148;
-const SUMMARY_CARD_COMPACT_HEIGHT = 148;
-const SUMMARY_RING_SIZE_COMPACT = 92;
 
 export function SummaryDonutCard({
   summary,
   compact = false,
-  activeJobsCount = 0,
-  queueCount = 0,
-  onCreateTask,
-  onViewTasks,
 }: Props) {
   const percent = summary.overallPercent ?? 0;
   const dash = `${percent} 100`;
@@ -84,41 +73,6 @@ export function SummaryDonutCard({
             >
               整体翻译进度、覆盖语言和当前任务状态
             </div>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginTop: 14,
-              }}
-            >
-              <StatusPill label={`${translatedLanguageCount}/${summary.languageCount} 种语言已覆盖`} tone="info" />
-              <StatusPill
-                label={
-                  activeJobsCount > 0
-                    ? `${activeJobsCount} 个任务进行中`
-                    : queueCount > 0
-                      ? `${queueCount} 个任务等待中`
-                      : "当前没有进行中的任务"
-                }
-                tone={activeJobsCount > 0 || queueCount > 0 ? "success" : "neutral"}
-              />
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              flexWrap: "wrap",
-              marginTop: 18,
-            }}
-          >
-            <Button type="primary" onClick={onCreateTask}>
-              新建翻译任务
-            </Button>
-            <Button onClick={onViewTasks}>
-              查看任务列表
-            </Button>
           </div>
           <div
             style={{
@@ -316,39 +270,6 @@ function StatFoot({
   );
 }
 
-function StatusPill({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "info" | "success" | "neutral";
-}) {
-  const toneStyle =
-    tone === "success"
-      ? { background: v4Colors.successBg, color: v4Colors.success, borderColor: "#d9f7be" }
-      : tone === "neutral"
-        ? { background: v4Colors.cardBg, color: v4Colors.textMuted, borderColor: v4Colors.cardBorder }
-        : { background: v4Colors.primarySoft, color: v4Colors.primary, borderColor: "#bae0ff" };
-
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "5px 10px",
-        borderRadius: 999,
-        fontSize: 12,
-        fontWeight: 600,
-        border: `1px solid ${toneStyle.borderColor}`,
-        background: toneStyle.background,
-        color: toneStyle.color,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 function formatLargeCount(n: number): string {
   return n.toLocaleString();
 }
@@ -356,11 +277,13 @@ function formatLargeCount(n: number): string {
 export function PageHeaderBar({
   shop,
   credits,
+  planType,
 }: {
   shop: string;
   credits: number | null;
+  planType: string | null;
 }) {
-  const avatarLetter = (shop[0] ?? "C").toUpperCase();
+  const planLabel = formatPlanType(planType);
 
   return (
     <header
@@ -368,88 +291,112 @@ export function PageHeaderBar({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 22,
-        gap: 16,
+        marginBottom: 18,
+        gap: 14,
+        flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div
+        style={{
+          minWidth: 0,
+          flex: "1 1 240px",
+        }}
+      >
         <div
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 8,
-            background: v4Colors.primarySoft,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: `1px solid ${v4Colors.cardBorder}`,
+            fontSize: 18,
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+            color: v4Colors.text,
+            lineHeight: 1.2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
-          <div
-            style={{
-              width: 15,
-              height: 15,
-              border: `2.5px solid ${v4Colors.primary}`,
-              borderRadius: "50%",
-              borderRightColor: "transparent",
-              transform: "rotate(-30deg)",
-            }}
-          />
+          {shop}
         </div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: v4Colors.text }}>
-            Ciwi <span style={{ color: v4Colors.textMuted, fontWeight: 600 }}>Localize</span>
-          </div>
-          <div style={{ fontSize: 11.5, color: v4Colors.textFaint, fontWeight: 500 }}>{shop}</div>
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: 12,
+            color: v4Colors.textFaint,
+            fontWeight: 500,
+          }}
+        >
+          智能翻译工作台
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {credits != null ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "7px 12px",
-              borderRadius: 999,
-              background: v4Colors.cardBg,
-              border: `1px solid ${v4Colors.cardBorder}`,
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: v4Colors.text,
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: v4Colors.success,
-              }}
-            />
-            {formatCredits(credits)} 积分可用
-          </span>
-        ) : null}
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: "50%",
-            background: v4Colors.cardSelected,
-            color: v4Colors.primary,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: 13,
-            border: `1px solid ${v4Colors.cardBorder}`,
-          }}
-        >
-          {avatarLetter}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0,
+          borderRadius: 10,
+          overflow: "hidden",
+          border: `1px solid ${v4Colors.cardBorder}`,
+          background: v4Colors.cardBg,
+          minWidth: "min(100%, 300px)",
+        }}
+      >
+        <HeaderMetaItem label="付费计划" value={planLabel} />
+        <div style={{ width: 1, background: v4Colors.divider, alignSelf: "stretch" }} />
+        <HeaderMetaItem
+          label="可用积分"
+          value={credits != null ? `${formatCredits(credits)}` : "—"}
+          valueColor={v4Colors.success}
+        />
       </div>
     </header>
   );
+}
+
+function HeaderMetaItem({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: "8px 14px",
+        minWidth: 126,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 600, color: v4Colors.textMuted, lineHeight: 1.2 }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 13.5,
+          fontWeight: 700,
+          color: valueColor ?? v4Colors.text,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function formatPlanType(planType: string | null): string {
+  if (!planType) return "未开通";
+
+  const normalized = planType.trim().toLowerCase();
+  if (normalized === "free") return "免费版";
+  if (normalized === "basic") return "基础版";
+  if (normalized === "pro" || normalized === "professional") return "专业版";
+  if (normalized === "enterprise" || normalized === "unlimited") return "企业版";
+  return planType;
 }
 
 export function coverageBarColor(percent: number | null): string {

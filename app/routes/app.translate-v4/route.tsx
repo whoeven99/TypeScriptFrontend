@@ -28,6 +28,18 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { GetUserSubscriptionPlan } from "~/api/JavaServer";
+
+async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
+  const server = process.env.SERVER_URL?.trim();
+  if (!server) return null;
+
+  const result = await GetUserSubscriptionPlan({ shop, server });
+  if (!result?.success) return null;
+
+  const planType = result?.response?.planType;
+  return typeof planType === "string" && planType.trim() ? planType.trim() : null;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4Enabled()) {
@@ -65,7 +77,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const targetLocales = selectShopTargetLocales(locales, primaryLocale);
-  const [jobs, quota, coverage] = await Promise.all([
+  const [jobs, quota, coverage, planType] = await Promise.all([
     listV4JobSummaries(session.shop),
     getShopQuota(session.shop),
     getCoverageSummaryFromCache({
@@ -73,6 +85,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       primaryLocale,
       targetLocales,
     }),
+    loadSubscriptionPlanType(session.shop),
   ]);
 
   return json({
@@ -82,6 +95,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     jobs,
     quota,
     coverage,
+    planType,
   });
 };
 
@@ -94,6 +108,7 @@ export default function AppTranslateV4() {
     jobs: initialJobs,
     quota: initialQuota,
     coverage: initialCoverage,
+    planType,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
@@ -338,15 +353,6 @@ export default function AppTranslateV4() {
   const remainingCredits = quota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
-  const activeJobsCount = useMemo(() => jobs.filter((j) => !j.isTerminal).length, [jobs]);
-
-  const scrollToCreateTask = useCallback(() => {
-    createTaskSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
-  const scrollToTaskList = useCallback(() => {
-    taskQueueSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
 
   const openLanguagePage = useCallback(() => {
     navigate("/app/language");
@@ -356,7 +362,11 @@ export default function AppTranslateV4() {
     <div style={v4PageStyle}>
       <TitleBar title="智能翻译" />
       <div style={v4ContentStyle}>
-        <PageHeaderBar shop={shop} credits={remainingCredits} />
+        <PageHeaderBar
+          shop={shop}
+          credits={remainingCredits}
+          planType={planType}
+        />
 
         {translateQueue.length > 0 ? (
           <div
@@ -405,10 +415,6 @@ export default function AppTranslateV4() {
           <SummaryDonutCard
             summary={coverage}
             compact
-            activeJobsCount={activeJobsCount}
-            queueCount={translateQueue.length}
-            onCreateTask={scrollToCreateTask}
-            onViewTasks={scrollToTaskList}
           />
           <CoverageCard
             locales={coverage.locales}
