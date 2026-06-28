@@ -559,7 +559,7 @@ export async function listV4JobSummaries(
           error: err instanceof Error ? err.message : String(err),
         },
       );
-      throw err;
+      continue;
     }
   }
   return summaries;

@@ -6,7 +6,7 @@ import {
   V4_HINT_KEYS,
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
-import type { TranslationV4Job } from "./types";
+import { EMPTY_V4_METRICS, type TranslationV4Job } from "./types";
 
 /** worker 未能在该时长内收尾暂停 → TSF 直接排队写回已 checkpoint 的译文。 */
 const STUCK_PAUSE_ESCALATE_MS = 120_000;
@@ -20,6 +20,7 @@ export async function escalateStuckPauseIfNeeded(
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): Promise<TranslationV4Job | null> {
+  const jobMetrics = job.metrics ?? EMPTY_V4_METRICS;
   if (job.status !== "TRANSLATING") return null;
 
   const pauseRequested =
@@ -28,7 +29,7 @@ export async function escalateStuckPauseIfNeeded(
 
   const translateDone = Math.max(
     metrics.translateDone,
-    Number(job.metrics.translateDone) || 0,
+    Number(jobMetrics.translateDone) || 0,
   );
   if (translateDone <= 0) return null;
 
@@ -49,7 +50,7 @@ export async function escalateStuckPauseIfNeeded(
     errorMessage: metrics.pauseReason ?? "已手动暂停",
     errorStage: null,
     metrics: {
-      ...job.metrics,
+      ...jobMetrics,
       initTotal: metrics.initTotal,
       initDone: metrics.initDone,
       translateTotal: metrics.translateTotal,

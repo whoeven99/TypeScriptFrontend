@@ -25,8 +25,10 @@
 - 本地最小复现已验证：执行与 `mergeV4JobMetrics()` 等价的 `Number(job.metrics[key])`，当 `job.metrics` 缺失时会抛出 `TypeError: Cannot read properties of undefined`。
 - `.dbg/translate-v4-500.env` 指向 `127.0.0.1:7778`，但当前埋点代码写死 `127.0.0.1:7777`；因此这轮线上 500 未打到本地 debug server，日志仍为空。
 - 已对 `mergeV4JobMetrics()` 加入 `EMPTY_V4_METRICS` 兜底，避免旧任务文档缺失 `metrics` 时把整个 loader 打成 500。
+- 继续静态排查后发现 `pauseReconcile.server.ts` 也直接读取并展开 `job.metrics`；已同步补上 `EMPTY_V4_METRICS` 兜底。
+- `listV4JobSummaries()` 现改为单条坏任务仅记录埋点并跳过，避免一个脏 Cosmos 文档导致整页 SSR 500。
 
 ## Verification Conclusion
 - Hypothesis A: `listV4JobSummaries()` 抛错导致 loader 500，现已被强化为 **Likely**。
-- Hypothesis B: 旧任务文档缺失 `metrics` 导致 `mergeV4JobMetrics()` 读取时报错，现有静态链路 + 本地复现均支持，状态为 **Likely**，待线上验证。
+- Hypothesis B: 旧任务文档缺失 `metrics` 导致 `mergeV4JobMetrics()` / `pauseReconcile` 读取时报错，现有静态链路 + 本地复现均支持，状态为 **Likely**，待线上验证。
 - 待用户重新验证 `app/translate-v4` 是否恢复；若仍有 500，再继续沿埋点端口不一致与其他数据字段缺失排查。

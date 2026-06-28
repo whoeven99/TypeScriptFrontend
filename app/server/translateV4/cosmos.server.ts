@@ -170,6 +170,7 @@ export type UpdateV4JobInput = Partial<
     | "errorMessage"
     | "errorStage"
     | "blobPrefix"
+    | "pauseAfterWriteback"
     | "aiModelUsed"
     | "aiProvider"
     | "engineUsage"
