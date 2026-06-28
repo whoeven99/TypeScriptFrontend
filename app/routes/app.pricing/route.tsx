@@ -9,7 +9,6 @@ import {
   Typography,
   Alert,
   Skeleton,
-  Badge,
   Flex,
   Switch,
   Table,
@@ -29,10 +28,7 @@ import {
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
-import {
-  CheckOutlined,
-  FireFilled,
-} from "@ant-design/icons";
+import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
 import {
   mutationAppPurchaseOneTimeCreate,
@@ -922,7 +918,7 @@ const Index = () => {
           />
         )}
         <AppSectionCard
-          title={t("Choose the right plan for you")}
+          title={t("Plans")}
           extra={
             <Flex align="center" gap={8} wrap="wrap">
               <Text type="secondary">{t("Monthly")}</Text>
@@ -970,11 +966,11 @@ const Index = () => {
               loading={!plan.id}
             >
               <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                <Flex justify="space-between" align="center" gap={12}>
-                  <Tag bordered={false} color={plan.type === "Free" ? "blue" : "default"}>
-                    {plan.type === "Free" ? t("Current plan") : t("Entry plan")}
+                {plan.type === "Free" ? (
+                  <Tag bordered={false} color="blue" style={{ width: "fit-content" }}>
+                    {t("Current plan")}
                   </Tag>
-                </Flex>
+                ) : null}
                 <div>
                   <Title level={4} style={{ margin: 0 }}>
                     {t("Free")}
@@ -1001,9 +997,6 @@ const Index = () => {
                   : t("pricing.get_start")}
               </Button>
               <div style={{ flex: 1 }}>
-                <Text className="pricing-plan-card__feature-title">
-                  {t("Included essentials")}
-                </Text>
                 <div
                   key={0}
                   className="pricing-plan-card__feature"
@@ -1052,26 +1045,10 @@ const Index = () => {
                 width: "100%",
               }}
             >
-              <Badge.Ribbon
-                text={item.isRecommended ? t("Most popular") : t("pricing.recommended")}
-                color="blue"
-                style={{
-                  display:
-                    item.isRecommended && plan.type === "Free" && plan.id
-                      ? "block"
-                      : "none",
-                  right: -8,
-                }}
-              >
                 <Card
                   className={`pricing-plan-card ${
                     item.disabled ? "pricing-plan-card--current" : ""
-                  } ${
-                    item.isRecommended && plan.type === "Free" && plan.id
-                      ? "pricing-plan-card--featured"
-                      : ""
                   }`}
-                  hoverable
                   style={{
                     flex: 1,
                     height: "100%",
@@ -1091,27 +1068,15 @@ const Index = () => {
                   loading={!plan.id}
                 >
                   <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                    <Flex justify="space-between" align="center" gap={12}>
-                      <Tag
-                        bordered={false}
-                        color={
-                          item.disabled
-                            ? "blue"
-                            : item.isRecommended && plan.type === "Free" && plan.id
-                              ? "gold"
-                              : "default"
-                        }
-                      >
-                        {item.disabled
-                          ? t("Current plan")
-                          : item.isRecommended && plan.type === "Free" && plan.id
-                            ? t("Recommended")
-                            : t("Growth tier")}
+                    {item.disabled ? (
+                      <Tag bordered={false} color="blue" style={{ width: "fit-content" }}>
+                        {t("Current plan")}
                       </Tag>
-                      {item.isRecommended && plan.type === "Free" && plan.id ? (
-                        <FireFilled style={{ color: "var(--p-color-text-caution)" }} />
-                      ) : null}
-                    </Flex>
+                    ) : item.isRecommended && plan.type === "Free" && plan.id ? (
+                      <Tag bordered={false} color="gold" style={{ width: "fit-content" }}>
+                        {t("Recommended")}
+                      </Tag>
+                    ) : null}
                     <div>
                       <Title level={4} style={{ margin: 0 }}>
                         {yearly ? item.yearlyTitle : item.title}
@@ -1151,36 +1116,28 @@ const Index = () => {
                     {item.buttonText}
                   </Button>
                   {isNew && (
-                    <Space direction="vertical" size={8} style={{ display: "flex" }}>
-                      <div className="free_trial">
-                        <Text strong>{t("5-day trial")}</Text>
-                      </div>
-                      <Button
-                        id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                        type="primary"
-                        block
-                        disabled={item.disabled || selectedPayPlanOption}
-                        style={{ marginBottom: "20px" }}
-                        onClick={() =>
-                          handlePayForPlan({
-                            plan: item,
-                            trialDays: 5,
-                            id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
-                          })
-                        }
-                        loading={
-                          payForPlanButtonLoading ==
-                          `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
-                        }
-                      >
-                        {t("Free trial")}
-                      </Button>
-                    </Space>
+                    <Button
+                      id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
+                      type="primary"
+                      block
+                      disabled={item.disabled || selectedPayPlanOption}
+                      style={{ marginBottom: "20px" }}
+                      onClick={() =>
+                        handlePayForPlan({
+                          plan: item,
+                          trialDays: 5,
+                          id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
+                        })
+                      }
+                      loading={
+                        payForPlanButtonLoading ==
+                        `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
+                      }
+                    >
+                      {t("Free trial")}
+                    </Button>
                   )}
                   <div style={{ flex: 1 }}>
-                    <Text className="pricing-plan-card__feature-title">
-                      {t("What you unlock")}
-                    </Text>
                     {item.features.map((feature, idx) => (
                       <div
                         key={idx}
@@ -1197,7 +1154,6 @@ const Index = () => {
                     ))}
                   </div>
                 </Card>
-              </Badge.Ribbon>
             </Col>
           ))}
           </Row>
@@ -1212,25 +1168,14 @@ const Index = () => {
             />
           </AppSectionCard>
         </Space>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={8}>
-            <AppSectionCard title={t("Support")}>
-              <Button type="primary" onClick={handleContactSupport}>
-                {t("Contact Support")}
-              </Button>
-            </AppSectionCard>
-          </Col>
-          <Col xs={24} md={16}>
-            <AppSectionCard bodyPadding="8px 16px">
-              <Collapse
-                items={collapseData}
-                onChange={() => {
-                  reportClick("pricing_faq_click");
-                }}
-              />
-            </AppSectionCard>
-          </Col>
-        </Row>
+        <AppSectionCard title={t("FAQs")} bodyPadding="8px 16px">
+          <Collapse
+            items={collapseData}
+            onChange={() => {
+              reportClick("pricing_faq_click");
+            }}
+          />
+        </AppSectionCard>
       </Space>
       <HasPayForFreePlanModal />
       <Modal
