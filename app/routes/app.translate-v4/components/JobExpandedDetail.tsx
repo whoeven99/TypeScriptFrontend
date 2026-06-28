@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { StageName } from "~/server/translateV4/types";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
@@ -50,22 +51,46 @@ function stageDetail(idx: number, m: StageMetrics): string {
 function stageElapsedMs(
   t?: { startedAt: string; endedAt?: string | null },
   freezeAt?: string | null,
+  nowMs?: number | null,
 ): number | null {
   if (!t?.startedAt) return null;
   const end = t.endedAt
     ? new Date(t.endedAt).getTime()
     : freezeAt
       ? new Date(freezeAt).getTime()
-      : Date.now();
+      : nowMs ?? null;
+  if (end == null) return null;
   const ms = end - new Date(t.startedAt).getTime();
   return Number.isFinite(ms) && ms >= 0 ? ms : null;
+}
+
+function useHydratedNow(enabled: boolean) {
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setNowMs(null);
+      return;
+    }
+    setNowMs(Date.now());
+  }, [enabled]);
+
+  return nowMs;
 }
 
 export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary }) {
   const m = job.metrics;
   const translatedResources = m.translateDone;
   const resourceTotal = m.translateTotal || taskResourceTotal(m);
-  const elapsed = jobElapsedMs(job);
+  const nowMs = useHydratedNow(
+    !job.isTerminal && job.status !== "PAUSED" && job.status !== "CANCELLED",
+  );
+  const elapsed =
+    job.isTerminal || job.status === "PAUSED" || job.status === "CANCELLED"
+      ? jobElapsedMs(job)
+      : nowMs != null
+        ? jobElapsedMs(job, nowMs)
+        : null;
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
   const startTime = formatJobStartTime(job.createdAt);
 
@@ -135,7 +160,15 @@ function TaskIdSuffix({ taskId }: { taskId: string }) {
 
 /** 收起态：启动时间、耗时、积分一行摘要。 */
 export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }) {
-  const elapsed = jobElapsedMs(job);
+  const nowMs = useHydratedNow(
+    !job.isTerminal && job.status !== "PAUSED" && job.status !== "CANCELLED",
+  );
+  const elapsed =
+    job.isTerminal || job.status === "PAUSED" || job.status === "CANCELLED"
+      ? jobElapsedMs(job)
+      : nowMs != null
+        ? jobElapsedMs(job, nowMs)
+        : null;
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
   const startTime = formatJobStartTime(job.createdAt);
 
@@ -180,6 +213,9 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
   const timings = job.stageTimings ?? {};
   const activeStage = stageOf(job.status, job.errorStage);
   const isPaused = job.status === "PAUSED";
+  const nowMs = useHydratedNow(
+    !job.isTerminal && job.status !== "PAUSED" && job.status !== "CANCELLED",
+  );
   const freezeAt =
     job.status === "PAUSED" || job.status === "CANCELLED" || job.isTerminal
       ? job.updatedAt
@@ -199,7 +235,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
           (job.status === "PAUSED" || job.status === "CANCELLED") && idx === activeStage
             ? freezeAt
             : undefined;
-        const ms = stageElapsedMs(timings[key], stageFreezeAt);
+        const ms = stageElapsedMs(timings[key], stageFreezeAt, nowMs);
         const initScanning = idx === 0 && current && m.initTotal <= 0;
         const translateWarmingUp =
           idx === 1 &&

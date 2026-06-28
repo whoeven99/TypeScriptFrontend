@@ -279,11 +279,12 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
 }
 
 function CoverageRow({ row }: { row: LocaleCoverageRow }) {
-  const [, setMinuteTick] = useState(0);
+  const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!row.autoTranslate) return;
-    const id = setInterval(() => setMinuteTick((n) => n + 1), 60_000);
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
     return () => clearInterval(id);
   }, [row.autoTranslate, row.lastAutoUpdateAt, row.nextAutoUpdateAt]);
 
@@ -291,8 +292,14 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   const barColor = coverageBarColor(percent);
   const width = percent != null ? `${percent}%` : "0%";
   const label = localeShortName(row.locale, row.label);
-  const lastHint = row.autoTranslate ? formatLastAutoUpdateDisplay(row.lastAutoUpdateAt) : null;
-  const nextHint = row.autoTranslate ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt) : null;
+  const lastHint =
+    row.autoTranslate && nowMs != null
+      ? formatLastAutoUpdateDisplay(row.lastAutoUpdateAt, nowMs)
+      : null;
+  const nextHint =
+    row.autoTranslate && nowMs != null
+      ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt, nowMs)
+      : null;
 
   return (
     <div>
