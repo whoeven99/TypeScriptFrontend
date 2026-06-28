@@ -11,13 +11,13 @@ import {
 } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryAppByHandle, queryShopLanguages } from "~/api/admin";
-import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
+import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { queryAppByHandle } from "~/api/admin";
+import type { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import {
   useFetcher,
   useLoaderData,
-  useLocation,
   useNavigate,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -46,8 +46,9 @@ import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 interface TableDataType {
   key: string;
   title: string;
@@ -707,7 +708,36 @@ const Index = () => {
     }
 
     return list;
-  }, [appInstallList]);
+  }, [appInstallList, t]);
+
+  const summaryTrackedRows = [
+    ...productsDataSource,
+    ...onlineStoreThemeDataSource,
+    ...onlineStoreDataSource,
+    ...blogAndArticleDataSource,
+    ...settingsDataSource,
+  ].filter((item) => !item.withoutCount && typeof item.allItems === "number");
+  const totalTrackedItems = summaryTrackedRows.reduce(
+    (sum, item) => sum + (typeof item.allItems === "number" ? item.allItems : 0),
+    0,
+  );
+  const totalTranslatedItems = summaryTrackedRows.reduce(
+    (sum, item) =>
+      sum + (typeof item.allTranslatedItems === "number" ? item.allTranslatedItems : 0),
+    0,
+  );
+  const coveragePercent = totalTrackedItems
+    ? Math.round((totalTranslatedItems / totalTrackedItems) * 100)
+    : 0;
+  const attentionModules = summaryTrackedRows.filter((item) => {
+    if (
+      typeof item.allItems !== "number" ||
+      typeof item.allTranslatedItems !== "number"
+    ) {
+      return false;
+    }
+    return item.allItems > item.allTranslatedItems;
+  }).length;
 
   useEffect(() => {
     fetcher.submit(
@@ -727,7 +757,7 @@ const Index = () => {
         method: "POST",
       },
     );
-  }, []);
+  }, [appFetcher, fetcher]);
 
   useEffect(() => {
     if (languageTableData?.length) {
@@ -744,7 +774,7 @@ const Index = () => {
         setCurrentLocale(newArray[0]?.value);
       }
     }
-  }, [languageTableData]);
+  }, [languageTableData, searchTerm]);
 
   useEffect(() => {
     if (appFetcher.data) {
@@ -774,7 +804,7 @@ const Index = () => {
         dispatch(updateData(productsFetcher.data?.response));
       }
     }
-  }, [productsFetcher.data]);
+  }, [dispatch, productsFetcher.data]);
 
   useEffect(() => {
     if (collectionsFetcher.data) {
@@ -785,7 +815,7 @@ const Index = () => {
         dispatch(updateData(collectionsFetcher.data?.response));
       }
     }
-  }, [collectionsFetcher.data]);
+  }, [dispatch, collectionsFetcher.data]);
 
   useEffect(() => {
     if (articlesFetcher.data) {
@@ -796,7 +826,7 @@ const Index = () => {
         dispatch(updateData(articlesFetcher.data?.response));
       }
     }
-  }, [articlesFetcher.data]);
+  }, [dispatch, articlesFetcher.data]);
 
   useEffect(() => {
     if (blog_titlesFetcher.data) {
@@ -807,7 +837,7 @@ const Index = () => {
         dispatch(updateData(blog_titlesFetcher.data?.response));
       }
     }
-  }, [blog_titlesFetcher.data]);
+  }, [dispatch, blog_titlesFetcher.data]);
 
   useEffect(() => {
     if (pagesFetcher.data) {
@@ -818,7 +848,7 @@ const Index = () => {
         dispatch(updateData(pagesFetcher.data?.response));
       }
     }
-  }, [pagesFetcher.data]);
+  }, [dispatch, pagesFetcher.data]);
 
   useEffect(() => {
     if (filtersFetcher.data) {
@@ -829,7 +859,7 @@ const Index = () => {
         dispatch(updateData(filtersFetcher.data?.response));
       }
     }
-  }, [filtersFetcher.data]);
+  }, [dispatch, filtersFetcher.data]);
 
   useEffect(() => {
     if (metaobjectsFetcher.data) {
@@ -840,7 +870,7 @@ const Index = () => {
         dispatch(updateData(metaobjectsFetcher.data?.response));
       }
     }
-  }, [metaobjectsFetcher.data]);
+  }, [dispatch, metaobjectsFetcher.data]);
 
   useEffect(() => {
     if (emailFetcher.data) {
@@ -851,7 +881,7 @@ const Index = () => {
         dispatch(updateData(emailFetcher.data?.response));
       }
     }
-  }, [emailFetcher.data]);
+  }, [dispatch, emailFetcher.data]);
 
   useEffect(() => {
     if (navigationFetcher.data) {
@@ -862,7 +892,7 @@ const Index = () => {
         dispatch(updateData(navigationFetcher.data?.response));
       }
     }
-  }, [navigationFetcher.data]);
+  }, [dispatch, navigationFetcher.data]);
 
   useEffect(() => {
     if (policiesFetcher.data) {
@@ -873,7 +903,7 @@ const Index = () => {
         dispatch(updateData(policiesFetcher.data?.response));
       }
     }
-  }, [policiesFetcher.data]);
+  }, [dispatch, policiesFetcher.data]);
 
   useEffect(() => {
     if (shopFetcher.data) {
@@ -881,7 +911,7 @@ const Index = () => {
         dispatch(updateData(shopFetcher.data?.response));
       }
     }
-  }, [shopFetcher.data]);
+  }, [dispatch, shopFetcher.data]);
 
   useEffect(() => {
     if (store_metadataFetcher.data) {
@@ -892,7 +922,7 @@ const Index = () => {
         dispatch(updateData(store_metadataFetcher.data?.response));
       }
     }
-  }, [store_metadataFetcher.data]);
+  }, [dispatch, store_metadataFetcher.data]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -903,7 +933,7 @@ const Index = () => {
         dispatch(updateData(themeFetcher.data?.response));
       }
     }
-  }, [themeFetcher.data]);
+  }, [dispatch, themeFetcher.data]);
 
   useEffect(() => {
     if (deliveryFetcher.data) {
@@ -914,7 +944,7 @@ const Index = () => {
         dispatch(updateData(deliveryFetcher.data?.response));
       }
     }
-  }, [deliveryFetcher.data]);
+  }, [dispatch, deliveryFetcher.data]);
 
   useEffect(() => {
     if (shippingFetcher.data) {
@@ -925,7 +955,7 @@ const Index = () => {
         dispatch(updateData(shippingFetcher.data.response));
       }
     }
-  }, [shippingFetcher.data]);
+  }, [dispatch, shippingFetcher.data]);
 
   useEffect(() => {
     const sourceCode = source?.code;
@@ -1032,7 +1062,24 @@ const Index = () => {
         <div className="manage-page">
         <div className="manage-page__inner">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AppPageHeader title={t("Manage Translation")} />
+          <AppPageHeader
+            title={t("Manage Translation")}
+            extra={
+              currentLocale ? (
+                <div className="app-status-cluster">
+                  <AppStatusBadge tone="success">{`${t("Locale")}: ${currentLocale}`}</AppStatusBadge>
+                </div>
+              ) : null
+            }
+          />
+          <AppSectionCard bodyPadding="16px">
+            <div className="manage-summary-row">
+              <MetricPanel label={t("Translated items")} value={totalTranslatedItems.toLocaleString()} />
+              <MetricPanel label={t("Total tracked")} value={totalTrackedItems.toLocaleString()} />
+              <MetricPanel label={t("Coverage")} value={`${coveragePercent}%`} />
+              <MetricPanel label={t("Needs attention")} value={`${attentionModules}`} />
+            </div>
+          </AppSectionCard>
           <AppSectionCard bodyPadding="16px">
             <div className="manage-header">
               <div className="manage-header-left">
@@ -1086,11 +1133,7 @@ const Index = () => {
           </AppSectionCard>
           <div className="manage-content-wrap">
             <div className="manage-content-left">
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
-              >
+              <div className="manage-card-grid">
                 <ManageTranslationsCard
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
@@ -1126,7 +1169,7 @@ const Index = () => {
                   dataSource={liquidAndThirdPartyAppsDataSource}
                   currentLocale={currentLocale}
                 />
-              </Space>
+              </div>
             </div>
             {/* <div className="manage-content-right"></div> */}
           </div>
@@ -1230,5 +1273,20 @@ export const getItemOptions = (t: (key: string) => string) => [
   { label: t("Delivery"), value: "delivery" },
   { label: t("Shipping"), value: "shipping" },
 ];
+
+function MetricPanel({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="app-metric-block">
+      <div className="app-metric-block__label">{label}</div>
+      <div className="app-metric-block__value">{value}</div>
+    </div>
+  );
+}
 
 export default Index;

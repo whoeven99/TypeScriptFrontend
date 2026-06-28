@@ -14,19 +14,18 @@ import {
   Table,
   Collapse,
   Modal,
-  CollapseProps,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
-import { ActionFunctionArgs } from "@remix-run/node";
+import type { CollapseProps } from "antd";
+import type { ActionFunctionArgs } from "@remix-run/node";
 import {
   GetLatestActiveSubscribeId,
   InsertOrUpdateOrder,
-  QueryUserIpCount,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { OptionType } from "~/components/paymentModal";
+import { useFetcher } from "@remix-run/react";
+import type { OptionType } from "~/components/paymentModal";
 import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
 import {
@@ -34,7 +33,6 @@ import {
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
-import { handleContactSupport } from "../app._index/route";
 import {
   setIpBalance,
   setPlan,
@@ -243,8 +241,6 @@ const Index = () => {
 
   const { reportClick, report } = useReport();
 
-  const { server } = useLoaderData<typeof loader>();
-
   //价格选项数组
   const creditOptions: OptionType[] = useMemo(
     () => [
@@ -358,7 +354,6 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
-  const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -372,7 +367,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, []);
+  }, [fetcher]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -413,7 +408,7 @@ const Index = () => {
       dispatch(setIpBalance({ ipBalance: 500 }));
       setCancelPlanWarnModal(false);
     }
-  }, [planCancelFetcher.data]);
+  }, [dispatch, planCancelFetcher.data]);
 
   const plans = useMemo(
     () => [
@@ -422,14 +417,12 @@ const Index = () => {
         yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 76.68,
-        }),
+        yearlyBillingAmount: 76.68,
         buttonText:
           plan.type === "Basic" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: "",
+        fitLabel: t("适合刚开始做多语言运营、需要基础商品与页面翻译的店铺"),
         disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
@@ -450,14 +443,12 @@ const Index = () => {
         yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 191.88,
-        }),
+        yearlyBillingAmount: 191.88,
         buttonText:
           plan.type === "Pro" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: "",
+        fitLabel: t("适合稳定扩展多个语言市场、持续更新商品内容的店铺"),
         disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
@@ -478,14 +469,12 @@ const Index = () => {
         yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 383.88,
-        }),
+        yearlyBillingAmount: 383.88,
         buttonText:
           plan.type === "Premium" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: "",
+        fitLabel: t("适合高频上新、多区域运营和更重度翻译协作的团队"),
         disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
@@ -504,7 +493,7 @@ const Index = () => {
         ],
       },
     ],
-    [plan, yearly],
+    [plan, yearly, t],
   );
 
   const tableData = useMemo(
@@ -654,7 +643,7 @@ const Index = () => {
         type: "text",
       },
     ],
-    [],
+    [t],
   );
 
   const collapseData: CollapseProps["items"] = useMemo(
@@ -723,7 +712,7 @@ const Index = () => {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const columns = [
@@ -873,12 +862,21 @@ const Index = () => {
   };
 
   return (
-    <Page fullWidth>
+    <Page>
       <TitleBar title={t("Pricing")} />
       <div className="pricing-page">
       <div className="pricing-page__inner">
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
-        <AppPageHeader title={t("Pricing")} />
+        <AppPageHeader
+          title={t("Pricing")}
+          extra={
+            plan.type ? (
+              <div className="app-status-cluster">
+                <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+              </div>
+            ) : null
+          }
+        />
 
         <section className="pricing-section">
           <div className="pricing-section__header">
@@ -901,6 +899,10 @@ const Index = () => {
                 updateTime={updateTime}
                 totalCredits={totalChars || 0}
                 usedCredits={chars || 0}
+                onUpgradePlan={() => {
+                  const el = document.getElementById("pricing-plans");
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
               />
             </Col>
             <Col xs={24} lg={9}>
@@ -912,19 +914,9 @@ const Index = () => {
                 styles={{ body: { padding: 20, height: "100%" } }}
               >
                 <Space direction="vertical" size={14} style={{ display: "flex", height: "100%" }}>
-                  <div>
-                    <Title level={4} style={{ margin: 0 }}>
-                      {t("Decision helper")}
-                    </Title>
-                  </div>
-
-                  <div className="pricing-plan-card__billing-note">
-                    <strong>{t("Upgrade plan")}</strong>
-                  </div>
-
-                  <div className="pricing-plan-card__billing-note">
-                    <strong>{t("Buy credits")}</strong>
-                  </div>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {t("Actions")}
+                  </Title>
 
                   <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button type="primary" onClick={() => {
@@ -1107,7 +1099,6 @@ const Index = () => {
                       <Title level={4} style={{ margin: 0 }}>
                         {yearly ? item.yearlyTitle : item.title}
                       </Title>
-                      {item.fitLabel ? <div className="pricing-plan-card__fit">{item.fitLabel}</div> : null}
                     </div>
                     <div>
                       <Text className="pricing-plan-card__price">
@@ -1117,10 +1108,14 @@ const Index = () => {
                     </div>
                   </Space>
                   {yearly && (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: item.subtitle }}
-                      className="pricing-plan-card__billing-note"
-                    />
+                    <div className="pricing-plan-card__billing-note">
+                      <strong>{t("Yearly billing")}</strong>
+                      <div>
+                        {t("$ {{amount}} billed once a year", {
+                          amount: item.yearlyBillingAmount.toFixed(2),
+                        })}
+                      </div>
+                    </div>
                   )}
                   <Button
                     id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}

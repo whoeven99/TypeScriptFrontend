@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
+import { Page } from "@shopify/polaris";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
@@ -19,7 +20,7 @@ import {
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4ContentStyle, v4PageStyle } from "./v4Styles";
+import { v4ContentStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
@@ -359,17 +360,17 @@ export default function AppTranslateV4() {
   }, [navigate]);
 
   const lowCoverageCount = useMemo(
-    () => coverage.locales.filter((item) => item.coveragePercent < 80).length,
+    () => coverage.locales.filter((item) => (item.percent ?? 0) < 80).length,
     [coverage.locales],
   );
 
   const translatedLocaleCount = useMemo(
-    () => coverage.locales.filter((item) => item.status === "translated").length,
+    () => coverage.locales.filter((item) => (item.percent ?? 0) > 0).length,
     [coverage.locales],
   );
 
   return (
-    <div style={v4PageStyle}>
+    <Page>
       <TitleBar title="智能翻译" />
       <div style={v4ContentStyle}>
         <PageHeaderBar
@@ -386,7 +387,7 @@ export default function AppTranslateV4() {
               borderRadius: 12,
               background: "var(--p-color-bg-surface-info)",
               color: "var(--p-color-text-info)",
-              border: "1px solid rgba(84, 103, 255, 0.16)",
+              border: "1px solid rgba(84, 103, 255, 0.12)",
               display: "flex",
               alignItems: "flex-start",
               gap: 8,
@@ -490,8 +491,7 @@ export default function AppTranslateV4() {
               style={{
                 borderRadius: 16,
                 border: "1px solid var(--app-color-border-secondary)",
-                background:
-                  "linear-gradient(180deg, rgba(29, 154, 127, 0.08), rgba(255, 255, 255, 0.96))",
+                background: "var(--app-surface-growth-soft)",
                 boxShadow: "var(--app-shadow-card)",
                 padding: 18,
               }}
@@ -499,7 +499,7 @@ export default function AppTranslateV4() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--app-color-text)" }}>
-                    Plan & Credits Context
+                    Plan & Credits
                   </div>
                 </div>
                 <span className="app-subtle-chip">{planType ?? "Free"} Plan</span>
@@ -532,7 +532,7 @@ export default function AppTranslateV4() {
       </div>
 
       <SupportChatWidget />
-    </div>
+    </Page>
   );
 }
 

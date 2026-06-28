@@ -17,6 +17,9 @@ export const appDesignTokens = {
   colorTextTertiary: "var(--p-color-text-tertiary)",
   colorBrand: "var(--p-color-bg-fill-brand)",
   colorBrandOnFill: "var(--p-color-text-brand-on-bg-fill)",
+  colorPrimarySoft: "var(--app-accent-primary-soft)",
+  colorGrowthSoft: "var(--app-accent-growth-soft)",
+  colorUtilitySoft: "var(--app-accent-utility-soft)",
   fontSizeBody: 14,
   fontSizeBodySmall: 13,
   fontSizeCaption: 12,
@@ -86,7 +89,7 @@ export const appAntdTheme: ThemeConfig = {
       hoverBg: appDesignTokens.colorSurface,
       activeBorderColor: appDesignTokens.colorBrand,
       hoverBorderColor: appDesignTokens.colorBorder,
-      activeShadow: "0 0 0 1px rgba(0, 127, 97, 0.12)",
+      activeShadow: "0 0 0 1px rgba(84, 103, 255, 0.16)",
       addonBg: appDesignTokens.colorSurfaceSecondary,
     },
     Menu: {
@@ -102,6 +105,11 @@ export const appAntdTheme: ThemeConfig = {
       selectorBg: appDesignTokens.colorSurface,
       hoverBorderColor: appDesignTokens.colorBorder,
       activeBorderColor: appDesignTokens.colorBrand,
+    },
+    Switch: {
+      colorPrimary: "var(--app-accent-primary)",
+      colorPrimaryHover: "var(--app-accent-primary-hover)",
+      colorTextQuaternary: "rgba(27, 39, 71, 0.14)",
     },
     Statistic: {
       contentFontSize: 28,

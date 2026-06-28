@@ -1,10 +1,9 @@
 import { useNavigate } from "@remix-run/react";
-import { Space, Button, Typography, Table } from "antd";
-import { useCallback, useEffect, useMemo } from "react";
+import { Space, Button, Table } from "antd";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-const { Text } = Typography;
 
 interface SwitcherSettingCardProps {
   cardTitle: string;
@@ -40,7 +39,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         "manage_list_edit",
       );
     },
-    [dataSource, currentLocale],
+    [navigate, report],
   );
 
   const columns = useMemo(
@@ -86,7 +85,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         },
       },
     ],
-    [dataSource, currentLocale],
+    [cardTitle, currentLocale, dataSource, handleEdit, t],
   );
   return (
     <AppSectionCard title={cardTitle} bodyPadding="12px 16px">

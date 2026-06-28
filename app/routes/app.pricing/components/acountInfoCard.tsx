@@ -34,7 +34,6 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
           <Title level={4} style={{ margin: 0 }}>
             {t("Billing overview")}
           </Title>
-          {planLabel ? <Text type="secondary">{planLabel}</Text> : null}
         </div>
         <Button type="primary" onClick={onBuyCredits}>
           {t("Buy Credit")}
@@ -70,11 +69,9 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
           value={typeof totalCredits === "number" ? Number(totalCredits).toLocaleString() : "—"}
         />
       </div>
-      {onUpgradePlan ? (
-        <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button onClick={onUpgradePlan}>{t("Upgrade plan")}</Button>
-        </div>
-      ) : null}
+      <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {onUpgradePlan ? <Button onClick={onUpgradePlan}>{t("Upgrade plan")}</Button> : null}
+      </div>
     </div>
   );
 };

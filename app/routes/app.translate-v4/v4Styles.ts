@@ -6,7 +6,8 @@ export const v4Colors = {
   cardSelected: "var(--app-color-surface-selected)",
   cardBorder: "var(--app-color-border-secondary)",
   divider: "var(--app-color-border-secondary)",
-  summaryBg: "linear-gradient(135deg, rgba(84, 103, 255, 0.12) 0%, rgba(29, 154, 127, 0.06) 100%)",
+  summaryBg:
+    "linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 250, 255, 0.9) 55%, rgba(29, 154, 127, 0.05) 100%)",
   primary: "var(--app-accent-primary)",
   primaryHover: "var(--app-accent-primary-hover)",
   primaryTextOnFill: "var(--app-color-brand-on-fill)",
@@ -36,8 +37,6 @@ export const v4Colors = {
 export const v4PageStyle: CSSProperties = {
   background: "var(--app-color-bg)",
   minHeight: "calc(100vh - 48px)",
-  margin: "-16px -20px",
-  padding: "24px 24px 40px",
   fontFamily: v4Colors.font,
   color: v4Colors.text,
   WebkitFontSmoothing: "antialiased",
@@ -45,13 +44,11 @@ export const v4PageStyle: CSSProperties = {
 
 export const v4ContentStyle: CSSProperties = {
   width: "100%",
-  maxWidth: 1360,
-  margin: "0 auto",
 };
 
 export const v4CardStyle: CSSProperties = {
   background: v4Colors.cardBg,
-  borderRadius: 12,
+  borderRadius: 16,
   border: `1px solid ${v4Colors.cardBorder}`,
   boxShadow: "var(--app-shadow-card)",
 };

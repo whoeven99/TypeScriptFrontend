@@ -69,11 +69,11 @@ export function SummaryDonutCard({
               style={{
                 fontSize: 13,
                 color: v4Colors.textMuted,
-                marginTop: 4,
+                marginTop: 6,
                 lineHeight: "20px",
               }}
             >
-              {translatedLanguageCount} / {summary.languageCount}
+              已覆盖 {translatedLanguageCount} / {summary.languageCount} 种目标语言
             </div>
           </div>
           <div

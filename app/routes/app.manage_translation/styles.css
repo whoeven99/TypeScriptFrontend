@@ -1,13 +1,15 @@
 .manage-page {
-    margin: -16px -20px;
-    padding: 24px;
-    background: var(--app-color-bg);
+    width: 100%;
 }
 
 .manage-page__inner {
     width: 100%;
-    max-width: 1360px;
-    margin: 0 auto;
+}
+
+.manage-summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
 }
 
 .manage-header {
@@ -58,6 +60,12 @@
     min-width: 0;
 }
 
+.manage-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
 .manage-page .ant-table-container {
     border: 1px solid var(--app-color-border-secondary);
     border-radius: 14px;
@@ -87,4 +95,11 @@
 .items-scroll-item:hover {
     background-color: var(--app-color-surface-secondary);
     color: var(--app-color-text);
+}
+
+@media (max-width: 960px) {
+    .manage-summary-row,
+    .manage-card-grid {
+        grid-template-columns: 1fr;
+    }
 }

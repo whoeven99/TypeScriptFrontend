@@ -13,7 +13,8 @@ import {
   Checkbox,
 } from "antd";
 import { useEffect, useState, startTransition, useMemo, useRef } from "react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useFetcher,
   useLoaderData,
@@ -24,7 +25,6 @@ import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
   mutationShopLocaleEnable,
-  queryAllLanguages,
   queryPrimaryMarket,
   queryShopLanguages,
 } from "~/api/admin";
@@ -40,7 +40,6 @@ import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import {
   setAutoTranslateCompat,
   listLanguageStatusCompat,
@@ -59,9 +58,8 @@ import languageLocaleData from "~/utils/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export interface MarketType {
   key: string;
@@ -231,11 +229,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
 
         if (data?.length > 0) {
-          const successItems = data.map((item) => {
-            if (item.status === "fulfilled" && item?.value) {
-              return item?.value;
-            }
-          });
+          const successItems = data
+            .filter(
+              (item): item is PromiseFulfilledResult<unknown> =>
+                item.status === "fulfilled" && Boolean(item.value),
+            )
+            .map((item) => item.value);
 
           return {
             success: true,
@@ -358,12 +357,26 @@ const Index = () => {
     [selectedRowKeys],
   );
   const someCurrentPageSelected = useMemo(
-    () => selectedRowKeys.some((key) => selectedRowKeys.includes(key)),
-    [selectedRowKeys],
+    () => dataSource.some((item: any) => selectedRowKeys.includes(item.key)),
+    [dataSource, selectedRowKeys],
   );
   const allCurrentPageSelected = useMemo(
-    () => dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
+    () =>
+      dataSource.length > 0 &&
+      dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
     [dataSource, selectedRowKeys],
+  );
+  const publishedCount = useMemo(
+    () => dataSource.filter((item: any) => item.published).length,
+    [dataSource],
+  );
+  const autoTranslateCount = useMemo(
+    () => dataSource.filter((item: any) => item.autoTranslate).length,
+    [dataSource],
+  );
+  const attentionCount = useMemo(
+    () => dataSource.filter((item: any) => item.status === 0).length,
+    [dataSource],
   );
 
   const fetcher = useFetcher<any>();
@@ -410,7 +423,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [location.search]);
+  }, [fetcher, loadingFetcher, location.search, shop, webPresencesFetcher]);
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -432,7 +445,7 @@ const Index = () => {
         action: withEmbeddedSearch("/app/language", location.search),
       },
     );
-  }, [languageTableDataLocale, location.search]);
+  }, [dataSource, languageTableDataLocale, location.search, webPresencesFetcher]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
@@ -521,7 +534,16 @@ const Index = () => {
         GetLanguageLocaleInfoFront();
       }
     }
-  }, [loadingFetcher.data]);
+  }, [
+    dispatch,
+    loadingFetcher.data,
+    migrated,
+    server,
+    shop,
+    statusFetcher,
+    translateV4Allowed,
+    useV4LanguageStatus,
+  ]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -557,23 +579,22 @@ const Index = () => {
         },
       );
     }
-  }, [deleteFetcher.data]);
+  }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
     if (useV4LanguageStatus) return;
     if (statusFetcher.data) {
       if (statusFetcher.data?.success) {
-        const items = statusFetcher.data?.response?.translatesDOResult?.map(
-          (item: any) => {
+        const items =
+          statusFetcher.data?.response?.translatesDOResult?.filter((item: any) => {
             if (item?.status === 2) {
-              return item;
-            } else {
-              dispatch(
-                setStatusState({ target: item?.target, status: item?.status }),
-              );
+              return true;
             }
-          },
-        );
+            dispatch(
+              setStatusState({ target: item?.target, status: item?.status }),
+            );
+            return false;
+          }) ?? [];
         if (items[0] !== undefined && items[0].status === 2) {
           // 加入10秒的延时
           const delayTimeout = setTimeout(() => {
@@ -597,7 +618,7 @@ const Index = () => {
         }
       }
     }
-  }, [statusFetcher.data, useV4LanguageStatus]);
+  }, [dispatch, source?.code, statusFetcher, statusFetcher.data, useV4LanguageStatus]);
 
   useEffect(() => {
     if (!useV4LanguageStatus) return;
@@ -660,7 +681,7 @@ const Index = () => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [dataSource, useV4LanguageStatus, source?.code]);
+  }, [dataSource, source?.code, statusFetcher, useV4LanguageStatus]);
 
   const columns = [
     {
@@ -915,6 +936,13 @@ const Index = () => {
       <div className={styles.languagePageInner}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
+        <AppSectionCard bodyPadding="20px" style={{ width: "100%" }}>
+          <div className={styles.languageSummaryRow}>
+            <MetricPanel label={t("Published locales")} value={`${publishedCount}`} />
+            <MetricPanel label={t("Auto translation on")} value={`${autoTranslateCount}`} />
+            <MetricPanel label={t("Needs attention")} value={`${attentionCount}`} />
+          </div>
+        </AppSectionCard>
         <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
           <div className={styles.languageTable_action}>
           <Flex
@@ -1151,5 +1179,20 @@ const Index = () => {
     </Page>
   );
 };
+
+function MetricPanel({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="app-metric-block">
+      <div className="app-metric-block__label">{label}</div>
+      <div className="app-metric-block__value">{value}</div>
+    </div>
+  );
+}
 
 export default Index;

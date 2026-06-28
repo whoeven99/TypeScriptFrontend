@@ -3,23 +3,7 @@
 }
 
 .pricing-page {
-  margin: -16px -20px;
-  padding: 24px 24px 40px;
-  background: var(--app-color-bg);
-}
-
-.pricing-page__inner {
   width: 100%;
-  max-width: 1360px;
-  margin: 0 auto;
-}
-
-.pricing-page .Polaris-Page,
-.pricing-page .Polaris-Page__Content,
-.pricing-page .Polaris-Page-Layout,
-.pricing-page .Polaris-Layout,
-.pricing-page .Polaris-Layout__Section {
-  max-width: none !important;
 }
 
 .pricing-section {
@@ -82,6 +66,13 @@
     var(--p-color-bg-surface);
 }
 
+.pricing-usage-card__subtitle {
+  margin-top: 6px;
+  color: var(--app-color-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
 .pricing-decision-card {
   border: 1px solid rgba(84, 103, 255, 0.16) !important;
   box-shadow: var(--app-shadow-card) !important;
@@ -137,6 +128,17 @@
   font-weight: 500;
 }
 
+.pricing-usage-card__caption {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed rgba(27, 39, 71, 0.12);
+  color: var(--app-color-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
 .pricing-plan-card {
   border-radius: 16px;
   border: 1px solid var(--app-color-border-secondary) !important;
@@ -189,6 +191,8 @@
 
 .pricing-plan-card__billing-note strong {
   color: var(--p-color-text);
+  display: block;
+  margin-bottom: 4px;
 }
 
 .pricing-plan-card__feature {

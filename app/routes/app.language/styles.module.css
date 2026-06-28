@@ -1,13 +1,15 @@
 .languagePage {
-  margin: -16px -20px;
-  padding: 24px;
-  background: var(--app-color-bg);
+  width: 100%;
 }
 
 .languagePageInner {
   width: 100%;
-  max-width: 1360px;
-  margin: 0 auto;
+}
+
+.languageSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .languageTable_action {
@@ -55,4 +57,10 @@
   border: 1px solid var(--app-color-border-secondary);
   border-radius: 12px;
   background: var(--app-color-surface-secondary);
+}
+
+@media (max-width: 900px) {
+  .languageSummaryRow {
+    grid-template-columns: 1fr;
+  }
 }

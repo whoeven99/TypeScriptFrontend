@@ -79,9 +79,6 @@ export function CreateTaskCard({
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
             新建翻译任务
           </h2>
-          <div style={{ marginTop: 4, fontSize: 12, color: v4Colors.textMuted, lineHeight: 1.5 }}>
-            {targets.length} 种语言 · {modules.length} 个模块
-          </div>
         </div>
         <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
           {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
@@ -120,7 +117,7 @@ export function CreateTaskCard({
         style={{
           padding: "14px 14px 0",
           borderRadius: 12,
-          background: v4Colors.cardSubdued,
+          background: "rgba(84, 103, 255, 0.04)",
           border: `1px dashed ${v4Colors.cardBorder}`,
         }}
       >
