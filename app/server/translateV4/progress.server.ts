@@ -3,6 +3,7 @@ import { getV4Job, listV4Jobs } from "./cosmos.server";
 import { escalateStuckPauseIfNeeded } from "./pauseReconcile.server";
 import {
   ACTIVE_V4_STATUSES,
+  EMPTY_V4_METRICS,
   TERMINAL_V4_STATUSES,
   type StageTimings,
   type TranslationV4Job,
@@ -12,6 +13,29 @@ import {
 
 /** 翻译进度里「字段/HTML 片段」级计数的展示名。 */
 const TRANSLATION_V4_UNIT_LABEL = "子节点";
+
+async function reportTranslateV4ProgressDebug(
+  hypothesisId: "A" | "B",
+  location: string,
+  msg: string,
+  data: Record<string, unknown>,
+) {
+  // #region debug-point A:translate-v4-progress
+  await fetch("http://127.0.0.1:7777/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: "translate-v4-500",
+      runId: "pre-fix",
+      hypothesisId,
+      location,
+      msg: `[DEBUG] ${msg}`,
+      data,
+      ts: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
 
 export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   currentModule: string | null;
@@ -32,17 +56,18 @@ export function mergeV4JobMetrics(
   redisProgress: Record<string, string>,
   controlAction: V4ControlAction | null = null,
 ): TranslationV4MergedMetrics {
+  const jobMetrics = job.metrics ?? EMPTY_V4_METRICS;
   // 计数器在单个 run 内单调递增；两源取 max 而非「redis || cosmos」，避免某一源瞬时
   // 为 0/空（pause/resume 切换、Redis 与 Cosmos 短暂不一致）时进度回退闪 0。
   const merge = (key: keyof TranslationV4Metrics): number =>
-    Math.max(Number(redisProgress[key]) || 0, Number(job.metrics[key]) || 0);
+    Math.max(Number(redisProgress[key]) || 0, Number(jobMetrics[key]) || 0);
   return {
     initTotal: merge("initTotal"),
     initDone: merge("initDone"),
     translateTotal: merge("translateTotal"),
     translateDone: merge("translateDone"),
     translateFailed: merge("translateFailed"),
-    translateFallback: job.metrics.translateFallback,
+    translateFallback: jobMetrics.translateFallback,
     translateUnitTotal: merge("translateUnitTotal"),
     translateUnitDone: merge("translateUnitDone"),
     writebackTotal: merge("writebackTotal"),
@@ -491,20 +516,51 @@ export async function listV4JobSummaries(
   const redisByTaskId = await batchReadRedisForJobs(filtered);
   const summaries: TranslationJobProgressSummary[] = [];
   for (const job of filtered) {
-    const redis = redisByTaskId.get(job.id);
-    const metrics = mergeV4JobMetrics(
-      job,
-      redis?.progress ?? {},
-      redis?.control ?? null,
-    );
-    const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
-    const finalJob = escalated ?? job;
-    summaries.push(
-      toProgressSummary(
-        finalJob,
-        escalated ? mergeV4JobMetrics(finalJob, {}, null) : metrics,
-      ),
-    );
+    try {
+      await reportTranslateV4ProgressDebug(
+        "B",
+        "progress.listV4JobSummaries:job-shape",
+        "processing v4 job summary",
+        {
+          shopName,
+          jobId: (job as Partial<TranslationV4Job>)?.id ?? null,
+          status: (job as Partial<TranslationV4Job>)?.status ?? null,
+          hasMetrics: Boolean((job as Partial<TranslationV4Job>)?.metrics),
+          hasModules: Array.isArray((job as Partial<TranslationV4Job>)?.modules),
+          hasCreatedAt: Boolean((job as Partial<TranslationV4Job>)?.createdAt),
+          hasUpdatedAt: Boolean((job as Partial<TranslationV4Job>)?.updatedAt),
+        },
+      );
+      const redis = redisByTaskId.get(job.id);
+      const metrics = mergeV4JobMetrics(
+        job,
+        redis?.progress ?? {},
+        redis?.control ?? null,
+      );
+      const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
+      const finalJob = escalated ?? job;
+      summaries.push(
+        toProgressSummary(
+          finalJob,
+          escalated ? mergeV4JobMetrics(finalJob, {}, null) : metrics,
+        ),
+      );
+    } catch (err) {
+      await reportTranslateV4ProgressDebug(
+        "A",
+        "progress.listV4JobSummaries:job-error",
+        "failed while building v4 job summary",
+        {
+          shopName,
+          jobId: (job as Partial<TranslationV4Job>)?.id ?? null,
+          status: (job as Partial<TranslationV4Job>)?.status ?? null,
+          hasMetrics: Boolean((job as Partial<TranslationV4Job>)?.metrics),
+          hasModules: Array.isArray((job as Partial<TranslationV4Job>)?.modules),
+          error: err instanceof Error ? err.message : String(err),
+        },
+      );
+      throw err;
+    }
   }
   return summaries;
 }
