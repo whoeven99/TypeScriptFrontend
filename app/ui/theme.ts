@@ -6,6 +6,10 @@ export const appDesignTokens = {
   colorSurfaceSecondary: "var(--p-color-bg-surface-secondary)",
   colorSurfaceHover: "var(--p-color-bg-surface-hover)",
   colorSurfaceSelected: "var(--p-color-bg-surface-selected)",
+  colorSurfaceInfo: "var(--p-color-bg-surface-info)",
+  colorSurfaceSuccess: "var(--p-color-bg-surface-success)",
+  colorSurfaceCaution: "var(--p-color-bg-surface-caution)",
+  colorSurfaceCritical: "var(--p-color-bg-surface-critical)",
   colorBorder: "var(--p-color-border)",
   colorBorderSecondary: "var(--p-color-border-secondary)",
   colorText: "var(--p-color-text)",
@@ -39,9 +43,18 @@ export const appAntdTheme: ThemeConfig = {
     colorSplit: appDesignTokens.colorBorderSecondary,
     fontSize: appDesignTokens.fontSizeBody,
     borderRadius: appDesignTokens.borderRadius,
+    controlItemBgActive: appDesignTokens.colorSurfaceSelected,
+    controlItemBgHover: appDesignTokens.colorSurfaceHover,
     wireframe: false,
   },
   components: {
+    Alert: {
+      colorInfoBg: appDesignTokens.colorSurfaceInfo,
+      colorInfoBorder: appDesignTokens.colorBorderSecondary,
+      colorSuccessBg: appDesignTokens.colorSurfaceSuccess,
+      colorWarningBg: appDesignTokens.colorSurfaceCaution,
+      colorErrorBg: appDesignTokens.colorSurfaceCritical,
+    },
     Button: {
       borderRadius: appDesignTokens.borderRadius,
       primaryShadow: "none",
@@ -61,6 +74,12 @@ export const appAntdTheme: ThemeConfig = {
       headerBg: appDesignTokens.colorSurface,
       headerHeight: 42,
       headerFontSize: appDesignTokens.fontSizeBody,
+      borderRadiusLG: 12,
+    },
+    Collapse: {
+      headerBg: "transparent",
+      contentBg: "transparent",
+      colorBorder: appDesignTokens.colorBorderSecondary,
     },
     Input: {
       activeBg: appDesignTokens.colorSurface,
@@ -84,6 +103,10 @@ export const appAntdTheme: ThemeConfig = {
       hoverBorderColor: appDesignTokens.colorBorder,
       activeBorderColor: appDesignTokens.colorBrand,
     },
+    Statistic: {
+      contentFontSize: 28,
+      titleFontSize: appDesignTokens.fontSizeCaption,
+    },
     Table: {
       headerBg: appDesignTokens.colorSurfaceSecondary,
       headerColor: appDesignTokens.colorTextSecondary,
@@ -92,6 +115,17 @@ export const appAntdTheme: ThemeConfig = {
       rowHoverBg: appDesignTokens.colorSurfaceSecondary,
       rowSelectedBg: appDesignTokens.colorSurfaceSelected,
       rowSelectedHoverBg: appDesignTokens.colorSurfaceSelected,
+    },
+    Tabs: {
+      inkBarColor: appDesignTokens.colorBrand,
+      itemColor: appDesignTokens.colorTextSecondary,
+      itemHoverColor: appDesignTokens.colorText,
+      itemSelectedColor: appDesignTokens.colorText,
+    },
+    Tag: {
+      defaultBg: appDesignTokens.colorSurfaceSecondary,
+      defaultColor: appDesignTokens.colorTextSecondary,
+      defaultBorderColor: "transparent",
     },
     Typography: {
       titleMarginBottom: 0,

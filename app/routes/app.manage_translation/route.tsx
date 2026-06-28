@@ -1033,7 +1033,7 @@ const Index = () => {
           <AppPageHeader
             title={t("Manage Translation")}
             description={t(
-              "Choose a locale, review translation coverage, and jump into each content area from one consistent dashboard.",
+              "Choose a locale, review translation coverage across content domains, and move into each editing area from one consistent translation dashboard.",
             )}
           />
           <AppSectionCard bodyPadding="16px">

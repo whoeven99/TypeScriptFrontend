@@ -2,6 +2,8 @@ import type { CSSProperties } from "react";
 import { v4Colors } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 type Props = {
   summary: CoverageSummary;
@@ -148,7 +150,7 @@ export function SummaryDonutCard({
               <span
                 style={{
                   fontFamily: v4Colors.mono,
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: 700,
                   letterSpacing: "-0.02em",
                   lineHeight: 1,
@@ -160,12 +162,12 @@ export function SummaryDonutCard({
               <span
                 style={{
                   fontSize: 11,
-                  color: v4Colors.primaryHover ?? v4Colors.primary,
+                  color: v4Colors.textMuted,
                   marginTop: 6,
                   fontWeight: 600,
                 }}
               >
-                已翻译
+                整体覆盖率
               </span>
             </div>
           </div>
@@ -286,105 +288,61 @@ export function PageHeaderBar({
   const planLabel = formatPlanType(planType);
 
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 18,
-        gap: 14,
-        flexWrap: "wrap",
-      }}
-    >
-      <div
-        style={{
-          minWidth: 0,
-          flex: "1 1 240px",
-        }}
-      >
+    <AppPageHeader
+      style={{ marginBottom: 18 }}
+      title="智能翻译"
+      description="把商品、页面与主题内容快速翻译到更多语言市场，减少理解摩擦，并持续提升商店内容覆盖率。"
+      extra={
         <div
           style={{
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            color: v4Colors.text,
-            lineHeight: 1.2,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
           }}
         >
-          {shop}
+          <AppStatusBadge tone="info">{planLabel}</AppStatusBadge>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              borderRadius: 999,
+              background: v4Colors.cardBg,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              color: v4Colors.textMuted,
+            }}
+          >
+            <span style={{ fontSize: 12, color: v4Colors.textMuted }}>可用积分</span>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: v4Colors.success,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {credits != null ? `${formatCredits(credits)}` : "—"}
+            </span>
+          </div>
+          <div
+            style={{
+              maxWidth: 240,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              color: v4Colors.textFaint,
+              fontSize: 12,
+            }}
+            title={shop}
+          >
+            {shop}
+          </div>
         </div>
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 12,
-            color: v4Colors.textFaint,
-            fontWeight: 500,
-          }}
-        >
-          智能翻译工作台
-        </div>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0,
-          borderRadius: 10,
-          overflow: "hidden",
-          border: `1px solid ${v4Colors.cardBorder}`,
-          background: v4Colors.cardBg,
-          minWidth: "min(100%, 300px)",
-        }}
-      >
-        <HeaderMetaItem label="付费计划" value={planLabel} />
-        <div style={{ width: 1, background: v4Colors.divider, alignSelf: "stretch" }} />
-        <HeaderMetaItem
-          label="可用积分"
-          value={credits != null ? `${formatCredits(credits)}` : "—"}
-          valueColor={v4Colors.success}
-        />
-      </div>
-    </header>
-  );
-}
-
-function HeaderMetaItem({
-  label,
-  value,
-  valueColor,
-}: {
-  label: string;
-  value: string;
-  valueColor?: string;
-}) {
-  return (
-    <div
-      style={{
-        padding: "8px 14px",
-        minWidth: 126,
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-      }}
-    >
-      <div style={{ fontSize: 11, fontWeight: 600, color: v4Colors.textMuted, lineHeight: 1.2 }}>
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 13.5,
-          fontWeight: 700,
-          color: valueColor ?? v4Colors.text,
-          letterSpacing: "-0.01em",
-          lineHeight: 1.2,
-        }}
-      >
-        {value}
-      </div>
-    </div>
+      }
+    />
   );
 }
 

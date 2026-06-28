@@ -8,12 +8,16 @@ interface AcountInfoCardProps {
   loading: boolean;
   translation_balance: number;
   onBuyCredits: () => void;
+  planLabel?: string;
+  updateTime?: string | null;
 }
 
 const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
   loading,
   translation_balance,
   onBuyCredits,
+  planLabel,
+  updateTime,
 }) => {
   const { t } = useTranslation();
 
@@ -31,9 +35,12 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
       <div className="pricing-usage-card__header">
         <div>
           <Title level={4} style={{ margin: 0 }}>
-            {t("Credits")}
+            {t("Billing overview")}
           </Title>
-          <Text type="secondary">{t("Translation quota")}</Text>
+          <Text type="secondary">
+            {planLabel ? `${planLabel} · ` : ""}
+            {t("See your available credits and decide whether to upgrade or buy extra volume.")}
+          </Text>
         </div>
         <Button type="primary" onClick={onBuyCredits}>
           {t("Buy Credit")}
@@ -45,6 +52,11 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
           formatter={(value) => Number(value || 0).toLocaleString()}
           suffix={t("Credits")}
         />
+        {updateTime ? (
+          <Text type="secondary">
+            {t("Next plan update: {{date}}", { date: updateTime })}
+          </Text>
+        ) : null}
       </div>
     </Card>
   );

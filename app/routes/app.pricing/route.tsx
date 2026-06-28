@@ -15,7 +15,6 @@ import {
   Collapse,
   Modal,
   CollapseProps,
-  Tag,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -431,6 +430,7 @@ const Index = () => {
           plan.type === "Basic" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
+        fitLabel: t("Best for shops validating a few target markets"),
         disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
@@ -458,6 +458,7 @@ const Index = () => {
           plan.type === "Pro" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
+        fitLabel: t("Best for growing stores translating products and storefront content continuously"),
         disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
@@ -485,6 +486,7 @@ const Index = () => {
           plan.type === "Premium" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
+        fitLabel: t("Best for teams operating multiple languages as an ongoing growth channel"),
         disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
@@ -875,10 +877,15 @@ const Index = () => {
     <Page>
       <TitleBar title={t("Pricing")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader title={t("Pricing")} />
+        <AppPageHeader
+          title={t("Pricing")}
+          description={t(
+            "Choose a plan that matches your store growth stage, understand available credits clearly, and decide when to upgrade versus buy extra volume.",
+          )}
+        />
 
         <AppSectionCard
-          title={t("Credits")}
+          title={t("Billing overview")}
           extra={
             plan.type ? (
               <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
@@ -887,20 +894,13 @@ const Index = () => {
             )
           }
         >
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            {updateTime ? (
-              <Flex justify="end">
-                <Text style={{ fontSize: 14 }}>
-                  {t("Next plan update: {{date}}", { date: updateTime })}
-                </Text>
-              </Flex>
-            ) : null}
-            <AcountInfoCard
-              loading={isLoading}
-              translation_balance={totalChars - chars || 0}
-              onBuyCredits={handleOpenAddCreditsModal}
-            />
-          </Space>
+          <AcountInfoCard
+            loading={isLoading}
+            translation_balance={totalChars - chars || 0}
+            onBuyCredits={handleOpenAddCreditsModal}
+            planLabel={plan.type ? `${t(plan.type)} ${t("Plan")}` : undefined}
+            updateTime={updateTime}
+          />
         </AppSectionCard>
 
         {isQuotaExceeded && (
@@ -961,14 +961,15 @@ const Index = () => {
             >
               <Space direction="vertical" size={12} style={{ display: "flex" }}>
                 {plan.type === "Free" ? (
-                  <Tag bordered={false} color="blue" style={{ width: "fit-content" }}>
-                    {t("Current plan")}
-                  </Tag>
+                  <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
                 ) : null}
                 <div>
                   <Title level={4} style={{ margin: 0 }}>
                     {t("Free")}
                   </Title>
+                  <div className="pricing-plan-card__fit">
+                    {t("Best for testing translation flows before scaling")}
+                  </div>
                 </div>
                 <div>
                   <Text className="pricing-plan-card__price">$0</Text>
@@ -1041,7 +1042,7 @@ const Index = () => {
             >
                 <Card
                   className={`pricing-plan-card ${
-                    item.disabled ? "pricing-plan-card--current" : ""
+                    item.disabled ? "pricing-plan-card--current" : item.isRecommended && plan.type === "Free" && plan.id ? "pricing-plan-card--recommended" : ""
                   }`}
                   style={{
                     flex: 1,
@@ -1063,18 +1064,15 @@ const Index = () => {
                 >
                   <Space direction="vertical" size={12} style={{ display: "flex" }}>
                     {item.disabled ? (
-                      <Tag bordered={false} color="blue" style={{ width: "fit-content" }}>
-                        {t("Current plan")}
-                      </Tag>
+                      <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
                     ) : item.isRecommended && plan.type === "Free" && plan.id ? (
-                      <Tag bordered={false} color="gold" style={{ width: "fit-content" }}>
-                        {t("Recommended")}
-                      </Tag>
+                      <AppStatusBadge tone="caution">{t("Recommended")}</AppStatusBadge>
                     ) : null}
                     <div>
                       <Title level={4} style={{ margin: 0 }}>
                         {yearly ? item.yearlyTitle : item.title}
                       </Title>
+                      <div className="pricing-plan-card__fit">{item.fitLabel}</div>
                     </div>
                     <div>
                       <Text className="pricing-plan-card__price">
@@ -1091,7 +1089,7 @@ const Index = () => {
                   )}
                   <Button
                     id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
-                    type={isNew ? "default" : item.isRecommended ? "primary" : "default"}
+                    type={item.isRecommended && !isNew ? "primary" : "default"}
                     block
                     disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
@@ -1112,7 +1110,7 @@ const Index = () => {
                   {isNew && (
                     <Button
                       id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                      type="primary"
+                      type={item.isRecommended ? "primary" : "default"}
                       block
                       disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}

@@ -915,7 +915,7 @@ const Index = () => {
         <AppPageHeader
           title={t("Languages")}
           description={t(
-            "Manage published locales, auto-translation behavior, and jump into translation or editing flows.",
+            "Manage published locales, control auto-translation behavior, and quickly decide whether each market should go to translation or content management next.",
           )}
           extra={<PrimaryLanguage />}
         />

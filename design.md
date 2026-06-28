@@ -106,6 +106,24 @@
 
 结合 Shopify App 与 Polaris 的通用规范，当前项目建议采用以下设计原则：
 
+### 3.0 视觉气质方向
+
+在继续规范字号、边框和 token 之前，先明确这个产品整体应该呈现什么气质：
+
+- `专业`：看起来像 Shopify Admin 内的一款可信效率工具，而不是独立营销页
+- `克制`：尽量通过留白、排版、轻表面变化和少量强调色建立层级
+- `智能`：翻译、自动化、批量任务等能力可以有轻度技术感，但不靠深色面板和强对比营造“AI 感”
+- `全球增长`：需要能自然承载“覆盖更多语言市场、减少理解摩擦、支持转化”的业务价值表达
+
+一句话风格定义：
+
+> 中性专业底色 + 冷静智能感 + 对增长价值的低饱和强调
+
+执行时应避免两种极端：
+
+- 不能退化成“纯灰白后台”，导致产品没有辨识度
+- 也不能回到“高饱和运营页”或“营销落地页”，削弱 Shopify Admin 一致性
+
 ### 3.1 与 Shopify Admin 保持一致
 
 - 页面基础背景、卡片表面、边框、文本层级优先使用 Polaris token
@@ -170,6 +188,23 @@
 - 提醒：`var(--p-color-bg-surface-caution)` + `var(--p-color-text-caution)`
 - 危险：`var(--p-color-bg-surface-critical)` + `var(--p-color-text-critical)`
 - 信息：`var(--p-color-bg-surface-info)` + `var(--p-color-text-info)`
+
+#### 柔性配色框架
+
+在颜色执行上，不建议只记一组固定 hex，而应按“角色”使用颜色：
+
+- `Base Neutral`：页面背景、卡片背景、输入框、表格、主要文字，完全遵循 Polaris 中性色体系
+- `Primary Emphasis`：用于主按钮、当前选中、核心进度、关键聚焦状态，采用冷静的 indigo-blue 倾向
+- `Positive Accent`：用于成功、可用额度、正向覆盖增长，保持 restrained teal/green，只做正向反馈
+- `Warm Utility Accent`：用于优惠、年付、提醒、轻提示，采用 muted amber，只做有限强调
+- `Critical Accent`：只用于错误、失败、危险操作，不参与日常装饰
+
+页面级用色边界：
+
+- `translate-v4` 可以使用更多 `Primary Emphasis`，但不能整页蓝化
+- `pricing` 允许轻度品牌染色和柔和渐变，但不能用重营销色块
+- `language` 和 `manage` 应更偏中性底色，让状态与操作更加清晰
+- 大面积背景优先使用 `surface` 或低透明度 tint，不使用重 fill
 
 补充限制：
 

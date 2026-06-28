@@ -22,7 +22,7 @@
 .items-scroll-item {
     padding: 8px 16px;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 8px;
     margin-bottom: 4px;
     transition: background 0.2s, color 0.2s;
     width: 100%;
@@ -30,6 +30,16 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 
+}
+
+.manage-content-wrap {
+    display: flex;
+    gap: 16px;
+}
+
+.manage-content-left {
+    flex: 1;
+    min-width: 0;
 }
 
 .items-scroll-item.selected {

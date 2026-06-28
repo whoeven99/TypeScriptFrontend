@@ -3,17 +3,18 @@
 }
 
 .yearly_save {
-  background-color: var(--p-color-bg-surface-info);
-  color: var(--p-color-text-info);
+  background: var(--app-accent-utility-soft);
+  color: var(--app-accent-utility);
   padding: 4px 12px;
   border-radius: 100px;
   text-align: center;
   gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--app-accent-utility) 12%, var(--app-color-border-secondary));
 }
 
 .pricing-usage-card {
   background:
-    linear-gradient(180deg, rgba(45, 127, 249, 0.05) 0%, rgba(45, 127, 249, 0) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 6%, white) 0%, rgba(255, 255, 255, 0.9) 100%),
     var(--p-color-bg-surface);
 }
 
@@ -57,19 +58,27 @@
 
 .pricing-plan-card {
   border-radius: 16px;
-  border: none !important;
+  border: 1px solid var(--app-color-border-secondary) !important;
   background: var(--p-color-bg-surface);
   box-shadow: var(--app-shadow-card);
 }
 
 .pricing-plan-card--current {
   background:
-    linear-gradient(180deg, rgba(45, 127, 249, 0.08) 0%, rgba(45, 127, 249, 0.02) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 8%, white) 0%, rgba(255, 255, 255, 0.98) 100%),
     var(--p-color-bg-surface);
 }
 
+.pricing-plan-card--recommended {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 8%, white) 0%, rgba(255, 255, 255, 0.98) 100%),
+    var(--p-color-bg-surface);
+  border-color: color-mix(in srgb, var(--app-accent-primary) 16%, var(--app-color-border-secondary)) !important;
+  box-shadow: var(--app-shadow-card-strong);
+}
+
 .pricing-plan-card__price {
-  font-size: 36px;
+  font-size: 32px;
   line-height: 1;
   font-weight: 700;
   color: var(--p-color-text);
@@ -84,7 +93,14 @@
   margin-bottom: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: var(--p-color-bg-surface-secondary);
+  background: var(--app-color-surface-secondary);
+  color: var(--p-color-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.pricing-plan-card__fit {
+  margin-top: 4px;
   color: var(--p-color-text-secondary);
   font-size: 13px;
   line-height: 20px;
