@@ -307,6 +307,7 @@ const Index = () => {
   /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
   const itemsCountLoadTokenRef = useRef(0);
   const loadedItemsCountLocaleRef = useRef<string | null>(null);
+  const hasInitializedRef = useRef(false);
 
   const itemsCountFetcherByType = useMemo(
     () => ({
@@ -740,6 +741,9 @@ const Index = () => {
   }).length;
 
   useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在翻译管理页面`,

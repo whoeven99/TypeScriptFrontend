@@ -336,6 +336,7 @@ const Index = () => {
   }, [dataSource]);
 
   const prevLocaleDataRef = useRef<string[]>();
+  const hasBootstrappedRef = useRef(false);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -388,6 +389,9 @@ const Index = () => {
   const location = useLocation();
 
   useEffect(() => {
+    if (hasBootstrappedRef.current) return;
+    hasBootstrappedRef.current = true;
+
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
     loadingFetcher.submit(formData, {
@@ -445,7 +449,7 @@ const Index = () => {
         action: withEmbeddedSearch("/app/language", location.search),
       },
     );
-  }, [dataSource, languageTableDataLocale, location.search, webPresencesFetcher]);
+  }, [dataSource, languageTableDataLocale, location.search]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
@@ -618,7 +622,7 @@ const Index = () => {
         }
       }
     }
-  }, [dispatch, source?.code, statusFetcher, statusFetcher.data, useV4LanguageStatus]);
+  }, [dispatch, source?.code, statusFetcher.data, useV4LanguageStatus]);
 
   useEffect(() => {
     if (!useV4LanguageStatus) return;
@@ -681,7 +685,7 @@ const Index = () => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [dataSource, source?.code, statusFetcher, useV4LanguageStatus]);
+  }, [dataSource, source?.code, useV4LanguageStatus]);
 
   const columns = [
     {

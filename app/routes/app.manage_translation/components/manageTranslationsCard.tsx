@@ -43,54 +43,73 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   );
 
   const columns = useMemo(
-    () => [
-      {
-        title: cardTitle,
-        dataIndex: "title",
-        key: "title",
-        width: "30%",
-      },
-      dataSource.some((item: any) => !item.withoutCount)
-        ? {
-          title: t("Items Translated"),
-          dataIndex: "items",
-          key: "items",
+    () => {
+      const baseColumns = [
+        {
+          title: cardTitle,
+          dataIndex: "title",
+          key: "title",
           width: "30%",
+        },
+      ];
+
+      const countColumn = dataSource.some((item: any) => !item.withoutCount)
+        ? [
+            {
+              title: t("Items Translated"),
+              dataIndex: "items",
+              key: "items",
+              width: "30%",
+              render: (_: any, record: any) => {
+                if (record.withoutCount) return null;
+                return record.allItems === undefined ||
+                  record.allTranslatedItems === undefined ? (
+                  <div>{t("Syncing")}</div>
+                ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
+                  <div>--</div>
+                ) : (
+                  <div>
+                    {record.allTranslatedItems}/{record.allItems}
+                  </div>
+                );
+              },
+            },
+          ]
+        : [];
+
+      return [
+        ...baseColumns,
+        ...countColumn,
+        {
+          title: t("Action"),
+          dataIndex: "operation",
+          key: "operation",
+          width: "40%",
           render: (_: any, record: any) => {
-            if (record.withoutCount) return null;
-            return record.allItems === undefined ||
-              record.allTranslatedItems === undefined ? (
-              <div>{t("Syncing")}</div>
-            ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
-              <div>--</div>
-            ) : (
-              <div>
-                {record.allTranslatedItems}/{record.allItems}
-              </div>
+            return (
+              <Button
+                type="default"
+                onClick={() => handleEdit(record, currentLocale)}
+              >
+                {t("Edit")}
+              </Button>
             );
           },
-        }
-        : {},
-      {
-        title: t("Action"),
-        dataIndex: "operation",
-        key: "operation",
-        width: "40%",
-          render: (_: any, record: any) => {
-          return (
-            <Button type="default" onClick={() => handleEdit(record, currentLocale)}>
-              {t("Edit")}
-            </Button>
-          );
         },
-      },
-    ],
+      ];
+    },
     [cardTitle, currentLocale, dataSource, handleEdit, t],
   );
   return (
     <AppSectionCard title={cardTitle} bodyPadding="12px 16px">
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
-        <Table className="manage-section-table" columns={columns} dataSource={dataSource} pagination={false} />
+        <Table
+          className="manage-section-table"
+          columns={columns}
+          dataSource={dataSource}
+          rowKey="key"
+          pagination={false}
+        />
       </Space>
     </AppSectionCard>
   );
