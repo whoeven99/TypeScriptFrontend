@@ -877,18 +877,11 @@ const Index = () => {
           }
         />
 
-        <section className="pricing-section">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Available credits")}</h2>
-            </div>
-          </div>
-          <AcountInfoCard
-            loading={isLoading}
-            translation_balance={totalChars - chars || 0}
-            onBuyCredits={handleOpenAddCreditsModal}
-          />
-        </section>
+        <AcountInfoCard
+          loading={isLoading}
+          translation_balance={totalChars - chars || 0}
+          onBuyCredits={handleOpenAddCreditsModal}
+        />
 
         {isQuotaExceeded && (
           <Alert

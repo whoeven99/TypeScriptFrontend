@@ -2,7 +2,7 @@ import { Button, Skeleton, Statistic, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import "../style.css";
 
-const { Text } = Typography;
+const { Title } = Typography;
 
 interface AcountInfoCardProps {
   loading: boolean;
@@ -19,7 +19,12 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
 
   return (
     <div className="pricing-usage-card">
-      <div className="pricing-usage-card__metric">
+      <div className="pricing-usage-card__header">
+        <Title level={4} style={{ margin: 0 }}>
+          {t("Available credits")}
+        </Title>
+      </div>
+      <div className="pricing-usage-card__content">
         {loading ? (
           <Skeleton active paragraph={{ rows: 1, width: ["40%"] }} title={false} />
         ) : (
@@ -32,11 +37,6 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
             <Button onClick={onBuyCredits}>{t("Buy credits")}</Button>
           </div>
         )}
-        {!loading ? (
-          <>
-            <Text type="secondary">{t("Available credits")}</Text>
-          </>
-        ) : null}
       </div>
     </div>
   );

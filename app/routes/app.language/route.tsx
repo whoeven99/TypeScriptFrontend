@@ -366,18 +366,6 @@ const Index = () => {
       dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
     [dataSource, selectedRowKeys],
   );
-  const publishedCount = useMemo(
-    () => dataSource.filter((item: any) => item.published).length,
-    [dataSource],
-  );
-  const autoTranslateCount = useMemo(
-    () => dataSource.filter((item: any) => item.autoTranslate).length,
-    [dataSource],
-  );
-  const attentionCount = useMemo(
-    () => dataSource.filter((item: any) => item.status === 0).length,
-    [dataSource],
-  );
 
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
@@ -936,13 +924,6 @@ const Index = () => {
       <div className={styles.languagePageInner}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
-        <AppSectionCard bodyPadding="20px" style={{ width: "100%" }}>
-          <div className={styles.languageSummaryRow}>
-            <MetricPanel label={t("Published locales")} value={`${publishedCount}`} />
-            <MetricPanel label={t("Auto translation on")} value={`${autoTranslateCount}`} />
-            <MetricPanel label={t("Needs attention")} value={`${attentionCount}`} />
-          </div>
-        </AppSectionCard>
         <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
           <div className={styles.languageTable_action}>
           <Flex
@@ -1180,20 +1161,5 @@ const Index = () => {
     </Page>
   );
 };
-
-function MetricPanel({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="app-metric-block">
-      <div className="app-metric-block__label">{label}</div>
-      <div className="app-metric-block__value">{value}</div>
-    </div>
-  );
-}
 
 export default Index;

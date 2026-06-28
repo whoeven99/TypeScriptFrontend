@@ -46,7 +46,6 @@ import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -710,35 +709,6 @@ const Index = () => {
     return list;
   }, [appInstallList, t]);
 
-  const summaryTrackedRows = [
-    ...productsDataSource,
-    ...onlineStoreThemeDataSource,
-    ...onlineStoreDataSource,
-    ...blogAndArticleDataSource,
-    ...settingsDataSource,
-  ].filter((item) => !item.withoutCount && typeof item.allItems === "number");
-  const totalTrackedItems = summaryTrackedRows.reduce(
-    (sum, item) => sum + (typeof item.allItems === "number" ? item.allItems : 0),
-    0,
-  );
-  const totalTranslatedItems = summaryTrackedRows.reduce(
-    (sum, item) =>
-      sum + (typeof item.allTranslatedItems === "number" ? item.allTranslatedItems : 0),
-    0,
-  );
-  const coveragePercent = totalTrackedItems
-    ? Math.round((totalTranslatedItems / totalTrackedItems) * 100)
-    : 0;
-  const attentionModules = summaryTrackedRows.filter((item) => {
-    if (
-      typeof item.allItems !== "number" ||
-      typeof item.allTranslatedItems !== "number"
-    ) {
-      return false;
-    }
-    return item.allItems > item.allTranslatedItems;
-  }).length;
-
   useEffect(() => {
     fetcher.submit(
       {
@@ -1062,24 +1032,7 @@ const Index = () => {
         <div className="manage-page">
         <div className="manage-page__inner">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AppPageHeader
-            title={t("Manage Translation")}
-            extra={
-              currentLocale ? (
-                <div className="app-status-cluster">
-                  <AppStatusBadge tone="success">{`${t("Locale")}: ${currentLocale}`}</AppStatusBadge>
-                </div>
-              ) : null
-            }
-          />
-          <AppSectionCard bodyPadding="16px">
-            <div className="manage-summary-row">
-              <MetricPanel label={t("Translated items")} value={totalTranslatedItems.toLocaleString()} />
-              <MetricPanel label={t("Total tracked")} value={totalTrackedItems.toLocaleString()} />
-              <MetricPanel label={t("Coverage")} value={`${coveragePercent}%`} />
-              <MetricPanel label={t("Needs attention")} value={`${attentionModules}`} />
-            </div>
-          </AppSectionCard>
+          <AppPageHeader title={t("Manage Translation")} />
           <AppSectionCard bodyPadding="16px">
             <div className="manage-header">
               <div className="manage-header-left">
@@ -1273,20 +1226,5 @@ export const getItemOptions = (t: (key: string) => string) => [
   { label: t("Delivery"), value: "delivery" },
   { label: t("Shipping"), value: "shipping" },
 ];
-
-function MetricPanel({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="app-metric-block">
-      <div className="app-metric-block__label">{label}</div>
-      <div className="app-metric-block__value">{value}</div>
-    </div>
-  );
-}
 
 export default Index;
