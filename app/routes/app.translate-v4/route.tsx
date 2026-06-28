@@ -19,7 +19,7 @@ import {
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4PageStyle } from "./v4Styles";
+import { v4ContentStyle, v4PageStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
@@ -115,11 +115,6 @@ export default function AppTranslateV4() {
         ? locales
         : [{ value: "zh-CN", label: "中文 (zh-CN)", primary: true, published: true }],
     [locales],
-  );
-
-  const sourceLocaleOption = useMemo(
-    () => localeOptions.find((l) => l.value === source),
-    [localeOptions, source],
   );
 
   const targetOptions = useMemo(
@@ -343,94 +338,93 @@ export default function AppTranslateV4() {
   return (
     <div style={v4PageStyle}>
       <TitleBar title="智能翻译" />
+      <div style={v4ContentStyle}>
+        <PageHeaderBar shop={shop} credits={remainingCredits} />
 
-      <PageHeaderBar shop={shop} credits={remainingCredits} />
+        {translateQueue.length > 0 ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: "var(--p-color-bg-surface-info)",
+              color: "var(--p-color-text-info)",
+              border: "1px solid var(--p-color-border-secondary)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+              fontSize: 13,
+              lineHeight: "20px",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                marginTop: 6,
+                borderRadius: "50%",
+                background: "currentColor",
+                flexShrink: 0,
+              }}
+            />
+            <span>
+              {translateSlotBusy
+                ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
+                : `${translateQueue.length} 个语言任务等待开始翻译。`}
+            </span>
+          </div>
+        ) : null}
 
-      {translateQueue.length > 0 ? (
         <div
           style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
+            gap: 16,
             marginBottom: 16,
-            padding: "12px 16px",
-            borderRadius: 8,
-            background: "var(--p-color-bg-surface-info)",
-            color: "var(--p-color-text-info)",
-            border: "1px solid var(--p-color-border-secondary)",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-            fontSize: 13,
-            lineHeight: "20px",
+            maxWidth: 608,
           }}
         >
-          <span
-            aria-hidden
-            style={{
-              width: 8,
-              height: 8,
-              marginTop: 6,
-              borderRadius: "50%",
-              background: "currentColor",
-              flexShrink: 0,
-            }}
+          <SummaryDonutCard summary={coverage} compact />
+          <CoverageCard
+            locales={coverage.locales}
+            loading={coverageLoading}
+            onRefresh={refreshCoverage}
+            compact
           />
-          <span>
-            {translateSlotBusy
-              ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
-              : `${translateQueue.length} 个语言任务等待开始翻译。`}
-          </span>
         </div>
-      ) : null}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
-          gap: 16,
-          marginBottom: 16,
-          maxWidth: 608,
-        }}
-      >
-        <SummaryDonutCard summary={coverage} compact />
-        <CoverageCard
-          locales={coverage.locales}
-          loading={coverageLoading}
-          onRefresh={refreshCoverage}
-          compact
-        />
-      </div>
+        <div style={{ marginBottom: 16 }}>
+          <CreateTaskCard
+            targetOptions={targetOptions}
+            targets={targets}
+            onTargetsChange={setTargets}
+            modules={moduleKeys}
+            onModulesChange={setModuleKeys}
+            creating={creating}
+            onCreate={handleCreate}
+            aiModel={aiModel}
+            onAiModelChange={setAiModel}
+            isCover={isCover}
+            onIsCoverChange={setIsCover}
+            isHandle={isHandle}
+            onIsHandleChange={setIsHandle}
+          />
+        </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <CreateTaskCard
-          source={source}
-          sourceLabel={sourceLocaleOption?.label ?? source}
-          targetOptions={targetOptions}
-          targets={targets}
-          onTargetsChange={setTargets}
-          modules={moduleKeys}
-          onModulesChange={setModuleKeys}
-          creating={creating}
-          onCreate={handleCreate}
-          aiModel={aiModel}
-          onAiModelChange={setAiModel}
-          isCover={isCover}
-          onIsCoverChange={setIsCover}
-          isHandle={isHandle}
-          onIsHandleChange={setIsHandle}
-        />
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr)",
-          gap: 16,
-        }}
-      >
-        <TaskQueueSection
-          jobs={jobs}
-          translateSlotBusy={translateSlotBusy}
-          onAction={handleAction}
-        />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr)",
+            gap: 16,
+          }}
+        >
+          <TaskQueueSection
+            jobs={jobs}
+            translateSlotBusy={translateSlotBusy}
+            onAction={handleAction}
+          />
+        </div>
       </div>
 
       <SupportChatWidget />

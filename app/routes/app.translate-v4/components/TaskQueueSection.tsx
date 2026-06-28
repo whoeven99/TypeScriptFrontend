@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Empty, Popconfirm, Segmented } from "antd";
+import { Button, Empty, Popconfirm, Tabs } from "antd";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
@@ -11,7 +11,7 @@ import {
 } from "../jobStageUtils";
 import { ProgressRing, StatusTag, MiniStageTrack } from "./V4JobCardParts";
 import { AutoTaskBadge } from "./AutoTranslateMarkers";
-import { JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
+import { JobCollapsedMeta, JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -68,12 +68,21 @@ export function CompactJobCard({
       : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage)] ?? "等待"}`;
 
   return (
-    <div style={{ ...v4CardStyle, padding: "12px 16px", marginBottom: 8 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <div
+      style={{
+        ...v4CardStyle,
+        padding: expanded ? "14px 16px" : "12px 16px",
+        marginBottom: 10,
+        background: expanded ? v4Colors.cardSubdued : v4Colors.cardBg,
+        borderColor: expanded ? "#d6e4ff" : v4Colors.cardBorder,
+        boxShadow: expanded ? "0 4px 14px rgba(22, 119, 255, 0.07)" : "0 1px 2px rgba(22, 119, 255, 0.04)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <ProgressRing percent={percent} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: v4Colors.text }}>
               {job.source} → {job.target}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
@@ -85,30 +94,19 @@ export function CompactJobCard({
             ) : null}
           </div>
           <MiniStageTrack job={job} />
+          {!expanded ? <JobCollapsedMeta job={job} /> : null}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-          {canDelete ? (
-            <Popconfirm
-              title="删除该任务？"
-              description="会清除任务记录及其翻译内容数据，不可恢复。"
-              okText="删除"
-              okButtonProps={{ danger: true, loading: pending === "delete" }}
-              cancelText="取消"
-              onConfirm={() => runAction("delete")}
-            >
-              <Button type="text" size="small" danger style={textActionButtonStyle}>
-                删除
-              </Button>
-            </Popconfirm>
-          ) : null}
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0, marginTop: -2 }}>
           <Button
             type="text"
             size="small"
             onClick={onToggleExpand}
             style={{
-              color: v4Colors.primary,
+              color: expanded ? v4Colors.primaryHover : v4Colors.primary,
               fontWeight: 600,
-              background: expanded ? v4Colors.primarySoft : "transparent",
+              borderRadius: 8,
+              background: expanded ? v4Colors.primarySoft : v4Colors.cardSubdued,
+              border: `1px solid ${expanded ? "#bfdbff" : v4Colors.cardBorder}`,
             }}
           >
             {expanded ? "收起" : "查看"}
@@ -117,20 +115,55 @@ export function CompactJobCard({
       </div>
 
       {expanded ? (
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${v4Colors.divider}` }}>
+        <div
+          style={{
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: `1px solid ${v4Colors.divider}`,
+            background: "rgba(255,255,255,0.6)",
+            borderRadius: 10,
+          }}
+        >
           <JobSummaryStats job={job} />
           <JobStageProgressList job={job} />
 
-          {canResume || canPause || canCancel ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-              {canResume ? (
-                <ActionChip label="继续" kind="primary" loading={pending === "resume"} onClick={() => runAction("resume")} />
-              ) : null}
-              {canPause ? (
-                <ActionChip label="暂停" kind="ghost" loading={pending === "pause"} onClick={() => runAction("pause")} />
-              ) : null}
-              {canCancel ? (
-                <ActionChip label="取消" kind="danger" loading={pending === "cancel"} onClick={() => runAction("cancel")} />
+          {canResume || canPause || canCancel || canDelete ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+                marginTop: 14,
+                paddingTop: 12,
+                borderTop: `1px solid ${v4Colors.divider}`,
+              }}
+            >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {canResume ? (
+                  <ActionChip label="继续" kind="primary" loading={pending === "resume"} onClick={() => runAction("resume")} />
+                ) : null}
+                {canPause ? (
+                  <ActionChip label="暂停" kind="ghost" loading={pending === "pause"} onClick={() => runAction("pause")} />
+                ) : null}
+                {canCancel ? (
+                  <ActionChip label="取消任务" kind="danger" loading={pending === "cancel"} onClick={() => runAction("cancel")} />
+                ) : null}
+              </div>
+              {canDelete ? (
+                <Popconfirm
+                  title="删除该任务？"
+                  description="会清除任务记录及其翻译内容数据，不可恢复。"
+                  okText="删除"
+                  okButtonProps={{ danger: true, loading: pending === "delete" }}
+                  cancelText="取消"
+                  onConfirm={() => runAction("delete")}
+                >
+                  <Button type="link" size="small" danger style={deleteLinkButtonStyle}>
+                    删除记录
+                  </Button>
+                </Popconfirm>
               ) : null}
             </div>
           ) : null}
@@ -143,10 +176,6 @@ export function CompactJobCard({
     </div>
   );
 }
-
-const textActionButtonStyle: CSSProperties = {
-  paddingInline: 8,
-};
 
 function ActionChip({
   label,
@@ -173,17 +202,31 @@ function ActionChip({
       onClick={onClick}
       style={{
         fontWeight: 600,
+        borderRadius: 8,
         ...(kind === "primary"
           ? {
               boxShadow: "none",
             }
-          : {}),
+          : kind === "ghost"
+            ? {
+                background: v4Colors.cardBg,
+                borderColor: v4Colors.cardBorder,
+                color: v4Colors.text,
+              }
+            : {
+                paddingInline: 4,
+              }),
       }}
     >
       {label}
     </Button>
   );
 }
+
+const deleteLinkButtonStyle: CSSProperties = {
+  paddingInline: 0,
+  fontWeight: 500,
+};
 
 export function TaskQueueSection({
   jobs,
@@ -194,7 +237,7 @@ export function TaskQueueSection({
   translateSlotBusy: boolean;
   onAction: Props["onAction"];
 }) {
-  const [tab, setTab] = useState<"current" | "history" | "all">(
+  const [tab, setTab] = useState<"current" | "history">(
     "current",
   );
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -224,19 +267,16 @@ export function TaskQueueSection({
   }, [tab, currentJobs.length, historyJobs.length]);
 
   const displayJobs = useMemo(() => {
-    if (tab === "all") return jobs;
     if (tab === "history") {
       return historyExpanded ? historyJobs : historyJobs.slice(0, 6);
     }
     return currentJobs;
-  }, [tab, jobs, currentJobs, historyJobs, historyExpanded]);
+  }, [tab, currentJobs, historyJobs, historyExpanded]);
 
   const helperText =
     tab === "current"
       ? "优先处理进行中、暂停中和失败的任务。"
-      : tab === "history"
-        ? "这里保留已完成或已取消的任务记录。"
-        : "查看全部任务，适合排查全局状态。";
+      : "这里保留已完成或已取消的任务记录。";
 
   return (
     <div style={{ ...v4CardStyle, padding: "16px" }}>
@@ -256,14 +296,29 @@ export function TaskQueueSection({
       </div>
 
       <div style={{ marginBottom: 12 }}>
-        <Segmented
-          value={tab}
-          onChange={(value) => setTab(value as "current" | "history" | "all")}
-          options={[
-            { label: `进行中 ${currentJobs.length}`, value: "current" },
-            { label: `历史记录 ${historyJobs.length}`, value: "history" },
-            { label: `全部 ${jobs.length}`, value: "all" },
+        <Tabs
+          activeKey={tab}
+          onChange={(value) => setTab(value as "current" | "history")}
+          size="small"
+          items={[
+            {
+              key: "current",
+              label: (
+                <span style={tabLabelStyle(tab === "current")}>
+                  当前任务 {currentJobs.length}
+                </span>
+              ),
+            },
+            {
+              key: "history",
+              label: (
+                <span style={tabLabelStyle(tab === "history")}>
+                  历史任务 {historyJobs.length}
+                </span>
+              ),
+            },
           ]}
+          style={{ marginBottom: 0 }}
         />
       </div>
 
@@ -319,3 +374,12 @@ const historyToggleStyle: CSSProperties = {
   fontWeight: 600,
   marginTop: 4,
 };
+
+function tabLabelStyle(active: boolean): CSSProperties {
+  return {
+    color: active ? v4Colors.primary : v4Colors.textMuted,
+    fontSize: 13,
+    fontWeight: active ? 600 : 500,
+    transition: "color 0.2s ease",
+  };
+}

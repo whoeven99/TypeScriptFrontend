@@ -44,6 +44,12 @@ export const v4PageStyle: CSSProperties = {
   WebkitFontSmoothing: "antialiased",
 };
 
+export const v4ContentStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: 1200,
+  margin: "0 auto",
+};
+
 export const v4CardStyle: CSSProperties = {
   background: v4Colors.cardBg,
   borderRadius: 8,
