@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Empty, Popconfirm, Tabs } from "antd";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
@@ -260,12 +260,6 @@ export function TaskQueueSection({
     [jobs],
   );
 
-  useEffect(() => {
-    if (tab === "current" && currentJobs.length === 0 && historyJobs.length > 0) {
-      setTab("history");
-    }
-  }, [tab, currentJobs.length, historyJobs.length]);
-
   const displayJobs = useMemo(() => {
     if (tab === "history") {
       return historyExpanded ? historyJobs : historyJobs.slice(0, 6);
@@ -277,6 +271,13 @@ export function TaskQueueSection({
     tab === "current"
       ? "优先处理进行中、暂停中和失败的任务。"
       : "这里保留已完成或已取消的任务记录。";
+
+  const emptyTitle =
+    tab === "history" ? "暂无历史任务" : "当前没有进行中的任务";
+  const emptyDescription =
+    tab === "history"
+      ? "完成或取消后的任务记录会显示在这里。"
+      : "选好目标语言和翻译内容后，点击上方按钮创建第一个翻译任务。";
 
   return (
     <div style={{ ...v4CardStyle, padding: "16px" }}>
@@ -327,11 +328,14 @@ export function TaskQueueSection({
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
-                {tab === "history"
-                  ? "已完成或已取消的任务会显示在这里。"
-                  : "选好语言和内容后，点击上方按钮创建第一个翻译任务。"}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
+                  {emptyTitle}
+                </span>
+                <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
+                  {emptyDescription}
+                </span>
+              </div>
             }
           />
         </div>

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "antd";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
@@ -30,32 +31,41 @@ type Props = {
   loading: boolean;
   onRefresh: () => void;
   compact?: boolean;
+  onManageLanguages?: () => void;
 };
-
-const COVERAGE_CARD_WIDTH = 296;
-const COVERAGE_CARD_COMPACT_HEIGHT = 148;
 
 export function CoverageCard({
   locales,
   loading,
   onRefresh,
   compact = false,
+  onManageLanguages,
 }: Props) {
+  const autoTranslateCount = useMemo(
+    () => locales.filter((row) => row.autoTranslate).length,
+    [locales],
+  );
+  const lowCoverageCount = useMemo(
+    () => locales.filter((row) => (row.percent ?? 0) < 100).length,
+    [locales],
+  );
+
   if (compact) {
-    const visibleLocales = locales.slice(0, 3);
+    const visibleLocales = locales.slice(0, 4);
 
     return (
       <div
         style={{
           ...v4CardStyle,
-          width: COVERAGE_CARD_WIDTH,
-          minWidth: COVERAGE_CARD_WIDTH,
-          height: COVERAGE_CARD_COMPACT_HEIGHT,
-          padding: "16px 18px",
+          width: "100%",
+          minWidth: 0,
+          minHeight: 208,
+          padding: "20px 22px",
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          borderRadius: 12,
         }}
       >
         <div
@@ -81,38 +91,33 @@ export function CoverageCard({
             <div
               style={{
                 marginTop: 4,
-                fontSize: 11,
+                fontSize: 13,
                 color: v4Colors.textMuted,
-                lineHeight: 1.3,
+                lineHeight: "20px",
               }}
             >
-              共 {locales.length} 种目标语言
+              目标语言翻译完成情况与自动翻译状态
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={loading}
-            style={{
-              background: "none",
-              border: "none",
-              color: v4Colors.textMuted,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: loading ? "default" : "pointer",
-              opacity: loading ? 0.6 : 1,
-              fontFamily: "inherit",
-              padding: 0,
-              flexShrink: 0,
-            }}
-          >
-            {loading ? "刷新中…" : "刷新"}
-          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+            <Button size="small" onClick={onManageLanguages}>
+              管理语言
+            </Button>
+            <Button size="small" onClick={onRefresh} loading={loading}>
+              刷新统计
+            </Button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0 12px" }}>
+          <HeadMetric label="目标语言" value={`${locales.length}`} />
+          <HeadMetric label="自动翻译" value={`${autoTranslateCount}`} />
+          <HeadMetric label="待完善" value={`${lowCoverageCount}`} />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {visibleLocales.length === 0 ? (
-            <div style={{ fontSize: 12, color: v4Colors.textMuted }}>
+            <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
               暂无目标语言，请先在语言页添加。
             </div>
           ) : (
@@ -158,6 +163,33 @@ export function CoverageCard({
         ) : (
           locales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
+      </div>
+    </div>
+  );
+}
+
+function HeadMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        minWidth: 92,
+        padding: "8px 10px",
+        borderRadius: 10,
+        background: v4Colors.cardSubdued,
+        border: `1px solid ${v4Colors.cardBorder}`,
+      }}
+    >
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600 }}>{label}</div>
+      <div
+        style={{
+          marginTop: 4,
+          fontFamily: v4Colors.mono,
+          fontWeight: 700,
+          fontSize: 18,
+          color: v4Colors.text,
+        }}
+      >
+        {value}
       </div>
     </div>
   );

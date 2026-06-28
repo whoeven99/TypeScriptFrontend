@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Button } from "antd";
 import { v4Colors } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
@@ -6,6 +7,10 @@ import type { CoverageSummary } from "~/server/translateV4/coverage.server";
 type Props = {
   summary: CoverageSummary;
   compact?: boolean;
+  activeJobsCount?: number;
+  queueCount?: number;
+  onCreateTask?: () => void;
+  onViewTasks?: () => void;
 };
 
 /** 左侧摘要卡固定宽度与高度，不随右侧表单展开而拉伸。 */
@@ -14,107 +19,48 @@ const SUMMARY_RING_SIZE = 148;
 const SUMMARY_CARD_COMPACT_HEIGHT = 148;
 const SUMMARY_RING_SIZE_COMPACT = 92;
 
-export function SummaryDonutCard({ summary, compact = false }: Props) {
+export function SummaryDonutCard({
+  summary,
+  compact = false,
+  activeJobsCount = 0,
+  queueCount = 0,
+  onCreateTask,
+  onViewTasks,
+}: Props) {
   const percent = summary.overallPercent ?? 0;
   const dash = `${percent} 100`;
+  const translatedLanguageCount = summary.locales.filter((row) => (row.percent ?? 0) > 0).length;
+  const pendingItems = Math.max(summary.totalItems - summary.translatedItems, 0);
 
   if (compact) {
     return (
       <div
         style={{
           background: v4Colors.summaryBg,
-          borderRadius: 8,
-          padding: "16px 18px",
+          borderRadius: 12,
+          padding: "20px 22px",
           color: v4Colors.text,
-          width: SUMMARY_CARD_WIDTH,
-          minWidth: SUMMARY_CARD_WIDTH,
-          height: SUMMARY_CARD_COMPACT_HEIGHT,
+          width: "100%",
+          minWidth: 0,
+          minHeight: 208,
           boxSizing: "border-box",
-          flexShrink: 0,
           display: "flex",
-          alignItems: "center",
-          gap: 16,
+          justifyContent: "space-between",
+          alignItems: "stretch",
+          flexWrap: "wrap",
+          gap: 24,
           border: `1px solid ${v4Colors.cardBorder}`,
-          boxShadow: "0 4px 14px rgba(22, 119, 255, 0.06)",
+          boxShadow: "0 8px 24px rgba(22, 119, 255, 0.08)",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            width: SUMMARY_RING_SIZE_COMPACT,
-            height: SUMMARY_RING_SIZE_COMPACT,
-            flexShrink: 0,
-          }}
-        >
-          <svg
-            viewBox="0 0 36 36"
-            style={{
-              width: SUMMARY_RING_SIZE_COMPACT,
-              height: SUMMARY_RING_SIZE_COMPACT,
-              transform: "rotate(-90deg)",
-            }}
-          >
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke={v4Colors.ringTrack}
-              strokeWidth="3"
-            />
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke={v4Colors.primary}
-              strokeWidth="3"
-              strokeDasharray={dash}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: v4Colors.mono,
-                fontSize: 22,
-                fontWeight: 600,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-                color: v4Colors.text,
-              }}
-            >
-              {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                color: v4Colors.primaryHover ?? v4Colors.primary,
-                marginTop: 4,
-                fontWeight: 600,
-              }}
-            >
-              已翻译
-            </span>
-          </div>
-        </div>
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
             minWidth: 0,
-            alignSelf: "stretch",
             flex: 1,
+            flexBasis: 320,
           }}
         >
           <div>
@@ -136,25 +82,138 @@ export function SummaryDonutCard({ summary, compact = false }: Props) {
                 lineHeight: "20px",
               }}
             >
-              当前店铺多语言翻译完成情况
+              整体翻译进度、覆盖语言和当前任务状态
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginTop: 14,
+              }}
+            >
+              <StatusPill label={`${translatedLanguageCount}/${summary.languageCount} 种语言已覆盖`} tone="info" />
+              <StatusPill
+                label={
+                  activeJobsCount > 0
+                    ? `${activeJobsCount} 个任务进行中`
+                    : queueCount > 0
+                      ? `${queueCount} 个任务等待中`
+                      : "当前没有进行中的任务"
+                }
+                tone={activeJobsCount > 0 || queueCount > 0 ? "success" : "neutral"}
+              />
             </div>
           </div>
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
               gap: 12,
-              borderTop: `1px solid ${v4Colors.divider}`,
-              paddingTop: 12,
+              flexWrap: "wrap",
+              marginTop: 18,
             }}
           >
-            <StatFoot label="语言" value={`${summary.languageCount}`} unit="语言" />
-            <StatFoot
-              label="已译条目"
-              value={formatLargeCount(summary.translatedItems)}
-              unit="已译条目"
-              align="right"
-            />
+            <Button type="primary" onClick={onCreateTask}>
+              新建翻译任务
+            </Button>
+            <Button onClick={onViewTasks}>
+              查看任务列表
+            </Button>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+              gap: 12,
+              borderTop: `1px solid ${v4Colors.divider}`,
+              paddingTop: 14,
+              marginTop: 18,
+            }}
+          >
+            <StatFoot label="翻译进度" value={`${summary.overallPercent ?? 0}%`} unit="整体完成率" />
+            <StatFoot label="覆盖语言" value={`${translatedLanguageCount}`} unit={`共 ${summary.languageCount} 种`} />
+            <StatFoot label="已译条目" value={formatLargeCount(summary.translatedItems)} unit="已完成" />
+            <StatFoot label="待翻译条目" value={formatLargeCount(pendingItems)} unit="待处理" />
+          </div>
+        </div>
+        <div
+          style={{
+            width: 148,
+            minWidth: 148,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: "auto",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: 132,
+              height: 132,
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              viewBox="0 0 36 36"
+              style={{
+                width: 132,
+                height: 132,
+                transform: "rotate(-90deg)",
+              }}
+            >
+              <circle
+                cx="18"
+                cy="18"
+                r="15.5"
+                fill="none"
+                stroke={v4Colors.ringTrack}
+                strokeWidth="3"
+              />
+              <circle
+                cx="18"
+                cy="18"
+                r="15.5"
+                fill="none"
+                stroke={v4Colors.primary}
+                strokeWidth="3"
+                strokeDasharray={dash}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: v4Colors.mono,
+                  fontSize: 28,
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
+                  color: v4Colors.text,
+                }}
+              >
+                {summary.overallPercent != null ? `${summary.overallPercent}%` : "—"}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: v4Colors.primaryHover ?? v4Colors.primary,
+                  marginTop: 6,
+                  fontWeight: 600,
+                }}
+              >
+                已翻译
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -250,9 +309,43 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontFamily: v4Colors.mono, fontSize: 18, fontWeight: 600, lineHeight: 1.1, color: v4Colors.text }}>{value}</div>
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600, marginTop: 3 }}>{unit}</div>
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: v4Colors.mono, fontSize: 20, fontWeight: 700, lineHeight: 1.1, color: v4Colors.text }}>{value}</div>
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginTop: 4 }}>{unit}</div>
     </div>
+  );
+}
+
+function StatusPill({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "info" | "success" | "neutral";
+}) {
+  const toneStyle =
+    tone === "success"
+      ? { background: v4Colors.successBg, color: v4Colors.success, borderColor: "#d9f7be" }
+      : tone === "neutral"
+        ? { background: v4Colors.cardBg, color: v4Colors.textMuted, borderColor: v4Colors.cardBorder }
+        : { background: v4Colors.primarySoft, color: v4Colors.primary, borderColor: "#bae0ff" };
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "5px 10px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 600,
+        border: `1px solid ${toneStyle.borderColor}`,
+        background: toneStyle.background,
+        color: toneStyle.color,
+      }}
+    >
+      {label}
+    </span>
   );
 }
 

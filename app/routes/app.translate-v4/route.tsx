@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
@@ -88,6 +88,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function AppTranslateV4() {
+  const navigate = useNavigate();
   const {
     shop,
     locales,
@@ -102,12 +103,6 @@ export default function AppTranslateV4() {
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
   const source = primaryLocale || "en";
-  const [targets, setTargets] = useState<string[]>([]);
-  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
-  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
-  const [isCover, setIsCover] = useState(false);
-  const [isHandle, setIsHandle] = useState(false);
-  const [creating, setCreating] = useState(false);
 
   const localeOptions = useMemo(
     () =>
@@ -121,6 +116,15 @@ export default function AppTranslateV4() {
     () => selectShopTargetLocales(localeOptions, source),
     [localeOptions, source],
   );
+
+  const [targets, setTargets] = useState<string[]>(() =>
+    targetOptions.map((option) => option.value),
+  );
+  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
+  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
+  const [isCover, setIsCover] = useState(false);
+  const [isHandle, setIsHandle] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
@@ -334,6 +338,21 @@ export default function AppTranslateV4() {
   );
 
   const remainingCredits = quota?.remaining ?? null;
+  const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
+  const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
+  const activeJobsCount = useMemo(() => jobs.filter((j) => !j.isTerminal).length, [jobs]);
+
+  const scrollToCreateTask = useCallback(() => {
+    createTaskSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const scrollToTaskList = useCallback(() => {
+    taskQueueSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const openLanguagePage = useCallback(() => {
+    navigate("/app/language");
+  }, [navigate]);
 
   return (
     <div style={v4PageStyle}>
@@ -379,22 +398,30 @@ export default function AppTranslateV4() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(296px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
             gap: 16,
             marginBottom: 16,
-            maxWidth: 608,
+            alignItems: "stretch",
           }}
         >
-          <SummaryDonutCard summary={coverage} compact />
+          <SummaryDonutCard
+            summary={coverage}
+            compact
+            activeJobsCount={activeJobsCount}
+            queueCount={translateQueue.length}
+            onCreateTask={scrollToCreateTask}
+            onViewTasks={scrollToTaskList}
+          />
           <CoverageCard
             locales={coverage.locales}
             loading={coverageLoading}
             onRefresh={refreshCoverage}
             compact
+            onManageLanguages={openLanguagePage}
           />
         </div>
 
-        <div style={{ marginBottom: 16 }}>
+        <div ref={createTaskSectionRef} style={{ marginBottom: 16 }}>
           <CreateTaskCard
             targetOptions={targetOptions}
             targets={targets}
@@ -413,6 +440,7 @@ export default function AppTranslateV4() {
         </div>
 
         <div
+          ref={taskQueueSectionRef}
           style={{
             display: "grid",
             gridTemplateColumns: "minmax(0, 1fr)",
