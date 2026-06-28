@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { eNumPlanType } from "../route";
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 interface BuyCreditsOuterCardProps {
   planType: string;
@@ -59,25 +59,20 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
       style={{ border: "none", boxShadow: "none" }}
       styles={{ body: { padding: 16 } }}
     >
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space direction="vertical" size={12} style={{ display: "flex" }}>
         <Flex justify="space-between" align="start" gap={16} wrap="wrap">
-          <Space direction="vertical" size={4}>
+          <Flex gap={8} wrap="wrap" align="center">
+            <Title level={4} style={{ margin: 0 }}>
+              {t("Quick top-up")}
+            </Title>
             <Flex gap={8} wrap="wrap" align="center">
-              <Title level={4} style={{ margin: 0 }}>
-                {t("Quick top-up")}
-              </Title>
               {planType ? (
                 <Tag bordered={false} color="blue">
                   {t("Discount applied")}
                 </Tag>
               ) : null}
             </Flex>
-            <Text type="secondary">
-              {t(
-                "Buy extra credits in a few clicks. Your current plan discount is reflected automatically in the available packs.",
-              )}
-            </Text>
-          </Space>
+          </Flex>
           <Button type="primary" onClick={() => handleOpenAddCreditsModalAndSelectedOption()}>
             {t("Browse all credit packs")}
           </Button>

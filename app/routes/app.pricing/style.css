@@ -2,31 +2,6 @@
   width: 100%;
 }
 
-.pricing-hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--p-color-bg-surface);
-  color: var(--p-color-text);
-  border: 1px solid var(--p-color-border-secondary);
-}
-
-.pricing-hero-summary {
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, rgba(45, 127, 249, 0.08) 0%, rgba(45, 127, 249, 0.02) 100%),
-    var(--p-color-bg-surface);
-  box-shadow: var(--app-shadow-card);
-}
-
-.pricing-hero-summary__item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .yearly_save {
   background-color: var(--p-color-bg-surface-info);
   color: var(--p-color-text-info);
@@ -170,14 +145,6 @@
 .pricing-plan-card__unit {
   margin-left: 6px;
   color: var(--p-color-text-secondary);
-}
-
-.pricing-plan-card__note {
-  display: block;
-  min-height: 40px;
-  color: var(--p-color-text-secondary);
-  font-size: 13px;
-  line-height: 20px;
 }
 
 .pricing-plan-card__billing-note {

@@ -20,7 +20,6 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
-import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs } from "@remix-run/node";
 import {
   GetLatestActiveSubscribeId,
@@ -31,12 +30,8 @@ import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import {
-  ArrowRightOutlined,
   CheckOutlined,
   FireFilled,
-  RocketOutlined,
-  SafetyCertificateOutlined,
-  ThunderboltOutlined,
 } from "@ant-design/icons";
 import "./style.css";
 import {
@@ -249,7 +244,7 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const { plan, updateTime, chars, totalChars, ipBalance, isNew } = useSelector(
+  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
@@ -434,10 +429,6 @@ const Index = () => {
         yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
-        description: t(
-          "For merchants launching multilingual storefronts with predictable monthly volume.",
-        ),
-        highlight: t("Best for single-store teams building a strong translation baseline."),
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
           amount: 76.68,
         }),
@@ -465,10 +456,6 @@ const Index = () => {
         yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
-        description: t(
-          "For growing stores that need more credits, automation, and faster day-to-day operations.",
-        ),
-        highlight: t("Great for scaling teams that translate often and want higher savings."),
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
           amount: 191.88,
         }),
@@ -496,10 +483,6 @@ const Index = () => {
         yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
-        description: t(
-          "For high-volume or multi-store businesses that need maximum throughput and premium support.",
-        ),
-        highlight: t("Built for advanced operations with the highest credit capacity and discounts."),
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
           amount: 383.88,
         }),
@@ -526,24 +509,6 @@ const Index = () => {
       },
     ],
     [plan, yearly],
-  );
-
-  const heroHighlights = useMemo(
-    () => [
-      {
-        icon: <ThunderboltOutlined />,
-        text: t("Predictable monthly credits for ongoing localization"),
-      },
-      {
-        icon: <RocketOutlined />,
-        text: t("Higher plans unlock better credit purchase discounts"),
-      },
-      {
-        icon: <SafetyCertificateOutlined />,
-        text: t("Built for Shopify Admin workflows with transparent billing"),
-      },
-    ],
-    [t],
   );
 
   const tableData = useMemo(
@@ -915,117 +880,10 @@ const Index = () => {
     <Page>
       <TitleBar title={t("Pricing")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <ScrollNotice
-          text={t(
-            "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
-          )}
-        />
-        <AppPageHeader
-          title={t("Pricing")}
-          description={t(
-            "Choose the right plan, unlock stronger credit economics, and keep multilingual growth moving with predictable billing.",
-          )}
-        />
-        <AppSectionCard
-          bodyPadding="24px"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--p-color-bg-surface) 0%, var(--p-color-bg-surface-secondary) 100%)",
-          }}
-        >
-          <Row gutter={[24, 24]} align="middle">
-            <Col xs={24} lg={15}>
-              <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                <Flex gap={8} wrap="wrap">
-                  <AppStatusBadge tone="info">{t("Plan & billing")}</AppStatusBadge>
-                  {plan.type ? (
-                    <Tag bordered={false} color="blue">
-                      {`${t(plan.type)} Plan`}
-                    </Tag>
-                  ) : null}
-                </Flex>
-                <Space direction="vertical" size={4} style={{ display: "flex" }}>
-                  <Title
-                    level={2}
-                    style={{
-                      margin: 0,
-                      fontSize: 30,
-                      lineHeight: 1.2,
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    {t("Make translation spend feel predictable, scalable, and easy to justify.")}
-                  </Title>
-                  <Text
-                    style={{
-                      color: "var(--app-color-text-secondary)",
-                      fontSize: 14,
-                      lineHeight: "24px",
-                      maxWidth: 680,
-                    }}
-                  >
-                    {t(
-                      "Compare plans, surface savings earlier, and top up credits without leaving the billing workflow your team already understands.",
-                    )}
-                  </Text>
-                </Space>
-                <Flex gap={8} wrap="wrap">
-                  {heroHighlights.map((item) => (
-                    <Tag
-                      key={item.text}
-                      bordered={false}
-                      className="pricing-hero-tag"
-                      icon={item.icon}
-                    >
-                      {item.text}
-                    </Tag>
-                  ))}
-                </Flex>
-              </Space>
-            </Col>
-            <Col xs={24} lg={9}>
-              <Card className="pricing-hero-summary" bordered={false}>
-                <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                  <div className="pricing-hero-summary__item">
-                    <Text type="secondary">{t("Current plan")}</Text>
-                    <Title level={4} style={{ margin: 0 }}>
-                      {plan.type ? `${t(plan.type)} Plan` : t("Loading")}
-                    </Title>
-                    <Text type="secondary">
-                      {t("Upgrade anytime to unlock more credits and better top-up pricing.")}
-                    </Text>
-                  </div>
-                  <div className="pricing-hero-summary__item">
-                    <Text type="secondary">{t("Yearly billing advantage")}</Text>
-                    <Title level={3} style={{ margin: 0 }}>
-                      {t("Save 20%")}
-                    </Title>
-                    <Text type="secondary">
-                      {t("Applies across all paid plans with one annual checkout.")}
-                    </Text>
-                  </div>
-                  <Button
-                    type="primary"
-                    icon={<ArrowRightOutlined />}
-                    onClick={() => {
-                      if (!yearly) {
-                        handleSetYearlyReport();
-                      }
-                    }}
-                  >
-                    {yearly ? t("Yearly billing active") : t("Switch to yearly")}
-                  </Button>
-                </Space>
-              </Card>
-            </Col>
-          </Row>
-        </AppSectionCard>
+        <AppPageHeader title={t("Pricing")} />
 
         <AppSectionCard
           title={t("Usage & top-up")}
-          description={t(
-            "Track available quota, understand when your plan refreshes, and buy extra credits with your current discount applied automatically.",
-          )}
           extra={
             plan.type ? (
               <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
@@ -1045,7 +903,6 @@ const Index = () => {
             <AcountInfoCard
               loading={isLoading}
               translation_balance={totalChars - chars || 0}
-              ip_balance={ipBalance || 0}
             />
             <BuyCreditsOuterCard
               planType={plan?.type}
@@ -1066,9 +923,6 @@ const Index = () => {
         )}
         <AppSectionCard
           title={t("Choose the right plan for you")}
-          description={t(
-            "Each tier improves both monthly capacity and the economics of extra credit purchases. Use yearly billing for the strongest value.",
-          )}
           extra={
             <Flex align="center" gap={8} wrap="wrap">
               <Text type="secondary">{t("Monthly")}</Text>
@@ -1125,17 +979,11 @@ const Index = () => {
                   <Title level={4} style={{ margin: 0 }}>
                     {t("Free")}
                   </Title>
-                  <Text type="secondary">
-                    {t("For testing workflows and getting your first multilingual pages live.")}
-                  </Text>
                 </div>
                 <div>
                   <Text className="pricing-plan-card__price">$0</Text>
                   <Text className="pricing-plan-card__unit">{t("/month")}</Text>
                 </div>
-                <Text className="pricing-plan-card__note">
-                  {t("A lightweight starting point before upgrading to recurring monthly credits.")}
-                </Text>
               </Space>
 
               <Button
@@ -1268,7 +1116,6 @@ const Index = () => {
                       <Title level={4} style={{ margin: 0 }}>
                         {yearly ? item.yearlyTitle : item.title}
                       </Title>
-                      <Text type="secondary">{item.description}</Text>
                     </div>
                     <div>
                       <Text className="pricing-plan-card__price">
@@ -1276,7 +1123,6 @@ const Index = () => {
                       </Text>
                       <Text className="pricing-plan-card__unit">{t("/month")}</Text>
                     </div>
-                    <Text className="pricing-plan-card__note">{item.highlight}</Text>
                   </Space>
                   {yearly && (
                     <div
@@ -1308,9 +1154,6 @@ const Index = () => {
                     <Space direction="vertical" size={8} style={{ display: "flex" }}>
                       <div className="free_trial">
                         <Text strong>{t("5-day trial")}</Text>
-                        <Text type="secondary">
-                          {t("Includes full features and 200,000 trial credits")}
-                        </Text>
                       </div>
                       <Button
                         id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
@@ -1371,20 +1214,10 @@ const Index = () => {
         </Space>
         <Row gutter={[24, 24]}>
           <Col xs={24} md={8}>
-            <AppSectionCard
-              title={t("Need help choosing?")}
-              description={t(
-                "Talk to support if you manage multiple stores, need a shared setup, or want help forecasting the right quota.",
-              )}
-            >
-              <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                <Text type="secondary">
-                  {t("We can recommend the right tier based on store count, update frequency, and expected translation volume.")}
-                </Text>
-                <Button type="primary" onClick={handleContactSupport}>
-                  {t("Contact Support")}
-                </Button>
-              </Space>
+            <AppSectionCard title={t("Support")}>
+              <Button type="primary" onClick={handleContactSupport}>
+                {t("Contact Support")}
+              </Button>
             </AppSectionCard>
           </Col>
           <Col xs={24} md={16}>
