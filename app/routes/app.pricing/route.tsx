@@ -876,6 +876,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Pricing")} />
+      <div className="pricing-page">
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <AppPageHeader
           title={t("Pricing")}
@@ -1169,6 +1170,7 @@ const Index = () => {
           />
         </AppSectionCard>
       </Space>
+      </div>
       <HasPayForFreePlanModal />
       <Modal
         title={t("Buy Credits")}

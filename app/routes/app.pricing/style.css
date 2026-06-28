@@ -2,6 +2,15 @@
   width: 100%;
 }
 
+.pricing-page {
+  margin: -16px -20px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--app-accent-primary) 10%, transparent), transparent 28%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--app-accent-growth) 8%, transparent), transparent 22%),
+    linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
+}
+
 .yearly_save {
   background: var(--app-accent-utility-soft);
   color: var(--app-accent-utility);
@@ -16,6 +25,15 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 6%, white) 0%, rgba(255, 255, 255, 0.9) 100%),
     var(--p-color-bg-surface);
+}
+
+.pricing-page .ant-alert {
+  border-radius: 14px;
+  box-shadow: var(--app-shadow-card);
+}
+
+.pricing-page .ant-card {
+  backdrop-filter: blur(10px);
 }
 
 .pricing-usage-card__header {
@@ -113,8 +131,8 @@
 .pricing-plan-card__feature {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .pricing-comparison-table .ant-table-thead > tr > th {
@@ -125,4 +143,10 @@
 
 .pricing-comparison-table .ant-table-tbody > tr > td {
   color: var(--p-color-text);
+}
+
+.pricing-comparison-table .ant-table-container {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--app-color-border-secondary);
 }

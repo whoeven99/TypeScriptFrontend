@@ -373,15 +373,16 @@ export default function AppTranslateV4() {
             style={{
               marginBottom: 16,
               padding: "12px 16px",
-              borderRadius: 8,
+              borderRadius: 12,
               background: "var(--p-color-bg-surface-info)",
               color: "var(--p-color-text-info)",
-              border: "1px solid var(--p-color-border-secondary)",
+              border: "1px solid color-mix(in srgb, var(--p-color-text-info) 10%, var(--p-color-border-secondary))",
               display: "flex",
               alignItems: "flex-start",
               gap: 8,
               fontSize: 13,
               lineHeight: "20px",
+              boxShadow: "var(--app-shadow-card)",
             }}
           >
             <span
@@ -426,21 +427,30 @@ export default function AppTranslateV4() {
         </div>
 
         <div ref={createTaskSectionRef} style={{ marginBottom: 16 }}>
-          <CreateTaskCard
-            targetOptions={targetOptions}
-            targets={targets}
-            onTargetsChange={setTargets}
-            modules={moduleKeys}
-            onModulesChange={setModuleKeys}
-            creating={creating}
-            onCreate={handleCreate}
-            aiModel={aiModel}
-            onAiModelChange={setAiModel}
-            isCover={isCover}
-            onIsCoverChange={setIsCover}
-            isHandle={isHandle}
-            onIsHandleChange={setIsHandle}
-          />
+          <div
+            style={{
+              padding: 1,
+              borderRadius: 16,
+              background:
+                "linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 12%, transparent), transparent)",
+            }}
+          >
+            <CreateTaskCard
+              targetOptions={targetOptions}
+              targets={targets}
+              onTargetsChange={setTargets}
+              modules={moduleKeys}
+              onModulesChange={setModuleKeys}
+              creating={creating}
+              onCreate={handleCreate}
+              aiModel={aiModel}
+              onAiModelChange={setAiModel}
+              isCover={isCover}
+              onIsCoverChange={setIsCover}
+              isHandle={isHandle}
+              onIsHandleChange={setIsHandle}
+            />
+          </div>
         </div>
 
         <div

@@ -1,9 +1,21 @@
+.manage-page {
+    margin: -16px -20px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--app-accent-primary) 8%, transparent), transparent 26%),
+        linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
+}
+
 .manage-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--app-accent-primary) 5%, white);
+    border: 1px solid var(--app-color-border-secondary);
 }
 
 .manage-header-left {
@@ -40,6 +52,27 @@
 .manage-content-left {
     flex: 1;
     min-width: 0;
+}
+
+.manage-page .ant-table-container {
+    border: 1px solid var(--app-color-border-secondary);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.manage-page .ant-table-thead > tr > th {
+    background: var(--app-color-surface-secondary);
+    color: var(--app-color-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.manage-page .ant-table-tbody > tr > td {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.manage-page .manage-section-table .ant-table-tbody > tr:hover > td {
+    background: color-mix(in srgb, var(--app-accent-primary) 4%, white) !important;
 }
 
 .items-scroll-item.selected {

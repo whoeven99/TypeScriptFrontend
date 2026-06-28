@@ -77,9 +77,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         dataIndex: "operation",
         key: "operation",
         width: "40%",
-        render: (_: any, record: any) => {
+          render: (_: any, record: any) => {
           return (
-            <Button onClick={() => handleEdit(record, currentLocale)}>
+            <Button type="default" onClick={() => handleEdit(record, currentLocale)}>
               {t("Edit")}
             </Button>
           );
@@ -91,7 +91,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   return (
     <AppSectionCard title={cardTitle} bodyPadding="12px 16px">
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
-        <Table columns={columns} dataSource={dataSource} pagination={false} />
+        <Table className="manage-section-table" columns={columns} dataSource={dataSource} pagination={false} />
       </Space>
     </AppSectionCard>
   );

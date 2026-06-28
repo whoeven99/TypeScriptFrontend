@@ -28,7 +28,7 @@ export function SummaryDonutCard({
       <div
         style={{
           background: v4Colors.summaryBg,
-          borderRadius: 12,
+          borderRadius: 18,
           padding: "20px 22px",
           color: v4Colors.text,
           width: "100%",
@@ -40,8 +40,8 @@ export function SummaryDonutCard({
           alignItems: "stretch",
           flexWrap: "wrap",
           gap: 24,
-          border: "none",
-          boxShadow: "var(--app-shadow-card)",
+          border: `1px solid ${v4Colors.cardBorder}`,
+          boxShadow: "var(--app-shadow-card-strong)",
         }}
       >
         <div
@@ -180,7 +180,7 @@ export function SummaryDonutCard({
     <div
       style={{
         background: v4Colors.summaryBg,
-        borderRadius: 8,
+        borderRadius: 16,
         padding: "16px",
         color: v4Colors.text,
         display: "flex",
@@ -189,8 +189,8 @@ export function SummaryDonutCard({
         minWidth: SUMMARY_CARD_WIDTH,
         boxSizing: "border-box",
         flexShrink: 0,
-        border: "none",
-        boxShadow: "var(--app-shadow-card)",
+        border: `1px solid ${v4Colors.cardBorder}`,
+        boxShadow: "var(--app-shadow-card-strong)",
       }}
     >
       <div

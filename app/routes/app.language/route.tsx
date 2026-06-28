@@ -911,6 +911,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
+      <div className={styles.languagePage}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <AppPageHeader
           title={t("Languages")}
@@ -922,6 +923,7 @@ const Index = () => {
         <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
           <div className={styles.languageTable_action}>
           <Flex
+            className={styles.languageToolbar}
             align="center"
             justify="space-between" // 使按钮左右分布
             style={{ width: "100%", marginBottom: "16px" }}
@@ -966,6 +968,7 @@ const Index = () => {
           </Flex>
           {isMobile ? (
             <Card
+              className={styles.languageMobileCard}
               title={
                 <Checkbox
                   checked={allCurrentPageSelected && !loading}
@@ -1060,6 +1063,7 @@ const Index = () => {
             </Card>
           ) : (
             <Table
+              className={styles.languageTable}
               rowSelection={rowSelection}
               columns={columns}
               dataSource={dataSource}
@@ -1069,6 +1073,7 @@ const Index = () => {
           </div>
         </AppSectionCard>
       </Space>
+      </div>
       <AddLanguageModal
         shop={shop}
         isVisible={isLanguageModalOpen}
