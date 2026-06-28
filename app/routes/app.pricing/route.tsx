@@ -895,13 +895,63 @@ const Index = () => {
             )
           }
         >
-          <AcountInfoCard
-            loading={isLoading}
-            translation_balance={totalChars - chars || 0}
-            onBuyCredits={handleOpenAddCreditsModal}
-            planLabel={plan.type ? `${t(plan.type)} ${t("Plan")}` : undefined}
-            updateTime={updateTime}
-          />
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={15}>
+              <AcountInfoCard
+                loading={isLoading}
+                translation_balance={totalChars - chars || 0}
+                onBuyCredits={handleOpenAddCreditsModal}
+                planLabel={plan.type ? `${t(plan.type)} ${t("Plan")}` : undefined}
+                updateTime={updateTime}
+                totalCredits={totalChars || 0}
+                usedCredits={chars || 0}
+              />
+            </Col>
+            <Col xs={24} lg={9}>
+              <Card
+                style={{
+                  height: "100%",
+                  border: "1px solid var(--app-color-border-secondary)",
+                  boxShadow: "var(--app-shadow-card)",
+                  borderRadius: 16,
+                  background:
+                    "linear-gradient(180deg, rgba(84, 103, 255, 0.08), rgba(255,255,255,0.96))",
+                }}
+                styles={{ body: { padding: 20, height: "100%" } }}
+              >
+                <Space direction="vertical" size={14} style={{ display: "flex", height: "100%" }}>
+                  <div>
+                    <Title level={4} style={{ margin: 0 }}>
+                      {t("Decision helper")}
+                    </Title>
+                    <Text type="secondary">
+                      {t("Use one clear rule to decide between upgrading your plan and buying extra credits.")}
+                    </Text>
+                  </div>
+
+                  <div className="pricing-plan-card__billing-note">
+                    <strong>{t("Upgrade plan")}</strong>
+                    <div>{t("Best for stores translating content continuously across multiple markets every month.")}</div>
+                  </div>
+
+                  <div className="pricing-plan-card__billing-note">
+                    <strong>{t("Buy credits")}</strong>
+                    <div>{t("Best for short-term spikes like campaign launches, product drops, or urgent content refreshes.")}</div>
+                  </div>
+
+                  <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Button type="primary" onClick={() => {
+                      const el = document.getElementById("pricing-plans");
+                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}>
+                      {t("View plans")}
+                    </Button>
+                    <Button onClick={handleOpenAddCreditsModal}>{t("Buy credits")}</Button>
+                  </div>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
         </AppSectionCard>
 
         {isQuotaExceeded && (
@@ -912,6 +962,7 @@ const Index = () => {
             showIcon
           />
         )}
+        <div id="pricing-plans">
         <AppSectionCard
           title={t("Plans")}
           extra={
@@ -1151,6 +1202,7 @@ const Index = () => {
           ))}
           </Row>
         </AppSectionCard>
+        </div>
         <Space direction="vertical" size="small" style={{ display: "flex" }}>
           <AppSectionCard title={t("Compare plans")} bodyPadding="16px">
             <Table

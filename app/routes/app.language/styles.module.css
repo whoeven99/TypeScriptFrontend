@@ -2,7 +2,7 @@
   margin: -16px -20px;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--app-accent-primary) 8%, transparent), transparent 26%),
+    radial-gradient(circle at top left, rgba(84, 103, 255, 0.12), transparent 26%),
     linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
 }
 
@@ -16,7 +16,7 @@
 .languageToolbar {
   padding: 14px 16px;
   border-radius: 14px;
-  background: color-mix(in srgb, var(--app-accent-primary) 5%, white);
+  background: rgba(84, 103, 255, 0.06);
   border: 1px solid var(--app-color-border-secondary);
 }
 
@@ -43,7 +43,7 @@
 }
 
 .languageTable :global(.ant-table-tbody > tr:hover > td) {
-  background: color-mix(in srgb, var(--app-accent-primary) 4%, white) !important;
+  background: rgba(84, 103, 255, 0.05) !important;
 }
 
 .publishModal_webpresence_card {

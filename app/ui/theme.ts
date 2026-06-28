@@ -26,11 +26,11 @@ export const appDesignTokens = {
 
 export const appAntdTheme: ThemeConfig = {
   token: {
-    colorPrimary: appDesignTokens.colorBrand,
-    colorInfo: appDesignTokens.colorBrand,
-    colorSuccess: "var(--p-color-text-success)",
-    colorWarning: "var(--p-color-text-caution)",
-    colorError: "var(--p-color-text-critical)",
+    colorPrimary: "var(--app-accent-primary)",
+    colorInfo: "var(--app-accent-primary)",
+    colorSuccess: "var(--app-accent-growth)",
+    colorWarning: "var(--app-accent-utility)",
+    colorError: "var(--app-accent-critical)",
     colorText: appDesignTokens.colorText,
     colorTextSecondary: appDesignTokens.colorTextSecondary,
     colorTextHeading: appDesignTokens.colorText,

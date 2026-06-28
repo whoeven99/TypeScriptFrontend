@@ -6,8 +6,8 @@
   margin: -16px -20px;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--app-accent-primary) 10%, transparent), transparent 28%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--app-accent-growth) 8%, transparent), transparent 22%),
+    radial-gradient(circle at top left, rgba(84, 103, 255, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(29, 154, 127, 0.10), transparent 22%),
     linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
 }
 
@@ -18,12 +18,12 @@
   border-radius: 100px;
   text-align: center;
   gap: 4px;
-  border: 1px solid color-mix(in srgb, var(--app-accent-utility) 12%, var(--app-color-border-secondary));
+  border: 1px solid rgba(200, 139, 36, 0.18);
 }
 
 .pricing-usage-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 6%, white) 0%, rgba(255, 255, 255, 0.9) 100%),
+    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.92) 100%),
     var(--p-color-bg-surface);
 }
 
@@ -83,15 +83,15 @@
 
 .pricing-plan-card--current {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 8%, white) 0%, rgba(255, 255, 255, 0.98) 100%),
+    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.98) 100%),
     var(--p-color-bg-surface);
 }
 
 .pricing-plan-card--recommended {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-accent-primary) 8%, white) 0%, rgba(255, 255, 255, 0.98) 100%),
+    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.98) 100%),
     var(--p-color-bg-surface);
-  border-color: color-mix(in srgb, var(--app-accent-primary) 16%, var(--app-color-border-secondary)) !important;
+  border-color: rgba(84, 103, 255, 0.22) !important;
   box-shadow: var(--app-shadow-card-strong);
 }
 

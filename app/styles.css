@@ -15,16 +15,16 @@
   --app-color-text-tertiary: var(--p-color-text-tertiary);
   --app-color-brand: var(--p-color-bg-fill-brand);
   --app-color-brand-on-fill: var(--p-color-text-brand-on-bg-fill);
-  --app-accent-primary: var(--app-color-brand);
-  --app-accent-primary-hover: var(--p-color-bg-fill-brand-hover);
-  --app-accent-primary-soft: color-mix(in srgb, var(--app-color-brand) 10%, white);
-  --app-accent-primary-muted: color-mix(in srgb, var(--app-color-brand) 18%, var(--app-color-surface));
-  --app-accent-growth: var(--p-color-text-success);
-  --app-accent-growth-soft: var(--p-color-bg-surface-success);
-  --app-accent-utility: var(--p-color-text-caution);
-  --app-accent-utility-soft: var(--p-color-bg-surface-caution);
-  --app-accent-critical: var(--p-color-text-critical);
-  --app-accent-critical-soft: var(--p-color-bg-surface-critical);
+  --app-accent-primary: #5467ff;
+  --app-accent-primary-hover: #4254e8;
+  --app-accent-primary-soft: rgba(84, 103, 255, 0.12);
+  --app-accent-primary-muted: rgba(84, 103, 255, 0.08);
+  --app-accent-growth: #1d9a7f;
+  --app-accent-growth-soft: rgba(29, 154, 127, 0.12);
+  --app-accent-utility: #c88b24;
+  --app-accent-utility-soft: rgba(200, 139, 36, 0.14);
+  --app-accent-critical: #d04d5f;
+  --app-accent-critical-soft: rgba(208, 77, 95, 0.12);
   --app-font-size-body: 14px;
   --app-font-size-body-small: 13px;
   --app-font-size-caption: 12px;
@@ -69,14 +69,14 @@ body {
   border-radius: 999px;
   background: var(--app-accent-primary-soft);
   color: var(--app-color-text);
-  border: 1px solid color-mix(in srgb, var(--app-color-brand) 10%, var(--app-color-border-secondary));
+  border: 1px solid rgba(84, 103, 255, 0.18);
   font-size: var(--app-font-size-caption);
   font-weight: 600;
 }
 
 .app-tonal-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-color-brand) 5%, white), rgba(255, 255, 255, 0.92)),
+    linear-gradient(180deg, rgba(84, 103, 255, 0.06), rgba(255, 255, 255, 0.92)),
     var(--app-color-surface);
 }
 

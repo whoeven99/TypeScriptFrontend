@@ -6,8 +6,7 @@ export const v4Colors = {
   cardSelected: "var(--app-color-surface-selected)",
   cardBorder: "var(--app-color-border-secondary)",
   divider: "var(--app-color-border-secondary)",
-  summaryBg:
-    "linear-gradient(135deg, color-mix(in srgb, var(--app-accent-primary) 7%, white) 0%, color-mix(in srgb, var(--app-accent-growth) 4%, white) 100%)",
+  summaryBg: "linear-gradient(135deg, rgba(84, 103, 255, 0.12) 0%, rgba(29, 154, 127, 0.06) 100%)",
   primary: "var(--app-accent-primary)",
   primaryHover: "var(--app-accent-primary-hover)",
   primaryTextOnFill: "var(--app-color-brand-on-fill)",
@@ -16,7 +15,7 @@ export const v4Colors = {
   info: "var(--p-color-text-info)",
   successBg: "var(--app-accent-growth-soft)",
   success: "var(--app-accent-growth)",
-  successSoft: "color-mix(in srgb, var(--app-accent-growth) 35%, white)",
+  successSoft: "rgba(29, 154, 127, 0.28)",
   warningBg: "var(--app-accent-utility-soft)",
   warning: "var(--app-accent-utility)",
   dangerBg: "var(--app-accent-critical-soft)",
@@ -25,7 +24,7 @@ export const v4Colors = {
   textMuted: "var(--app-color-text-secondary)",
   textFaint: "var(--app-color-text-tertiary)",
   textLight: "var(--app-color-text-secondary)",
-  ringTrack: "color-mix(in srgb, var(--app-accent-primary) 14%, var(--app-color-surface-secondary))",
+  ringTrack: "rgba(84, 103, 255, 0.16)",
   progressTrack: "var(--app-color-surface-secondary)",
   disabledBg: "var(--app-color-surface-secondary)",
   disabledText: "var(--app-color-text-tertiary)",
@@ -36,7 +35,7 @@ export const v4Colors = {
 
 export const v4PageStyle: CSSProperties = {
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--app-accent-primary) 10%, transparent), transparent 28%), radial-gradient(circle at top right, color-mix(in srgb, var(--app-accent-growth) 9%, transparent), transparent 22%), linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%)",
+    "radial-gradient(circle at top left, rgba(84, 103, 255, 0.14), transparent 28%), radial-gradient(circle at top right, rgba(29, 154, 127, 0.10), transparent 22%), linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%)",
   minHeight: "calc(100vh - 48px)",
   margin: "-16px -20px",
   padding: "24px 24px 40px",
