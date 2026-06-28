@@ -1,4 +1,4 @@
-import { Button, Card, Col, Row, Typography } from "antd";
+import { Card, Col, Row, Space, Statistic, Tag, Typography } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "../style.css";
@@ -22,8 +22,6 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
     () => ({
       translation_balance: translation_balance,
       ip_balance: ip_balance,
-      img_balance: 10000,
-      other_rights: 5,
     }),
     [translation_balance, ip_balance],
   );
@@ -31,133 +29,67 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
   return (
     <Card
       loading={loading}
-      style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+      className="pricing-usage-card"
+      style={{ border: "none", boxShadow: "none" }}
       styles={{
         body: {
-          padding: 16,
+          padding: 0,
         },
       }}
     >
-      <div
-        style={{
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          padding: "8px 12px",
-          borderRadius: 8,
-          background: "var(--app-color-surface-secondary)",
-          marginBottom: 16,
-        }}
-      >
-        <div className="marquee-wrapper">
-          <div className="marquee-content">
-            <span className="marquee-text">
-              {t(
-                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-              )}
-            </span>
-            <span className="marquee-text">
-              {t(
-                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-              )}
-            </span>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <div className="pricing-usage-card__header">
+          <div>
+            <Text className="pricing-usage-card__eyebrow">
+              {t("Available quota")}
+            </Text>
+            <Title level={4} style={{ margin: "4px 0 0" }}>
+              {t("Use what's left now, then top up only when needed")}
+            </Title>
           </div>
-          <div className="marquee-content">
-            <span className="marquee-text">
-              {t(
-                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-              )}
-            </span>
-            <span className="marquee-text">
-              {t(
-                "Plan benefits: Translation credits never expire · monthly translation credits can be accumulated · translation credit transfer is supported.",
-              )}
-            </span>
-          </div>
+          <Tag bordered={false} color="blue">
+            {t("Live usage")}
+          </Tag>
         </div>
-      </div>
+        <Space size={[8, 8]} wrap>
+          <Tag bordered={false} className="pricing-usage-card__tag">
+            {t("Translation credits never expire")}
+          </Tag>
+          <Tag bordered={false} className="pricing-usage-card__tag">
+            {t("Monthly plan credits can accumulate")}
+          </Tag>
+          <Tag bordered={false} className="pricing-usage-card__tag">
+            {t("Credit transfer is supported")}
+          </Tag>
+        </Space>
+      </Space>
       <Row gutter={[16, 16]}>
-          <Col
-            // key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "flex",
-              width: "100%",
-              whiteSpace: "nowrap",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
+        <Col xs={24} md={12}>
+          <div className="pricing-usage-card__metric">
             <Text type="secondary">{t("Translation quota")}</Text>
-            <Title style={{ margin: 0, fontSize: 24, color: "var(--app-color-text)" }}>
-              {componentData.translation_balance?.toLocaleString()}
-            </Title>
-            <Text type="secondary">{t("Credits")}</Text>
-          </Col>
-          <Col
-            // key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "flex",
-              width: "100%",
-              whiteSpace: "nowrap",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
+            <Statistic
+              value={componentData.translation_balance}
+              formatter={(value) => Number(value || 0).toLocaleString()}
+              suffix={t("Credits")}
+            />
+            <Text type="secondary">
+              {t("Available for translation tasks, content refreshes, and future updates.")}
+            </Text>
+          </div>
+        </Col>
+        <Col xs={24} md={12}>
+          <div className="pricing-usage-card__metric">
             <Text type="secondary">{t("IP geo quota")}</Text>
-            <Title style={{ margin: 0, fontSize: 24, color: "var(--app-color-text)" }}>
-              {componentData.ip_balance?.toLocaleString()}
-            </Title>
-            <Text type="secondary">{t("requests")}</Text>
-          </Col>
-          <Col
-            // key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "none",
-              width: "100%",
-              whiteSpace: "nowrap",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Text>{t("Image Balance")}</Text>
-            <Title style={{ margin: 0, fontSize: 20 }}>
-              {componentData.img_balance}
-            </Title>
-            <Text>{t("picture")}</Text>
-          </Col>
-          <Col
-            // key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "none",
-              width: "100%",
-              whiteSpace: "nowrap",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Text>{t("Other rights")}</Text>
-            <Title style={{ margin: 0 }}>{componentData.other_rights}</Title>
-            <Button>{t("picture")}</Button>
-          </Col>
+            <Statistic
+              value={componentData.ip_balance}
+              formatter={(value) => Number(value || 0).toLocaleString()}
+              suffix={t("requests")}
+            />
+            <Text type="secondary">
+              {t("Reserved for IP-based workflows and store-level geo requests.")}
+            </Text>
+          </div>
+        </Col>
       </Row>
     </Card>
   );

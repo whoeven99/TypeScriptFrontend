@@ -1,7 +1,9 @@
-import { Button, Card, Flex, Skeleton } from "antd";
+import { Button, Card, Flex, Skeleton, Space, Tag, Typography } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { eNumPlanType } from "../route";
+
+const { Text, Title } = Typography;
 
 interface BuyCreditsOuterCardProps {
   planType: string;
@@ -53,36 +55,59 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
 
   return (
     <Card
-      style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+      className="pricing-quick-buy-card"
+      style={{ border: "none", boxShadow: "none" }}
       styles={{ body: { padding: 16 } }}
     >
-      <Flex justify="space-between">
-        <Flex gap={8}>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <Flex justify="space-between" align="start" gap={16} wrap="wrap">
+          <Space direction="vertical" size={4}>
+            <Flex gap={8} wrap="wrap" align="center">
+              <Title level={4} style={{ margin: 0 }}>
+                {t("Quick top-up")}
+              </Title>
+              {planType ? (
+                <Tag bordered={false} color="blue">
+                  {t("Discount applied")}
+                </Tag>
+              ) : null}
+            </Flex>
+            <Text type="secondary">
+              {t(
+                "Buy extra credits in a few clicks. Your current plan discount is reflected automatically in the available packs.",
+              )}
+            </Text>
+          </Space>
+          <Button type="primary" onClick={() => handleOpenAddCreditsModalAndSelectedOption()}>
+            {t("Browse all credit packs")}
+          </Button>
+        </Flex>
+        <Flex gap={8} wrap="wrap">
           {planType ? (
             <>
               <Button
-                style={{ color: "var(--app-color-text)" }}
+                className="pricing-quick-buy-card__option"
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-1")
                 }
               >
-                500,000/ ${optionPrices.priceForOption1}
+                {`500,000 / $${optionPrices.priceForOption1}`}
               </Button>
               <Button
-                style={{ color: "var(--app-color-text)" }}
+                className="pricing-quick-buy-card__option"
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-2")
                 }
               >
-                1,000,000/ ${optionPrices.priceForOption2}
+                {`1,000,000 / $${optionPrices.priceForOption2}`}
               </Button>
               <Button
-                style={{ color: "var(--app-color-text)" }}
+                className="pricing-quick-buy-card__option"
                 onClick={() =>
                   handleOpenAddCreditsModalAndSelectedOption("option-3")
                 }
               >
-                2,000,000/ ${optionPrices.priceForOption3}
+                {`2,000,000 / $${optionPrices.priceForOption3}`}
               </Button>
             </>
           ) : (
@@ -93,10 +118,7 @@ const BuyCreditsOuterCard: React.FC<BuyCreditsOuterCardProps> = ({
             </>
           )}
         </Flex>
-        <Button onClick={() => handleOpenAddCreditsModalAndSelectedOption()}>
-          {t("Buy Credit")}
-        </Button>
-      </Flex>
+      </Space>
     </Card>
   );
 };
