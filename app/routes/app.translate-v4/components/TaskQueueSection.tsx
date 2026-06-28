@@ -74,8 +74,8 @@ export function CompactJobCard({
         padding: expanded ? "14px 16px" : "12px 16px",
         marginBottom: 10,
         background: expanded ? v4Colors.cardSubdued : v4Colors.cardBg,
-        borderColor: expanded ? "#d6e4ff" : v4Colors.cardBorder,
-        boxShadow: expanded ? "0 4px 14px rgba(22, 119, 255, 0.07)" : "0 1px 2px rgba(22, 119, 255, 0.04)",
+        border: expanded ? "1px solid #d6e4ff" : "none",
+        boxShadow: "var(--app-shadow-card)",
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>

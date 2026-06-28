@@ -38,8 +38,8 @@ export function SummaryDonutCard({
           alignItems: "stretch",
           flexWrap: "wrap",
           gap: 24,
-          border: `1px solid ${v4Colors.cardBorder}`,
-          boxShadow: "0 8px 24px rgba(22, 119, 255, 0.08)",
+          border: "none",
+          boxShadow: "var(--app-shadow-card)",
         }}
       >
         <div
@@ -187,8 +187,8 @@ export function SummaryDonutCard({
         minWidth: SUMMARY_CARD_WIDTH,
         boxSizing: "border-box",
         flexShrink: 0,
-        border: `1px solid ${v4Colors.cardBorder}`,
-        boxShadow: "0 4px 14px rgba(22, 119, 255, 0.06)",
+        border: "none",
+        boxShadow: "var(--app-shadow-card)",
       }}
     >
       <div

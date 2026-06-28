@@ -1,12 +1,11 @@
 import type { CSSProperties } from "react";
 
 export const v4Colors = {
-  pageBg: "#f5f7fb",
-  cardBg: "#ffffff",
+  cardBg: "var(--app-color-surface)",
   cardSubdued: "#fafcff",
   cardSelected: "#f0f5ff",
-  cardBorder: "#e5eaf3",
-  divider: "#edf1f7",
+  cardBorder: "var(--app-color-border-subdued, #e5eaf3)",
+  divider: "var(--app-color-border-subdued, #edf1f7)",
   summaryBg: "linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%)",
   primary: "#1677ff",
   primaryHover: "#0958d9",
@@ -35,7 +34,7 @@ export const v4Colors = {
 } as const;
 
 export const v4PageStyle: CSSProperties = {
-  background: v4Colors.pageBg,
+  background: "transparent",
   minHeight: "calc(100vh - 48px)",
   margin: "-16px -20px",
   padding: "20px 24px 32px",
@@ -53,8 +52,8 @@ export const v4ContentStyle: CSSProperties = {
 export const v4CardStyle: CSSProperties = {
   background: v4Colors.cardBg,
   borderRadius: 8,
-  border: `1px solid ${v4Colors.cardBorder}`,
-  boxShadow: "0 1px 2px rgba(22, 119, 255, 0.04)",
+  border: "none",
+  boxShadow: "var(--app-shadow-card)",
 };
 
 export function v4ChipStyle(selected: boolean): CSSProperties {
