@@ -1190,6 +1190,7 @@ const Index = () => {
             className="pricing-comparison-table"
             dataSource={tableData}
             columns={columns}
+            rowKey={(record) => String(record.key)}
             pagination={false}
           />
         </section>

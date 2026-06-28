@@ -336,7 +336,6 @@ const Index = () => {
   }, [dataSource]);
 
   const prevLocaleDataRef = useRef<string[]>();
-  const hasBootstrappedRef = useRef(false);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -389,9 +388,6 @@ const Index = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (hasBootstrappedRef.current) return;
-    hasBootstrappedRef.current = true;
-
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
     loadingFetcher.submit(formData, {
@@ -427,7 +423,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [fetcher, loadingFetcher, location.search, shop, webPresencesFetcher]);
+  }, []);
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -1094,6 +1090,7 @@ const Index = () => {
               rowSelection={rowSelection}
               columns={columns}
               dataSource={dataSource}
+              rowKey={(record) => record.key ?? record.locale}
               loading={deleteloading || loading}
             />
           )}
