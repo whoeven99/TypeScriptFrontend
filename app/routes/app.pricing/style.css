@@ -110,6 +110,14 @@
   box-shadow: inset 0 0 0 1px var(--p-color-border-secondary);
 }
 
+.pricing-usage-card__metric-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .pricing-usage-card__metric .ant-statistic {
   margin: 0;
 }

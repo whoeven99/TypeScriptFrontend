@@ -8,7 +8,6 @@ import {
   Button,
   Typography,
   Alert,
-  Skeleton,
   Flex,
   Switch,
   Table,
@@ -235,7 +234,7 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
+  const { plan, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
@@ -881,56 +880,14 @@ const Index = () => {
         <section className="pricing-section">
           <div className="pricing-section__header">
             <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Billing overview")}</h2>
+              <h2 className="pricing-section__title">{t("Available credits")}</h2>
             </div>
-            {plan.type ? (
-              <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
-            ) : (
-              <Skeleton.Button />
-            )}
           </div>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} lg={15}>
-              <AcountInfoCard
-                loading={isLoading}
-                translation_balance={totalChars - chars || 0}
-                onBuyCredits={handleOpenAddCreditsModal}
-                planLabel={plan.type ? `${t(plan.type)} ${t("Plan")}` : undefined}
-                updateTime={updateTime}
-                totalCredits={totalChars || 0}
-                usedCredits={chars || 0}
-                onUpgradePlan={() => {
-                  const el = document.getElementById("pricing-plans");
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              />
-            </Col>
-            <Col xs={24} lg={9}>
-              <Card
-                className="pricing-decision-card"
-                style={{
-                  height: "100%",
-                }}
-                styles={{ body: { padding: 20, height: "100%" } }}
-              >
-                <Space direction="vertical" size={14} style={{ display: "flex", height: "100%" }}>
-                  <Title level={4} style={{ margin: 0 }}>
-                    {t("Actions")}
-                  </Title>
-
-                  <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button type="primary" onClick={() => {
-                      const el = document.getElementById("pricing-plans");
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}>
-                      {t("View plans")}
-                    </Button>
-                    <Button onClick={handleOpenAddCreditsModal}>{t("Buy credits")}</Button>
-                  </div>
-                </Space>
-              </Card>
-            </Col>
-          </Row>
+          <AcountInfoCard
+            loading={isLoading}
+            translation_balance={totalChars - chars || 0}
+            onBuyCredits={handleOpenAddCreditsModal}
+          />
         </section>
 
         {isQuotaExceeded && (
