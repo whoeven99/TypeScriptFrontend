@@ -26,21 +26,6 @@
   margin-bottom: 16px;
 }
 
-.pricing-usage-card__eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--p-color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pricing-usage-card__tag {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--p-color-bg-surface-secondary);
-  color: var(--p-color-text-secondary);
-}
-
 .pricing-usage-card__metric {
   display: flex;
   flex-direction: column;
@@ -68,26 +53,6 @@
   color: var(--p-color-text-secondary);
   font-size: 13px;
   font-weight: 500;
-}
-
-.pricing-quick-buy-card {
-  background: var(--p-color-bg-surface-secondary);
-}
-
-.pricing-quick-buy-card__option {
-  height: auto;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border-color: var(--p-color-border-secondary);
-  background: var(--p-color-bg-surface);
-  color: var(--p-color-text);
-  box-shadow: none;
-}
-
-.pricing-quick-buy-card__option:hover,
-.pricing-quick-buy-card__option:focus {
-  border-color: var(--p-color-border-brand);
-  color: var(--p-color-text);
 }
 
 .pricing-plan-card {

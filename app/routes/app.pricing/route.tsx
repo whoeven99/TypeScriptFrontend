@@ -45,7 +45,6 @@ import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
-import BuyCreditsOuterCard from "./components/buyCreditsOuterCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
@@ -879,7 +878,7 @@ const Index = () => {
         <AppPageHeader title={t("Pricing")} />
 
         <AppSectionCard
-          title={t("Usage & top-up")}
+          title={t("Credits")}
           extra={
             plan.type ? (
               <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
@@ -899,12 +898,7 @@ const Index = () => {
             <AcountInfoCard
               loading={isLoading}
               translation_balance={totalChars - chars || 0}
-            />
-            <BuyCreditsOuterCard
-              planType={plan?.type}
-              isInTrial={plan?.isInFreePlanTime}
-              handleOpenAddCreditsModal={handleOpenAddCreditsModal}
-              setSelectedOption={setSelectedOption}
+              onBuyCredits={handleOpenAddCreditsModal}
             />
           </Space>
         </AppSectionCard>
