@@ -1,9 +1,13 @@
 .languagePage {
   margin: -16px -20px;
   padding: 24px;
-  background:
-    radial-gradient(circle at top left, rgba(84, 103, 255, 0.12), transparent 26%),
-    linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
+  background: var(--app-color-bg);
+}
+
+.languagePageInner {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
 }
 
 .languageTable_action {

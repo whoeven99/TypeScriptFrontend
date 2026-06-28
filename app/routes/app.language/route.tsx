@@ -912,6 +912,7 @@ const Index = () => {
         )}
       />
       <div className={styles.languagePage}>
+      <div className={styles.languagePageInner}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
         <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
@@ -1067,6 +1068,7 @@ const Index = () => {
           </div>
         </AppSectionCard>
       </Space>
+      </div>
       </div>
       <AddLanguageModal
         shop={shop}

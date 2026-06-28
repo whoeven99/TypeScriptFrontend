@@ -1030,6 +1030,7 @@ const Index = () => {
       />
       {loading || !!selectOptions?.length ? (
         <div className="manage-page">
+        <div className="manage-page__inner">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AppPageHeader title={t("Manage Translation")} />
           <AppSectionCard bodyPadding="16px">
@@ -1130,6 +1131,7 @@ const Index = () => {
             {/* <div className="manage-content-right"></div> */}
           </div>
         </Space>
+        </div>
         </div>
       ) : (
         <NoLanguageSetCard />

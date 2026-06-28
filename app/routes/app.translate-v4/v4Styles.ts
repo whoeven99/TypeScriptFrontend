@@ -34,8 +34,7 @@ export const v4Colors = {
 } as const;
 
 export const v4PageStyle: CSSProperties = {
-  background:
-    "radial-gradient(circle at top left, rgba(84, 103, 255, 0.14), transparent 28%), radial-gradient(circle at top right, rgba(29, 154, 127, 0.10), transparent 22%), linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%)",
+  background: "var(--app-color-bg)",
   minHeight: "calc(100vh - 48px)",
   margin: "-16px -20px",
   padding: "24px 24px 40px",
@@ -46,6 +45,7 @@ export const v4PageStyle: CSSProperties = {
 
 export const v4ContentStyle: CSSProperties = {
   width: "100%",
+  maxWidth: 1360,
   margin: "0 auto",
 };
 

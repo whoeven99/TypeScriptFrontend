@@ -5,10 +5,13 @@
 .pricing-page {
   margin: -16px -20px;
   padding: 24px 24px 40px;
-  background:
-    radial-gradient(circle at top left, rgba(84, 103, 255, 0.14), transparent 28%),
-    radial-gradient(circle at top right, rgba(29, 154, 127, 0.10), transparent 22%),
-    linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
+  background: var(--app-color-bg);
+}
+
+.pricing-page__inner {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
 }
 
 .pricing-page .Polaris-Page,
@@ -214,6 +217,10 @@
 @media (max-width: 768px) {
   .pricing-page {
     padding: 16px 16px 32px;
+  }
+
+  .pricing-page__inner {
+    max-width: none;
   }
 
   .pricing-section {
