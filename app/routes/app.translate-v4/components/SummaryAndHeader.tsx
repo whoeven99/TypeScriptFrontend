@@ -73,7 +73,7 @@ export function SummaryDonutCard({
                 lineHeight: "20px",
               }}
             >
-              已覆盖 {translatedLanguageCount} / {summary.languageCount} 种目标语言
+              {summary.languageCount} 种目标语言中，已有 {translatedLanguageCount} 种包含翻译内容
             </div>
           </div>
           <div
@@ -87,7 +87,7 @@ export function SummaryDonutCard({
             }}
           >
             <StatFoot label="翻译进度" value={`${summary.overallPercent ?? 0}%`} unit="整体完成率" />
-            <StatFoot label="覆盖语言" value={`${translatedLanguageCount}`} unit={`共 ${summary.languageCount} 种`} />
+            <StatFoot label="已有内容语言" value={`${translatedLanguageCount}`} unit={`共 ${summary.languageCount} 种`} />
             <StatFoot label="已译条目" value={formatLargeCount(summary.translatedItems)} unit="已完成" />
             <StatFoot label="待翻译条目" value={formatLargeCount(pendingItems)} unit="待处理" />
           </div>
@@ -277,11 +277,9 @@ function formatLargeCount(n: number): string {
 }
 
 export function PageHeaderBar({
-  shop,
   credits,
   planType,
 }: {
-  shop: string;
   credits: number | null;
   planType: string | null;
 }) {
@@ -325,19 +323,6 @@ export function PageHeaderBar({
             >
               {credits != null ? `${formatCredits(credits)}` : "—"}
             </span>
-          </div>
-          <div
-            style={{
-              maxWidth: 240,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              color: v4Colors.textFaint,
-              fontSize: 12,
-            }}
-            title={shop}
-          >
-            {shop}
           </div>
         </div>
       }

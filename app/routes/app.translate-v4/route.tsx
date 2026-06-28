@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, message } from "antd";
+import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
@@ -359,22 +359,11 @@ export default function AppTranslateV4() {
     navigate("/app/language");
   }, [navigate]);
 
-  const lowCoverageCount = useMemo(
-    () => coverage.locales.filter((item) => (item.percent ?? 0) < 80).length,
-    [coverage.locales],
-  );
-
-  const translatedLocaleCount = useMemo(
-    () => coverage.locales.filter((item) => (item.percent ?? 0) > 0).length,
-    [coverage.locales],
-  );
-
   return (
     <Page>
       <TitleBar title="智能翻译" />
       <div style={v4ContentStyle}>
         <PageHeaderBar
-          shop={shop}
           credits={remainingCredits}
           planType={planType}
         />
@@ -418,115 +407,77 @@ export default function AppTranslateV4() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
             gap: 18,
             alignItems: "start",
           }}
         >
-          <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
+              gap: 18,
+              alignItems: "start",
+            }}
+          >
             <SummaryDonutCard
               summary={coverage}
               compact
             />
-
-            <div ref={createTaskSectionRef}>
-              <div
-                style={{
-                  padding: 1,
-                  borderRadius: 16,
-                  background: "linear-gradient(180deg, rgba(84, 103, 255, 0.16), rgba(84, 103, 255, 0.02))",
-                }}
-              >
-                <CreateTaskCard
-                  targetOptions={targetOptions}
-                  targets={targets}
-                  onTargetsChange={setTargets}
-                  modules={moduleKeys}
-                  onModulesChange={setModuleKeys}
-                  creating={creating}
-                  onCreate={handleCreate}
-                  aiModel={aiModel}
-                  onAiModelChange={setAiModel}
-                  isCover={isCover}
-                  onIsCoverChange={setIsCover}
-                  isHandle={isHandle}
-                  onIsHandleChange={setIsHandle}
-                />
-              </div>
-            </div>
-
             <div
-              ref={taskQueueSectionRef}
               style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr)",
-                gap: 16,
+                position: "sticky",
+                top: 24,
               }}
             >
-              <TaskQueueSection
-                jobs={jobs}
-                translateSlotBusy={translateSlotBusy}
-                onAction={handleAction}
+              <CoverageCard
+                locales={coverage.locales}
+                loading={coverageLoading}
+                onRefresh={refreshCoverage}
+                compact
+                onManageLanguages={openLanguagePage}
+              />
+            </div>
+          </div>
+
+          <div ref={createTaskSectionRef}>
+            <div
+              style={{
+                padding: 1,
+                borderRadius: 16,
+                background: "linear-gradient(180deg, rgba(84, 103, 255, 0.16), rgba(84, 103, 255, 0.02))",
+              }}
+            >
+              <CreateTaskCard
+                targetOptions={targetOptions}
+                targets={targets}
+                onTargetsChange={setTargets}
+                modules={moduleKeys}
+                onModulesChange={setModuleKeys}
+                creating={creating}
+                onCreate={handleCreate}
+                aiModel={aiModel}
+                onAiModelChange={setAiModel}
+                isCover={isCover}
+                onIsCoverChange={setIsCover}
+                isHandle={isHandle}
+                onIsHandleChange={setIsHandle}
               />
             </div>
           </div>
 
           <div
+            ref={taskQueueSectionRef}
             style={{
               display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr)",
               gap: 16,
-              position: "sticky",
-              top: 24,
             }}
           >
-            <CoverageCard
-              locales={coverage.locales}
-              loading={coverageLoading}
-              onRefresh={refreshCoverage}
-              compact
-              onManageLanguages={openLanguagePage}
+            <TaskQueueSection
+              jobs={jobs}
+              translateSlotBusy={translateSlotBusy}
+              onAction={handleAction}
             />
-
-            <div
-              style={{
-                borderRadius: 16,
-                border: "1px solid var(--app-color-border-secondary)",
-                background: "var(--app-surface-growth-soft)",
-                boxShadow: "var(--app-shadow-card)",
-                padding: 18,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--app-color-text)" }}>
-                    Plan & Credits
-                  </div>
-                </div>
-                <span className="app-subtle-chip">{planType ?? "Free"} Plan</span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: 10,
-                }}
-              >
-                <MiniMetric label="可用积分" value={remainingCredits != null ? formatCount(remainingCredits) : "—"} />
-                <MiniMetric label="已覆盖语言" value={`${translatedLocaleCount}/${coverage.locales.length}`} />
-                <MiniMetric label="待完善" value={`${lowCoverageCount}`} />
-              </div>
-
-              <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Button type="default" onClick={openLanguagePage}>
-                  管理语言
-                </Button>
-                <Button type="primary" onClick={() => navigate("/app/pricing")}>
-                  查看套餐
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -534,28 +485,4 @@ export default function AppTranslateV4() {
       <SupportChatWidget />
     </Page>
   );
-}
-
-function MiniMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        padding: "12px 12px 10px",
-        borderRadius: 12,
-        background: "rgba(255, 255, 255, 0.72)",
-        border: "1px solid var(--app-color-border-secondary)",
-      }}
-    >
-      <div style={{ fontSize: 11, lineHeight: "16px", color: "var(--app-color-text-tertiary)", marginBottom: 6 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 18, lineHeight: "20px", fontWeight: 700, color: "var(--app-color-text)", letterSpacing: "-0.02em" }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function formatCount(value: number): string {
-  return value.toLocaleString();
 }
