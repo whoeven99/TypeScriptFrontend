@@ -90,7 +90,6 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title="目标语言" />
-        <SectionHelp>先覆盖当前重点市场语言，优先补齐会影响商品理解和购买决策的地区。</SectionHelp>
         <Select
           mode="multiple"
           placeholder="选择目标语言"
@@ -105,7 +104,6 @@ export function CreateTaskCard({
 
       <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
         <SectionHeader title="翻译内容" />
-        <SectionHelp>建议优先选择高价值内容模块，例如商品详情、首页卖点和政策说明。</SectionHelp>
         <Select
           mode="multiple"
           placeholder="选择翻译内容模块"
@@ -127,7 +125,6 @@ export function CreateTaskCard({
         }}
       >
         <SectionHeader title="高级设置" />
-        <SectionHelp>模型与覆盖策略会影响细节质量，默认保持次级层级，不与主任务路径竞争。</SectionHelp>
         <div style={{ marginTop: 4 }}>
           <SectionLabel>AI 模型</SectionLabel>
           <Select
@@ -169,14 +166,6 @@ function SectionHeader({
       <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text }}>
         {title}
       </div>
-    </div>
-  );
-}
-
-function SectionHelp({ children }: { children: string }) {
-  return (
-    <div style={{ fontSize: 12, lineHeight: 1.6, color: v4Colors.textMuted, marginTop: -4, marginBottom: 10 }}>
-      {children}
     </div>
   );
 }

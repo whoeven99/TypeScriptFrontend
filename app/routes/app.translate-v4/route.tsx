@@ -501,9 +501,6 @@ export default function AppTranslateV4() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--app-color-text)" }}>
                     Plan & Credits Context
                   </div>
-                  <div style={{ marginTop: 4, fontSize: 12, lineHeight: "18px", color: "var(--app-color-text-secondary)" }}>
-                    把计划和额度放到辅助层，帮助判断是否继续扩语言或补充额度。
-                  </div>
                 </div>
                 <span className="app-subtle-chip">{planType ?? "Free"} Plan</span>
               </div>
@@ -519,23 +516,6 @@ export default function AppTranslateV4() {
                 <MiniMetric label="可用积分" value={remainingCredits != null ? formatCount(remainingCredits) : "—"} />
                 <MiniMetric label="已覆盖语言" value={`${translatedLocaleCount}/${coverage.locales.length}`} />
                 <MiniMetric label="待完善" value={`${lowCoverageCount}`} />
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "11px 12px",
-                  borderRadius: 12,
-                  background: "rgba(255, 255, 255, 0.72)",
-                  border: "1px solid rgba(29, 154, 127, 0.12)",
-                  fontSize: 12,
-                  lineHeight: "18px",
-                  color: "var(--app-color-text-secondary)",
-                }}
-              >
-                {lowCoverageCount > 0
-                  ? "建议先补齐高流量市场语言，再扩更多模块，这样更接近 demo 里的运营决策路径。"
-                  : "当前语言覆盖已比较完整，下一步更适合扩展自动翻译或继续提升高价值页面质量。"}
               </div>
 
               <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>

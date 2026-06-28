@@ -913,13 +913,7 @@ const Index = () => {
       />
       <div className={styles.languagePage}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader
-          title={t("Languages")}
-          description={t(
-            "Manage published locales, control auto-translation behavior, and quickly decide whether each market should go to translation or content management next.",
-          )}
-          extra={<PrimaryLanguage />}
-        />
+        <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
         <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
           <div className={styles.languageTable_action}>
           <Flex

@@ -1,4 +1,4 @@
-import { Button, Card, Statistic, Typography } from "antd";
+import { Button, Statistic, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import "../style.css";
 
@@ -28,25 +28,13 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Card
-      loading={loading}
-      className="pricing-usage-card"
-      style={{ border: "none", boxShadow: "none" }}
-      styles={{
-        body: {
-          padding: 0,
-        },
-      }}
-    >
+    <div className="pricing-usage-card">
       <div className="pricing-usage-card__header">
         <div>
           <Title level={4} style={{ margin: 0 }}>
             {t("Billing overview")}
           </Title>
-          <Text type="secondary">
-            {planLabel ? `${planLabel} · ` : ""}
-            {t("See your available credits and decide whether to upgrade or buy extra volume.")}
-          </Text>
+          {planLabel ? <Text type="secondary">{planLabel}</Text> : null}
         </div>
         <Button type="primary" onClick={onBuyCredits}>
           {t("Buy Credit")}
@@ -82,30 +70,12 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
           value={typeof totalCredits === "number" ? Number(totalCredits).toLocaleString() : "—"}
         />
       </div>
-      <div
-        style={{
-          marginTop: 16,
-          padding: "12px 14px",
-          borderRadius: 12,
-          background: "rgba(255,255,255,0.72)",
-          border: "1px solid var(--app-color-border-secondary)",
-          color: "var(--p-color-text-secondary)",
-          fontSize: 13,
-          lineHeight: "20px",
-        }}
-      >
-        {translation_balance <= 0
-          ? t("You are out of credits. Buying extra credits will restore translation immediately.")
-          : t(
-              "If you translate continuously across multiple markets every month, upgrading the plan is usually more predictable than repeated top-ups.",
-            )}
-      </div>
       {onUpgradePlan ? (
         <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Button onClick={onUpgradePlan}>{t("Upgrade plan")}</Button>
         </div>
       ) : null}
-    </Card>
+    </div>
   );
 };
 

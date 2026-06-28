@@ -73,7 +73,7 @@ export function SummaryDonutCard({
                 lineHeight: "20px",
               }}
             >
-              整体翻译进度、覆盖语言和当前任务状态
+              {translatedLanguageCount} / {summary.languageCount}
             </div>
           </div>
           <div
@@ -291,7 +291,6 @@ export function PageHeaderBar({
     <AppPageHeader
       style={{ marginBottom: 18 }}
       title="智能翻译"
-      description="把商品、页面与主题内容快速翻译到更多语言市场，减少理解摩擦，并持续提升商店内容覆盖率。"
       extra={
         <div
           style={{

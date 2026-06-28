@@ -1031,12 +1031,7 @@ const Index = () => {
       {loading || !!selectOptions?.length ? (
         <div className="manage-page">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AppPageHeader
-            title={t("Manage Translation")}
-            description={t(
-              "Choose a locale, review translation coverage across content domains, and move into each editing area from one consistent translation dashboard.",
-            )}
-          />
+          <AppPageHeader title={t("Manage Translation")} />
           <AppSectionCard bodyPadding="16px">
             <div className="manage-header">
               <div className="manage-header-left">

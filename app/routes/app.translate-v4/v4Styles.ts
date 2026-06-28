@@ -46,7 +46,6 @@ export const v4PageStyle: CSSProperties = {
 
 export const v4ContentStyle: CSSProperties = {
   width: "100%",
-  maxWidth: 1280,
   margin: "0 auto",
 };
 

@@ -45,7 +45,6 @@ import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
-import AppSectionCard from "~/ui/components/AppSectionCard";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 const { Title, Text } = Typography;
@@ -430,7 +429,7 @@ const Index = () => {
           plan.type === "Basic" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: t("Best for shops validating a few target markets"),
+        fitLabel: "",
         disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
@@ -458,7 +457,7 @@ const Index = () => {
           plan.type === "Pro" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: t("Best for growing stores translating products and storefront content continuously"),
+        fitLabel: "",
         disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
@@ -486,7 +485,7 @@ const Index = () => {
           plan.type === "Premium" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: t("Best for teams operating multiple languages as an ongoing growth channel"),
+        fitLabel: "",
         disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
@@ -874,27 +873,23 @@ const Index = () => {
   };
 
   return (
-    <Page>
+    <Page fullWidth>
       <TitleBar title={t("Pricing")} />
       <div className="pricing-page">
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader
-          title={t("Pricing")}
-          description={t(
-            "Choose a plan that matches your store growth stage, understand available credits clearly, and decide when to upgrade versus buy extra volume.",
-          )}
-        />
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
+        <AppPageHeader title={t("Pricing")} />
 
-        <AppSectionCard
-          title={t("Billing overview")}
-          extra={
-            plan.type ? (
+        <section className="pricing-section">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("Billing overview")}</h2>
+            </div>
+            {plan.type ? (
               <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
             ) : (
               <Skeleton.Button />
-            )
-          }
-        >
+            )}
+          </div>
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={15}>
               <AcountInfoCard
@@ -909,13 +904,9 @@ const Index = () => {
             </Col>
             <Col xs={24} lg={9}>
               <Card
+                className="pricing-decision-card"
                 style={{
                   height: "100%",
-                  border: "1px solid var(--app-color-border-secondary)",
-                  boxShadow: "var(--app-shadow-card)",
-                  borderRadius: 16,
-                  background:
-                    "linear-gradient(180deg, rgba(84, 103, 255, 0.08), rgba(255,255,255,0.96))",
                 }}
                 styles={{ body: { padding: 20, height: "100%" } }}
               >
@@ -924,19 +915,14 @@ const Index = () => {
                     <Title level={4} style={{ margin: 0 }}>
                       {t("Decision helper")}
                     </Title>
-                    <Text type="secondary">
-                      {t("Use one clear rule to decide between upgrading your plan and buying extra credits.")}
-                    </Text>
                   </div>
 
                   <div className="pricing-plan-card__billing-note">
                     <strong>{t("Upgrade plan")}</strong>
-                    <div>{t("Best for stores translating content continuously across multiple markets every month.")}</div>
                   </div>
 
                   <div className="pricing-plan-card__billing-note">
                     <strong>{t("Buy credits")}</strong>
-                    <div>{t("Best for short-term spikes like campaign launches, product drops, or urgent content refreshes.")}</div>
                   </div>
 
                   <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -952,20 +938,20 @@ const Index = () => {
               </Card>
             </Col>
           </Row>
-        </AppSectionCard>
+        </section>
 
         {isQuotaExceeded && (
           <Alert
             message={t("The quota has been used up")}
-            description={t("Buy extra credits now to continue using")}
             type="warning"
             showIcon
           />
         )}
-        <div id="pricing-plans">
-        <AppSectionCard
-          title={t("Plans")}
-          extra={
+        <section className="pricing-section" id="pricing-plans">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("Plans")}</h2>
+            </div>
             <Flex align="center" gap={8} wrap="wrap">
               <Text type="secondary">{t("Monthly")}</Text>
               <Switch checked={yearly} onChange={handleSetYearlyReport} />
@@ -974,8 +960,7 @@ const Index = () => {
                 <Text strong>{t("Save 20%")}</Text>
               </div>
             </Flex>
-          }
-        >
+          </div>
           <Row gutter={[16, 16]}>
           <Col
             key={t("Free")}
@@ -1019,9 +1004,6 @@ const Index = () => {
                   <Title level={4} style={{ margin: 0 }}>
                     {t("Free")}
                   </Title>
-                  <div className="pricing-plan-card__fit">
-                    {t("Best for testing translation flows before scaling")}
-                  </div>
                 </div>
                 <div>
                   <Text className="pricing-plan-card__price">$0</Text>
@@ -1124,7 +1106,7 @@ const Index = () => {
                       <Title level={4} style={{ margin: 0 }}>
                         {yearly ? item.yearlyTitle : item.title}
                       </Title>
-                      <div className="pricing-plan-card__fit">{item.fitLabel}</div>
+                      {item.fitLabel ? <div className="pricing-plan-card__fit">{item.fitLabel}</div> : null}
                     </div>
                     <div>
                       <Text className="pricing-plan-card__price">
@@ -1201,26 +1183,33 @@ const Index = () => {
             </Col>
           ))}
           </Row>
-        </AppSectionCard>
-        </div>
-        <Space direction="vertical" size="small" style={{ display: "flex" }}>
-          <AppSectionCard title={t("Compare plans")} bodyPadding="16px">
-            <Table
-              className="pricing-comparison-table"
-              dataSource={tableData}
-              columns={columns}
-              pagination={false}
-            />
-          </AppSectionCard>
-        </Space>
-        <AppSectionCard title={t("FAQs")} bodyPadding="8px 16px">
+        </section>
+        <section className="pricing-section pricing-section--compact">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("Compare plans")}</h2>
+            </div>
+          </div>
+          <Table
+            className="pricing-comparison-table"
+            dataSource={tableData}
+            columns={columns}
+            pagination={false}
+          />
+        </section>
+        <section className="pricing-section pricing-section--compact">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("FAQs")}</h2>
+            </div>
+          </div>
           <Collapse
             items={collapseData}
             onChange={() => {
               reportClick("pricing_faq_click");
             }}
           />
-        </AppSectionCard>
+        </section>
       </Space>
       </div>
       <HasPayForFreePlanModal />

@@ -88,16 +88,6 @@ export function CoverageCard({
             >
               语言覆盖率
             </h2>
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                color: v4Colors.textMuted,
-                lineHeight: "20px",
-              }}
-            >
-              用更清晰的方式查看各语言市场的完成度和自动翻译覆盖情况
-            </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
             <Button size="small" onClick={onManageLanguages}>
@@ -113,20 +103,6 @@ export function CoverageCard({
           <HeadMetric label="目标语言" value={`${locales.length}`} />
           <HeadMetric label="自动翻译" value={`${autoTranslateCount}`} />
           <HeadMetric label="待完善" value={`${lowCoverageCount}`} />
-        </div>
-
-        <div
-          style={{
-            marginBottom: 12,
-            padding: "10px 12px",
-            borderRadius: 10,
-            background: v4Colors.primarySoft,
-            color: v4Colors.textMuted,
-            fontSize: 12,
-            lineHeight: 1.55,
-          }}
-        >
-          优先补齐高流量市场语言，可以更快减少理解障碍并提升内容覆盖完整度。
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -151,9 +127,6 @@ export function CoverageCard({
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
             语言覆盖率
           </h2>
-          <div style={{ marginTop: 4, fontSize: 12, color: v4Colors.textMuted, lineHeight: 1.55 }}>
-            先看哪些语言需要补齐，再决定是继续翻译还是进入语言管理。
-          </div>
         </div>
         <button
           type="button"
