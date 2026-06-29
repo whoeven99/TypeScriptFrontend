@@ -67,8 +67,8 @@ export function SummaryDonutCard({
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
                 color: v4Colors.text,
               }}
             >
@@ -80,6 +80,7 @@ export function SummaryDonutCard({
                 color: v4Colors.textMuted,
                 marginTop: 6,
                 lineHeight: "20px",
+                fontWeight: 400,
               }}
             >
               {summary.languageCount} 种目标语言中，已有 {translatedLanguageCount} 种包含翻译内容
@@ -158,10 +159,9 @@ export function SummaryDonutCard({
             >
               <span
                 style={{
-                  fontFamily: v4Colors.mono,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: 700,
-                  letterSpacing: "-0.02em",
+                  letterSpacing: "-0.03em",
                   lineHeight: 1,
                   color: v4Colors.text,
                 }}
@@ -174,6 +174,7 @@ export function SummaryDonutCard({
                   color: v4Colors.textMuted,
                   marginTop: 6,
                   fontWeight: 600,
+                  letterSpacing: "-0.01em",
                 }}
               >
                 整体覆盖率
@@ -237,7 +238,7 @@ export function SummaryDonutCard({
               justifyContent: "center",
             }}
           >
-            <span style={{ fontFamily: v4Colors.mono, fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1, color: v4Colors.text }}>
+            <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: v4Colors.text }}>
               {summary.overallPercent != null ? `${animatedPercent}%` : "—"}
             </span>
             <span style={{ fontSize: 11, color: v4Colors.primaryHover ?? v4Colors.primary, marginTop: 4, fontWeight: 600 }}>已翻译</span>
@@ -274,9 +275,23 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600, marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: v4Colors.mono, fontSize: 20, fontWeight: 700, lineHeight: 1.1, color: v4Colors.text }}>{value}</div>
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginTop: 4 }}>{unit}</div>
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginBottom: 6, letterSpacing: "-0.01em" }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          lineHeight: 1.1,
+          letterSpacing: "-0.03em",
+          color: v4Colors.text,
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginTop: 4, letterSpacing: "-0.01em" }}>
+        {unit}
+      </div>
     </div>
   );
 }
