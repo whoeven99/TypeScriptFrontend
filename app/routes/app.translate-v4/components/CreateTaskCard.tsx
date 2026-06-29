@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { CSSProperties } from "react";
+import { useMemo } from "react";
+import { Button, Checkbox, Select, Space } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -10,8 +10,6 @@ import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 
 type Props = {
-  source: string;
-  sourceLabel: string;
   targetOptions: ShopLocaleOption[];
   targets: string[];
   onTargetsChange: (values: string[]) => void;
@@ -28,8 +26,6 @@ type Props = {
 };
 
 export function CreateTaskCard({
-  source,
-  sourceLabel,
   targetOptions,
   targets,
   onTargetsChange,
@@ -44,212 +40,133 @@ export function CreateTaskCard({
   isHandle,
   onIsHandleChange,
 }: Props) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-
-  const toggleTarget = (value: string) => {
-    onTargetsChange(
-      targets.includes(value) ? targets.filter((t) => t !== value) : [...targets, value],
-    );
-  };
-  const toggleModule = (mod: string) => {
-    onModulesChange(
-      modules.includes(mod) ? modules.filter((m) => m !== mod) : [...modules, mod],
-    );
-  };
-
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
 
+  const sortedTargetOptions = useMemo(() => {
+    return [...targetOptions].sort((a, b) => {
+      const aSelected = targets.includes(a.value) ? 0 : 1;
+      const bSelected = targets.includes(b.value) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      return a.label.localeCompare(b.label);
+    });
+  }, [targetOptions, targets]);
+
+  const sortedModules = useMemo(() => {
+    return [...CREATE_TASK_MODULE_OPTIONS].sort((a, b) => {
+      const aSelected = modules.includes(a) ? 0 : 1;
+      const bSelected = modules.includes(b) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
+        CREATE_TASK_MODULE_LABELS[b] ?? b,
+      );
+    });
+  }, [modules]);
+
+  const targetSelectOptions = sortedTargetOptions.map((opt) => ({
+    value: opt.value,
+    label: `${localeShortName(opt.value, opt.label)} (${localeRegionCode(opt.value)})`,
+  }));
+
+  const moduleSelectOptions = sortedModules.map((mod) => ({
+    value: mod,
+    label: CREATE_TASK_MODULE_LABELS[mod] ?? mod,
+  }));
+
   return (
-    <div style={{ ...v4CardStyle, borderRadius: 20, padding: "24px 26px", boxShadow: "0 10px 30px rgba(27,24,48,0.05)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: v4Colors.text }}>
-          新建翻译任务
-        </h2>
-      </div>
-
-      {/* 源语言 → 目标语言 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            background: "#f6f5fc",
-            border: "1px solid #e7e6f3",
-            borderRadius: 11,
-            padding: "9px 13px",
-            fontWeight: 700,
-            fontSize: 13.5,
-          }}
-        >
-          <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(source)}</span>
-          {localeShortName(source, sourceLabel)}
-        </span>
-        <span style={{ color: "#c2c2c8", fontSize: 18 }}>→</span>
-        {targetOptions.map((opt) => {
-          const selected = targets.includes(opt.value);
-          return (
-            <button key={opt.value} type="button" onClick={() => toggleTarget(opt.value)} style={targetChipStyle(selected)}>
-              <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 700 }}>{localeRegionCode(opt.value)}</span>
-              {localeShortName(opt.value, opt.label)}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 包含的内容 */}
-      <div style={{ borderTop: "1px solid #f0efe9", paddingTop: 16, marginBottom: 18 }}>
-        <SectionLabel>包含的内容</SectionLabel>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {CREATE_TASK_MODULE_OPTIONS.map((mod) => {
-            const selected = modules.includes(mod);
-            return (
-              <button key={mod} type="button" onClick={() => toggleModule(mod)} style={moduleChipStyle(selected)}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{selected ? "✓" : "+"}</span>
-                {CREATE_TASK_MODULE_LABELS[mod] ?? mod}
-              </button>
-            );
-          })}
+    <div style={{ ...v4CardStyle, padding: "18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
+            新建翻译任务
+          </h2>
         </div>
+        <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
+          {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
+        </Button>
       </div>
 
-      {/* 高级设置 */}
-      <div style={{ marginBottom: 18 }}>
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((o) => !o)}
-          style={{
-            background: "none",
-            border: "none",
-            color: v4Colors.primary,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-            padding: 0,
-            fontFamily: "inherit",
-          }}
-        >
-          {advancedOpen ? "收起高级设置" : "高级设置"}
-        </button>
-        {advancedOpen ? (
-          <div
-            style={{
-              marginTop: 14,
-              padding: "16px 18px",
-              borderRadius: 14,
-              background: "#faf9fc",
-              border: "1px solid #eceaf5",
-            }}
-          >
-            <SectionLabel>AI 模型</SectionLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-              {AI_MODEL_OPTIONS.map((opt) => {
-                const selected = aiModel === opt.value;
-                return (
-                  <button key={opt.value} type="button" onClick={() => onAiModelChange(opt.value)} style={aiChipStyle(selected)}>
-                    <span style={{ fontSize: 14, lineHeight: 1 }}>{selected ? "✓" : "+"}</span>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-            <SectionLabel>翻译选项</SectionLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <button type="button" onClick={() => onIsCoverChange(!isCover)} style={optionChipStyle(isCover)}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{isCover ? "✓" : "+"}</span>
-                覆盖已有译文
-              </button>
-              <button type="button" onClick={() => onIsHandleChange(!isHandle)} style={optionChipStyle(isHandle)}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{isHandle ? "✓" : "+"}</span>
-                翻译 handle
-              </button>
-            </div>
-          </div>
-        ) : null}
+      <div style={{ marginBottom: 16 }}>
+        <SectionHeader title="目标语言" />
+        <Select
+          mode="multiple"
+          placeholder="选择目标语言"
+          value={targets}
+          onChange={onTargetsChange}
+          options={targetSelectOptions}
+          maxTagCount="responsive"
+          style={{ width: "100%" }}
+          optionFilterProp="label"
+        />
       </div>
 
-      {/* footer */}
+      <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
+        <SectionHeader title="翻译内容" />
+        <Select
+          mode="multiple"
+          placeholder="选择翻译内容模块"
+          value={modules}
+          onChange={onModulesChange}
+          options={moduleSelectOptions}
+          maxTagCount="responsive"
+          style={{ width: "100%" }}
+          optionFilterProp="label"
+        />
+      </div>
+
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          paddingTop: 16,
-          borderTop: "1px solid #f0efe9",
+          padding: "14px 14px 0",
+          borderRadius: 12,
+          background: "rgba(84, 103, 255, 0.04)",
+          border: `1px dashed ${v4Colors.cardBorder}`,
         }}
       >
-        <span style={{ fontSize: 13, color: v4Colors.textFaint, fontWeight: 600 }}>
-          {targets.length} 种语言 · {modules.length} 个模块
-        </span>
-        <button
-          type="button"
-          disabled={!canCreate}
-          onClick={onCreate}
-          style={{
-            background: canCreate ? v4Colors.primary : "#cfcde6",
-            color: "#fff",
-            border: "none",
-            borderRadius: 12,
-            padding: "12px 24px",
-            fontSize: 14.5,
-            fontWeight: 700,
-            fontFamily: "inherit",
-            cursor: canCreate ? "pointer" : "not-allowed",
-          }}
-        >
-          {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务 →` : "创建任务 →"}
-        </button>
+        <SectionHeader title="高级设置" />
+        <div style={{ marginTop: 4 }}>
+          <SectionLabel>AI 模型</SectionLabel>
+          <Select
+            value={aiModel}
+            onChange={onAiModelChange}
+            options={AI_MODEL_OPTIONS}
+            style={{ width: "100%", marginBottom: 16 }}
+          />
+          <SectionLabel>翻译选项</SectionLabel>
+          <Checkbox.Group
+            value={[
+              ...(isCover ? ["cover"] : []),
+              ...(isHandle ? ["handle"] : []),
+            ]}
+            onChange={(values) => {
+              onIsCoverChange(values.includes("cover"));
+              onIsHandleChange(values.includes("handle"));
+            }}
+            style={{ width: "100%" }}
+          >
+            <Space direction="vertical" size={10}>
+              <Checkbox value="cover">覆盖已有译文</Checkbox>
+              <Checkbox value="handle">翻译 handle</Checkbox>
+            </Space>
+          </Checkbox.Group>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({
+  title,
+}: {
+  title: string;
+}) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text }}>
+        {title}
       </div>
     </div>
   );
 }
 
 function SectionLabel({ children }: { children: string }) {
-  return <div style={{ fontSize: 11.5, fontWeight: 700, color: v4Colors.textMuted, marginBottom: 10 }}>{children}</div>;
-}
-
-const chipBase: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "8px 12px",
-  borderRadius: 10,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.15s",
-  fontFamily: "inherit",
-};
-
-/** 目标语言：选中=实心紫。 */
-function targetChipStyle(selected: boolean): CSSProperties {
-  return {
-    ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.primary : "#e7e6e0"}`,
-    background: selected ? v4Colors.primary : "#fff",
-    color: selected ? "#fff" : v4Colors.textMuted,
-  };
-}
-/** 模块：选中=深色描边浅底 + ✓。 */
-function moduleChipStyle(selected: boolean): CSSProperties {
-  return {
-    ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.text : "#e7e6e0"}`,
-    background: selected ? "#fbfbfa" : "#fff",
-    color: selected ? v4Colors.text : v4Colors.textFaint,
-  };
-}
-/** AI 模型：选中=紫色浅底。 */
-function aiChipStyle(selected: boolean): CSSProperties {
-  return {
-    ...chipBase,
-    border: `1.5px solid ${selected ? v4Colors.primary : "#e7e6e0"}`,
-    background: selected ? "#f1f0fb" : "#fff",
-    color: selected ? v4Colors.primary : v4Colors.textMuted,
-  };
-}
-/** 翻译选项：与模块同款。 */
-function optionChipStyle(selected: boolean): CSSProperties {
-  return moduleChipStyle(selected);
+  return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
 }

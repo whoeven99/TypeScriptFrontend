@@ -30,6 +30,13 @@ const LanguageSelectorCard = forwardRef<
         ref={ref}
         style={{
           width: "100%",
+          border: "none",
+          boxShadow: "var(--app-shadow-card)",
+        }}
+        styles={{
+          body: {
+            padding: "16px",
+          },
         }}
       >
         <Checkbox.Group
@@ -41,7 +48,7 @@ const LanguageSelectorCard = forwardRef<
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(289px, 1fr)",
-              gap: "16px",
+              gap: "var(--app-space-400)",
               width: "100%",
             }}
           >
@@ -73,8 +80,8 @@ const LanguageSelectorCard = forwardRef<
                       width: "30px",
                       height: "auto",
                       justifyContent: "center",
-                      border: "1px solid #888",
-                      borderRadius: "2px",
+                      border: "1px solid var(--app-color-border-secondary)",
+                      borderRadius: "4px",
                     }}
                   />
                   <span>{lang?.name}</span>

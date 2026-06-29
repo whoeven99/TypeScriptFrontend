@@ -64,6 +64,7 @@ import {
 import { setLanguageTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
+import { appAntdTheme } from "~/ui/theme";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -536,7 +537,14 @@ export default function App() {
 
         //判断语言数据是否存在，针对用户直接进入language页面的情况，此时可能会出现同时调用setLanguageTableData方法的情况所以保证根路由的优先级较低不覆盖language页面的数据
         if (targets?.length > 0 && source && languageTableData.length == 0) {
-          dispatch(setLanguageTableData(targets));
+          dispatch(
+            setLanguageTableData(
+              targets.map((item: any) => ({
+                ...item,
+                key: item?.key ?? item?.locale,
+              })),
+            ),
+          );
           //像后端提供最新的语言数据
           languageAddFetcher.submit(
             {
@@ -661,32 +669,7 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "var(--p-color-bg-fill-brand)",
-            fontSize: 16,
-          },
-          components: {
-            Table: {
-              rowSelectedBg: "rgba(217, 217, 217, 0.7)",
-              rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Button: {
-              primaryShadow: "none",
-            },
-            Select: {
-              optionSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Menu: {
-              itemSelectedBg: "rgba(217, 217, 217, 0.7)",
-            },
-            Card: {
-              headerHeight: 42,
-            },
-          },
-        }}
-      >
+      <ConfigProvider theme={appAntdTheme}>
         <NavMenu>
           <Link to="/app" rel="home">
             Home
@@ -701,7 +684,7 @@ export default function App() {
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
               {translateV4Enabled && translateV4ShopAllowed && (
-                <Link to="/app/translate-v4">智能翻译</Link>
+                <Link to="/app/translate-v4">智能翻译 (v4)</Link>
               )}
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>

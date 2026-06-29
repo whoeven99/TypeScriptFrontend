@@ -42,6 +42,7 @@ import TranslatedIcon from "app/components/translateIcon";
 import store from "~/store";
 import { RootState } from "~/store";
 import { useSelector } from "react-redux";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
 const { Text, Title } = Typography;
 interface RealTimeData {
   autoTranslate: false;
@@ -267,21 +268,21 @@ const TranslationDashboard = () => {
     formData.append("translationScore", JSON.stringify({}));
     translationEvaluationFetcher.submit(formData, {
       method: "post",
-      action: "/app/translate_report",
+      action: withEmbeddedSearch("/app/translate_report", location.search),
     });
     setLoading(true);
     const languageFormData = new FormData();
     languageFormData.append("LanguageFetcher", JSON.stringify({}));
     storeLanguageFetcher.submit(languageFormData, {
       method: "post",
-      action: "/app/translate_report",
+      action: withEmbeddedSearch("/app/translate_report", location.search),
     });
     setLanguageStatus(true);
     const realTimeFormData = new FormData();
     realTimeFormData.append("realTimeFetcher", JSON.stringify({}));
     realTimeQuotaFetcher.submit(realTimeFormData, {
       method: "post",
-      action: "/app/translate_report",
+      action: withEmbeddedSearch("/app/translate_report", location.search),
     });
     setRealTimeIsLoading(true);
   };

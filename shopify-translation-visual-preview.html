@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopify Translation App Visual Preview</title>
+  <style>
+    :root {
+      --bg-page: #f4f6fb;
+      --bg-grid: radial-gradient(circle at top left, rgba(90, 109, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(44, 178, 145, 0.1), transparent 24%),
+        linear-gradient(180deg, #f7f9fd 0%, #f4f6fb 100%);
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --surface-subtle: #f7f8fc;
+      --surface-brand: rgba(84, 103, 255, 0.08);
+      --surface-growth: rgba(44, 178, 145, 0.12);
+      --surface-warm: rgba(222, 161, 59, 0.13);
+      --line: rgba(27, 39, 71, 0.1);
+      --line-strong: rgba(27, 39, 71, 0.16);
+      --text: #182033;
+      --text-secondary: #55607a;
+      --text-tertiary: #7b869f;
+      --brand: #5467ff;
+      --brand-strong: #4254e8;
+      --brand-deep: #2d3572;
+      --success: #1d9a7f;
+      --warning: #c88b24;
+      --danger: #d04d5f;
+      --shadow-lg: 0 24px 60px rgba(31, 41, 83, 0.08);
+      --shadow-md: 0 14px 32px rgba(31, 41, 83, 0.06);
+      --shadow-sm: 0 10px 20px rgba(31, 41, 83, 0.04);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max-width: 1360px;
+      --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    body {
+      background-image: var(--bg-grid);
+    }
+
+    .page {
+      width: min(calc(100% - 40px), var(--max-width));
+      margin: 0 auto;
+      padding: 36px 0 72px;
+    }
+
+    .hero {
+      padding: 28px 30px;
+      border: 1px solid rgba(84, 103, 255, 0.08);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72)),
+        linear-gradient(120deg, rgba(84, 103, 255, 0.04), rgba(44, 178, 145, 0.05));
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(12px);
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(84, 103, 255, 0.08);
+      color: var(--brand-deep);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 860px;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .principles {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .principle {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+    }
+
+    .principle strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .principle span {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .panel {
+      margin-top: 24px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.72);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,249,253,0.65));
+    }
+
+    .panel-head h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .panel-head p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--line);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .panel-body {
+      padding: 26px 24px 28px;
+    }
+
+    .translate-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.9fr);
+      gap: 20px;
+    }
+
+    .left-stack,
+    .right-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      box-shadow: var(--shadow-sm);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    .card--hero {
+      padding: 22px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.94), rgba(248,250,255,0.86)),
+        linear-gradient(135deg, rgba(84, 103, 255, 0.08), rgba(44, 178, 145, 0.05));
+    }
+
+    .card--brand-soft {
+      background:
+        linear-gradient(180deg, rgba(84, 103, 255, 0.08), rgba(255,255,255,0.92));
+    }
+
+    .card--growth-soft {
+      background:
+        linear-gradient(180deg, rgba(44, 178, 145, 0.1), rgba(255,255,255,0.95));
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    .card-subtitle {
+      margin-top: 5px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .badge--brand {
+      color: var(--brand-deep);
+      background: rgba(84, 103, 255, 0.1);
+      border-color: rgba(84, 103, 255, 0.15);
+    }
+
+    .badge--success {
+      color: #116955;
+      background: rgba(44, 178, 145, 0.12);
+      border-color: rgba(44, 178, 145, 0.18);
+    }
+
+    .badge--warning {
+      color: #8a5d11;
+      background: rgba(222, 161, 59, 0.14);
+      border-color: rgba(222, 161, 59, 0.2);
+    }
+
+    .headline {
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .headline strong {
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .headline span {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.74);
+      border: 1px solid rgba(27, 39, 71, 0.07);
+    }
+
+    .metric-label {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .metric-note {
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .insight {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.75);
+      border: 1px dashed rgba(84, 103, 255, 0.2);
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .progress {
+      margin-top: 16px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(27, 39, 71, 0.08);
+      overflow: hidden;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 78%;
+      background: linear-gradient(90deg, var(--brand), #7b8cff);
+      border-radius: inherit;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .field-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .field-top strong {
+      font-size: 14px;
+    }
+
+    .field-top span {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .field-help {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .select-row,
+    .tag-row,
+    .action-row,
+    .plan-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.92);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .pill--active {
+      border-color: rgba(84, 103, 255, 0.25);
+      background: rgba(84, 103, 255, 0.08);
+      color: var(--brand-deep);
+      box-shadow: inset 0 0 0 1px rgba(84, 103, 255, 0.05);
+    }
+
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+      margin: 18px 0;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: default;
+      text-decoration: none;
+    }
+
+    .btn--primary {
+      color: #fff;
+      background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+      box-shadow: 0 14px 24px rgba(84, 103, 255, 0.2);
+    }
+
+    .btn--secondary {
+      color: var(--text);
+      background: rgba(255,255,255,0.86);
+      border-color: var(--line);
+    }
+
+    .btn--ghost {
+      color: var(--text-secondary);
+      background: transparent;
+      border-color: transparent;
+      padding: 0;
+      height: auto;
+      font-weight: 600;
+    }
+
+    .job {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.76);
+    }
+
+    .job + .job {
+      margin-top: 12px;
+    }
+
+    .job-top,
+    .job-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .job-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .job-meta {
+      margin-top: 10px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
+
+    .kpi-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .kpi-row strong {
+      font-size: 14px;
+    }
+
+    .kpi-row span {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .pricing-shell {
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: minmax(340px, 1.1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .summary-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .summary-card--value {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.92), rgba(247,250,255,0.84)),
+        linear-gradient(135deg, rgba(84, 103, 255, 0.05), rgba(44,178,145,0.04));
+    }
+
+    .balance-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .balance-item {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(27, 39, 71, 0.07);
+    }
+
+    .balance-item small {
+      display: block;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .balance-item strong {
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px;
+      border-radius: 14px;
+      background: rgba(84, 103, 255, 0.07);
+      border: 1px solid rgba(84, 103, 255, 0.1);
+      gap: 6px;
+    }
+
+    .toggle span {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .toggle span.active {
+      background: #fff;
+      color: var(--brand-deep);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .plan {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.85);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .plan--highlight {
+      background:
+        linear-gradient(180deg, rgba(84,103,255,0.08), rgba(255,255,255,0.95));
+      border-color: rgba(84, 103, 255, 0.16);
+      box-shadow: 0 18px 30px rgba(84, 103, 255, 0.12);
+    }
+
+    .plan-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .plan-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .plan-fit {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .price {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .price strong {
+      font-size: 34px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .price span {
+      color: var(--text-secondary);
+      font-size: 13px;
+      padding-bottom: 3px;
+    }
+
+    .price-note {
+      margin-bottom: 16px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .feature {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .feature i {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(44, 178, 145, 0.12);
+      color: var(--success);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-style: normal;
+      font-size: 11px;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+
+    .plan .btn {
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .sub-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+      gap: 18px;
+    }
+
+    .credit-options {
+      display: grid;
+      gap: 12px;
+    }
+
+    .credit-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .credit-option--active {
+      background: rgba(84, 103, 255, 0.08);
+      border-color: rgba(84, 103, 255, 0.18);
+    }
+
+    .credit-option strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .credit-option span,
+    .faq-item p {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .faq {
+      display: grid;
+      gap: 12px;
+    }
+
+    .faq-item {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.76);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+    }
+
+    .faq-item strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .caption {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.64);
+      border: 1px dashed rgba(27,39,71,0.12);
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .language-shell,
+    .manage-shell {
+      display: grid;
+      gap: 18px;
+    }
+
+    .toolbar-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-main,
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .inline-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .select-mock {
+      min-width: 180px;
+      height: 40px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .language-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 18px;
+    }
+
+    .table-shell {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .table-row,
+    .table-head {
+      display: grid;
+      grid-template-columns: 1.4fr 0.7fr 0.75fr 0.75fr 0.9fr;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+    }
+
+    .table-head {
+      background: rgba(84, 103, 255, 0.04);
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .table-row + .table-row {
+      border-top: 1px solid rgba(27, 39, 71, 0.07);
+    }
+
+    .lang-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .lang-name small {
+      display: block;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 1px solid rgba(84, 103, 255, 0.2);
+      background: rgba(84, 103, 255, 0.08);
+      box-shadow: inset 0 0 0 4px #fff;
+    }
+
+    .switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(27, 39, 71, 0.16);
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(27,39,71,0.12);
+    }
+
+    .switch.is-on {
+      background: rgba(84, 103, 255, 0.3);
+    }
+
+    .switch.is-on::after {
+      left: 21px;
+    }
+
+    .status-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .status-inline i {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      font-style: normal;
+    }
+
+    .status-inline.success { color: var(--success); }
+    .status-inline.warning { color: var(--warning); }
+    .status-inline.brand { color: var(--brand); }
+
+    .stack-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stack-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.76);
+      border: 1px solid rgba(27, 39, 71, 0.08);
+    }
+
+    .stack-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .stack-item span {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .manage-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
+      gap: 18px;
+    }
+
+    .manage-sections {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .section-card {
+      border-radius: 18px;
+      border: 1px solid rgba(27, 39, 71, 0.08);
+      background: rgba(255,255,255,0.82);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .section-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 16px 12px;
+    }
+
+    .section-card-head strong {
+      font-size: 15px;
+    }
+
+    .section-table {
+      display: grid;
+    }
+
+    .section-table-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border-top: 1px solid rgba(27, 39, 71, 0.06);
+    }
+
+    .section-table-row span {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .count {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .ghost-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(27,39,71,0.05);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+      .translate-shell,
+      .summary-strip,
+      .sub-grid,
+      .plan-grid,
+      .principles,
+      .language-grid,
+      .manage-summary,
+      .manage-sections {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-grid,
+      .balance-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(calc(100% - 24px), var(--max-width));
+        padding-top: 18px;
+      }
+
+      .hero,
+      .panel-body,
+      .panel-head {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .mini-grid,
+      .balance-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-head,
+      .job-top,
+      .button-row,
+      .card-head,
+      .toolbar-card {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .table-head,
+      .table-row {
+        grid-template-columns: 1fr;
+      }
+
+      .section-table-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">Visual Direction Preview</div>
+      <h1>Shopify 翻译 App 新视觉预览</h1>
+      <p>
+        这版预览重点验证三件事：整体是否更像 Shopify Admin 内的专业工具、颜色是否更有层次但不过分死板、
+        以及“翻译帮助店铺覆盖更多市场并支持转化”这件事能否被自然看见。
+      </p>
+      <div class="principles">
+        <div class="principle">
+          <strong>Professional Neutral</strong>
+          <span>以中性浅色表面为底，避免整页大面积情绪化色块。</span>
+        </div>
+        <div class="principle">
+          <strong>Quiet Intelligence</strong>
+          <span>品牌强调色集中在任务推进、选中态和关键 CTA，而不是铺满全页。</span>
+        </div>
+        <div class="principle">
+          <strong>Growth Value</strong>
+          <span>通过覆盖率、额度、适用场景来讲价值，而不是靠营销口号抢注意力。</span>
+        </div>
+        <div class="principle">
+          <strong>Flexible Palette</strong>
+          <span>采用角色化配色，而不是把界面锁死在一组蓝白灰常量里。</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Translate V4 Preview</h2>
+          <p>目标：更像翻译任务工作台，清楚展示当前状态、下一步动作和业务价值。</p>
+        </div>
+        <div class="chip-row">
+          <span class="chip" style="color:#2d3572;"><i class="dot"></i>Primary Emphasis</span>
+          <span class="chip" style="color:#1d9a7f;"><i class="dot"></i>Growth Signal</span>
+          <span class="chip" style="color:#c88b24;"><i class="dot"></i>Utility Accent</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="translate-shell">
+          <div class="left-stack">
+            <div class="card card--hero">
+              <div class="card-head">
+                <div>
+                  <div class="badge badge--brand">Translation Workspace</div>
+                  <h3 class="card-title" style="font-size:24px; margin-top:12px;">让商品、页面与主题内容更快覆盖全球市场</h3>
+                  <div class="card-subtitle">把翻译状态、覆盖率和任务创建放在同一条主线里，帮助商家更快把高价值内容推向更多语言市场。</div>
+                </div>
+                <div class="badge badge--success">Pro Plan · 18,450 credits</div>
+              </div>
+              <div class="headline">
+                <strong>78%</strong>
+                <span>已覆盖 12 个目标语言市场。更高语言覆盖意味着更少理解摩擦，更容易完成购买决策。</span>
+              </div>
+              <div class="mini-grid">
+                <div class="metric">
+                  <div class="metric-label">已翻译条目</div>
+                  <div class="metric-value">14,280</div>
+                  <div class="metric-note">商品、集合、政策与主题内容</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">待处理内容</div>
+                  <div class="metric-value">3,960</div>
+                  <div class="metric-note">优先处理高流量商品与落地页</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">自动翻译覆盖</div>
+                  <div class="metric-value">9 / 12</div>
+                  <div class="metric-note">3 个语言市场等待额度补充</div>
+                </div>
+              </div>
+              <div class="insight">推荐优先翻译：热销商品描述、尺码与运输政策、首页主卖点模块。这些内容最直接影响海外访客的理解速度与购买信心。</div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Create Translation Task</h3>
+                  <div class="card-subtitle">把任务创建流程压缩成一条清晰主线，让商家先决定市场语言，再决定最影响转化的内容范围。</div>
+                </div>
+                <div class="badge badge--warning">Advanced options tucked away</div>
+              </div>
+
+              <div class="field-group">
+                <div class="field-top">
+                  <strong>目标语言</strong>
+                  <span>先覆盖重点市场</span>
+                </div>
+                <div class="field-help">建议优先选择当前有访问量但内容未完全本地化的语言，以更快补齐影响购买决策的关键页面。</div>
+                <div class="select-row">
+                  <span class="pill pill--active">English</span>
+                  <span class="pill pill--active">German</span>
+                  <span class="pill pill--active">French</span>
+                  <span class="pill">Spanish</span>
+                  <span class="pill">Japanese</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <div class="field-top">
+                  <strong>翻译内容</strong>
+                  <span>优先高价值内容</span>
+                </div>
+                <div class="field-help">不是所有内容都要同时开始。先处理会影响用户理解、信任与结账决策的内容，通常更有效率。</div>
+                <div class="tag-row">
+                  <span class="pill pill--active">Products</span>
+                  <span class="pill pill--active">Homepage sections</span>
+                  <span class="pill">Blog articles</span>
+                  <span class="pill">Metaobjects</span>
+                  <span class="pill">Policies</span>
+                </div>
+              </div>
+
+              <div class="section-divider"></div>
+
+              <div class="field-group">
+                <div class="field-top">
+                  <strong>高级设置</strong>
+                  <span>作为次级选择</span>
+                </div>
+                <div class="field-help">模型选择、术语保护和 SEO 规则默认收纳，不与主任务路径竞争注意力。</div>
+                <div class="select-row">
+                  <span class="pill pill--active">AI model: Balanced</span>
+                  <span class="pill">Preserve glossary</span>
+                  <span class="pill">Keep product handles</span>
+                </div>
+              </div>
+
+              <div class="button-row">
+                <div class="action-row">
+                  <span class="btn btn--ghost">Preview scope</span>
+                  <span class="btn btn--ghost">Estimated credits 2,480</span>
+                </div>
+                <div class="action-row">
+                  <span class="btn btn--secondary">Save draft</span>
+                  <span class="btn btn--primary">Create task</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Task Queue</h3>
+                  <div class="card-subtitle">状态与进度用统一语义色呈现，减少亮蓝描边和过度仪表盘感。</div>
+                </div>
+                <div class="chip-row">
+                  <span class="chip">Current tasks</span>
+                  <span class="chip">History</span>
+                </div>
+              </div>
+
+              <div class="job">
+                <div class="job-top">
+                  <div class="job-title">EN / DE / FR · Product + Homepage sync</div>
+                  <div class="badge badge--success">Running</div>
+                </div>
+                <div class="progress"><span></span></div>
+                <div class="job-meta">
+                  <span>2,820 / 3,600 items completed</span>
+                  <span>ETA 8 min</span>
+                  <span>credits used 1,920</span>
+                </div>
+              </div>
+
+              <div class="job">
+                <div class="job-top">
+                  <div class="job-title">Japanese market launch · Policy pages</div>
+                  <div class="badge badge--warning">Needs review</div>
+                </div>
+                <div class="job-meta">
+                  <span>34 glossary conflicts detected</span>
+                  <span>last updated 6 min ago</span>
+                  <span>open details</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-stack">
+            <div class="card card--brand-soft">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Coverage Snapshot</h3>
+                  <div class="card-subtitle">价值表达来自覆盖率和市场可用性，而不是强营销 Banner。</div>
+                </div>
+                <div class="badge badge--brand">12 markets</div>
+              </div>
+              <div class="kpi-list">
+                <div class="kpi-row">
+                  <div>
+                    <strong>German storefront readiness</strong>
+                    <span>商品与导航已完整覆盖，结账相关政策仍需补齐</span>
+                  </div>
+                  <div class="badge badge--success">92%</div>
+                </div>
+                <div class="kpi-row">
+                  <div>
+                    <strong>French content readiness</strong>
+                    <span>首页主卖点已上线，但高流量 SKU 仍有缺口</span>
+                  </div>
+                  <div class="badge badge--brand">76%</div>
+                </div>
+                <div class="kpi-row">
+                  <div>
+                    <strong>Spanish expansion opportunity</strong>
+                    <span>已有流量增长趋势，建议补商品页和 FAQ</span>
+                  </div>
+                  <div class="badge badge--warning">54%</div>
+                </div>
+              </div>
+              <div class="caption">界面上只保留轻度品牌染色和信息层次，不做整块深色运营卡，让应用更像 Shopify Admin 内的专业工具。</div>
+            </div>
+
+            <div class="card card--growth-soft">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Plan & Credits Context</h3>
+                  <div class="card-subtitle">计划和额度降为上下文层，不压过页面主任务。</div>
+                </div>
+                <div class="badge badge--success">Auto top-up enabled</div>
+              </div>
+              <div class="balance-grid">
+                <div class="balance-item">
+                  <small>Current plan</small>
+                  <strong>Pro</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Monthly credits</small>
+                  <strong>30k</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Remaining</small>
+                  <strong>18.4k</strong>
+                </div>
+              </div>
+              <div class="button-row" style="margin-top:16px;">
+                <span class="btn btn--secondary">View pricing</span>
+                <span class="btn btn--ghost">Get help choosing scope</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Pricing Preview</h2>
+          <p>目标：更像 Shopify 内的 Billing / Plan 管理页，强调清晰比较、当前状态和下一步决策。</p>
+        </div>
+        <div class="toggle" aria-hidden="true">
+          <span>Monthly</span>
+          <span class="active">Yearly · Save 20%</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="pricing-shell">
+          <div class="summary-strip">
+            <div class="summary-card summary-card--value">
+              <div class="card-head" style="margin-bottom:10px;">
+                <div>
+                  <div class="badge badge--brand">Billing Overview</div>
+                  <h3 class="card-title" style="font-size:24px; margin-top:12px;">让翻译投入更可预测，也更贴近店铺增长节奏</h3>
+                  <div class="card-subtitle">把当前计划、剩余额度和下一步动作放在同一个概览区里，帮助商家判断该升级计划还是临时补量。</div>
+                </div>
+              </div>
+              <div class="balance-grid">
+                <div class="balance-item">
+                  <small>Current plan</small>
+                  <strong>Growth</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Remaining credits</small>
+                  <strong>4,280</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Refresh date</small>
+                  <strong style="font-size:18px;">Jul 03</strong>
+                </div>
+              </div>
+              <div class="caption">你当前最适合的动作：如果下周还有多语言活动页上线，升级计划会比多次零散补量更稳定。</div>
+            </div>
+
+            <div class="summary-card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Decision Helper</h3>
+                  <div class="card-subtitle">不用把套餐和 credits 当成两套产品来理解。</div>
+                </div>
+                <div class="badge badge--warning">4.2k credits left</div>
+              </div>
+              <div class="kpi-list">
+                <div class="kpi-row">
+                  <div>
+                    <strong>Upgrade plan</strong>
+                    <span>适合持续扩张多个语言市场，减少额度不足导致的中断。</span>
+                  </div>
+                </div>
+                <div class="kpi-row">
+                  <div>
+                    <strong>Buy credits</strong>
+                    <span>适合短期补量，例如新品上架、活动页翻译或临时市场测试。</span>
+                  </div>
+                </div>
+              </div>
+              <div class="button-row">
+                <span class="btn btn--primary">Upgrade plan</span>
+                <span class="btn btn--secondary">Buy credits</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="plan-grid">
+            <article class="plan">
+              <div class="plan-top">
+                <div>
+                  <div class="plan-name">Starter</div>
+                  <div class="plan-fit">适合刚开始做多语言试水的店铺</div>
+                </div>
+                <div class="badge">Current baseline</div>
+              </div>
+              <div class="price">
+                <strong>$19</strong>
+                <span>/ month</span>
+              </div>
+              <div class="price-note">或年付月均 $15.2，适合低频翻译与基础市场覆盖。</div>
+              <div class="feature-list">
+                <div class="feature"><i>✓</i><span>5k monthly credits</span></div>
+                <div class="feature"><i>✓</i><span>Products + pages translation</span></div>
+                <div class="feature"><i>✓</i><span>Basic glossary protection</span></div>
+              </div>
+              <span class="btn btn--secondary">Choose Starter</span>
+            </article>
+
+            <article class="plan plan--highlight">
+              <div class="plan-top">
+                <div>
+                  <div class="plan-name">Growth</div>
+                  <div class="plan-fit">适合稳定扩展多个市场、需要持续更新内容的店铺</div>
+                </div>
+                <div class="badge badge--brand">Recommended</div>
+              </div>
+              <div class="price">
+                <strong>$59</strong>
+                <span>/ month</span>
+              </div>
+              <div class="price-note">年付月均 $47.2，能支撑更连续的商品和主题内容同步。</div>
+              <div class="feature-list">
+                <div class="feature"><i>✓</i><span>30k monthly credits</span></div>
+                <div class="feature"><i>✓</i><span>Auto-translate workflows</span></div>
+                <div class="feature"><i>✓</i><span>Theme + policy coverage</span></div>
+                <div class="feature"><i>✓</i><span>Priority support</span></div>
+              </div>
+              <span class="btn btn--primary">Upgrade to Growth</span>
+            </article>
+
+            <article class="plan">
+              <div class="plan-top">
+                <div>
+                  <div class="plan-name">Scale</div>
+                  <div class="plan-fit">适合多区域运营、频繁上新和高并发翻译需求</div>
+                </div>
+                <div class="badge badge--success">Best for teams</div>
+              </div>
+              <div class="price">
+                <strong>$129</strong>
+                <span>/ month</span>
+              </div>
+              <div class="price-note">年付月均 $103.2，适合把翻译当作常规增长运营能力。</div>
+              <div class="feature-list">
+                <div class="feature"><i>✓</i><span>100k monthly credits</span></div>
+                <div class="feature"><i>✓</i><span>Advanced glossary & QA</span></div>
+                <div class="feature"><i>✓</i><span>Launch support for new markets</span></div>
+              </div>
+              <span class="btn btn--secondary">Talk to support</span>
+            </article>
+          </div>
+
+          <div class="sub-grid">
+            <div class="summary-card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Buy Credits</h3>
+                  <div class="card-subtitle">选中态和价格层级与套餐卡一致，避免像两套不同产品。</div>
+                </div>
+                <div class="badge badge--warning">For short-term spikes</div>
+              </div>
+              <div class="credit-options">
+                <div class="credit-option">
+                  <div>
+                    <strong>5,000 credits</strong>
+                    <span>适合活动页、单次新品上架或补漏翻译。</span>
+                  </div>
+                  <div class="badge">$12</div>
+                </div>
+                <div class="credit-option credit-option--active">
+                  <div>
+                    <strong>20,000 credits</strong>
+                    <span>适合季度大规模更新，能减少多次零散购买。</span>
+                  </div>
+                  <div class="badge badge--brand">$39</div>
+                </div>
+                <div class="credit-option">
+                  <div>
+                    <strong>50,000 credits</strong>
+                    <span>适合短期扩展多个语言市场或主题重构。</span>
+                  </div>
+                  <div class="badge">$89</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="summary-card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">FAQ / Support</h3>
+                  <div class="card-subtitle">降级为辅助决策区，不抢套餐主线。</div>
+                </div>
+                <div class="badge">Need help?</div>
+              </div>
+              <div class="faq">
+                <div class="faq-item">
+                  <strong>年付和月付的区别是什么？</strong>
+                  <p>年付强调成本可预测与长期节省，适合持续做多语言运营的店铺。</p>
+                </div>
+                <div class="faq-item">
+                  <strong>什么时候该升级计划而不是买 credits？</strong>
+                  <p>如果你每个月都要持续翻译商品、主题和政策内容，升级计划通常更稳定也更省管理成本。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="caption">
+            这版 Pricing 的重点不是“卖得更猛”，而是让商家更快理解当前状态、不同方案适用场景，以及升级后对内容覆盖与业务节奏的帮助。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Language Preview</h2>
+          <p>目标：把语言页做成“语言运营控制台”，既能管理发布与自动翻译，又能快速跳到翻译或管理流。</p>
+        </div>
+        <div class="chip-row">
+          <span class="chip">Language ops</span>
+          <span class="chip">Publish control</span>
+          <span class="chip">Auto-translation</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="language-shell">
+          <div class="summary-strip">
+            <div class="summary-card summary-card--value">
+              <div class="card-head">
+                <div>
+                  <div class="badge badge--brand">Languages</div>
+                  <h3 class="card-title" style="font-size:24px; margin-top:12px;">把语言设置、发布状态和自动翻译管理集中到一个清晰入口</h3>
+                  <div class="card-subtitle">语言页不应该只是表格。它需要让商家快速理解：哪些语言已经上线、哪些语言还在补内容、下一步应该去翻译还是去管理。</div>
+                </div>
+                <div class="badge">Primary · English</div>
+              </div>
+              <div class="balance-grid">
+                <div class="balance-item">
+                  <small>Published locales</small>
+                  <strong>8</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Auto-translate on</small>
+                  <strong>5</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Needs attention</small>
+                  <strong>2</strong>
+                </div>
+              </div>
+              <div class="caption">这页的视觉重点从“功能列表”转向“语言运营状态”。商家先看到整体语言策略，再进入单语言处理。</div>
+            </div>
+            <div class="summary-card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Page behavior</h3>
+                  <div class="card-subtitle">保留真实页面已有的动作结构，但让 CTA 和状态更清楚。</div>
+                </div>
+                <div class="badge badge--warning">Max 20 locales</div>
+              </div>
+              <div class="stack-list">
+                <div class="stack-item">
+                  <strong>Add Language</strong>
+                  <span>作为主动作保留，但不再和所有表格动作抢同级视觉焦点。</span>
+                </div>
+                <div class="stack-item">
+                  <strong>Preview store</strong>
+                  <span>保持为次级操作，放在工具栏右侧，服务验证而不是抢主线。</span>
+                </div>
+                <div class="stack-item">
+                  <strong>Translate / Manage</strong>
+                  <span>在语言行内保留双动作，但优先让用户判断“去翻译”还是“去编辑已有内容”。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card toolbar-card">
+            <div class="toolbar-main">
+              <span class="btn btn--secondary">Delete selected</span>
+              <span class="inline-label">Selected 2 items</span>
+            </div>
+            <div class="toolbar-actions">
+              <span class="btn btn--secondary">Preview store</span>
+              <span class="btn btn--primary">Add Language</span>
+            </div>
+          </div>
+
+          <div class="language-grid">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Locale Table</h3>
+                  <div class="card-subtitle">表格仍然是主结构，但更强调状态清晰和动作节奏，而不是纯工具表格感。</div>
+                </div>
+                <div class="badge badge--success">Default language: English</div>
+              </div>
+              <div class="table-shell">
+                <div class="table-head">
+                  <div>Language</div>
+                  <div>Status</div>
+                  <div>Publish</div>
+                  <div>Auto</div>
+                  <div>Action</div>
+                </div>
+                <div class="table-row">
+                  <div class="lang-name">
+                    <span class="check"></span>
+                    <div>German <small>Deutsch · de</small></div>
+                  </div>
+                  <div class="status-inline success"><i></i>Synced</div>
+                  <div><span class="switch is-on"></span></div>
+                  <div><span class="switch is-on"></span></div>
+                  <div class="action-row">
+                    <span class="btn btn--primary">Translate</span>
+                    <span class="btn btn--secondary">Manage</span>
+                  </div>
+                </div>
+                <div class="table-row">
+                  <div class="lang-name">
+                    <span class="check"></span>
+                    <div>French <small>Français · fr</small></div>
+                  </div>
+                  <div class="status-inline brand"><i></i>In progress</div>
+                  <div><span class="switch is-on"></span></div>
+                  <div><span class="switch"></span></div>
+                  <div class="action-row">
+                    <span class="btn btn--secondary">Update</span>
+                    <span class="btn btn--secondary">Manage</span>
+                  </div>
+                </div>
+                <div class="table-row">
+                  <div class="lang-name">
+                    <span class="check"></span>
+                    <div>Japanese <small>日本語 · ja</small></div>
+                  </div>
+                  <div class="status-inline warning"><i></i>Needs first translation</div>
+                  <div><span class="switch"></span></div>
+                  <div><span class="switch"></span></div>
+                  <div class="action-row">
+                    <span class="btn btn--primary">Translate</span>
+                    <span class="btn btn--secondary">Manage</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="right-stack">
+              <div class="card card--brand-soft">
+                <div class="card-head">
+                  <div>
+                    <h3 class="card-title">Add Language Modal Direction</h3>
+                    <div class="card-subtitle">真实页面有搜索、区域折叠与多选逻辑，demo 用更轻的方式呈现选择体验。</div>
+                  </div>
+                  <div class="badge badge--brand">Search + grouped selection</div>
+                </div>
+                <div class="select-row">
+                  <span class="pill pill--active">German</span>
+                  <span class="pill pill--active">French</span>
+                  <span class="pill">Spanish</span>
+                  <span class="pill">Japanese</span>
+                </div>
+                <div class="section-divider"></div>
+                <div class="stack-list">
+                  <div class="stack-item">
+                    <strong>Common languages</strong>
+                    <span>把高频语言放到前面，减少首次添加的理解成本。</span>
+                  </div>
+                  <div class="stack-item">
+                    <strong>Region groups</strong>
+                    <span>保留折叠结构，但强调“运营场景”而不是机械地区列表。</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h3 class="card-title">Operator Insight</h3>
+                    <div class="card-subtitle">让语言页也承担轻量运营判断，而不是只做基础设置。</div>
+                  </div>
+                </div>
+                <div class="kpi-list">
+                  <div class="kpi-row">
+                    <div>
+                      <strong>建议先处理 Japanese</strong>
+                      <span>当前已有市场流量，但未完成首轮翻译，自动翻译无法开启。</span>
+                    </div>
+                    <div class="badge badge--warning">Action needed</div>
+                  </div>
+                  <div class="kpi-row">
+                    <div>
+                      <strong>German 可直接进入管理</strong>
+                      <span>基础同步完成，适合进一步校对商品卖点和政策内容。</span>
+                    </div>
+                    <div class="badge badge--success">Ready</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Manage Translation Preview</h2>
+          <p>目标：把 manage 做成“翻译资产总览面板”，让语言选择、统计刷新和内容域导航更容易扫读。</p>
+        </div>
+        <div class="chip-row">
+          <span class="chip">Asset dashboard</span>
+          <span class="chip">Content domains</span>
+          <span class="chip">Coverage stats</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="manage-shell">
+          <div class="manage-summary">
+            <div class="summary-card summary-card--value">
+              <div class="card-head">
+                <div>
+                  <div class="badge badge--brand">Manage Translation</div>
+                  <h3 class="card-title" style="font-size:24px; margin-top:12px;">按内容域管理翻译资产，而不是在不同页面里来回寻找</h3>
+                  <div class="card-subtitle">真实页面已经按 Products、Theme、Online Store、Policies 等模块拆分。新 demo 的重点是让这个结构更像一个可扫读的翻译资产面板。</div>
+                </div>
+                <div class="badge badge--success">Locale · German</div>
+              </div>
+              <div class="balance-grid">
+                <div class="balance-item">
+                  <small>Translated items</small>
+                  <strong>6,420</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Total tracked</small>
+                  <strong>8,030</strong>
+                </div>
+                <div class="balance-item">
+                  <small>Coverage</small>
+                  <strong>80%</strong>
+                </div>
+              </div>
+              <div class="caption">Manage 页更适合承载“内容域覆盖率”的概念，让商家先看哪个模块缺口最大，再进入具体编辑。</div>
+            </div>
+            <div class="summary-card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Top actions</h3>
+                  <div class="card-subtitle">保留真实页面的语言切换、刷新统计和 import 行为，但重新梳理优先级。</div>
+                </div>
+              </div>
+              <div class="toolbar-main" style="margin-bottom:12px;">
+                <span class="inline-label">Localized content:</span>
+                <span class="select-mock">German <span style="color:var(--text-tertiary)">⌄</span></span>
+              </div>
+              <div class="action-row">
+                <span class="btn btn--secondary">Refresh statistics</span>
+                <span class="btn btn--primary">Import</span>
+              </div>
+              <div class="caption">如果是免费计划，Import 会退化为受限动作并引导升级，但视觉上不需要用重警告去打断整个页面。</div>
+            </div>
+          </div>
+
+          <div class="manage-sections">
+            <div class="section-card">
+              <div class="section-card-head">
+                <strong>Products</strong>
+                <span class="ghost-tag">High impact</span>
+              </div>
+              <div class="section-table">
+                <div class="section-table-row">
+                  <span>Products</span>
+                  <span class="count">2,940 / 3,200</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Collections</span>
+                  <span class="count">420 / 510</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-card-head">
+                <strong>Online Store Theme</strong>
+                <span class="ghost-tag">Brand surface</span>
+              </div>
+              <div class="section-table">
+                <div class="section-table-row">
+                  <span>Locale Content</span>
+                  <span class="count">610 / 900</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Json Template</span>
+                  <span class="count">--</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Section Group</span>
+                  <span class="count">--</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-card-head">
+                <strong>Online Store</strong>
+                <span class="ghost-tag">Storefront content</span>
+              </div>
+              <div class="section-table">
+                <div class="section-table-row">
+                  <span>Pages</span>
+                  <span class="count">166 / 220</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Navigation</span>
+                  <span class="count">48 / 52</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Metaobjects</span>
+                  <span class="count">210 / 330</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-card-head">
+                <strong>Settings</strong>
+                <span class="ghost-tag">Trust builders</span>
+              </div>
+              <div class="section-table">
+                <div class="section-table-row">
+                  <span>Policies</span>
+                  <span class="count">18 / 24</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Email</span>
+                  <span class="count">72 / 96</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+                <div class="section-table-row">
+                  <span>Shipping</span>
+                  <span class="count">12 / 20</span>
+                  <span class="btn btn--secondary">Edit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="caption">
+            这版 Manage demo 重点在于把原本很多张功能卡收敛成一套更容易扫读的“内容域卡片矩阵”。这样商家会先看到覆盖缺口，再进入具体编辑页，而不是把注意力耗在表格结构本身。
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

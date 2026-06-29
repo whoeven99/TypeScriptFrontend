@@ -3,6 +3,7 @@ import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
 import { useState, useEffect } from "react";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 const { Text } = Typography;
 
 interface WelcomeCardProps {
@@ -76,40 +77,37 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
     };
   }, []);
   return (
-    <Card
+    <AppSectionCard
       title={
         !switcherOpen
           ? t("The switcher is currently enabled.")
           : t("Enable language and currency switcher")
       }
-      styles={{
-        header: { borderBottom: "none", fontSize: "20px" },
-        body: {
-          padding: "0 24px 12px 24px",
-        },
-      }}
-    // extra={
-    //   <Button
-    //     icon={<RedoOutlined spin={loading} />}
-    //     type="link"
-    //     onClick={handleReload}
-    //   />
-    // }
+      description={
+        !switcherOpen
+          ? t(
+              "Customers can switch languages and currencies when visiting the site.",
+            )
+          : t(
+              "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”.",
+            )
+      }
+      extra={
+        <Button
+          onClick={() => {
+            handleSetting();
+          }}
+          type="default"
+        >
+          {!switcherOpen ? t("Disable App") : t("Setup App")}
+        </Button>
+      }
     >
       <Flex vertical align="center" gap={8}>
         <Flex
           gap={8}
           style={{ width: "100%", justifyContent: "space-between" }}
         >
-          <Text style={{ width: "75%" }}>
-            {!switcherOpen
-              ? t(
-                "Customers can switch languages and currencies when visiting the site. "
-              )
-              : t(
-                "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
-              )}
-          </Text>
           <div
             style={{
               display: "flex",
@@ -131,17 +129,8 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
             />
           </div>
         </Flex>
-        <Button
-          onClick={() => {
-            handleSetting();
-          }}
-          type="default"
-          style={{ width: "auto", alignSelf: "flex-start" }}
-        >
-          {!switcherOpen ? t("Disable App") : t("Setup App")}
-        </Button>
       </Flex>
-    </Card>
+    </AppSectionCard>
   );
 };
 

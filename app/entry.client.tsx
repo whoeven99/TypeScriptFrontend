@@ -8,6 +8,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import Backend from "i18next-http-backend";
 import { createCache, StyleProvider } from "@ant-design/cssinjs";
 import { ConfigProvider } from "antd";
+import { appAntdTheme } from "./ui/theme";
 
 async function hydrate() {
   await i18next
@@ -39,13 +40,7 @@ async function hydrate() {
       document.getElementById('root')!,
       <I18nextProvider i18n={i18next}>
         <StyleProvider cache={cache}>
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: "#007F61", // 设置主色
-              },
-            }}
-          >
+          <ConfigProvider theme={appAntdTheme}>
             <StrictMode>
               <RemixBrowser />
             </StrictMode>

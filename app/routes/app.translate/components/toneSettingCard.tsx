@@ -1,28 +1,8 @@
-import { Icon, Page } from "@shopify/polaris";
-import {
-  Flex,
-  Card,
-  Checkbox,
-  CheckboxChangeEvent,
-  Divider,
-  Space,
-  Typography,
-  Radio,
-  Popconfirm,
-  Button,
-  Badge,
-  Popover,
-  Select,
-} from "antd";
+import { Checkbox, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { LanguagesDataType } from "~/routes/app.language/route";
-import { PlusIcon } from "@shopify/polaris-icons";
-import defaultStyles from "../../styles/defaultStyles.module.css";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { useNavigate } from "@remix-run/react";
-import { apiKeyConfiguration } from "../route";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ToneSettingCardProps {
   toneSettingCardShow: boolean;
@@ -123,7 +103,10 @@ const ToneSettingCard = ({
   ];
 
   return (
-    <Card
+    <AppSectionCard
+      title={t("translateSettings.title3")}
+      description={t("Optional tone and industry guidance for AI models that support richer writing instructions.")}
+      bodyPadding="16px"
       style={{
         width: "100%",
         minHeight: "222px",
@@ -133,9 +116,9 @@ const ToneSettingCard = ({
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Space direction="vertical" size={16} style={{ display: "flex" }}>
           <div>
-            <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+            <Text strong style={{ color: "var(--app-color-text)" }}>
               {t("translateSettings4.title")}
-            </Title>
+            </Text>
             <Text type="secondary">{t("translateSettings4.description")}</Text>
           </div>
           <Space direction="vertical" style={{ width: "100%" }}>
@@ -418,9 +401,9 @@ const ToneSettingCard = ({
           </Space>
         </Space>
         <Space direction="vertical" size={16} style={{ display: "flex" }}>
-          <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+          <Text strong style={{ color: "var(--app-color-text)" }}>
             {t("translateSettings2.title")}
-          </Title>
+          </Text>
           <Checkbox.Group
             value={translateSettings2}
             options={translateSettings2Options}
@@ -433,7 +416,7 @@ const ToneSettingCard = ({
           />
         </Space>
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 
