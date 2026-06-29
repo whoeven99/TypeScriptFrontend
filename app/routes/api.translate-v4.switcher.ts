@@ -9,7 +9,7 @@ import {
   getSwitcherConfigForAdmin,
   saveSwitcherConfigForAdmin,
 } from "~/server/storefront/switcherAdmin.server";
-import type { SwitcherConfigWriteInput } from "~/server/storefront/switcherData.server";
+import type { SwitcherConfigWriteInput } from "~/lib/switcherConstants";
 
 function ok(response: unknown) {
   return json({ success: true, errorCode: null, errorMsg: null, response });
@@ -51,7 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (blocked) return blocked;
 
   const body = (await request.json().catch(() => ({}))) as Partial<
-    SwitcherConfigWriteInput & { shopName?: string; server?: string }
+    SwitcherConfigWriteInput
   >;
 
   try {

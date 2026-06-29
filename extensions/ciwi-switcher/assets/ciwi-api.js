@@ -168,8 +168,7 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
 }
 
 export async function fetchSwitcherConfig({ blockId, shop }) {
-  // 默认配置：成功但服务端无数据、以及网络异常时都回退到它，
-  // 保证 ciwi-main 永远拿到一个完整的 response（不会是 null 导致 UI 崩溃）。
+  // 默认配置与 app/lib/switcherConstants.ts SWITCHER_UI_DEFAULTS 对齐
   const initData = {
     shopName: shop,
     includedFlag: true,
@@ -177,11 +176,11 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
     currencySelector: true,
     ipOpen: false,
     ipRedirections: [],
-    fontColor: "#000000",
+    fontColor: "#303030",
     backgroundColor: "#ffffff",
     buttonColor: "#ffffff",
-    buttonBackgroundColor: "#000000",
-    optionBorderColor: "#ccc",
+    buttonBackgroundColor: "#f6f6f7",
+    optionBorderColor: "#d4d4d8",
     selectorPosition: "bottom_left",
     positionData: 10,
   };

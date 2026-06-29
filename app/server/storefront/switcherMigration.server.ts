@@ -4,7 +4,6 @@ import { upsertSwitcherConfig } from "./switcherData.server";
 
 type JavaIpRedirection = {
   id?: number;
-  shopName?: string;
   region?: string;
   languageCode?: string;
   currencyCode?: string;
@@ -28,7 +27,7 @@ type JavaWidgetResponse = {
   ipRedirections?: JavaIpRedirection[];
 };
 
-export type SwitcherSyncResult = {
+type SwitcherSyncResult = {
   shop: string;
   switcherSynced: boolean;
   ipRedirectionCount: number;

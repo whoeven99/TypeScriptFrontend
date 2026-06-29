@@ -6,10 +6,8 @@ import {
   type WidgetConfigResponse,
 } from "./switcherData.server";
 
-export type { IpRedirectionItem, WidgetConfigResponse } from "./switcherData.server";
-
 /**
- * 灰度入口：migratedToTsf 且命中 v4 allowlist 时从 Prisma 读，否则透明代理到 Java。
+ * 灰度入口：migratedToTsf 为 true 时从 Prisma 读，否则透明代理到 Java。
  * 对应 Java POST /widgetConfigurations/getData。
  */
 export async function getSwitcherConfig(
@@ -22,7 +20,7 @@ export async function getSwitcherConfig(
   );
 }
 
-/** migratedToTsf + allowlist 路径：从 Prisma SwitcherConfiguration + IpRedirection 读取 */
+/** migratedToTsf 路径：从 Prisma SwitcherConfiguration + IpRedirection 读取 */
 async function readFromPrisma(shop: string): Promise<BaseResponse<WidgetConfigResponse>> {
   const payload = await readSwitcherConfigPayload(shop);
   if (!payload) {

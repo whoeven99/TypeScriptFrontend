@@ -1,7 +1,11 @@
 import prisma from "~/db.server";
+import {
+  SWITCHER_UI_DEFAULTS,
+  type SwitcherConfigWriteInput,
+} from "~/lib/switcherConstants";
 
 /** 对应 Java WidgetReturnVO + UserIPRedirectionDO 的 ipRedirections 字段 */
-export type IpRedirectionItem = {
+type IpRedirectionItem = {
   id: number;
   shopName: string;
   region: string;
@@ -24,37 +28,6 @@ export type WidgetConfigResponse = {
   positionData: string;
   isTransparent: boolean;
   ipRedirections: IpRedirectionItem[];
-};
-
-export type SwitcherConfigWriteInput = {
-  languageSelector: boolean;
-  currencySelector: boolean;
-  ipOpen: boolean;
-  includedFlag: boolean;
-  fontColor: string;
-  backgroundColor: string;
-  buttonColor: string;
-  buttonBackgroundColor: string;
-  optionBorderColor: string;
-  selectorPosition: string;
-  positionData: string;
-  isTransparent: boolean;
-};
-
-/** Admin 页与 Java getData 失败时的默认配置（与 app.switcher initData 对齐）。 */
-export const SWITCHER_UI_DEFAULTS: SwitcherConfigWriteInput = {
-  includedFlag: true,
-  languageSelector: true,
-  currencySelector: true,
-  ipOpen: false,
-  fontColor: "#303030",
-  backgroundColor: "#ffffff",
-  buttonColor: "#ffffff",
-  buttonBackgroundColor: "#f6f6f7",
-  optionBorderColor: "#d4d4d8",
-  selectorPosition: "bottom_left",
-  positionData: "10",
-  isTransparent: false,
 };
 
 function str(value: unknown, fallback: string): string {

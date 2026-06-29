@@ -1,12 +1,13 @@
 import {
   readSwitcherConfigPayload,
-  SWITCHER_UI_DEFAULTS,
   upsertSwitcherConfig,
-  type SwitcherConfigWriteInput,
 } from "./switcherData.server";
+import {
+  SWITCHER_UI_DEFAULTS,
+  type SwitcherConfigWriteInput,
+} from "~/lib/switcherConstants";
 
-/** Admin 编辑区使用的配置形状（不含 ipRedirections）。 */
-export type SwitcherAdminConfig = SwitcherConfigWriteInput & {
+type SwitcherAdminConfig = SwitcherConfigWriteInput & {
   shopName: string;
 };
 

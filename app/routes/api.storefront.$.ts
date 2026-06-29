@@ -91,16 +91,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   // POST /api/storefront/widgetConfigurations/getData
   if (path === "widgetConfigurations/getData") {
     let shop = auth.shop;
-    try {
-      const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-      const shopName = typeof body.shopName === "string" ? body.shopName : "";
-      if (shopName && shopName !== auth.shop) {
-        return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
-      }
-      if (shopName) shop = shopName;
-    } catch {
-      // body 解析失败时用 auth.shop
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const shopName = typeof body.shopName === "string" ? body.shopName : "";
+    if (shopName && shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
     }
+    if (shopName) shop = shopName;
 
     try {
       const result = await getSwitcherConfig(shop);

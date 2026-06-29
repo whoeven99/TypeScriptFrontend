@@ -1,20 +1,11 @@
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
+import {
+  buildSwitcherEditDefaults,
+  type SwitcherEditData,
+} from "~/lib/switcherConstants";
 
-export type SwitcherEditData = {
-  shopName: string;
-  includedFlag: boolean;
-  languageSelector: boolean;
-  currencySelector: boolean;
-  ipOpen: boolean;
-  fontColor: string;
-  backgroundColor: string;
-  buttonColor: string;
-  buttonBackgroundColor: string;
-  optionBorderColor: string;
-  selectorPosition: string;
-  positionData: string;
-  isTransparent: boolean;
-};
+export type { SwitcherEditData } from "~/lib/switcherConstants";
+export { buildSwitcherEditDefaults };
 
 type SwitcherApiResponse = {
   success: boolean;

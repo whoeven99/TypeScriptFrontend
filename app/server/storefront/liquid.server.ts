@@ -6,7 +6,7 @@ import { ok, fail, type BaseResponse } from "./response.server";
 /** 对应 Java parseLiquidDataByShopNameAndLanguage 的响应 response 形状：
  *  { "原文": ["译文", replacementMethod(bool)], ... }
  */
-export type LiquidMap = Record<string, [string, boolean]>;
+type LiquidMap = Record<string, [string, boolean]>;
 
 /**
  * 判断字符串是否为 JSON 对象/数组（Java 侧会跳过这类 before/after）。
@@ -39,7 +39,7 @@ export async function parseLiquidTranslations(
   );
 }
 
-/** migratedToTsf + allowlist 路径：从 Prisma LiquidRule 读取。 */
+/** migratedToTsf 路径：从 Prisma LiquidRule 读取。 */
 async function readFromPrisma(
   shop: string,
   languageCode: string,
