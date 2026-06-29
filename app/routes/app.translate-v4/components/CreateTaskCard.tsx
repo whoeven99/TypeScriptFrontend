@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type { CustomTagProps } from "rc-select/lib/BaseSelect";
 import { Button, Checkbox, Select, Space } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
@@ -54,27 +55,25 @@ export function CreateTaskCard({
     });
   }, [targetOptions, targets]);
 
-  const sortedModules = useMemo(() => {
-    return [...CREATE_TASK_MODULE_OPTIONS].sort((a, b) => {
-      const aSelected = modules.includes(a) ? 0 : 1;
-      const bSelected = modules.includes(b) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
-        CREATE_TASK_MODULE_LABELS[b] ?? b,
-      );
-    });
-  }, [modules]);
-
   const targetSelectOptions = sortedTargetOptions.map((opt) => ({
     value: opt.value,
     label: localeShortName(opt.value, opt.label),
     regionCode: localeRegionCode(opt.value),
   }));
 
-  const moduleSelectOptions = sortedModules.map((mod) => ({
+  // 翻译内容改为内联多选 chip：顺序固定（避免点选时跳动），选中态与上方语言同色。
+  const moduleChips = CREATE_TASK_MODULE_OPTIONS.map((mod) => ({
     value: mod,
     label: CREATE_TASK_MODULE_LABELS[mod] ?? mod,
   }));
+
+  const toggleModule = (value: string) => {
+    onModulesChange(
+      modules.includes(value)
+        ? modules.filter((m) => m !== value)
+        : [...modules, value],
+    );
+  };
 
   return (
     <div
@@ -128,17 +127,22 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title="翻译内容" />
-        <Select
-          mode="multiple"
-          placeholder="选择翻译内容模块"
-          value={modules}
-          onChange={onModulesChange}
-          options={moduleSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={renderModuleTag}
-        />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {moduleChips.map((mod) => {
+            const selected = modules.includes(mod.value);
+            return (
+              <button
+                key={mod.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleModule(mod.value)}
+                style={moduleChipStyle(selected)}
+              >
+                {mod.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div
@@ -258,17 +262,21 @@ function renderLocaleTag(
   );
 }
 
-function renderModuleTag(props: CustomTagProps) {
-  const { label, closable, onClose } = props;
-
-  return (
-    <span className="v4-select-tag v4-select-tag--module">
-      <span>{label}</span>
-      {closable ? (
-        <button type="button" className="v4-select-tag__close" onClick={onClose} aria-label={`移除 ${label}`}>
-          ×
-        </button>
-      ) : null}
-    </span>
-  );
+/** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
+function moduleChipStyle(selected: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: "1px solid transparent",
+    background: selected ? v4Colors.primarySoft : v4Colors.cardSubdued,
+    color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1.35,
+    cursor: "pointer",
+    transition: "background 0.15s, color 0.15s",
+    fontFamily: "inherit",
+  };
 }
