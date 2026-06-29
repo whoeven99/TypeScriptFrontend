@@ -24,9 +24,7 @@ import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
-import pkg from "lodash";
 import SideMenu from "~/components/sideMenu/sideMenu";
-const { isArray } = pkg;
 
 const { Text } = Typography;
 
@@ -803,7 +801,7 @@ const handleLanguageChange = (language: string) => {
           >
             <Spin />
           </div>
-        ) : isArray(menuData) && menuData?.length ? (
+        ) : Array.isArray(menuData) && menuData?.length ? (
           <>
             {!isMobile && (
               <Sider
