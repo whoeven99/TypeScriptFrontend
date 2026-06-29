@@ -280,6 +280,35 @@ body {
 }
 
 /* =========================================================================
+   智能翻译 v4 —— 页面级靛蓝配色（比全局 accent 更沉稳）
+   ========================================================================= */
+
+.v4-page {
+  --v4-accent-primary: #3355a8;
+  --v4-accent-primary-hover: #274488;
+  --v4-accent-primary-deep: #1c3268;
+  --v4-accent-primary-soft: rgba(51, 85, 168, 0.08);
+  --v4-accent-primary-muted: rgba(51, 85, 168, 0.12);
+  --v4-ring-track: rgba(51, 85, 168, 0.12);
+}
+
+.v4-page .ant-tabs-ink-bar {
+  background: var(--v4-accent-primary) !important;
+}
+
+.v4-page .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--v4-accent-primary) !important;
+}
+
+.v4-page .ant-btn-link:not(:disabled) {
+  color: var(--v4-accent-primary);
+}
+
+.v4-page .ant-btn-link:not(:disabled):hover {
+  color: var(--v4-accent-primary-hover);
+}
+
+/* =========================================================================
    智能翻译 —— 新建任务卡片 Select / 按钮样式（对齐概览卡）
    ========================================================================= */
 
@@ -315,8 +344,8 @@ body {
 }
 
 .v4-select-tag--locale {
-  background: var(--app-accent-primary-soft);
-  color: var(--app-accent-primary-hover);
+  background: var(--v4-accent-primary-soft);
+  color: var(--v4-accent-primary);
 }
 
 .v4-select-tag--locale .v4-select-tag__code {
@@ -359,12 +388,12 @@ body {
   padding-inline: 16px;
   border-radius: 10px;
   font-weight: 600;
-  background: var(--app-accent-primary) !important;
-  border-color: var(--app-accent-primary) !important;
-  box-shadow: 0 4px 14px rgba(84, 103, 255, 0.28);
+  background: var(--v4-accent-primary) !important;
+  border-color: var(--v4-accent-primary) !important;
+  box-shadow: 0 4px 14px rgba(51, 85, 168, 0.22);
 }
 
 .v4-create-task-card__submit.ant-btn-primary:not(:disabled):hover {
-  background: var(--app-accent-primary-hover) !important;
-  border-color: var(--app-accent-primary-hover) !important;
+  background: var(--v4-accent-primary-hover) !important;
+  border-color: var(--v4-accent-primary-hover) !important;
 }

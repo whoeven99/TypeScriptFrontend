@@ -3,8 +3,11 @@ import { getTranslateV4RedisClient } from "./redis.server";
 /** 与 Spark worker redisV4 / scheduler 共用。 */
 export const AUTO_SCAN_LAST_AT_KEY = "translate:v4:auto_scan:last_at";
 
-/** 与 Spark worker scheduler 一致：未配置环境变量时默认 1 小时。 */
+/** 与 Spark worker scheduler 一致：未配置环境变量时默认 1 小时扫描。 */
 export const AUTO_TRANSLATE_INTERVAL_MS_DEFAULT = 60 * 60_000;
+
+/** 单店两次自动建任务批次的最小间隔（默认 3 小时；与 worker AUTO_TRANSLATE_SHOP_COOLDOWN_MS 一致）。 */
+export const AUTO_TRANSLATE_SHOP_COOLDOWN_MS_DEFAULT = 3 * 60 * 60_000;
 
 /** 自动扫描对齐的时区（展示与调度一致，默认北京时间）。 */
 export const AUTO_TRANSLATE_SCHEDULE_TZ_DEFAULT = "Asia/Shanghai";
@@ -15,6 +18,11 @@ export const AUTO_TRANSLATE_SCHEDULE_MINUTE_DEFAULT = 0;
 export function getAutoTranslateIntervalMs(): number {
   const n = Number(process.env.AUTO_TRANSLATE_INTERVAL_MS);
   return n > 0 ? n : AUTO_TRANSLATE_INTERVAL_MS_DEFAULT;
+}
+
+export function getAutoTranslateShopCooldownMs(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_SHOP_COOLDOWN_MS);
+  return n > 0 ? n : AUTO_TRANSLATE_SHOP_COOLDOWN_MS_DEFAULT;
 }
 
 export function getAutoTranslateScheduleTimezone(): string {
@@ -91,8 +99,8 @@ function utcFromTzLocal(
 }
 
 /**
- * 下一轮自动扫描时刻：按配置时区对齐到整点（默认每小时 :00）。
- * 不依赖 Worker 上次扫描 / 部署时间，避免发布重启后「下次时间」跟着漂移。
+ * 下一轮全局自动扫描时刻：按配置时区对齐到整点（默认每小时 :00 北京时间）。
+ * 单店实际建任务还受 AUTO_TRANSLATE_SHOP_COOLDOWN_MS（默认 3h）约束。
  */
 export function resolveNextClockAlignedScanAt(
   now = new Date(),
