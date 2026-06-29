@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { defer, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
@@ -36,11 +36,16 @@ async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
   const server = process.env.SERVER_URL?.trim();
   if (!server) return null;
 
-  const result = await GetUserSubscriptionPlan({ shop, server });
-  if (!result?.success) return null;
+  try {
+    const result = await GetUserSubscriptionPlan({ shop, server });
+    if (!result?.success) return null;
 
-  const planType = result?.response?.planType;
-  return typeof planType === "string" && planType.trim() ? planType.trim() : null;
+    const planType = result?.response?.planType;
+    return typeof planType === "string" && planType.trim() ? planType.trim() : null;
+  } catch (err) {
+    console.error("[translateV4] loadSubscriptionPlanType failed:", err);
+    return null;
+  }
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -64,36 +69,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  try {
-    await syncShopTargetLocalesFromShopify(
-      session.shop,
-      shopLocaleRows,
-      primaryLocale,
-    );
-  } catch (syncErr) {
+  // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
+  // 后台执行，避免 N 个串行 upsert 阻塞首屏。
+  void syncShopTargetLocalesFromShopify(
+    session.shop,
+    shopLocaleRows,
+    primaryLocale,
+  ).catch((syncErr) => {
     console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
-  }
+  });
 
   const targetLocales = selectShopTargetLocales(locales, primaryLocale);
-  const [jobs, quota, coverage, planType] = await Promise.all([
+
+  // 关键内容（任务列表 + 覆盖率，均为内部 DB/Redis）阻塞等待；
+  // quota / planType 是较慢的 Java HTTP 调用且仅用于头部徽标，改为流式返回。
+  const [jobs, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
-    getShopQuota(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
       primaryLocale,
       targetLocales,
     }),
-    loadSubscriptionPlanType(session.shop),
   ]);
 
-  return json({
+  return defer({
     shop: session.shop,
     locales,
     primaryLocale,
     jobs,
-    quota,
     coverage,
-    planType,
+    quota: getShopQuota(session.shop),
+    planType: loadSubscriptionPlanType(session.shop),
   });
 };
 
@@ -104,14 +110,40 @@ export default function AppTranslateV4() {
     locales,
     primaryLocale,
     jobs: initialJobs,
-    quota: initialQuota,
+    quota: quotaPromise,
     coverage: initialCoverage,
-    planType,
+    planType: planTypePromise,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
-  const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
+  const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const [planType, setPlanType] = useState<string | null>(null);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
+
+  // quota / planType 由 loader 流式返回，到达后填充（不阻塞首屏）。
+  useEffect(() => {
+    let active = true;
+    Promise.resolve(quotaPromise)
+      .then((q) => {
+        if (active) setQuota(q);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [quotaPromise]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve(planTypePromise)
+      .then((p) => {
+        if (active) setPlanType(p);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [planTypePromise]);
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
