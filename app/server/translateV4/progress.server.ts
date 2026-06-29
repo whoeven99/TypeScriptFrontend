@@ -11,10 +11,11 @@ import {
   reconcileTranslateUnitMetrics,
   translateResourceTotal,
 } from "./metricsUtils";
-import { ACTIVE_V4_STATUSES } from "./types";
 import { writebackResourceTotal } from "./resumeStatus";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 import {
+  ACTIVE_V4_STATUSES,
+  EMPTY_V4_METRICS,
   TERMINAL_V4_STATUSES,
   type StageTimings,
   type TranslationV4Job,
@@ -44,10 +45,11 @@ export function mergeV4JobMetrics(
   redisProgress: Record<string, string>,
   controlAction: V4ControlAction | null = null,
 ): TranslationV4MergedMetrics {
+  const jobMetrics = job.metrics ?? EMPTY_V4_METRICS;
   // 计数器在单个 run 内单调递增；两源取 max 而非「redis || cosmos」，避免某一源瞬时
   // 为 0/空（pause/resume 切换、Redis 与 Cosmos 短暂不一致）时进度回退闪 0。
   const merge = (key: keyof TranslationV4Metrics): number =>
-    Math.max(Number(redisProgress[key]) || 0, Number(job.metrics[key]) || 0);
+    Math.max(Number(redisProgress[key]) || 0, Number(jobMetrics[key]) || 0);
   const translateDone = merge("translateDone");
   const translateTotal = merge("translateTotal");
   const mergedUnits = reconcileTranslateUnitMetrics({
@@ -64,7 +66,7 @@ export function mergeV4JobMetrics(
     translateFailed: merge("translateFailed"),
     translateFallback: Math.max(
       Number(redisProgress.translateFallback) || 0,
-      Number(job.metrics.translateFallback) || 0,
+      Number(jobMetrics.translateFallback) || 0,
     ),
     translateUnitTotal: mergedUnits.translateUnitTotal,
     translateUnitDone: mergedUnits.translateUnitDone,
@@ -564,25 +566,29 @@ export async function listV4JobSummaries(
   const redisByTaskId = await batchReadRedisForJobs(filtered);
   const summaries: TranslationJobProgressSummary[] = [];
   for (const job of filtered) {
-    const redis = redisByTaskId.get(job.id);
-    const metrics = mergeV4JobMetrics(
-      job,
-      redis?.progress ?? {},
-      redis?.control ?? null,
-    );
-    const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
-    const writebackEscalated =
-      escalated ??
-      (await escalateStuckTranslatingToWritebackIfNeeded(shopName, job, metrics));
-    const finalJob = writebackEscalated ?? escalated ?? job;
-    summaries.push(
-      toProgressSummary(
-        finalJob,
-        writebackEscalated || escalated
-          ? mergeV4JobMetrics(finalJob, {}, null)
-          : metrics,
-      ),
-    );
+    try {
+      const redis = redisByTaskId.get(job.id);
+      const metrics = mergeV4JobMetrics(
+        job,
+        redis?.progress ?? {},
+        redis?.control ?? null,
+      );
+      const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
+      const writebackEscalated =
+        escalated ??
+        (await escalateStuckTranslatingToWritebackIfNeeded(shopName, job, metrics));
+      const finalJob = writebackEscalated ?? escalated ?? job;
+      summaries.push(
+        toProgressSummary(
+          finalJob,
+          writebackEscalated || escalated
+            ? mergeV4JobMetrics(finalJob, {}, null)
+            : metrics,
+        ),
+      );
+    } catch {
+      continue;
+    }
   }
   return summaries;
 }

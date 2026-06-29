@@ -1,6 +1,7 @@
 import { Card, Space, Button, Typography } from "antd";
 import { useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Title, Paragraph } = Typography;
 
@@ -9,17 +10,16 @@ const NoLanguageSetCard = () => {
   const { t } = useTranslation();
 
   return (
-    <Card
+    <AppSectionCard
+      title={t("No languages to translate.")}
+      description={t(
+        "Your store currently has no languages requiring translation. Please add a target language first.",
+      )}
       style={{
         textAlign: "center",
-        padding: "20px",
         width: "100%",
       }}
     >
-      <Title level={4}>{t("No languages to translate.")}</Title>
-      <Paragraph>
-        {t("Your store currently has no languages requiring translation. Please try adding a language.")}
-      </Paragraph>
       <Space direction="vertical" size="large">
         <Button
           type="primary"
@@ -30,7 +30,7 @@ const NoLanguageSetCard = () => {
           {t("Add Language")}
         </Button>
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 

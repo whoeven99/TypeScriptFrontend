@@ -12,6 +12,9 @@ database.sqlite
 
 .env
 .env.*
+.env.prod
+shop.txt
+shops.txt
 
 /extensions/*/dist
 

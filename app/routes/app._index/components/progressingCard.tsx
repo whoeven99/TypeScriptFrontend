@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
 import ProgressBlock from "./progressBlock";
 import useReport from "scripts/eventReport";
-const { Text, Title } = Typography;
+import AppSectionCard from "~/ui/components/AppSectionCard";
+
+const { Text } = Typography;
 
 interface ProgressingCardProps {
   dataSource: any[];
@@ -32,26 +34,24 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
   };
 
   return (
-    <Card
-      style={{ width: "100%" }}
-      styles={{ body: { width: "100%", padding: "12px 24px" } }}
-    >
-      <Flex
-        justify="space-between"
-        align="center"
-        style={{ marginBottom: "10px" }}
-      >
-        <Title level={4} style={{ fontWeight: 600 }}>
-          {t("transLanguageCard1.title")}
-        </Title>
+    <AppSectionCard
+      title={t("transLanguageCard1.title")}
+      extra={
         <Button type="primary" onClick={() => navigateToTranslate()}>
           {t("transLanguageCard1.button")}
         </Button>
-      </Flex>
+      }
+    >
       {isProgressLoading ? (
         <Skeleton.Button active style={{ height: "130px" }} block />
       ) : dataSource?.length !== 0 ? (
-        <Card>
+        <Card
+          style={{
+            border: "none",
+            boxShadow: "none",
+            background: "var(--app-color-surface-secondary)",
+          }}
+        >
           <ProgressBlock
             taskId={dataSource[0]?.taskId}
             key={dataSource[0]?.target}
@@ -67,7 +67,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
           />
         </Card>
       ) : (
-        <Card>
+        <Card
+          style={{
+            border: "none",
+            boxShadow: "none",
+            background: "var(--app-color-surface-secondary)",
+          }}
+          styles={{ body: { padding: "16px" } }}
+        >
           <Text
             style={{
               display: "flex",
@@ -100,7 +107,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
           {t("see all tasks")}
         </Button>
       </Flex>
-    </Card>
+    </AppSectionCard>
   );
 };
 

@@ -15,7 +15,7 @@ export function ProgressRing({ percent, size = "md" }: { percent: number; size?:
   return (
     <div style={{ position: "relative", width: dim, height: dim, flexShrink: 0 }}>
       <svg viewBox="0 0 36 36" style={{ width: dim, height: dim, transform: "rotate(-90deg)" }}>
-        <circle cx="18" cy="18" r="15.5" fill="none" stroke="#ece9f6" strokeWidth={strokeWidth} />
+        <circle cx="18" cy="18" r="15.5" fill="none" stroke={v4Colors.ringTrack} strokeWidth={strokeWidth} />
         <circle
           cx="18"
           cy="18"
@@ -69,8 +69,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                   height: 1,
                   flexShrink: 0,
                   marginRight: 6,
-                  background:
-                    segments[i - 1]!.complete ? v4Colors.successSoft : "#e2e1da",
+                  background: segments[i - 1]!.complete ? v4Colors.successSoft : v4Colors.progressTrack,
                 }}
               />
             ) : null}
@@ -79,7 +78,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                 flex: 1,
                 height: 5,
                 borderRadius: 999,
-                background: "#edecea",
+                background: v4Colors.progressTrack,
                 overflow: "hidden",
               }}
             >
@@ -92,7 +91,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                     ? v4Colors.successSoft
                     : seg.active
                       ? v4Colors.primary
-                      : "#d8d7d0",
+                      : v4Colors.ringTrack,
                   transition: "width 0.45s ease, background 0.2s",
                 }}
               />
@@ -115,7 +114,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                 : seg.active
                   ? v4Colors.primary
                   : v4Colors.textFaint,
-              lineHeight: 1.2,
+              lineHeight: 1.25,
               letterSpacing: "0.01em",
             }}
           >
@@ -137,28 +136,37 @@ export function StatusTag({
   let bg = v4Colors.primarySoft;
   let color = v4Colors.primary;
   if (status === "COMPLETED") {
-    bg = "rgba(37, 99, 235, 0.1)";
-    color = "#2563eb";
+    bg = v4Colors.successBg;
+    color = v4Colors.success;
   } else if (status === "PAUSED") {
-    bg = "#fcf0d9";
-    color = "#b87a00";
+    bg = v4Colors.warningBg;
+    color = v4Colors.warning;
   } else if (status === "CANCELLED") {
-    bg = "#eceae6";
-    color = "#8a8a94";
+    bg = v4Colors.cardSubdued;
+    color = v4Colors.textMuted;
   } else if (status === "FAILED") {
-    bg = "rgba(220, 38, 38, 0.1)";
+    bg = v4Colors.dangerBg;
     color = v4Colors.danger;
   }
 
   return (
     <span
       style={{
-        fontSize: 10,
-        fontWeight: 700,
-        padding: "2px 7px",
-        borderRadius: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "3px 8px",
+        borderRadius: 999,
         background: bg,
         color,
+        border: `1px solid ${status === "COMPLETED"
+          ? "#d9f7be"
+          : status === "PAUSED"
+            ? "#ffe58f"
+            : status === "FAILED"
+              ? "#ffccc7"
+              : status === "CANCELLED"
+                ? v4Colors.cardBorder
+                : "#bae0ff"}`,
       }}
     >
       {label}

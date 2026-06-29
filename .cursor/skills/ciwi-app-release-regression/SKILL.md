@@ -20,7 +20,7 @@ description: >-
 | 首页 Dashboard | `/app` | 安装引导、翻译进度、额度/分析概览 |
 | 语言 | `/app/language` | 发布/管理店铺目标语言，触发翻译流程入口 |
 | 批量翻译 v2 | `/app/translate` | Java 后端执行批量翻译（旧主链路） |
-| 批量翻译 v4 | `/app/translate-v4` | Cosmos + Redis + Spark worker（需 `TRANSLATE_V4_ENABLED`） |
+| 批量翻译 v4 | `/app/translate-v4` | Cosmos + Redis + Spark worker（需 Turso `migratedToTsf=true`） |
 | 管理翻译 | `/app/manage_translation` + 30+ 子路由 | 按资源类型查看/编辑/单条重译 |
 | 货币 | `/app/currency` | 多货币、汇率、Shopify Markets 相关配置 |
 | Switcher | `/app/switcher` | 前台切换器 UI/行为配置 |
@@ -57,7 +57,7 @@ description: >-
 | R0-1 | 打开 `application_url`（如 `https://typescriptfrontend.onrender.com`） | 非 5xx，可到达 auth 或 app |
 | R0-2 | OAuth：测试店安装/打开 App | Admin 内嵌 `/app` 可加载，无白屏 |
 | R0-3 | 检查 Render env：`SERVER_URL`、`SHOPIFY_*`、`DATABASE_URL` | 与目标环境一致 |
-| R0-4 | v4 若本次发布涉及：`TRANSLATE_V4_ENABLED=true` 时导航出现「智能翻译 (v4)」；未设置则 **不应** 出现且 `/app/translate-v4` 重定向 `/app` |
+| R0-4 | v4 若本次发布涉及：已迁移店（`migratedToTsf=true`）导航出现「智能翻译 (v4)」且 `/app` 重定向 `/app/translate-v4`；未迁移店 **不应** 出现且 `/app/translate-v4` 重定向 `/app` |
 
 ### R1 — 安装与用户初始化（新装或清数据店）
 
@@ -161,7 +161,7 @@ description: >-
 - **环境**: test / prod
 - **Commit / Deploy**:
 - **测试店**: {TEST_SHOP}
-- **TRANSLATE_V4_ENABLED**: true / false / 未设置
+- **migratedToTsf**: true / false（测试店是否已切 v4）
 
 ## 结果摘要
 

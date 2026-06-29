@@ -6,17 +6,21 @@ import {
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
 import { invalidateMigrationCache } from "~/server/translateV4/migration.server";
+import {
+  mergeMigrationTargetLocales,
+  javaAutoTranslateByTarget,
+  autoTranslateForTarget,
+  type JavaTranslateRow,
+} from "~/server/translateV4/migrationTargets.server";
 import { upsertTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { syncSwitcherFromJava } from "~/server/storefront/switcherMigration.server";
 import {
   GetGlossaryByShopName,
   SelectShopNameLiquidData,
-  GetTranslateDOByShopNameAndSource,
+  GetLanguageList,
   MarkShopMigratedToTsf,
 } from "~/api/JavaServer";
-import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
-
 /**
  * 通知 Java：本店已迁移到 TSF。Java 自己记录，后续自动翻译任务跳过该店，
  * 避免新旧两版重复翻译。两边 Redis 不同实例，故走 Java API 而非直接写 Redis。
@@ -51,27 +55,58 @@ function asArray(value: unknown): any[] {
 async function fetchShopTargetLocalesFromAdmin(
   shop: string,
   accessToken: string,
-): Promise<{ primaryLocale: string; targets: string[] }> {
+): Promise<{ primaryLocale: string; shopifyRows: Array<{ locale: string; primary?: boolean }> }> {
   try {
     const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
     return {
       primaryLocale: loaded.primaryLocale,
-      targets: loaded.rows.filter((r) => !r.primary).map((r) => r.locale),
+      shopifyRows: loaded.rows.map((r) => ({
+        locale: r.locale,
+        primary: r.primary,
+      })),
     };
   } catch (err) {
     console.error("[migrate] fetch shopLocales failed:", err);
-    return { primaryLocale: "en", targets: [] };
+    return { primaryLocale: "en", shopifyRows: [] };
   }
+}
+
+/** 从 Java Translates 读语言行（含未 publish 的 target）。 */
+async function readJavaTranslateRows(
+  shop: string,
+  source: string,
+  server: string,
+): Promise<JavaTranslateRow[]> {
+  try {
+    const res = await GetLanguageList({ shop, server, source });
+    const data = (res as { response?: unknown })?.response ?? res;
+    return asArray(data);
+  } catch (err) {
+    console.error(`[migrate] ${shop} read Java translate rows failed:`, err);
+    return [];
+  }
+}
+
+async function resolveMigrationTargets(
+  shop: string,
+  server: string,
+  primaryLocale: string,
+  shopifyRows: Array<{ locale: string; primary?: boolean }>,
+  bodyTargets?: string[],
+): Promise<string[]> {
+  const javaRows = await readJavaTranslateRows(shop, primaryLocale, server);
+  const merged = mergeMigrationTargetLocales(primaryLocale, shopifyRows, javaRows);
+  if (merged.length > 0) return merged;
+  if (Array.isArray(bodyTargets) && bodyTargets.length > 0) {
+    return Array.from(new Set(bodyTargets.map((t) => String(t).trim()).filter(Boolean)));
+  }
+  return [];
 }
 
 /** GET /api/translate-v4/migrate —— 返回本店当前迁移摘要（已迁移则带数据量，未迁移返回 null）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
-
-  if (!isTranslateV4ShopAllowed(shop)) {
-    return json({ ok: false, error: "not_allowed" }, { status: 403 });
-  }
 
   const existing = await prisma.shopTranslationSettings.findUnique({
     where: { shop },
@@ -103,20 +138,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 async function readAutoTranslateByTarget(
   shop: string,
   source: string,
+  server: string,
 ): Promise<Map<string, boolean>> {
-  const map = new Map<string, boolean>();
-  try {
-    const res = await GetTranslateDOByShopNameAndSource({ shop, source });
-    const data = (res as { response?: unknown })?.response ?? res;
-    const arr = Array.isArray(data) ? data : data ? [data] : [];
-    for (const r of arr) {
-      const target = (r as { target?: string })?.target;
-      if (target) map.set(String(target), Boolean((r as { autoTranslate?: boolean })?.autoTranslate));
-    }
-  } catch (err) {
-    console.error(`[migrate] ${shop} read autoTranslate failed:`, err);
-  }
-  return map;
+  const rows = await readJavaTranslateRows(shop, source, server);
+  return javaAutoTranslateByTarget(rows);
 }
 
 async function readSwitcherMigrationSummary(shop: string) {
@@ -144,10 +169,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shop = session.shop;
   const server = process.env.SERVER_URL ?? "";
 
-  if (!isTranslateV4ShopAllowed(shop)) {
-    return json({ ok: false, error: "not_allowed" }, { status: 403 });
-  }
-
   const body = (await request.json().catch(() => ({}))) as {
     primaryLocale?: string;
     targets?: string[];
@@ -155,15 +176,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const fromShopify = await fetchShopTargetLocalesFromAdmin(
     shop,
-    session.accessToken,
+    session.accessToken ?? "",
   );
   const primaryLocale = fromShopify.primaryLocale || body.primaryLocale?.trim() || "en";
-  const targets =
-    fromShopify.targets.length > 0
-      ? fromShopify.targets
-      : Array.isArray(body.targets)
-        ? Array.from(new Set(body.targets.map((t) => String(t).trim()).filter(Boolean)))
-        : [];
+  const targets = await resolveMigrationTargets(
+    shop,
+    server,
+    primaryLocale,
+    fromShopify.shopifyRows,
+    body.targets,
+  );
 
   // 幂等：已迁移直接回当前摘要，并补齐 Shopify 上新增的目标语言
   const existing = await prisma.shopTranslationSettings.findUnique({
@@ -177,6 +199,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets.map((locale) => ({ locale, primary: false })),
           primaryLocale,
         );
+        await prisma.shopTranslationSettings.update({
+          where: { shop },
+          data: { primaryLocale, targets },
+        });
       } catch (syncErr) {
         console.error(`[migrate] ${shop} sync targets on revisit failed:`, syncErr);
       }
@@ -222,7 +248,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const [glossaryRes, liquidRes, autoByTarget] = await Promise.all([
       GetGlossaryByShopName({ shop, server }),
       SelectShopNameLiquidData({ shop, server }),
-      readAutoTranslateByTarget(shop, primaryLocale),
+      readAutoTranslateByTarget(shop, primaryLocale, server),
     ]);
     const anyAuto = [...autoByTarget.values()].some(Boolean);
 
@@ -281,7 +307,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 每目标语言一行（带各自的自动翻译开关），供语言页和 worker 按语言精确处理
     await upsertTargetLocales(
       shop,
-      targets.map((t) => ({ locale: t, autoTranslate: autoByTarget.get(t) ?? false })),
+      targets.map((t) => ({
+        locale: t,
+        autoTranslate: autoTranslateForTarget(t, autoByTarget),
+      })),
     );
 
     let switcherSynced = false;

@@ -1,9 +1,9 @@
 import { useNavigate } from "@remix-run/react";
-import { Card, Space, Button, Typography, Table } from "antd";
-import { useCallback, useEffect, useMemo } from "react";
+import { Space, Button, Table } from "antd";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-const { Title } = Typography;
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 interface SwitcherSettingCardProps {
   cardTitle: string;
@@ -39,63 +39,79 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         "manage_list_edit",
       );
     },
-    [dataSource, currentLocale],
+    [navigate, report],
   );
 
   const columns = useMemo(
-    () => [
-      {
-        title: cardTitle,
-        dataIndex: "title",
-        key: "title",
-        width: "30%",
-      },
-      dataSource.some((item: any) => !item.withoutCount)
-        ? {
-          title: t("Items Translated"),
-          dataIndex: "items",
-          key: "items",
+    () => {
+      const baseColumns = [
+        {
+          title: cardTitle,
+          dataIndex: "title",
+          key: "title",
           width: "30%",
+        },
+      ];
+
+      const countColumn = dataSource.some((item: any) => !item.withoutCount)
+        ? [
+            {
+              title: t("Items Translated"),
+              dataIndex: "items",
+              key: "items",
+              width: "30%",
+              render: (_: any, record: any) => {
+                if (record.withoutCount) return null;
+                return record.allItems === undefined ||
+                  record.allTranslatedItems === undefined ? (
+                  <div>{t("Syncing")}</div>
+                ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
+                  <div>--</div>
+                ) : (
+                  <div>
+                    {record.allTranslatedItems}/{record.allItems}
+                  </div>
+                );
+              },
+            },
+          ]
+        : [];
+
+      return [
+        ...baseColumns,
+        ...countColumn,
+        {
+          title: t("Action"),
+          dataIndex: "operation",
+          key: "operation",
+          width: "40%",
           render: (_: any, record: any) => {
-            if (record.withoutCount) return null;
-            return record.allItems === undefined ||
-              record.allTranslatedItems === undefined ? (
-              <div>{t("Syncing")}</div>
-            ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
-              <div>--</div>
-            ) : (
-              <div>
-                {record.allTranslatedItems}/{record.allItems}
-              </div>
+            return (
+              <Button
+                type="default"
+                onClick={() => handleEdit(record, currentLocale)}
+              >
+                {t("Edit")}
+              </Button>
             );
           },
-        }
-        : {},
-      {
-        title: t("Action"),
-        dataIndex: "operation",
-        key: "operation",
-        width: "40%",
-        render: (_: any, record: any) => {
-          return (
-            <Button onClick={() => handleEdit(record, currentLocale)}>
-              {t("Edit")}
-            </Button>
-          );
         },
-      },
-    ],
-    [dataSource, currentLocale],
+      ];
+    },
+    [cardTitle, currentLocale, dataSource, handleEdit, t],
   );
   return (
-    <Card>
+    <AppSectionCard title={cardTitle} bodyPadding="12px 16px">
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
-        <Title style={{ fontSize: "1.5rem", display: "inline" }}>
-          {cardTitle}
-        </Title>
-        <Table columns={columns} dataSource={dataSource} pagination={false} />
+        <Table
+          className="manage-section-table"
+          columns={columns}
+          dataSource={dataSource}
+          rowKey="key"
+          pagination={false}
+        />
       </Space>
-    </Card>
+    </AppSectionCard>
   );
 };
 

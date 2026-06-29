@@ -164,13 +164,16 @@ export function formatElapsed(ms: number): string {
   return `${h}时${m % 60}分`;
 }
 
-export function jobElapsedMs(job: TranslationJobProgressSummary): number | null {
+export function jobElapsedMs(
+  job: TranslationJobProgressSummary,
+  nowMs = Date.now(),
+): number | null {
   const freezeAt =
     job.status === "PAUSED" || job.status === "CANCELLED" || job.isTerminal
       ? job.updatedAt
       : null;
   if (!job.createdAt) return null;
-  const end = freezeAt ? new Date(freezeAt).getTime() : Date.now();
+  const end = freezeAt ? new Date(freezeAt).getTime() : nowMs;
   const ms = end - new Date(job.createdAt).getTime();
   return Number.isFinite(ms) && ms >= 0 ? ms : null;
 }
@@ -185,6 +188,7 @@ export function formatJobStartTime(createdAt: string): string | null {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Shanghai",
   });
 }
 

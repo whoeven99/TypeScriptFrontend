@@ -11,18 +11,23 @@ import {
   Table,
   Typography,
 } from "antd";
-import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
-import prisma from "~/db.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
@@ -30,9 +35,10 @@ import TranslationPanel from "./components/TranslationPanel";
 import ExpressTranslateCard from "./components/ExpressTranslateCard";
 import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
-import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
-import { listV4JobSummaries } from "~/server/translateV4/progress.server";
-import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 
 const { Title, Text } = Typography;
 
@@ -43,54 +49,24 @@ type ShopLocaleOption = {
   published: boolean;
 };
 
-/** 首页「极速翻译」卡片所需的 v4 数据，仅在功能开关开启时拉取。 */
-async function loadExpressV4Data(shop: string, accessToken: string) {
-  if (!isTranslateV4Enabled() || !isTranslateV4ShopAllowed(shop)) {
-    return { enabled: false, locales: [], primaryLocale: "en", jobs: [], migrated: false };
-  }
-
-  let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "en";
-  try {
-    const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
-    locales = loaded.localeOptions;
-    primaryLocale = loaded.primaryLocale;
-  } catch (err) {
-    console.error("[expressV4] load shopLocales failed:", err);
-  }
-
-  let jobs: Awaited<ReturnType<typeof listV4JobSummaries>> = [];
-  try {
-    jobs = await listV4JobSummaries(shop);
-  } catch (err) {
-    console.error("[expressV4] load jobs failed:", err);
-  }
-
-  let migrated = false;
-  try {
-    const settings = await prisma.shopTranslationSettings.findUnique({
-      where: { shop },
-      select: { migratedToTsf: true },
-    });
-    migrated = settings?.migratedToTsf ?? false;
-  } catch (err) {
-    console.error("[expressV4] load migration status failed:", err);
-  }
-
-  return { enabled: true, locales, primaryLocale, jobs, migrated };
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+
+  if (await isShopMigrated(shop)) {
+    throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
+  }
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
 
-  const expressV4 = await loadExpressV4Data(
-    adminAuthResult.session.shop,
-    adminAuthResult.session.accessToken,
-  );
+  const expressV4 = {
+    enabled: false,
+    locales: [] as ShopLocaleOption[],
+    primaryLocale: "en",
+    jobs: [],
+    migrated: false,
+  };
 
   return {
     language,
@@ -108,6 +84,7 @@ const Index = () => {
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   /** 已迁移到 v4 的店：首页只展示「极速翻译」，隐藏 v2 仪表盘与翻译进度卡。 */
   const v4MigratedHome = expressV4.enabled && expressV4.migrated;
@@ -150,7 +127,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app/currency",
+        action: withEmbeddedSearch("/app/currency", location.search),
       },
     );
     fetcher.submit(
@@ -171,7 +148,7 @@ const Index = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -442,6 +419,12 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
+        <AppPageHeader
+          title={t("Dashboard")}
+          description={t(
+            "Monitor translation progress, review key storefront metrics, and jump into the next localization task.",
+          )}
+        />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           {!v4MigratedHome ? (
             <>
@@ -476,24 +459,14 @@ const Index = () => {
 
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                }}
-                styles={{
-                  body: {
-                    height: "100%",
-                    padding: "12px 24px",
-                  },
-                }}
-              >
+              <AppSectionCard style={{ height: "100%" }} bodyPadding="12px 16px">
                 <Space direction="vertical" style={{ display: "flex" }}>
                   <Text strong>{t("transLanguageCard3.title")}</Text>
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "row-reverse",
-                      gap: "10px",
+                      gap: "var(--app-space-300)",
                       justifyContent: "flex-start",
                     }}
                   >
@@ -503,7 +476,7 @@ const Index = () => {
                       style={{
                         width: "50px",
                         height: "50px",
-                        borderRadius: "4px",
+                        borderRadius: "var(--app-radius-small)",
                       }}
                     />
                     <div style={{ marginRight: "auto" }}>
@@ -535,29 +508,20 @@ const Index = () => {
                     </div>
                   </div>
                 </Space>
-              </Card>
+              </AppSectionCard>
             </Col>
             <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                }}
-                styles={{
-                  body: {
-                    height: "100%",
-                    padding: "12px 24px",
-                  },
-                }}
+              <AppSectionCard
+                style={{ height: "100%" }}
+                bodyPadding="12px 16px"
+                title={t("transCurrencyCard1.title")}
+                description={t("transCurrencyCard1.description")}
               >
                 <Flex
                   vertical
                   style={{ height: "100%" }}
                   justify="space-between"
                 >
-                  <Space direction="vertical" style={{ display: "flex" }}>
-                    <Text strong>{t("transCurrencyCard1.title")}</Text>
-                    <Text>{t("transCurrencyCard1.description")}</Text>
-                  </Space>
                   <div
                     style={{
                       display: "flex",
@@ -577,27 +541,21 @@ const Index = () => {
                     )}
                   </div>
                 </Flex>
-              </Card>
+              </AppSectionCard>
             </Col>
           </Row>
         </Space>
         <Space direction="vertical" size="small" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={4}>{t("dashboard.title3")}</Title>
-          </div>
-          <Card
-            styles={{
-              body: {
-                padding: "12px 24px",
-              },
-            }}
+          <AppSectionCard
+            title={t("dashboard.title3")}
+            bodyPadding="12px 16px"
           >
             <Space
               direction="vertical"
               size="small"
               style={{ display: "flex" }}
             >
-              <Title style={{ fontSize: "14px" }}>{t("planCard.title")}</Title>
+              <Text strong>{t("planCard.title")}</Text>
               <Flex justify="space-between" align="center">
                 <Text>{t("planCard.description")}</Text>
                 {isLoading ? (
@@ -611,7 +569,7 @@ const Index = () => {
 
               <Table columns={columns} dataSource={data} pagination={false} />
             </Space>
-          </Card>
+          </AppSectionCard>
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <ContactCard
@@ -630,15 +588,18 @@ const Index = () => {
         </Space>
         <Text
           style={{
-            display: "flex", // 使用 flexbox 来布局
-            justifyContent: "center", // 水平居中
+            display: "flex",
+            justifyContent: "center",
+            color: "var(--app-color-text-secondary)",
+            gap: "4px",
+            flexWrap: "wrap",
           }}
         >
           {t("Learn more in")}
           <Link
             to="https://ciwi.ai/help-center/ShopifyApp/about-ciwi-ai-translator-shopify-app"
             target="_blank"
-            style={{ margin: "0 5px" }}
+            style={{ color: "var(--app-color-brand)" }}
             onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
@@ -647,7 +608,7 @@ const Index = () => {
           <Link
             to={"https://ciwi.ai"}
             target="_blank"
-            style={{ margin: "0 5px" }}
+            style={{ color: "var(--app-color-brand)" }}
           >
             {t("Ciwi.ai")}
           </Link>

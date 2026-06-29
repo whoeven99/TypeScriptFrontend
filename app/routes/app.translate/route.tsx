@@ -39,6 +39,8 @@ import ToneSettingCard from "./components/toneSettingCard";
 import AdvanceSettingCard from "./components/advanceSettingCard";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
 import languageLocaleData from "~/utils/language-locale-data";
+import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
 
 const { Title, Text } = Typography;
 
@@ -207,7 +209,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: "/app",
+        action: withEmbeddedSearch("/app", location.search),
       },
     );
     fetcher.submit(
@@ -230,7 +232,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [location.search]);
 
   //更新语言数据，增加src、localeName、status字段
   useEffect(() => {
@@ -549,6 +551,12 @@ const Index = () => {
           display: "flex",
         }}
       >
+        <AppPageHeader
+          title={t("Translate Store")}
+          description={t(
+            "Choose target languages, review translation scope, and configure model behavior before launching a new translation task.",
+          )}
+        />
         <TranslateAffix
           loading={loadingArray.includes("loading")}
           languageData={languageData}
@@ -564,18 +572,26 @@ const Index = () => {
           <Skeleton.Button active style={{ height: 600 }} block />
         ) : languageData.length != 0 ? (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <Title
+            <div
               style={{
-                margin: "0",
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                paddingLeft: "8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--app-space-100)",
               }}
             >
-              {t("translateSettings.title1")}
-            </Title>
-            <div style={{ paddingLeft: "8px" }}>
-              <Text>{t("Your store's default language:")}</Text>{" "}
+              <Text
+                strong
+                style={{
+                  fontSize: 14,
+                  lineHeight: "20px",
+                  color: "var(--app-color-text)",
+                }}
+              >
+                {t("translateSettings.title1")}
+              </Text>
+              <Text style={{ color: "var(--app-color-text-secondary)" }}>
+                {t("Your store's default language:")}{" "}
+              </Text>
               <Text strong>
                 {source.name ? (
                   source.name
@@ -591,21 +607,36 @@ const Index = () => {
               languageData={languageData}
               languageCardWarnText={languageCardWarnText}
             />
-            <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
+            <Link
+              to={"/app/language"}
+              style={{ color: "var(--app-color-brand)" }}
+            >
               {t(
                 "Can't find the language you want to translate into? Click here to add a language.",
               )}
             </Link>
-            <div style={{ paddingLeft: "8px" }}>
-              <Title
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--app-space-100)",
+              }}
+            >
+              <Text
+                strong
                 style={{
-                  margin: "0",
-                  fontSize: "1.25rem",
-                  fontWeight: 700,
+                  fontSize: 14,
+                  lineHeight: "20px",
+                  color: "var(--app-color-text)",
                 }}
               >
                 {t("translateSettings.title2")}
-              </Title>
+              </Text>
+              <Text style={{ color: "var(--app-color-text-secondary)" }}>
+                {t(
+                  "Set translation scope, choose the translation engine, and decide whether to overwrite existing content.",
+                )}
+              </Text>
             </div>
             <TransalteSettingCard
               translateSettings1={translateSettings1}
@@ -619,23 +650,6 @@ const Index = () => {
               handleUsePrivateApi={handleUsePrivateApi}
               isMobile={isMobile}
             />
-            {toneSettingCardShow && (
-              <div
-                style={{
-                  paddingLeft: "8px",
-                }}
-              >
-                <Title
-                  style={{
-                    margin: "0",
-                    fontSize: "1.25rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  {t("translateSettings.title3")}
-                </Title>
-              </div>
-            )}
             <ToneSettingCard
               toneSettingCardShow={toneSettingCardShow}
               translateSettings2={translateSettings2}

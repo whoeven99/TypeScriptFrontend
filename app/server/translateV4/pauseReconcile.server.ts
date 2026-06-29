@@ -5,7 +5,7 @@ import {
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
 import { reconcileTranslateUnitMetrics } from "./metricsUtils";
-import type { TranslationV4Job } from "./types";
+import { EMPTY_V4_METRICS, type TranslationV4Job } from "./types";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 
 /** worker 未能在该时长内收尾暂停 → TSF 直接落 PAUSED（不再先写回）。 */
@@ -20,6 +20,7 @@ export async function escalateStuckPauseIfNeeded(
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): Promise<TranslationV4Job | null> {
+  const jobMetrics = job.metrics ?? EMPTY_V4_METRICS;
   if (job.status !== "TRANSLATING") return null;
 
   const pauseRequested =
@@ -37,7 +38,7 @@ export async function escalateStuckPauseIfNeeded(
 
   const translateDone = Math.max(
     metrics.translateDone,
-    Number(job.metrics.translateDone) || 0,
+    Number(jobMetrics.translateDone) || 0,
   );
   const units = reconcileTranslateUnitMetrics({
     translateDone,
@@ -55,7 +56,7 @@ export async function escalateStuckPauseIfNeeded(
       sanitizeV4UserErrorMessage(metrics.pauseReason) ?? "已手动暂停",
     errorStage: "TRANSLATE",
     metrics: {
-      ...job.metrics,
+      ...jobMetrics,
       initTotal: metrics.initTotal,
       initDone: metrics.initDone,
       translateTotal: metrics.translateTotal,

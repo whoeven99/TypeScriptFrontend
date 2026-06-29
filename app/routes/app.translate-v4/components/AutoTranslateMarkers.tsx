@@ -1,13 +1,14 @@
 import { v4Colors } from "../v4Styles";
 
 const autoMarkerBadgeStyle = {
-  padding: "1px 7px",
-  fontSize: 10,
+  padding: "3px 8px",
+  fontSize: 12,
   fontWeight: 600,
   lineHeight: 1.5,
   color: v4Colors.success,
-  background: "rgba(22, 163, 74, 0.1)",
+  background: v4Colors.successBg,
   borderRadius: 999,
+  border: "1px solid #d9f7be",
 } as const;
 
 type BadgeProps = {
