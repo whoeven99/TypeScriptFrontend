@@ -3,8 +3,8 @@ import { getTranslateV4RedisClient } from "./redis.server";
 /** 与 Spark worker redisV4 / scheduler 共用。 */
 export const AUTO_SCAN_LAST_AT_KEY = "translate:v4:auto_scan:last_at";
 
-/** 与 Spark worker scheduler 一致：未配置环境变量时默认 1 小时。 */
-export const AUTO_TRANSLATE_INTERVAL_MS_DEFAULT = 60 * 60_000;
+/** 与 Spark worker scheduler 一致：未配置环境变量时默认 3 小时。 */
+export const AUTO_TRANSLATE_INTERVAL_MS_DEFAULT = 3 * 60 * 60_000;
 
 /** 自动扫描对齐的时区（展示与调度一致，默认北京时间）。 */
 export const AUTO_TRANSLATE_SCHEDULE_TZ_DEFAULT = "Asia/Shanghai";
@@ -91,7 +91,7 @@ function utcFromTzLocal(
 }
 
 /**
- * 下一轮自动扫描时刻：按配置时区对齐到整点（默认每小时 :00）。
+ * 下一轮自动扫描时刻：按配置时区对齐（默认每 3 小时 :00 北京时间）。
  * 不依赖 Worker 上次扫描 / 部署时间，避免发布重启后「下次时间」跟着漂移。
  */
 export function resolveNextClockAlignedScanAt(
