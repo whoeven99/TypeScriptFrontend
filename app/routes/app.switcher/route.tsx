@@ -24,8 +24,12 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
-import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
+import {
+  loadSwitcherConfigCompat,
+  saveSwitcherConfigCompat,
+} from "./switcherClient";
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -102,8 +106,10 @@ const initialLocalization = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  const migrated = await isShopMigrated(shop);
   return {
     shop,
+    migrated,
     server: process.env.SERVER_URL,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
     ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
@@ -164,7 +170,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+  const { shop, migrated, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
@@ -262,8 +268,9 @@ const Index = () => {
       },
     );
     const getSwitcherConfig = async () => {
-      const data = await WidgetConfigurations({
-        shop: shop,
+      const data = await loadSwitcherConfigCompat({
+        migrated,
+        shop,
         server: server as string,
       });
       const initData = {
@@ -281,7 +288,7 @@ const Index = () => {
         positionData: "10",
         isTransparent: false,
       };
-      if (data?.success) {
+      if (data?.success && data.response) {
         const filteredResponse = Object.fromEntries(
           Object.entries(data.response).filter(([_, value]) => value !== null),
         );
@@ -329,7 +336,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, [location.search]);
+  }, [location.search, migrated, shop, server]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -644,9 +651,11 @@ const Index = () => {
 
   const handleSave = async () => {
     setUpdateLoading(true);
-    const data = await SaveAndUpdateData({
-      ...editData,
+    const data = await saveSwitcherConfigCompat({
+      migrated,
+      shop,
       server: server as string,
+      data: editData,
     });
     if (data?.success && data.response != undefined) {
       setOriginalData(data.response);

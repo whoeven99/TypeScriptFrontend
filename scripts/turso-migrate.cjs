@@ -13,6 +13,18 @@ const fs = require("fs");
 const path = require("path");
 const { createClient } = require("@libsql/client/http");
 
+/** 本地 migration → 执行后应存在的代表性表（用于漂移修复） */
+const MIGRATION_MARKERS = [
+  { name: "20250526051132_init", table: "Session" },
+  { name: "20250619000000_add_session_refresh_token", table: "Session" },
+  { name: "20260622111403_add_shop_translation_glossary_liquid", table: "ShopTranslationSettings" },
+  { name: "20260622144316_add_shop_target_locale_glossary_int_id", table: "ShopTargetLocale" },
+  {
+    name: "20260629100000_add_switcher_configuration_ip_redirection",
+    table: "SwitcherConfiguration",
+  },
+];
+
 const PRISMA_MIGRATIONS_DDL = `
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
     "id"                    TEXT PRIMARY KEY NOT NULL,
@@ -88,19 +100,70 @@ async function executeWithRetry(client, statement, maxAttempts = 3) {
   throw lastError;
 }
 
-/** SQLite/Turso 不支持 ADD COLUMN IF NOT EXISTS；列已存在时跳过 ALTER。 */
+async function tableExists(client, table) {
+  try {
+    await client.execute(`SELECT 1 FROM "${table}" LIMIT 1`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** SQLite/Turso 不支持 ADD COLUMN IF NOT EXISTS；列/表/索引已存在时跳过。 */
 async function executeMigrationStatement(client, statement) {
   try {
     return await executeWithRetry(client, statement);
   } catch (error) {
     const msg = String(error.message || error);
-    const isAlterAdd = /^\s*ALTER\s+TABLE\b/i.test(statement) && /\bADD\s+COLUMN\b/i.test(statement);
+    const isAlterAdd =
+      /^\s*ALTER\s+TABLE\b/i.test(statement) && /\bADD\s+COLUMN\b/i.test(statement);
     if (isAlterAdd && /duplicate column name/i.test(msg)) {
       console.log(`[turso:migrate] 跳过已存在列 (${statement.split(/\s+/).slice(-3).join(" ")})`);
       return;
     }
+    const isCreateTable = /^\s*CREATE\s+TABLE\b/i.test(statement);
+    if (isCreateTable && /already exists/i.test(msg)) {
+      console.log("[turso:migrate] 跳过已存在表");
+      return;
+    }
+    const isCreateIndex = /^\s*CREATE\s+(UNIQUE\s+)?INDEX\b/i.test(statement);
+    if (isCreateIndex && /already exists/i.test(msg)) {
+      console.log("[turso:migrate] 跳过已存在索引");
+      return;
+    }
     throw error;
   }
+}
+
+async function applyMigrationSql(client, migration, target) {
+  const sql = fs.readFileSync(migration.sqlPath, "utf8");
+  console.log(`[turso:migrate:${target}] 应用: ${migration.name}`);
+  for (const statement of splitStatements(sql)) {
+    await executeMigrationStatement(client, statement);
+  }
+  return sql;
+}
+
+/** 修复「_prisma_migrations 已标记但表未创建」的漂移（多由 baseline --through 误标引起）。 */
+async function repairDrift(client, migrations, applied, target) {
+  const migrationByName = new Map(migrations.map((m) => [m.name, m]));
+  let repaired = 0;
+
+  for (const marker of MIGRATION_MARKERS) {
+    if (!applied.has(marker.name)) continue;
+    if (await tableExists(client, marker.table)) continue;
+
+    const migration = migrationByName.get(marker.name);
+    if (!migration) continue;
+
+    console.warn(
+      `[turso:migrate:${target}] 漂移: ${marker.name} 已标记但表 ${marker.table} 不存在，重新执行 SQL`,
+    );
+    await applyMigrationSql(client, migration, target);
+    repaired += 1;
+  }
+
+  return repaired;
 }
 
 async function getAppliedNames(client) {
@@ -142,35 +205,49 @@ async function main() {
   if (!url?.startsWith("libsql://")) throw new Error(`无效 ${urlKey}`);
   if (!authToken || authToken === "REPLACE_ME") throw new Error(`无效 ${tokenKey}`);
 
+  const host = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  })();
+  console.log(`[turso:migrate:${target}] 目标库 host=${host}`);
+
   const client = createClient({ url, authToken });
   const migrations = listMigrations(path.join(root, "prisma", "migrations"));
 
   await executeWithRetry(client, PRISMA_MIGRATIONS_DDL.trim());
   const applied = await getAppliedNames(client);
 
+  const repaired = await repairDrift(client, migrations, applied, target);
+
   let ran = 0;
 
   for (const migration of migrations) {
     if (applied.has(migration.name)) continue;
 
-    const sql = fs.readFileSync(migration.sqlPath, "utf8");
-
-    console.log(`[turso:migrate:${target}] 应用: ${migration.name}`);
-    for (const statement of splitStatements(sql)) {
-      await executeMigrationStatement(client, statement);
-    }
+    const sql = await applyMigrationSql(client, migration, target);
     await markApplied(client, migration.name, sql);
     ran += 1;
+  }
+
+  for (const table of ["SwitcherConfiguration", "IpRedirection"]) {
+    const ok = await tableExists(client, table);
+    console.log(`[turso:migrate:${target}] 校验 ${table}: ${ok ? "OK" : "缺失"}`);
+    if (!ok) {
+      throw new Error(`迁移后仍缺少表 ${table}，请检查 ${urlKey} 是否指向预期 Turso 库`);
+    }
   }
 
   const status = await client.execute(
     'SELECT migration_name, finished_at FROM "_prisma_migrations" ORDER BY finished_at',
   );
-  console.log(`[turso:migrate:${target}] 本次应用 ${ran} 条 migration`);
+  console.log(`[turso:migrate:${target}] 本次应用 ${ran} 条 migration，漂移修复 ${repaired} 条`);
   console.log(
     `[turso:migrate:${target}] 共 ${status.rows.length} 条记录在 _prisma_migrations`,
   );
-  if (ran === 0) {
+  if (ran === 0 && repaired === 0) {
     console.log(`[turso:migrate:${target}] 无待执行 migration（已是最新）`);
   }
 }

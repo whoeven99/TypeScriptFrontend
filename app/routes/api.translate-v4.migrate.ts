@@ -8,6 +8,7 @@ import prisma from "~/db.server";
 import { invalidateMigrationCache } from "~/server/translateV4/migration.server";
 import { upsertTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { syncSwitcherFromJava } from "~/server/storefront/switcherMigration.server";
 import {
   GetGlossaryByShopName,
   SelectShopNameLiquidData,
@@ -34,6 +35,8 @@ type MigrationSummary = {
   already: boolean;
   glossaryCount: number;
   liquidCount: number;
+  switcherSynced: boolean;
+  ipRedirectionCount: number;
   settings: {
     primaryLocale: string;
     targets: string[];
@@ -76,14 +79,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!existing?.migratedToTsf) {
     return json({ ok: true, migrated: false, summary: null });
   }
-  const [glossaryCount, liquidCount] = await Promise.all([
+  const [glossaryCount, liquidCount, switcherSummary] = await Promise.all([
     prisma.glossary.count({ where: { shop } }),
     prisma.liquidRule.count({ where: { shop } }),
+    readSwitcherMigrationSummary(shop),
   ]);
   const summary: MigrationSummary = {
     already: true,
     glossaryCount,
     liquidCount,
+    switcherSynced: switcherSummary.switcherSynced,
+    ipRedirectionCount: switcherSummary.ipRedirectionCount,
     settings: {
       primaryLocale: existing.primaryLocale,
       targets: Array.isArray(existing.targets) ? (existing.targets as string[]) : [],
@@ -111,6 +117,20 @@ async function readAutoTranslateByTarget(
     console.error(`[migrate] ${shop} read autoTranslate failed:`, err);
   }
   return map;
+}
+
+async function readSwitcherMigrationSummary(shop: string) {
+  const [switcherConfig, ipRedirectionCount] = await Promise.all([
+    prisma.switcherConfiguration.findUnique({
+      where: { shop },
+      select: { shop: true },
+    }),
+    prisma.ipRedirection.count({ where: { shop, isDeleted: false } }),
+  ]);
+  return {
+    switcherSynced: Boolean(switcherConfig),
+    ipRedirectionCount,
+  };
 }
 
 /**
@@ -162,14 +182,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
     await notifyJavaShopMigrated(shop, server); // 自愈：标记可能丢失
-    const [glossaryCount, liquidCount] = await Promise.all([
+    let switcherSynced = false;
+    let ipRedirectionCount = 0;
+    const existingSwitcher = await prisma.switcherConfiguration.findUnique({
+      where: { shop },
+      select: { shop: true },
+    });
+    if (!existingSwitcher && server) {
+      try {
+        const switcherResult = await syncSwitcherFromJava(shop, server);
+        switcherSynced = switcherResult.switcherSynced;
+        ipRedirectionCount = switcherResult.ipRedirectionCount;
+      } catch (switcherErr) {
+        console.error(`[migrate] ${shop} switcher backfill failed:`, switcherErr);
+      }
+    }
+    const [glossaryCount, liquidCount, switcherSummary] = await Promise.all([
       prisma.glossary.count({ where: { shop } }),
       prisma.liquidRule.count({ where: { shop } }),
+      readSwitcherMigrationSummary(shop),
     ]);
     const summary: MigrationSummary = {
       already: true,
       glossaryCount,
       liquidCount,
+      switcherSynced: switcherSynced || switcherSummary.switcherSynced,
+      ipRedirectionCount: ipRedirectionCount || switcherSummary.ipRedirectionCount,
       settings: {
         primaryLocale: existing.primaryLocale,
         targets: Array.isArray(existing.targets) ? (existing.targets as string[]) : [],
@@ -246,6 +284,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       targets.map((t) => ({ locale: t, autoTranslate: autoByTarget.get(t) ?? false })),
     );
 
+    let switcherSynced = false;
+    let ipRedirectionCount = 0;
+    if (server) {
+      try {
+        const switcherResult = await syncSwitcherFromJava(shop, server);
+        switcherSynced = switcherResult.switcherSynced;
+        ipRedirectionCount = switcherResult.ipRedirectionCount;
+      } catch (switcherErr) {
+        console.error(`[migrate] ${shop} switcher sync failed:`, switcherErr);
+      }
+    }
+
     // 通知 Java 跳过本店的自动翻译（避免双翻译）
     await notifyJavaShopMigrated(shop, server);
     invalidateMigrationCache(shop); // 让术语表/语言页立刻按已迁移分流
@@ -254,10 +304,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       already: false,
       glossaryCount: glossaryData.length,
       liquidCount: liquidData.length,
+      switcherSynced,
+      ipRedirectionCount,
       settings: { primaryLocale, targets, autoTranslate: anyAuto },
     };
     console.log(
-      `[migrate] ${shop} done: glossary=${summary.glossaryCount} liquid=${summary.liquidCount} auto=${anyAuto} targets=${targets.join(",")}`,
+      `[migrate] ${shop} done: glossary=${summary.glossaryCount} liquid=${summary.liquidCount} switcher=${summary.switcherSynced} ipRedirects=${summary.ipRedirectionCount} auto=${anyAuto} targets=${targets.join(",")}`,
     );
     return json({ ok: true, summary });
   } catch (err) {
