@@ -37,7 +37,6 @@ import {
 } from "~/store/modules/languageTableData";
 import { GetTranslate } from "~/api/JavaServer";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
-import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import {
@@ -102,14 +101,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   const migrated = await isShopMigrated(shop);
-  const translateV4Allowed = isTranslateV4ShopAllowed(shop);
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
     migrated,
-    translateV4Allowed,
   });
 };
 
@@ -316,9 +313,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server, migrated, translateV4Allowed } =
+  const { shop, mobile, server, migrated } =
     useLoaderData<typeof loader>();
-  const useV4LanguageStatus = migrated || translateV4Allowed;
+  const useV4LanguageStatus = migrated;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -483,7 +480,6 @@ const Index = () => {
         const GetLanguageLocaleInfoFront = async () => {
           const languageList = await listLanguageStatusCompat({
             migrated,
-            translateV4Allowed,
             shop,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
@@ -529,7 +525,7 @@ const Index = () => {
     server,
     shop,
     statusFetcher,
-    translateV4Allowed,
+    migrated,
     useV4LanguageStatus,
   ]);
 
@@ -616,7 +612,6 @@ const Index = () => {
     const pollV4LanguageStatus = async () => {
       const languageList = await listLanguageStatusCompat({
         migrated,
-        translateV4Allowed,
         shop,
         server: server as string,
         source: source.code,
@@ -643,7 +638,6 @@ const Index = () => {
     shop,
     server,
     migrated,
-    translateV4Allowed,
     dispatch,
   ]);
 
@@ -842,7 +836,6 @@ const Index = () => {
     if (row) {
       const data = await setAutoTranslateCompat({
         migrated,
-        translateV4Allowed,
         shopName: shop,
         source: source?.code,
         target: row.locale,

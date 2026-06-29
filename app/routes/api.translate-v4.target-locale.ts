@@ -8,14 +8,8 @@ import {
   setAutoTranslate,
   listTargetLocales,
 } from "~/server/translateV4/targetLocale.server";
-import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { listLanguageStatusFromV4 } from "~/server/translateV4/languageStatus.server";
-
-async function shouldUseV4LanguageStatus(shop: string): Promise<boolean> {
-  if (isTranslateV4ShopAllowed(shop)) return true;
-  return await isShopMigrated(shop);
-}
 
 /**
  * GET /api/translate-v4/target-locale —— 列出本店每语言状态（仅迁移后的店）。
@@ -24,7 +18,7 @@ async function shouldUseV4LanguageStatus(shop: string): Promise<boolean> {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   try {
-    if (!(await shouldUseV4LanguageStatus(session.shop))) {
+    if (!(await isShopMigrated(session.shop))) {
       const rows = await listTargetLocales(session.shop);
       return json({
         success: true,

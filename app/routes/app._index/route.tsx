@@ -24,11 +24,10 @@ import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
-import prisma from "~/db.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
@@ -39,9 +38,7 @@ import { globalStore } from "~/globalStore";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
-import { listV4JobSummaries } from "~/server/translateV4/progress.server";
-import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 
 const { Title, Text } = Typography;
 
@@ -52,54 +49,24 @@ type ShopLocaleOption = {
   published: boolean;
 };
 
-/** 首页「极速翻译」卡片所需的 v4 数据，仅在功能开关开启时拉取。 */
-async function loadExpressV4Data(shop: string, accessToken: string) {
-  if (!isTranslateV4Enabled() || !isTranslateV4ShopAllowed(shop)) {
-    return { enabled: false, locales: [], primaryLocale: "en", jobs: [], migrated: false };
-  }
-
-  let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "en";
-  try {
-    const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
-    locales = loaded.localeOptions;
-    primaryLocale = loaded.primaryLocale;
-  } catch (err) {
-    console.error("[expressV4] load shopLocales failed:", err);
-  }
-
-  let jobs: Awaited<ReturnType<typeof listV4JobSummaries>> = [];
-  try {
-    jobs = await listV4JobSummaries(shop);
-  } catch (err) {
-    console.error("[expressV4] load jobs failed:", err);
-  }
-
-  let migrated = false;
-  try {
-    const settings = await prisma.shopTranslationSettings.findUnique({
-      where: { shop },
-      select: { migratedToTsf: true },
-    });
-    migrated = settings?.migratedToTsf ?? false;
-  } catch (err) {
-    console.error("[expressV4] load migration status failed:", err);
-  }
-
-  return { enabled: true, locales, primaryLocale, jobs, migrated };
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+
+  if (await isShopMigrated(shop)) {
+    throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
+  }
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
 
-  const expressV4 = await loadExpressV4Data(
-    adminAuthResult.session.shop,
-    adminAuthResult.session.accessToken,
-  );
+  const expressV4 = {
+    enabled: false,
+    locales: [] as ShopLocaleOption[],
+    primaryLocale: "en",
+    jobs: [],
+    migrated: false,
+  };
 
   return {
     language,
