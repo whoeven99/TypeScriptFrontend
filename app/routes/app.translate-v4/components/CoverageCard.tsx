@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "antd";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
-import { v4Colors, v4CardStyle } from "../v4Styles";
+import { v4Colors, v4CardStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
@@ -35,6 +35,9 @@ type Props = {
   onRefresh: () => void;
   compact?: boolean;
   onManageLanguages?: () => void;
+  onExpandedChange?: (expanded: boolean) => void;
+  /** 与左侧摘要卡同列拉伸等高（默认收起态） */
+  fillPairHeight?: boolean;
 };
 
 export function CoverageCard({
@@ -43,8 +46,18 @@ export function CoverageCard({
   onRefresh,
   compact = false,
   onManageLanguages,
+  onExpandedChange,
+  fillPairHeight = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      onExpandedChange?.(next);
+      return next;
+    });
+  };
 
   const autoTranslateCount = useMemo(
     () => locales.filter((row) => row.autoTranslate).length,
@@ -65,8 +78,9 @@ export function CoverageCard({
         style={{
           ...v4CardStyle,
           width: "100%",
+          height: fillPairHeight ? "100%" : undefined,
           minWidth: 0,
-          minHeight: 208,
+          minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
           padding: "20px 22px",
           boxSizing: "border-box",
           display: "flex",
@@ -129,7 +143,7 @@ export function CoverageCard({
           <button
             type="button"
             className="v4-press"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={toggleExpanded}
             style={{
               marginTop: 12,
               alignSelf: "flex-start",

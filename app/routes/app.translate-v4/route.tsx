@@ -20,7 +20,7 @@ import {
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4ContentStyle } from "./v4Styles";
+import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
@@ -113,6 +113,7 @@ export default function AppTranslateV4() {
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
+  const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
 
   const localeOptions = useMemo(
@@ -417,18 +418,30 @@ export default function AppTranslateV4() {
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
               gap: 18,
-              // 两卡默认等高；左卡通过 alignSelf:flex-start 固定在自身高度，
-              // 右侧覆盖率卡展开时只让自己变高，不会把左卡拉高留白。
-              alignItems: "stretch",
+              alignItems: coverageExpanded ? "start" : "stretch",
             }}
           >
-            <SummaryDonutCard
-              summary={coverage}
-              compact
-            />
             <div
               style={{
                 display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                ...(coverageExpanded
+                  ? {
+                      alignSelf: "flex-start",
+                      height: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                    }
+                  : null),
+              }}
+            >
+              <SummaryDonutCard
+                summary={coverage}
+                compact
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
               }}
             >
               <CoverageCard
@@ -437,6 +450,8 @@ export default function AppTranslateV4() {
                 onRefresh={refreshCoverage}
                 compact
                 onManageLanguages={openLanguagePage}
+                onExpandedChange={setCoverageExpanded}
+                fillPairHeight={!coverageExpanded}
               />
             </div>
           </div>

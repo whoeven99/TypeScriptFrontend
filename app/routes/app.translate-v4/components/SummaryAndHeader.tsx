@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { v4Colors } from "../v4Styles";
+import { v4Colors, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
 import AppPageHeader from "~/ui/components/AppPageHeader";
@@ -35,15 +35,14 @@ export function SummaryDonutCard({
       <div
         className="v4-enter v4-enter-d1 v4-lift"
         style={{
-          // 固定在自身内容高度，右侧覆盖率卡展开时不会被拉高留白
-          alignSelf: "flex-start",
           background: v4Colors.summaryBg,
           borderRadius: 18,
           padding: "20px 22px",
           color: v4Colors.text,
           width: "100%",
+          height: "100%",
           minWidth: 0,
-          minHeight: 208,
+          minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
           boxSizing: "border-box",
           display: "flex",
           justifyContent: "space-between",
