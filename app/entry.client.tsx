@@ -40,7 +40,10 @@ async function hydrate() {
       document.getElementById('root')!,
       <I18nextProvider i18n={i18next}>
         <StyleProvider cache={cache}>
-          <ConfigProvider theme={appAntdTheme}>
+          <ConfigProvider
+            theme={appAntdTheme}
+            getPopupContainer={() => document.body}
+          >
             <StrictMode>
               <RemixBrowser />
             </StrictMode>
@@ -51,10 +54,4 @@ async function hydrate() {
   });
 }
 
-if (window.requestIdleCallback) {
-  window.requestIdleCallback(hydrate);
-} else {
-  // Safari doesn't support requestIdleCallback
-  // https://caniuse.com/requestidlecallback
-  window.setTimeout(hydrate, 1);
-}
+void hydrate();

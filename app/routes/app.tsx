@@ -667,7 +667,10 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider theme={appAntdTheme}>
+      <ConfigProvider
+        theme={appAntdTheme}
+        getPopupContainer={() => document.body}
+      >
         <NavMenu>
           <Link to="/app" rel="home">
             Home

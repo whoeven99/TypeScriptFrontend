@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { defer, redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
-import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
+import type { ShopQuota } from "~/server/translateV4/quota.server";
 import { getCoverageSummaryFromCache,
   type CoverageSummary,
 } from "~/server/translateV4/coverage.server";
@@ -30,23 +31,6 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { GetUserSubscriptionPlan } from "~/api/JavaServer";
-
-async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
-  const server = process.env.SERVER_URL?.trim();
-  if (!server) return null;
-
-  try {
-    const result = await GetUserSubscriptionPlan({ shop, server });
-    if (!result?.success) return null;
-
-    const planType = result?.response?.planType;
-    return typeof planType === "string" && planType.trim() ? planType.trim() : null;
-  } catch (err) {
-    console.error("[translateV4] loadSubscriptionPlanType failed:", err);
-    return null;
-  }
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -81,8 +65,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const targetLocales = selectShopTargetLocales(locales, primaryLocale);
 
-  // 关键内容（任务列表 + 覆盖率，均为内部 DB/Redis）阻塞等待；
-  // quota / planType 是较慢的 Java HTTP 调用且仅用于头部徽标，改为流式返回。
+  // 关键内容（任务列表 + 覆盖率）在 loader 阻塞等待；quota / planType 由客户端拉取，
+  // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
   const [jobs, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
     getCoverageSummaryFromCache({
@@ -92,14 +76,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }),
   ]);
 
-  return defer({
+  return json({
     shop: session.shop,
     locales,
     primaryLocale,
     jobs,
     coverage,
-    quota: getShopQuota(session.shop),
-    planType: loadSubscriptionPlanType(session.shop),
   });
 };
 
@@ -110,40 +92,16 @@ export default function AppTranslateV4() {
     locales,
     primaryLocale,
     jobs: initialJobs,
-    quota: quotaPromise,
     coverage: initialCoverage,
-    planType: planTypePromise,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
-  const [planType, setPlanType] = useState<string | null>(null);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-
-  // quota / planType 由 loader 流式返回，到达后填充（不阻塞首屏）。
-  useEffect(() => {
-    let active = true;
-    Promise.resolve(quotaPromise)
-      .then((q) => {
-        if (active) setQuota(q);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [quotaPromise]);
-
-  useEffect(() => {
-    let active = true;
-    Promise.resolve(planTypePromise)
-      .then((p) => {
-        if (active) setPlanType(p);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [planTypePromise]);
+  const planType = useSelector(
+    (state: { userConfig?: { plan?: { type?: string } } }) =>
+      state.userConfig?.plan?.type?.trim() || null,
+  );
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
@@ -258,6 +216,10 @@ export default function AppTranslateV4() {
       console.error("[translateV4] refresh quota failed:", err);
     }
   }, [shop]);
+
+  useEffect(() => {
+    void refreshQuota();
+  }, [refreshQuota]);
 
   const handleAction = useCallback(
     async (
