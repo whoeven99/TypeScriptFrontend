@@ -52,10 +52,10 @@ export function validateTargetLocales(
 ): { ok: true } | { ok: false; message: string } {
   const source = localeKey(sourceLocale);
   if (!locales.length) {
-    return { ok: false, message: "请至少选择一个目标语言" };
+    return { ok: false, message: "v4.validation.selectTarget" };
   }
   if (locales.some((l) => localeKey(l) === source)) {
-    return { ok: false, message: "目标语言不能和源语言相同" };
+    return { ok: false, message: "v4.validation.sameAsSource" };
   }
   return { ok: true };
 }
@@ -123,7 +123,7 @@ export async function createTranslateV4Tasks(
     if (entry.status === "rejected") continue;
     const r = entry.value;
     if (r.jobId) created.push({ target: r.target, jobId: r.jobId });
-    else failed.push({ target: r.target, error: r.error ?? "未知错误" });
+    else failed.push({ target: r.target, error: r.error ?? "v4.create.unknownError" });
   }
 
   return { created, failed };

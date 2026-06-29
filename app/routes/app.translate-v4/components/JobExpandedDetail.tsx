@@ -1,25 +1,30 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { StageName } from "~/server/translateV4/types";
 import { capTranslateUnitsByResources } from "~/server/translateV4/metricsUtils";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
 import { v4Colors } from "../v4Styles";
 import {
-  formatElapsed,
-  formatJobStartTime,
   isStageBarComplete,
   jobElapsedMs,
   jobQuotaCredits,
   stageBarPercent,
   stageOf,
 } from "../jobStageUtils";
+import {
+  formatV4Elapsed,
+  formatV4JobStartTime,
+  getV4ModuleLabel,
+  V4_STAGE_KEYS,
+} from "../v4I18n";
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
-const STAGE_DEFS: { name: string; key: StageName }[] = [
-  { name: "初始化", key: "INIT" },
-  { name: "翻译", key: "TRANSLATE" },
-  { name: "写回", key: "WRITEBACK" },
+const STAGE_DEF_KEYS: { key: StageName; labelKey: (typeof V4_STAGE_KEYS)[number] }[] = [
+  { key: "INIT", labelKey: "v4.stage.init" },
+  { key: "TRANSLATE", labelKey: "v4.stage.translate" },
+  { key: "WRITEBACK", labelKey: "v4.stage.writeback" },
 ];
 
 // 进度色与品牌统一：进行中用主题紫 v4Colors.primary，完成用绿色。
@@ -40,9 +45,9 @@ function taskResourceTotal(m: StageMetrics): number {
 function stageDetail(idx: number, m: StageMetrics): string {
   if (idx === 0) return `${m.initDone}/${m.initTotal}`;
   if (idx === 1) {
-    const res = `资源 ${m.translateDone}/${m.translateTotal}`;
+    const res = `${m.translateDone}/${m.translateTotal}`;
     return m.translateUnitTotal > 0
-      ? `${res} · 节点 ${capTranslateUnitsByResources(m).toLocaleString()}/${m.translateUnitTotal.toLocaleString()}`
+      ? `${res} · ${capTranslateUnitsByResources(m).toLocaleString()}/${m.translateUnitTotal.toLocaleString()}`
       : res;
   }
   const total = taskResourceTotal(m);
@@ -80,6 +85,7 @@ function useHydratedNow(enabled: boolean) {
 }
 
 export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary }) {
+  const { t, i18n } = useTranslation();
   const m = job.metrics;
   const translatedResources = m.translateDone;
   const resourceTotal = m.translateTotal || taskResourceTotal(m);
@@ -93,7 +99,7 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
         ? jobElapsedMs(job, nowMs)
         : null;
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
-  const startTime = formatJobStartTime(job.createdAt);
+  const startTime = formatV4JobStartTime(job.createdAt, i18n.language);
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -108,11 +114,12 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
       >
         {startTime ? (
           <span>
-            开始时间 <strong style={{ color: v4Colors.text }}>{startTime}</strong>
+            {t("v4.job.startTime")}{" "}
+            <strong style={{ color: v4Colors.text }}>{startTime}</strong>
           </span>
         ) : null}
         <span>
-          已翻译资源{" "}
+          {t("v4.job.translatedResources")}{" "}
           <strong style={{ color: v4Colors.text }}>
             {translatedResources.toLocaleString()}
             {resourceTotal > 0 ? ` / ${resourceTotal.toLocaleString()}` : ""}
@@ -120,14 +127,15 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
         </span>
         {elapsed != null ? (
           <span>
-            耗时 <strong style={{ color: v4Colors.text }}>{formatElapsed(elapsed)}</strong>
+            {t("v4.job.elapsed")}{" "}
+            <strong style={{ color: v4Colors.text }}>{formatV4Elapsed(elapsed, t)}</strong>
           </span>
         ) : null}
         {job.usedTokens > 0 ? (
           <span>
-            消耗{" "}
+            {t("v4.job.creditsUsed")}{" "}
             <strong style={{ color: v4Colors.text }}>
-              {credits.toLocaleString()} 积分
+              {t("v4.job.creditsShort", { count: credits })}
             </strong>
             <TaskIdSuffix taskId={job.taskId} />
           </span>
@@ -158,6 +166,7 @@ function TaskIdSuffix({ taskId }: { taskId: string }) {
 
 /** 收起态：启动时间、耗时、积分一行摘要。 */
 export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }) {
+  const { t, i18n } = useTranslation();
   const nowMs = useHydratedNow(
     !job.isTerminal && job.status !== "PAUSED" && job.status !== "CANCELLED",
   );
@@ -168,15 +177,15 @@ export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }
         ? jobElapsedMs(job, nowMs)
         : null;
   const credits = jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER);
-  const startTime = formatJobStartTime(job.createdAt);
+  const startTime = formatV4JobStartTime(job.createdAt, i18n.language);
 
   const items: string[] = [];
-  if (startTime) items.push(`启动 ${startTime}`);
-  if (elapsed != null) items.push(`耗时 ${formatElapsed(elapsed)}`);
+  if (startTime) items.push(t("v4.job.startedAt", { time: startTime }));
+  if (elapsed != null) items.push(t("v4.job.elapsedShort", { time: formatV4Elapsed(elapsed, t) }));
   if (job.usedTokens > 0) {
-    items.push(`消耗 ${credits.toLocaleString()} 积分`);
+    items.push(t("v4.job.creditsShort", { count: credits }));
   } else if (!job.isTerminal) {
-    items.push("积分统计中");
+    items.push(t("v4.job.creditsCounting"));
   }
 
   if (items.length === 0) return null;
@@ -207,6 +216,7 @@ export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }
 }
 
 export function JobStageProgressList({ job }: { job: TranslationJobProgressSummary }) {
+  const { t } = useTranslation();
   const m = job.metrics;
   const timings = job.stageTimings ?? {};
   const activeStage = stageOf(job.status, job.errorStage, m);
@@ -222,7 +232,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
   return (
     <div>
       <style>{INIT_SCAN_CSS}</style>
-      {STAGE_DEFS.map(({ name, key }, idx) => {
+      {STAGE_DEF_KEYS.map(({ labelKey, key }, idx) => {
         const complete = isStageBarComplete(idx, m, job.status);
         const percent = stageBarPercent(idx, m, job.status);
         const current =
@@ -267,19 +277,27 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                       : v4Colors.textFaint,
               }}
             >
-              {name}
+              {t(labelKey)}
             </span>
             {initScanning ? (
               <InitScanIndicator
                 initDone={m.initDone}
                 moduleLabel={
-                  m.currentModule ? MODULE_LABELS[m.currentModule] ?? m.currentModule : null
+                  m.currentModule
+                    ? getV4ModuleLabel(m.currentModule, t) ||
+                      MODULE_LABELS[m.currentModule] ||
+                      m.currentModule
+                    : null
                 }
               />
             ) : translateWarmingUp ? (
               <TranslateWorkingIndicator
                 moduleLabel={
-                  m.currentModule ? MODULE_LABELS[m.currentModule] ?? m.currentModule : null
+                  m.currentModule
+                    ? getV4ModuleLabel(m.currentModule, t) ||
+                      MODULE_LABELS[m.currentModule] ||
+                      m.currentModule
+                    : null
                 }
                 usedCredits={jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER)}
               />
@@ -322,7 +340,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                 >
                   {stageDetail(idx, m)}
                   {complete ? " ✓" : ""}
-                  {ms != null ? ` · 耗时 ${formatElapsed(ms)}` : ""}
+                  {ms != null ? ` · ${t("v4.job.elapsedShort", { time: formatV4Elapsed(ms, t) })}` : ""}
                 </span>
               </>
             )}
@@ -340,6 +358,7 @@ function InitScanIndicator({
   initDone: number;
   moduleLabel: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="v4-indet-track" style={{ flex: 1 }}>
@@ -354,7 +373,7 @@ function InitScanIndicator({
           flexShrink: 0,
         }}
       >
-        已发现 {initDone.toLocaleString()} 项
+        {t("v4.job.itemsFound", { count: initDone })}
         {moduleLabel ? ` · ${moduleLabel}` : ""}
         <span className="v4-dots" />
       </span>
@@ -369,6 +388,7 @@ function TranslateWorkingIndicator({
   moduleLabel: string | null;
   usedCredits: number;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="v4-indet-track" style={{ flex: 1 }}>
@@ -383,9 +403,11 @@ function TranslateWorkingIndicator({
           flexShrink: 0,
         }}
       >
-        正在调用模型
+        {t("v4.job.callingModel")}
         {moduleLabel ? ` · ${moduleLabel}` : ""}
-        {usedCredits > 0 ? ` · 已用 ${usedCredits.toLocaleString()} 积分` : ""}
+        {usedCredits > 0
+          ? ` · ${t("v4.job.creditsUsedShort", { count: usedCredits })}`
+          : ""}
         <span className="v4-dots" />
       </span>
     </>

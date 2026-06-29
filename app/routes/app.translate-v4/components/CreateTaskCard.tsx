@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import { Button, Checkbox, Select, Space } from "antd";
+import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
-  CREATE_TASK_MODULE_LABELS,
   CREATE_TASK_MODULE_OPTIONS,
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
+import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -40,6 +41,7 @@ export function CreateTaskCard({
   isHandle,
   onIsHandleChange,
 }: Props) {
+  const { t } = useTranslation();
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
 
   const sortedTargetOptions = useMemo(() => {
@@ -56,11 +58,9 @@ export function CreateTaskCard({
       const aSelected = modules.includes(a) ? 0 : 1;
       const bSelected = modules.includes(b) ? 0 : 1;
       if (aSelected !== bSelected) return aSelected - bSelected;
-      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
-        CREATE_TASK_MODULE_LABELS[b] ?? b,
-      );
+      return (getV4ModuleLabel(a, t)).localeCompare(getV4ModuleLabel(b, t));
     });
-  }, [modules]);
+  }, [modules, t]);
 
   const targetSelectOptions = sortedTargetOptions.map((opt) => ({
     value: opt.value,
@@ -69,7 +69,12 @@ export function CreateTaskCard({
 
   const moduleSelectOptions = sortedModules.map((mod) => ({
     value: mod,
-    label: CREATE_TASK_MODULE_LABELS[mod] ?? mod,
+    label: getV4ModuleLabel(mod, t),
+  }));
+
+  const aiModelOptions = AI_MODEL_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: getV4AiModelLabel(opt.value, t),
   }));
 
   return (
@@ -77,19 +82,23 @@ export function CreateTaskCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
-            新建翻译任务
+            {t("v4.createTask.title")}
           </h2>
         </div>
         <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
-          {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
+          {creating
+            ? t("v4.createTask.creating")
+            : targets.length > 1
+              ? t("v4.createTask.createMultiple", { count: targets.length })
+              : t("v4.createTask.createOne")}
         </Button>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title="目标语言" />
+        <SectionHeader title={t("v4.createTask.targetLanguages")} />
         <Select
           mode="multiple"
-          placeholder="选择目标语言"
+          placeholder={t("v4.createTask.selectTargetLanguages")}
           value={targets}
           onChange={onTargetsChange}
           options={targetSelectOptions}
@@ -100,10 +109,10 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
-        <SectionHeader title="翻译内容" />
+        <SectionHeader title={t("v4.createTask.content")} />
         <Select
           mode="multiple"
-          placeholder="选择翻译内容模块"
+          placeholder={t("v4.createTask.selectModules")}
           value={modules}
           onChange={onModulesChange}
           options={moduleSelectOptions}
@@ -121,16 +130,16 @@ export function CreateTaskCard({
           border: `1px dashed ${v4Colors.cardBorder}`,
         }}
       >
-        <SectionHeader title="高级设置" />
+        <SectionHeader title={t("v4.createTask.advancedSettings")} />
         <div style={{ marginTop: 4 }}>
-          <SectionLabel>AI 模型</SectionLabel>
+          <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
           <Select
             value={aiModel}
             onChange={onAiModelChange}
-            options={AI_MODEL_OPTIONS}
+            options={aiModelOptions}
             style={{ width: "100%", marginBottom: 16 }}
           />
-          <SectionLabel>翻译选项</SectionLabel>
+          <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
           <Checkbox.Group
             value={[
               ...(isCover ? ["cover"] : []),
@@ -143,8 +152,8 @@ export function CreateTaskCard({
             style={{ width: "100%" }}
           >
             <Space direction="vertical" size={10}>
-              <Checkbox value="cover">覆盖已有译文</Checkbox>
-              <Checkbox value="handle">翻译 handle</Checkbox>
+              <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
+              <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
             </Space>
           </Checkbox.Group>
         </div>
