@@ -34,7 +34,7 @@ Agent 执行全 App 回归前**必须先读此文件**。Switcher 前台 URL 与
 | `SERVER_URL` | Java 后端 |
 | `DATABASE_URL` | Prisma session |
 | `SHOPIFY_API_KEY` / `SHOPIFY_API_SECRET` | OAuth |
-| `TRANSLATE_V4_ENABLED` | `true`/`1`/`yes` 时启用 v4 导航与页面 |
+| Turso `ShopTranslationSettings.migratedToTsf` | 已迁移店启用 v4 导航与 `/app/translate-v4` |
 | `SHOPIFY_ALLOW_BOT_UA` | `true` 时 Cursor 浏览器可测 Admin（需 patch 生效） |
 | Cosmos / Redis / v4 worker 相关 | 仅 v4 回归需要 |
 

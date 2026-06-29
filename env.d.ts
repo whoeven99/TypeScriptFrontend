@@ -8,5 +8,4 @@ interface ImportMetaEnv {
   readonly TURSO_PROD_DATABASE_URL?: string;
   readonly TURSO_PROD_AUTH_TOKEN?: string;
   readonly TURSO_TARGET?: "test" | "prod";
-  readonly TRANSLATE_V4_ENABLED?: string;
 }
