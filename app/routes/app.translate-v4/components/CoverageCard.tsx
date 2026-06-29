@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "antd";
-import { useTranslation } from "react-i18next";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
-import { v4Colors, v4CardStyle } from "../v4Styles";
+import { v4Colors, v4CardStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
-import {
-  formatV4LastAutoUpdateDisplay,
-  formatV4NextAutoUpdateDisplay,
-} from "../v4I18n";
+import { formatLastAutoUpdateDisplay, formatNextAutoUpdateDisplay } from "../nextAutoUpdateDisplay";
 
 const AUTO_BADGE_HOVER_CSS = `
 .v4-auto-badge-wrap { position: relative; display: inline-flex; vertical-align: middle; cursor: default; }
@@ -30,12 +26,18 @@ const AUTO_BADGE_HOVER_CSS = `
 }
 `;
 
+/** 默认仅展示前 N 种语言，保持与左侧摘要卡等高；其余通过「查看全部」展开。 */
+const COVERAGE_PREVIEW_COUNT = 3;
+
 type Props = {
   locales: LocaleCoverageRow[];
   loading: boolean;
   onRefresh: () => void;
   compact?: boolean;
   onManageLanguages?: () => void;
+  onExpandedChange?: (expanded: boolean) => void;
+  /** 与左侧摘要卡同列拉伸等高（默认收起态） */
+  fillPairHeight?: boolean;
 };
 
 export function CoverageCard({
@@ -44,8 +46,19 @@ export function CoverageCard({
   onRefresh,
   compact = false,
   onManageLanguages,
+  onExpandedChange,
+  fillPairHeight = false,
 }: Props) {
-  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      onExpandedChange?.(next);
+      return next;
+    });
+  };
+
   const autoTranslateCount = useMemo(
     () => locales.filter((row) => row.autoTranslate).length,
     [locales],
@@ -56,15 +69,18 @@ export function CoverageCard({
   );
 
   if (compact) {
-    const visibleLocales = locales.slice(0, 4);
+    const hasMore = locales.length > COVERAGE_PREVIEW_COUNT;
+    const visibleLocales = expanded ? locales : locales.slice(0, COVERAGE_PREVIEW_COUNT);
 
     return (
       <div
+        className="v4-enter v4-enter-d2 v4-lift"
         style={{
           ...v4CardStyle,
           width: "100%",
+          height: fillPairHeight ? "100%" : undefined,
           minWidth: 0,
-          minHeight: 208,
+          minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
           padding: "20px 22px",
           boxSizing: "border-box",
           display: "flex",
@@ -91,29 +107,30 @@ export function CoverageCard({
                 color: v4Colors.text,
               }}
             >
-              {t("v4.coverage.title")}
+              语言覆盖率
             </h2>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
             <Button size="small" onClick={onManageLanguages}>
-              {t("v4.coverage.manageLanguages")}
+              管理语言
             </Button>
             <Button size="small" onClick={onRefresh} loading={loading}>
-              {t("Refresh statistics")}
+              刷新统计
             </Button>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0 12px" }}>
-          <HeadMetric label={t("v4.coverage.targetLanguages")} value={`${locales.length}`} />
-          <HeadMetric label={t("v4.coverage.autoTranslate")} value={`${autoTranslateCount}`} />
-          <HeadMetric label={t("v4.coverage.needsImprovement")} value={`${lowCoverageCount}`} />
+          <HeadMetric label="目标语言" value={`${locales.length}`} />
+          <HeadMetric label="自动翻译" value={`${autoTranslateCount}`} />
+          <HeadMetric label="待完善" value={`${lowCoverageCount}`} />
         </div>
 
+        <style>{AUTO_BADGE_HOVER_CSS}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {visibleLocales.length === 0 ? (
             <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
-              {t("v4.coverage.noTargetLanguages")}
+              暂无目标语言，请先在语言页添加。
             </div>
           ) : (
             visibleLocales.map((row) => (
@@ -121,6 +138,35 @@ export function CoverageCard({
             ))
           )}
         </div>
+
+        {hasMore ? (
+          <button
+            type="button"
+            className="v4-press"
+            onClick={toggleExpanded}
+            style={{
+              marginTop: 12,
+              alignSelf: "flex-start",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "5px 11px",
+              borderRadius: 8,
+              background: v4Colors.cardBg,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              color: v4Colors.primary,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {expanded ? "收起" : `查看全部 ${locales.length} 种`}
+            <span className={`v4-caret${expanded ? " v4-caret--open" : ""}`} aria-hidden>
+              ⌄
+            </span>
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -130,7 +176,7 @@ export function CoverageCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
-            {t("v4.coverage.title")}
+            语言覆盖率
           </h2>
         </div>
         <button
@@ -149,14 +195,14 @@ export function CoverageCard({
             padding: "4px 6px",
           }}
         >
-          {loading ? t("v4.coverage.refreshing") : t("Refresh statistics")}
+          {loading ? "刷新中…" : "刷新统计"}
         </button>
       </div>
 
       <style>{AUTO_BADGE_HOVER_CSS}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
-          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{t("v4.coverage.noTargetLanguages")}</div>
+          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无目标语言，请先在语言页添加。</div>
         ) : (
           locales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
@@ -199,7 +245,7 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
   const label = localeShortName(row.locale, row.label);
 
   return (
-    <div>
+    <div className="v4-row-enter">
       <div
         style={{
           display: "flex",
@@ -240,6 +286,7 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
           >
             {label}
           </span>
+          {row.autoTranslate ? <AutoTranslateBadge lastUpdateHint={null} nextUpdateHint={null} /> : null}
         </span>
         <span
           style={{
@@ -276,7 +323,6 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
 }
 
 function CoverageRow({ row }: { row: LocaleCoverageRow }) {
-  const { t } = useTranslation();
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
@@ -292,11 +338,11 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   const label = localeShortName(row.locale, row.label);
   const lastHint =
     row.autoTranslate && nowMs != null
-      ? formatV4LastAutoUpdateDisplay(row.lastAutoUpdateAt, t, nowMs)
+      ? formatLastAutoUpdateDisplay(row.lastAutoUpdateAt, nowMs)
       : null;
   const nextHint =
     row.autoTranslate && nowMs != null
-      ? formatV4NextAutoUpdateDisplay(row.nextAutoUpdateAt, t, nowMs)
+      ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt, nowMs)
       : null;
 
   return (
@@ -337,7 +383,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
       </div>
       {row.cacheMissing && row.total === 0 ? (
         <div style={{ fontSize: 11, color: v4Colors.textMuted, marginTop: 4 }}>
-          {t("v4.coverage.cacheNotReady")}
+          统计缓存未就绪，点击「刷新统计」从 Shopify 计算
         </div>
       ) : null}
     </div>

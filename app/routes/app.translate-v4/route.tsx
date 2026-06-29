@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { useTranslation } from "react-i18next";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
@@ -15,12 +14,13 @@ import { getCoverageSummaryFromCache,
 } from "~/server/translateV4/coverage.server";
 import {
   createTranslateV4Tasks,
+  formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4ContentStyle } from "./v4Styles";
+import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
@@ -31,7 +31,6 @@ import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { GetUserSubscriptionPlan } from "~/api/JavaServer";
-import { formatV4CreateTasksMessage } from "./v4I18n";
 
 async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
   const server = process.env.SERVER_URL?.trim();
@@ -100,7 +99,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function AppTranslateV4() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const {
     shop,
     locales,
@@ -115,6 +113,7 @@ export default function AppTranslateV4() {
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
+  const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
 
   const localeOptions = useMemo(
@@ -161,11 +160,11 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
-      if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
+      if (forceRefresh) message.error("刷新统计失败");
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop, targetOptions, t]);
+  }, [shop, targetOptions]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -243,29 +242,29 @@ export default function AppTranslateV4() {
         if (data?.ok) {
           const label =
             actionType === "delete"
-              ? t("v4.deleted")
+              ? "已删除"
               : actionType === "resume"
-                ? t("v4.resuming")
+                ? "正在继续…"
                 : actionType === "pause"
                   ? data.pending
-                    ? t("v4.pausing")
-                    : t("v4.paused")
+                    ? "正在暂停…"
+                    : "已暂停"
                   : data.pending
-                    ? t("v4.cancelling")
-                    : t("v4.cancelled");
+                    ? "正在取消…"
+                    : "已取消";
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
           return true;
         }
-        message.error(data?.error || t("v4.actionFailed"));
+        message.error(data?.error || "操作失败");
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
-        message.error(t("v4.actionFailedRetry"));
+        message.error("操作失败，请稍后重试");
         return false;
       }
     },
-    [shop, refreshList, refreshQuota, t],
+    [shop, refreshList, refreshQuota],
   );
 
   const handleCreate = useCallback(async () => {
@@ -282,11 +281,11 @@ export default function AppTranslateV4() {
       });
 
       if (result.validationError) {
-        message.warning(t(result.validationError));
+        message.warning(result.validationError);
         return;
       }
 
-      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
+      const summary = formatCreateTasksMessage(result);
       if (result.created.length > 0) {
         message.success(summary);
         await Promise.all([refreshList(), refreshQuota()]);
@@ -302,7 +301,7 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] create failed:", err);
-      message.error(t("v4.createFailedRetry"));
+      message.error("创建失败，请稍后重试");
     } finally {
       setCreating(false);
     }
@@ -316,7 +315,6 @@ export default function AppTranslateV4() {
     targetOptions,
     refreshList,
     refreshQuota,
-    t,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -361,15 +359,18 @@ export default function AppTranslateV4() {
 
   return (
     <Page>
-      <TitleBar title={t("v4.title")} />
+      <TitleBar title="智能翻译" />
       <div style={v4ContentStyle}>
-        <PageHeaderBar
-          credits={remainingCredits}
-          planType={planType}
-        />
+        <div className="v4-enter">
+          <PageHeaderBar
+            credits={remainingCredits}
+            planType={planType}
+          />
+        </div>
 
         {translateQueue.length > 0 ? (
           <div
+            className="v4-enter"
             style={{
               marginBottom: 16,
               padding: "12px 16px",
@@ -387,6 +388,7 @@ export default function AppTranslateV4() {
           >
             <span
               aria-hidden
+              className="v4-livedot"
               style={{
                 width: 8,
                 height: 8,
@@ -398,8 +400,8 @@ export default function AppTranslateV4() {
             />
             <span>
               {translateSlotBusy
-                ? t("v4.queueBusy", { count: translateQueue.length })
-                : t("v4.queueWaiting", { count: translateQueue.length })}
+                ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
+                : `${translateQueue.length} 个语言任务等待开始翻译。`}
             </span>
           </div>
         ) : null}
@@ -416,17 +418,30 @@ export default function AppTranslateV4() {
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
               gap: 18,
-              alignItems: "start",
+              alignItems: coverageExpanded ? "start" : "stretch",
             }}
           >
-            <SummaryDonutCard
-              summary={coverage}
-              compact
-            />
             <div
               style={{
-                position: "sticky",
-                top: 24,
+                display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                ...(coverageExpanded
+                  ? {
+                      alignSelf: "flex-start",
+                      height: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                    }
+                  : null),
+              }}
+            >
+              <SummaryDonutCard
+                summary={coverage}
+                compact
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
               }}
             >
               <CoverageCard
@@ -435,12 +450,15 @@ export default function AppTranslateV4() {
                 onRefresh={refreshCoverage}
                 compact
                 onManageLanguages={openLanguagePage}
+                onExpandedChange={setCoverageExpanded}
+                fillPairHeight={!coverageExpanded}
               />
             </div>
           </div>
 
           <div ref={createTaskSectionRef}>
             <div
+              className="v4-enter v4-enter-d2"
               style={{
                 padding: 1,
                 borderRadius: 16,
@@ -467,6 +485,7 @@ export default function AppTranslateV4() {
 
           <div
             ref={taskQueueSectionRef}
+            className="v4-enter v4-enter-d3"
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 1fr)",
