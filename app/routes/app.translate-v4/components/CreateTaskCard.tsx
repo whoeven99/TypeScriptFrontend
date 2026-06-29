@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { CustomTagProps } from "rc-select/lib/BaseSelect";
 import { Button, Checkbox, Select, Space } from "antd";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -66,7 +67,8 @@ export function CreateTaskCard({
 
   const targetSelectOptions = sortedTargetOptions.map((opt) => ({
     value: opt.value,
-    label: `${localeShortName(opt.value, opt.label)} (${localeRegionCode(opt.value)})`,
+    label: localeShortName(opt.value, opt.label),
+    regionCode: localeRegionCode(opt.value),
   }));
 
   const moduleSelectOptions = sortedModules.map((mod) => ({
@@ -75,14 +77,28 @@ export function CreateTaskCard({
   }));
 
   return (
-    <div style={{ ...v4CardStyle, padding: "18px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
+    <div
+      className="v4-create-task-card v4-lift"
+      style={{
+        ...v4CardStyle,
+        borderRadius: 18,
+        padding: "20px 22px",
+        boxShadow: "var(--app-shadow-card-strong)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
             新建翻译任务
           </h2>
         </div>
-        <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
+        <Button
+          type="primary"
+          className="v4-create-task-card__submit"
+          disabled={!canCreate}
+          loading={creating}
+          onClick={onCreate}
+        >
           {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
         </Button>
       </div>
@@ -98,10 +114,19 @@ export function CreateTaskCard({
           maxTagCount="responsive"
           style={{ width: "100%" }}
           optionFilterProp="label"
+          tagRender={(props) => renderLocaleTag(props, targetSelectOptions)}
+          optionRender={(option) => (
+            <span>
+              <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
+                {option.data.regionCode}
+              </span>
+              {option.label}
+            </span>
+          )}
         />
       </div>
 
-      <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <SectionHeader title="翻译内容" />
         <Select
           mode="multiple"
@@ -112,6 +137,7 @@ export function CreateTaskCard({
           maxTagCount="responsive"
           style={{ width: "100%" }}
           optionFilterProp="label"
+          tagRender={renderModuleTag}
         />
       </div>
 
@@ -119,7 +145,7 @@ export function CreateTaskCard({
         style={{
           padding: advancedOpen ? "14px 14px 0" : "14px",
           borderRadius: 12,
-          background: "rgba(84, 103, 255, 0.04)",
+          background: v4Colors.cardSubdued,
           border: `1px dashed ${v4Colors.cardBorder}`,
           transition: "padding 0.42s cubic-bezier(0.22, 0.61, 0.36, 1)",
         }}
@@ -206,4 +232,43 @@ function SectionHeader({
 
 function SectionLabel({ children }: { children: string }) {
   return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
+}
+
+type TargetOption = { value: string; label: string; regionCode: string };
+
+function renderLocaleTag(
+  props: CustomTagProps,
+  options: TargetOption[],
+) {
+  const { label, value, closable, onClose } = props;
+  const opt = options.find((item) => item.value === value);
+  const code = opt?.regionCode ?? localeRegionCode(String(value));
+  const name = typeof label === "string" ? label : opt?.label ?? String(value);
+
+  return (
+    <span className="v4-select-tag v4-select-tag--locale">
+      <span className="v4-select-tag__code">{code}</span>
+      <span>{name}</span>
+      {closable ? (
+        <button type="button" className="v4-select-tag__close" onClick={onClose} aria-label={`移除 ${name}`}>
+          ×
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+function renderModuleTag(props: CustomTagProps) {
+  const { label, closable, onClose } = props;
+
+  return (
+    <span className="v4-select-tag v4-select-tag--module">
+      <span>{label}</span>
+      {closable ? (
+        <button type="button" className="v4-select-tag__close" onClick={onClose} aria-label={`移除 ${label}`}>
+          ×
+        </button>
+      ) : null}
+    </span>
+  );
 }

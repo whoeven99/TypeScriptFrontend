@@ -456,31 +456,22 @@ export default function AppTranslateV4() {
             </div>
           </div>
 
-          <div ref={createTaskSectionRef}>
-            <div
-              className="v4-enter v4-enter-d2"
-              style={{
-                padding: 1,
-                borderRadius: 16,
-                background: "linear-gradient(180deg, rgba(84, 103, 255, 0.16), rgba(84, 103, 255, 0.02))",
-              }}
-            >
-              <CreateTaskCard
-                targetOptions={targetOptions}
-                targets={targets}
-                onTargetsChange={setTargets}
-                modules={moduleKeys}
-                onModulesChange={setModuleKeys}
-                creating={creating}
-                onCreate={handleCreate}
-                aiModel={aiModel}
-                onAiModelChange={setAiModel}
-                isCover={isCover}
-                onIsCoverChange={setIsCover}
-                isHandle={isHandle}
-                onIsHandleChange={setIsHandle}
-              />
-            </div>
+          <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
+            <CreateTaskCard
+              targetOptions={targetOptions}
+              targets={targets}
+              onTargetsChange={setTargets}
+              modules={moduleKeys}
+              onModulesChange={setModuleKeys}
+              creating={creating}
+              onCreate={handleCreate}
+              aiModel={aiModel}
+              onAiModelChange={setAiModel}
+              isCover={isCover}
+              onIsCoverChange={setIsCover}
+              isHandle={isHandle}
+              onIsHandleChange={setIsHandle}
+            />
           </div>
 
           <div
