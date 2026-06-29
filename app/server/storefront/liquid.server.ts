@@ -1,6 +1,6 @@
 import axios from "axios";
 import prisma from "~/db.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { routeStorefrontRead } from "./routing.server";
 import { ok, fail, type BaseResponse } from "./response.server";
 
 /** 对应 Java parseLiquidDataByShopNameAndLanguage 的响应 response 形状：
@@ -32,14 +32,14 @@ export async function parseLiquidTranslations(
   shop: string,
   languageCode: string,
 ): Promise<BaseResponse<LiquidMap>> {
-  const migrated = await isShopMigrated(shop);
-  if (migrated) {
-    return readFromPrisma(shop, languageCode);
-  }
-  return proxyToJava(shop, languageCode);
+  return routeStorefrontRead(
+    shop,
+    () => readFromPrisma(shop, languageCode),
+    () => proxyToJava(shop, languageCode),
+  );
 }
 
-/** migratedToTsf=true 路径：从 Prisma LiquidRule 读取。 */
+/** migratedToTsf + allowlist 路径：从 Prisma LiquidRule 读取。 */
 async function readFromPrisma(
   shop: string,
   languageCode: string,

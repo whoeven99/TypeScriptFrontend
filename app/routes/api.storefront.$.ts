@@ -2,6 +2,7 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { verifyAppProxyHmac } from "~/server/storefront/auth.server";
 import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
+import { getSwitcherConfig } from "~/server/storefront/switcherConfig.server";
 import { fail } from "~/server/storefront/response.server";
 
 /**
@@ -80,6 +81,32 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return json(result, { headers: CORS_HEADERS });
     } catch (err) {
       console.error(`[storefront] liquid parse failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
+  // POST /api/storefront/widgetConfigurations/getData
+  if (path === "widgetConfigurations/getData") {
+    let shop = auth.shop;
+    try {
+      const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+      const shopName = typeof body.shopName === "string" ? body.shopName : "";
+      if (shopName && shopName !== auth.shop) {
+        return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+      }
+      if (shopName) shop = shopName;
+    } catch {
+      // body 解析失败时用 auth.shop
+    }
+
+    try {
+      const result = await getSwitcherConfig(shop);
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] getSwitcherConfig failed shop=${shop}:`, err);
       return json(fail(10001, "internal error"), {
         status: 500,
         headers: CORS_HEADERS,

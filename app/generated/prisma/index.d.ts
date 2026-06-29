@@ -34,6 +34,16 @@ export type ShopTargetLocale = $Result.DefaultSelection<Prisma.$ShopTargetLocale
  */
 export type Glossary = $Result.DefaultSelection<Prisma.$GlossaryPayload>
 /**
+ * Model SwitcherConfiguration
+ * 
+ */
+export type SwitcherConfiguration = $Result.DefaultSelection<Prisma.$SwitcherConfigurationPayload>
+/**
+ * Model IpRedirection
+ * 
+ */
+export type IpRedirection = $Result.DefaultSelection<Prisma.$IpRedirectionPayload>
+/**
  * Model LiquidRule
  * 
  */
@@ -196,6 +206,26 @@ export class PrismaClient<
     * ```
     */
   get glossary(): Prisma.GlossaryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.switcherConfiguration`: Exposes CRUD operations for the **SwitcherConfiguration** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SwitcherConfigurations
+    * const switcherConfigurations = await prisma.switcherConfiguration.findMany()
+    * ```
+    */
+  get switcherConfiguration(): Prisma.SwitcherConfigurationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.ipRedirection`: Exposes CRUD operations for the **IpRedirection** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more IpRedirections
+    * const ipRedirections = await prisma.ipRedirection.findMany()
+    * ```
+    */
+  get ipRedirection(): Prisma.IpRedirectionDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.liquidRule`: Exposes CRUD operations for the **LiquidRule** model.
@@ -651,6 +681,8 @@ export namespace Prisma {
     ShopTranslationSettings: 'ShopTranslationSettings',
     ShopTargetLocale: 'ShopTargetLocale',
     Glossary: 'Glossary',
+    SwitcherConfiguration: 'SwitcherConfiguration',
+    IpRedirection: 'IpRedirection',
     LiquidRule: 'LiquidRule'
   };
 
@@ -670,7 +702,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "session" | "shopTranslationSettings" | "shopTargetLocale" | "glossary" | "liquidRule"
+      modelProps: "session" | "shopTranslationSettings" | "shopTargetLocale" | "glossary" | "switcherConfiguration" | "ipRedirection" | "liquidRule"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -970,6 +1002,154 @@ export namespace Prisma {
           }
         }
       }
+      SwitcherConfiguration: {
+        payload: Prisma.$SwitcherConfigurationPayload<ExtArgs>
+        fields: Prisma.SwitcherConfigurationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SwitcherConfigurationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SwitcherConfigurationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          findFirst: {
+            args: Prisma.SwitcherConfigurationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SwitcherConfigurationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          findMany: {
+            args: Prisma.SwitcherConfigurationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>[]
+          }
+          create: {
+            args: Prisma.SwitcherConfigurationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          createMany: {
+            args: Prisma.SwitcherConfigurationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SwitcherConfigurationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>[]
+          }
+          delete: {
+            args: Prisma.SwitcherConfigurationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          update: {
+            args: Prisma.SwitcherConfigurationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          deleteMany: {
+            args: Prisma.SwitcherConfigurationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SwitcherConfigurationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SwitcherConfigurationUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>[]
+          }
+          upsert: {
+            args: Prisma.SwitcherConfigurationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SwitcherConfigurationPayload>
+          }
+          aggregate: {
+            args: Prisma.SwitcherConfigurationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSwitcherConfiguration>
+          }
+          groupBy: {
+            args: Prisma.SwitcherConfigurationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SwitcherConfigurationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SwitcherConfigurationCountArgs<ExtArgs>
+            result: $Utils.Optional<SwitcherConfigurationCountAggregateOutputType> | number
+          }
+        }
+      }
+      IpRedirection: {
+        payload: Prisma.$IpRedirectionPayload<ExtArgs>
+        fields: Prisma.IpRedirectionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.IpRedirectionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.IpRedirectionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          findFirst: {
+            args: Prisma.IpRedirectionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.IpRedirectionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          findMany: {
+            args: Prisma.IpRedirectionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>[]
+          }
+          create: {
+            args: Prisma.IpRedirectionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          createMany: {
+            args: Prisma.IpRedirectionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.IpRedirectionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>[]
+          }
+          delete: {
+            args: Prisma.IpRedirectionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          update: {
+            args: Prisma.IpRedirectionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          deleteMany: {
+            args: Prisma.IpRedirectionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.IpRedirectionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.IpRedirectionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>[]
+          }
+          upsert: {
+            args: Prisma.IpRedirectionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IpRedirectionPayload>
+          }
+          aggregate: {
+            args: Prisma.IpRedirectionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateIpRedirection>
+          }
+          groupBy: {
+            args: Prisma.IpRedirectionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<IpRedirectionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.IpRedirectionCountArgs<ExtArgs>
+            result: $Utils.Optional<IpRedirectionCountAggregateOutputType> | number
+          }
+        }
+      }
       LiquidRule: {
         payload: Prisma.$LiquidRulePayload<ExtArgs>
         fields: Prisma.LiquidRuleFieldRefs
@@ -1144,6 +1324,8 @@ export namespace Prisma {
     shopTranslationSettings?: ShopTranslationSettingsOmit
     shopTargetLocale?: ShopTargetLocaleOmit
     glossary?: GlossaryOmit
+    switcherConfiguration?: SwitcherConfigurationOmit
+    ipRedirection?: IpRedirectionOmit
     liquidRule?: LiquidRuleOmit
   }
 
@@ -5564,6 +5746,2195 @@ export namespace Prisma {
 
 
   /**
+   * Model SwitcherConfiguration
+   */
+
+  export type AggregateSwitcherConfiguration = {
+    _count: SwitcherConfigurationCountAggregateOutputType | null
+    _min: SwitcherConfigurationMinAggregateOutputType | null
+    _max: SwitcherConfigurationMaxAggregateOutputType | null
+  }
+
+  export type SwitcherConfigurationMinAggregateOutputType = {
+    shop: string | null
+    languageSelector: boolean | null
+    currencySelector: boolean | null
+    ipOpen: boolean | null
+    includedFlag: boolean | null
+    fontColor: string | null
+    backgroundColor: string | null
+    buttonColor: string | null
+    buttonBackgroundColor: string | null
+    optionBorderColor: string | null
+    selectorPosition: string | null
+    positionData: string | null
+    isTransparent: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SwitcherConfigurationMaxAggregateOutputType = {
+    shop: string | null
+    languageSelector: boolean | null
+    currencySelector: boolean | null
+    ipOpen: boolean | null
+    includedFlag: boolean | null
+    fontColor: string | null
+    backgroundColor: string | null
+    buttonColor: string | null
+    buttonBackgroundColor: string | null
+    optionBorderColor: string | null
+    selectorPosition: string | null
+    positionData: string | null
+    isTransparent: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SwitcherConfigurationCountAggregateOutputType = {
+    shop: number
+    languageSelector: number
+    currencySelector: number
+    ipOpen: number
+    includedFlag: number
+    fontColor: number
+    backgroundColor: number
+    buttonColor: number
+    buttonBackgroundColor: number
+    optionBorderColor: number
+    selectorPosition: number
+    positionData: number
+    isTransparent: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type SwitcherConfigurationMinAggregateInputType = {
+    shop?: true
+    languageSelector?: true
+    currencySelector?: true
+    ipOpen?: true
+    includedFlag?: true
+    fontColor?: true
+    backgroundColor?: true
+    buttonColor?: true
+    buttonBackgroundColor?: true
+    optionBorderColor?: true
+    selectorPosition?: true
+    positionData?: true
+    isTransparent?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SwitcherConfigurationMaxAggregateInputType = {
+    shop?: true
+    languageSelector?: true
+    currencySelector?: true
+    ipOpen?: true
+    includedFlag?: true
+    fontColor?: true
+    backgroundColor?: true
+    buttonColor?: true
+    buttonBackgroundColor?: true
+    optionBorderColor?: true
+    selectorPosition?: true
+    positionData?: true
+    isTransparent?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SwitcherConfigurationCountAggregateInputType = {
+    shop?: true
+    languageSelector?: true
+    currencySelector?: true
+    ipOpen?: true
+    includedFlag?: true
+    fontColor?: true
+    backgroundColor?: true
+    buttonColor?: true
+    buttonBackgroundColor?: true
+    optionBorderColor?: true
+    selectorPosition?: true
+    positionData?: true
+    isTransparent?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type SwitcherConfigurationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SwitcherConfiguration to aggregate.
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SwitcherConfigurations to fetch.
+     */
+    orderBy?: SwitcherConfigurationOrderByWithRelationInput | SwitcherConfigurationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SwitcherConfigurationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SwitcherConfigurations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SwitcherConfigurations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SwitcherConfigurations
+    **/
+    _count?: true | SwitcherConfigurationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SwitcherConfigurationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SwitcherConfigurationMaxAggregateInputType
+  }
+
+  export type GetSwitcherConfigurationAggregateType<T extends SwitcherConfigurationAggregateArgs> = {
+        [P in keyof T & keyof AggregateSwitcherConfiguration]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSwitcherConfiguration[P]>
+      : GetScalarType<T[P], AggregateSwitcherConfiguration[P]>
+  }
+
+
+
+
+  export type SwitcherConfigurationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SwitcherConfigurationWhereInput
+    orderBy?: SwitcherConfigurationOrderByWithAggregationInput | SwitcherConfigurationOrderByWithAggregationInput[]
+    by: SwitcherConfigurationScalarFieldEnum[] | SwitcherConfigurationScalarFieldEnum
+    having?: SwitcherConfigurationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SwitcherConfigurationCountAggregateInputType | true
+    _min?: SwitcherConfigurationMinAggregateInputType
+    _max?: SwitcherConfigurationMaxAggregateInputType
+  }
+
+  export type SwitcherConfigurationGroupByOutputType = {
+    shop: string
+    languageSelector: boolean
+    currencySelector: boolean
+    ipOpen: boolean
+    includedFlag: boolean
+    fontColor: string
+    backgroundColor: string
+    buttonColor: string
+    buttonBackgroundColor: string
+    optionBorderColor: string
+    selectorPosition: string
+    positionData: string
+    isTransparent: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: SwitcherConfigurationCountAggregateOutputType | null
+    _min: SwitcherConfigurationMinAggregateOutputType | null
+    _max: SwitcherConfigurationMaxAggregateOutputType | null
+  }
+
+  type GetSwitcherConfigurationGroupByPayload<T extends SwitcherConfigurationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SwitcherConfigurationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SwitcherConfigurationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SwitcherConfigurationGroupByOutputType[P]>
+            : GetScalarType<T[P], SwitcherConfigurationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SwitcherConfigurationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: boolean
+    backgroundColor?: boolean
+    buttonColor?: boolean
+    buttonBackgroundColor?: boolean
+    optionBorderColor?: boolean
+    selectorPosition?: boolean
+    positionData?: boolean
+    isTransparent?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["switcherConfiguration"]>
+
+  export type SwitcherConfigurationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: boolean
+    backgroundColor?: boolean
+    buttonColor?: boolean
+    buttonBackgroundColor?: boolean
+    optionBorderColor?: boolean
+    selectorPosition?: boolean
+    positionData?: boolean
+    isTransparent?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["switcherConfiguration"]>
+
+  export type SwitcherConfigurationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    shop?: boolean
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: boolean
+    backgroundColor?: boolean
+    buttonColor?: boolean
+    buttonBackgroundColor?: boolean
+    optionBorderColor?: boolean
+    selectorPosition?: boolean
+    positionData?: boolean
+    isTransparent?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["switcherConfiguration"]>
+
+  export type SwitcherConfigurationSelectScalar = {
+    shop?: boolean
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: boolean
+    backgroundColor?: boolean
+    buttonColor?: boolean
+    buttonBackgroundColor?: boolean
+    optionBorderColor?: boolean
+    selectorPosition?: boolean
+    positionData?: boolean
+    isTransparent?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type SwitcherConfigurationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"shop" | "languageSelector" | "currencySelector" | "ipOpen" | "includedFlag" | "fontColor" | "backgroundColor" | "buttonColor" | "buttonBackgroundColor" | "optionBorderColor" | "selectorPosition" | "positionData" | "isTransparent" | "createdAt" | "updatedAt", ExtArgs["result"]["switcherConfiguration"]>
+
+  export type $SwitcherConfigurationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SwitcherConfiguration"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      shop: string
+      languageSelector: boolean
+      currencySelector: boolean
+      ipOpen: boolean
+      includedFlag: boolean
+      fontColor: string
+      backgroundColor: string
+      buttonColor: string
+      buttonBackgroundColor: string
+      optionBorderColor: string
+      selectorPosition: string
+      positionData: string
+      isTransparent: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["switcherConfiguration"]>
+    composites: {}
+  }
+
+  type SwitcherConfigurationGetPayload<S extends boolean | null | undefined | SwitcherConfigurationDefaultArgs> = $Result.GetResult<Prisma.$SwitcherConfigurationPayload, S>
+
+  type SwitcherConfigurationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SwitcherConfigurationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SwitcherConfigurationCountAggregateInputType | true
+    }
+
+  export interface SwitcherConfigurationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SwitcherConfiguration'], meta: { name: 'SwitcherConfiguration' } }
+    /**
+     * Find zero or one SwitcherConfiguration that matches the filter.
+     * @param {SwitcherConfigurationFindUniqueArgs} args - Arguments to find a SwitcherConfiguration
+     * @example
+     * // Get one SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SwitcherConfigurationFindUniqueArgs>(args: SelectSubset<T, SwitcherConfigurationFindUniqueArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SwitcherConfiguration that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SwitcherConfigurationFindUniqueOrThrowArgs} args - Arguments to find a SwitcherConfiguration
+     * @example
+     * // Get one SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SwitcherConfigurationFindUniqueOrThrowArgs>(args: SelectSubset<T, SwitcherConfigurationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SwitcherConfiguration that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationFindFirstArgs} args - Arguments to find a SwitcherConfiguration
+     * @example
+     * // Get one SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SwitcherConfigurationFindFirstArgs>(args?: SelectSubset<T, SwitcherConfigurationFindFirstArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SwitcherConfiguration that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationFindFirstOrThrowArgs} args - Arguments to find a SwitcherConfiguration
+     * @example
+     * // Get one SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SwitcherConfigurationFindFirstOrThrowArgs>(args?: SelectSubset<T, SwitcherConfigurationFindFirstOrThrowArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SwitcherConfigurations that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SwitcherConfigurations
+     * const switcherConfigurations = await prisma.switcherConfiguration.findMany()
+     * 
+     * // Get first 10 SwitcherConfigurations
+     * const switcherConfigurations = await prisma.switcherConfiguration.findMany({ take: 10 })
+     * 
+     * // Only select the `shop`
+     * const switcherConfigurationWithShopOnly = await prisma.switcherConfiguration.findMany({ select: { shop: true } })
+     * 
+     */
+    findMany<T extends SwitcherConfigurationFindManyArgs>(args?: SelectSubset<T, SwitcherConfigurationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SwitcherConfiguration.
+     * @param {SwitcherConfigurationCreateArgs} args - Arguments to create a SwitcherConfiguration.
+     * @example
+     * // Create one SwitcherConfiguration
+     * const SwitcherConfiguration = await prisma.switcherConfiguration.create({
+     *   data: {
+     *     // ... data to create a SwitcherConfiguration
+     *   }
+     * })
+     * 
+     */
+    create<T extends SwitcherConfigurationCreateArgs>(args: SelectSubset<T, SwitcherConfigurationCreateArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SwitcherConfigurations.
+     * @param {SwitcherConfigurationCreateManyArgs} args - Arguments to create many SwitcherConfigurations.
+     * @example
+     * // Create many SwitcherConfigurations
+     * const switcherConfiguration = await prisma.switcherConfiguration.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SwitcherConfigurationCreateManyArgs>(args?: SelectSubset<T, SwitcherConfigurationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SwitcherConfigurations and returns the data saved in the database.
+     * @param {SwitcherConfigurationCreateManyAndReturnArgs} args - Arguments to create many SwitcherConfigurations.
+     * @example
+     * // Create many SwitcherConfigurations
+     * const switcherConfiguration = await prisma.switcherConfiguration.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SwitcherConfigurations and only return the `shop`
+     * const switcherConfigurationWithShopOnly = await prisma.switcherConfiguration.createManyAndReturn({
+     *   select: { shop: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SwitcherConfigurationCreateManyAndReturnArgs>(args?: SelectSubset<T, SwitcherConfigurationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SwitcherConfiguration.
+     * @param {SwitcherConfigurationDeleteArgs} args - Arguments to delete one SwitcherConfiguration.
+     * @example
+     * // Delete one SwitcherConfiguration
+     * const SwitcherConfiguration = await prisma.switcherConfiguration.delete({
+     *   where: {
+     *     // ... filter to delete one SwitcherConfiguration
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SwitcherConfigurationDeleteArgs>(args: SelectSubset<T, SwitcherConfigurationDeleteArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SwitcherConfiguration.
+     * @param {SwitcherConfigurationUpdateArgs} args - Arguments to update one SwitcherConfiguration.
+     * @example
+     * // Update one SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SwitcherConfigurationUpdateArgs>(args: SelectSubset<T, SwitcherConfigurationUpdateArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SwitcherConfigurations.
+     * @param {SwitcherConfigurationDeleteManyArgs} args - Arguments to filter SwitcherConfigurations to delete.
+     * @example
+     * // Delete a few SwitcherConfigurations
+     * const { count } = await prisma.switcherConfiguration.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SwitcherConfigurationDeleteManyArgs>(args?: SelectSubset<T, SwitcherConfigurationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SwitcherConfigurations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SwitcherConfigurations
+     * const switcherConfiguration = await prisma.switcherConfiguration.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SwitcherConfigurationUpdateManyArgs>(args: SelectSubset<T, SwitcherConfigurationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SwitcherConfigurations and returns the data updated in the database.
+     * @param {SwitcherConfigurationUpdateManyAndReturnArgs} args - Arguments to update many SwitcherConfigurations.
+     * @example
+     * // Update many SwitcherConfigurations
+     * const switcherConfiguration = await prisma.switcherConfiguration.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SwitcherConfigurations and only return the `shop`
+     * const switcherConfigurationWithShopOnly = await prisma.switcherConfiguration.updateManyAndReturn({
+     *   select: { shop: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SwitcherConfigurationUpdateManyAndReturnArgs>(args: SelectSubset<T, SwitcherConfigurationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SwitcherConfiguration.
+     * @param {SwitcherConfigurationUpsertArgs} args - Arguments to update or create a SwitcherConfiguration.
+     * @example
+     * // Update or create a SwitcherConfiguration
+     * const switcherConfiguration = await prisma.switcherConfiguration.upsert({
+     *   create: {
+     *     // ... data to create a SwitcherConfiguration
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SwitcherConfiguration we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SwitcherConfigurationUpsertArgs>(args: SelectSubset<T, SwitcherConfigurationUpsertArgs<ExtArgs>>): Prisma__SwitcherConfigurationClient<$Result.GetResult<Prisma.$SwitcherConfigurationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SwitcherConfigurations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationCountArgs} args - Arguments to filter SwitcherConfigurations to count.
+     * @example
+     * // Count the number of SwitcherConfigurations
+     * const count = await prisma.switcherConfiguration.count({
+     *   where: {
+     *     // ... the filter for the SwitcherConfigurations we want to count
+     *   }
+     * })
+    **/
+    count<T extends SwitcherConfigurationCountArgs>(
+      args?: Subset<T, SwitcherConfigurationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SwitcherConfigurationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SwitcherConfiguration.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SwitcherConfigurationAggregateArgs>(args: Subset<T, SwitcherConfigurationAggregateArgs>): Prisma.PrismaPromise<GetSwitcherConfigurationAggregateType<T>>
+
+    /**
+     * Group by SwitcherConfiguration.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SwitcherConfigurationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SwitcherConfigurationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SwitcherConfigurationGroupByArgs['orderBy'] }
+        : { orderBy?: SwitcherConfigurationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SwitcherConfigurationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSwitcherConfigurationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SwitcherConfiguration model
+   */
+  readonly fields: SwitcherConfigurationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SwitcherConfiguration.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SwitcherConfigurationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SwitcherConfiguration model
+   */
+  interface SwitcherConfigurationFieldRefs {
+    readonly shop: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly languageSelector: FieldRef<"SwitcherConfiguration", 'Boolean'>
+    readonly currencySelector: FieldRef<"SwitcherConfiguration", 'Boolean'>
+    readonly ipOpen: FieldRef<"SwitcherConfiguration", 'Boolean'>
+    readonly includedFlag: FieldRef<"SwitcherConfiguration", 'Boolean'>
+    readonly fontColor: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly backgroundColor: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly buttonColor: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly buttonBackgroundColor: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly optionBorderColor: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly selectorPosition: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly positionData: FieldRef<"SwitcherConfiguration", 'String'>
+    readonly isTransparent: FieldRef<"SwitcherConfiguration", 'Boolean'>
+    readonly createdAt: FieldRef<"SwitcherConfiguration", 'DateTime'>
+    readonly updatedAt: FieldRef<"SwitcherConfiguration", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SwitcherConfiguration findUnique
+   */
+  export type SwitcherConfigurationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter, which SwitcherConfiguration to fetch.
+     */
+    where: SwitcherConfigurationWhereUniqueInput
+  }
+
+  /**
+   * SwitcherConfiguration findUniqueOrThrow
+   */
+  export type SwitcherConfigurationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter, which SwitcherConfiguration to fetch.
+     */
+    where: SwitcherConfigurationWhereUniqueInput
+  }
+
+  /**
+   * SwitcherConfiguration findFirst
+   */
+  export type SwitcherConfigurationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter, which SwitcherConfiguration to fetch.
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SwitcherConfigurations to fetch.
+     */
+    orderBy?: SwitcherConfigurationOrderByWithRelationInput | SwitcherConfigurationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SwitcherConfigurations.
+     */
+    cursor?: SwitcherConfigurationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SwitcherConfigurations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SwitcherConfigurations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SwitcherConfigurations.
+     */
+    distinct?: SwitcherConfigurationScalarFieldEnum | SwitcherConfigurationScalarFieldEnum[]
+  }
+
+  /**
+   * SwitcherConfiguration findFirstOrThrow
+   */
+  export type SwitcherConfigurationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter, which SwitcherConfiguration to fetch.
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SwitcherConfigurations to fetch.
+     */
+    orderBy?: SwitcherConfigurationOrderByWithRelationInput | SwitcherConfigurationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SwitcherConfigurations.
+     */
+    cursor?: SwitcherConfigurationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SwitcherConfigurations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SwitcherConfigurations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SwitcherConfigurations.
+     */
+    distinct?: SwitcherConfigurationScalarFieldEnum | SwitcherConfigurationScalarFieldEnum[]
+  }
+
+  /**
+   * SwitcherConfiguration findMany
+   */
+  export type SwitcherConfigurationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter, which SwitcherConfigurations to fetch.
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SwitcherConfigurations to fetch.
+     */
+    orderBy?: SwitcherConfigurationOrderByWithRelationInput | SwitcherConfigurationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SwitcherConfigurations.
+     */
+    cursor?: SwitcherConfigurationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SwitcherConfigurations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SwitcherConfigurations.
+     */
+    skip?: number
+    distinct?: SwitcherConfigurationScalarFieldEnum | SwitcherConfigurationScalarFieldEnum[]
+  }
+
+  /**
+   * SwitcherConfiguration create
+   */
+  export type SwitcherConfigurationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SwitcherConfiguration.
+     */
+    data: XOR<SwitcherConfigurationCreateInput, SwitcherConfigurationUncheckedCreateInput>
+  }
+
+  /**
+   * SwitcherConfiguration createMany
+   */
+  export type SwitcherConfigurationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SwitcherConfigurations.
+     */
+    data: SwitcherConfigurationCreateManyInput | SwitcherConfigurationCreateManyInput[]
+  }
+
+  /**
+   * SwitcherConfiguration createManyAndReturn
+   */
+  export type SwitcherConfigurationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * The data used to create many SwitcherConfigurations.
+     */
+    data: SwitcherConfigurationCreateManyInput | SwitcherConfigurationCreateManyInput[]
+  }
+
+  /**
+   * SwitcherConfiguration update
+   */
+  export type SwitcherConfigurationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SwitcherConfiguration.
+     */
+    data: XOR<SwitcherConfigurationUpdateInput, SwitcherConfigurationUncheckedUpdateInput>
+    /**
+     * Choose, which SwitcherConfiguration to update.
+     */
+    where: SwitcherConfigurationWhereUniqueInput
+  }
+
+  /**
+   * SwitcherConfiguration updateMany
+   */
+  export type SwitcherConfigurationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SwitcherConfigurations.
+     */
+    data: XOR<SwitcherConfigurationUpdateManyMutationInput, SwitcherConfigurationUncheckedUpdateManyInput>
+    /**
+     * Filter which SwitcherConfigurations to update
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * Limit how many SwitcherConfigurations to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SwitcherConfiguration updateManyAndReturn
+   */
+  export type SwitcherConfigurationUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * The data used to update SwitcherConfigurations.
+     */
+    data: XOR<SwitcherConfigurationUpdateManyMutationInput, SwitcherConfigurationUncheckedUpdateManyInput>
+    /**
+     * Filter which SwitcherConfigurations to update
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * Limit how many SwitcherConfigurations to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SwitcherConfiguration upsert
+   */
+  export type SwitcherConfigurationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SwitcherConfiguration to update in case it exists.
+     */
+    where: SwitcherConfigurationWhereUniqueInput
+    /**
+     * In case the SwitcherConfiguration found by the `where` argument doesn't exist, create a new SwitcherConfiguration with this data.
+     */
+    create: XOR<SwitcherConfigurationCreateInput, SwitcherConfigurationUncheckedCreateInput>
+    /**
+     * In case the SwitcherConfiguration was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SwitcherConfigurationUpdateInput, SwitcherConfigurationUncheckedUpdateInput>
+  }
+
+  /**
+   * SwitcherConfiguration delete
+   */
+  export type SwitcherConfigurationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+    /**
+     * Filter which SwitcherConfiguration to delete.
+     */
+    where: SwitcherConfigurationWhereUniqueInput
+  }
+
+  /**
+   * SwitcherConfiguration deleteMany
+   */
+  export type SwitcherConfigurationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SwitcherConfigurations to delete
+     */
+    where?: SwitcherConfigurationWhereInput
+    /**
+     * Limit how many SwitcherConfigurations to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SwitcherConfiguration without action
+   */
+  export type SwitcherConfigurationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SwitcherConfiguration
+     */
+    select?: SwitcherConfigurationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SwitcherConfiguration
+     */
+    omit?: SwitcherConfigurationOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model IpRedirection
+   */
+
+  export type AggregateIpRedirection = {
+    _count: IpRedirectionCountAggregateOutputType | null
+    _avg: IpRedirectionAvgAggregateOutputType | null
+    _sum: IpRedirectionSumAggregateOutputType | null
+    _min: IpRedirectionMinAggregateOutputType | null
+    _max: IpRedirectionMaxAggregateOutputType | null
+  }
+
+  export type IpRedirectionAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type IpRedirectionSumAggregateOutputType = {
+    id: number | null
+  }
+
+  export type IpRedirectionMinAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    region: string | null
+    languageCode: string | null
+    currencyCode: string | null
+    isDeleted: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type IpRedirectionMaxAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    region: string | null
+    languageCode: string | null
+    currencyCode: string | null
+    isDeleted: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type IpRedirectionCountAggregateOutputType = {
+    id: number
+    shop: number
+    region: number
+    languageCode: number
+    currencyCode: number
+    isDeleted: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type IpRedirectionAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type IpRedirectionSumAggregateInputType = {
+    id?: true
+  }
+
+  export type IpRedirectionMinAggregateInputType = {
+    id?: true
+    shop?: true
+    region?: true
+    languageCode?: true
+    currencyCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type IpRedirectionMaxAggregateInputType = {
+    id?: true
+    shop?: true
+    region?: true
+    languageCode?: true
+    currencyCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type IpRedirectionCountAggregateInputType = {
+    id?: true
+    shop?: true
+    region?: true
+    languageCode?: true
+    currencyCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type IpRedirectionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which IpRedirection to aggregate.
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of IpRedirections to fetch.
+     */
+    orderBy?: IpRedirectionOrderByWithRelationInput | IpRedirectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: IpRedirectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` IpRedirections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` IpRedirections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned IpRedirections
+    **/
+    _count?: true | IpRedirectionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: IpRedirectionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: IpRedirectionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: IpRedirectionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: IpRedirectionMaxAggregateInputType
+  }
+
+  export type GetIpRedirectionAggregateType<T extends IpRedirectionAggregateArgs> = {
+        [P in keyof T & keyof AggregateIpRedirection]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateIpRedirection[P]>
+      : GetScalarType<T[P], AggregateIpRedirection[P]>
+  }
+
+
+
+
+  export type IpRedirectionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: IpRedirectionWhereInput
+    orderBy?: IpRedirectionOrderByWithAggregationInput | IpRedirectionOrderByWithAggregationInput[]
+    by: IpRedirectionScalarFieldEnum[] | IpRedirectionScalarFieldEnum
+    having?: IpRedirectionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: IpRedirectionCountAggregateInputType | true
+    _avg?: IpRedirectionAvgAggregateInputType
+    _sum?: IpRedirectionSumAggregateInputType
+    _min?: IpRedirectionMinAggregateInputType
+    _max?: IpRedirectionMaxAggregateInputType
+  }
+
+  export type IpRedirectionGroupByOutputType = {
+    id: number
+    shop: string
+    region: string
+    languageCode: string
+    currencyCode: string
+    isDeleted: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: IpRedirectionCountAggregateOutputType | null
+    _avg: IpRedirectionAvgAggregateOutputType | null
+    _sum: IpRedirectionSumAggregateOutputType | null
+    _min: IpRedirectionMinAggregateOutputType | null
+    _max: IpRedirectionMaxAggregateOutputType | null
+  }
+
+  type GetIpRedirectionGroupByPayload<T extends IpRedirectionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<IpRedirectionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof IpRedirectionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], IpRedirectionGroupByOutputType[P]>
+            : GetScalarType<T[P], IpRedirectionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type IpRedirectionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    region?: boolean
+    languageCode?: boolean
+    currencyCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["ipRedirection"]>
+
+  export type IpRedirectionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    region?: boolean
+    languageCode?: boolean
+    currencyCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["ipRedirection"]>
+
+  export type IpRedirectionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    region?: boolean
+    languageCode?: boolean
+    currencyCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["ipRedirection"]>
+
+  export type IpRedirectionSelectScalar = {
+    id?: boolean
+    shop?: boolean
+    region?: boolean
+    languageCode?: boolean
+    currencyCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type IpRedirectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "region" | "languageCode" | "currencyCode" | "isDeleted" | "createdAt" | "updatedAt", ExtArgs["result"]["ipRedirection"]>
+
+  export type $IpRedirectionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "IpRedirection"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      shop: string
+      region: string
+      languageCode: string
+      currencyCode: string
+      isDeleted: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["ipRedirection"]>
+    composites: {}
+  }
+
+  type IpRedirectionGetPayload<S extends boolean | null | undefined | IpRedirectionDefaultArgs> = $Result.GetResult<Prisma.$IpRedirectionPayload, S>
+
+  type IpRedirectionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<IpRedirectionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: IpRedirectionCountAggregateInputType | true
+    }
+
+  export interface IpRedirectionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['IpRedirection'], meta: { name: 'IpRedirection' } }
+    /**
+     * Find zero or one IpRedirection that matches the filter.
+     * @param {IpRedirectionFindUniqueArgs} args - Arguments to find a IpRedirection
+     * @example
+     * // Get one IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends IpRedirectionFindUniqueArgs>(args: SelectSubset<T, IpRedirectionFindUniqueArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one IpRedirection that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {IpRedirectionFindUniqueOrThrowArgs} args - Arguments to find a IpRedirection
+     * @example
+     * // Get one IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends IpRedirectionFindUniqueOrThrowArgs>(args: SelectSubset<T, IpRedirectionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first IpRedirection that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionFindFirstArgs} args - Arguments to find a IpRedirection
+     * @example
+     * // Get one IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends IpRedirectionFindFirstArgs>(args?: SelectSubset<T, IpRedirectionFindFirstArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first IpRedirection that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionFindFirstOrThrowArgs} args - Arguments to find a IpRedirection
+     * @example
+     * // Get one IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends IpRedirectionFindFirstOrThrowArgs>(args?: SelectSubset<T, IpRedirectionFindFirstOrThrowArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more IpRedirections that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all IpRedirections
+     * const ipRedirections = await prisma.ipRedirection.findMany()
+     * 
+     * // Get first 10 IpRedirections
+     * const ipRedirections = await prisma.ipRedirection.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ipRedirectionWithIdOnly = await prisma.ipRedirection.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends IpRedirectionFindManyArgs>(args?: SelectSubset<T, IpRedirectionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a IpRedirection.
+     * @param {IpRedirectionCreateArgs} args - Arguments to create a IpRedirection.
+     * @example
+     * // Create one IpRedirection
+     * const IpRedirection = await prisma.ipRedirection.create({
+     *   data: {
+     *     // ... data to create a IpRedirection
+     *   }
+     * })
+     * 
+     */
+    create<T extends IpRedirectionCreateArgs>(args: SelectSubset<T, IpRedirectionCreateArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many IpRedirections.
+     * @param {IpRedirectionCreateManyArgs} args - Arguments to create many IpRedirections.
+     * @example
+     * // Create many IpRedirections
+     * const ipRedirection = await prisma.ipRedirection.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends IpRedirectionCreateManyArgs>(args?: SelectSubset<T, IpRedirectionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many IpRedirections and returns the data saved in the database.
+     * @param {IpRedirectionCreateManyAndReturnArgs} args - Arguments to create many IpRedirections.
+     * @example
+     * // Create many IpRedirections
+     * const ipRedirection = await prisma.ipRedirection.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many IpRedirections and only return the `id`
+     * const ipRedirectionWithIdOnly = await prisma.ipRedirection.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends IpRedirectionCreateManyAndReturnArgs>(args?: SelectSubset<T, IpRedirectionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a IpRedirection.
+     * @param {IpRedirectionDeleteArgs} args - Arguments to delete one IpRedirection.
+     * @example
+     * // Delete one IpRedirection
+     * const IpRedirection = await prisma.ipRedirection.delete({
+     *   where: {
+     *     // ... filter to delete one IpRedirection
+     *   }
+     * })
+     * 
+     */
+    delete<T extends IpRedirectionDeleteArgs>(args: SelectSubset<T, IpRedirectionDeleteArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one IpRedirection.
+     * @param {IpRedirectionUpdateArgs} args - Arguments to update one IpRedirection.
+     * @example
+     * // Update one IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends IpRedirectionUpdateArgs>(args: SelectSubset<T, IpRedirectionUpdateArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more IpRedirections.
+     * @param {IpRedirectionDeleteManyArgs} args - Arguments to filter IpRedirections to delete.
+     * @example
+     * // Delete a few IpRedirections
+     * const { count } = await prisma.ipRedirection.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends IpRedirectionDeleteManyArgs>(args?: SelectSubset<T, IpRedirectionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more IpRedirections.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many IpRedirections
+     * const ipRedirection = await prisma.ipRedirection.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends IpRedirectionUpdateManyArgs>(args: SelectSubset<T, IpRedirectionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more IpRedirections and returns the data updated in the database.
+     * @param {IpRedirectionUpdateManyAndReturnArgs} args - Arguments to update many IpRedirections.
+     * @example
+     * // Update many IpRedirections
+     * const ipRedirection = await prisma.ipRedirection.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more IpRedirections and only return the `id`
+     * const ipRedirectionWithIdOnly = await prisma.ipRedirection.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends IpRedirectionUpdateManyAndReturnArgs>(args: SelectSubset<T, IpRedirectionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one IpRedirection.
+     * @param {IpRedirectionUpsertArgs} args - Arguments to update or create a IpRedirection.
+     * @example
+     * // Update or create a IpRedirection
+     * const ipRedirection = await prisma.ipRedirection.upsert({
+     *   create: {
+     *     // ... data to create a IpRedirection
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the IpRedirection we want to update
+     *   }
+     * })
+     */
+    upsert<T extends IpRedirectionUpsertArgs>(args: SelectSubset<T, IpRedirectionUpsertArgs<ExtArgs>>): Prisma__IpRedirectionClient<$Result.GetResult<Prisma.$IpRedirectionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of IpRedirections.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionCountArgs} args - Arguments to filter IpRedirections to count.
+     * @example
+     * // Count the number of IpRedirections
+     * const count = await prisma.ipRedirection.count({
+     *   where: {
+     *     // ... the filter for the IpRedirections we want to count
+     *   }
+     * })
+    **/
+    count<T extends IpRedirectionCountArgs>(
+      args?: Subset<T, IpRedirectionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], IpRedirectionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a IpRedirection.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends IpRedirectionAggregateArgs>(args: Subset<T, IpRedirectionAggregateArgs>): Prisma.PrismaPromise<GetIpRedirectionAggregateType<T>>
+
+    /**
+     * Group by IpRedirection.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IpRedirectionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends IpRedirectionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: IpRedirectionGroupByArgs['orderBy'] }
+        : { orderBy?: IpRedirectionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, IpRedirectionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIpRedirectionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the IpRedirection model
+   */
+  readonly fields: IpRedirectionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for IpRedirection.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__IpRedirectionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the IpRedirection model
+   */
+  interface IpRedirectionFieldRefs {
+    readonly id: FieldRef<"IpRedirection", 'Int'>
+    readonly shop: FieldRef<"IpRedirection", 'String'>
+    readonly region: FieldRef<"IpRedirection", 'String'>
+    readonly languageCode: FieldRef<"IpRedirection", 'String'>
+    readonly currencyCode: FieldRef<"IpRedirection", 'String'>
+    readonly isDeleted: FieldRef<"IpRedirection", 'Boolean'>
+    readonly createdAt: FieldRef<"IpRedirection", 'DateTime'>
+    readonly updatedAt: FieldRef<"IpRedirection", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * IpRedirection findUnique
+   */
+  export type IpRedirectionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter, which IpRedirection to fetch.
+     */
+    where: IpRedirectionWhereUniqueInput
+  }
+
+  /**
+   * IpRedirection findUniqueOrThrow
+   */
+  export type IpRedirectionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter, which IpRedirection to fetch.
+     */
+    where: IpRedirectionWhereUniqueInput
+  }
+
+  /**
+   * IpRedirection findFirst
+   */
+  export type IpRedirectionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter, which IpRedirection to fetch.
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of IpRedirections to fetch.
+     */
+    orderBy?: IpRedirectionOrderByWithRelationInput | IpRedirectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for IpRedirections.
+     */
+    cursor?: IpRedirectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` IpRedirections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` IpRedirections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of IpRedirections.
+     */
+    distinct?: IpRedirectionScalarFieldEnum | IpRedirectionScalarFieldEnum[]
+  }
+
+  /**
+   * IpRedirection findFirstOrThrow
+   */
+  export type IpRedirectionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter, which IpRedirection to fetch.
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of IpRedirections to fetch.
+     */
+    orderBy?: IpRedirectionOrderByWithRelationInput | IpRedirectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for IpRedirections.
+     */
+    cursor?: IpRedirectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` IpRedirections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` IpRedirections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of IpRedirections.
+     */
+    distinct?: IpRedirectionScalarFieldEnum | IpRedirectionScalarFieldEnum[]
+  }
+
+  /**
+   * IpRedirection findMany
+   */
+  export type IpRedirectionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter, which IpRedirections to fetch.
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of IpRedirections to fetch.
+     */
+    orderBy?: IpRedirectionOrderByWithRelationInput | IpRedirectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing IpRedirections.
+     */
+    cursor?: IpRedirectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` IpRedirections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` IpRedirections.
+     */
+    skip?: number
+    distinct?: IpRedirectionScalarFieldEnum | IpRedirectionScalarFieldEnum[]
+  }
+
+  /**
+   * IpRedirection create
+   */
+  export type IpRedirectionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * The data needed to create a IpRedirection.
+     */
+    data: XOR<IpRedirectionCreateInput, IpRedirectionUncheckedCreateInput>
+  }
+
+  /**
+   * IpRedirection createMany
+   */
+  export type IpRedirectionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many IpRedirections.
+     */
+    data: IpRedirectionCreateManyInput | IpRedirectionCreateManyInput[]
+  }
+
+  /**
+   * IpRedirection createManyAndReturn
+   */
+  export type IpRedirectionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * The data used to create many IpRedirections.
+     */
+    data: IpRedirectionCreateManyInput | IpRedirectionCreateManyInput[]
+  }
+
+  /**
+   * IpRedirection update
+   */
+  export type IpRedirectionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * The data needed to update a IpRedirection.
+     */
+    data: XOR<IpRedirectionUpdateInput, IpRedirectionUncheckedUpdateInput>
+    /**
+     * Choose, which IpRedirection to update.
+     */
+    where: IpRedirectionWhereUniqueInput
+  }
+
+  /**
+   * IpRedirection updateMany
+   */
+  export type IpRedirectionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update IpRedirections.
+     */
+    data: XOR<IpRedirectionUpdateManyMutationInput, IpRedirectionUncheckedUpdateManyInput>
+    /**
+     * Filter which IpRedirections to update
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * Limit how many IpRedirections to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * IpRedirection updateManyAndReturn
+   */
+  export type IpRedirectionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * The data used to update IpRedirections.
+     */
+    data: XOR<IpRedirectionUpdateManyMutationInput, IpRedirectionUncheckedUpdateManyInput>
+    /**
+     * Filter which IpRedirections to update
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * Limit how many IpRedirections to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * IpRedirection upsert
+   */
+  export type IpRedirectionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * The filter to search for the IpRedirection to update in case it exists.
+     */
+    where: IpRedirectionWhereUniqueInput
+    /**
+     * In case the IpRedirection found by the `where` argument doesn't exist, create a new IpRedirection with this data.
+     */
+    create: XOR<IpRedirectionCreateInput, IpRedirectionUncheckedCreateInput>
+    /**
+     * In case the IpRedirection was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<IpRedirectionUpdateInput, IpRedirectionUncheckedUpdateInput>
+  }
+
+  /**
+   * IpRedirection delete
+   */
+  export type IpRedirectionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+    /**
+     * Filter which IpRedirection to delete.
+     */
+    where: IpRedirectionWhereUniqueInput
+  }
+
+  /**
+   * IpRedirection deleteMany
+   */
+  export type IpRedirectionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which IpRedirections to delete
+     */
+    where?: IpRedirectionWhereInput
+    /**
+     * Limit how many IpRedirections to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * IpRedirection without action
+   */
+  export type IpRedirectionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IpRedirection
+     */
+    select?: IpRedirectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the IpRedirection
+     */
+    omit?: IpRedirectionOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Model LiquidRule
    */
 
@@ -6670,6 +9041,41 @@ export namespace Prisma {
   export type GlossaryScalarFieldEnum = (typeof GlossaryScalarFieldEnum)[keyof typeof GlossaryScalarFieldEnum]
 
 
+  export const SwitcherConfigurationScalarFieldEnum: {
+    shop: 'shop',
+    languageSelector: 'languageSelector',
+    currencySelector: 'currencySelector',
+    ipOpen: 'ipOpen',
+    includedFlag: 'includedFlag',
+    fontColor: 'fontColor',
+    backgroundColor: 'backgroundColor',
+    buttonColor: 'buttonColor',
+    buttonBackgroundColor: 'buttonBackgroundColor',
+    optionBorderColor: 'optionBorderColor',
+    selectorPosition: 'selectorPosition',
+    positionData: 'positionData',
+    isTransparent: 'isTransparent',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type SwitcherConfigurationScalarFieldEnum = (typeof SwitcherConfigurationScalarFieldEnum)[keyof typeof SwitcherConfigurationScalarFieldEnum]
+
+
+  export const IpRedirectionScalarFieldEnum: {
+    id: 'id',
+    shop: 'shop',
+    region: 'region',
+    languageCode: 'languageCode',
+    currencyCode: 'currencyCode',
+    isDeleted: 'isDeleted',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type IpRedirectionScalarFieldEnum = (typeof IpRedirectionScalarFieldEnum)[keyof typeof IpRedirectionScalarFieldEnum]
+
+
   export const LiquidRuleScalarFieldEnum: {
     id: 'id',
     shop: 'shop',
@@ -7103,6 +9509,177 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Glossary"> | Date | string
   }
 
+  export type SwitcherConfigurationWhereInput = {
+    AND?: SwitcherConfigurationWhereInput | SwitcherConfigurationWhereInput[]
+    OR?: SwitcherConfigurationWhereInput[]
+    NOT?: SwitcherConfigurationWhereInput | SwitcherConfigurationWhereInput[]
+    shop?: StringFilter<"SwitcherConfiguration"> | string
+    languageSelector?: BoolFilter<"SwitcherConfiguration"> | boolean
+    currencySelector?: BoolFilter<"SwitcherConfiguration"> | boolean
+    ipOpen?: BoolFilter<"SwitcherConfiguration"> | boolean
+    includedFlag?: BoolFilter<"SwitcherConfiguration"> | boolean
+    fontColor?: StringFilter<"SwitcherConfiguration"> | string
+    backgroundColor?: StringFilter<"SwitcherConfiguration"> | string
+    buttonColor?: StringFilter<"SwitcherConfiguration"> | string
+    buttonBackgroundColor?: StringFilter<"SwitcherConfiguration"> | string
+    optionBorderColor?: StringFilter<"SwitcherConfiguration"> | string
+    selectorPosition?: StringFilter<"SwitcherConfiguration"> | string
+    positionData?: StringFilter<"SwitcherConfiguration"> | string
+    isTransparent?: BoolFilter<"SwitcherConfiguration"> | boolean
+    createdAt?: DateTimeFilter<"SwitcherConfiguration"> | Date | string
+    updatedAt?: DateTimeFilter<"SwitcherConfiguration"> | Date | string
+  }
+
+  export type SwitcherConfigurationOrderByWithRelationInput = {
+    shop?: SortOrder
+    languageSelector?: SortOrder
+    currencySelector?: SortOrder
+    ipOpen?: SortOrder
+    includedFlag?: SortOrder
+    fontColor?: SortOrder
+    backgroundColor?: SortOrder
+    buttonColor?: SortOrder
+    buttonBackgroundColor?: SortOrder
+    optionBorderColor?: SortOrder
+    selectorPosition?: SortOrder
+    positionData?: SortOrder
+    isTransparent?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SwitcherConfigurationWhereUniqueInput = Prisma.AtLeast<{
+    shop?: string
+    AND?: SwitcherConfigurationWhereInput | SwitcherConfigurationWhereInput[]
+    OR?: SwitcherConfigurationWhereInput[]
+    NOT?: SwitcherConfigurationWhereInput | SwitcherConfigurationWhereInput[]
+    languageSelector?: BoolFilter<"SwitcherConfiguration"> | boolean
+    currencySelector?: BoolFilter<"SwitcherConfiguration"> | boolean
+    ipOpen?: BoolFilter<"SwitcherConfiguration"> | boolean
+    includedFlag?: BoolFilter<"SwitcherConfiguration"> | boolean
+    fontColor?: StringFilter<"SwitcherConfiguration"> | string
+    backgroundColor?: StringFilter<"SwitcherConfiguration"> | string
+    buttonColor?: StringFilter<"SwitcherConfiguration"> | string
+    buttonBackgroundColor?: StringFilter<"SwitcherConfiguration"> | string
+    optionBorderColor?: StringFilter<"SwitcherConfiguration"> | string
+    selectorPosition?: StringFilter<"SwitcherConfiguration"> | string
+    positionData?: StringFilter<"SwitcherConfiguration"> | string
+    isTransparent?: BoolFilter<"SwitcherConfiguration"> | boolean
+    createdAt?: DateTimeFilter<"SwitcherConfiguration"> | Date | string
+    updatedAt?: DateTimeFilter<"SwitcherConfiguration"> | Date | string
+  }, "shop">
+
+  export type SwitcherConfigurationOrderByWithAggregationInput = {
+    shop?: SortOrder
+    languageSelector?: SortOrder
+    currencySelector?: SortOrder
+    ipOpen?: SortOrder
+    includedFlag?: SortOrder
+    fontColor?: SortOrder
+    backgroundColor?: SortOrder
+    buttonColor?: SortOrder
+    buttonBackgroundColor?: SortOrder
+    optionBorderColor?: SortOrder
+    selectorPosition?: SortOrder
+    positionData?: SortOrder
+    isTransparent?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: SwitcherConfigurationCountOrderByAggregateInput
+    _max?: SwitcherConfigurationMaxOrderByAggregateInput
+    _min?: SwitcherConfigurationMinOrderByAggregateInput
+  }
+
+  export type SwitcherConfigurationScalarWhereWithAggregatesInput = {
+    AND?: SwitcherConfigurationScalarWhereWithAggregatesInput | SwitcherConfigurationScalarWhereWithAggregatesInput[]
+    OR?: SwitcherConfigurationScalarWhereWithAggregatesInput[]
+    NOT?: SwitcherConfigurationScalarWhereWithAggregatesInput | SwitcherConfigurationScalarWhereWithAggregatesInput[]
+    shop?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    languageSelector?: BoolWithAggregatesFilter<"SwitcherConfiguration"> | boolean
+    currencySelector?: BoolWithAggregatesFilter<"SwitcherConfiguration"> | boolean
+    ipOpen?: BoolWithAggregatesFilter<"SwitcherConfiguration"> | boolean
+    includedFlag?: BoolWithAggregatesFilter<"SwitcherConfiguration"> | boolean
+    fontColor?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    backgroundColor?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    buttonColor?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    buttonBackgroundColor?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    optionBorderColor?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    selectorPosition?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    positionData?: StringWithAggregatesFilter<"SwitcherConfiguration"> | string
+    isTransparent?: BoolWithAggregatesFilter<"SwitcherConfiguration"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"SwitcherConfiguration"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SwitcherConfiguration"> | Date | string
+  }
+
+  export type IpRedirectionWhereInput = {
+    AND?: IpRedirectionWhereInput | IpRedirectionWhereInput[]
+    OR?: IpRedirectionWhereInput[]
+    NOT?: IpRedirectionWhereInput | IpRedirectionWhereInput[]
+    id?: IntFilter<"IpRedirection"> | number
+    shop?: StringFilter<"IpRedirection"> | string
+    region?: StringFilter<"IpRedirection"> | string
+    languageCode?: StringFilter<"IpRedirection"> | string
+    currencyCode?: StringFilter<"IpRedirection"> | string
+    isDeleted?: BoolFilter<"IpRedirection"> | boolean
+    createdAt?: DateTimeFilter<"IpRedirection"> | Date | string
+    updatedAt?: DateTimeFilter<"IpRedirection"> | Date | string
+  }
+
+  export type IpRedirectionOrderByWithRelationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    region?: SortOrder
+    languageCode?: SortOrder
+    currencyCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IpRedirectionWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: IpRedirectionWhereInput | IpRedirectionWhereInput[]
+    OR?: IpRedirectionWhereInput[]
+    NOT?: IpRedirectionWhereInput | IpRedirectionWhereInput[]
+    shop?: StringFilter<"IpRedirection"> | string
+    region?: StringFilter<"IpRedirection"> | string
+    languageCode?: StringFilter<"IpRedirection"> | string
+    currencyCode?: StringFilter<"IpRedirection"> | string
+    isDeleted?: BoolFilter<"IpRedirection"> | boolean
+    createdAt?: DateTimeFilter<"IpRedirection"> | Date | string
+    updatedAt?: DateTimeFilter<"IpRedirection"> | Date | string
+  }, "id">
+
+  export type IpRedirectionOrderByWithAggregationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    region?: SortOrder
+    languageCode?: SortOrder
+    currencyCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: IpRedirectionCountOrderByAggregateInput
+    _avg?: IpRedirectionAvgOrderByAggregateInput
+    _max?: IpRedirectionMaxOrderByAggregateInput
+    _min?: IpRedirectionMinOrderByAggregateInput
+    _sum?: IpRedirectionSumOrderByAggregateInput
+  }
+
+  export type IpRedirectionScalarWhereWithAggregatesInput = {
+    AND?: IpRedirectionScalarWhereWithAggregatesInput | IpRedirectionScalarWhereWithAggregatesInput[]
+    OR?: IpRedirectionScalarWhereWithAggregatesInput[]
+    NOT?: IpRedirectionScalarWhereWithAggregatesInput | IpRedirectionScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"IpRedirection"> | number
+    shop?: StringWithAggregatesFilter<"IpRedirection"> | string
+    region?: StringWithAggregatesFilter<"IpRedirection"> | string
+    languageCode?: StringWithAggregatesFilter<"IpRedirection"> | string
+    currencyCode?: StringWithAggregatesFilter<"IpRedirection"> | string
+    isDeleted?: BoolWithAggregatesFilter<"IpRedirection"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"IpRedirection"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"IpRedirection"> | Date | string
+  }
+
   export type LiquidRuleWhereInput = {
     AND?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
     OR?: LiquidRuleWhereInput[]
@@ -7526,6 +10103,209 @@ export namespace Prisma {
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
     status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SwitcherConfigurationCreateInput = {
+    shop: string
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: string
+    backgroundColor?: string
+    buttonColor?: string
+    buttonBackgroundColor?: string
+    optionBorderColor?: string
+    selectorPosition?: string
+    positionData?: string
+    isTransparent?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SwitcherConfigurationUncheckedCreateInput = {
+    shop: string
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: string
+    backgroundColor?: string
+    buttonColor?: string
+    buttonBackgroundColor?: string
+    optionBorderColor?: string
+    selectorPosition?: string
+    positionData?: string
+    isTransparent?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SwitcherConfigurationUpdateInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    languageSelector?: BoolFieldUpdateOperationsInput | boolean
+    currencySelector?: BoolFieldUpdateOperationsInput | boolean
+    ipOpen?: BoolFieldUpdateOperationsInput | boolean
+    includedFlag?: BoolFieldUpdateOperationsInput | boolean
+    fontColor?: StringFieldUpdateOperationsInput | string
+    backgroundColor?: StringFieldUpdateOperationsInput | string
+    buttonColor?: StringFieldUpdateOperationsInput | string
+    buttonBackgroundColor?: StringFieldUpdateOperationsInput | string
+    optionBorderColor?: StringFieldUpdateOperationsInput | string
+    selectorPosition?: StringFieldUpdateOperationsInput | string
+    positionData?: StringFieldUpdateOperationsInput | string
+    isTransparent?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SwitcherConfigurationUncheckedUpdateInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    languageSelector?: BoolFieldUpdateOperationsInput | boolean
+    currencySelector?: BoolFieldUpdateOperationsInput | boolean
+    ipOpen?: BoolFieldUpdateOperationsInput | boolean
+    includedFlag?: BoolFieldUpdateOperationsInput | boolean
+    fontColor?: StringFieldUpdateOperationsInput | string
+    backgroundColor?: StringFieldUpdateOperationsInput | string
+    buttonColor?: StringFieldUpdateOperationsInput | string
+    buttonBackgroundColor?: StringFieldUpdateOperationsInput | string
+    optionBorderColor?: StringFieldUpdateOperationsInput | string
+    selectorPosition?: StringFieldUpdateOperationsInput | string
+    positionData?: StringFieldUpdateOperationsInput | string
+    isTransparent?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SwitcherConfigurationCreateManyInput = {
+    shop: string
+    languageSelector?: boolean
+    currencySelector?: boolean
+    ipOpen?: boolean
+    includedFlag?: boolean
+    fontColor?: string
+    backgroundColor?: string
+    buttonColor?: string
+    buttonBackgroundColor?: string
+    optionBorderColor?: string
+    selectorPosition?: string
+    positionData?: string
+    isTransparent?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SwitcherConfigurationUpdateManyMutationInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    languageSelector?: BoolFieldUpdateOperationsInput | boolean
+    currencySelector?: BoolFieldUpdateOperationsInput | boolean
+    ipOpen?: BoolFieldUpdateOperationsInput | boolean
+    includedFlag?: BoolFieldUpdateOperationsInput | boolean
+    fontColor?: StringFieldUpdateOperationsInput | string
+    backgroundColor?: StringFieldUpdateOperationsInput | string
+    buttonColor?: StringFieldUpdateOperationsInput | string
+    buttonBackgroundColor?: StringFieldUpdateOperationsInput | string
+    optionBorderColor?: StringFieldUpdateOperationsInput | string
+    selectorPosition?: StringFieldUpdateOperationsInput | string
+    positionData?: StringFieldUpdateOperationsInput | string
+    isTransparent?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SwitcherConfigurationUncheckedUpdateManyInput = {
+    shop?: StringFieldUpdateOperationsInput | string
+    languageSelector?: BoolFieldUpdateOperationsInput | boolean
+    currencySelector?: BoolFieldUpdateOperationsInput | boolean
+    ipOpen?: BoolFieldUpdateOperationsInput | boolean
+    includedFlag?: BoolFieldUpdateOperationsInput | boolean
+    fontColor?: StringFieldUpdateOperationsInput | string
+    backgroundColor?: StringFieldUpdateOperationsInput | string
+    buttonColor?: StringFieldUpdateOperationsInput | string
+    buttonBackgroundColor?: StringFieldUpdateOperationsInput | string
+    optionBorderColor?: StringFieldUpdateOperationsInput | string
+    selectorPosition?: StringFieldUpdateOperationsInput | string
+    positionData?: StringFieldUpdateOperationsInput | string
+    isTransparent?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IpRedirectionCreateInput = {
+    id: number
+    shop: string
+    region?: string
+    languageCode?: string
+    currencyCode?: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IpRedirectionUncheckedCreateInput = {
+    id: number
+    shop: string
+    region?: string
+    languageCode?: string
+    currencyCode?: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IpRedirectionUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    currencyCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IpRedirectionUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    currencyCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IpRedirectionCreateManyInput = {
+    id: number
+    shop: string
+    region?: string
+    languageCode?: string
+    currencyCode?: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IpRedirectionUpdateManyMutationInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    currencyCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IpRedirectionUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    currencyCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type LiquidRuleCreateInput = {
@@ -8026,6 +10806,101 @@ export namespace Prisma {
   export type GlossarySumOrderByAggregateInput = {
     id?: SortOrder
     status?: SortOrder
+  }
+
+  export type SwitcherConfigurationCountOrderByAggregateInput = {
+    shop?: SortOrder
+    languageSelector?: SortOrder
+    currencySelector?: SortOrder
+    ipOpen?: SortOrder
+    includedFlag?: SortOrder
+    fontColor?: SortOrder
+    backgroundColor?: SortOrder
+    buttonColor?: SortOrder
+    buttonBackgroundColor?: SortOrder
+    optionBorderColor?: SortOrder
+    selectorPosition?: SortOrder
+    positionData?: SortOrder
+    isTransparent?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SwitcherConfigurationMaxOrderByAggregateInput = {
+    shop?: SortOrder
+    languageSelector?: SortOrder
+    currencySelector?: SortOrder
+    ipOpen?: SortOrder
+    includedFlag?: SortOrder
+    fontColor?: SortOrder
+    backgroundColor?: SortOrder
+    buttonColor?: SortOrder
+    buttonBackgroundColor?: SortOrder
+    optionBorderColor?: SortOrder
+    selectorPosition?: SortOrder
+    positionData?: SortOrder
+    isTransparent?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SwitcherConfigurationMinOrderByAggregateInput = {
+    shop?: SortOrder
+    languageSelector?: SortOrder
+    currencySelector?: SortOrder
+    ipOpen?: SortOrder
+    includedFlag?: SortOrder
+    fontColor?: SortOrder
+    backgroundColor?: SortOrder
+    buttonColor?: SortOrder
+    buttonBackgroundColor?: SortOrder
+    optionBorderColor?: SortOrder
+    selectorPosition?: SortOrder
+    positionData?: SortOrder
+    isTransparent?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IpRedirectionCountOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    region?: SortOrder
+    languageCode?: SortOrder
+    currencyCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IpRedirectionAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type IpRedirectionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    region?: SortOrder
+    languageCode?: SortOrder
+    currencyCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IpRedirectionMinOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    region?: SortOrder
+    languageCode?: SortOrder
+    currencyCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IpRedirectionSumOrderByAggregateInput = {
+    id?: SortOrder
   }
 
   export type LiquidRuleCountOrderByAggregateInput = {

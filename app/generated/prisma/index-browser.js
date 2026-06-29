@@ -170,6 +170,35 @@ exports.Prisma.GlossaryScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.SwitcherConfigurationScalarFieldEnum = {
+  shop: 'shop',
+  languageSelector: 'languageSelector',
+  currencySelector: 'currencySelector',
+  ipOpen: 'ipOpen',
+  includedFlag: 'includedFlag',
+  fontColor: 'fontColor',
+  backgroundColor: 'backgroundColor',
+  buttonColor: 'buttonColor',
+  buttonBackgroundColor: 'buttonBackgroundColor',
+  optionBorderColor: 'optionBorderColor',
+  selectorPosition: 'selectorPosition',
+  positionData: 'positionData',
+  isTransparent: 'isTransparent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.IpRedirectionScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  region: 'region',
+  languageCode: 'languageCode',
+  currencyCode: 'currencyCode',
+  isDeleted: 'isDeleted',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.LiquidRuleScalarFieldEnum = {
   id: 'id',
   shop: 'shop',
@@ -212,6 +241,8 @@ exports.Prisma.ModelName = {
   ShopTranslationSettings: 'ShopTranslationSettings',
   ShopTargetLocale: 'ShopTargetLocale',
   Glossary: 'Glossary',
+  SwitcherConfiguration: 'SwitcherConfiguration',
+  IpRedirection: 'IpRedirection',
   LiquidRule: 'LiquidRule'
 };
 

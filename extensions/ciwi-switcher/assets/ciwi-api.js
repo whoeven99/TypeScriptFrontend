@@ -15,6 +15,15 @@ export function switchUrl(blockId) {
   }
 }
 
+/**
+ * 店面读 API 基址：优先 App Proxy（Liquid 注入 #ciwiAppProxyBase），
+ * 未注入时降级 Java 直连。灰度由 TSF 服务端 isShopMigrated 决定读 Prisma 或代理 Java。
+ */
+function resolveStorefrontApiBase(blockId) {
+  const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
+  return appProxyBase || switchUrl(blockId);
+}
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
     headers: {
@@ -107,10 +116,7 @@ export async function ParseLiquidDataByShopNameAndLanguage({
   languageCode,
 }) {
   try {
-    // 优先使用 App Proxy（由 Liquid 块注入的 ciwiAppProxyBase）；
-    // 未注入时降级到 Java 直连（switchUrl 保留，不删除 Java 代码）
-    const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
-    const baseUrl = appProxyBase || switchUrl(blockId);
+    const baseUrl = resolveStorefrontApiBase(blockId);
     const { data } = await fetchJson(
       `${baseUrl}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
       {
@@ -181,8 +187,9 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
   };
 
   try {
+    const baseUrl = resolveStorefrontApiBase(blockId);
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/widgetConfigurations/getData`,
+      `${baseUrl}/widgetConfigurations/getData`,
       {
         method: "POST",
         body: JSON.stringify({ shopName: shop }),
