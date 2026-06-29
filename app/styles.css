@@ -168,3 +168,113 @@ body {
   font-size: var(--app-font-size-body-small);
   line-height: 20px;
 }
+
+/* =========================================================================
+   智能翻译首页 —— UI 润色：进场 / 悬浮 / 点击 / 展开 动画
+   ========================================================================= */
+
+@keyframes v4-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes v4-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes v4-livedot {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 进场：卡片自下而上淡入，可用 delay 类做错峰 */
+.v4-enter {
+  animation: v4-rise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.v4-enter-d1 {
+  animation-delay: 0.06s;
+}
+.v4-enter-d2 {
+  animation-delay: 0.12s;
+}
+.v4-enter-d3 {
+  animation-delay: 0.18s;
+}
+
+/* 卡片悬浮上浮 + 阴影加重 */
+.v4-lift {
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1), border-color 0.2s ease;
+}
+.v4-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.1);
+}
+
+/* 小元素点击回弹 */
+.v4-press {
+  transition: transform 0.12s ease;
+}
+.v4-press:active {
+  transform: scale(0.96);
+}
+
+/* 展开/收起容器：高度 + 透明度过渡 */
+.v4-collapse {
+  overflow: hidden;
+  transition: max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.32s ease;
+}
+
+/* 实时同步小圆点呼吸 */
+.v4-livedot {
+  animation: v4-livedot 1.6s ease-in-out infinite;
+}
+
+/* 新增/出现的小行（如已选标签）轻微弹入 */
+.v4-row-enter {
+  animation: v4-pop 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* 折叠箭头旋转 */
+.v4-caret {
+  display: inline-block;
+  transition: transform 0.22s ease;
+}
+.v4-caret--open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v4-enter,
+  .v4-row-enter,
+  .v4-livedot {
+    animation: none !important;
+  }
+  .v4-lift,
+  .v4-press,
+  .v4-collapse,
+  .v4-caret {
+    transition: none !important;
+  }
+}

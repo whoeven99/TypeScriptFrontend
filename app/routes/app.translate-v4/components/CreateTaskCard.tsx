@@ -1,14 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button, Checkbox, Select, Space } from "antd";
-import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
+  CREATE_TASK_MODULE_LABELS,
   CREATE_TASK_MODULE_OPTIONS,
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
-import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -41,8 +40,9 @@ export function CreateTaskCard({
   isHandle,
   onIsHandleChange,
 }: Props) {
-  const { t } = useTranslation();
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
+  // 高级设置默认收起，点击展开
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const sortedTargetOptions = useMemo(() => {
     return [...targetOptions].sort((a, b) => {
@@ -58,9 +58,11 @@ export function CreateTaskCard({
       const aSelected = modules.includes(a) ? 0 : 1;
       const bSelected = modules.includes(b) ? 0 : 1;
       if (aSelected !== bSelected) return aSelected - bSelected;
-      return (getV4ModuleLabel(a, t)).localeCompare(getV4ModuleLabel(b, t));
+      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
+        CREATE_TASK_MODULE_LABELS[b] ?? b,
+      );
     });
-  }, [modules, t]);
+  }, [modules]);
 
   const targetSelectOptions = sortedTargetOptions.map((opt) => ({
     value: opt.value,
@@ -69,12 +71,7 @@ export function CreateTaskCard({
 
   const moduleSelectOptions = sortedModules.map((mod) => ({
     value: mod,
-    label: getV4ModuleLabel(mod, t),
-  }));
-
-  const aiModelOptions = AI_MODEL_OPTIONS.map((opt) => ({
-    value: opt.value,
-    label: getV4AiModelLabel(opt.value, t),
+    label: CREATE_TASK_MODULE_LABELS[mod] ?? mod,
   }));
 
   return (
@@ -82,23 +79,19 @@ export function CreateTaskCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
-            {t("v4.createTask.title")}
+            新建翻译任务
           </h2>
         </div>
         <Button type="primary" disabled={!canCreate} loading={creating} onClick={onCreate}>
-          {creating
-            ? t("v4.createTask.creating")
-            : targets.length > 1
-              ? t("v4.createTask.createMultiple", { count: targets.length })
-              : t("v4.createTask.createOne")}
+          {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
         </Button>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.targetLanguages")} />
+        <SectionHeader title="目标语言" />
         <Select
           mode="multiple"
-          placeholder={t("v4.createTask.selectTargetLanguages")}
+          placeholder="选择目标语言"
           value={targets}
           onChange={onTargetsChange}
           options={targetSelectOptions}
@@ -109,10 +102,10 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ borderTop: `1px solid ${v4Colors.divider}`, paddingTop: 16, marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.content")} />
+        <SectionHeader title="翻译内容" />
         <Select
           mode="multiple"
-          placeholder={t("v4.createTask.selectModules")}
+          placeholder="选择翻译内容模块"
           value={modules}
           onChange={onModulesChange}
           options={moduleSelectOptions}
@@ -124,38 +117,73 @@ export function CreateTaskCard({
 
       <div
         style={{
-          padding: "14px 14px 0",
+          padding: advancedOpen ? "14px 14px 0" : "14px",
           borderRadius: 12,
           background: "rgba(84, 103, 255, 0.04)",
           border: `1px dashed ${v4Colors.cardBorder}`,
+          transition: "padding 0.42s cubic-bezier(0.22, 0.61, 0.36, 1)",
         }}
       >
-        <SectionHeader title={t("v4.createTask.advancedSettings")} />
-        <div style={{ marginTop: 4 }}>
-          <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
-          <Select
-            value={aiModel}
-            onChange={onAiModelChange}
-            options={aiModelOptions}
-            style={{ width: "100%", marginBottom: 16 }}
-          />
-          <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
-          <Checkbox.Group
-            value={[
-              ...(isCover ? ["cover"] : []),
-              ...(isHandle ? ["handle"] : []),
-            ]}
-            onChange={(values) => {
-              onIsCoverChange(values.includes("cover"));
-              onIsHandleChange(values.includes("handle"));
-            }}
-            style={{ width: "100%" }}
-          >
-            <Space direction="vertical" size={10}>
-              <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
-              <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
-            </Space>
-          </Checkbox.Group>
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((v) => !v)}
+          aria-expanded={advancedOpen}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+            gap: 8,
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 13,
+            fontWeight: 600,
+            color: v4Colors.text,
+            userSelect: "none",
+          }}
+        >
+          <span>高级设置</span>
+          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden>
+            ⌄
+          </span>
+        </button>
+
+        <div
+          className="v4-collapse"
+          style={{
+            maxHeight: advancedOpen ? 420 : 0,
+            opacity: advancedOpen ? 1 : 0,
+          }}
+        >
+          <div style={{ marginTop: 12 }}>
+            <SectionLabel>AI 模型</SectionLabel>
+            <Select
+              value={aiModel}
+              onChange={onAiModelChange}
+              options={AI_MODEL_OPTIONS}
+              style={{ width: "100%", marginBottom: 16 }}
+            />
+            <SectionLabel>翻译选项</SectionLabel>
+            <Checkbox.Group
+              value={[
+                ...(isCover ? ["cover"] : []),
+                ...(isHandle ? ["handle"] : []),
+              ]}
+              onChange={(values) => {
+                onIsCoverChange(values.includes("cover"));
+                onIsHandleChange(values.includes("handle"));
+              }}
+              style={{ width: "100%" }}
+            >
+              <Space direction="vertical" size={10}>
+                <Checkbox value="cover">覆盖已有译文</Checkbox>
+                <Checkbox value="handle">翻译 handle</Checkbox>
+              </Space>
+            </Checkbox.Group>
+          </div>
         </div>
       </div>
     </div>
