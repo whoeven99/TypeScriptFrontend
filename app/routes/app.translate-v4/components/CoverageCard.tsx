@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "antd";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
-import { v4Colors, v4CardStyle } from "../v4Styles";
+import { v4Colors, v4CardStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
@@ -26,12 +26,18 @@ const AUTO_BADGE_HOVER_CSS = `
 }
 `;
 
+/** 默认仅展示前 N 种语言，保持与左侧摘要卡等高；其余通过「查看全部」展开。 */
+const COVERAGE_PREVIEW_COUNT = 3;
+
 type Props = {
   locales: LocaleCoverageRow[];
   loading: boolean;
   onRefresh: () => void;
   compact?: boolean;
   onManageLanguages?: () => void;
+  onExpandedChange?: (expanded: boolean) => void;
+  /** 与左侧摘要卡同列拉伸等高（默认收起态） */
+  fillPairHeight?: boolean;
 };
 
 export function CoverageCard({
@@ -40,7 +46,19 @@ export function CoverageCard({
   onRefresh,
   compact = false,
   onManageLanguages,
+  onExpandedChange,
+  fillPairHeight = false,
 }: Props) {
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      onExpandedChange?.(next);
+      return next;
+    });
+  };
+
   const autoTranslateCount = useMemo(
     () => locales.filter((row) => row.autoTranslate).length,
     [locales],
@@ -51,15 +69,18 @@ export function CoverageCard({
   );
 
   if (compact) {
-    const visibleLocales = locales.slice(0, 4);
+    const hasMore = locales.length > COVERAGE_PREVIEW_COUNT;
+    const visibleLocales = expanded ? locales : locales.slice(0, COVERAGE_PREVIEW_COUNT);
 
     return (
       <div
+        className="v4-enter v4-enter-d2 v4-lift"
         style={{
           ...v4CardStyle,
           width: "100%",
+          height: fillPairHeight ? "100%" : undefined,
           minWidth: 0,
-          minHeight: 208,
+          minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
           padding: "20px 22px",
           boxSizing: "border-box",
           display: "flex",
@@ -105,6 +126,7 @@ export function CoverageCard({
           <HeadMetric label="待完善" value={`${lowCoverageCount}`} />
         </div>
 
+        <style>{AUTO_BADGE_HOVER_CSS}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {visibleLocales.length === 0 ? (
             <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
@@ -116,6 +138,35 @@ export function CoverageCard({
             ))
           )}
         </div>
+
+        {hasMore ? (
+          <button
+            type="button"
+            className="v4-press"
+            onClick={toggleExpanded}
+            style={{
+              marginTop: 12,
+              alignSelf: "flex-start",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "5px 11px",
+              borderRadius: 8,
+              background: v4Colors.cardBg,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              color: v4Colors.primary,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {expanded ? "收起" : `查看全部 ${locales.length} 种`}
+            <span className={`v4-caret${expanded ? " v4-caret--open" : ""}`} aria-hidden>
+              ⌄
+            </span>
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -194,7 +245,7 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
   const label = localeShortName(row.locale, row.label);
 
   return (
-    <div>
+    <div className="v4-row-enter">
       <div
         style={{
           display: "flex",
@@ -235,6 +286,7 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
           >
             {label}
           </span>
+          {row.autoTranslate ? <AutoTranslateBadge lastUpdateHint={null} nextUpdateHint={null} /> : null}
         </span>
         <span
           style={{

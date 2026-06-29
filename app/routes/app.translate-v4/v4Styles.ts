@@ -53,6 +53,9 @@ export const v4CardStyle: CSSProperties = {
   boxShadow: "var(--app-shadow-card)",
 };
 
+/** 概览区左右双卡默认最小高度（覆盖率未展开语言列表时对齐）。 */
+export const V4_OVERVIEW_CARD_MIN_HEIGHT = 284;
+
 export function v4ChipStyle(selected: boolean): CSSProperties {
   return {
     display: "inline-flex",

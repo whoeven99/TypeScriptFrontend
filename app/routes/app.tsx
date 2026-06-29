@@ -681,9 +681,6 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
-              {translateV4Migrated && (
-                <Link to="/app/translate-v4">智能翻译 (v4)</Link>
-              )}
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}

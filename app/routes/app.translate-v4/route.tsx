@@ -20,7 +20,7 @@ import {
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4ContentStyle } from "./v4Styles";
+import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
@@ -113,6 +113,7 @@ export default function AppTranslateV4() {
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
+  const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
 
   const localeOptions = useMemo(
@@ -360,13 +361,16 @@ export default function AppTranslateV4() {
     <Page>
       <TitleBar title="智能翻译" />
       <div style={v4ContentStyle}>
-        <PageHeaderBar
-          credits={remainingCredits}
-          planType={planType}
-        />
+        <div className="v4-enter">
+          <PageHeaderBar
+            credits={remainingCredits}
+            planType={planType}
+          />
+        </div>
 
         {translateQueue.length > 0 ? (
           <div
+            className="v4-enter"
             style={{
               marginBottom: 16,
               padding: "12px 16px",
@@ -384,6 +388,7 @@ export default function AppTranslateV4() {
           >
             <span
               aria-hidden
+              className="v4-livedot"
               style={{
                 width: 8,
                 height: 8,
@@ -413,17 +418,30 @@ export default function AppTranslateV4() {
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
               gap: 18,
-              alignItems: "start",
+              alignItems: coverageExpanded ? "start" : "stretch",
             }}
           >
-            <SummaryDonutCard
-              summary={coverage}
-              compact
-            />
             <div
               style={{
-                position: "sticky",
-                top: 24,
+                display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                ...(coverageExpanded
+                  ? {
+                      alignSelf: "flex-start",
+                      height: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                    }
+                  : null),
+              }}
+            >
+              <SummaryDonutCard
+                summary={coverage}
+                compact
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
               }}
             >
               <CoverageCard
@@ -432,38 +450,33 @@ export default function AppTranslateV4() {
                 onRefresh={refreshCoverage}
                 compact
                 onManageLanguages={openLanguagePage}
+                onExpandedChange={setCoverageExpanded}
+                fillPairHeight={!coverageExpanded}
               />
             </div>
           </div>
 
-          <div ref={createTaskSectionRef}>
-            <div
-              style={{
-                padding: 1,
-                borderRadius: 16,
-                background: "linear-gradient(180deg, rgba(84, 103, 255, 0.16), rgba(84, 103, 255, 0.02))",
-              }}
-            >
-              <CreateTaskCard
-                targetOptions={targetOptions}
-                targets={targets}
-                onTargetsChange={setTargets}
-                modules={moduleKeys}
-                onModulesChange={setModuleKeys}
-                creating={creating}
-                onCreate={handleCreate}
-                aiModel={aiModel}
-                onAiModelChange={setAiModel}
-                isCover={isCover}
-                onIsCoverChange={setIsCover}
-                isHandle={isHandle}
-                onIsHandleChange={setIsHandle}
-              />
-            </div>
+          <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
+            <CreateTaskCard
+              targetOptions={targetOptions}
+              targets={targets}
+              onTargetsChange={setTargets}
+              modules={moduleKeys}
+              onModulesChange={setModuleKeys}
+              creating={creating}
+              onCreate={handleCreate}
+              aiModel={aiModel}
+              onAiModelChange={setAiModel}
+              isCover={isCover}
+              onIsCoverChange={setIsCover}
+              isHandle={isHandle}
+              onIsHandleChange={setIsHandle}
+            />
           </div>
 
           <div
             ref={taskQueueSectionRef}
+            className="v4-enter v4-enter-d3"
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 1fr)",
