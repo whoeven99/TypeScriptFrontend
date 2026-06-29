@@ -30,6 +30,8 @@ const LanguageSelectorCard = forwardRef<
         ref={ref}
         style={{
           width: "100%",
+          border: "none",
+          boxShadow: "var(--app-shadow-card)",
         }}
         styles={{
           body: {

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, message } from "antd";
+import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
+import { Page } from "@shopify/polaris";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
@@ -19,64 +20,65 @@ import {
 import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
-import { v4PageStyle } from "./v4Styles";
+import { v4ContentStyle } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
+import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { GetUserSubscriptionPlan } from "~/api/JavaServer";
 
-const SHOP_LOCALES_QUERY = `#graphql
-  query TranslateV4ShopLocales {
-    shopLocales {
-      locale
-      name
-      primary
-      published
-    }
-  }
-`;
+async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
+  const server = process.env.SERVER_URL?.trim();
+  if (!server) return null;
+
+  const result = await GetUserSubscriptionPlan({ shop, server });
+  if (!result?.success) return null;
+
+  const planType = result?.response?.planType;
+  return typeof planType === "string" && planType.trim() ? planType.trim() : null;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4Enabled()) {
     throw redirect("/app");
   }
 
-  const { admin, session } = await authenticate.admin(request);
-
+  const { session } = await authenticate.admin(request);
   if (!isTranslateV4ShopAllowed(session.shop)) {
     throw redirect("/app");
   }
 
   let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "zh-CN";
+  let primaryLocale = "en";
+  let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
   try {
-    const res = await admin.graphql(SHOP_LOCALES_QUERY);
-    const payload = (await res.json()) as {
-      data?: {
-        shopLocales?: Array<{
-          locale: string;
-          name: string;
-          primary: boolean;
-          published: boolean;
-        }> | null;
-      };
-    };
-    const rows = payload.data?.shopLocales ?? [];
-    locales = rows.map((r) => ({
-      value: r.locale,
-      label: `${r.name} (${r.locale})`,
-      primary: r.primary,
-      published: r.published,
-    }));
-    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+    const loaded = await loadShopLocalesForTranslation({
+      shop: session.shop,
+      accessToken: session.accessToken as string,
+    });
+    shopLocaleRows = loaded.rows;
+    locales = loaded.localeOptions;
+    primaryLocale = loaded.primaryLocale;
   } catch (err) {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  const targetLocales = locales.filter((l) => !l.primary && l.published);
+  try {
+    await syncShopTargetLocalesFromShopify(
+      session.shop,
+      shopLocaleRows,
+      primaryLocale,
+    );
+  } catch (syncErr) {
+    console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
+  }
 
-  const [jobs, quota, coverage] = await Promise.all([
+  const targetLocales = selectShopTargetLocales(locales, primaryLocale);
+  const [jobs, quota, coverage, planType] = await Promise.all([
     listV4JobSummaries(session.shop),
     getShopQuota(session.shop),
     getCoverageSummaryFromCache({
@@ -84,6 +86,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       primaryLocale,
       targetLocales,
     }),
+    loadSubscriptionPlanType(session.shop),
   ]);
 
   return json({
@@ -93,10 +96,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     jobs,
     quota,
     coverage,
+    planType,
   });
 };
 
 export default function AppTranslateV4() {
+  const navigate = useNavigate();
   const {
     shop,
     locales,
@@ -104,19 +109,14 @@ export default function AppTranslateV4() {
     jobs: initialJobs,
     quota: initialQuota,
     coverage: initialCoverage,
+    planType,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const [coverageLoading, setCoverageLoading] = useState(false);
-  const source = primaryLocale || "zh-CN";
-  const [targets, setTargets] = useState<string[]>([]);
-  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
-  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
-  const [isCover, setIsCover] = useState(false);
-  const [isHandle, setIsHandle] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const source = primaryLocale || "en";
 
   const localeOptions = useMemo(
     () =>
@@ -126,28 +126,39 @@ export default function AppTranslateV4() {
     [locales],
   );
 
-  const sourceLocaleOption = useMemo(
-    () => localeOptions.find((l) => l.value === source),
+  const targetOptions = useMemo(
+    () => selectShopTargetLocales(localeOptions, source),
     [localeOptions, source],
   );
 
-  const targetOptions = useMemo(
-    () => localeOptions.filter((l) => l.value !== source && l.published),
-    [localeOptions, source],
+  const [targets, setTargets] = useState<string[]>(() =>
+    targetOptions.map((option) => option.value),
   );
+  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
+  const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
+  const [isCover, setIsCover] = useState(false);
+  const [isHandle, setIsHandle] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
     try {
-      const refreshParam = forceRefresh ? "&refresh=1" : "";
-      const res = await fetch(
-        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}${refreshParam}`,
-      );
-      const data = await res.json();
-      if (data?.ok) {
-        setCoverage(data.summary as CoverageSummary);
-      } else if (forceRefresh) {
-        message.error(data?.error || "刷新统计失败");
+      if (!forceRefresh) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
+        return;
+      }
+
+      // 按语言逐个刷新，避免一次请求扫全店导致超时 / 与翻译任务争抢 Shopify 限流
+      for (const loc of targetOptions) {
+        const res = await fetch(
+          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
+        );
+        const data = await res.json();
+        if (data?.ok) setCoverage(data.summary as CoverageSummary);
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
@@ -155,7 +166,7 @@ export default function AppTranslateV4() {
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop]);
+  }, [shop, targetOptions]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -326,8 +337,9 @@ export default function AppTranslateV4() {
     if (coverageAutoRefreshDone.current) return;
     if (!initialCoverage.locales.some((l) => l.cacheMissing)) return;
     coverageAutoRefreshDone.current = true;
-    void refreshCoverage(true);
-  }, [initialCoverage.locales, refreshCoverage]);
+    // 翻译进行中勿全量扫 Shopify；仅读 Redis 缓存，用户可手动「刷新统计」
+    void refreshCoverageFromCache();
+  }, [initialCoverage.locales, refreshCoverageFromCache]);
 
   const translateSlotBusy = useMemo(
     () => jobs.some((j) => j.status === "TRANSLATING" || j.isStopping),
@@ -340,75 +352,137 @@ export default function AppTranslateV4() {
   );
 
   const remainingCredits = quota?.remaining ?? null;
+  const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
+  const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const openLanguagePage = useCallback(() => {
+    navigate("/app/language");
+  }, [navigate]);
 
   return (
-    <div style={v4PageStyle}>
+    <Page>
       <TitleBar title="智能翻译" />
-
-      <PageHeaderBar shop={shop} credits={remainingCredits} />
-
-      {translateQueue.length > 0 ? (
-        <Alert
-          type="info"
-          showIcon
-          style={{ marginBottom: 16, borderRadius: 12 }}
-          message={
-            translateSlotBusy
-              ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
-              : `${translateQueue.length} 个语言任务等待开始翻译。`
-          }
+      <div style={v4ContentStyle}>
+        <PageHeaderBar
+          credits={remainingCredits}
+          planType={planType}
         />
-      ) : null}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "auto minmax(0, 1fr)",
-          gap: 16,
-          marginBottom: 16,
-          alignItems: "stretch",
-        }}
-      >
-        <SummaryDonutCard summary={coverage} />
-        <CreateTaskCard
-          source={source}
-          sourceLabel={sourceLocaleOption?.label ?? source}
-          targetOptions={targetOptions}
-          targets={targets}
-          onTargetsChange={setTargets}
-          modules={moduleKeys}
-          onModulesChange={setModuleKeys}
-          creating={creating}
-          onCreate={handleCreate}
-          aiModel={aiModel}
-          onAiModelChange={setAiModel}
-          isCover={isCover}
-          onIsCoverChange={setIsCover}
-          isHandle={isHandle}
-          onIsHandleChange={setIsHandle}
-        />
-      </div>
+        {translateQueue.length > 0 ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 16px",
+              borderRadius: 12,
+              background: "var(--p-color-bg-surface-info)",
+              color: "var(--p-color-text-info)",
+              border: "1px solid rgba(84, 103, 255, 0.12)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+              fontSize: 13,
+              lineHeight: "20px",
+              boxShadow: "var(--app-shadow-card)",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                marginTop: 6,
+                borderRadius: "50%",
+                background: "currentColor",
+                flexShrink: 0,
+              }}
+            />
+            <span>
+              {translateSlotBusy
+                ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
+                : `${translateQueue.length} 个语言任务等待开始翻译。`}
+            </span>
+          </div>
+        ) : null}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 0.8fr)",
-          gap: 16,
-        }}
-      >
-        <TaskQueueSection
-          jobs={jobs}
-          translateSlotBusy={translateSlotBusy}
-          onAction={handleAction}
-        />
-        <CoverageCard
-          locales={coverage.locales}
-          loading={coverageLoading}
-          onRefresh={refreshCoverage}
-        />
+        <div
+          style={{
+            display: "grid",
+            gap: 18,
+            alignItems: "start",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
+              gap: 18,
+              alignItems: "start",
+            }}
+          >
+            <SummaryDonutCard
+              summary={coverage}
+              compact
+            />
+            <div
+              style={{
+                position: "sticky",
+                top: 24,
+              }}
+            >
+              <CoverageCard
+                locales={coverage.locales}
+                loading={coverageLoading}
+                onRefresh={refreshCoverage}
+                compact
+                onManageLanguages={openLanguagePage}
+              />
+            </div>
+          </div>
+
+          <div ref={createTaskSectionRef}>
+            <div
+              style={{
+                padding: 1,
+                borderRadius: 16,
+                background: "linear-gradient(180deg, rgba(84, 103, 255, 0.16), rgba(84, 103, 255, 0.02))",
+              }}
+            >
+              <CreateTaskCard
+                targetOptions={targetOptions}
+                targets={targets}
+                onTargetsChange={setTargets}
+                modules={moduleKeys}
+                onModulesChange={setModuleKeys}
+                creating={creating}
+                onCreate={handleCreate}
+                aiModel={aiModel}
+                onAiModelChange={setAiModel}
+                isCover={isCover}
+                onIsCoverChange={setIsCover}
+                isHandle={isHandle}
+                onIsHandleChange={setIsHandle}
+              />
+            </div>
+          </div>
+
+          <div
+            ref={taskQueueSectionRef}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr)",
+              gap: 16,
+            }}
+          >
+            <TaskQueueSection
+              jobs={jobs}
+              translateSlotBusy={translateSlotBusy}
+              onAction={handleAction}
+            />
+          </div>
+        </div>
       </div>
 
       <SupportChatWidget />
-    </div>
+    </Page>
   );
 }

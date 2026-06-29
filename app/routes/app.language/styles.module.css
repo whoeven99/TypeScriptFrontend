@@ -1,12 +1,66 @@
+.languagePage {
+  width: 100%;
+}
+
+.languagePageInner {
+  width: 100%;
+}
+
+.languageSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .languageTable_action {
   width: 100%;
   display: flex;
   flex-direction: column;
-  /* 设置垂直方向排列 */
+  gap: 0;
+}
+
+.languageToolbar {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(84, 103, 255, 0.06);
+  border: 1px solid var(--app-color-border-secondary);
+}
+
+.languageMobileCard {
+  border: 1px solid var(--app-color-border-secondary) !important;
+  border-radius: 14px !important;
+}
+
+.languageTable :global(.ant-table-container) {
+  border: 1px solid var(--app-color-border-secondary);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.languageTable :global(.ant-table-thead > tr > th) {
+  background: var(--app-color-surface-secondary);
+  color: var(--app-color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.languageTable :global(.ant-table-tbody > tr > td) {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.languageTable :global(.ant-table-tbody > tr:hover > td) {
+  background: rgba(84, 103, 255, 0.05) !important;
 }
 
 .publishModal_webpresence_card {
   padding: 12px;
-  border: 2px solid rgb(239, 239, 239);
-  border-radius: 8px;
+  border: 1px solid var(--app-color-border-secondary);
+  border-radius: 12px;
+  background: var(--app-color-surface-secondary);
+}
+
+@media (max-width: 900px) {
+  .languageSummaryRow {
+    grid-template-columns: 1fr;
+  }
 }

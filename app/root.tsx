@@ -1,7 +1,6 @@
 import {
   isRouteErrorResponse,
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -93,59 +92,57 @@ export function ErrorBoundary() {
     s1.async = true;
     s1.setAttribute("crossorigin", "*");
     document.body.appendChild(s1);
-  }, []);
+  }, [fetcher]);
 
   // 服务器端渲染时直接返回基础结构
   return (
-    <html>
+    <>
       <Head />
-      <body>
-        <div id="root">
+      <div id="root">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+            background: "#f5f5f5",
+          }}
+        >
           <div
             style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: "100vh",
-              background: "#f5f5f5",
+              width: "100%",
+              maxWidth: 500,
+              textAlign: "center",
+              padding: "24px",
             }}
           >
-            <div
+            <h1 style={{ fontSize: 72, margin: "24px 0" }}>{errorCode}</h1>
+            <h2 style={{ margin: "24px 0" }}>{currentError.title}</h2>
+            <p
               style={{
-                width: "100%",
-                maxWidth: 500,
-                textAlign: "center",
-                padding: "24px",
+                display: "block",
+                marginBottom: "24px",
+                fontSize: 16,
               }}
             >
-              <h1 style={{ fontSize: 72, margin: "24px 0" }}>{errorCode}</h1>
-              <h2 style={{ margin: "24px 0" }}>{currentError.title}</h2>
-              <p
-                style={{
-                  display: "block",
-                  marginBottom: "24px",
-                  fontSize: 16,
-                }}
-              >
-                {currentError.message}
-              </p>
-              <p
-                style={{
-                  display: "block",
-                  marginBottom: "24px",
-                  fontSize: 16,
-                }}
-              >
-                Please click the "Ciwi-Translator" option in the app navigation
-                bar again
-              </p>
-            </div>
+              {currentError.message}
+            </p>
+            <p
+              style={{
+                display: "block",
+                marginBottom: "24px",
+                fontSize: 16,
+              }}
+            >
+              Please click the "Ciwi-Translator" option in the app navigation
+              bar again
+            </p>
           </div>
-          <ScrollRestoration />
-          <Scripts />
         </div>
-      </body>
-    </html>
+        <ScrollRestoration />
+        <Scripts />
+      </div>
+    </>
   );
 }
 
@@ -218,6 +215,7 @@ export default function App() {
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
+            title="Google Tag Manager"
             height="0"
             width="0"
             style={{ display: "none", visibility: "hidden" }}

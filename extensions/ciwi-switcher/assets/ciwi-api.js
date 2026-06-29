@@ -1,8 +1,13 @@
 // api.js
 /**
- * 根据 blockId 切换后端地址（保留原实现）
+ * 解析 Java 后端地址。
+ * 单一来源为 Liquid 注入的 #ciwiJavaBackend（与模板 preconnect 同源）；
+ * 读取不到时回退到原有按 blockId 的硬编码判断，保证行为不变。
  */
 export function switchUrl(blockId) {
+  const injected = document.getElementById("ciwiJavaBackend")?.value?.trim();
+  if (injected) return injected;
+
   if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
     return "https://springbackendprod.azurewebsites.net";
   } else {
@@ -152,11 +157,29 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
     );
     return data;
   } catch (err) {
-    console.error(`${shop} Error GetProductImageData:`, err);
+    console.error(`${shopName} Error GetShopImageData:`, err);
   }
 }
 
 export async function fetchSwitcherConfig({ blockId, shop }) {
+  // 默认配置：成功但服务端无数据、以及网络异常时都回退到它，
+  // 保证 ciwi-main 永远拿到一个完整的 response（不会是 null 导致 UI 崩溃）。
+  const initData = {
+    shopName: shop,
+    includedFlag: true,
+    languageSelector: true,
+    currencySelector: true,
+    ipOpen: false,
+    ipRedirections: [],
+    fontColor: "#000000",
+    backgroundColor: "#ffffff",
+    buttonColor: "#ffffff",
+    buttonBackgroundColor: "#000000",
+    optionBorderColor: "#ccc",
+    selectorPosition: "bottom_left",
+    positionData: 10,
+  };
+
   try {
     const { data } = await fetchJson(
       `${switchUrl(blockId)}/widgetConfigurations/getData`,
@@ -165,22 +188,6 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
         body: JSON.stringify({ shopName: shop }),
       },
     );
-
-    const initData = {
-      shopName: shop,
-      includedFlag: true,
-      languageSelector: true,
-      currencySelector: true,
-      ipOpen: false,
-      ipRedirections: [],
-      fontColor: "#000000",
-      backgroundColor: "#ffffff",
-      buttonColor: "#ffffff",
-      buttonBackgroundColor: "#000000",
-      optionBorderColor: "#ccc",
-      selectorPosition: "bottom_left",
-      positionData: 10,
-    };
 
     if (
       data.success &&
@@ -210,10 +217,10 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
   } catch (error) {
     console.error(`${shop} fetchSwitcherConfig error:`, error);
     return {
-      success: false,
+      success: true,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: null,
+      response: initData,
     };
   }
 }

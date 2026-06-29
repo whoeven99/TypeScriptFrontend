@@ -6,7 +6,8 @@ import {
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
 import { invalidateMigrationCache } from "~/server/translateV4/migration.server";
-import { upsertTargetLocales } from "~/server/translateV4/targetLocale.server";
+import { upsertTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import {
   GetGlossaryByShopName,
   SelectShopNameLiquidData,
@@ -42,6 +43,22 @@ type MigrationSummary = {
 
 function asArray(value: unknown): any[] {
   return Array.isArray(value) ? value : [];
+}
+
+async function fetchShopTargetLocalesFromAdmin(
+  shop: string,
+  accessToken: string,
+): Promise<{ primaryLocale: string; targets: string[] }> {
+  try {
+    const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
+    return {
+      primaryLocale: loaded.primaryLocale,
+      targets: loaded.rows.filter((r) => !r.primary).map((r) => r.locale),
+    };
+  } catch (err) {
+    console.error("[migrate] fetch shopLocales failed:", err);
+    return { primaryLocale: "en", targets: [] };
+  }
 }
 
 /** GET /api/translate-v4/migrate —— 返回本店当前迁移摘要（已迁移则带数据量，未迁移返回 null）。 */
@@ -115,16 +132,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     primaryLocale?: string;
     targets?: string[];
   };
-  const primaryLocale = body.primaryLocale?.trim() || "en";
-  const targets = Array.isArray(body.targets)
-    ? Array.from(new Set(body.targets.map((t) => String(t).trim()).filter(Boolean)))
-    : [];
 
-  // 幂等：已迁移直接回当前摘要
+  const fromShopify = await fetchShopTargetLocalesFromAdmin(
+    shop,
+    session.accessToken,
+  );
+  const primaryLocale = fromShopify.primaryLocale || body.primaryLocale?.trim() || "en";
+  const targets =
+    fromShopify.targets.length > 0
+      ? fromShopify.targets
+      : Array.isArray(body.targets)
+        ? Array.from(new Set(body.targets.map((t) => String(t).trim()).filter(Boolean)))
+        : [];
+
+  // 幂等：已迁移直接回当前摘要，并补齐 Shopify 上新增的目标语言
   const existing = await prisma.shopTranslationSettings.findUnique({
     where: { shop },
   });
   if (existing?.migratedToTsf) {
+    if (targets.length > 0) {
+      try {
+        await syncShopTargetLocalesFromShopify(
+          shop,
+          targets.map((locale) => ({ locale, primary: false })),
+          primaryLocale,
+        );
+      } catch (syncErr) {
+        console.error(`[migrate] ${shop} sync targets on revisit failed:`, syncErr);
+      }
+    }
     await notifyJavaShopMigrated(shop, server); // 自愈：标记可能丢失
     const [glossaryCount, liquidCount] = await Promise.all([
       prisma.glossary.count({ where: { shop } }),

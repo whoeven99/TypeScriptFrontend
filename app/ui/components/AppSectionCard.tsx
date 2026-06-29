@@ -21,7 +21,7 @@ const headerRowStyle: CSSProperties = {
 const titleWrapStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: "var(--app-space-100)",
+  gap: "6px",
   minWidth: 0,
   flex: 1,
 };
@@ -39,6 +39,7 @@ const descriptionStyle: CSSProperties = {
   color: "var(--app-color-text-secondary)",
   fontSize: "var(--app-font-size-body-small)",
   lineHeight: "20px",
+  maxWidth: 720,
 };
 
 export default function AppSectionCard({
@@ -53,7 +54,14 @@ export default function AppSectionCard({
 
   return (
     <Card
-      style={{ width: "100%", ...style }}
+      style={{
+        width: "100%",
+        border: "1px solid var(--app-color-border-secondary)",
+        boxShadow: "var(--app-shadow-card)",
+        background: "var(--app-color-surface)",
+        borderRadius: "var(--app-radius-lg)",
+        ...style,
+      }}
       styles={{
         body: {
           padding: bodyPadding,

@@ -13,7 +13,8 @@ import {
   Checkbox,
 } from "antd";
 import { useEffect, useState, startTransition, useMemo, useRef } from "react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useFetcher,
   useLoaderData,
@@ -24,7 +25,6 @@ import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
   mutationShopLocaleEnable,
-  queryAllLanguages,
   queryPrimaryMarket,
   queryShopLanguages,
 } from "~/api/admin";
@@ -39,7 +39,7 @@ import { GetTranslate } from "~/api/JavaServer";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
-import { deleteTargetLocales } from "~/server/translateV4/targetLocale.server";
+import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import {
   setAutoTranslateCompat,
   listLanguageStatusCompat,
@@ -56,8 +56,10 @@ import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
 import languageLocaleData from "~/utils/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export interface MarketType {
   key: string;
@@ -130,6 +132,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop: shop,
           accessToken: accessToken as string,
         });
+        const primaryLocale = data.find((lang) => lang.primary)?.locale;
+        if (primaryLocale && (await isShopMigrated(shop))) {
+          try {
+            await syncShopTargetLocalesFromShopify(
+              shop,
+              data.map((lang) => ({ locale: lang.locale, primary: lang.primary })),
+              primaryLocale,
+            );
+          } catch (syncErr) {
+            console.error("[language] syncShopTargetLocales failed:", syncErr);
+          }
+        }
         return {
           success: true,
           errorCode: 0,
@@ -215,11 +229,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
 
         if (data?.length > 0) {
-          const successItems = data.map((item) => {
-            if (item.status === "fulfilled" && item?.value) {
-              return item?.value;
-            }
-          });
+          const successItems = data
+            .filter(
+              (item): item is PromiseFulfilledResult<unknown> =>
+                item.status === "fulfilled" && Boolean(item.value),
+            )
+            .map((item) => item.value);
 
           return {
             success: true,
@@ -342,11 +357,13 @@ const Index = () => {
     [selectedRowKeys],
   );
   const someCurrentPageSelected = useMemo(
-    () => selectedRowKeys.some((key) => selectedRowKeys.includes(key)),
-    [selectedRowKeys],
+    () => dataSource.some((item: any) => selectedRowKeys.includes(item.key)),
+    [dataSource, selectedRowKeys],
   );
   const allCurrentPageSelected = useMemo(
-    () => dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
+    () =>
+      dataSource.length > 0 &&
+      dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
     [dataSource, selectedRowKeys],
   );
 
@@ -394,7 +411,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [location.search]);
+  }, []);
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -416,7 +433,7 @@ const Index = () => {
         action: withEmbeddedSearch("/app/language", location.search),
       },
     );
-  }, [languageTableDataLocale, location.search]);
+  }, [dataSource, languageTableDataLocale, location.search]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
@@ -505,7 +522,16 @@ const Index = () => {
         GetLanguageLocaleInfoFront();
       }
     }
-  }, [loadingFetcher.data]);
+  }, [
+    dispatch,
+    loadingFetcher.data,
+    migrated,
+    server,
+    shop,
+    statusFetcher,
+    translateV4Allowed,
+    useV4LanguageStatus,
+  ]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -541,23 +567,22 @@ const Index = () => {
         },
       );
     }
-  }, [deleteFetcher.data]);
+  }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
     if (useV4LanguageStatus) return;
     if (statusFetcher.data) {
       if (statusFetcher.data?.success) {
-        const items = statusFetcher.data?.response?.translatesDOResult?.map(
-          (item: any) => {
+        const items =
+          statusFetcher.data?.response?.translatesDOResult?.filter((item: any) => {
             if (item?.status === 2) {
-              return item;
-            } else {
-              dispatch(
-                setStatusState({ target: item?.target, status: item?.status }),
-              );
+              return true;
             }
-          },
-        );
+            dispatch(
+              setStatusState({ target: item?.target, status: item?.status }),
+            );
+            return false;
+          }) ?? [];
         if (items[0] !== undefined && items[0].status === 2) {
           // 加入10秒的延时
           const delayTimeout = setTimeout(() => {
@@ -581,7 +606,7 @@ const Index = () => {
         }
       }
     }
-  }, [statusFetcher.data, useV4LanguageStatus]);
+  }, [dispatch, source?.code, statusFetcher.data, useV4LanguageStatus]);
 
   useEffect(() => {
     if (!useV4LanguageStatus) return;
@@ -644,7 +669,7 @@ const Index = () => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [dataSource, useV4LanguageStatus, source?.code]);
+  }, [dataSource, source?.code, useV4LanguageStatus]);
 
   const columns = [
     {
@@ -895,15 +920,14 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
+      <div className={styles.languagePage}>
+      <div className={styles.languagePageInner}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            {t("Languages")}
-          </Title>
-          <PrimaryLanguage />
-        </div>
-        <div className={styles.languageTable_action}>
+        <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
+        <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
+          <div className={styles.languageTable_action}>
           <Flex
+            className={styles.languageToolbar}
             align="center"
             justify="space-between" // 使按钮左右分布
             style={{ width: "100%", marginBottom: "16px" }}
@@ -922,7 +946,7 @@ const Index = () => {
               >
                 {t("Delete")}
               </Button>
-              <Text style={{ color: "#007F61" }}>
+              <Text style={{ color: "var(--app-color-text-secondary)" }}>
                 {hasSelected
                   ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
                   : null}
@@ -948,6 +972,7 @@ const Index = () => {
           </Flex>
           {isMobile ? (
             <Card
+              className={styles.languageMobileCard}
               title={
                 <Checkbox
                   checked={allCurrentPageSelected && !loading}
@@ -966,6 +991,7 @@ const Index = () => {
                 </Checkbox>
               }
               loading={loading}
+              style={{ border: "none", boxShadow: "none" }}
             >
               {dataSource.map((item: any) => (
                 <Card.Grid key={item.key} style={{ width: "100%" }}>
@@ -986,7 +1012,9 @@ const Index = () => {
                     >
                       {item.name}
                     </Checkbox>
-                    <TranslatedIcon status={item.status} />
+                    <div>
+                      <TranslatedIcon status={item.status} />
+                    </div>
                     <Flex justify="space-between">
                       <Text>{t("Publish")}</Text>
                       <Switch
@@ -1039,14 +1067,19 @@ const Index = () => {
             </Card>
           ) : (
             <Table
+              className={styles.languageTable}
               rowSelection={rowSelection}
               columns={columns}
               dataSource={dataSource}
+              rowKey={(record) => record.key ?? record.locale}
               loading={deleteloading || loading}
             />
           )}
-        </div>
+          </div>
+        </AppSectionCard>
       </Space>
+      </div>
+      </div>
       <AddLanguageModal
         shop={shop}
         isVisible={isLanguageModalOpen}

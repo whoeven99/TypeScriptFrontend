@@ -1,5 +1,10 @@
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { v4Colors } from "../v4Styles";
+import {
+  VISIBLE_STAGE_LABELS,
+  miniStageSegmentState,
+  type VisibleStageIndex,
+} from "../jobStageUtils";
 
 export function ProgressRing({ percent, size = "md" }: { percent: number; size?: "md" | "sm" }) {
   const dash = `${percent} 100`;
@@ -10,7 +15,7 @@ export function ProgressRing({ percent, size = "md" }: { percent: number; size?:
   return (
     <div style={{ position: "relative", width: dim, height: dim, flexShrink: 0 }}>
       <svg viewBox="0 0 36 36" style={{ width: dim, height: dim, transform: "rotate(-90deg)" }}>
-        <circle cx="18" cy="18" r="15.5" fill="none" stroke="#ece9f6" strokeWidth={strokeWidth} />
+        <circle cx="18" cy="18" r="15.5" fill="none" stroke={v4Colors.ringTrack} strokeWidth={strokeWidth} />
         <circle
           cx="18"
           cy="18"
@@ -41,6 +46,86 @@ export function ProgressRing({ percent, size = "md" }: { percent: number; size?:
   );
 }
 
+const MINI_STAGE_INDICES: VisibleStageIndex[] = [0, 1, 2];
+
+/** 列表卡片：三阶段迷你进度（初始化 → 翻译 → 写回，不含 verify）。 */
+export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) {
+  const segments = MINI_STAGE_INDICES.map((idx) => ({
+    idx,
+    label: VISIBLE_STAGE_LABELS[idx],
+    ...miniStageSegmentState(idx, job),
+  }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {segments.map((seg, i) => (
+          <div key={seg.idx} style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 0 }}>
+            {i > 0 ? (
+              <span
+                aria-hidden
+                style={{
+                  width: 8,
+                  height: 1,
+                  flexShrink: 0,
+                  marginRight: 6,
+                  background: segments[i - 1]!.complete ? v4Colors.successSoft : v4Colors.progressTrack,
+                }}
+              />
+            ) : null}
+            <div
+              style={{
+                flex: 1,
+                height: 5,
+                borderRadius: 999,
+                background: v4Colors.progressTrack,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${seg.percent}%`,
+                  borderRadius: 999,
+                  background: seg.complete
+                    ? v4Colors.successSoft
+                    : seg.active
+                      ? v4Colors.primary
+                      : v4Colors.ringTrack,
+                  transition: "width 0.45s ease, background 0.2s",
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {segments.map((seg) => (
+          <span
+            key={seg.idx}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              textAlign: "center",
+              fontSize: 10,
+              fontWeight: seg.active ? 700 : 500,
+              color: seg.complete
+                ? v4Colors.success
+                : seg.active
+                  ? v4Colors.primary
+                  : v4Colors.textFaint,
+              lineHeight: 1.25,
+              letterSpacing: "0.01em",
+            }}
+          >
+            {seg.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StatusTag({
   status,
   label,
@@ -51,28 +136,37 @@ export function StatusTag({
   let bg = v4Colors.primarySoft;
   let color = v4Colors.primary;
   if (status === "COMPLETED") {
-    bg = "rgba(31, 157, 107, 0.12)";
+    bg = v4Colors.successBg;
     color = v4Colors.success;
   } else if (status === "PAUSED") {
-    bg = "#fcf0d9";
-    color = "#b87a00";
+    bg = v4Colors.warningBg;
+    color = v4Colors.warning;
   } else if (status === "CANCELLED") {
-    bg = "#eceae6";
-    color = "#8a8a94";
+    bg = v4Colors.cardSubdued;
+    color = v4Colors.textMuted;
   } else if (status === "FAILED") {
-    bg = "rgba(220, 38, 38, 0.1)";
+    bg = v4Colors.dangerBg;
     color = v4Colors.danger;
   }
 
   return (
     <span
       style={{
-        fontSize: 10,
-        fontWeight: 700,
-        padding: "2px 7px",
-        borderRadius: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "3px 8px",
+        borderRadius: 999,
         background: bg,
         color,
+        border: `1px solid ${status === "COMPLETED"
+          ? "#d9f7be"
+          : status === "PAUSED"
+            ? "#ffe58f"
+            : status === "FAILED"
+              ? "#ffccc7"
+              : status === "CANCELLED"
+                ? v4Colors.cardBorder
+                : "#bae0ff"}`,
       }}
     >
       {label}

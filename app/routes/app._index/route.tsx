@@ -41,6 +41,7 @@ import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 const { Title, Text } = Typography;
 
@@ -51,48 +52,18 @@ type ShopLocaleOption = {
   published: boolean;
 };
 
-const SHOP_LOCALES_QUERY = `#graphql
-  query HomeExpressShopLocales {
-    shopLocales {
-      locale
-      name
-      primary
-      published
-    }
-  }
-`;
-
 /** 首页「极速翻译」卡片所需的 v4 数据，仅在功能开关开启时拉取。 */
-async function loadExpressV4Data(
-  admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"],
-  shop: string,
-) {
+async function loadExpressV4Data(shop: string, accessToken: string) {
   if (!isTranslateV4Enabled() || !isTranslateV4ShopAllowed(shop)) {
-    return { enabled: false, locales: [], primaryLocale: "zh-CN", jobs: [], migrated: false };
+    return { enabled: false, locales: [], primaryLocale: "en", jobs: [], migrated: false };
   }
 
   let locales: ShopLocaleOption[] = [];
-  let primaryLocale = "zh-CN";
+  let primaryLocale = "en";
   try {
-    const res = await admin.graphql(SHOP_LOCALES_QUERY);
-    const payload = (await res.json()) as {
-      data?: {
-        shopLocales?: Array<{
-          locale: string;
-          name: string;
-          primary: boolean;
-          published: boolean;
-        }> | null;
-      };
-    };
-    const rows = payload.data?.shopLocales ?? [];
-    locales = rows.map((r) => ({
-      value: r.locale,
-      label: `${r.name} (${r.locale})`,
-      primary: r.primary,
-      published: r.published,
-    }));
-    primaryLocale = rows.find((r) => r.primary)?.locale ?? primaryLocale;
+    const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
+    locales = loaded.localeOptions;
+    primaryLocale = loaded.primaryLocale;
   } catch (err) {
     console.error("[expressV4] load shopLocales failed:", err);
   }
@@ -125,7 +96,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
 
-  const expressV4 = await loadExpressV4Data(adminAuthResult.admin, shop);
+  const expressV4 = await loadExpressV4Data(
+    adminAuthResult.session.shop,
+    adminAuthResult.session.accessToken,
+  );
 
   return {
     language,

@@ -40,6 +40,39 @@
   box-shadow: none;
 }
 
+/* 打开/关闭过渡：淡入 + 轻微缩放上移。
+   direct-select-mode 常驻显示，用 :not() 排除，使其保持不透明、不参与动画。 */
+.selector_box:not(.direct-select-mode) {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top center;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  will-change: opacity, transform;
+}
+
+/* 向上展开时把缩放锚点放到底部，过渡更自然 */
+.selector_box[data-placement="up"] {
+  transform-origin: bottom center;
+}
+
+/* 未打开时不拦截点击（含关闭淡出过程中的 200ms） */
+.selector_box:not(.direct-select-mode):not(.is-open) {
+  pointer-events: none;
+}
+
+.selector_box.is-open:not(.direct-select-mode) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selector_box:not(.direct-select-mode) {
+    transition: none;
+  }
+}
+
 @media (min-width: 769px) {
   .ciwi_main_box,
   .selector_box,

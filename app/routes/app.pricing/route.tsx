@@ -8,28 +8,23 @@ import {
   Button,
   Typography,
   Alert,
-  Skeleton,
-  Badge,
   Flex,
   Switch,
   Table,
   Collapse,
   Modal,
-  CollapseProps,
-  Grid,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
-import ScrollNotice from "~/components/ScrollNotice";
-import { ActionFunctionArgs } from "@remix-run/node";
+import type { CollapseProps } from "antd";
+import type { ActionFunctionArgs } from "@remix-run/node";
 import {
   GetLatestActiveSubscribeId,
   InsertOrUpdateOrder,
-  QueryUserIpCount,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { OptionType } from "~/components/paymentModal";
+import { useFetcher } from "@remix-run/react";
+import type { OptionType } from "~/components/paymentModal";
 import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
 import {
@@ -37,7 +32,6 @@ import {
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
-import { handleContactSupport } from "../app._index/route";
 import {
   setIpBalance,
   setPlan,
@@ -47,7 +41,8 @@ import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
-import BuyCreditsOuterCard from "./components/buyCreditsOuterCard";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 
 const { Title, Text } = Typography;
 
@@ -238,16 +233,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { useBreakpoint } = Grid;
-  const screens = useBreakpoint(); // 监听屏幕断点
 
-  const { plan, updateTime, chars, totalChars, ipBalance, isNew } = useSelector(
+  const { plan, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
   const { reportClick, report } = useReport();
-
-  const { server } = useLoaderData<typeof loader>();
 
   //价格选项数组
   const creditOptions: OptionType[] = useMemo(
@@ -351,7 +342,6 @@ const Index = () => {
   //各个表单开启状态
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
 
@@ -363,7 +353,6 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
-  const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -377,7 +366,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, []);
+  }, [fetcher]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -418,7 +407,7 @@ const Index = () => {
       dispatch(setIpBalance({ ipBalance: 500 }));
       setCancelPlanWarnModal(false);
     }
-  }, [planCancelFetcher.data]);
+  }, [dispatch, planCancelFetcher.data]);
 
   const plans = useMemo(
     () => [
@@ -427,14 +416,12 @@ const Index = () => {
         yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 76.68,
-        }),
+        yearlyBillingAmount: 76.68,
         buttonText:
           plan.type === "Basic" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        buttonType: "default",
+        fitLabel: t("适合刚开始做多语言运营、需要基础商品与页面翻译的店铺"),
         disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
@@ -455,14 +442,12 @@ const Index = () => {
         yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 191.88,
-        }),
+        yearlyBillingAmount: 191.88,
         buttonText:
           plan.type === "Pro" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        buttonType: "default",
+        fitLabel: t("适合稳定扩展多个语言市场、持续更新商品内容的店铺"),
         disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
@@ -483,13 +468,12 @@ const Index = () => {
         yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
-        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
-          amount: 383.88,
-        }),
+        yearlyBillingAmount: 383.88,
         buttonText:
           plan.type === "Premium" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
+        fitLabel: t("适合高频上新、多区域运营和更重度翻译协作的团队"),
         disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
@@ -508,7 +492,7 @@ const Index = () => {
         ],
       },
     ],
-    [plan, yearly],
+    [plan, yearly, t],
   );
 
   const tableData = useMemo(
@@ -658,7 +642,7 @@ const Index = () => {
         type: "text",
       },
     ],
-    [],
+    [t],
   );
 
   const collapseData: CollapseProps["items"] = useMemo(
@@ -727,7 +711,7 @@ const Index = () => {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const columns = [
@@ -879,106 +863,48 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Pricing")} />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <ScrollNotice
-          text={t(
-            "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
-          )}
+      <div className="pricing-page">
+      <div className="pricing-page__inner">
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
+        <AppPageHeader
+          title={t("Pricing")}
+          extra={
+            plan.type ? (
+              <div className="app-status-cluster">
+                <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+              </div>
+            ) : null
+          }
         />
-        <Flex gap={3} style={{ flexDirection: "column", width: "100%" }}>
-          <Flex justify="space-between" align="center">
-            <Title level={4} style={{ margin: 0 }}>
-              {t("Your translation quota")}
-            </Title>
-            {plan.type ? (
-              <Title
-                level={4}
-                style={{ margin: 0, fontSize: 16, color: "#007F61" }}
-              >
-                {t(plan.type)} Plan
-              </Title>
-            ) : (
-              <Skeleton.Button />
-            )}
-          </Flex>
-          <Flex justify="right" align="center">
-            <Text
-              style={{
-                display: updateTime ? "block" : "none",
-                fontSize: 14,
-              }}
-            >
-              {t("Next plan update: {{date}}", { date: updateTime })}
-            </Text>
-          </Flex>
-          <AcountInfoCard
-            loading={isLoading}
-            translation_balance={totalChars - chars || 0}
-            ip_balance={ipBalance || 0}
-          />
-          <BuyCreditsOuterCard
-            planType={plan?.type}
-            isInTrial={plan?.isInFreePlanTime}
-            handleOpenAddCreditsModal={handleOpenAddCreditsModal}
-            setSelectedOption={setSelectedOption}
-          />
-        </Flex>
+
+        <AcountInfoCard
+          loading={isLoading}
+          translation_balance={totalChars - chars || 0}
+          onBuyCredits={handleOpenAddCreditsModal}
+        />
 
         {isQuotaExceeded && (
           <Alert
             message={t("The quota has been used up")}
-            description={t("Buy extra credits now to continue using")}
             type="warning"
             showIcon
           />
         )}
-        <Flex vertical align="center" style={{ width: "100%" }}>
-          <Title level={3} style={{ fontWeight: 700 }}>
-            {t("Choose the right plan for you")}
-          </Title>
-          <Row style={{ width: "100%" }}>
-            <Col
-              span={screens.xs ? 16 : 18}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: screens.xs ? "left" : "center",
-                left: screens.xs ? "0" : "50%",
-                transform: screens.xs ? "translateX(0)" : "translateX(-50%)",
-              }}
-            >
-              <Flex align="center">
-                <Space align="center" size="small">
-                  <Switch checked={yearly} onChange={handleSetYearlyReport} />
-                  <Text>{t("Yearly")}</Text>
-                </Space>
-                <div className="yearly_save">
-                  <Text strong>{t("Save 20%")}</Text>
-                </div>
-              </Flex>
-            </Col>
-            <Col
-              span={screens.xs ? 8 : 6}
-              style={{ textAlign: screens.xs ? "center" : "right" }}
-            >
-              {isLoading ? (
-                <Skeleton.Button active />
-              ) : (
-                <Button
-                  style={{ right: 0 }}
-                  type="primary"
-                  size="middle"
-                  onClick={() => {
-                    setIsModalVisible(true);
-                  }}
-                >
-                  {t("Shared Plan")}
-                </Button>
-              )}
-            </Col>
-          </Row>
-        </Flex>
-        <Row gutter={[16, 16]}>
+        <section className="pricing-section" id="pricing-plans">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("Plans")}</h2>
+            </div>
+            <Flex align="center" gap={8} wrap="wrap">
+              <Text type="secondary">{t("Monthly")}</Text>
+              <Switch checked={yearly} onChange={handleSetYearlyReport} />
+              <Text strong>{t("Yearly")}</Text>
+              <div className="yearly_save">
+                <Text strong>{t("Save 20%")}</Text>
+              </div>
+            </Flex>
+          </div>
+          <Row gutter={[16, 16]}>
           <Col
             key={t("Free")}
             xs={24}
@@ -991,6 +917,9 @@ const Index = () => {
             }}
           >
             <Card
+              className={`pricing-plan-card ${
+                plan.type === "Free" ? "pricing-plan-card--current" : ""
+              }`}
               hoverable
               style={{
                 flex: 1,
@@ -998,7 +927,6 @@ const Index = () => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                borderColor: plan.type === "Free" ? "#007F61" : undefined,
                 minWidth: "220px",
               }}
               styles={{
@@ -1006,22 +934,31 @@ const Index = () => {
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
-                  padding: "16px",
+                  padding: "20px",
                 },
               }}
               loading={!plan.id}
             >
-              <Title level={5}>Free</Title>
-              <div style={{ margin: yearly ? "12px 0 46px 0" : "12px  0" }}>
-                <Text style={{ fontSize: "28px", fontWeight: "bold" }}>$0</Text>
-                <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
-              </div>
+              <Space direction="vertical" size={12} style={{ display: "flex" }}>
+                {plan.type === "Free" ? (
+                  <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
+                ) : null}
+                <div>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {t("Free")}
+                  </Title>
+                </div>
+                <div>
+                  <Text className="pricing-plan-card__price">$0</Text>
+                  <Text className="pricing-plan-card__unit">{t("/month")}</Text>
+                </div>
+              </Space>
 
               <Button
                 type="default"
                 block
                 disabled={plan.type === "Free" || selectedPayPlanOption}
-                style={{ marginBottom: isNew ? "70px" : "20px" }}
+                style={{ marginTop: 20, marginBottom: isNew ? "60px" : "20px" }}
                 onClick={() => {
                   setCancelPlanWarnModal(true);
                   reportClick("pricing_plan_trial");
@@ -1034,18 +971,10 @@ const Index = () => {
               <div style={{ flex: 1 }}>
                 <div
                   key={0}
-                  style={{
-                    marginBottom: "8px",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "6px",
-                  }}
+                  className="pricing-plan-card__feature"
                 >
                   <CheckOutlined
-                    style={{
-                      color: "#52c41a",
-                      fontSize: "12px",
-                    }}
+                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
                   />
                   <Text style={{ fontSize: "13px" }}>
                     {t("starter_features1")}
@@ -1053,18 +982,10 @@ const Index = () => {
                 </div>
                 <div
                   key={1}
-                  style={{
-                    marginBottom: "8px",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "6px",
-                  }}
+                  className="pricing-plan-card__feature"
                 >
                   <CheckOutlined
-                    style={{
-                      color: "#52c41a",
-                      fontSize: "12px",
-                    }}
+                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
                   />
                   <Text style={{ fontSize: "13px" }}>
                     {t("starter_features2")}
@@ -1072,18 +993,10 @@ const Index = () => {
                 </div>
                 <div
                   key={2}
-                  style={{
-                    marginBottom: "8px",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "6px",
-                  }}
+                  className="pricing-plan-card__feature"
                 >
                   <CheckOutlined
-                    style={{
-                      color: "#52c41a",
-                      fontSize: "12px",
-                    }}
+                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
                   />
                   <Text style={{ fontSize: "13px" }}>
                     {t("starter_features3")}
@@ -1104,30 +1017,16 @@ const Index = () => {
                 width: "100%",
               }}
             >
-              <Badge.Ribbon
-                text={t("pricing.recommended")}
-                color="#1890ff"
-                style={{
-                  display:
-                    item.isRecommended && plan.type === "Free" && plan.id
-                      ? "block"
-                      : "none",
-                  right: -8,
-                }}
-              >
                 <Card
-                  hoverable
+                  className={`pricing-plan-card ${
+                    item.disabled ? "pricing-plan-card--current" : item.isRecommended && plan.type === "Free" && plan.id ? "pricing-plan-card--recommended" : ""
+                  }`}
                   style={{
                     flex: 1,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     position: "relative",
-                    borderColor: item.disabled
-                      ? "#007F61"
-                      : item.isRecommended && plan.type === "Free" && plan.id
-                        ? "#1890ff"
-                        : undefined,
                     minWidth: "220px",
                   }}
                   styles={{
@@ -1135,29 +1034,42 @@ const Index = () => {
                       flex: 1,
                       display: "flex",
                       flexDirection: "column",
-                      padding: "16px",
+                      padding: "20px",
                     },
                   }}
                   loading={!plan.id}
                 >
-                  <Title level={5}>
-                    {yearly ? item.yearlyTitle : item.title}
-                  </Title>
-                  <div style={{ margin: "12px 0" }}>
-                    <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                      ${yearly ? item.yearlyPrice : item.monthlyPrice}
-                    </Text>
-                    <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
-                  </div>
+                  <Space direction="vertical" size={12} style={{ display: "flex" }}>
+                    {item.disabled ? (
+                      <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
+                    ) : item.isRecommended && plan.type === "Free" && plan.id ? (
+                      <AppStatusBadge tone="caution">{t("Recommended")}</AppStatusBadge>
+                    ) : null}
+                    <div>
+                      <Title level={4} style={{ margin: 0 }}>
+                        {yearly ? item.yearlyTitle : item.title}
+                      </Title>
+                    </div>
+                    <div>
+                      <Text className="pricing-plan-card__price">
+                        ${yearly ? item.yearlyPrice : item.monthlyPrice}
+                      </Text>
+                      <Text className="pricing-plan-card__unit">{t("/month")}</Text>
+                    </div>
+                  </Space>
                   {yearly && (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: item.subtitle }}
-                      style={{ marginBottom: "12px" }}
-                    />
+                    <div className="pricing-plan-card__billing-note">
+                      <strong>{t("Yearly billing")}</strong>
+                      <div>
+                        {t("$ {{amount}} billed once a year", {
+                          amount: item.yearlyBillingAmount.toFixed(2),
+                        })}
+                      </div>
+                    </div>
                   )}
                   <Button
                     id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
-                    type="default"
+                    type={item.isRecommended && !isNew ? "primary" : "default"}
                     block
                     disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
@@ -1178,7 +1090,7 @@ const Index = () => {
                   {isNew && (
                     <Button
                       id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                      type="primary"
+                      type={item.isRecommended ? "primary" : "default"}
                       block
                       disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
@@ -1201,16 +1113,11 @@ const Index = () => {
                     {item.features.map((feature, idx) => (
                       <div
                         key={idx}
-                        style={{
-                          marginBottom: "8px",
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: "6px",
-                        }}
+                        className="pricing-plan-card__feature"
                       >
                         <CheckOutlined
                           style={{
-                            color: "#52c41a",
+                            color: "var(--p-color-text-success)",
                             fontSize: "12px",
                           }}
                         />
@@ -1219,49 +1126,40 @@ const Index = () => {
                     ))}
                   </div>
                 </Card>
-              </Badge.Ribbon>
             </Col>
           ))}
-        </Row>
-        <Space
-          direction="vertical"
-          size="small"
-          style={{
-            display: "flex",
-          }}
-        >
-          <Title
-            level={3}
-            style={{
-              fontWeight: 700,
-              textAlign: "center",
+          </Row>
+        </section>
+        <section className="pricing-section pricing-section--compact">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("Compare plans")}</h2>
+            </div>
+          </div>
+          <Table
+            className="pricing-comparison-table"
+            dataSource={tableData}
+            columns={columns}
+            rowKey={(record) => String(record.key)}
+            pagination={false}
+          />
+        </section>
+        <section className="pricing-section pricing-section--compact">
+          <div className="pricing-section__header">
+            <div className="pricing-section__title-wrap">
+              <h2 className="pricing-section__title">{t("FAQs")}</h2>
+            </div>
+          </div>
+          <Collapse
+            items={collapseData}
+            onChange={() => {
+              reportClick("pricing_faq_click");
             }}
-          >
-            {t("Compare plans")}
-          </Title>
-          <Table dataSource={tableData} columns={columns} pagination={false} />
-        </Space>
-        <Row>
-          <Col span={6}>
-            <Space direction="vertical" size="small">
-              <Title level={3} style={{ fontWeight: 700 }}>
-                {t("FAQs")}
-              </Title>
-              <Text type="secondary">
-                {t("Everything you need to know about pricing and billing.")}
-              </Text>
-            </Space>
-          </Col>
-          <Col span={18}>
-            <Collapse
-              items={collapseData}
-              onChange={() => {
-                reportClick("pricing_faq_click");
-              }}
-            />
-          </Col>
-        </Row>
+          />
+        </section>
       </Space>
+      </div>
+      </div>
       <HasPayForFreePlanModal />
       <Modal
         title={t("Buy Credits")}
@@ -1300,22 +1198,19 @@ const Index = () => {
                   hoverable
                   style={{
                     textAlign: "center",
-                    borderColor:
-                      JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
-                        ? "#007F61"
-                        : undefined,
-                    borderWidth:
-                      JSON.stringify(selectedOptionKey) ===
-                      JSON.stringify(option.key)
-                        ? "2px"
-                        : "1px",
+                    borderColor: "transparent",
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
                     height: "150px",
+                    background:
+                      JSON.stringify(selectedOptionKey) ===
+                      JSON.stringify(option.key)
+                        ? "var(--app-color-surface-selected)"
+                        : "var(--app-color-surface)",
+                    boxShadow: "var(--app-shadow-card)",
                   }}
                   onClick={() => setSelectedOption(option.key)}
                 >
@@ -1338,7 +1233,7 @@ const Index = () => {
                         level={3}
                         style={{
                           margin: 0,
-                          color: "#007F61",
+                          color: "var(--app-color-text)",
                           fontWeight: 700,
                         }}
                       >
@@ -1355,7 +1250,7 @@ const Index = () => {
                   ) : (
                     <Title
                       level={3}
-                      style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                      style={{ margin: 0, color: "var(--app-color-text)", fontWeight: 700 }}
                     >
                       ${option.price.currentPrice.toFixed(2)}
                     </Title>
@@ -1414,112 +1309,6 @@ const Index = () => {
             "Moving to the free plan will turn off key features. Are you sure you want to switch?",
           )}
         </Text>
-      </Modal>
-      <Modal
-        centered
-        title={
-          <span style={{ fontSize: "24px", fontWeight: 700 }}>
-            {t("Shared Plan: How to Set Up")}
-          </span>
-        } // 标题加粗
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        width={800}
-        style={{ top: 50 }}
-        footer={null} // 移除 OK 和 Cancel 按钮
-        className="custom-modal" // 自定义类名
-      >
-        <Card
-          style={{
-            borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-            marginBottom: 16,
-            fontSize: "16px",
-            lineHeight: "1.5",
-          }}
-        >
-          {/* <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan: How to Set Up')}</strong></h2> */}
-          <p style={{ marginBottom: "16px" }}>
-            {t(
-              "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.",
-            )}
-          </p>
-          <p>
-            <strong>{t("Note")}</strong>
-            {t(
-              "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.",
-            )}
-          </p>
-        </Card>
-        <Card
-          style={{
-            borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-            marginBottom: 16,
-            fontSize: "16px",
-            lineHeight: "1.5",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              marginBottom: "16px",
-            }}
-          >
-            <h2 style={{ fontSize: "18px" }}>
-              <strong>{t("Steps to Bind a Sub-Account")}</strong>
-            </h2>
-            <div>
-              <div>
-                <strong>{t("1. Get the Store URL")}</strong>
-              </div>
-              <p>
-                {t("Find the store you want to bind and copy its store URL.")}
-              </p>
-            </div>
-            <div>
-              <div>
-                <strong>{t("2. Install the App")}</strong>
-              </div>
-              <p>{t("Download and install the official app on that store.")}</p>
-            </div>
-            <div>
-              <div>
-                <strong>{t("3. Contact Support")}</strong>
-              </div>
-              <p>
-                {t(
-                  "Share the store URL with our support team and request to bind a sub-account.",
-                )}
-              </p>
-            </div>
-          </div>
-          <span>{t("💡 Tip:")}</span>
-          <ul style={{ padding: "0 24px" }}>
-            <li>
-              <strong>{t("Pro Plan")}</strong>
-              {t("Share with 1 store")}
-            </li>
-            <li>
-              <strong>{t("Premium Plan")}</strong>
-              {t("Share with up to 3 stores")}
-            </li>
-          </ul>
-        </Card>
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <Button
-            type="primary"
-            size="large"
-            onClick={() => {
-              handleContactSupport();
-              setIsModalVisible(false);
-            }}
-          >
-            {t("Contact Support")}
-          </Button>
-        </div>
       </Modal>
     </Page>
   );

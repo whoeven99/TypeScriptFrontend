@@ -13,12 +13,13 @@ const headerStyle: CSSProperties = {
   alignItems: "flex-start",
   gap: "var(--app-space-400)",
   flexWrap: "wrap",
+  padding: "2px 0",
 };
 
 const titleWrapStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: "var(--app-space-100)",
+  gap: "6px",
   minWidth: 0,
   flex: 1,
 };
@@ -27,8 +28,9 @@ const titleStyle: CSSProperties = {
   margin: 0,
   color: "var(--app-color-text)",
   fontSize: 24,
-  lineHeight: "32px",
+  lineHeight: "30px",
   fontWeight: 700,
+  letterSpacing: "-0.03em",
 };
 
 const descriptionStyle: CSSProperties = {
@@ -36,7 +38,7 @@ const descriptionStyle: CSSProperties = {
   color: "var(--app-color-text-secondary)",
   fontSize: "var(--app-font-size-body-small)",
   lineHeight: "20px",
-  maxWidth: 720,
+  maxWidth: 760,
 };
 
 export default function AppPageHeader({
@@ -51,7 +53,7 @@ export default function AppPageHeader({
         <h1 style={titleStyle}>{title}</h1>
         {description ? <p style={descriptionStyle}>{description}</p> : null}
       </div>
-      {extra ? <div>{extra}</div> : null}
+      {extra ? <div style={{ display: "flex", alignItems: "center", gap: 8 }}>{extra}</div> : null}
     </div>
   );
 }

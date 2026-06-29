@@ -1,9 +1,9 @@
-import { FetcherWithComponents, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { Button, Flex, Modal, Space, Switch, Table, Typography } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { LanguagesDataType, MarketType } from "../route";
+import type { LanguagesDataType, MarketType } from "../route";
 import styles from "../styles.module.css";
 import {
   setPublishLoadingState,
@@ -294,7 +294,12 @@ const PublishModal: React.FC<PublishModalProps> = ({
         </Flex>
         <div className={styles.publishModal_webpresence_card}>
           <Text strong>{t("Publish to Selected Domains")}</Text>
-          <Table dataSource={dataSource} columns={columns} pagination={false} />
+          <Table
+            dataSource={dataSource}
+            columns={columns}
+            rowKey={(record) => record.key ?? record.domain}
+            pagination={false}
+          />
         </div>
       </Space>
     </Modal>

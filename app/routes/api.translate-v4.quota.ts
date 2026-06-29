@@ -12,6 +12,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!isTranslateV4ShopAllowed(shopName)) {
     return json({ ok: false, error: "功能未开放" }, { status: 403 });
   }
+
   const quota = await getShopQuota(shopName);
   return json({ ok: true, quota });
 };
