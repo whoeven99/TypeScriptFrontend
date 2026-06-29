@@ -1,11 +1,10 @@
 import prisma from "~/db.server";
-import { isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
 
 const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, { value: boolean; expiresAt: number }>();
 
 /**
- * Turso 中 migratedToTsf 是否为 true（不含 allowlist，用于展示真实迁移状态）。
+ * Turso 中 migratedToTsf 是否为 true。
  */
 export async function hasShopMigratedToTsf(shop: string): Promise<boolean> {
   const now = Date.now();
@@ -29,11 +28,9 @@ export async function hasShopMigratedToTsf(shop: string): Promise<boolean> {
 }
 
 /**
- * 该店是否走 TSF 数据路径（Liquid/术语表/店面等）。
- * 需同时满足：Turso migratedToTsf=true，且店铺命中 TRANSLATE_V4_SHOP_ALLOWLIST（或全员开放）。
+ * 该店是否已切到 v4（由迁移脚本或迁移 API 写入 migratedToTsf 标记）。
  */
 export async function isShopMigrated(shop: string): Promise<boolean> {
-  if (!isTranslateV4ShopAllowed(shop)) return false;
   return hasShopMigratedToTsf(shop);
 }
 

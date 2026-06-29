@@ -637,9 +637,8 @@ type SingleTextTranslateArgs = {
 };
 
 /**
- * 单字段手动翻译(页面调用)。
- * - 灰度白名单店 → 走 TSF 端点 /api/translate-v4/single(迁移店 LLM / 未迁移店端点内代理 Java)。
- * - 非白名单店 → 直连 Java(原行为不变),完全不经过 TSF 端点,灰度风险被关住。
+ * - 已迁移店 → 走 TSF 端点 /api/translate-v4/single（LLM 翻译）。
+ * - 未迁移店 → 直连 Java（原行为不变）。
  */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
   if (!globalStore.translateV4ExpressBeta) {

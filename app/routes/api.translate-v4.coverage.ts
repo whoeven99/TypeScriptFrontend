@@ -1,18 +1,14 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { computeCoverageSummary, getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  if (!isTranslateV4Enabled()) {
-    return json({ ok: false, error: "v4 disabled" }, { status: 403 });
-  }
-
   const { admin, session } = await authenticate.admin(request);
-  if (!isTranslateV4ShopAllowed(session.shop)) {
-    return json({ ok: false, error: "shop not allowed" }, { status: 403 });
+  if (!(await isShopMigrated(session.shop))) {
+    return json({ ok: false, error: "shop not migrated" }, { status: 403 });
   }
 
   const url = new URL(request.url);

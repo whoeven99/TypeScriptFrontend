@@ -5,7 +5,7 @@ import { Page } from "@shopify/polaris";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
-import { isTranslateV4Enabled, isTranslateV4ShopAllowed } from "~/server/translateV4/feature.server";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
@@ -44,12 +44,8 @@ async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  if (!isTranslateV4Enabled()) {
-    throw redirect("/app");
-  }
-
   const { session } = await authenticate.admin(request);
-  if (!isTranslateV4ShopAllowed(session.shop)) {
+  if (!(await isShopMigrated(session.shop))) {
     throw redirect("/app");
   }
 

@@ -6,12 +6,11 @@ import { GetLanguageList, UpdateAutoTranslateByData } from "~/api/JavaServer";
  */
 export async function listLanguageStatusCompat(args: {
   migrated: boolean;
-  translateV4Allowed: boolean;
   shop: string;
   server: string;
   source: string;
 }) {
-  if (args.migrated || args.translateV4Allowed) {
+  if (args.migrated) {
     const res = await fetch("/api/translate-v4/target-locale");
     return res.json();
   }
@@ -23,19 +22,17 @@ export async function listLanguageStatusCompat(args: {
 }
 
 /**
- * 语言页「按语言自动翻译开关」的迁移分流：已迁移或 v4 白名单店写 TSF Prisma
- * （走 /api/translate-v4/target-locale），未迁移的店仍直连 Java。
+ * 语言页「按语言自动翻译开关」的迁移分流：已迁移店写 TSF Prisma，未迁移店仍直连 Java。
  */
 export async function setAutoTranslateCompat(args: {
   migrated: boolean;
-  translateV4Allowed: boolean;
   shopName: string;
   source: string;
   target: string;
   autoTranslate: boolean;
   server: string;
 }) {
-  if (args.migrated || args.translateV4Allowed) {
+  if (args.migrated) {
     const res = await fetch("/api/translate-v4/target-locale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
