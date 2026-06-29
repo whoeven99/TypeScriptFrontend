@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { v4Colors } from "../v4Styles";
 
 const autoMarkerBadgeStyle = {
@@ -18,11 +19,12 @@ type BadgeProps = {
 
 /** 与语言页自动翻译开关同源（ShopTargetLocale.autoTranslate）。 */
 export function AutoTranslateBadge({ lastUpdateHint, nextUpdateHint }: BadgeProps = {}) {
+  const { t } = useTranslation();
   const hasHints = Boolean(lastUpdateHint || nextUpdateHint);
 
   return (
     <span className="v4-auto-badge-wrap">
-      <span style={autoMarkerBadgeStyle}>自动翻译</span>
+      <span style={autoMarkerBadgeStyle}>{t("v4.autoTranslate.badge")}</span>
       {hasHints ? (
         <span className="v4-auto-badge-hints" aria-hidden>
           {lastUpdateHint ? <span>{lastUpdateHint}</span> : null}
@@ -35,5 +37,6 @@ export function AutoTranslateBadge({ lastUpdateHint, nextUpdateHint }: BadgeProp
 
 /** 任务队列：自动任务来源标记，样式与覆盖率「自动翻译」一致。 */
 export function AutoTaskBadge() {
-  return <span style={autoMarkerBadgeStyle}>自动</span>;
+  const { t } = useTranslation();
+  return <span style={autoMarkerBadgeStyle}>{t("v4.autoTranslate.taskBadge")}</span>;
 }

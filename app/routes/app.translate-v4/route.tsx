@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
+import { useTranslation } from "react-i18next";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
@@ -14,7 +15,6 @@ import { getCoverageSummaryFromCache,
 } from "~/server/translateV4/coverage.server";
 import {
   createTranslateV4Tasks,
-  formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
@@ -31,6 +31,7 @@ import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { GetUserSubscriptionPlan } from "~/api/JavaServer";
+import { formatV4CreateTasksMessage } from "./v4I18n";
 
 async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
   const server = process.env.SERVER_URL?.trim();
@@ -99,6 +100,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function AppTranslateV4() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     shop,
     locales,
@@ -159,11 +161,11 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
-      if (forceRefresh) message.error("刷新统计失败");
+      if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop, targetOptions]);
+  }, [shop, targetOptions, t]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -241,29 +243,29 @@ export default function AppTranslateV4() {
         if (data?.ok) {
           const label =
             actionType === "delete"
-              ? "已删除"
+              ? t("v4.deleted")
               : actionType === "resume"
-                ? "正在继续…"
+                ? t("v4.resuming")
                 : actionType === "pause"
                   ? data.pending
-                    ? "正在暂停…"
-                    : "已暂停"
+                    ? t("v4.pausing")
+                    : t("v4.paused")
                   : data.pending
-                    ? "正在取消…"
-                    : "已取消";
+                    ? t("v4.cancelling")
+                    : t("v4.cancelled");
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
           return true;
         }
-        message.error(data?.error || "操作失败");
+        message.error(data?.error || t("v4.actionFailed"));
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
-        message.error("操作失败，请稍后重试");
+        message.error(t("v4.actionFailedRetry"));
         return false;
       }
     },
-    [shop, refreshList, refreshQuota],
+    [shop, refreshList, refreshQuota, t],
   );
 
   const handleCreate = useCallback(async () => {
@@ -280,11 +282,11 @@ export default function AppTranslateV4() {
       });
 
       if (result.validationError) {
-        message.warning(result.validationError);
+        message.warning(t(result.validationError));
         return;
       }
 
-      const summary = formatCreateTasksMessage(result);
+      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
       if (result.created.length > 0) {
         message.success(summary);
         await Promise.all([refreshList(), refreshQuota()]);
@@ -300,7 +302,7 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] create failed:", err);
-      message.error("创建失败，请稍后重试");
+      message.error(t("v4.createFailedRetry"));
     } finally {
       setCreating(false);
     }
@@ -314,6 +316,7 @@ export default function AppTranslateV4() {
     targetOptions,
     refreshList,
     refreshQuota,
+    t,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -358,7 +361,7 @@ export default function AppTranslateV4() {
 
   return (
     <Page>
-      <TitleBar title="智能翻译" />
+      <TitleBar title={t("v4.title")} />
       <div style={v4ContentStyle}>
         <PageHeaderBar
           credits={remainingCredits}
@@ -395,8 +398,8 @@ export default function AppTranslateV4() {
             />
             <span>
               {translateSlotBusy
-                ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
-                : `${translateQueue.length} 个语言任务等待开始翻译。`}
+                ? t("v4.queueBusy", { count: translateQueue.length })
+                : t("v4.queueWaiting", { count: translateQueue.length })}
             </span>
           </div>
         ) : null}

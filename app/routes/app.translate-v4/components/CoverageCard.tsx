@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "antd";
+import { useTranslation } from "react-i18next";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
-import { formatLastAutoUpdateDisplay, formatNextAutoUpdateDisplay } from "../nextAutoUpdateDisplay";
+import {
+  formatV4LastAutoUpdateDisplay,
+  formatV4NextAutoUpdateDisplay,
+} from "../v4I18n";
 
 const AUTO_BADGE_HOVER_CSS = `
 .v4-auto-badge-wrap { position: relative; display: inline-flex; vertical-align: middle; cursor: default; }
@@ -41,6 +45,7 @@ export function CoverageCard({
   compact = false,
   onManageLanguages,
 }: Props) {
+  const { t } = useTranslation();
   const autoTranslateCount = useMemo(
     () => locales.filter((row) => row.autoTranslate).length,
     [locales],
@@ -86,29 +91,29 @@ export function CoverageCard({
                 color: v4Colors.text,
               }}
             >
-              语言覆盖率
+              {t("v4.coverage.title")}
             </h2>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
             <Button size="small" onClick={onManageLanguages}>
-              管理语言
+              {t("v4.coverage.manageLanguages")}
             </Button>
             <Button size="small" onClick={onRefresh} loading={loading}>
-              刷新统计
+              {t("Refresh statistics")}
             </Button>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0 12px" }}>
-          <HeadMetric label="目标语言" value={`${locales.length}`} />
-          <HeadMetric label="自动翻译" value={`${autoTranslateCount}`} />
-          <HeadMetric label="待完善" value={`${lowCoverageCount}`} />
+          <HeadMetric label={t("v4.coverage.targetLanguages")} value={`${locales.length}`} />
+          <HeadMetric label={t("v4.coverage.autoTranslate")} value={`${autoTranslateCount}`} />
+          <HeadMetric label={t("v4.coverage.needsImprovement")} value={`${lowCoverageCount}`} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {visibleLocales.length === 0 ? (
             <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
-              暂无目标语言，请先在语言页添加。
+              {t("v4.coverage.noTargetLanguages")}
             </div>
           ) : (
             visibleLocales.map((row) => (
@@ -125,7 +130,7 @@ export function CoverageCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
-            语言覆盖率
+            {t("v4.coverage.title")}
           </h2>
         </div>
         <button
@@ -144,14 +149,14 @@ export function CoverageCard({
             padding: "4px 6px",
           }}
         >
-          {loading ? "刷新中…" : "刷新统计"}
+          {loading ? t("v4.coverage.refreshing") : t("Refresh statistics")}
         </button>
       </div>
 
       <style>{AUTO_BADGE_HOVER_CSS}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
-          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>暂无目标语言，请先在语言页添加。</div>
+          <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{t("v4.coverage.noTargetLanguages")}</div>
         ) : (
           locales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
@@ -271,6 +276,7 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
 }
 
 function CoverageRow({ row }: { row: LocaleCoverageRow }) {
+  const { t } = useTranslation();
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
@@ -286,11 +292,11 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   const label = localeShortName(row.locale, row.label);
   const lastHint =
     row.autoTranslate && nowMs != null
-      ? formatLastAutoUpdateDisplay(row.lastAutoUpdateAt, nowMs)
+      ? formatV4LastAutoUpdateDisplay(row.lastAutoUpdateAt, t, nowMs)
       : null;
   const nextHint =
     row.autoTranslate && nowMs != null
-      ? formatNextAutoUpdateDisplay(row.nextAutoUpdateAt, nowMs)
+      ? formatV4NextAutoUpdateDisplay(row.nextAutoUpdateAt, t, nowMs)
       : null;
 
   return (
@@ -331,7 +337,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
       </div>
       {row.cacheMissing && row.total === 0 ? (
         <div style={{ fontSize: 11, color: v4Colors.textMuted, marginTop: 4 }}>
-          统计缓存未就绪，点击「刷新统计」从 Shopify 计算
+          {t("v4.coverage.cacheNotReady")}
         </div>
       ) : null}
     </div>

@@ -1,18 +1,16 @@
 import { useMemo, useState } from "react";
 import { Button, Empty, Popconfirm, Tabs } from "antd";
+import { useTranslation } from "react-i18next";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { formatLocaleRoute } from "../localeDisplay";
-import {
-  jobDisplayPercent,
-  visibleStageIndex,
-  VISIBLE_STAGE_LABELS,
-} from "../jobStageUtils";
+import { jobDisplayPercent } from "../jobStageUtils";
 import { ProgressRing, StatusTag, MiniStageTrack } from "./V4JobCardParts";
 import { AutoTaskBadge } from "./AutoTranslateMarkers";
 import { JobCollapsedMeta, JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
+import { getV4JobStatusLabel, getV4VisibleStageLabel } from "../v4I18n";
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -32,10 +30,10 @@ export function CompactJobCard({
   onToggleExpand,
   onAction,
 }: Props) {
+  const { t } = useTranslation();
   const [pending, setPending] = useState<null | "pause" | "resume" | "cancel" | "delete">(null);
 
-  const displayStatusLabel =
-    job.status === "TRANSLATE_QUEUED" && translateSlotBusy ? "排队等待翻译" : job.statusLabel;
+  const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
 
   const percent = jobDisplayPercent(job);
 
@@ -62,9 +60,9 @@ export function CompactJobCard({
     ? job.status === "COMPLETED"
       ? ""
       : job.status === "CANCELLED"
-        ? "已取消"
-        : "已结束"
-    : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage, job.metrics)] ?? "等待"}`;
+        ? t("v4.tasks.cancelled")
+        : t("v4.tasks.ended")
+    : t("v4.tasks.inProgress", { stage: getV4VisibleStageLabel(job, t) });
 
   return (
     <div
@@ -108,7 +106,7 @@ export function CompactJobCard({
               border: `1px solid ${expanded ? "#bfdbff" : v4Colors.cardBorder}`,
             }}
           >
-            {expanded ? "收起" : "查看"}
+            {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
           </Button>
         </div>
       </div>
@@ -141,26 +139,26 @@ export function CompactJobCard({
             >
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {canResume ? (
-                  <ActionChip label="继续" kind="primary" loading={pending === "resume"} onClick={() => runAction("resume")} />
+                  <ActionChip label={t("v4.tasks.resume")} kind="primary" loading={pending === "resume"} onClick={() => runAction("resume")} />
                 ) : null}
                 {canPause ? (
-                  <ActionChip label="暂停" kind="ghost" loading={pending === "pause"} onClick={() => runAction("pause")} />
+                  <ActionChip label={t("v4.tasks.pause")} kind="ghost" loading={pending === "pause"} onClick={() => runAction("pause")} />
                 ) : null}
                 {canCancel ? (
-                  <ActionChip label="取消任务" kind="danger" loading={pending === "cancel"} onClick={() => runAction("cancel")} />
+                  <ActionChip label={t("v4.tasks.cancelTask")} kind="danger" loading={pending === "cancel"} onClick={() => runAction("cancel")} />
                 ) : null}
               </div>
               {canDelete ? (
                 <Popconfirm
-                  title="删除该任务？"
-                  description="会清除任务记录及其翻译内容数据，不可恢复。"
-                  okText="删除"
+                  title={t("v4.tasks.deleteConfirmTitle")}
+                  description={t("v4.tasks.deleteConfirmDesc")}
+                  okText={t("Delete")}
                   okButtonProps={{ danger: true, loading: pending === "delete" }}
-                  cancelText="取消"
+                  cancelText={t("Cancel")}
                   onConfirm={() => runAction("delete")}
                 >
                   <Button type="link" size="small" danger style={deleteLinkButtonStyle}>
-                    删除记录
+                    {t("v4.tasks.deleteRecord")}
                   </Button>
                 </Popconfirm>
               ) : null}
@@ -236,6 +234,7 @@ export function TaskQueueSection({
   translateSlotBusy: boolean;
   onAction: Props["onAction"];
 }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"current" | "history">(
     "current",
   );
@@ -268,22 +267,22 @@ export function TaskQueueSection({
 
   const helperText =
     tab === "current"
-      ? "优先处理进行中、暂停中和失败的任务。"
-      : "这里保留已完成或已取消的任务记录。";
+      ? t("v4.tasks.currentHelper")
+      : t("v4.tasks.historyHelper");
 
   const emptyTitle =
-    tab === "history" ? "暂无历史任务" : "当前没有进行中的任务";
+    tab === "history" ? t("v4.tasks.noHistory") : t("v4.tasks.noCurrent");
   const emptyDescription =
     tab === "history"
-      ? "完成或取消后的任务记录会显示在这里。"
-      : "选好目标语言和翻译内容后，点击上方按钮创建第一个翻译任务。";
+      ? t("v4.tasks.noHistoryDesc")
+      : t("v4.tasks.noCurrentDesc");
 
   return (
     <div style={{ ...v4CardStyle, padding: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
         <div style={{ minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
-            任务列表 · {jobs.length}
+            {t("v4.tasks.title", { count: jobs.length })}
           </h2>
           <div style={{ marginTop: 4, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
             {helperText}
@@ -291,7 +290,7 @@ export function TaskQueueSection({
         </div>
         <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: v4Colors.textFaint, fontWeight: 600 }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: v4Colors.successSoft }} />
-          实时同步
+          {t("v4.tasks.syncLive")}
         </span>
       </div>
 
@@ -305,7 +304,7 @@ export function TaskQueueSection({
               key: "current",
               label: (
                 <span style={tabLabelStyle(tab === "current")}>
-                  当前任务 {currentJobs.length}
+                  {t("v4.tasks.currentTab", { count: currentJobs.length })}
                 </span>
               ),
             },
@@ -313,7 +312,7 @@ export function TaskQueueSection({
               key: "history",
               label: (
                 <span style={tabLabelStyle(tab === "history")}>
-                  历史任务 {historyJobs.length}
+                  {t("v4.tasks.historyTab", { count: historyJobs.length })}
                 </span>
               ),
             },
@@ -362,8 +361,10 @@ export function TaskQueueSection({
               style={historyToggleStyle}
             >
               {historyExpanded
-                ? "收起历史记录"
-                : `显示更多历史记录（剩余 ${historyJobs.length - displayJobs.length} 条）`}
+                ? t("v4.tasks.collapseHistory")
+                : t("v4.tasks.showMoreHistory", {
+                    count: historyJobs.length - displayJobs.length,
+                  })}
             </Button>
           ) : null}
         </>
