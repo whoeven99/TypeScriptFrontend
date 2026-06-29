@@ -1,5 +1,10 @@
 import type { TranslationV4Status } from "~/server/translateV4/types";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import {
+  capTranslateUnitsByResources,
+  isTranslateResourceComplete,
+  translateResourceTotal,
+} from "~/server/translateV4/metricsUtils";
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
@@ -10,7 +15,15 @@ export type VisibleStageIndex = 0 | 1 | 2;
 export function stageOf(
   status: TranslationV4Status,
   errorStage?: string | null,
+  metrics?: StageMetrics,
 ): VisibleStageIndex {
+  if (
+    metrics &&
+    (status === "TRANSLATING" || status === "TRANSLATE_QUEUED") &&
+    isStageBarComplete(1, metrics, status)
+  ) {
+    return 2;
+  }
   if (status === "PAUSED" || status === "FAILED" || status === "CANCELLED") {
     switch (errorStage) {
       case "WRITEBACK":
@@ -36,12 +49,13 @@ export function stageOf(
 export function visibleStageIndex(
   status: TranslationV4Status,
   errorStage?: string | null,
+  metrics?: StageMetrics,
 ): VisibleStageIndex {
-  return stageOf(status, errorStage) as VisibleStageIndex;
+  return stageOf(status, errorStage, metrics) as VisibleStageIndex;
 }
 
 function isVerifyHiddenComplete(status: TranslationV4Status): boolean {
-  return status === "COMPLETED" || ["VERIFY_QUEUED", "VERIFYING"].includes(status);
+  return status === "COMPLETED";
 }
 
 export function miniStageSegmentState(
@@ -56,7 +70,7 @@ export function miniStageSegmentState(
 
   const complete = isStageBarComplete(idx, metrics, status);
   const percent = complete ? 100 : stageBarPercent(idx, metrics, status);
-  const activeIdx = visibleStageIndex(status, errorStage);
+  const activeIdx = visibleStageIndex(status, errorStage, metrics);
   const active =
     !isTerminal &&
     !isStopping &&
@@ -73,14 +87,22 @@ function ratioPercent(done: number, total: number): number {
 }
 
 function taskResourceTotal(m: StageMetrics): number {
-  return m.translateTotal || m.initTotal || 0;
+  return translateResourceTotal(m);
+}
+
+function cappedUnitDone(m: StageMetrics): number {
+  return capTranslateUnitsByResources(m);
 }
 
 function translateStageProgress(m: StageMetrics): { done: number; total: number } {
-  if (m.translateUnitTotal > 0) {
-    return { done: m.translateUnitDone, total: m.translateUnitTotal };
+  const resourceTotal = taskResourceTotal(m);
+  if (resourceTotal > 0) {
+    return { done: m.translateDone, total: resourceTotal };
   }
-  return { done: m.translateDone, total: taskResourceTotal(m) };
+  if (m.translateUnitTotal > 0) {
+    return { done: cappedUnitDone(m), total: m.translateUnitTotal };
+  }
+  return { done: m.translateDone, total: 0 };
 }
 
 export function stageBarPercent(
@@ -113,6 +135,9 @@ export function isStageBarComplete(
     case 0:
       return m.initTotal > 0 && m.initDone >= m.initTotal;
     case 1: {
+      if (isTranslateResourceComplete(m)) return true;
+      const resourceTotal = taskResourceTotal(m);
+      if (resourceTotal > 0) return false;
       const { done, total } = translateStageProgress(m);
       return total > 0 && done >= total;
     }
@@ -167,6 +192,6 @@ export function formatJobStartTime(createdAt: string): string | null {
   });
 }
 
-export function jobQuotaCredits(usedTokens: number, multiplier = 1.5): number {
+export function jobQuotaCredits(usedTokens: number, multiplier = 1): number {
   return usedTokens > 0 ? Math.round(usedTokens * multiplier) : 0;
 }

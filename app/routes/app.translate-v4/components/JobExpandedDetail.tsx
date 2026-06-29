@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { StageName } from "~/server/translateV4/types";
+import { capTranslateUnitsByResources } from "~/server/translateV4/metricsUtils";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
 import { v4Colors } from "../v4Styles";
 import {
@@ -41,7 +42,7 @@ function stageDetail(idx: number, m: StageMetrics): string {
   if (idx === 1) {
     const res = `资源 ${m.translateDone}/${m.translateTotal}`;
     return m.translateUnitTotal > 0
-      ? `${res} · 节点 ${m.translateUnitDone}/${m.translateUnitTotal}`
+      ? `${res} · 节点 ${capTranslateUnitsByResources(m).toLocaleString()}/${m.translateUnitTotal.toLocaleString()}`
       : res;
   }
   const total = taskResourceTotal(m);
@@ -128,9 +129,6 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
             <strong style={{ color: v4Colors.text }}>
               {credits.toLocaleString()} 积分
             </strong>
-            <span style={{ opacity: 0.75 }}>
-              （{job.usedTokens.toLocaleString()} tokens）
-            </span>
             <TaskIdSuffix taskId={job.taskId} />
           </span>
         ) : (
@@ -211,7 +209,7 @@ export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }
 export function JobStageProgressList({ job }: { job: TranslationJobProgressSummary }) {
   const m = job.metrics;
   const timings = job.stageTimings ?? {};
-  const activeStage = stageOf(job.status, job.errorStage);
+  const activeStage = stageOf(job.status, job.errorStage, m);
   const isPaused = job.status === "PAUSED";
   const nowMs = useHydratedNow(
     !job.isTerminal && job.status !== "PAUSED" && job.status !== "CANCELLED",
@@ -283,7 +281,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                 moduleLabel={
                   m.currentModule ? MODULE_LABELS[m.currentModule] ?? m.currentModule : null
                 }
-                usedTokens={job.usedTokens}
+                usedCredits={jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER)}
               />
             ) : (
               <>
@@ -366,10 +364,10 @@ function InitScanIndicator({
 
 function TranslateWorkingIndicator({
   moduleLabel,
-  usedTokens,
+  usedCredits,
 }: {
   moduleLabel: string | null;
-  usedTokens: number;
+  usedCredits: number;
 }) {
   return (
     <>
@@ -387,7 +385,7 @@ function TranslateWorkingIndicator({
       >
         正在调用模型
         {moduleLabel ? ` · ${moduleLabel}` : ""}
-        {usedTokens > 0 ? ` · ${usedTokens.toLocaleString()} tokens` : ""}
+        {usedCredits > 0 ? ` · 已用 ${usedCredits.toLocaleString()} 积分` : ""}
         <span className="v4-dots" />
       </span>
     </>

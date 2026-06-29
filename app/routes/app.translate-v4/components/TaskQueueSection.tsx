@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { v4Colors, v4CardStyle } from "../v4Styles";
+import { formatLocaleRoute } from "../localeDisplay";
 import {
   jobDisplayPercent,
   visibleStageIndex,
@@ -38,7 +39,7 @@ export function CompactJobCard({
 
   const percent = jobDisplayPercent(job);
 
-  const canResume = job.status === "PAUSED" || job.status === "FAILED";
+  const canResume = job.canResume;
   const canPause = canPauseV4Job(job.status) && !job.isStopping;
   const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED" && !job.isStopping;
   const canDelete =
@@ -63,9 +64,7 @@ export function CompactJobCard({
       : job.status === "CANCELLED"
         ? "已取消"
         : "已结束"
-    : ["VERIFY_QUEUED", "VERIFYING"].includes(job.status)
-      ? ""
-      : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage)] ?? "等待"}`;
+    : `进行中：${VISIBLE_STAGE_LABELS[visibleStageIndex(job.status, job.errorStage, job.metrics)] ?? "等待"}`;
 
   return (
     <div
@@ -81,9 +80,9 @@ export function CompactJobCard({
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <ProgressRing percent={percent} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: v4Colors.text }}>
-              {job.source} → {job.target}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
+              {formatLocaleRoute(job.source, job.target)}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />

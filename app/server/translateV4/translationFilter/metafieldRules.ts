@@ -5,11 +5,62 @@ import {
   SUSPICIOUS2_PATTERN,
 } from "./constants";
 import { tryParseJsonContainer } from "~/server/translateV4/jsonExtractRules.server";
+import { isHtmlContent } from "./jsonUtils";
 import { metaTranslate } from "./judgeTranslateUtils";
 import { canTranslateMetafieldJson } from "./metafieldJsonJudge";
 
 function isJsonContainer(value: string): boolean {
   return tryParseJsonContainer(value) !== undefined;
+}
+
+/** Hardcoded metafield literals (TranslateV2Service + common Shopify app sentinels). */
+const METAFIELD_LITERAL_BLOCKLIST = new Set([
+  "CC_CC-PT",
+  "_none",
+]);
+
+/**
+ * Metafield-only technical value patterns (IDs, app bundle keys, internal tokens).
+ * SUSPICIOUS_* covers 9–10 char IDs; these catch shorter / structured tokens.
+ */
+const METAFIELD_VALUE_BLOCK_PATTERNS: RegExp[] = [
+  /** 5–8 char mixed-case alphanumeric (e.g. UFdVwM). */
+  /^(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{5,8}$/,
+  /** Shopify app extension identifiers: app--{numericId}--{slug}. */
+  /^app--\d+--[a-z0-9_-]+$/i,
+  /** Underscore-prefixed internal tokens (_none, _disabled, …). */
+  /^_[a-z][a-z0-9_-]*$/i,
+];
+
+/**
+ * Port StringUtils.isValidString — opaque scalar (numbers, punctuation-heavy, short hash).
+ * Used for METAFIELD SINGLE_LINE_TEXT non-HTML (ShopifyService.countMetafieldData).
+ */
+function isMetafieldOpaqueScalar(value: string): boolean {
+  if (value.includes('{"') && value.includes("}")) {
+    return true;
+  }
+  if (!/^[a-zA-Z0-9\p{P}]+$/u.test(value)) {
+    return false;
+  }
+  if (/^[0-9\p{P}]+$/u.test(value)) {
+    return true;
+  }
+  if (/^[0-9]+$/.test(value)) {
+    return true;
+  }
+  if (value.startsWith("#") && value.length <= 10) {
+    return true;
+  }
+  const punctCount = (value.match(/[\p{P}]/gu) ?? []).length;
+  return punctCount >= 2;
+}
+
+function isBlockedMetafieldValue(value: string): boolean {
+  if (METAFIELD_LITERAL_BLOCKLIST.has(value)) {
+    return true;
+  }
+  return METAFIELD_VALUE_BLOCK_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 /**
@@ -44,7 +95,15 @@ export function passesMetafieldModuleRules(
     return false;
   }
 
-  if (value === "CC_CC-PT") {
+  if (isBlockedMetafieldValue(value)) {
+    return false;
+  }
+
+  if (
+    type === "SINGLE_LINE_TEXT_FIELD" &&
+    !isHtmlContent(value) &&
+    isMetafieldOpaqueScalar(value)
+  ) {
     return false;
   }
 

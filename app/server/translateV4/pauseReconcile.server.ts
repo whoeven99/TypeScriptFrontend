@@ -2,18 +2,18 @@ import { updateV4Job } from "./cosmos.server";
 import {
   clearV4Control,
   clearV4PausePending,
-  getTranslateV4RedisClient,
-  V4_HINT_KEYS,
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
+import { reconcileTranslateUnitMetrics } from "./metricsUtils";
 import { EMPTY_V4_METRICS, type TranslationV4Job } from "./types";
+import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
 
-/** worker 未能在该时长内收尾暂停 → TSF 直接排队写回已 checkpoint 的译文。 */
+/** worker 未能在该时长内收尾暂停 → TSF 直接落 PAUSED（不再先写回）。 */
 const STUCK_PAUSE_ESCALATE_MS = 120_000;
 
 /**
- * 暂停后 worker 应进入 WRITEBACK_QUEUED，但若翻译 worker 卡在 LLM 长尾，
- * 控制键会一直 pending。超时后由 TSF 代为推进到写回队列。
+ * 暂停后 worker 应直接 PAUSED，但若卡在 LLM 长尾，控制键会一直 pending。
+ * 超时后由 TSF 代为落盘 PAUSED，避免任务长期停在 TRANSLATING。
  */
 export async function escalateStuckPauseIfNeeded(
   shopName: string,
@@ -27,15 +27,8 @@ export async function escalateStuckPauseIfNeeded(
     metrics.pausePending || metrics.controlAction === "pause";
   if (!pauseRequested) return null;
 
-  const translateDone = Math.max(
-    metrics.translateDone,
-    Number(jobMetrics.translateDone) || 0,
-  );
-  if (translateDone <= 0) return null;
-
   const requestedAt =
     Number(metrics.pauseRequestedAt) ||
-    // 兼容升级前已写入 pausePending、但没有 pauseRequestedAt 的任务
     (metrics.controlAction === "pause" || metrics.pausePending
       ? Date.now() - STUCK_PAUSE_ESCALATE_MS - 1
       : 0);
@@ -43,12 +36,25 @@ export async function escalateStuckPauseIfNeeded(
     return null;
   }
 
+  const translateDone = Math.max(
+    metrics.translateDone,
+    Number(jobMetrics.translateDone) || 0,
+  );
+  const units = reconcileTranslateUnitMetrics({
+    translateDone,
+    translateTotal: metrics.translateTotal,
+    translateUnitDone: metrics.translateUnitDone,
+    translateUnitTotal: metrics.translateUnitTotal,
+    initTotal: metrics.initTotal,
+  });
+
   const updated = await updateV4Job(shopName, job.id, {
-    status: "WRITEBACK_QUEUED",
+    status: "PAUSED",
     claimedBy: null,
-    pauseAfterWriteback: "pause",
-    errorMessage: metrics.pauseReason ?? "已手动暂停",
-    errorStage: null,
+    pauseAfterWriteback: null,
+    errorMessage:
+      sanitizeV4UserErrorMessage(metrics.pauseReason) ?? "已手动暂停",
+    errorStage: "TRANSLATE",
     metrics: {
       ...jobMetrics,
       initTotal: metrics.initTotal,
@@ -57,9 +63,8 @@ export async function escalateStuckPauseIfNeeded(
       translateDone,
       translateFailed: metrics.translateFailed,
       translateFallback: metrics.translateFallback,
-      translateUnitTotal: metrics.translateUnitTotal,
-      translateUnitDone: metrics.translateUnitDone,
-      writebackTotal: translateDone,
+      translateUnitTotal: units.translateUnitTotal,
+      translateUnitDone: units.translateUnitDone,
       usedTokens: metrics.usedTokens,
     },
   });
@@ -68,17 +73,8 @@ export async function escalateStuckPauseIfNeeded(
   await clearV4Control(job.id);
   await clearV4PausePending(job.id);
 
-  try {
-    await getTranslateV4RedisClient().lpush(
-      V4_HINT_KEYS.writeback,
-      JSON.stringify({ taskId: job.id, shopName }),
-    );
-  } catch {
-    // non-fatal
-  }
-
   console.log(
-    `[translateV4] escalated stuck pause → WRITEBACK_QUEUED task=${job.id} translateDone=${translateDone}`,
+    `[translateV4] escalated stuck pause → PAUSED task=${job.id} translateDone=${translateDone}`,
   );
   return updated;
 }

@@ -1,3 +1,5 @@
+import { localeRegionCode } from "~/routes/app.translate-v4/localeDisplay";
+
 export type ShopLocaleOption = {
   value: string;
   label: string;
@@ -131,7 +133,8 @@ export function formatCreateTasksMessage(result: CreateTranslateV4TasksResult): 
   if (result.validationError) return result.validationError;
   if (result.created.length === 0) {
     const first = result.failed[0];
-    return first ? `${first.target}: ${first.error}` : "创建失败";
+    if (!first) return "创建失败";
+    return `${localeRegionCode(first.target)}: ${first.error}`;
   }
   if (result.failed.length === 0) {
     return result.created.length === 1
