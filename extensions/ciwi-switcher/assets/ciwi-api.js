@@ -17,7 +17,7 @@ export function switchUrl(blockId) {
 
 /**
  * 店面读 API 基址：优先 App Proxy（Liquid 注入 #ciwiAppProxyBase），
- * 未注入时降级 Java 直连。灰度由 TSF 服务端 isShopMigrated 决定读 Prisma 或代理 Java。
+ * 未注入时降级 Java 直连。灰度由 TSF 服务端 isStorefrontGrayEligible 决定读 Prisma 或代理 Java。
  */
 function resolveStorefrontApiBase(blockId) {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();

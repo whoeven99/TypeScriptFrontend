@@ -4,7 +4,7 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   getSwitcherConfigForAdmin,
   saveSwitcherConfigForAdmin,
@@ -19,9 +19,9 @@ function fail(errorMsg: string, errorCode = 10001) {
   return json({ success: false, errorCode, errorMsg, response: null });
 }
 
-async function assertMigratedShop(shop: string) {
-  if (!(await isShopMigrated(shop))) {
-    return fail("not migrated", 403);
+async function assertStorefrontGrayEligible(shop: string) {
+  if (!(await isStorefrontGrayEligible(shop))) {
+    return fail("not eligible for storefront gray", 403);
   }
   return null;
 }
@@ -29,7 +29,7 @@ async function assertMigratedShop(shop: string) {
 /** GET /api/translate-v4/switcher —— 灰度店读取 Switcher 配置（Turso）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const blocked = await assertMigratedShop(session.shop);
+  const blocked = await assertStorefrontGrayEligible(session.shop);
   if (blocked) return blocked;
 
   try {
@@ -47,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
-  const blocked = await assertMigratedShop(shop);
+  const blocked = await assertStorefrontGrayEligible(shop);
   if (blocked) return blocked;
 
   const body = (await request.json().catch(() => ({}))) as Partial<

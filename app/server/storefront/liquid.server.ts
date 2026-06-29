@@ -25,7 +25,7 @@ function isJsonObject(str: string): boolean {
 }
 
 /**
- * 灰度入口：migratedToTsf 为 true 时从 Prisma 读，否则透明代理到 Java。
+ * 灰度入口：migratedToTsf 且 shop 在 TRANSLATE_V4_SHOP_ALLOWLIST 内时从 Prisma 读；allowlist 未配置则走 Java。
  * 保留 Java 路径，不删除 Java 对应逻辑。
  */
 export async function parseLiquidTranslations(

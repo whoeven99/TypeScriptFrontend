@@ -14,7 +14,7 @@ type SwitcherApiResponse = {
   response?: SwitcherEditData;
 };
 
-/** 读配置：灰度店走 Turso，未迁移店走 Java。 */
+/** 读配置：灰度 eligible 店走 Turso，否则走 Java。 */
 export async function loadSwitcherConfigCompat(args: {
   migrated: boolean;
   shop: string;
@@ -31,7 +31,7 @@ export async function loadSwitcherConfigCompat(args: {
   });
 }
 
-/** 保存配置：灰度店写 Turso，未迁移店写 Java。 */
+/** 保存配置：灰度 eligible 店写 Turso，否则写 Java。 */
 export async function saveSwitcherConfigCompat(args: {
   migrated: boolean;
   shop: string;
