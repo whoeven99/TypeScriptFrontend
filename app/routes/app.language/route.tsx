@@ -39,6 +39,7 @@ import { GetTranslate } from "~/api/JavaServer";
 import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
 import {
   setAutoTranslateCompat,
   listLanguageStatusCompat,
@@ -224,6 +225,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: addLanguages?.primaryLanguage || "",
           targets: addLanguages?.selectedLanguages || [],
         }); // 处理逻辑
+        // 语言已变更，清掉 v4 首页的语言列表缓存
+        invalidateShopLocalesCache(shop);
 
         if (data?.length > 0) {
           const successItems = data
@@ -291,6 +294,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           );
           const data = await Promise.allSettled(promise);
+          // 语言已变更，清掉 v4 首页的语言列表缓存
+          invalidateShopLocalesCache(shop);
 
           // 迁移过的店：同步清掉 TSF 的目标语言行，避免 worker 继续给已删语言建任务
           if (await isShopMigrated(shop)) {
