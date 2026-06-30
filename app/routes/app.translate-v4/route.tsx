@@ -24,6 +24,7 @@ import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
+import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
@@ -101,10 +102,18 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const planType = useSelector(
-    (state: { userConfig?: { plan?: { type?: string } } }) =>
-      state.userConfig?.plan?.type?.trim() || null,
+  const { plan, isNew } = useSelector(
+    (state: {
+      userConfig?: {
+        plan?: { type?: string; isInFreePlanTime?: boolean };
+        isNew?: boolean | null;
+      };
+    }) => ({
+      plan: state.userConfig?.plan,
+      isNew: state.userConfig?.isNew ?? null,
+    }),
   );
+  const planType = plan?.type?.trim() || null;
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
@@ -136,6 +145,7 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [quotaGateMode, setQuotaGateMode] = useState<"trial" | "pricing" | null>(null);
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
@@ -271,6 +281,24 @@ export default function AppTranslateV4() {
   );
 
   const handleCreate = useCallback(async () => {
+    const normalizedPlanType = planType?.trim().toLowerCase() || "";
+    const hasPaidPlan = normalizedPlanType !== "" && normalizedPlanType !== "free";
+    const remainingCredits = quota?.remaining ?? null;
+    const shouldGateByCredits =
+      remainingCredits != null &&
+      remainingCredits <= 0 &&
+      !hasPaidPlan &&
+      !plan?.isInFreePlanTime;
+
+    if (shouldGateByCredits) {
+      if (isNew === null) {
+        message.info(t("Checking your trial eligibility. Please try again in a moment."));
+        return;
+      }
+      setQuotaGateMode(isNew ? "trial" : "pricing");
+      return;
+    }
+
     setCreating(true);
     try {
       const result = await createTranslateV4Tasks({
@@ -320,6 +348,10 @@ export default function AppTranslateV4() {
     targetOptions,
     refreshList,
     refreshQuota,
+    plan,
+    planType,
+    quota,
+    isNew,
     t,
   ]);
 
@@ -500,6 +532,11 @@ export default function AppTranslateV4() {
       </div>
 
       <SupportChatWidget />
+      <CreateTaskQuotaGateModal
+        open={quotaGateMode !== null}
+        mode={quotaGateMode ?? "pricing"}
+        onClose={() => setQuotaGateMode(null)}
+      />
       <PaymentModal
         visible={showPaymentModal}
         setVisible={setShowPaymentModal}
