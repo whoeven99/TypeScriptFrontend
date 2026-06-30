@@ -28,7 +28,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
   const navigate = useNavigate();
   const navigateToTranslate = () => {
     reportClick("dashboard_translate_button");
-    navigate("/app/translate", {
+    navigate("/app/translate-v4", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
   };

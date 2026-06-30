@@ -17,17 +17,12 @@ import {
   type TranslationV4Module,
 } from "~/server/translateV4/types";
 import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 
 /** GET /api/translate-v4/tasks —— 列出本店 v4 任务（手动 + 自动）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
-
-  if (!(await isShopMigrated(shopName))) {
-    return json({ ok: false, error: "功能未开放" }, { status: 403 });
-  }
 
   const jobs = await listV4JobSummaries(shopName, { limit: 50 });
   return json({ ok: true, jobs });
@@ -61,9 +56,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ ok: false, error: "至少选择一个翻译模块" }, { status: 400 });
 
   const shopName = session.shop;
-  if (!(await isShopMigrated(shopName))) {
-    return json({ ok: false, error: "功能未开放" }, { status: 403 });
-  }
 
   if (await existsBlockingV4Job(shopName, source, target)) {
     return json(

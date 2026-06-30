@@ -555,7 +555,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Translate Settings")}>
-        <button variant="breadcrumb" onClick={() => navigate("/app/translate")}>
+        <button variant="breadcrumb" onClick={() => navigate("/app/translate-v4")}>
           {t("Translate Store")}
         </button>
         <button variant="breadcrumb">{t("Translate Settings")}</button>
@@ -577,7 +577,7 @@ const Index = () => {
             <Button
               type="text"
               variant="outlined"
-              onClick={() => navigate("/app/translate")}
+              onClick={() => navigate("/app/translate-v4")}
               style={{ padding: "4px" }}
             >
               <Icon source={ArrowLeftIcon} tone="base" />

@@ -36,7 +36,6 @@ import {
   setLanguageTableData,
 } from "~/store/modules/languageTableData";
 import { GetTranslate } from "~/api/JavaServer";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
@@ -101,13 +100,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop } = adminAuthResult.session;
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
-  const migrated = await isShopMigrated(shop);
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
-    migrated,
   });
 };
 
@@ -131,7 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken: accessToken as string,
         });
         const primaryLocale = data.find((lang) => lang.primary)?.locale;
-        if (primaryLocale && (await isShopMigrated(shop))) {
+        if (primaryLocale) {
           try {
             await syncShopTargetLocalesFromShopify(
               shop,
@@ -298,12 +295,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           invalidateShopLocalesCache(shop);
 
           // 迁移过的店：同步清掉 TSF 的目标语言行，避免 worker 继续给已删语言建任务
-          if (await isShopMigrated(shop)) {
-            await deleteTargetLocales(
-              shop,
-              deleteData.targets.map((t: LanguagesDataType) => t.locale),
-            );
-          }
+          await deleteTargetLocales(
+            shop,
+            deleteData.targets.map((t: LanguagesDataType) => t.locale),
+          );
 
           return json({ data: data });
         }
@@ -318,9 +313,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server, migrated } =
-    useLoaderData<typeof loader>();
-  const useV4LanguageStatus = migrated;
+  const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const useV4LanguageStatus = true;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -484,7 +478,6 @@ const Index = () => {
         }));
         const GetLanguageLocaleInfoFront = async () => {
           const languageList = await listLanguageStatusCompat({
-            migrated,
             shop,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
@@ -501,21 +494,6 @@ const Index = () => {
                 sameTranslationLocale(language.target, lang.locale),
               )?.autoTranslate ?? false,
           }));
-          const findItem = data.find((data: any) => data.status === 2);
-          if (findItem && shopPrimaryLanguageData && !useV4LanguageStatus) {
-            const formData = new FormData();
-            formData.append(
-              "statusData",
-              JSON.stringify({
-                source: shopPrimaryLanguageData[0]?.locale,
-                target: [findItem.locale],
-              }),
-            );
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }
           dispatch(setLanguageTableData(data));
           setLoading(false);
         };
@@ -526,11 +504,9 @@ const Index = () => {
   }, [
     dispatch,
     loadingFetcher.data,
-    migrated,
     server,
     shop,
     statusFetcher,
-    migrated,
     useV4LanguageStatus,
   ]);
 
@@ -571,52 +547,11 @@ const Index = () => {
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
-    if (useV4LanguageStatus) return;
-    if (statusFetcher.data) {
-      if (statusFetcher.data?.success) {
-        const items =
-          statusFetcher.data?.response?.translatesDOResult?.filter((item: any) => {
-            if (item?.status === 2) {
-              return true;
-            }
-            dispatch(
-              setStatusState({ target: item?.target, status: item?.status }),
-            );
-            return false;
-          }) ?? [];
-        if (items[0] !== undefined && items[0].status === 2) {
-          // 加入10秒的延时
-          const delayTimeout = setTimeout(() => {
-            const formData = new FormData();
-            formData.append(
-              "statusData",
-              JSON.stringify({
-                source: source.code,
-                target: [items[0]?.target],
-              }),
-            );
-
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }, 10000); // 10秒延时（10000毫秒）
-
-          // 清除超时定时器，以防组件卸载后仍然尝试执行
-          return () => clearTimeout(delayTimeout);
-        }
-      }
-    }
-  }, [dispatch, source?.code, statusFetcher.data, useV4LanguageStatus]);
-
-  useEffect(() => {
-    if (!useV4LanguageStatus) return;
     if (!dataSource?.some((item: any) => item.status === 2)) return;
     if (!source?.code) return;
 
     const pollV4LanguageStatus = async () => {
       const languageList = await listLanguageStatusCompat({
-        migrated,
         shop,
         server: server as string,
         source: source.code,
@@ -636,39 +571,7 @@ const Index = () => {
       void pollV4LanguageStatus();
     }, 3000);
     return () => clearInterval(intervalId);
-  }, [
-    dataSource,
-    useV4LanguageStatus,
-    source?.code,
-    shop,
-    server,
-    migrated,
-    dispatch,
-  ]);
-
-  useEffect(() => {
-    if (useV4LanguageStatus) return;
-    if (dataSource && dataSource.find((item: any) => item.status === 2)) {
-      if (source?.code) {
-        const formData = new FormData();
-        formData.append(
-          "statusData",
-          JSON.stringify({
-            source: source?.code,
-            target: [dataSource.find((item: any) => item.status === 2)?.locale],
-          }),
-        );
-        const timeoutId = setTimeout(() => {
-          statusFetcher.submit(formData, {
-            method: "POST",
-            action: "/app",
-          });
-        }, 2000); // 2秒延时
-        // 在组件卸载时清除定时器
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [dataSource, source?.code, useV4LanguageStatus]);
+  }, [dataSource, source?.code, shop, server, dispatch]);
 
   const columns = [
     {
@@ -761,7 +664,7 @@ const Index = () => {
   ];
 
   const navigateToTranslate = (selectedLanguageCode: string[]) => {
-    navigate("/app/translate", {
+    navigate("/app/translate-v4", {
       state: {
         from: "/app/language",
         selectedLanguageCode: selectedLanguageCode,
@@ -840,12 +743,8 @@ const Index = () => {
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
       const data = await setAutoTranslateCompat({
-        migrated,
-        shopName: shop,
-        source: source?.code,
         target: row.locale,
         autoTranslate: checked,
-        server: server || "",
       });
       if (data?.success) {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
@@ -1039,7 +938,7 @@ const Index = () => {
                       type="primary"
                       style={{ width: "100%" }}
                       onClick={() => {
-                        navigate("/app/translate", {
+                        navigate("/app/translate-v4", {
                           state: {
                             from: "/app/language",
                             selectedLanguageCode: [item.locale],
@@ -1132,7 +1031,7 @@ const Index = () => {
             <Button
               type="primary"
               onClick={() =>
-                navigate("/app/translate", {
+                navigate("/app/translate-v4", {
                   state: {
                     from: "/app/language",
                     selectedLanguageCode: [noFirstTranslationLocale],

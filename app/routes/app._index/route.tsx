@@ -38,7 +38,6 @@ import { globalStore } from "~/globalStore";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 
 const { Title, Text } = Typography;
 
@@ -50,33 +49,8 @@ type ShopLocaleOption = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
-  if (await isShopMigrated(shop)) {
-    throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
-  }
-  const language =
-    request.headers.get("Accept-Language")?.split(",")[0] || "en";
-  const languageCode = language.split("-")[0];
-
-  const expressV4 = {
-    enabled: false,
-    locales: [] as ShopLocaleOption[],
-    primaryLocale: "en",
-    jobs: [],
-    migrated: false,
-  };
-
-  return {
-    language,
-    isChinese: languageCode === "zh" || languageCode === "zh-CN",
-    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-    server: process.env.SERVER_URL,
-    shop: shop,
-    expressV4,
-  };
+  await authenticate.admin(request);
+  throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
 };
 
 const Index = () => {

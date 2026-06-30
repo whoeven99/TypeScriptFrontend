@@ -96,7 +96,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   };
 
   const handleReTranslate = async () => {
-    navigate("/app/translate");
+    navigate("/app/translate-v4");
     reportClick("dashboard_translation_task_retranslate");
   };
 

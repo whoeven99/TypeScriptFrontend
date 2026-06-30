@@ -17,7 +17,6 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import {
   GetUserWords,
   GetLanguageStatus,
@@ -123,13 +122,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  const migrated = await isShopMigrated(shop);
-
   return json({
     shop,
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
-    translateV4Migrated: migrated,
+    translateV4Migrated: true,
   });
 };
 
@@ -483,7 +480,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Migrated } =
+  const { apiKey, shop, server } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
@@ -520,7 +517,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
-    globalStore.translateV4ExpressBeta = Boolean(translateV4Migrated);
+    globalStore.translateV4ExpressBeta = true;
   }, []);
 
   useEffect(() => {
@@ -672,8 +669,8 @@ export default function App() {
         getPopupContainer={() => document.body}
       >
         <NavMenu>
-          <Link to="/app" rel="home">
-            Home
+          <Link to="/app/translate-v4" rel="home">
+            {t("v4.title")}
           </Link>
           {isClient && (
             <>
