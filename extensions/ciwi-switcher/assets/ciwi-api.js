@@ -89,8 +89,14 @@ export async function IncludeCrawlerPrintLog({
 
 export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
   try {
+    // 优先使用 App Proxy（由 Liquid 块注入的 ciwiAppProxyBase）；
+    // TSF 侧按 PageFly 灰度资格（migratedToTsf + allowlist）决定读 Prisma 或代理 Java，
+    // switcher 无需感知，始终访问同一路径即可。
+    // 未注入时降级到 Java 直连（switchUrl 保留，不删除 Java 代码）。
+    const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
+    const baseUrl = appProxyBase || switchUrl(blockId);
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
+      `${baseUrl}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
       {
         method: "POST",
       },
