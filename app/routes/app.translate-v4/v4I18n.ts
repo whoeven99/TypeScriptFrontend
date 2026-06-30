@@ -79,11 +79,8 @@ export function getV4StatusLabel(
   status: TranslationV4Status,
   t: TFunction,
   metrics?: TranslationJobProgressSummary["metrics"],
-  errorMessage?: string | null,
+  _errorMessage?: string | null,
 ): string {
-  if (status === "PAUSED" && errorMessage?.trim()) {
-    return errorMessage.trim();
-  }
   if (status === "TRANSLATE_QUEUED" && metrics) {
     const started =
       metrics.translateDone > 0 ||

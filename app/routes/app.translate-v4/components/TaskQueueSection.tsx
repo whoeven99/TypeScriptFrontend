@@ -10,7 +10,11 @@ import { jobDisplayPercent } from "../jobStageUtils";
 import { ProgressRing, StatusTag, MiniStageTrack } from "./V4JobCardParts";
 import { AutoTaskBadge } from "./AutoTranslateMarkers";
 import { JobCollapsedMeta, JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
-import { getV4JobStatusLabel, getV4VisibleStageLabel } from "../v4I18n";
+import {
+  getV4JobStatusLabel,
+  getV4VisibleStageLabel,
+  translateV4Message,
+} from "../v4I18n";
 
 type Props = {
   job: TranslationJobProgressSummary;
@@ -34,6 +38,9 @@ export function CompactJobCard({
   const [pending, setPending] = useState<null | "pause" | "resume" | "cancel" | "delete">(null);
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
+  const noticeMessage = job.errorMessage?.trim()
+    ? translateV4Message(job.errorMessage, t)
+    : null;
 
   const percent = jobDisplayPercent(job);
 
@@ -169,11 +176,59 @@ export function CompactJobCard({
             </div>
           ) : null}
 
-          {job.errorMessage ? (
-            <div style={{ fontSize: 12, color: v4Colors.danger, marginTop: 8 }}>{job.errorMessage}</div>
-          ) : null}
         </div>
       ) : null}
+
+      {noticeMessage ? (
+        <JobNoticeBar message={noticeMessage} tone={job.status === "FAILED" ? "danger" : "warning"} />
+      ) : null}
+    </div>
+  );
+}
+
+function JobNoticeBar({
+  message,
+  tone,
+}: {
+  message: string;
+  tone: "warning" | "danger";
+}) {
+  const isDanger = tone === "danger";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 8,
+        marginTop: 12,
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: isDanger ? v4Colors.dangerBg : v4Colors.warningBg,
+        border: `1px solid ${isDanger ? "#ffccc7" : "#ffe58f"}`,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 6,
+          height: 6,
+          marginTop: 6,
+          borderRadius: "50%",
+          flexShrink: 0,
+          background: isDanger ? v4Colors.danger : v4Colors.warning,
+        }}
+      />
+      <span
+        style={{
+          fontSize: 12,
+          lineHeight: 1.5,
+          color: isDanger ? v4Colors.danger : v4Colors.warning,
+          overflowWrap: "anywhere",
+        }}
+      >
+        {message}
+      </span>
     </div>
   );
 }
