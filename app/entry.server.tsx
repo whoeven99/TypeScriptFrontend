@@ -2,7 +2,9 @@ import { renderToPipeableStream } from "react-dom/server";
 import { RemixServer } from "@remix-run/react";
 import {
   type EntryContext,
+  createReadableStreamFromReadable,
 } from "@remix-run/node";
+import { PassThrough, Writable } from "node:stream";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
 import { I18nextProvider, initReactI18next } from "react-i18next";
@@ -116,8 +118,6 @@ export default async function handleRequest(
     let didError = false;
 
     return new Promise<Response>((resolve, reject) => {
-      const encoder = new TextEncoder();
-
       const { pipe, abort } = renderToPipeableStream(<MainApp />, {
         onShellReady() {
           if (isABot) return; // 爬虫走 onAllReady 获取完整 HTML
@@ -139,45 +139,40 @@ export default async function handleRequest(
       });
 
       function buildStreamResponse(
-        pipe: (writable: WritableStream) => void,
+        pipe: (destination: NodeJS.Writable) => void,
         abort: () => void,
       ) {
-        return new Response(
-          new ReadableStream({
-            start(controller) {
-              // 写入 HTML 头部（含 <head> + <body> 开始标签）
-              controller.enqueue(encoder.encode(
-                `<!DOCTYPE html><html lang="${language}">${head}<body><div id="root">`
-              ));
-
-              // 将 React 流输出桥接到 ReadableStream
-              pipe(new WritableStream({
-                write(chunk) {
-                  const str = typeof chunk === "string" ? chunk : String(chunk);
-                  controller.enqueue(encoder.encode(str));
-                },
-                close() {
-                  // React 流全部输出完毕后，提取 antd CSS-in-JS 样式并闭合标签
-                  const styleText = extractStyle(cache);
-                  controller.enqueue(encoder.encode(
-                    `</div>${styleText}</body></html>`
-                  ));
-                  controller.close();
-                },
-                abort(reason) {
-                  controller.error(reason);
-                },
-              }));
-            },
-            cancel() {
-              abort();
-            },
-          }),
-          {
-            status: didError ? 500 : responseStatusCode,
-            headers: responseHeaders,
-          },
+        const body = new PassThrough();
+        body.write(
+          `<!DOCTYPE html><html lang="${language}">${head}<body><div id="root">`,
         );
+
+        const reactSink = new Writable({
+          write(chunk, _encoding, callback) {
+            body.write(chunk, callback);
+          },
+          final(callback) {
+            try {
+              const styleText = extractStyle(cache);
+              body.write(`</div>${styleText}</body></html>`);
+              body.end();
+              callback();
+            } catch (err) {
+              callback(err as Error);
+            }
+          },
+        });
+
+        pipe(reactSink);
+
+        body.once("close", () => abort());
+
+        const stream = createReadableStreamFromReadable(body);
+
+        return new Response(stream, {
+          status: didError ? 500 : responseStatusCode,
+          headers: responseHeaders,
+        });
       }
     });
   };
