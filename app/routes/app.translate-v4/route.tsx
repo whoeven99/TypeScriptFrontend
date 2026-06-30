@@ -540,6 +540,7 @@ export default function AppTranslateV4() {
       <PaymentModal
         visible={showPaymentModal}
         setVisible={setShowPaymentModal}
+        variant="v4"
       />
     </Page>
   );

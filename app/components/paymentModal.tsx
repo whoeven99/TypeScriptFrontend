@@ -1,10 +1,7 @@
 import {
   Button,
-  Card,
-  Col,
   Divider,
   Modal,
-  Row,
   Space,
   Typography,
 } from "antd";
@@ -16,12 +13,14 @@ import { handleContactSupport } from "~/routes/app._index/route";
 import { useSelector } from "react-redux";
 import useReport from "../../scripts/eventReport";
 import "./styles.css";
+import { v4CardStyle, v4Colors } from "~/routes/app.translate-v4/v4Styles";
 
 const { Title, Text } = Typography;
 
 interface PaymentModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
+  variant?: "default" | "v4";
 }
 
 export interface OptionType {
@@ -35,7 +34,7 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, variant = "default" }) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const { t } = useTranslation();
@@ -43,6 +42,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const orderFetcher = useFetcher<any>();
   const { reportClick } = useReport();
   const { plan } = useSelector((state: any) => state.userConfig);
+  const isV4 = variant === "v4";
 
   const options: OptionType[] = useMemo(
     () => [
@@ -231,6 +231,234 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     setVisible(false);
     // if (recommendOption) setSelectedOption(recommendOption);
   };
+
+  if (isV4) {
+    return (
+      <Modal
+        open={visible}
+        onCancel={onCancel}
+        width={960}
+        footer={null}
+        styles={{
+          content: {
+            padding: 0,
+            overflow: "hidden",
+            borderRadius: 20,
+            border: `1px solid ${v4Colors.cardBorder}`,
+            background: v4Colors.cardBg,
+            boxShadow: "var(--app-shadow-card-strong)",
+          },
+          body: {
+            padding: 0,
+          },
+        }}
+      >
+        <div style={{ padding: "24px 24px 20px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+              flexWrap: "wrap",
+              paddingBottom: 20,
+              marginBottom: 20,
+              borderBottom: `1px solid ${v4Colors.divider}`,
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <Text
+                strong
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: v4Colors.primarySoft,
+                  color: v4Colors.primary,
+                  fontSize: 12,
+                  lineHeight: "20px",
+                  marginBottom: 12,
+                }}
+              >
+                {t("Translation credits")}
+              </Text>
+              <Title level={3} style={{ margin: 0, lineHeight: 1.25, color: v4Colors.text }}>
+                {t("Not enough translation credits. Purchase more to continue")}
+              </Title>
+              <Text
+                style={{
+                  display: "block",
+                  marginTop: 12,
+                  color: v4Colors.textMuted,
+                  fontSize: 14,
+                  lineHeight: "22px",
+                  maxWidth: 560,
+                }}
+              >
+                {t("Choose a credit pack to keep the current task queue moving without leaving the page.")}
+              </Text>
+            </div>
+
+            <div
+              style={{
+                ...v4CardStyle,
+                background: v4Colors.summaryBg,
+                borderRadius: 16,
+                padding: "16px 18px",
+                minWidth: 220,
+                flex: "0 0 auto",
+              }}
+            >
+              <Text
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: v4Colors.textMuted,
+                  marginBottom: 8,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {t("Selected pack")}
+              </Text>
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  fontSize: 22,
+                  lineHeight: 1.1,
+                  color: v4Colors.text,
+                  marginBottom: 6,
+                }}
+              >
+                {selectedOption?.name ?? "500K"}
+              </Text>
+              <Text style={{ display: "block", color: v4Colors.textMuted, marginBottom: 12 }}>
+                {Number(selectedOption?.Credits ?? 0).toLocaleString()} {t("credits")}
+              </Text>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                <Text strong style={{ fontSize: 24, lineHeight: 1, color: v4Colors.text }}>
+                  ${selectedOption?.price.currentPrice ?? 0}
+                </Text>
+                <Text style={{ color: v4Colors.textMuted }}>{t("one-time")}</Text>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+              marginBottom: 20,
+            }}
+          >
+            {options.map((option) => (
+              <PaymentOptionSelect
+                key={option.key}
+                option={option}
+                selectedOption={selectedOption}
+                onChange={(value) => setSelectedKey(value.key)}
+                variant="v4"
+              />
+            ))}
+          </div>
+
+          <div
+            style={{
+              ...v4CardStyle,
+              background: v4Colors.cardSubdued,
+              borderRadius: 16,
+              padding: "16px 18px",
+              marginBottom: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 16,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <Text
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: v4Colors.textMuted,
+                  marginBottom: 6,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {t("Need help deciding?")}
+              </Text>
+              <Text style={{ color: v4Colors.textMuted, lineHeight: "22px" }}>
+                {t("Contact support if you need help estimating the right credit pack.")}
+              </Text>
+            </div>
+            <Button
+              type="default"
+              onClick={handleContactSupport}
+              style={{
+                borderColor: v4Colors.cardBorder,
+                color: v4Colors.text,
+              }}
+            >
+              {t("Contact support")}
+            </Button>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <Button
+              onClick={onCancel}
+              style={{
+                minWidth: 108,
+                borderColor: v4Colors.cardBorder,
+              }}
+            >
+              {t("Maybe later")}
+            </Button>
+            <Button
+              type="primary"
+              onClick={onClick}
+              disabled={buyButtonLoading || !selectedKey}
+              loading={buyButtonLoading}
+              style={{
+                minWidth: 160,
+                height: "auto",
+                paddingBlock: 8,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  lineHeight: 1.25,
+                }}
+              >
+                <Text strong style={{ color: "inherit" }}>
+                  ${selectedOption?.price.currentPrice ?? 0}
+                </Text>
+                <Text style={{ color: "inherit" }}>
+                  {t("Buy now")}
+                </Text>
+              </div>
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
