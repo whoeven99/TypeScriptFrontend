@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Button, message } from "antd";
+import { Alert, Button } from "antd";
+import { message } from "~/ui/message";
 import { useNavigate } from "@remix-run/react";
 import {
   createTranslateV4Tasks,
