@@ -33,7 +33,6 @@ import useReport from "scripts/eventReport";
 import ProgressingModal from "./components/progressingModal";
 import TranslationPanel from "./components/TranslationPanel";
 import ExpressTranslateCard from "./components/ExpressTranslateCard";
-import { GetAllProgressData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
@@ -216,59 +215,12 @@ const Index = () => {
       },
     ];
 
-  const getAllProgressDataFromEnd = async ({
-    retryCount = 0,
-    active = false
-  }: {
-    retryCount?: number,
-    active?: boolean
+  const getAllProgressDataFromEnd = async (_opts?: {
+    retryCount?: number;
+    active?: boolean;
   }) => {
-    // source 不存在：500ms 重试，最多 5 次
-    if (!globalStore.source) {
-      if (retryCount < 50) {
-        setTimeout(() => {
-          getAllProgressDataFromEnd({ retryCount: retryCount + 1, active });
-        }, 500);
-      }
-      return;
-    }
-
-    const getAllProgressData = await GetAllProgressData({
-      shop,
-      server: server || "",
-      source: globalStore.source || "",
-    });
-
-    if (getAllProgressData?.success) {
-      const listData =
-        getAllProgressData?.response?.list?.map((item: any) => {
-          return {
-            ...item,
-            progressData:
-              item?.translateStatus === "translation_process_saving_shopify"
-                ? {
-                  RemainingQuantity:
-                    item?.writingData?.write_total -
-                    item?.writingData?.write_done || 0,
-                  TotalQuantity: item?.writingData?.write_total || 1,
-                }
-                : item?.progressData,
-            module: resourceTypeToModule(item?.resourceType ?? ""),
-            status: hasStoppedTaskIds.current.includes(item?.taskId) ? 7 : item?.status,
-          };
-        }) ?? [];
-
-      setProgressDataSource(listData);
-    }
-
     if (isProgressLoading) {
       setIsProgressLoading(false);
-    }
-
-    if (active) {
-      pollingTimerRef.current = setTimeout(() => {
-        getAllProgressDataFromEnd({ active: needRepoll });
-      }, 1000);
     }
   };
 
