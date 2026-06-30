@@ -7,6 +7,7 @@ import { CurrencyDataType } from "~/routes/app.currency/route";
 import { UpdateUserIp } from "~/api/JavaServer";
 import { WarningOutlined } from "@ant-design/icons";
 import currencyLocaleData from "~/utils/currency-locale-data";
+import { useFetcher } from "@remix-run/react";
 
 const { Text } = Typography;
 
@@ -15,6 +16,8 @@ interface UpdateCustomRedirectsModalProps {
   currencyTableData: CurrencyDataType[];
   regionsData: any[];
   server: string;
+  /** IP 管理是否已迁移到 TSF，true 则通过 Remix action 调 TSF，false 仍调 Java */
+  ipMigrated: boolean;
   dataSource: {
     key: number;
     status: boolean;
@@ -51,6 +54,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   currencyTableData,
   regionsData,
   server,
+  ipMigrated,
   dataSource,
   defaultData,
   handleUpdateDataSource,
@@ -58,6 +62,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   setIsModalHide,
 }) => {
   const { t } = useTranslation();
+  const updateFetcher = useFetcher<any>();
 
   //表单数据依据
   const [formData, setFormData] = useState<{
@@ -188,43 +193,75 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
 
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
-      let data;
 
-      data = await UpdateUserIp({
-        id: defaultData.key,
-        shop: globalStore?.shop || "",
-        server: server,
-        region: formData.region,
-        languageCode: formData.languageCode,
-        currencyCode: formData.currencyCode,
-      });
-
-      if (data.success) {
-        const newData = {
-          key: data.response?.id || defaultData?.key,
-          region: data.response?.region,
-          languageCode: data.response?.languageCode,
-          currencyCode: data.response?.currencyCode,
-        };
-        handleUpdateDataSource(newData);
-        shopify.toast.show("Saved successfully");
-        setFormData({
-          ...formData,
-          region: "",
-          languageCode: "",
-          currencyCode: "",
-        });
-        setIsModalHide();
+      if (ipMigrated) {
+        // 已迁移：通过 Remix action 调 TSF Prisma
+        updateFetcher.submit(
+          {
+            updateUserIp: JSON.stringify({
+              id: defaultData.key,
+              region: formData.region,
+              languageCode: formData.languageCode,
+              currencyCode: formData.currencyCode,
+            }),
+          },
+          { method: "POST" },
+        );
+        // 响应由 updateFetcher.data useEffect 处理（见下方）
       } else {
-        shopify.toast.show(data.errorMsg);
+        // 未迁移：直接调 Java
+        const data = await UpdateUserIp({
+          id: defaultData.key,
+          shop: globalStore?.shop || "",
+          server: server,
+          region: formData.region,
+          languageCode: formData.languageCode,
+          currencyCode: formData.currencyCode,
+        });
+
+        if (data.success) {
+          const newData = {
+            key: data.response?.id || defaultData?.key,
+            region: data.response?.region,
+            languageCode: data.response?.languageCode,
+            currencyCode: data.response?.currencyCode,
+          };
+          handleUpdateDataSource(newData);
+          shopify.toast.show("Saved successfully");
+          setFormData({ region: "", languageCode: "", currencyCode: "" });
+          setIsModalHide();
+        } else {
+          shopify.toast.show(data.errorMsg);
+        }
+        setLoadingStatusArray(
+          loadingStatusArray.filter((item) => item !== "submitting"),
+        );
       }
-      setLoadingStatusArray(
-        loadingStatusArray.filter((item) => item == "submitting"),
-      );
     } else {
       shopify.toast.show(t("You cannot add two conflicting rules."));
     }
   };
+
+  // 处理 TSF updateUserIp 响应
+  useEffect(() => {
+    if (!updateFetcher.data || !defaultData) return;
+    const data = updateFetcher.data;
+    if (data?.success && data?.response) {
+      const newData = {
+        key: data.response?.id || defaultData?.key,
+        region: data.response?.region,
+        languageCode: data.response?.languageCode,
+        currencyCode: data.response?.currencyCode,
+      };
+      handleUpdateDataSource(newData);
+      shopify.toast.show("Saved successfully");
+      setFormData({ region: "", languageCode: "", currencyCode: "" });
+      setIsModalHide();
+    } else if (data && !data?.success) {
+      shopify.toast.show(data?.errorMsg || "Update failed");
+    }
+    setLoadingStatusArray((prev) => prev.filter((item) => item !== "submitting"));
+  }, [updateFetcher.data]);
 
   const onCancel = () => {
     setFormData({

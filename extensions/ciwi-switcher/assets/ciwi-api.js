@@ -27,6 +27,19 @@ async function fetchJson(url, options = {}) {
   return { status: res.status, data };
 }
 
+/**
+ * IP 灰度路由：优先使用 App Proxy（→ TSF 按 isShopIpMigrated 决定走本地或代理 Java）；
+ * App Proxy 不可用时回退到 Java 直连。
+ *
+ * 与 ParseLiquidDataByShopNameAndLanguage 的 appProxyBase 逻辑保持一致：
+ *   - App Proxy 始终配置（{{ shop.url }}/apps/ciwi），99% 情况下有值。
+ *   - 回退只在极端情况（Shopify 扩展注入失败）下生效。
+ */
+function ipBaseUrl(blockId) {
+  const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
+  return appProxyBase || switchUrl(blockId);
+}
+
 export async function NoCrawlerPrintLog({
   blockId,
   shopName,
@@ -43,7 +56,7 @@ export async function NoCrawlerPrintLog({
 }) {
   try {
     await fetchJson(
-      `${switchUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
+      `${ipBaseUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -73,7 +86,7 @@ export async function IncludeCrawlerPrintLog({
 }) {
   try {
     await fetchJson(
-      `${switchUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
+      `${ipBaseUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -267,7 +280,7 @@ export async function fetchAutoRate({ blockId, shop, currencyCode }) {
 export async function checkUserIp({ blockId, shop }) {
   try {
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
+      `${ipBaseUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
       { method: "POST" },
     );
 

@@ -76,6 +76,32 @@ model Glossary {
   @@index([shop])
 }
 
+// 对应 Java `UserIp`——每店一行，记录 IP 定位使用次数与邮件提醒状态
+model ShopIpQuota {
+  shop        String   @id
+  times       BigInt   @default(0)  // 本订阅周期已用次数（超过档位上限则超额检查 quota）
+  allTimes    BigInt   @default(0)  // 累计总次数（Java all_times）
+  firstEmail  Boolean  @default(false)  // 90% 阈值邮件已发
+  secondEmail Boolean  @default(false)  // 100% 阈值邮件已发
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 对应 Java `User_IP_Redirection`——每店的 IP 重定向规则
+model IpRedirection {
+  id           Int      @id              // 迁移时写入 Java 原 id；新建取 max+1
+  shop         String
+  region       String   @default("")    // 国家/地区 ISO 码
+  languageCode String   @default("")    // 目标语言（"auto" 表示不强制）
+  currencyCode String   @default("")    // 目标货币（"auto" 表示不强制）
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shop, isDeleted])
+  @@index([shop, region])
+}
+
 // 取代 Java `User_Liquid`
 model LiquidRule {
   id                String   @id @default(cuid())

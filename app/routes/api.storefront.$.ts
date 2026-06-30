@@ -3,6 +3,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { verifyAppProxyHmac } from "~/server/storefront/auth.server";
 import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
 import { fail } from "~/server/storefront/response.server";
+import { isShopIpMigrated } from "~/server/storefront/ipMigration.server";
+import {
+  checkUserIp,
+  logNoCrawler,
+  logIncludeCrawler,
+} from "~/server/storefront/ip.server";
 
 /**
  * App Proxy storefront 路由：/api/storefront/*
@@ -87,5 +93,105 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
   }
 
+  // ── IP 灰度端点 ──────────────────────────────────────────────────────────
+  // 路径格式（App Proxy 透传后）：
+  //   userIp/checkUserIp
+  //   userIp/noCrawlerPrintLog
+  //   userIp/includeCrawlerPrintLog
+  //
+  // 灰度规则：
+  //   isShopIpMigrated(shop) === true  →  TSF 本地 Prisma 处理
+  //   else                             →  透传到 Java（保持现网行为）
+  // ─────────────────────────────────────────────────────────────────────────
+
+  if (path.startsWith("userIp/")) {
+    const ipMigrated = await isShopIpMigrated(auth.shop);
+
+    if (!ipMigrated) {
+      return proxyToJava(request, auth.shop);
+    }
+
+    if (path === "userIp/checkUserIp") {
+      const result = await checkUserIp(auth.shop);
+      return json(result, { headers: CORS_HEADERS });
+    }
+
+    if (path === "userIp/noCrawlerPrintLog") {
+      const body = await request.json().catch(() => ({}));
+      logNoCrawler(auth.shop, body).catch((e) =>
+        console.error("[ip] logNoCrawler error:", e),
+      );
+      return json(
+        { success: true, errorCode: null, errorMsg: null, response: null },
+        { headers: CORS_HEADERS },
+      );
+    }
+
+    if (path === "userIp/includeCrawlerPrintLog") {
+      const body = await request.json().catch(() => ({}));
+      logIncludeCrawler(auth.shop, body).catch((e) =>
+        console.error("[ip] logIncludeCrawler error:", e),
+      );
+      return json(
+        { success: true, errorCode: null, errorMsg: null, response: null },
+        { headers: CORS_HEADERS },
+      );
+    }
+
+    return json(fail(404, "not found"), { status: 404, headers: CORS_HEADERS });
+  }
+
   return json(fail(404, "not found"), { status: 404, headers: CORS_HEADERS });
 };
+
+// ────────────────────────────────────────────────────────────────────────────
+// 辅助：透传到 Java 后端
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 将请求原样转发到 Java（SpringBackend），保留 query string 和 body。
+ * 用于未迁移店的灰度回退。
+ */
+async function proxyToJava(request: Request, shop: string): Promise<Response> {
+  const javaBase = process.env.SERVER_URL;
+  if (!javaBase) {
+    console.error("[storefront] SERVER_URL not configured, cannot proxy to Java");
+    return new Response(
+      JSON.stringify(fail(503, "java backend not configured")),
+      { status: 503, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
+
+  const url = new URL(request.url);
+  // App Proxy 路径：/api/storefront/{path}  →  Java 路径：/{path}
+  const javaPath = url.pathname.replace(/^\/api\/storefront\//, "/");
+  const javaUrl = `${javaBase}${javaPath}${url.search}`;
+
+  try {
+    let body: string | undefined;
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      body = await request.text();
+    }
+
+    const upstream = await fetch(javaUrl, {
+      method: request.method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-Shop": shop,
+      },
+      body,
+    });
+
+    const data = await upstream.text();
+    return new Response(data, {
+      status: upstream.status,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error(`[storefront] proxyToJava failed url=${javaUrl}:`, err);
+    return new Response(
+      JSON.stringify(fail(502, "java backend unreachable")),
+      { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
+}

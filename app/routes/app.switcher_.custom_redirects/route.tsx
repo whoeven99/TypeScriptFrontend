@@ -10,6 +10,7 @@ import {
   Popover,
   Space,
   Table,
+  Tag,
   Typography,
 } from "antd";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
@@ -26,15 +27,25 @@ import languageLocaleData from "~/utils/language-locale-data";
 import countryLocaleData from "~/utils/country-locale-data";
 import currencyLocaleData from "~/utils/currency-locale-data";
 import { WarningOutlined } from "@ant-design/icons";
+import { isShopIpMigrated } from "~/server/storefront/ipMigration.server";
+import {
+  syncIpRedirections,
+  updateIpRedirection,
+  queryIpCount,
+} from "~/server/storefront/ip.server";
 
 const { Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  const ipMigrated = await isShopIpMigrated(shop);
 
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
+    ipMigrated,
   };
 };
 
@@ -43,42 +54,108 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   const formData = await request.formData();
-  const marketsData = JSON.parse(formData.get("marketsData") as string);
+  const marketsData = JSON.parse((formData.get("marketsData") as string) || "null");
+  const syncUserIpData = JSON.parse((formData.get("syncUserIp") as string) || "null");
+  const updateUserIpData = JSON.parse((formData.get("updateUserIp") as string) || "null");
+  const queryIpCountFlag = formData.get("queryIpCount") === "true";
 
-  switch (true) {
-    case !!marketsData:
-      try {
-        const data = await queryMarketDomainData({
-          shop,
-          accessToken: accessToken as string,
-        });
-        console.log(data);
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
+  // ── IP CRUD（IP 已迁移店走 TSF，否则前端直接调 Java，action 不介入）────────────────
+
+  if (syncUserIpData) {
+    const ipMigrated = await isShopIpMigrated(shop);
+    if (!ipMigrated) {
+      return {
+        success: false,
+        errorCode: 10002,
+        errorMsg: "NOT_MIGRATED",
+        response: null,
+      };
+    }
+    try {
+      const rows = await syncIpRedirections(shop, syncUserIpData);
+      return { success: true, errorCode: null, errorMsg: null, response: rows };
+    } catch (err) {
+      console.error(`[custom_redirects] syncIpRedirections failed shop=${shop}:`, err);
+      return { success: false, errorCode: 10001, errorMsg: "SERVER_ERROR", response: null };
+    }
+  }
+
+  if (updateUserIpData) {
+    const ipMigrated = await isShopIpMigrated(shop);
+    if (!ipMigrated) {
+      return {
+        success: false,
+        errorCode: 10002,
+        errorMsg: "NOT_MIGRATED",
+        response: null,
+      };
+    }
+    try {
+      const updated = await updateIpRedirection(shop, updateUserIpData);
+      if (!updated) {
+        return { success: false, errorCode: 10001, errorMsg: "UPDATE_FAILED", response: null };
       }
-    default:
+      return { success: true, errorCode: null, errorMsg: null, response: updated };
+    } catch (err) {
+      console.error(`[custom_redirects] updateIpRedirection failed shop=${shop}:`, err);
+      return { success: false, errorCode: 10001, errorMsg: "SERVER_ERROR", response: null };
+    }
+  }
+
+  if (queryIpCountFlag) {
+    const ipMigrated = await isShopIpMigrated(shop);
+    if (!ipMigrated) {
+      return {
+        success: false,
+        errorCode: 10002,
+        errorMsg: "NOT_MIGRATED",
+        response: null,
+      };
+    }
+    try {
+      const count = await queryIpCount(shop);
+      return { success: true, errorCode: null, errorMsg: null, response: String(count) };
+    } catch (err) {
+      console.error(`[custom_redirects] queryIpCount failed shop=${shop}:`, err);
+      return { success: false, errorCode: 10001, errorMsg: "SERVER_ERROR", response: null };
+    }
+  }
+
+  // ── Shopify Markets 数据 ────────────────────────────────────────────────────
+
+  if (marketsData) {
+    try {
+      const data = await queryMarketDomainData({
+        shop,
+        accessToken: accessToken as string,
+      });
+      console.log(data);
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
+    } catch (error) {
       return {
         success: false,
         errorCode: 10001,
         errorMsg: "SERVER_ERROR",
         response: null,
       };
+    }
   }
+
+  return {
+    success: false,
+    errorCode: 10001,
+    errorMsg: "SERVER_ERROR",
+    response: null,
+  };
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { server, mobile, ipMigrated } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -159,6 +236,7 @@ const Index = () => {
   );
 
   const marketsFetcher = useFetcher<any>();
+  const syncFetcher = useFetcher<any>();
 
   useEffect(() => {
     marketsFetcher.submit(
@@ -192,11 +270,24 @@ const Index = () => {
       }));
 
       const initCustomRedirectData = async () => {
-        const data = await SyncUserIp({
-          shop: globalStore?.shop || "",
-          server: server || "",
-          initData,
-        });
+        let data: any;
+
+        if (ipMigrated) {
+          // 已迁移：通过 Remix action 走 TSF Prisma
+          syncFetcher.submit(
+            { syncUserIp: JSON.stringify(initData) },
+            { method: "POST" },
+          );
+          // 响应由下方 syncFetcher.data 的 useEffect 处理
+          return;
+        } else {
+          // 未迁移：直接调 Java
+          data = await SyncUserIp({
+            shop: globalStore?.shop || "",
+            server: server || "",
+            initData,
+          });
+        }
 
         if (data?.success) {
           if (Array.isArray(data?.response) && data?.response?.length) {
@@ -211,7 +302,7 @@ const Index = () => {
               }))
               .sort((a: any, b: any) =>
                 a?.regionName?.localeCompare(b?.regionName),
-              ); // 按region字段的首字母排序
+              );
             setDataSource(newData);
           }
         }
@@ -221,6 +312,24 @@ const Index = () => {
       initCustomRedirectData();
     }
   }, [regionsDataSource, currencyDataSource]);
+
+  // 处理 TSF syncUserIp 响应
+  useEffect(() => {
+    if (!syncFetcher.data) return;
+    const data = syncFetcher.data;
+    if (data?.success && Array.isArray(data?.response) && data?.response?.length) {
+      const newData = data.response
+        .map((item: any) => ({
+          ...item,
+          regionName:
+            countryLocaleData[item?.region as keyof typeof countryLocaleData] || "",
+          key: item?.id,
+        }))
+        .sort((a: any, b: any) => a?.regionName?.localeCompare(b?.regionName));
+      setDataSource(newData);
+    }
+    setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
+  }, [syncFetcher.data]);
 
   useEffect(() => {
     if (!marketsFetcher.data?.success) return;
@@ -440,22 +549,27 @@ const Index = () => {
         size="middle"
         style={{ display: "flex", width: "100%" }}
       >
-        <Text>
-          {t(
-            "Configure region-specific redirects for your visitors.Need more regions? Add them in your",
-          )}{" "}
-          <Button
-            type="link"
-            style={{ padding: 0 }}
-            onClick={() =>
-              window.open(
-                `https://admin.shopify.com/store/${shopHandle}/markets`,
-              )
-            }
-          >
-            {t("Shopify Markets settings")}
-          </Button>
-        </Text>
+        <Flex align="center" gap={8} wrap="wrap">
+          <Text>
+            {t(
+              "Configure region-specific redirects for your visitors.Need more regions? Add them in your",
+            )}{" "}
+            <Button
+              type="link"
+              style={{ padding: 0 }}
+              onClick={() =>
+                window.open(
+                  `https://admin.shopify.com/store/${shopHandle}/markets`,
+                )
+              }
+            >
+              {t("Shopify Markets settings")}
+            </Button>
+          </Text>
+          <Tag color={ipMigrated ? "green" : "default"}>
+            {ipMigrated ? "TSF" : "Java"}
+          </Tag>
+        </Flex>
 
         {isMobile ? (
           <>
@@ -581,6 +695,7 @@ const Index = () => {
         currencyTableData={currencyDataSource}
         regionsData={regionsDataSource}
         server={server || ""}
+        ipMigrated={ipMigrated}
         dataSource={dataSource}
         handleUpdateDataSource={({
           key,
