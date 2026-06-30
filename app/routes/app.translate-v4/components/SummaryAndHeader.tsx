@@ -1,10 +1,12 @@
 import type { CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 import { v4Colors, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
 import { useCountUp } from "../hooks/useCountUp";
+import { formatV4PlanType } from "../v4I18n";
 
 type Props = {
   summary: CoverageSummary;
@@ -19,6 +21,7 @@ export function SummaryDonutCard({
   summary,
   compact = false,
 }: Props) {
+  const { t } = useTranslation();
   const percent = summary.overallPercent ?? 0;
   const translatedLanguageCount = summary.locales.filter((row) => (row.percent ?? 0) > 0).length;
   const pendingItems = Math.max(summary.totalItems - summary.translatedItems, 0);
@@ -72,7 +75,7 @@ export function SummaryDonutCard({
                 color: v4Colors.text,
               }}
             >
-              站点翻译状态
+              {t("v4.siteTranslationStatus")}
             </div>
             <div
               style={{
@@ -83,7 +86,10 @@ export function SummaryDonutCard({
                 fontWeight: 400,
               }}
             >
-              {summary.languageCount} 种目标语言中，已有 {translatedLanguageCount} 种包含翻译内容
+              {t("v4.targetLanguagesSummary", {
+                total: summary.languageCount,
+                translated: translatedLanguageCount,
+              })}
             </div>
           </div>
           <div
@@ -96,10 +102,26 @@ export function SummaryDonutCard({
               marginTop: 18,
             }}
           >
-            <StatFoot label="翻译进度" value={`${animatedPercent}%`} unit="整体完成率" />
-            <StatFoot label="已有内容语言" value={`${animatedTranslatedLang}`} unit={`共 ${summary.languageCount} 种`} />
-            <StatFoot label="已译条目" value={formatLargeCount(animatedTranslatedItems)} unit="已完成" />
-            <StatFoot label="待翻译条目" value={formatLargeCount(animatedPendingItems)} unit="待处理" />
+            <StatFoot
+              label={t("v4.translationProgress")}
+              value={`${animatedPercent}%`}
+              unit={t("v4.overallCompletion")}
+            />
+            <StatFoot
+              label={t("v4.languagesWithContent")}
+              value={`${animatedTranslatedLang}`}
+              unit={t("v4.outOfLanguages", { count: summary.languageCount })}
+            />
+            <StatFoot
+              label={t("v4.translatedItems")}
+              value={formatLargeCount(animatedTranslatedItems)}
+              unit={t("v4.done")}
+            />
+            <StatFoot
+              label={t("v4.pendingItems")}
+              value={formatLargeCount(animatedPendingItems)}
+              unit={t("v4.pending")}
+            />
           </div>
         </div>
         <div
@@ -177,7 +199,7 @@ export function SummaryDonutCard({
                   letterSpacing: "-0.01em",
                 }}
               >
-                整体覆盖率
+                {t("v4.overallCoverage")}
               </span>
             </div>
           </div>
@@ -241,7 +263,9 @@ export function SummaryDonutCard({
             <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: v4Colors.text }}>
               {summary.overallPercent != null ? `${animatedPercent}%` : "—"}
             </span>
-            <span style={{ fontSize: 11, color: v4Colors.primaryHover ?? v4Colors.primary, marginTop: 4, fontWeight: 600 }}>已翻译</span>
+            <span style={{ fontSize: 11, color: v4Colors.primaryHover ?? v4Colors.primary, marginTop: 4, fontWeight: 600 }}>
+              {t("v4.translated")}
+            </span>
           </div>
         </div>
       </div>
@@ -255,8 +279,17 @@ export function SummaryDonutCard({
           flexShrink: 0,
         }}
       >
-        <StatFoot label="语言" value={`${summary.languageCount}`} unit="语言" />
-        <StatFoot label="已译条目" value={formatLargeCount(summary.translatedItems)} unit="已译条目" align="right" />
+        <StatFoot
+          label={t("v4.languages")}
+          value={`${summary.languageCount}`}
+          unit={t("v4.languages")}
+        />
+        <StatFoot
+          label={t("v4.translatedItems")}
+          value={formatLargeCount(summary.translatedItems)}
+          unit={t("v4.translatedItems")}
+          align="right"
+        />
       </div>
     </div>
   );
@@ -307,12 +340,13 @@ export function PageHeaderBar({
   credits: number | null;
   planType: string | null;
 }) {
-  const planLabel = formatPlanType(planType);
+  const { t } = useTranslation();
+  const planLabel = formatV4PlanType(planType, t);
 
   return (
     <AppPageHeader
       style={{ marginBottom: 18 }}
-      title="智能翻译"
+      title={t("v4.title")}
       extra={
         <div
           style={{
@@ -336,7 +370,7 @@ export function PageHeaderBar({
               color: v4Colors.textMuted,
             }}
           >
-            <span style={{ fontSize: 12, color: v4Colors.textMuted }}>可用积分</span>
+            <span style={{ fontSize: 12, color: v4Colors.textMuted }}>{t("v4.availableCredits")}</span>
             <span
               style={{
                 fontSize: 13,
@@ -352,17 +386,6 @@ export function PageHeaderBar({
       }
     />
   );
-}
-
-function formatPlanType(planType: string | null): string {
-  if (!planType) return "未开通";
-
-  const normalized = planType.trim().toLowerCase();
-  if (normalized === "free") return "免费版";
-  if (normalized === "basic") return "基础版";
-  if (normalized === "pro" || normalized === "professional") return "专业版";
-  if (normalized === "enterprise" || normalized === "unlimited") return "企业版";
-  return planType;
 }
 
 export function coverageBarColor(percent: number | null): string {

@@ -81,11 +81,11 @@ async function createOneTask(
       return { target, error: payload.error || `HTTP ${response.status}` };
     }
     if (!payload.jobId) {
-      return { target, error: "缺少 jobId" };
+      return { target, error: "v4.create.missingJobId" };
     }
     return { target, jobId: payload.jobId };
   } catch {
-    return { target, error: "网络错误" };
+    return { target, error: "v4.create.networkError" };
   }
 }
 

@@ -5,6 +5,11 @@ import { visibleStageIndex } from "./jobStageUtils";
 
 export const V4_STAGE_KEYS = ["v4.stage.init", "v4.stage.translate", "v4.stage.writeback"] as const;
 
+export function translateV4Message(value: string, t: TFunction): string {
+  const translated = t(value);
+  return translated === value ? value : translated;
+}
+
 export function formatV4Elapsed(ms: number, t: TFunction): string {
   const s = Math.max(0, Math.round(ms / 1000));
   if (s < 60) return t("v4.elapsed.seconds", { count: s });
@@ -169,14 +174,12 @@ export function formatV4CreateTasksMessage(
   localeRegionCode: (locale: string) => string,
 ): string {
   if (result.validationError) {
-    const key = result.validationError;
-    const translated = t(key);
-    return translated === key ? key : translated;
+    return translateV4Message(result.validationError, t);
   }
   if (result.created.length === 0) {
     const first = result.failed[0];
     if (!first) return t("v4.create.failed");
-    return `${localeRegionCode(first.target)}: ${first.error}`;
+    return `${localeRegionCode(first.target)}: ${translateV4Message(first.error, t)}`;
   }
   if (result.failed.length === 0) {
     return result.created.length === 1

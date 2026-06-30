@@ -1,10 +1,11 @@
+import { useTranslation } from "react-i18next";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { v4Colors } from "../v4Styles";
 import {
-  VISIBLE_STAGE_LABELS,
   miniStageSegmentState,
   type VisibleStageIndex,
 } from "../jobStageUtils";
+import { V4_STAGE_KEYS } from "../v4I18n";
 
 export function ProgressRing({ percent, size = "md" }: { percent: number; size?: "md" | "sm" }) {
   const dash = `${percent} 100`;
@@ -50,9 +51,10 @@ const MINI_STAGE_INDICES: VisibleStageIndex[] = [0, 1, 2];
 
 /** 列表卡片：三阶段迷你进度（初始化 → 翻译 → 写回，不含 verify）。 */
 export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) {
+  const { t } = useTranslation();
   const segments = MINI_STAGE_INDICES.map((idx) => ({
     idx,
-    label: VISIBLE_STAGE_LABELS[idx],
+    label: t(V4_STAGE_KEYS[idx]),
     ...miniStageSegmentState(idx, job),
   }));
 

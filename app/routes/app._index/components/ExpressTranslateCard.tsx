@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button } from "antd";
+import { useTranslation } from "react-i18next";
 import { message } from "~/ui/message";
 import { useNavigate } from "@remix-run/react";
 import {
   createTranslateV4Tasks,
-  formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
@@ -18,6 +18,10 @@ import { AutoTaskBadge } from "~/routes/app.translate-v4/components/AutoTranslat
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { JobCollapsedMeta } from "~/routes/app.translate-v4/components/JobExpandedDetail";
 import { ProgressRing, StatusTag } from "~/routes/app.translate-v4/components/V4JobCardParts";
+import {
+  formatV4CreateTasksMessage,
+  translateV4Message,
+} from "~/routes/app.translate-v4/v4I18n";
 
 type ExpressLocaleOption = ShopLocaleOption & { published?: boolean };
 
@@ -86,6 +90,7 @@ const ExpressTranslateCard = ({
   initialJobs,
   migrated,
 }: Props) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
@@ -191,11 +196,11 @@ const ExpressTranslateCard = ({
       });
 
       if (result.validationError) {
-        message.warning(result.validationError);
+        message.warning(translateV4Message(result.validationError, t));
         return;
       }
 
-      const summary = formatCreateTasksMessage(result);
+      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
       if (result.created.length > 0) {
         message.success(summary);
         setTargets([]);
@@ -205,17 +210,19 @@ const ExpressTranslateCard = ({
       }
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
-          result.failed.map((f) => `${f.target}: ${f.error}`).join("；"),
+          result.failed
+            .map((f) => `${localeRegionCode(f.target)}: ${translateV4Message(f.error, t)}`)
+            .join("；"),
           6,
         );
       }
     } catch (err) {
       console.error("[expressV4] create failed:", err);
-      message.error("创建失败，请稍后重试");
+      message.error(t("v4.createFailedRetry"));
     } finally {
       setCreating(false);
     }
-  }, [source, targets, targetOptions, refreshList]);
+  }, [source, targets, targetOptions, refreshList, t]);
 
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
