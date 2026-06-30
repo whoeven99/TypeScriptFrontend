@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Card, Rate, Input, Form, message, Typography, Button } from "antd";
+import { Card, Rate, Input, Form, Typography, Button } from "antd";
+import { message } from "~/ui/message";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 import { CloseOutlined } from "@ant-design/icons";

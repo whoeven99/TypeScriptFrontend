@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { message } from "antd";
+import { message } from "~/ui/message";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";

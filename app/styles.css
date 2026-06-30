@@ -17,8 +17,8 @@
   --app-color-text: var(--p-color-text);
   --app-color-text-secondary: var(--p-color-text-secondary);
   --app-color-text-tertiary: var(--p-color-text-tertiary);
-  --app-color-brand: var(--p-color-bg-fill-brand);
-  --app-color-brand-on-fill: var(--p-color-text-brand-on-bg-fill);
+  --app-color-brand: var(--app-accent-primary);
+  --app-color-brand-on-fill: #ffffff;
   --app-accent-primary: #5467ff;
   --app-accent-primary-hover: #4254e8;
   --app-accent-primary-deep: #2d3572;
@@ -81,6 +81,9 @@ body {
   color: var(--app-color-text);
   font-size: var(--app-font-size-body);
   line-height: 1.5;
+  /* 覆盖 Polaris 原生品牌色，统一为紫色 */
+  --p-color-bg-fill-brand: #5467ff;
+  --p-color-text-brand-on-bg-fill: #ffffff;
 }
 
 .app-subtle-chip {

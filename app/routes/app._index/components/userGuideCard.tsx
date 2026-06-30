@@ -72,12 +72,12 @@ const UserGuideCard: React.FC = () => {
                 justifyContent: "space-between",
                 alignItems: "center",
                 width: "100%",
-                color: "#1890ff",
+                color: "var(--app-color-brand)",
               }}
             >
               <Text
                 style={{
-                  color: "#1890ff",
+                  color: "var(--app-color-brand)",
                   width: "calc(100% - 24px)", // 减去右箭头的宽度
                   overflow: "hidden",
                   textOverflow: "ellipsis",
