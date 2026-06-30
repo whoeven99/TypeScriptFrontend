@@ -19,7 +19,6 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import {
   GetUserWords,
-  GetLanguageStatus,
   AddUserFreeSubscription,
   InsertOrUpdateOrder,
   InitializationDetection,
@@ -143,7 +142,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const customApikeyData = JSON.parse(
       formData.get("customApikeyData") as string,
     );
-    const statusData = JSON.parse(formData.get("statusData") as string);
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
     );
@@ -244,25 +242,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         logGraphQLErrorDetail("Error customApikeyData app", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (statusData) {
-      try {
-        const data = await GetLanguageStatus({
-          shop,
-          source: statusData.source,
-          target: statusData.target,
-        });
-        return data;
-      } catch (error) {
-        logGraphQLErrorDetail("Error statusData app", error);
         return {
           success: false,
           errorCode: 10001,
@@ -515,7 +494,6 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
-    globalStore.translateV4ExpressBeta = true;
   }, []);
 
   useEffect(() => {

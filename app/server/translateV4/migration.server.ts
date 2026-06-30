@@ -1,18 +1,5 @@
 import prisma from "~/db.server";
 
-/** v4 为默认翻译链路，不再按 migratedToTsf 分流。 */
-export async function hasShopMigratedToTsf(_shop: string): Promise<boolean> {
-  return true;
-}
-
-/** @deprecated 保留兼容调用方；恒为 true。 */
-export async function isShopMigrated(_shop: string): Promise<boolean> {
-  return true;
-}
-
-/** 迁移 API / 脚本写入后仍可调用；v4 默认模式下为 no-op。 */
-export function invalidateMigrationCache(_shop: string): void {}
-
 /** 首次进入 v4 时确保 ShopTranslationSettings 存在（幂等）。 */
 export async function ensureShopV4Settings(
   shop: string,

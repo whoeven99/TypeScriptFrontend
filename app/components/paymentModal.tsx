@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
-import { handleContactSupport } from "~/routes/app._index/route";
+import { handleContactSupport } from "~/lib/handleContactSupport";
 import { useSelector } from "react-redux";
 import useReport from "../../scripts/eventReport";
 import "./styles.css";

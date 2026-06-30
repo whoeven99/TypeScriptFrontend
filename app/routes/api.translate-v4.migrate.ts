@@ -5,7 +5,6 @@ import {
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
-import { invalidateMigrationCache } from "~/server/translateV4/migration.server";
 import {
   mergeMigrationTargetLocales,
   javaAutoTranslateByTarget,
@@ -277,7 +276,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     // 通知 Java 跳过本店的自动翻译（避免双翻译）
     await notifyJavaShopMigrated(shop, server);
-    invalidateMigrationCache(shop); // 让术语表/语言页立刻按已迁移分流
 
     const summary: MigrationSummary = {
       already: false,

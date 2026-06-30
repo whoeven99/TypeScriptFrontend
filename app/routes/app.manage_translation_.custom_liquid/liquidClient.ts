@@ -25,11 +25,11 @@ async function postTsfLiquid(body: Record<string, unknown>) {
   return res.json();
 }
 
-export async function selectLiquidCompat(_args: {
-  migrated?: boolean;
-  shop?: string;
-  server?: string;
-}): Promise<{ success: boolean; response?: LiquidTableRow[]; errorMsg?: string }> {
+export async function selectLiquidCompat(): Promise<{
+  success: boolean;
+  response?: LiquidTableRow[];
+  errorMsg?: string;
+}> {
   const res = await fetch("/api/translate-v4/liquid");
   const data = await res.json();
   if (!data.success) return data;
@@ -40,10 +40,7 @@ export async function selectLiquidCompat(_args: {
 }
 
 export async function insertLiquidCompat(args: {
-  migrated?: boolean;
   id?: string;
-  shop?: string;
-  server?: string;
   sourceText: string;
   targetText: string;
   replacementMethod: boolean;
@@ -68,20 +65,10 @@ export async function insertLiquidCompat(args: {
   });
 }
 
-export async function deleteLiquidCompat(args: {
-  migrated?: boolean;
-  shop?: string;
-  server?: string;
-  ids: string[];
-}) {
+export async function deleteLiquidCompat(args: { ids: string[] }) {
   return postTsfLiquid({ intent: "delete", ids: args.ids });
 }
 
-export async function toggleLiquidReplacementMethodCompat(args: {
-  migrated?: boolean;
-  shop?: string;
-  server?: string;
-  id: string;
-}) {
+export async function toggleLiquidReplacementMethodCompat(args: { id: string }) {
   return postTsfLiquid({ intent: "toggleReplacementMethod", id: args.id });
 }

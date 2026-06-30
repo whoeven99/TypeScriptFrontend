@@ -40,14 +40,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
-    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   };
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
-  const migrated = true;
+  const { mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -120,11 +118,7 @@ const Index = () => {
 
     //表格数据初始化方法
     setTimeout(async () => {
-      const selectShopNameLiquidData = await selectLiquidCompat({
-        migrated,
-        shop: globalStore?.shop || "",
-        server: server || "",
-      });
+      const selectShopNameLiquidData = await selectLiquidCompat();
 
       if (selectShopNameLiquidData.success) {
         setDataSource(selectShopNameLiquidData.response ?? []);
@@ -140,14 +134,11 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [migrated, server]);
+  }, []);
 
   //表格数据删除方法
   const handleDelete = async () => {
     const data = await deleteLiquidCompat({
-      migrated,
-      shop: globalStore?.shop || "",
-      server: server || "",
       ids: selectedRowKeys,
     });
     if (data.success) {
@@ -241,9 +232,6 @@ const Index = () => {
   const handleSwitchReplaceMethod = async ({ id }: { id: string }) => {
     const updateLiquidReplacementMethod =
       await toggleLiquidReplacementMethodCompat({
-        migrated,
-        shop: globalStore?.shop || "",
-        server: server || "",
         id,
       });
     if (updateLiquidReplacementMethod?.success) {
@@ -467,8 +455,6 @@ const Index = () => {
         )}
       </Space>
       <UpdateCustomTransModal
-        migrated={migrated}
-        server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={handleUpdateDataSource}
         defaultData={editData}

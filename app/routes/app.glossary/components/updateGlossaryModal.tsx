@@ -8,7 +8,6 @@ import {
   Select,
   Checkbox,
 } from "antd";
-import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import { planMapping } from "../route";
@@ -25,9 +24,6 @@ interface GlossaryModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   shopLocales: ShopLocalesType[];
-  shop: string;
-  server: string;
-  migrated: boolean;
 }
 
 const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
@@ -36,9 +32,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   isVisible,
   setIsModalOpen,
   shopLocales,
-  shop,
-  server,
-  migrated,
 }) => {
   const [sourceText, setSourceText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
@@ -70,14 +63,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
   const { plan } = useSelector((state: any) => state.userConfig);
-
-  useEffect(() => {
-    if (updateFetcher.data) {
-    }
-  }, [updateFetcher.data]);
 
   useEffect(() => {
     if (isVisible) {
@@ -172,8 +159,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       let data;
       if (item) {
         data = await updateGlossaryCompat({
-          migrated,
-          shop: shop,
           data: {
             key: id,
             sourceText: sourceText,
@@ -182,17 +167,13 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             type: checked ? 1 : 0,
             status: item?.status,
           },
-          server: server as string,
         });
       } else {
         data = await insertGlossaryCompat({
-          migrated,
-          shop: shop,
           sourceText: sourceText,
           targetText: targetText,
           rangeCode: rangeCode,
           type: checked ? 1 : 0,
-          server: server as string,
         });
       }
 

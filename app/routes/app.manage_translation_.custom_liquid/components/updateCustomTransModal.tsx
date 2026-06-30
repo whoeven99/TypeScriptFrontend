@@ -3,7 +3,6 @@ import { Modal, Input, Space, Button, Typography, Select, Flex } from "antd";
 import { useSelector } from "react-redux";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import { globalStore } from "~/globalStore";
 import {
   insertLiquidCompat,
   type LiquidTableRow,
@@ -12,8 +11,6 @@ import {
 const { Text } = Typography;
 
 interface UpdateCustomTransModalProps {
-  migrated: boolean;
-  server: string;
   dataSource: LiquidTableRow[];
   defaultData?: LiquidTableRow | undefined;
   handleUpdateDataSource: (row: LiquidTableRow & { key?: string }) => void;
@@ -23,8 +20,6 @@ interface UpdateCustomTransModalProps {
 }
 
 const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
-  migrated,
-  server,
   dataSource,
   defaultData,
   handleUpdateDataSource,
@@ -101,10 +96,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
       const data = await insertLiquidCompat({
-        migrated,
         id: defaultData?.key,
-        shop: globalStore?.shop || "",
-        server,
         sourceText: formData.sourceText,
         targetText: formData.targetText,
         replacementMethod: formData.replacementMethod,
