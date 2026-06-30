@@ -1,14 +1,12 @@
 import axios from "axios";
-import prisma from "~/db.server";
 import { isPageFlyGrayEligible } from "./storefrontGray.server";
 import { ok, fail, type BaseResponse } from "./response.server";
+import {
+  listPageFlyTranslations,
+  type PageFlyTranslationVO,
+} from "~/server/translateV4/pageflyTranslation.server";
 
-/** 对应 Java PageFlyVO：{ id, sourceText, targetText } */
-export type PageFlyTranslationVO = {
-  id: number;
-  sourceText: string;
-  targetText: string;
-};
+export type { PageFlyTranslationVO };
 
 /**
  * 灰度入口：PageFly 译文读取。
@@ -33,12 +31,7 @@ async function readFromPrisma(
   shop: string,
   languageCode: string,
 ): Promise<BaseResponse<PageFlyTranslationVO[]>> {
-  const rows = await prisma.pageFlyTranslation.findMany({
-    where: { shop, languageCode, isDeleted: false },
-    select: { id: true, sourceText: true, targetText: true },
-    orderBy: { id: "asc" },
-  });
-  return ok(rows);
+  return ok(await listPageFlyTranslations(shop, languageCode));
 }
 
 async function proxyToJava(
