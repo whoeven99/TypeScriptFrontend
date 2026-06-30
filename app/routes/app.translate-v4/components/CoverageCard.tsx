@@ -20,7 +20,8 @@ const AUTO_BADGE_HOVER_CSS = `
   background: var(--p-color-bg-surface); border: 1px solid var(--p-color-border-secondary);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   font-size: 10px; font-weight: 500; color: var(--p-color-text-secondary);
-  white-space: nowrap; z-index: 20;
+  max-width: min(240px, calc(100vw - 48px));
+  white-space: normal; overflow-wrap: anywhere; z-index: 20;
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity 0.12s ease, visibility 0.12s;
 }
@@ -98,8 +99,9 @@ export function CoverageCard({
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: 12,
+            flexWrap: "wrap",
           }}
         >
           <div style={{ minWidth: 0 }}>
@@ -115,11 +117,20 @@ export function CoverageCard({
               {t("v4.coverage.title")}
             </h2>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            <Button size="small" onClick={onManageLanguages}>
+          <div style={{ display: "flex", gap: 8, alignItems: "stretch", flexShrink: 0, flexWrap: "wrap", maxWidth: "100%" }}>
+            <Button
+              size="small"
+              onClick={onManageLanguages}
+              style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
+            >
               {t("v4.coverage.manageLanguages")}
             </Button>
-            <Button size="small" onClick={onRefresh} loading={loading}>
+            <Button
+              size="small"
+              onClick={onRefresh}
+              loading={loading}
+              style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
+            >
               {loading ? t("v4.coverage.refreshing") : t("v4.coverage.refreshStats")}
             </Button>
           </div>
@@ -164,6 +175,9 @@ export function CoverageCard({
               color: v4Colors.primary,
               cursor: "pointer",
               fontFamily: "inherit",
+              whiteSpace: "normal",
+              textAlign: "left",
+              lineHeight: 1.35,
             }}
           >
             {expanded
@@ -180,8 +194,8 @@ export function CoverageCard({
 
   return (
     <div style={{ ...v4CardStyle, padding: "16px", position: "sticky", top: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12 }}>
-        <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
             {t("v4.coverage.title")}
           </h2>
@@ -200,6 +214,9 @@ export function CoverageCard({
             opacity: loading ? 0.6 : 1,
             fontFamily: "inherit",
             padding: "4px 6px",
+            whiteSpace: "normal",
+            textAlign: "right",
+            lineHeight: 1.35,
           }}
         >
           {loading ? t("v4.coverage.refreshing") : t("v4.coverage.refreshStats")}
@@ -223,13 +240,16 @@ function HeadMetric({ label, value }: { label: string; value: string }) {
     <div
       style={{
         minWidth: 92,
+        flex: "1 1 110px",
         padding: "8px 10px",
         borderRadius: 10,
         background: v4Colors.cardSubdued,
         border: `1px solid ${v4Colors.cardBorder}`,
       }}
     >
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 600, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+        {label}
+      </div>
       <div
         style={{
           marginTop: 4,
@@ -365,7 +385,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
           fontSize: 13,
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, color: v4Colors.text, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, color: v4Colors.text, minWidth: 0, flexWrap: "wrap" }}>
           <span style={{ flexShrink: 0 }}>
             <span style={{ color: v4Colors.textFaint, marginRight: 6, fontSize: 11 }}>{localeRegionCode(row.locale)}</span>
             {label}

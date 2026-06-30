@@ -73,6 +73,8 @@ export function SummaryDonutCard({
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
                 color: v4Colors.text,
+                lineHeight: 1.4,
+                overflowWrap: "anywhere",
               }}
             >
               {t("v4.siteTranslationStatus")}
@@ -84,6 +86,7 @@ export function SummaryDonutCard({
                 marginTop: 6,
                 lineHeight: "20px",
                 fontWeight: 400,
+                overflowWrap: "anywhere",
               }}
             >
               {t("v4.targetLanguagesSummary", {
@@ -128,6 +131,7 @@ export function SummaryDonutCard({
           style={{
             width: 148,
             minWidth: 148,
+            maxWidth: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -308,7 +312,17 @@ function StatFoot({
 }) {
   return (
     <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginBottom: 6, letterSpacing: "-0.01em" }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: v4Colors.textMuted,
+          fontWeight: 500,
+          marginBottom: 6,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.35,
+          overflowWrap: "anywhere",
+        }}
+      >
         {label}
       </div>
       <div
@@ -322,7 +336,17 @@ function StatFoot({
       >
         {value}
       </div>
-      <div style={{ fontSize: 11, color: v4Colors.textMuted, fontWeight: 500, marginTop: 4, letterSpacing: "-0.01em" }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: v4Colors.textMuted,
+          fontWeight: 500,
+          marginTop: 4,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.35,
+          overflowWrap: "anywhere",
+        }}
+      >
         {unit}
       </div>
     </div>
@@ -355,6 +379,7 @@ export function PageHeaderBar({
             gap: 8,
             flexWrap: "wrap",
             justifyContent: "flex-end",
+            minWidth: 0,
           }}
         >
           <AppStatusBadge tone="info">{planLabel}</AppStatusBadge>
@@ -363,6 +388,8 @@ export function PageHeaderBar({
               display: "flex",
               alignItems: "center",
               gap: 8,
+              flexWrap: "wrap",
+              minWidth: 0,
               padding: "8px 12px",
               borderRadius: 999,
               background: v4Colors.cardBg,
@@ -370,7 +397,9 @@ export function PageHeaderBar({
               color: v4Colors.textMuted,
             }}
           >
-            <span style={{ fontSize: 12, color: v4Colors.textMuted }}>{t("v4.availableCredits")}</span>
+            <span style={{ fontSize: 12, color: v4Colors.textMuted, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+              {t("v4.availableCredits")}
+            </span>
             <span
               style={{
                 fontSize: 13,

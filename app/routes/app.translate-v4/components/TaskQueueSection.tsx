@@ -79,13 +79,13 @@ export function CompactJobCard({
         <ProgressRing percent={percent} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text, minWidth: 0, overflowWrap: "anywhere" }}>
               {formatLocaleRoute(job.source, job.target)}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
             {stageSummary ? (
-              <span style={{ fontSize: 12, color: v4Colors.textFaint, fontWeight: 400 }}>
+              <span style={{ fontSize: 12, color: v4Colors.textFaint, fontWeight: 400, minWidth: 0, overflowWrap: "anywhere" }}>
                 {stageSummary}
               </span>
             ) : null}
@@ -104,6 +104,10 @@ export function CompactJobCard({
               borderRadius: 8,
               background: expanded ? v4Colors.primarySoft : v4Colors.cardSubdued,
               border: `1px solid ${expanded ? "#bfdbff" : v4Colors.cardBorder}`,
+              whiteSpace: "normal",
+              textAlign: "center",
+              height: "auto",
+              lineHeight: 1.35,
             }}
           >
             {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
@@ -200,6 +204,10 @@ function ActionChip({
       style={{
         fontWeight: 600,
         borderRadius: 8,
+        whiteSpace: "normal",
+        textAlign: "center",
+        height: "auto",
+        lineHeight: 1.35,
         ...(kind === "primary"
           ? {
               boxShadow: "none",
@@ -288,7 +296,7 @@ export function TaskQueueSection({
             {helperText}
           </div>
         </div>
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: v4Colors.textFaint, fontWeight: 600 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: v4Colors.textFaint, fontWeight: 600, minWidth: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: v4Colors.successSoft }} />
           {t("v4.tasks.syncLive")}
         </span>
@@ -377,13 +385,23 @@ const historyToggleStyle: CSSProperties = {
   paddingInline: 0,
   fontWeight: 600,
   marginTop: 4,
+  whiteSpace: "normal",
+  textAlign: "left",
+  height: "auto",
+  lineHeight: 1.35,
 };
 
 function tabLabelStyle(active: boolean): CSSProperties {
   return {
+    display: "inline-block",
+    maxWidth: "100%",
     color: active ? v4Colors.primary : v4Colors.textMuted,
     fontSize: 13,
     fontWeight: active ? 600 : 500,
+    lineHeight: 1.35,
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
     transition: "color 0.2s ease",
   };
 }

@@ -97,9 +97,28 @@ export function CreateTaskCard({
         boxShadow: "var(--app-shadow-card-strong)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
+          marginBottom: 18,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: v4Colors.text,
+              lineHeight: 1.4,
+              overflowWrap: "anywhere",
+            }}
+          >
             {t("v4.createTask.title")}
           </h2>
         </div>
@@ -109,6 +128,15 @@ export function CreateTaskCard({
           disabled={!canCreate}
           loading={creating}
           onClick={onCreate}
+          style={{
+            maxWidth: "100%",
+            height: "auto",
+            minHeight: 32,
+            whiteSpace: "normal",
+            textAlign: "center",
+            lineHeight: 1.35,
+            paddingBlock: 6,
+          }}
         >
           {creating
             ? t("v4.createTask.creating")
@@ -191,8 +219,10 @@ export function CreateTaskCard({
             userSelect: "none",
           }}
         >
-          <span>{t("v4.createTask.advancedSettings")}</span>
-          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden>
+          <span style={{ minWidth: 0, textAlign: "left", lineHeight: 1.35, overflowWrap: "anywhere" }}>
+            {t("v4.createTask.advancedSettings")}
+          </span>
+          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden style={{ flexShrink: 0 }}>
             ⌄
           </span>
         </button>
@@ -243,7 +273,7 @@ function SectionHeader({
 }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text, lineHeight: 1.35, overflowWrap: "anywhere" }}>
         {title}
       </div>
     </div>
@@ -251,7 +281,11 @@ function SectionHeader({
 }
 
 function SectionLabel({ children }: { children: string }) {
-  return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
+  return (
+    <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+      {children}
+    </div>
+  );
 }
 
 type TargetOption = { value: string; label: string; regionCode: string };
@@ -267,9 +301,11 @@ function renderLocaleTag(
   const name = typeof label === "string" ? label : opt?.label ?? String(value);
 
   return (
-    <span className="v4-select-tag v4-select-tag--locale">
+    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
       <span className="v4-select-tag__code">{code}</span>
-      <span>{name}</span>
+      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {name}
+      </span>
       {closable ? (
         <button
           type="button"
@@ -297,6 +333,9 @@ function moduleChipStyle(selected: boolean): CSSProperties {
     fontSize: 13,
     fontWeight: 600,
     lineHeight: 1.35,
+    whiteSpace: "normal",
+    textAlign: "left",
+    overflowWrap: "anywhere",
     cursor: "pointer",
     transition: "background 0.15s, color 0.15s",
     fontFamily: "inherit",

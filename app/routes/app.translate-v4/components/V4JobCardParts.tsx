@@ -118,6 +118,8 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
                   : v4Colors.textFaint,
               lineHeight: 1.25,
               letterSpacing: "0.01em",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
             }}
           >
             {seg.label}
@@ -154,12 +156,20 @@ export function StatusTag({
   return (
     <span
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
         fontSize: 12,
         fontWeight: 600,
         padding: "3px 8px",
         borderRadius: 999,
         background: bg,
         color,
+        maxWidth: "100%",
+        textAlign: "center",
+        lineHeight: 1.35,
+        whiteSpace: "normal",
+        overflowWrap: "anywhere",
         border: `1px solid ${status === "COMPLETED"
           ? "#d9f7be"
           : status === "PAUSED"
