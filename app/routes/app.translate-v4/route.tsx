@@ -32,6 +32,7 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import PaymentModal from "~/components/paymentModal";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -134,6 +135,7 @@ export default function AppTranslateV4() {
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
@@ -490,6 +492,7 @@ export default function AppTranslateV4() {
             <TaskQueueSection
               jobs={jobs}
               translateSlotBusy={translateSlotBusy}
+              onBuyCredits={() => setShowPaymentModal(true)}
               onAction={handleAction}
             />
           </div>
@@ -497,6 +500,10 @@ export default function AppTranslateV4() {
       </div>
 
       <SupportChatWidget />
+      <PaymentModal
+        visible={showPaymentModal}
+        setVisible={setShowPaymentModal}
+      />
     </Page>
   );
 }

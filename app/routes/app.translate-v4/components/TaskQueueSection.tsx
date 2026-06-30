@@ -13,14 +13,15 @@ import { JobCollapsedMeta, JobSummaryStats, JobStageProgressList } from "./JobEx
 import {
   getV4JobStatusLabel,
   getV4VisibleStageLabel,
-  translateV4Message,
 } from "../v4I18n";
+import { getV4JobNotice } from "../v4JobNotice";
 
 type Props = {
   job: TranslationJobProgressSummary;
   translateSlotBusy: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
+  onBuyCredits: () => void;
   onAction: (
     taskId: string,
     action: "pause" | "resume" | "cancel" | "delete",
@@ -32,15 +33,14 @@ export function CompactJobCard({
   translateSlotBusy,
   expanded,
   onToggleExpand,
+  onBuyCredits,
   onAction,
 }: Props) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<null | "pause" | "resume" | "cancel" | "delete">(null);
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
-  const noticeMessage = job.errorMessage?.trim()
-    ? translateV4Message(job.errorMessage, t)
-    : null;
+  const notice = getV4JobNotice(job.errorMessage, t);
 
   const percent = jobDisplayPercent(job);
 
@@ -179,8 +179,13 @@ export function CompactJobCard({
         </div>
       ) : null}
 
-      {noticeMessage ? (
-        <JobNoticeBar message={noticeMessage} tone={job.status === "FAILED" ? "danger" : "warning"} />
+      {notice.message ? (
+        <JobNoticeBar
+          message={notice.message}
+          tone={job.status === "FAILED" ? "danger" : "warning"}
+          actionLabel={notice.action === "buy_credits" ? t("Buy credits") : null}
+          onAction={notice.action === "buy_credits" ? onBuyCredits : undefined}
+        />
       ) : null}
     </div>
   );
@@ -189,9 +194,13 @@ export function CompactJobCard({
 function JobNoticeBar({
   message,
   tone,
+  actionLabel,
+  onAction,
 }: {
   message: string;
   tone: "warning" | "danger";
+  actionLabel?: string | null;
+  onAction?: () => void;
 }) {
   const isDanger = tone === "danger";
 
@@ -200,7 +209,9 @@ function JobNoticeBar({
       style={{
         display: "flex",
         alignItems: "flex-start",
-        gap: 8,
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
         marginTop: 12,
         padding: "10px 12px",
         borderRadius: 10,
@@ -208,27 +219,51 @@ function JobNoticeBar({
         border: `1px solid ${isDanger ? "#ffccc7" : "#ffe58f"}`,
       }}
     >
-      <span
-        aria-hidden
+      <div
         style={{
-          width: 6,
-          height: 6,
-          marginTop: 6,
-          borderRadius: "50%",
-          flexShrink: 0,
-          background: isDanger ? v4Colors.danger : v4Colors.warning,
-        }}
-      />
-      <span
-        style={{
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: isDanger ? v4Colors.danger : v4Colors.warning,
-          overflowWrap: "anywhere",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
+          minWidth: 0,
+          flex: 1,
         }}
       >
-        {message}
-      </span>
+        <span
+          aria-hidden
+          style={{
+            width: 6,
+            height: 6,
+            marginTop: 6,
+            borderRadius: "50%",
+            flexShrink: 0,
+            background: isDanger ? v4Colors.danger : v4Colors.warning,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: isDanger ? v4Colors.danger : v4Colors.warning,
+            overflowWrap: "anywhere",
+          }}
+        >
+          {message}
+        </span>
+      </div>
+      {actionLabel && onAction ? (
+        <Button
+          size="small"
+          type="primary"
+          onClick={onAction}
+          style={{
+            flexShrink: 0,
+            borderRadius: 8,
+            boxShadow: "none",
+          }}
+        >
+          {actionLabel}
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -291,10 +326,12 @@ const deleteLinkButtonStyle: CSSProperties = {
 export function TaskQueueSection({
   jobs,
   translateSlotBusy,
+  onBuyCredits,
   onAction,
 }: {
   jobs: TranslationJobProgressSummary[];
   translateSlotBusy: boolean;
+  onBuyCredits: () => void;
   onAction: Props["onAction"];
 }) {
   const { t } = useTranslation();
@@ -408,6 +445,7 @@ export function TaskQueueSection({
               job={job}
               translateSlotBusy={translateSlotBusy}
               expanded={expandedTaskId === job.taskId}
+              onBuyCredits={onBuyCredits}
               onToggleExpand={() =>
                 setExpandedTaskId((current) =>
                   current === job.taskId ? null : job.taskId,
