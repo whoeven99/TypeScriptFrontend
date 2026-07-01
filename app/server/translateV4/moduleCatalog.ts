@@ -25,7 +25,7 @@ export const V2_MODULE_OPTION_KEYS = [
 
 export type TranslateV2ModuleKey = (typeof V2_MODULE_OPTION_KEYS)[number];
 
-/** 手动创建任务默认勾选模块。 */
+/** v2 手动创建任务默认勾选（对齐 app.translate/route.tsx translateSettings3）。 */
 export const DEFAULT_V2_MODULE_KEYS: TranslateV2ModuleKey[] = [
   "products",
   "collection",

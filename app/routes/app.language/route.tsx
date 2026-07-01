@@ -35,6 +35,7 @@ import {
   setStatusState,
   setLanguageTableData,
 } from "~/store/modules/languageTableData";
+import { GetTranslate } from "~/api/JavaServer";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
@@ -116,6 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);
   const webPresences = JSON.parse(formData.get("webPresences") as string);
   const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
+  const translation = JSON.parse(formData.get("translation") as string);
   const deleteData = JSON.parse(formData.get("deleteData") as string);
 
   switch (true) {
@@ -253,6 +255,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "",
           response: [],
         };
+      }
+
+    case !!translation:
+      try {
+        // 字符数未超限，调用翻译接口
+        const data = await GetTranslate({
+          shop,
+          accessToken: accessToken as string,
+          source: translation.primaryLanguage,
+          target: translation.selectedLanguage,
+          translateSettings1: translation.translateSettings1,
+          translateSettings2: translation.translateSettings2,
+          translateSettings3: translation.translateSettings3,
+          customKey: translation.customKey,
+          translateSettings5: translation.translateSettings5,
+        });
+        return data;
+      } catch (error) {
+        console.error("Error translation language:", error);
+        return json({ error: "Error translation language" }, { status: 500 });
       }
 
     case !!deleteData:

@@ -74,6 +74,22 @@ export const WebhookDefaultTheme = async ({
 };
 
 //ip自定义配置初始化
+export const ContinueTranslating = async ({
+  shop,
+  server,
+  taskId,
+}: {
+  shop: string;
+  server: string;
+  taskId: number;
+}) => {
+  return javaApiRequest(`${shop} ContinueTranslatingV2`, {
+    url: `${server}/translate/continueTranslatingV2?shopName=${shop}&taskId=${taskId}`,
+    method: "POST",
+  });
+};
+
+//ip自定义配置初始化
 export const SyncUserIp = async ({
   shop,
   server,
@@ -274,6 +290,21 @@ export const IsInFreePlanTime = async ({
   });
 };
 
+export const GetAllProgressData = async ({
+  shop,
+  server,
+  source,
+}: {
+  shop: string;
+  server: string;
+  source: string;
+}) => {
+  return javaApiRequest(`${shop} GetAllProgressData`, {
+    url: `${server}/translate/getAllProgressData?shopName=${shop}&source=${source}`,
+    method: "POST",
+  });
+};
+
 export const IsShowFreePlan = async ({
   shop,
   server,
@@ -349,6 +380,49 @@ export const IsOpenFreePlan = async ({
       response: false,
     };
   }
+};
+
+export const GetProgressData = async ({
+  shopName,
+  server,
+  source,
+  target,
+}: {
+  shopName: string;
+  server: string;
+  source: string;
+  target: string;
+}) => {
+  return javaApiRequest(
+    `${shopName} GetProgressData`,
+    {
+      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}&source=${source}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+    { fallback: { RemainingQuantity: 0, TotalQuantity: 0 } },
+  );
+};
+
+export const StopTranslatingTask = async ({
+  shopName,
+  server,
+  taskId,
+}: {
+  shopName: string;
+  server: string;
+  taskId: number;
+}) => {
+  return javaApiRequest(
+    `${shopName} StopTranslatingTaskV2`,
+    {
+      url: `${server}/translate/stopTranslatingTaskV2?shopName=${shopName}&taskId=${taskId}`,
+      method: "POST",
+    },
+    { fallback: false },
+  );
 };
 
 export const UpdateProductImageAltData = async ({
@@ -1610,6 +1684,93 @@ export const GetLanguageStatus = async ({
 //     console.error("Error GetTotalWords:", error);
 //   }
 // };
+
+//一键全部翻译
+export const GetTranslate = async ({
+  shop,
+  accessToken,
+  source,
+  target,
+  translateSettings1,
+  translateSettings2,
+  translateSettings3,
+  customKey,
+  translateSettings5,
+}: {
+  shop: string;
+  accessToken: string;
+  source: string;
+  target: string[];
+  translateSettings1: string;
+  translateSettings2: string[];
+  translateSettings3: string[];
+  customKey: string;
+  translateSettings5: boolean;
+}) => {
+  try {
+    console.log(`${shop} GetTranslateData: `, {
+      shopName: shop,
+      accessToken: accessToken,
+      source: source,
+      target: target,
+      translateSettings1: translateSettings1,
+      translateSettings2: translateSettings2.toString(),
+      translateSettings3: translateSettings3,
+      customKey: customKey,
+      isCover: translateSettings5,
+    });
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" || translateSettings1 === "9" ? `privateKey/translate?shopName=${shop}` : `translate/clickTranslation?shopName=${shop}`}`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+        isCover: translateSettings5,
+        customKey: customKey,
+        translateSettings1:
+          translateSettings1 === "8" || translateSettings1 === "9"
+            ? translateSettings1 === "8"
+              ? "0"
+              : "1"
+            : translateSettings1,
+        translateSettings2: translateSettings2.toString(),
+        translateSettings3: translateSettings3,
+      },
+    });
+    console.log(`${shop} ${source}翻译${target}`);
+    console.log(`${shop} 翻译项: `, translateSettings3);
+    console.log(`${shop} 是否覆盖: `, translateSettings5);
+    console.log(`${shop} 自定义提示: `, customKey);
+    console.log("response", response.data);
+
+    const res = {
+      ...response.data,
+      response: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+        translateSettings1: translateSettings1,
+        translateSettings2: translateSettings2.toString(),
+        translateSettings3: translateSettings3,
+        customKey: customKey,
+        isCover: translateSettings5,
+      },
+    };
+    console.log("GetTranslate: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error GetTranslate:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
 
 // 获取谷歌分析
 export const GoogleAnalyticClickReport = async (params: any, name: string) => {

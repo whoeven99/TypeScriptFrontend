@@ -28,10 +28,12 @@ import {
   InsertCharsByShopName,
   InsertTargets,
   GetUserData,
+  StopTranslatingTask,
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
   GetUnTranslatedWords,
+  GetAllProgressData,
   IsInFreePlanTime,
   QueryUserIpCount,
 } from "~/api/JavaServer";

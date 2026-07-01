@@ -11,6 +11,7 @@ import {
 import useReport from "scripts/eventReport";
 import { useMemo, useRef, useState } from "react";
 import { globalStore } from "~/globalStore";
+import { ContinueTranslating, StopTranslatingTask } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
@@ -58,13 +59,31 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   const [stopButtonLoading, setStopButtonLoading] = useState(false);
   const [continueButtonLoading, setContinueButtonLoading] = useState(false);
 
-  const handleContinueTranslate = () => {
-    navigate("/app/translate-v4");
-    reportClick("dashboard_translation_task_continue");
+  const handleContinueTranslate = async () => {
+    setContinueButtonLoading(true)
+    const continueTranslating = await ContinueTranslating({
+      shop: globalStore?.shop || "",
+      server: globalStore?.server || "",
+      taskId,
+    });
+
+    if (continueTranslating?.success) {
+      setContinueButtonLoading(false)
+      updateProgressDataSourceStatus(taskId, 2)
+    }
   };
 
-  const handleStopTranslate = () => {
-    navigate("/app/translate-v4");
+  const handleStopTranslate = async () => {
+    setStopButtonLoading(true)
+    const stopTranslatingTask = await StopTranslatingTask({
+      shopName: globalStore?.shop || "",
+      server: globalStore?.server || "",
+      taskId,
+    });
+    if (stopTranslatingTask?.success) {
+      setStopButtonLoading(false)
+      updateProgressDataSourceStatus(taskId, 7)
+    }
     report(
       {
         stopTranslate: JSON.stringify({
