@@ -370,7 +370,7 @@ async function writeStoredModuleCount(
 }
 
 /**
- * 汇总页某卡片的统计（v4 口径，取代 Java GetTranslationItemsInfo）。
+ * 汇总页某卡片的统计（v4 口径，TSF 本地计算）。
  * 优先读 worker 写入的 Redis 缓存（秒出）；缺失则现算 Shopify 并回写缓存。
  * 多 module（如 Navigation = MENU+LINK）累加，返回与 Java 同形的单元素数组。
  */
