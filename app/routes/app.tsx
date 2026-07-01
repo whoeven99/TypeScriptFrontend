@@ -17,14 +17,12 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import {
   GetUserWords,
-  GetLanguageStatus,
   AddUserFreeSubscription,
   InitializationDetection,
   UserInitialization,
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
-  GetUserData,
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
@@ -315,10 +313,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const init = JSON.parse(formData.get("init") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
-    const customApikeyData = JSON.parse(
-      formData.get("customApikeyData") as string,
-    );
-    const statusData = JSON.parse(formData.get("statusData") as string);
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
     );
@@ -394,50 +388,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       } catch (error) {
         logGraphQLErrorDetail("Error languageData app", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (customApikeyData) {
-      try {
-        const apiNames = [0, 1]; // 对应 google, openai, deepl, deepseek
-        const results = await Promise.all(
-          apiNames.map((apiName) =>
-            GetUserData({
-              shop,
-              apiName,
-            }),
-          ),
-        );
-        return json({
-          customApikeyData: results,
-        });
-      } catch (error) {
-        logGraphQLErrorDetail("Error customApikeyData app", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (statusData) {
-      try {
-        const data = await GetLanguageStatus({
-          shop,
-          source: statusData.source,
-          target: statusData.target,
-        });
-        return data;
-      } catch (error) {
-        logGraphQLErrorDetail("Error statusData app", error);
         return {
           success: false,
           errorCode: 10001,
