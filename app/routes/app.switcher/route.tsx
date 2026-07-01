@@ -33,7 +33,6 @@ import {
 } from "./switcherClient";
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
-import axios from "axios";
 import { queryShopBaseConfigData } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
@@ -614,6 +613,7 @@ const Index = () => {
     }
     setUpdateLoading(false);
     if (isGeoLocationEnabled) {
+      const { default: axios } = await import("axios");
       await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
     }
     fetcher.submit(

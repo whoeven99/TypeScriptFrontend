@@ -4,22 +4,18 @@ import {
   LoaderFunctionArgs,
   json,
 } from "@remix-run/node";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import {
   Card,
-  Select,
   Text,
   InlineStack,
   Page,
   Layout,
-  Grid,
-  Popover,
   BlockStack,
   InlineGrid,
   Icon,
-  Box,
 } from "@shopify/polaris";
-import { Flex, Row, Skeleton, Typography, Button, Divider, Empty } from "antd";
+import { Flex, Skeleton, Typography, Button, Empty } from "antd";
 import { ArrowLeftIcon } from "@shopify/polaris-icons";
 import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -29,8 +25,9 @@ import { GetConversionData } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
-import LineChartECharts from "./components/LineChartECharts";
 const { Title } = Typography;
+
+const LineChartECharts = lazy(() => import("./components/LineChartECharts"));
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -536,7 +533,21 @@ const Index = () => {
                     {Array.isArray(chart.data) &&
                       chart.data.length > 0 &&
                       ready ? (
-                      <LineChartECharts data={chart.data} height={300} />
+                      <Suspense
+                        fallback={
+                          <Skeleton.Input
+                            block
+                            active
+                            style={{
+                              width: "100%",
+                              height: 300,
+                              borderRadius: 8,
+                            }}
+                          />
+                        }
+                      >
+                        <LineChartECharts data={chart.data} height={300} />
+                      </Suspense>
                     ) : (
                       <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
                     )}
