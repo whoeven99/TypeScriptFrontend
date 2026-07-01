@@ -36,7 +36,10 @@ import {
   setLanguageTableData,
 } from "~/store/modules/languageTableData";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
-import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import {
+  deleteTargetLocales,
+  syncShopTargetLocalesFromShopify,
+} from "~/server/translateV4/targetLocale.server";
 import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
 import {
   setAutoTranslateCompat,
@@ -131,7 +134,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           try {
             await syncShopTargetLocalesFromShopify(
               shop,
-              data.map((lang) => ({ locale: lang.locale, primary: lang.primary })),
+              data.map((lang) => ({
+                locale: lang.locale,
+                primary: lang.primary,
+              })),
               primaryLocale,
             );
           } catch (syncErr) {
@@ -529,27 +535,81 @@ const Index = () => {
     if (!dataSource?.some((item: any) => item.status === 2)) return;
     if (!source?.code) return;
 
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stablePollCount = 0;
+    let lastStatusSignature = dataSource
+      .map((item) => `${item.locale}:${item.status ?? ""}`)
+      .join("|");
+
+    const scheduleNextPoll = () => {
+      const delay =
+        typeof document !== "undefined" && document.hidden
+          ? 30_000
+          : Math.min(30_000, 3_000 * 2 ** Math.min(stablePollCount, 3));
+      timer = setTimeout(() => {
+        void pollV4LanguageStatus();
+      }, delay);
+    };
+
     const pollV4LanguageStatus = async () => {
-      const languageList = await listLanguageStatusCompat({
-        shop,
-        server: server as string,
-        source: source.code,
-      });
-      const rows = languageList?.response ?? [];
-      for (const lang of dataSource) {
-        const row = rows.find((r: { target: string }) =>
-          sameTranslationLocale(r.target, lang.locale),
-        );
-        if (row) {
-          dispatch(setStatusState({ target: lang.locale, status: row.status }));
+      if (disposed) return;
+      if (typeof document !== "undefined" && document.hidden) {
+        scheduleNextPoll();
+        return;
+      }
+
+      try {
+        const languageList = await listLanguageStatusCompat({
+          shop,
+          server: server as string,
+          source: source.code,
+        });
+        const rows = languageList?.response ?? [];
+        const nextStatusSignature = dataSource
+          .map((lang) => {
+            const row = rows.find((r: { target: string }) =>
+              sameTranslationLocale(r.target, lang.locale),
+            );
+            return `${lang.locale}:${row?.status ?? lang.status ?? ""}`;
+          })
+          .join("|");
+
+        stablePollCount =
+          nextStatusSignature === lastStatusSignature ? stablePollCount + 1 : 0;
+        lastStatusSignature = nextStatusSignature;
+
+        let hasPendingStatus = false;
+        for (const lang of dataSource) {
+          const row = rows.find((r: { target: string }) =>
+            sameTranslationLocale(r.target, lang.locale),
+          );
+          const nextStatus = row?.status ?? lang.status;
+          if (nextStatus === 2) hasPendingStatus = true;
+          if (row) {
+            dispatch(
+              setStatusState({ target: lang.locale, status: row.status }),
+            );
+          }
         }
+
+        if (hasPendingStatus) {
+          scheduleNextPoll();
+        }
+      } catch (error) {
+        console.error("[language] poll v4 language status failed:", error);
+        stablePollCount += 1;
+        scheduleNextPoll();
       }
     };
 
-    const intervalId = setInterval(() => {
+    timer = setTimeout(() => {
       void pollV4LanguageStatus();
     }, 3000);
-    return () => clearInterval(intervalId);
+    return () => {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [dataSource, source?.code, shop, server, dispatch]);
 
   const columns = [
@@ -797,164 +857,166 @@ const Index = () => {
         )}
       />
       <div className={styles.languagePage}>
-      <div className={styles.languagePageInner}>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
-        <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
-          <div className={styles.languageTable_action}>
-          <Flex
-            className={styles.languageToolbar}
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                disabled={!hasSelected}
-                loading={deleteloading}
-                onClick={() => {
-                  if (dontPromptAgain) {
-                    handleDelete();
-                  } else {
-                    setDeleteConfirmModalVisible(true);
-                  }
-                }}
-              >
-                {t("Delete")}
-              </Button>
-              <Text style={{ color: "var(--app-color-text-secondary)" }}>
-                {hasSelected
-                  ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                  : null}
-              </Text>
-            </Flex>
-            {loading ? (
-              <Space>
-                <Skeleton.Button active />
-                <Skeleton.Button active />
-              </Space>
-            ) : (
-              <Space>
-                {!isMobile && (
-                  <Button type="default" onClick={PreviewClick}>
-                    {t("Preview store")}
-                  </Button>
-                )}
-                <Button type="primary" onClick={handleOpenModal}>
-                  {t("Add Language")}
-                </Button>
-              </Space>
-            )}
-          </Flex>
-          {isMobile ? (
-            <Card
-              className={styles.languageMobileCard}
-              title={
-                <Checkbox
-                  checked={allCurrentPageSelected && !loading}
-                  indeterminate={
-                    someCurrentPageSelected && !allCurrentPageSelected
-                  }
-                  onChange={(e: any) =>
-                    setSelectedRowKeys(
-                      e.target.checked
-                        ? dataSource.map((item) => item.key)
-                        : [],
-                    )
-                  }
+        <div className={styles.languagePageInner}>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
+            <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
+              <div className={styles.languageTable_action}>
+                <Flex
+                  className={styles.languageToolbar}
+                  align="center"
+                  justify="space-between" // 使按钮左右分布
+                  style={{ width: "100%", marginBottom: "16px" }}
                 >
-                  {t("Languages")}
-                </Checkbox>
-              }
-              loading={loading}
-              style={{ border: "none", boxShadow: "none" }}
-            >
-              {dataSource.map((item: any) => (
-                <Card.Grid key={item.key} style={{ width: "100%" }}>
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ width: "100%" }}
-                  >
-                    <Checkbox
-                      checked={selectedRowKeys.includes(item.key)}
-                      onChange={(e: any) => {
-                        setSelectedRowKeys(
-                          e.target.checked
-                            ? [...selectedRowKeys, item.key]
-                            : selectedRowKeys.filter((key) => key !== item.key),
-                        );
+                  <Flex align="center" gap="middle">
+                    <Button
+                      disabled={!hasSelected}
+                      loading={deleteloading}
+                      onClick={() => {
+                        if (dontPromptAgain) {
+                          handleDelete();
+                        } else {
+                          setDeleteConfirmModalVisible(true);
+                        }
                       }}
                     >
-                      {item.name}
-                    </Checkbox>
-                    <div>
-                      <TranslatedIcon status={item.status} />
-                    </div>
-                    <Flex justify="space-between">
-                      <Text>{t("Publish")}</Text>
-                      <Switch
-                        checked={item.published}
-                        onChange={(checked) =>
-                          handlePublishChange(item.locale, checked)
+                      {t("Delete")}
+                    </Button>
+                    <Text style={{ color: "var(--app-color-text-secondary)" }}>
+                      {hasSelected
+                        ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                        : null}
+                    </Text>
+                  </Flex>
+                  {loading ? (
+                    <Space>
+                      <Skeleton.Button active />
+                      <Skeleton.Button active />
+                    </Space>
+                  ) : (
+                    <Space>
+                      {!isMobile && (
+                        <Button type="default" onClick={PreviewClick}>
+                          {t("Preview store")}
+                        </Button>
+                      )}
+                      <Button type="primary" onClick={handleOpenModal}>
+                        {t("Add Language")}
+                      </Button>
+                    </Space>
+                  )}
+                </Flex>
+                {isMobile ? (
+                  <Card
+                    className={styles.languageMobileCard}
+                    title={
+                      <Checkbox
+                        checked={allCurrentPageSelected && !loading}
+                        indeterminate={
+                          someCurrentPageSelected && !allCurrentPageSelected
                         }
-                      />
-                    </Flex>
-                    <Flex justify="space-between">
-                      <Text>{t("Auto translation")}</Text>
-                      <Switch
-                        checked={item.autoTranslate}
-                        onChange={(checked) =>
-                          handleAutoUpdateTranslationChange(
-                            item.locale,
-                            checked,
-                            item.status,
+                        onChange={(e: any) =>
+                          setSelectedRowKeys(
+                            e.target.checked
+                              ? dataSource.map((item) => item.key)
+                              : [],
                           )
                         }
-                      />
-                    </Flex>
-                    <Button
-                      type="primary"
-                      style={{ width: "100%" }}
-                      onClick={() => {
-                        navigate(getTranslatePagePath(), {
-                          state: {
-                            from: "/app/language",
-                            selectedLanguageCode: [item.locale],
-                          },
-                        });
-                      }}
-                    >
-                      {t("Translate")}
-                    </Button>
-                    <Button
-                      style={{ width: "100%" }}
-                      onClick={() => {
-                        navigate(
-                          `/app/manage_translation?language=${item?.locale}`,
-                        );
-                      }}
-                    >
-                      {t("Manage")}
-                    </Button>
-                  </Space>
-                </Card.Grid>
-              ))}
-            </Card>
-          ) : (
-            <Table
-              className={styles.languageTable}
-              rowSelection={rowSelection}
-              columns={columns}
-              dataSource={dataSource}
-              rowKey={(record) => record.key ?? record.locale}
-              loading={deleteloading || loading}
-            />
-          )}
-          </div>
-        </AppSectionCard>
-      </Space>
-      </div>
+                      >
+                        {t("Languages")}
+                      </Checkbox>
+                    }
+                    loading={loading}
+                    style={{ border: "none", boxShadow: "none" }}
+                  >
+                    {dataSource.map((item: any) => (
+                      <Card.Grid key={item.key} style={{ width: "100%" }}>
+                        <Space
+                          direction="vertical"
+                          size="middle"
+                          style={{ width: "100%" }}
+                        >
+                          <Checkbox
+                            checked={selectedRowKeys.includes(item.key)}
+                            onChange={(e: any) => {
+                              setSelectedRowKeys(
+                                e.target.checked
+                                  ? [...selectedRowKeys, item.key]
+                                  : selectedRowKeys.filter(
+                                      (key) => key !== item.key,
+                                    ),
+                              );
+                            }}
+                          >
+                            {item.name}
+                          </Checkbox>
+                          <div>
+                            <TranslatedIcon status={item.status} />
+                          </div>
+                          <Flex justify="space-between">
+                            <Text>{t("Publish")}</Text>
+                            <Switch
+                              checked={item.published}
+                              onChange={(checked) =>
+                                handlePublishChange(item.locale, checked)
+                              }
+                            />
+                          </Flex>
+                          <Flex justify="space-between">
+                            <Text>{t("Auto translation")}</Text>
+                            <Switch
+                              checked={item.autoTranslate}
+                              onChange={(checked) =>
+                                handleAutoUpdateTranslationChange(
+                                  item.locale,
+                                  checked,
+                                  item.status,
+                                )
+                              }
+                            />
+                          </Flex>
+                          <Button
+                            type="primary"
+                            style={{ width: "100%" }}
+                            onClick={() => {
+                              navigate(getTranslatePagePath(), {
+                                state: {
+                                  from: "/app/language",
+                                  selectedLanguageCode: [item.locale],
+                                },
+                              });
+                            }}
+                          >
+                            {t("Translate")}
+                          </Button>
+                          <Button
+                            style={{ width: "100%" }}
+                            onClick={() => {
+                              navigate(
+                                `/app/manage_translation?language=${item?.locale}`,
+                              );
+                            }}
+                          >
+                            {t("Manage")}
+                          </Button>
+                        </Space>
+                      </Card.Grid>
+                    ))}
+                  </Card>
+                ) : (
+                  <Table
+                    className={styles.languageTable}
+                    rowSelection={rowSelection}
+                    columns={columns}
+                    dataSource={dataSource}
+                    rowKey={(record) => record.key ?? record.locale}
+                    loading={deleteloading || loading}
+                  />
+                )}
+              </div>
+            </AppSectionCard>
+          </Space>
+        </div>
       </div>
       <AddLanguageModal
         shop={shop}

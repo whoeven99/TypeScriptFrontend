@@ -13,7 +13,7 @@ import {
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import { SearchOutlined } from "@ant-design/icons";
 import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
@@ -24,24 +24,20 @@ import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import {
+  getManageTranslationLanguage,
+  manageTranslationLanguageLoader,
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Text } = Typography;
 
 const { Sider, Content } = Layout;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
-  return json({
-    searchTerm,
-  });
-};
+export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+  const searchTerm = getManageTranslationLanguage(request);
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -225,7 +221,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在翻译管理-主题页面`,
+        log: `${globalStore?.shop} 目前在翻译管�?主题页面`,
       },
       {
         method: "POST",
@@ -461,7 +457,7 @@ const Index = () => {
             ? (second ?? first)
             : first;
 
-        // ✅ 首字母大写
+        // �?首字母大�?
         const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
 
         return { key: rawLabel, label };
@@ -506,14 +502,14 @@ const Index = () => {
   const handleInputChange = (record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
-      [record?.key]: value, // 更新对应的 key
+      [record?.key]: value, // 更新对应�?key
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
         (item) => item.id === record?.key,
       );
       if (existingItemIndex !== -1) {
-        // 如果 key 存在，更新其对应的 value
+        // 如果 key 存在，更新其对应�?value
         const updatedConfirmData = [...prevData];
         updatedConfirmData[existingItemIndex] = {
           ...updatedConfirmData[existingItemIndex],
@@ -526,12 +522,12 @@ const Index = () => {
           resourceId: record?.resourceId,
           locale: globalStore?.source || "",
           key: record?.shopifyKey,
-          value: value, // 初始为空字符串
+          value: value, // 初始为空字符�?
           translatableContentDigest: record?.digest,
           target: searchTerm || "",
         };
 
-        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+        return [...prevData, newItem]; // 将新数据添加�?confirmData �?
       }
     });
   };
@@ -547,7 +543,7 @@ const Index = () => {
   }) => {
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 从翻译管理-主题页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管�?主题页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -574,7 +570,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 从翻译管理-主题页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管�?主题页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -588,7 +584,6 @@ const Index = () => {
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
-  
   const refreshCurrentPageData = () => {
     const currentResourceIds = themesData
       .map((item: any) => item?.resourceId)
@@ -607,7 +602,7 @@ const Index = () => {
       },
     );
   };
-const handleLanguageChange = (language: string) => {
+  const handleLanguageChange = (language: string) => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
@@ -670,7 +665,7 @@ const handleLanguageChange = (language: string) => {
 
   const handleConfirm = () => {
     const formData = new FormData();
-    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发�?
     confirmFetcher.submit(formData, {
       method: "post",
     }); // 提交表单请求
@@ -697,7 +692,7 @@ const handleLanguageChange = (language: string) => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
     }
   };
 

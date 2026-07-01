@@ -16,7 +16,7 @@ import {
   Input,
 } from "antd";
 import { SearchOutlined, UploadOutlined } from "@ant-design/icons";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { NoteIcon } from "@shopify/polaris-icons";
 import { Page, Pagination, Select, Thumbnail, Spinner } from "@shopify/polaris";
@@ -27,25 +27,21 @@ import { authenticate } from "~/shopify.server";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import {
+  getManageTranslationLanguage,
+  manageTranslationLanguageLoader,
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
-  return {
-    searchTerm,
-  };
-};
+export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { admin } = adminAuthResult;
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const productStartCursor: any = JSON.parse(
@@ -548,9 +544,9 @@ const Index = () => {
   const [sourceLanguage, setSourceLanguage] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
   const specialTargetRules: Record<string, string[]> = {
-    "zh-tw": ["zh", "en"], // 目标为繁体，只能由 zh 或 en 来翻译
-    el: ["en", "tr"], // 目标为希腊语，只能由 en 或 tr 来翻译
-    kk: ["zh"], // 目标为哈萨克语，只能由 zh 来翻译
+    "zh-tw": ["zh", "en"], // 目标为繁体，只能�?zh �?en 来翻�?
+    el: ["en", "tr"], // 目标为希腊语，只能由 en �?tr 来翻�?
+    kk: ["zh"], // 目标为哈萨克语，只能�?zh 来翻�?
   };
 
   useEffect(() => {
@@ -573,9 +569,9 @@ const Index = () => {
   const canTranslate = (source: string, target: string): boolean => {
     const src = normalizeLocale(source);
     const tgt = normalizeLocale(target);
-    // 目标语言必须在输出范围
+    // 目标语言必须在输出范�?
     if (!baseOutput.has(tgt)) return false;
-    // 源语言必须在输入范围
+    // 源语言必须在输入范�?
     if (!baseInput.has(src)) return false;
     // 检查是否有特殊规则
     if (specialTargetRules[tgt]) {
@@ -592,16 +588,16 @@ const Index = () => {
     if (lower.startsWith("en")) return "en";
     if (lower.startsWith("pt")) return "pt";
 
-    // ✅ 处理其它常见格式（如 en-US / fr-CA）
+    // �?处理其它常见格式（如 en-US / fr-CA�?
     return lower;
   };
   useEffect(() => {
     setTargetLanguage(normalizeLocale(selectedLanguage));
   }, [selectedLanguage]);
-  // 当 sourceLanguage 改变时，动态计算 targetLanguages
+  // �?sourceLanguage 改变时，动态计�?targetLanguages
   useEffect(() => {
     const allowedTargets = [...baseOutput].filter((target) => {
-      // 排除跟 source 相同的 code（避免自翻译）
+      // 排除�?source 相同�?code（避免自翻译�?
       if (target === normalizeLocale(sourceLanguage)) return false;
 
       // 如果目标在特殊规则里，则仅当当前 source 在允许列表中才允许该目标
@@ -621,7 +617,7 @@ const Index = () => {
 
     setTargetLanguages(options);
 
-    // 如果当前选的 targetLanguage 不在新候选里，重置为第一个（如果存在）
+    // 如果当前选的 targetLanguage 不在新候选里，重置为第一个（如果存在�?
     if (!allowedTargets.includes(targetLanguage)) {
       setTargetLanguage(options[0]?.value ?? "");
     }
@@ -634,7 +630,7 @@ const Index = () => {
   useEffect(() => {
     if (targetLanguage && specialTargetRules[targetLanguage]) {
       const allowedSources = specialTargetRules[targetLanguage];
-      setSourceLanguages(buildOptions(allowedSources)); // 🎯 转换成 {label, value} 格式
+      setSourceLanguages(buildOptions(allowedSources)); // 🎯 转换�?{label, value} 格式
     } else {
       setSourceLanguages(buildOptions([...baseInput])); // 🎯 同样格式
     }
@@ -662,7 +658,7 @@ const Index = () => {
   const handleImageTranslate = (record: any) => {
     // 语言限制弹框
     if (!canTranslate(sourceLanguage, targetLanguage)) {
-      // console.log("当前语言不支持翻译");
+      // console.log("当前语言不支持翻�?);
       shopify.toast.show(
         t("The current language does not support image translation"),
       );
@@ -724,7 +720,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在翻译管理-产品图片页面`,
+        log: `${globalStore?.shop} 目前在翻译管�?产品图片页面`,
       },
       {
         method: "POST",
@@ -852,7 +848,7 @@ const Index = () => {
         ) : (
           <>
             {record.imageId === currentTranslatingImage.imageId &&
-              translateImageFetcher.state === "submitting" ? (
+            translateImageFetcher.state === "submitting" ? (
               <Spinner accessibilityLabel="Loading thumbnail" size="large" />
             ) : (
               <Thumbnail source={NoteIcon} size="large" alt="Small document" />
@@ -888,7 +884,7 @@ const Index = () => {
                 const isImage = file.type.startsWith("image/");
                 const isLt20M = file.size / 1024 / 1024 < 20;
 
-                // 检查文件格式
+                // 检查文件格�?
                 const supportedFormats = [
                   "image/jpeg",
                   "image/png",
@@ -917,12 +913,12 @@ const Index = () => {
                   return false;
                 }
 
-                // 检查图片像素大小
+                // 检查图片像素大�?
                 return new Promise((resolve) => {
                   const img = new window.Image();
                   img.onload = () => {
                     const pixelCount = img.width * img.height;
-                    const maxPixels = 20000000; // 2000万像素
+                    const maxPixels = 20000000; // 2000万像�?
 
                     if (pixelCount > maxPixels) {
                       shopify.toast.show(
@@ -1005,12 +1001,12 @@ const Index = () => {
   const handleSearch = (value: string) => {
     setQueryText(value);
 
-    // 清除上一次的定时器
+    // 清除上一次的定时�?
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
     }
 
-    // 延迟 1s 再执行请求
+    // 延迟 1s 再执行请�?
     timeoutIdRef.current = setTimeout(() => {
       productsFetcher.submit(
         {
@@ -1131,7 +1127,7 @@ const Index = () => {
   };
 
   const onCancel = () => {
-    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
   };
 
   return (
@@ -1343,7 +1339,7 @@ const Index = () => {
                                     const isLt20M =
                                       file.size / 1024 / 1024 < 20;
 
-                                    // 检查文件格式
+                                    // 检查文件格�?
                                     const supportedFormats = [
                                       "image/jpeg",
                                       "image/png",
@@ -1377,13 +1373,13 @@ const Index = () => {
                                       return false;
                                     }
 
-                                    // 检查图片像素大小
+                                    // 检查图片像素大�?
                                     return new Promise((resolve) => {
                                       const img = new window.Image();
                                       img.onload = () => {
                                         const pixelCount =
                                           img.width * img.height;
-                                        const maxPixels = 20000000; // 2000万像素
+                                        const maxPixels = 20000000; // 2000万像�?
 
                                         if (pixelCount > maxPixels) {
                                           shopify.toast.show(
@@ -1538,13 +1534,13 @@ const Index = () => {
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(productImageData[0]?.imageHasPreviousPage ||
                       productImageData[0]?.imageHasNextPage) && (
-                        <Pagination
-                          hasPrevious={productImageData[0]?.imageHasPreviousPage}
-                          onPrevious={handleImagePrevious}
-                          hasNext={productImageData[0]?.imageHasNextPage}
-                          onNext={handleImageNext}
-                        />
-                      )}
+                      <Pagination
+                        hasPrevious={productImageData[0]?.imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={productImageData[0]?.imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}

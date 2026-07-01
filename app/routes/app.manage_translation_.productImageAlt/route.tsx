@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { json, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Pagination, Select } from "@shopify/polaris";
@@ -25,6 +25,10 @@ import {
 } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import {
+  getManageTranslationLanguage,
+  manageTranslationLanguageLoader,
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
@@ -32,22 +36,14 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
-  return json({
-    searchTerm,
-  });
-};
+export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);
@@ -549,7 +545,7 @@ const Index = () => {
     loadFetcher.submit({ loading: true }, { method: "post" });
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在翻译管理-产品图片Alt图片描述页面`,
+        log: `${globalStore?.shop} 目前在翻译管�?产品图片Alt图片描述页面`,
       },
       {
         method: "POST",
@@ -598,7 +594,7 @@ const Index = () => {
     }
   }, [imageFetcher.data]);
 
-  // 更新 loadingItemsRef 的值
+  // 更新 loadingItemsRef 的�?
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
@@ -711,7 +707,7 @@ const Index = () => {
             value={
               confirmData.find((item: any) => item.key === record?.imageId)
                 ? confirmData.find((item: any) => item.key === record?.imageId)
-                  ?.value
+                    ?.value
                 : record?.targetAltText
             }
             onChange={(e) => handleInputChange(record, e.target.value)}
@@ -782,7 +778,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 从翻译管理-产品图片Alt页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管�?产品图片Alt页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -810,7 +806,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 从翻译管理-产品图片Alt页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管�?产品图片Alt页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -945,11 +941,11 @@ const Index = () => {
       }),
     );
 
-    // 并发执行所有请求
+    // 并发执行所有请�?
     try {
       let successCount = 0;
       const results = await Promise.all(promises);
-      // 这里可以根据 results 做成功/失败的提示
+      // 这里可以根据 results 做成�?失败的提�?
       results.forEach((result) => {
         if (result.success) {
           successCount++;
@@ -992,7 +988,7 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
     }
   };
 
@@ -1194,10 +1190,10 @@ const Index = () => {
                                         productAltTextItem?.imageId,
                                     )
                                       ? confirmData.find(
-                                        (confirmItem: any) =>
-                                          confirmItem.key ===
-                                          productAltTextItem?.imageId,
-                                      )?.value
+                                          (confirmItem: any) =>
+                                            confirmItem.key ===
+                                            productAltTextItem?.imageId,
+                                        )?.value
                                       : productAltTextItem.targetAltText
                                   }
                                   onChange={(e) =>

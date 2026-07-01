@@ -4,7 +4,7 @@ import {
   LoaderFunctionArgs,
   json,
 } from "@remix-run/node";
-import React, { Suspense, lazy, useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import {
   Card,
   Text,
@@ -111,6 +111,8 @@ const Index = () => {
   const [chartData, setChartData] = useState<any>([]);
   const [filteredChartData, setFilteredChartData] = useState<any>([]);
   const [defaultLanguage, setDefaultLanguage] = useState<string>("");
+  const chartAreaRef = useRef<HTMLDivElement | null>(null);
+  const [chartAreaVisible, setChartAreaVisible] = useState(false);
 
   const SkeletonGrid = ["1", "2", "3", "4"];
   const getLast24HoursRange = (): { start: Date; end: Date } => {
@@ -174,10 +176,9 @@ const Index = () => {
     const filled = chartData.map((chart: any) => {
       return {
         ...chart,
-        language:
-          chart.locale?.includes(defaultLanguage)
-            ? `${chart.language} (${t("Default Language")})`
-            : chart.language,
+        language: chart.locale?.includes(defaultLanguage)
+          ? `${chart.language} (${t("Default Language")})`
+          : chart.language,
         data: chart.data.map((series: any) => {
           const valueMap = new Map(
             Array.isArray(series.data)
@@ -400,6 +401,29 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (chartAreaVisible) return;
+    const el = chartAreaRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setChartAreaVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setChartAreaVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [chartAreaVisible]);
+
   return (
     <Page>
       {/* 筛选器 */}
@@ -452,7 +476,7 @@ const Index = () => {
                   currentFilterCondition === "last7" ? "primary" : "default"
                 }
                 onClick={() => {
-                  setPreset("last7"), clickReportDate(7);
+                  (setPreset("last7"), clickReportDate(7));
                 }}
               >
                 {t("Last 7 Days")}
@@ -495,71 +519,84 @@ const Index = () => {
       <div style={{ height: "20px" }}></div>
       <Layout>
         <Layout.Section>
-          <InlineGrid
-            gap="400"
-            columns={{
-              xs: "1fr", // 手机：1列
-              sm: "1fr", // 平板：2列
-              md: `repeat(${gridColumns}, minmax(300px, 1fr))`, // 桌面：动态列数
-            }}
-          >
-            {isLoading ? (
-              SkeletonGrid.map((item: any, index: number) => {
-                return (
+          <div ref={chartAreaRef}>
+            <InlineGrid
+              gap="400"
+              columns={{
+                xs: "1fr", // 手机：1列
+                sm: "1fr", // 平板：2列
+                md: `repeat(${gridColumns}, minmax(300px, 1fr))`, // 桌面：动态列数
+              }}
+            >
+              {isLoading ? (
+                SkeletonGrid.map((item: any, index: number) => {
+                  return (
+                    <Card key={index}>
+                      <Skeleton active paragraph={{ rows: 1 }} />
+                      <Skeleton.Input
+                        block
+                        active
+                        style={{ width: "100%", height: 200, borderRadius: 8 }}
+                      />
+                    </Card>
+                  );
+                })
+              ) : filteredChartData.length > 0 ? (
+                filteredChartData.map((chart: any, index: number) => (
                   <Card key={index}>
-                    <Skeleton active paragraph={{ rows: 1 }} />
-                    <Skeleton.Input
-                      block
-                      active
-                      style={{ width: "100%", height: 200, borderRadius: 8 }}
-                    />
-                  </Card>
-                );
-              })
-            ) : filteredChartData.length > 0 ? (
-              filteredChartData.map((chart: any, index: number) => (
-                <Card key={index}>
-                  <Text as="h3" variant="headingSm">
-                    {chart.language}
-                  </Text>
-                  <div
-                    style={{
-                      height: 300,
-                      width: "100%",
-                      // minWidth: 400,
-                      marginTop: "16px",
-                    }}
-                  >
-                    {Array.isArray(chart.data) &&
+                    <Text as="h3" variant="headingSm">
+                      {chart.language}
+                    </Text>
+                    <div
+                      style={{
+                        height: 300,
+                        width: "100%",
+                        // minWidth: 400,
+                        marginTop: "16px",
+                      }}
+                    >
+                      {Array.isArray(chart.data) &&
                       chart.data.length > 0 &&
-                      ready ? (
-                      <Suspense
-                        fallback={
-                          <Skeleton.Input
-                            block
-                            active
-                            style={{
-                              width: "100%",
-                              height: 300,
-                              borderRadius: 8,
-                            }}
-                          />
-                        }
-                      >
-                        <LineChartECharts data={chart.data} height={300} />
-                      </Suspense>
-                    ) : (
-                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                    )}
-                  </div>
+                      ready &&
+                      chartAreaVisible ? (
+                        <Suspense
+                          fallback={
+                            <Skeleton.Input
+                              block
+                              active
+                              style={{
+                                width: "100%",
+                                height: 300,
+                                borderRadius: 8,
+                              }}
+                            />
+                          }
+                        >
+                          <LineChartECharts data={chart.data} height={300} />
+                        </Suspense>
+                      ) : Array.isArray(chart.data) && chart.data.length > 0 ? (
+                        <Skeleton.Input
+                          block
+                          active
+                          style={{
+                            width: "100%",
+                            height: 300,
+                            borderRadius: 8,
+                          }}
+                        />
+                      ) : (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                      )}
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 </Card>
-              ))
-            ) : (
-              <Card>
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              </Card>
-            )}
-          </InlineGrid>
+              )}
+            </InlineGrid>
+          </div>
         </Layout.Section>
       </Layout>
     </Page>
