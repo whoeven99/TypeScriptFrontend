@@ -26,7 +26,6 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
-import { SupportChatWidget } from "./SupportChatWidget";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
@@ -43,6 +42,30 @@ import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLoc
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
+const LazySupportChatWidget = lazy(() =>
+  import("./SupportChatWidget").then((module) => ({
+    default: module.SupportChatWidget,
+  })),
+);
+
+function useIdleReady(timeout = 2500) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (ready) return;
+    if (typeof window === "undefined") return;
+
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(() => setReady(true), { timeout });
+      return () => window.cancelIdleCallback(id);
+    }
+
+    const id = window.setTimeout(() => setReady(true), timeout);
+    return () => window.clearTimeout(id);
+  }, [ready, timeout]);
+
+  return ready;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -154,6 +177,7 @@ export default function AppTranslateV4() {
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [quotaGateMode, setQuotaGateMode] = useState<"trial" | "pricing" | null>(null);
+  const supportChatReady = useIdleReady();
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
@@ -539,7 +563,11 @@ export default function AppTranslateV4() {
         </div>
       </div>
 
-      <SupportChatWidget />
+      {supportChatReady ? (
+        <Suspense fallback={null}>
+          <LazySupportChatWidget />
+        </Suspense>
+      ) : null}
       <CreateTaskQuotaGateModal
         open={quotaGateMode !== null}
         mode={quotaGateMode ?? "pricing"}
