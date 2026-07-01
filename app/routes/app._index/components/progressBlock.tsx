@@ -1,7 +1,7 @@
 import { PhoneOutlined } from "@ant-design/icons";
 import { Progress, Button } from "antd";
 import { getTranslatePagePath } from "~/lib/translateNavigation";
-import { handleContactSupport } from "../route";
+import { handleContactSupport } from "~/utils/supportChat";
 import { Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import {

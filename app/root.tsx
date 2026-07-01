@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useFetcher,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
@@ -15,11 +16,67 @@ import { createHead } from "remix-island";
 
 import "./styles.css";
 
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 function isNetworkFetchError(error: unknown): boolean {
   return (
     error instanceof TypeError &&
     typeof error.message === "string" &&
     /failed to fetch/i.test(error.message)
+  );
+}
+
+function runWhenIdle(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  if ("requestIdleCallback" in window) {
+    const id = window.requestIdleCallback(callback, { timeout: 3000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(callback, 1500);
+  return () => window.clearTimeout(id);
+}
+
+function appendExternalScript(id: string, src: string) {
+  if (document.getElementById(id)) return;
+  const script = document.createElement("script");
+  script.id = id;
+  script.src = src;
+  script.async = true;
+  script.setAttribute("crossorigin", "*");
+  document.body.appendChild(script);
+}
+
+function loadAnalyticsScripts() {
+  if (document.getElementById("ciwi-gtm-loader")) return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+  window.gtag =
+    window.gtag ||
+    function gtag() {
+      window.dataLayer.push(arguments);
+    };
+  window.gtag("js", new Date());
+  window.gtag("config", "G-F1BN24YVJN");
+  window.gtag("event", "conversion", {
+    send_to: "AW-11460630366/7Dj1CNvO4cYaEN6u7dgq",
+    value: 1.0,
+    currency: "USD",
+  });
+  appendExternalScript(
+    "ciwi-gtm-loader",
+    "https://www.googletagmanager.com/gtm.js?id=GTM-NVPT5XDV",
+  );
+}
+
+function loadSupportChatScript() {
+  appendExternalScript(
+    "ciwi-tawk-loader",
+    "https://embed.tawk.to/6909a2c4f363bc1955661e51/1j96q7jtm",
   );
 }
 
@@ -86,13 +143,6 @@ export function ErrorBoundary() {
 
   const currentError = errorMessages[errorCode] || errorMessages["500"];
 
-  useEffect(() => {
-    const s1 = document.createElement("script");
-    s1.src = "https://embed.tawk.to/6909a2c4f363bc1955661e51/1j96q7jtm";
-    s1.async = true;
-    s1.setAttribute("crossorigin", "*");
-    document.body.appendChild(s1);
-  }, []);
 
   // 服务器端渲染时直接返回基础结构
   return (
@@ -148,36 +198,12 @@ export function ErrorBoundary() {
 
 export default function App() {
   const fetcher = useFetcher<any>();
+  const location = useLocation();
 
   // 从 loader 数据中获取国际化语言代码
   useEffect(() => {
     // GTM 初始化脚本
-    const script = document.createElement("script");
-    script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
-    document.head.appendChild(script);
-
-    const gaInitScript = document.createElement("script");
-    gaInitScript.innerHTML = `
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){window.dataLayer.push(arguments)}
-      gtag('js', new Date());
-      gtag('config', 'G-F1BN24YVJN');
-    `;
-    document.head.appendChild(gaInitScript);
-
-    const gtagScript = document.createElement("script");
-    gtagScript.innerHTML = `
-      gtag('event', 'conversion', {
-        'send_to': 'AW-11460630366/7Dj1CNvO4cYaEN6u7dgq',
-        'value': 1.0,
-        'currency': 'USD'
-      });
-    `;
-    document.head.appendChild(gtagScript);
+    return runWhenIdle(loadAnalyticsScripts);
   }, []);
 
   useEffect(() => {
@@ -200,12 +226,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const s1 = document.createElement("script");
-    s1.src = "https://embed.tawk.to/6909a2c4f363bc1955661e51/1j96q7jtm";
-    s1.async = true;
-    s1.setAttribute("crossorigin", "*");
-    document.body.appendChild(s1);
-  }, []);
+    if (location.pathname.startsWith("/app/translate-v4")) {
+      return;
+    }
+    return runWhenIdle(loadSupportChatScript);
+  }, [location.pathname]);
 
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用

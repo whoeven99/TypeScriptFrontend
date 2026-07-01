@@ -129,11 +129,27 @@ export function SupportChatWidget() {
       if (cancelled) return;
       void refresh(open);
     };
-    tick();
-    const interval = window.setInterval(tick, open ? OPEN_POLL_MS : BADGE_POLL_MS);
+
+    if (open) {
+      tick();
+      const interval = window.setInterval(tick, OPEN_POLL_MS);
+      return () => {
+        cancelled = true;
+        window.clearInterval(interval);
+      };
+    }
+
+    let interval: number | undefined;
+    const timeout = window.setTimeout(() => {
+      tick();
+      if (cancelled) return;
+      interval = window.setInterval(tick, BADGE_POLL_MS);
+    }, BADGE_POLL_MS);
+
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      if (interval !== undefined) window.clearInterval(interval);
     };
   }, [open, refresh]);
 

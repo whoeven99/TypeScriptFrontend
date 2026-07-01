@@ -7,9 +7,7 @@ import { json } from "@remix-run/node";
 import {
   Link,
   Outlet,
-  useFetcher,
   useLoaderData,
-  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -21,7 +19,6 @@ import {
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
-  InsertOrUpdateOrder,
   InitializationDetection,
   UserInitialization,
   AddDefaultLanguagePack,
@@ -35,22 +32,20 @@ import {
   IsInFreePlanTime,
   QueryUserIpCount,
 } from "~/api/JavaServer";
-import { LanguagesDataType, ShopLocalesType } from "./app.language/route";
-import {
-  mutationAppPurchaseOneTimeCreate,
-  queryShopLanguages,
-} from "~/api/admin";
+import { ShopLocalesType } from "./app.language/route";
+import { queryShopLanguages } from "~/api/admin";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   setChars,
   setIpBalance,
   setIsNew,
   setPlan,
   setSource,
+  setShop,
   setTotalChars,
   setUpdateTime,
   setUserConfigIsLoading,
@@ -61,6 +56,29 @@ import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+
+type AppBootstrapData = {
+  source: { code: string; name: string };
+  targets: ShopLocalesType[];
+  plan: {
+    id: number;
+    type: string;
+    feeType: number;
+    isInFreePlanTime: boolean;
+  };
+  updateTime: string | null;
+  chars?: number;
+  totalChars?: number;
+  ipBalance?: number;
+  isNew: boolean | null;
+};
+
+const defaultPlan = {
+  id: 2,
+  type: "Free",
+  feeType: 0,
+  isInFreePlanTime: false,
+};
 
 const logGraphQLErrorDetail = (context: string, error: unknown) => {
   const e = error as any;
@@ -116,15 +134,172 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(`[${context}] rawError`, e);
 };
 
+function formatPlanUpdateTime(value: unknown): string | null {
+  if (!value) return null;
+  const time = new Date(String(value));
+  if (Number.isNaN(time.getTime())) return null;
+  return time
+    .toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+    .replace(/\//g, "-");
+}
+
+async function runAppInitialization({
+  shop,
+  accessToken,
+  source,
+  targets,
+}: {
+  shop: string;
+  accessToken?: string;
+  source: string;
+  targets: string[];
+}) {
+  try {
+    if (accessToken) {
+      await UserInitialization({ shop, accessToken });
+    }
+    const init = await InitializationDetection({ shop });
+    if (init?.success && accessToken) {
+      if (!init?.response?.insertCharsByShopName) {
+        await InsertCharsByShopName({ shop, accessToken });
+      }
+      if (!init?.response?.addUserFreeSubscription) {
+        await AddUserFreeSubscription({ shop });
+      }
+      if (!init?.response?.addDefaultLanguagePack) {
+        await AddDefaultLanguagePack({ shop });
+      }
+    }
+    if (accessToken && source && targets.length > 0) {
+      await InsertTargets({ shop, accessToken, source, targets });
+    }
+  } catch (error) {
+    logGraphQLErrorDetail("Error app bootstrap initialization", error);
+  }
+}
+
+async function loadAppBootstrap({
+  shop,
+  accessToken,
+  server,
+}: {
+  shop: string;
+  accessToken?: string;
+  server: string;
+}): Promise<AppBootstrapData> {
+  let source = { code: "", name: "" };
+  let targets: ShopLocalesType[] = [];
+
+  try {
+    if (accessToken) {
+      const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+        shop,
+        accessToken,
+      });
+      const primary = shopLanguagesIndex.find((language) => language?.primary);
+      source = {
+        code: primary?.locale || "",
+        name: primary?.name || "",
+      };
+      targets = shopLanguagesIndex
+        .filter((language) => !language.primary)
+        .map((language) => ({
+          ...language,
+          key: language?.key ?? language?.locale,
+        }));
+    }
+  } catch (error) {
+    logGraphQLErrorDetail("Error app bootstrap languages", error);
+  }
+
+  const [
+    subscriptionResult,
+    freePlanTimeResult,
+    wordsResult,
+    ipBalanceResult,
+    openFreePlanResult,
+  ] = await Promise.allSettled([
+    GetUserSubscriptionPlan({ shop, server }),
+    IsInFreePlanTime({ shop, server }),
+    GetUserWords({ shop, server }),
+    QueryUserIpCount({ shop, server }),
+    IsOpenFreePlan({ shop, server }),
+  ]);
+
+  const subscription =
+    subscriptionResult.status === "fulfilled"
+      ? subscriptionResult.value
+      : undefined;
+  const freePlanTime =
+    freePlanTimeResult.status === "fulfilled"
+      ? freePlanTimeResult.value
+      : undefined;
+  const words =
+    wordsResult.status === "fulfilled" ? wordsResult.value : undefined;
+  const ipBalance =
+    ipBalanceResult.status === "fulfilled"
+      ? ipBalanceResult.value
+      : undefined;
+  const openFreePlan =
+    openFreePlanResult.status === "fulfilled"
+      ? openFreePlanResult.value
+      : undefined;
+
+  const plan = {
+    ...defaultPlan,
+    ...(subscription?.success
+      ? {
+          id: subscription?.response?.userSubscriptionPlan || defaultPlan.id,
+          type: subscription?.response?.planType || defaultPlan.type,
+          feeType: subscription?.response?.feeType || defaultPlan.feeType,
+        }
+      : null),
+    isInFreePlanTime: freePlanTime?.success
+      ? Boolean(freePlanTime?.response)
+      : defaultPlan.isInFreePlanTime,
+  };
+
+  return {
+    source,
+    targets,
+    plan,
+    updateTime: subscription?.success
+      ? formatPlanUpdateTime(subscription?.response?.currentPeriodEnd)
+      : null,
+    chars: words?.success ? words?.response?.chars : undefined,
+    totalChars: words?.success ? words?.response?.totalChars : undefined,
+    ipBalance: ipBalance?.success ? ipBalance?.response : undefined,
+    isNew: openFreePlan?.success ? !openFreePlan?.response : null,
+  };
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+  const { shop, accessToken } = adminAuthResult.session;
+  const server = process.env.SERVER_URL || "";
+  const bootstrap = await loadAppBootstrap({
+    shop,
+    accessToken: accessToken as string | undefined,
+    server,
+  });
+
+  void runAppInitialization({
+    shop,
+    accessToken: accessToken as string | undefined,
+    source: bootstrap.source.code,
+    targets: bootstrap.targets.map((item) => item.locale),
+  });
 
   return json({
     shop,
-    server: process.env.SERVER_URL,
+    server,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     translateV4Migrated: true,
+    bootstrap,
   });
 };
 
@@ -478,187 +653,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Migrated } =
+  const { apiKey, shop, server, translateV4Migrated, bootstrap } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const location = useLocation();
-
-  //获取应用语言数据
-  const languageTableData: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
-
-  const { plan, chars, totalChars, ipBalance, isNew } = useSelector(
-    (state: any) => state.userConfig,
-  );
-  const initFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
-  const languageAddFetcher = useFetcher<any>();
 
   useEffect(() => {
-    initFetcher.submit(
-      { init: JSON.stringify({}) },
-      {
-        method: "POST",
-      },
-    );
-    //由于/translate/insertTargets接口返回较慢拆分为两个请求先请求shopify获取语言数据
-    languageFetcher.submit(
-      { languageData: JSON.stringify({}) },
-      {
-        method: "POST",
-      },
-    );
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
     globalStore.translateV4ExpressBeta = Boolean(translateV4Migrated);
-  }, []);
+    globalStore.source = bootstrap.source.code;
 
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data?.response) {
-        const source = {
-          code: languageFetcher.data?.response?.source?.locale || "",
-          name: languageFetcher.data?.response?.source?.name || "",
-        };
-        const targets = languageFetcher.data?.response?.targets;
-        globalStore.source = source.code;
-
-        //判断语言数据是否存在，针对用户直接进入language页面的情况，此时可能会出现同时调用setLanguageTableData方法的情况所以保证根路由的优先级较低不覆盖language页面的数据
-        if (targets?.length > 0 && source && languageTableData.length == 0) {
-          dispatch(
-            setLanguageTableData(
-              targets.map((item: any) => ({
-                ...item,
-                key: item?.key ?? item?.locale,
-              })),
-            ),
-          );
-          //像后端提供最新的语言数据
-          languageAddFetcher.submit(
-            {
-              languageInit: JSON.stringify({
-                source: source.code,
-                targets: targets?.map((item: any) => item?.locale) || [],
-              }),
-            },
-            {
-              method: "POST",
-            },
-          );
-        }
-        dispatch(
-          setSource({
-            source,
-          }),
-        );
-      }
+    dispatch(setShop({ shop }));
+    dispatch(setSource({ source: bootstrap.source }));
+    dispatch(setLanguageTableData(bootstrap.targets));
+    dispatch(setPlan({ plan: bootstrap.plan }));
+    if (bootstrap.updateTime) {
+      dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
     }
-  }, [languageFetcher.data]);
-
-  useEffect(() => {
-    // 当 URL 改变时调用这两个函数
-    if (!plan?.id) {
-      getPlan();
+    dispatch(setChars({ chars: bootstrap.chars }));
+    dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
+    dispatch(setIpBalance({ ipBalance: bootstrap.ipBalance }));
+    if (bootstrap.isNew !== null) {
+      dispatch(setIsNew({ isNew: bootstrap.isNew }));
     }
-    if (!chars || !totalChars || location.pathname == "/app/pricing") {
-      getWords();
-    }
-    if (!ipBalance) {
-      getIpBalance();
-    }
-    if (isNew === null) {
-      checkFreeUsed();
-    }
-  }, [location]); // 监听 URL 的变化
-
-  const getPlan = async () => {
-    const getUserSubscriptionPlan = await GetUserSubscriptionPlan({
-      shop: shop,
-      server: server as string,
-    });
-    const isInFreePlanTime = await IsInFreePlanTime({
-      shop: shop,
-      server: server as string,
-    });
-
-    let data: any = {
-      id: 2,
-      type: "Free",
-      feeType: 0,
-      isInFreePlanTime: false,
-    };
-
-    if (getUserSubscriptionPlan?.success) {
-      data = {
-        ...data,
-        id: getUserSubscriptionPlan?.response?.userSubscriptionPlan || 2,
-        type: getUserSubscriptionPlan?.response?.planType || "Free",
-        feeType: getUserSubscriptionPlan?.response?.feeType || 0,
-      };
-
-      if (getUserSubscriptionPlan?.response?.currentPeriodEnd) {
-        const updateTime = new Date(
-          getUserSubscriptionPlan?.response?.currentPeriodEnd,
-        )
-          .toLocaleDateString("zh-CN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          })
-          .replace(/\//g, "-");
-        dispatch(setUpdateTime({ updateTime: updateTime }));
-      }
-    }
-    if (isInFreePlanTime?.success) {
-      data = { ...data, isInFreePlanTime: isInFreePlanTime?.response || false };
-    }
-    dispatch(
-      setPlan({
-        plan: data,
-      }),
-    );
-  };
-
-  const getWords = async () => {
-    const data = await GetUserWords({
-      shop,
-      server: server as string,
-    });
-    if (data?.success) {
-      dispatch(setChars({ chars: data?.response?.chars }));
-      dispatch(
-        setTotalChars({
-          totalChars: data?.response?.totalChars,
-        }),
-      );
-      dispatch(setUserConfigIsLoading({ isLoading: false }));
-    }
-  };
-
-  const getIpBalance = async () => {
-    const data = await QueryUserIpCount({
-      shop,
-      server: server as string,
-    });
-    if (data?.success) {
-      dispatch(setIpBalance({ ipBalance: data?.response }));
-    }
-  };
-
-  const checkFreeUsed = async () => {
-    const data = await IsOpenFreePlan({
-      shop,
-      server: server as string,
-    });
-    if (data?.success) {
-      dispatch(setIsNew({ isNew: !data?.response }));
-    }
-  };
+    dispatch(setUserConfigIsLoading({ isLoading: false }));
+  }, [bootstrap, dispatch, server, shop, translateV4Migrated]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

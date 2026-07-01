@@ -19,19 +19,29 @@ import { PlusIcon } from "@shopify/polaris-icons";
 import defaultStyles from "../../styles/defaultStyles.module.css";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "@remix-run/react";
-import { apiKeyConfiguration } from "../route";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Title, Text } = Typography;
 
+interface ApiKeyConfiguration {
+  apiModel: string;
+  apiName: Number;
+  apiStatus: boolean;
+  isSelected: boolean;
+  promptWord: string;
+  shopName: string;
+  tokenLimit: Number;
+  usedToken: Number;
+}
+
 interface TransalteSettingCardProps {
   translateSettings1: string;
   setTranslateSettings1: (e: string) => void;
-  customApikeyData: apiKeyConfiguration[] | undefined;
+  customApikeyData: ApiKeyConfiguration[] | undefined;
   checkApiKeyConfiguration: (
-    customApikeyData: apiKeyConfiguration[],
+    customApikeyData: ApiKeyConfiguration[],
     apiName: 0 | 1,
-  ) => apiKeyConfiguration | null;
+  ) => ApiKeyConfiguration | null;
   translateSettings3: string[];
   setTranslateSettings3: (e: string[]) => void;
   translateSettings5: boolean;
