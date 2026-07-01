@@ -60,7 +60,7 @@ export function SummaryDonutCard({
           style={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             minWidth: 0,
             flex: 1,
             flexBasis: 320,
@@ -102,7 +102,7 @@ export function SummaryDonutCard({
               gap: 12,
               borderTop: `1px solid ${v4Colors.divider}`,
               paddingTop: 14,
-              marginTop: 18,
+              marginTop: 72,
             }}
           >
             <StatFoot
