@@ -18,6 +18,7 @@
     "turso:migrate:test": "node scripts/turso-migrate.cjs test",
     "turso:migrate:prod": "node scripts/turso-migrate.cjs prod",
     "sync:filter": "node scripts/sync-translation-filter.mjs",
+    "sync:switcher": "node scripts/sync-switcher-from-java.mjs",
     "check:filter": "node scripts/sync-translation-filter.mjs --check",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "postinstall": "patch-package",
@@ -34,7 +35,7 @@
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@azure/cosmos": "^4.9.3",
-    "@azure/storage-blob": "^12.32.0",
+    "@azure/storage-blob": "^12.33.0",
     "@google-cloud/translate": "^9.2.0",
     "@libsql/client": "^0.17.3",
     "@prisma/adapter-libsql": "^6.19.3",

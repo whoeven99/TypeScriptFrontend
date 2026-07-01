@@ -24,8 +24,14 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
-import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
+import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
+import {
+  loadSwitcherConfigCompat,
+  saveSwitcherConfigCompat,
+  buildSwitcherEditDefaults,
+  type SwitcherEditData,
+} from "./switcherClient";
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -37,21 +43,6 @@ import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
-interface EditData {
-  shopName: string;
-  includedFlag: boolean;
-  languageSelector: boolean;
-  currencySelector: boolean;
-  ipOpen: boolean;
-  fontColor: string;
-  backgroundColor: string;
-  buttonColor: string;
-  buttonBackgroundColor: string;
-  optionBorderColor: string;
-  selectorPosition: string;
-  positionData: string;
-  isTransparent: boolean;
-}
 
 const initialLocalization = {
   languages: [
@@ -102,8 +93,10 @@ const initialLocalization = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  const migrated = await isStorefrontGrayEligible(shop);
   return {
     shop,
+    migrated,
     server: process.env.SERVER_URL,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
     ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
@@ -164,7 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+  const { shop, migrated, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
@@ -180,8 +173,8 @@ const Index = () => {
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [localization, setLocalization] = useState(initialLocalization);
-  const [originalData, setOriginalData] = useState<EditData>();
-  const [editData, setEditData] = useState<EditData>({
+  const [originalData, setOriginalData] = useState<SwitcherEditData>();
+  const [editData, setEditData] = useState<SwitcherEditData>({
     shopName: "",
     includedFlag: false,
     languageSelector: false,
@@ -262,26 +255,13 @@ const Index = () => {
       },
     );
     const getSwitcherConfig = async () => {
-      const data = await WidgetConfigurations({
-        shop: shop,
+      const data = await loadSwitcherConfigCompat({
+        migrated,
+        shop,
         server: server as string,
       });
-      const initData = {
-        shopName: shop,
-        includedFlag: true,
-        languageSelector: true,
-        currencySelector: true,
-        ipOpen: false,
-        fontColor: "#303030",
-        backgroundColor: "#ffffff",
-        buttonColor: "#ffffff",
-        buttonBackgroundColor: "#f6f6f7",
-        optionBorderColor: "#d4d4d8",
-        selectorPosition: "bottom_left",
-        positionData: "10",
-        isTransparent: false,
-      };
-      if (data?.success) {
+      const initData = buildSwitcherEditDefaults(shop);
+      if (data?.success && data.response) {
         const filteredResponse = Object.fromEntries(
           Object.entries(data.response).filter(([_, value]) => value !== null),
         );
@@ -329,7 +309,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, [location.search]);
+  }, [location.search, migrated, shop, server]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -353,28 +333,6 @@ const Index = () => {
       }
 
       setCardLoading(false);
-      // const switcherData =
-      //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
-      // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      // const themeData = JSON.parse(jsonString);
-
-      // const footer = themeData.sections?.footer;
-      // if (footer?.blocks) {
-      //   const switcherJson: any = Object.values(footer.blocks).find(
-      //     (block: any) => block.type === ciwiSwitcherBlocksId,
-      //   );
-
-      //   if (switcherJson) {
-      //     setSwitcherEnableCardOpen(true);
-      //   }
-      // }
-      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
-      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
-      //     block.type.includes(ciwiSwitcherBlocksId)
-      //   )
-      // );
-
-      // setSwitcherEnableCardOpen(isAppEnabled);
     }
   }, [themeFetcher.data]);
 
@@ -439,7 +397,6 @@ const Index = () => {
           }
         }
       }
-    } else {
     }
   }, [shopFetcher.data]);
 
@@ -455,7 +412,7 @@ const Index = () => {
     }
   }, [editData, originalData]);
 
-  const handleEditData = (updates: Partial<EditData>) => {
+  const handleEditData = (updates: Partial<SwitcherEditData>) => {
     // 更新对应的状态
     Object.entries(updates).forEach(([key, value]) => {
       switch (key) {
@@ -644,9 +601,11 @@ const Index = () => {
 
   const handleSave = async () => {
     setUpdateLoading(true);
-    const data = await SaveAndUpdateData({
-      ...editData,
+    const data = await saveSwitcherConfigCompat({
+      migrated,
+      shop,
       server: server as string,
+      data: editData,
     });
     if (data?.success && data.response != undefined) {
       setOriginalData(data.response);
