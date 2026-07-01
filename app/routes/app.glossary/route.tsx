@@ -173,6 +173,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const { t } = useTranslation();
   const { reportClick, report } = useReport();
   useEffect(() => {
     loadingFetcher.submit(

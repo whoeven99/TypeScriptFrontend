@@ -92,7 +92,7 @@ export function ErrorBoundary() {
     s1.async = true;
     s1.setAttribute("crossorigin", "*");
     document.body.appendChild(s1);
-  }, [fetcher]);
+  }, []);
 
   // 服务器端渲染时直接返回基础结构
   return (
