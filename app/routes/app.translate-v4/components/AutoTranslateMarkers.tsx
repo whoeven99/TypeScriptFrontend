@@ -2,10 +2,17 @@ import { useTranslation } from "react-i18next";
 import { v4Colors } from "../v4Styles";
 
 const autoMarkerBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  maxWidth: "100%",
   padding: "3px 8px",
   fontSize: 12,
   fontWeight: 600,
   lineHeight: 1.5,
+  textAlign: "center",
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
   color: v4Colors.success,
   background: v4Colors.successBg,
   borderRadius: 999,
