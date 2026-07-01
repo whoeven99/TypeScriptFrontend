@@ -259,7 +259,13 @@ async function translateLeafBatch(
     RICH_MAX_CHARS_PER_BATCH,
     RICH_MAX_ITEMS_PER_BATCH,
   )) {
-    ingest(await translateLeafBatchOnce(batch, target, systemPrompt, masks));
+    const { map, usedTokens: batchTokens } = await translateLeafBatchOnce(
+      batch,
+      target,
+      systemPrompt,
+      masks,
+    );
+    ingest(map, batchTokens);
   }
 
   let missing = translatable.filter(({ i }) => !collected.has(i));
@@ -270,14 +276,26 @@ async function translateLeafBatch(
       RICH_MAX_CHARS_PER_BATCH,
       Math.min(RICH_MAX_ITEMS_PER_BATCH, 4),
     )) {
-      ingest(await translateLeafBatchOnce(batch, target, systemPrompt, masks));
+      const { map, usedTokens: batchTokens } = await translateLeafBatchOnce(
+        batch,
+        target,
+        systemPrompt,
+        masks,
+      );
+      ingest(map, batchTokens);
     }
     missing = translatable.filter(({ i }) => !collected.has(i));
     if (missing.length >= before) break;
   }
 
   for (const item of missing) {
-    ingest(await translateLeafBatchOnce([item], target, systemPrompt, masks));
+    const { map, usedTokens: batchTokens } = await translateLeafBatchOnce(
+      [item],
+      target,
+      systemPrompt,
+      masks,
+    );
+    ingest(map, batchTokens);
   }
 
   return { map: collected, usedTokens };

@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useFetcher,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
@@ -197,6 +198,7 @@ export function ErrorBoundary() {
 
 export default function App() {
   const fetcher = useFetcher<any>();
+  const location = useLocation();
 
   // 从 loader 数据中获取国际化语言代码
   useEffect(() => {
@@ -224,8 +226,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (location.pathname.startsWith("/app/translate-v4")) {
+      return;
+    }
     return runWhenIdle(loadSupportChatScript);
-  }, []);
+  }, [location.pathname]);
 
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用

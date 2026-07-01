@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { message } from "~/ui/message";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
@@ -33,7 +41,8 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import PaymentModal from "~/components/paymentModal";
+
+const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -536,10 +545,14 @@ export default function AppTranslateV4() {
         mode={quotaGateMode ?? "pricing"}
         onClose={() => setQuotaGateMode(null)}
       />
-      <PaymentModal
-        visible={showPaymentModal}
-        setVisible={setShowPaymentModal}
-      />
+      {showPaymentModal ? (
+        <Suspense fallback={null}>
+          <PaymentModal
+            visible={showPaymentModal}
+            setVisible={setShowPaymentModal}
+          />
+        </Suspense>
+      ) : null}
     </Page>
   );
 }
