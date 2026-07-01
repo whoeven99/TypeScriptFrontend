@@ -176,8 +176,7 @@
       <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
       <input type="hidden" id="ciwiAppProxyBase" value="{{ shop.url }}/apps/ciwi">
       {%- comment -%}
-        Java 后端地址单一来源：与上方 preconnect 同源（ciwi_java_backend）。
-        ciwi-api.js switchUrl() 优先读取本输入，避免 JS 与 Liquid 两处硬编码漂移。
+        Java 后端：仅用于货币 / IP / 图片等（switchUrl）。Widget / Liquid / PageFly 读数据走 #ciwiAppProxyBase（v4）。
       {%- endcomment -%}
       <input type="hidden" id="ciwiJavaBackend" value="{{ ciwi_java_backend }}">
       <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">

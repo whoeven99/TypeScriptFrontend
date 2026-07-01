@@ -16,12 +16,18 @@ export function switchUrl(blockId) {
 }
 
 /**
- * 店面读 API 基址：优先 App Proxy（Liquid 注入 #ciwiAppProxyBase → TSF /api/storefront/*）。
- * 未注入 App Proxy 时降级 Java 直连（仅作兜底；主题块已注入 ciwiAppProxyBase）。
+ * 店面 Widget / Liquid / PageFly 读 API：仅走 App Proxy（#ciwiAppProxyBase → TSF /api/storefront/*）。
+ * 货币 / IP / 图片等仍走 Java（switchUrl）。
  */
-function resolveStorefrontApiBase(blockId) {
+function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
-  return appProxyBase || switchUrl(blockId);
+  if (!appProxyBase) {
+    console.error(
+      "[ciwi] ciwiAppProxyBase missing; storefront reads require App Proxy (v4)",
+    );
+    return null;
+  }
+  return appProxyBase;
 }
 
 async function fetchJson(url, options = {}) {
@@ -96,12 +102,12 @@ export async function IncludeCrawlerPrintLog({
   }
 }
 
-export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
+export async function ReadTranslatedText({ shopName, languageCode }) {
   try {
-    // App Proxy → TSF /api/storefront/userPageFly/readTranslatedText（Prisma）。
-    // 未注入 ciwiAppProxyBase 时降级 Java 直连。
-    const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
-    const baseUrl = appProxyBase || switchUrl(blockId);
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return { success: false, errorCode: 10001, errorMsg: "APP_PROXY_MISSING", response: [] };
+    }
     const { data } = await fetchJson(
       `${baseUrl}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
       {
@@ -115,12 +121,14 @@ export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
 }
 
 export async function ParseLiquidDataByShopNameAndLanguage({
-  blockId,
   shopName,
   languageCode,
 }) {
   try {
-    const baseUrl = resolveStorefrontApiBase(blockId);
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return { success: false, errorCode: 10001, errorMsg: "APP_PROXY_MISSING", response: [] };
+    }
     const { data } = await fetchJson(
       `${baseUrl}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
       {
@@ -171,7 +179,7 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
   }
 }
 
-export async function fetchSwitcherConfig({ blockId, shop }) {
+export async function fetchSwitcherConfig({ shop }) {
   // 默认配置与 app/lib/switcherConstants.ts SWITCHER_UI_DEFAULTS 对齐
   const initData = {
     shopName: shop,
@@ -190,7 +198,15 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
   };
 
   try {
-    const baseUrl = resolveStorefrontApiBase(blockId);
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: true,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: initData,
+      };
+    }
     const { data } = await fetchJson(
       `${baseUrl}/widgetConfigurations/getData`,
       {

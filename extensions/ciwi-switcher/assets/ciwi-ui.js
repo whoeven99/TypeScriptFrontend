@@ -581,7 +581,6 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     async () =>
       asCacheableTranslationResponse(
         await ParseLiquidDataByShopNameAndLanguage({
-          blockId,
           shopName: shop.value,
           languageCode: language,
         }),
@@ -1173,7 +1172,6 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     async () =>
       asCacheableTranslationResponse(
         await ReadTranslatedText({
-          blockId,
           shopName: shop.value,
           languageCode: language,
         }),
