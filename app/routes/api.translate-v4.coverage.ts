@@ -1,15 +1,11 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { computeCoverageSummary, getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
-  if (!(await isShopMigrated(session.shop))) {
-    return json({ ok: false, error: "shop not migrated" }, { status: 403 });
-  }
 
   const url = new URL(request.url);
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;

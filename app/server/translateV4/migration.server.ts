@@ -1,40 +1,34 @@
 import prisma from "~/db.server";
+import { isV2PageWhitelistShop } from "./v2PageWhitelist";
 
-const CACHE_TTL_MS = 60_000;
-const cache = new Map<string, { value: boolean; expiresAt: number }>();
-
-/**
- * Turso 中 migratedToTsf 是否为 true。
- */
+/** v4 为默认翻译链路；白名单店铺仍走 v2。 */
 export async function hasShopMigratedToTsf(shop: string): Promise<boolean> {
-  const now = Date.now();
-  const cached = cache.get(shop);
-  if (cached && cached.expiresAt > now) return cached.value;
-
-  let migrated = false;
-  try {
-    const row = await prisma.shopTranslationSettings.findUnique({
-      where: { shop },
-      select: { migratedToTsf: true },
-    });
-    migrated = row?.migratedToTsf ?? false;
-  } catch (err) {
-    console.error(`[migration] hasShopMigratedToTsf 查询失败 shop=${shop}:`, err);
-    migrated = false;
-  }
-
-  cache.set(shop, { value: migrated, expiresAt: now + CACHE_TTL_MS });
-  return migrated;
+  return !isV2PageWhitelistShop(shop);
 }
 
-/**
- * 该店是否已切到 v4（由迁移脚本或迁移 API 写入 migratedToTsf 标记）。
- */
+/** 是否使用 v4 体验（首页/翻译页入口、单字段翻译链路等）。 */
 export async function isShopMigrated(shop: string): Promise<boolean> {
-  return hasShopMigratedToTsf(shop);
+  return !isV2PageWhitelistShop(shop);
 }
 
-/** 迁移状态变更后调用，清掉缓存让下次读最新值。 */
-export function invalidateMigrationCache(shop: string): void {
-  cache.delete(shop);
+/** 迁移 API / 脚本写入后仍可调用；v4 默认模式下为 no-op。 */
+export function invalidateMigrationCache(_shop: string): void {}
+
+/** 首次进入 v4 时确保 ShopTranslationSettings 存在（幂等）。 */
+export async function ensureShopV4Settings(
+  shop: string,
+  primaryLocale = "en",
+): Promise<void> {
+  await prisma.shopTranslationSettings.upsert({
+    where: { shop },
+    create: {
+      shop,
+      primaryLocale,
+      targets: [],
+      autoTranslate: false,
+      migratedToTsf: true,
+      migratedAt: new Date(),
+    },
+    update: { primaryLocale },
+  });
 }

@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { message } from "~/ui/message";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { ShopQuota } from "~/server/translateV4/quota.server";
@@ -37,9 +37,6 @@ import PaymentModal from "~/components/paymentModal";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  if (!(await isShopMigrated(session.shop))) {
-    throw redirect("/app");
-  }
 
   let locales: ShopLocaleOption[] = [];
   let primaryLocale = "en";
@@ -55,6 +52,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (err) {
     console.error("[translateV4] load shopLocales failed:", err);
   }
+
+  await ensureShopV4Settings(session.shop, primaryLocale);
 
   // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
   // 后台执行，避免 N 个串行 upsert 阻塞首屏。

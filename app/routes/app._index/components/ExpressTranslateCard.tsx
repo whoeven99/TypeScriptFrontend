@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Button } from "antd";
-import { useTranslation } from "react-i18next";
 import { message } from "~/ui/message";
 import { useNavigate } from "@remix-run/react";
 import {
   createTranslateV4Tasks,
+  formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
@@ -18,10 +17,6 @@ import { AutoTaskBadge } from "~/routes/app.translate-v4/components/AutoTranslat
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { JobCollapsedMeta } from "~/routes/app.translate-v4/components/JobExpandedDetail";
 import { ProgressRing, StatusTag } from "~/routes/app.translate-v4/components/V4JobCardParts";
-import {
-  formatV4CreateTasksMessage,
-  translateV4Message,
-} from "~/routes/app.translate-v4/v4I18n";
 
 type ExpressLocaleOption = ShopLocaleOption & { published?: boolean };
 
@@ -30,8 +25,6 @@ type Props = {
   locales: ExpressLocaleOption[];
   primaryLocale: string;
   initialJobs: TranslationJobProgressSummary[];
-  /** 本店是否已迁移到新版翻译（来自 ShopTranslationSettings.migratedToTsf）。 */
-  migrated: boolean;
 };
 
 /** 极速翻译默认模块（与 v2 手动创建默认、api.translate-v4.tasks 一致）。 */
@@ -88,16 +81,12 @@ const ExpressTranslateCard = ({
   locales,
   primaryLocale,
   initialJobs,
-  migrated,
 }: Props) => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [targets, setTargets] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  const [migratedState, setMigratedState] = useState(migrated);
-  const [migrating, setMigrating] = useState(false);
   const [jobsExpanded, setJobsExpanded] = useState(false);
 
   const source = primaryLocale || "zh-CN";
@@ -148,32 +137,6 @@ const ExpressTranslateCard = ({
     }
   }, [shop, applyJobsUpdate]);
 
-  const handleMigrate = useCallback(async () => {
-    setMigrating(true);
-    try {
-      const res = await fetch("/api/translate-v4/migrate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          primaryLocale: source,
-          targets: targetOptions.map((o) => o.value),
-        }),
-      });
-      const data = await res.json();
-      if (data?.ok && data.summary) {
-        setMigratedState(true);
-        message.success("已迁移到新版翻译");
-      } else {
-        message.error(data?.error || "迁移失败，请稍后重试");
-      }
-    } catch (err) {
-      console.error("[expressV4] migrate failed:", err);
-      message.error("迁移失败，请稍后重试");
-    } finally {
-      setMigrating(false);
-    }
-  }, [source, targetOptions]);
-
   const toggleTarget = (value: string) => {
     if (targets.includes(value)) {
       setTargets(targets.filter((t) => t !== value));
@@ -196,11 +159,11 @@ const ExpressTranslateCard = ({
       });
 
       if (result.validationError) {
-        message.warning(translateV4Message(result.validationError, t));
+        message.warning(result.validationError);
         return;
       }
 
-      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
+      const summary = formatCreateTasksMessage(result);
       if (result.created.length > 0) {
         message.success(summary);
         setTargets([]);
@@ -210,19 +173,17 @@ const ExpressTranslateCard = ({
       }
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
-          result.failed
-            .map((f) => `${localeRegionCode(f.target)}: ${translateV4Message(f.error, t)}`)
-            .join("；"),
+          result.failed.map((f) => `${f.target}: ${f.error}`).join("；"),
           6,
         );
       }
     } catch (err) {
       console.error("[expressV4] create failed:", err);
-      message.error(t("v4.createFailedRetry"));
+      message.error("创建失败，请稍后重试");
     } finally {
       setCreating(false);
     }
-  }, [source, targets, targetOptions, refreshList, t]);
+  }, [source, targets, targetOptions, refreshList]);
 
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
@@ -265,27 +226,7 @@ const ExpressTranslateCard = ({
         </button>
       </div>
 
-      {!migratedState ? (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginTop: 16, marginBottom: 0 }}
-          message="升级到新版翻译"
-          description="把你的术语表、Liquid 规则和自动翻译配置迁移到新版翻译引擎。迁移后由新版接管，不可回退。"
-          action={
-            <Button
-              type="primary"
-              size="small"
-              loading={migrating}
-              onClick={handleMigrate}
-            >
-              一键迁移
-            </Button>
-          }
-        />
-      ) : null}
-
-      <div style={{ marginTop: migratedState ? 20 : 16 }}>
+      <div style={{ marginTop: 20 }}>
         <SectionLabel>源语言</SectionLabel>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <span style={{ ...v4ChipStyle(true), cursor: "default" }}>
