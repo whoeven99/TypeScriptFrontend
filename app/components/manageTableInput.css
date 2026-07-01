@@ -1,0 +1,20 @@
+.html-preview-input {
+  min-height: 98px;
+  max-height: 220px;
+  padding: 4px 11px;
+  overflow: auto;
+  color: rgba(0, 0, 0, 0.88);
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  line-height: 1.5715;
+  word-break: break-word;
+}
+
+.html-preview-input :first-child {
+  margin-top: 0;
+}
+
+.html-preview-input :last-child {
+  margin-bottom: 0;
+}

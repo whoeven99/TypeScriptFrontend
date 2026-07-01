@@ -2,12 +2,40 @@ import { Input } from "antd";
 import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import "./styles.css";
+import "./manageTableInput.css";
 
 // tiptap 富文本编辑器（约 468K，含 prosemirror）单独拆成 chunk，
 // 仅在渲染 HTML 字段时按需加载，纯文本字段不会引入它。
 const ManageTableInputEditor = lazy(() => import("./manageTableInputEditor"));
 
 const { TextArea } = Input;
+
+const sanitizeHtmlForPreview = (html: string) => {
+  if (typeof document === "undefined") return "";
+
+  const doc = document.implementation.createHTMLDocument("");
+  doc.body.innerHTML = html;
+
+  doc.body
+    .querySelectorAll("script, iframe, object, embed, link, meta, style")
+    .forEach((node) => node.remove());
+
+  doc.body.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attr) => {
+      const attrName = attr.name.toLowerCase();
+      const attrValue = attr.value.trim().toLowerCase();
+      const unsafeUrl =
+        (attrName === "href" || attrName === "src") &&
+        (attrValue.startsWith("javascript:") || attrValue.startsWith("data:"));
+
+      if (attrName.startsWith("on") || attrName === "srcdoc" || unsafeUrl) {
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+};
 
 interface ManageTableInputProps {
   record: any;
@@ -50,17 +78,30 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     setMounted(true);
   }, []);
 
+  const readonlyHtml = useMemo(() => {
+    if (!mounted) return "";
+    return sanitizeHtmlForPreview(defaultValue);
+  }, [defaultValue, mounted]);
+
   const renderEditor = (mode: "edit" | "readonly") => {
     const fallback = (
       <TextArea
         rows={4}
         disabled
-        value={
-          mode === "edit" ? translatedValues?.[record?.key] : defaultValue
-        }
+        value={mode === "edit" ? translatedValues?.[record?.key] : defaultValue}
         className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
       />
     );
+    if (mode === "readonly") {
+      if (!mounted) return fallback;
+      return (
+        <div
+          className={`html-preview-input ${isRtl ? "rtl-input" : ""}`}
+          dangerouslySetInnerHTML={{ __html: readonlyHtml }}
+        />
+      );
+    }
+
     if (!mounted) return fallback;
     return (
       <Suspense fallback={fallback}>

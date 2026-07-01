@@ -19,7 +19,8 @@ import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { ShopQuota } from "~/server/translateV4/quota.server";
-import { getCoverageSummaryFromCache,
+import {
+  getCoverageSummaryFromCache,
   type CoverageSummary,
 } from "~/server/translateV4/coverage.server";
 import {
@@ -130,7 +131,8 @@ export default function AppTranslateV4() {
     coverage: initialCoverage,
   } = useLoaderData<typeof loader>();
 
-  const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
+  const [jobs, setJobs] =
+    useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const { plan, isNew } = useSelector(
@@ -153,12 +155,14 @@ export default function AppTranslateV4() {
     () =>
       locales.length
         ? locales
-        : [{
-            value: "zh-CN",
-            label: `${t("v4.locale.zhCnFallback")} (zh-CN)`,
-            primary: true,
-            published: true,
-          }],
+        : [
+            {
+              value: "zh-CN",
+              label: `${t("v4.locale.zhCnFallback")} (zh-CN)`,
+              primary: true,
+              published: true,
+            },
+          ],
     [locales, t],
   );
 
@@ -176,36 +180,41 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [quotaGateMode, setQuotaGateMode] = useState<"trial" | "pricing" | null>(null);
+  const [quotaGateMode, setQuotaGateMode] = useState<
+    "trial" | "pricing" | null
+  >(null);
   const supportChatReady = useIdleReady();
 
-  const refreshCoverage = useCallback(async (forceRefresh = true) => {
-    setCoverageLoading(true);
-    try {
-      if (!forceRefresh) {
-        const res = await fetch(
-          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
-        );
-        const data = await res.json();
-        if (data?.ok) setCoverage(data.summary as CoverageSummary);
-        return;
-      }
+  const refreshCoverage = useCallback(
+    async (forceRefresh = true) => {
+      setCoverageLoading(true);
+      try {
+        if (!forceRefresh) {
+          const res = await fetch(
+            `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+          );
+          const data = await res.json();
+          if (data?.ok) setCoverage(data.summary as CoverageSummary);
+          return;
+        }
 
-      // 按语言逐个刷新，避免一次请求扫全店导致超时 / 与翻译任务争抢 Shopify 限流
-      for (const loc of targetOptions) {
-        const res = await fetch(
-          `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
-        );
-        const data = await res.json();
-        if (data?.ok) setCoverage(data.summary as CoverageSummary);
+        // 按语言逐个刷新，避免一次请求扫全店导致超时 / 与翻译任务争抢 Shopify 限流
+        for (const loc of targetOptions) {
+          const res = await fetch(
+            `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
+          );
+          const data = await res.json();
+          if (data?.ok) setCoverage(data.summary as CoverageSummary);
+        }
+      } catch (err) {
+        console.error("[translateV4] refresh coverage failed:", err);
+        if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
+      } finally {
+        setCoverageLoading(false);
       }
-    } catch (err) {
-      console.error("[translateV4] refresh coverage failed:", err);
-      if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
-    } finally {
-      setCoverageLoading(false);
-    }
-  }, [shop, targetOptions, t]);
+    },
+    [shop, targetOptions, t],
+  );
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -314,7 +323,8 @@ export default function AppTranslateV4() {
 
   const handleCreate = useCallback(async () => {
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
-    const hasPaidPlan = normalizedPlanType !== "" && normalizedPlanType !== "free";
+    const hasPaidPlan =
+      normalizedPlanType !== "" && normalizedPlanType !== "free";
     const remainingCredits = quota?.remaining ?? null;
     const shouldGateByCredits =
       remainingCredits != null &&
@@ -324,7 +334,9 @@ export default function AppTranslateV4() {
 
     if (shouldGateByCredits) {
       if (isNew === null) {
-        message.info(t("Checking your trial eligibility. Please try again in a moment."));
+        message.info(
+          t("Checking your trial eligibility. Please try again in a moment."),
+        );
         return;
       }
       setQuotaGateMode(isNew ? "trial" : "pricing");
@@ -359,7 +371,10 @@ export default function AppTranslateV4() {
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
           result.failed
-            .map((f) => `${localeRegionCode(f.target)}: ${translateV4Message(f.error, t)}`)
+            .map(
+              (f) =>
+                `${localeRegionCode(f.target)}: ${translateV4Message(f.error, t)}`,
+            )
             .join("；"),
           6,
         );
@@ -391,13 +406,51 @@ export default function AppTranslateV4() {
   jobsRef.current = jobs;
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stablePollCount = 0;
+    let lastActiveJobsSignature = "";
+
+    const getNextDelay = () => {
+      if (typeof document !== "undefined" && document.hidden) return 30_000;
+      return Math.min(30_000, 3_000 * 2 ** Math.min(stablePollCount, 3));
+    };
+
+    const poll = () => {
+      if (disposed) return;
       const hasActive = jobsRef.current.some((j) => !j.isTerminal);
-      if (!hasActive) return;
-      void refreshList();
-      void refreshQuota();
-    }, 3000);
-    return () => clearInterval(timer);
+      if (!hasActive) {
+        stablePollCount = 0;
+        timer = setTimeout(poll, 10_000);
+        return;
+      }
+
+      const signature = jobsRef.current
+        .filter((j) => !j.isTerminal)
+        .map(
+          (j) =>
+            `${j.taskId}:${j.status}:${j.progressPercent ?? ""}:${j.updatedAt}`,
+        )
+        .join("|");
+
+      stablePollCount =
+        signature === lastActiveJobsSignature ? stablePollCount + 1 : 0;
+      lastActiveJobsSignature = signature;
+
+      if (typeof document === "undefined" || !document.hidden) {
+        void refreshList();
+        void refreshQuota();
+      }
+
+      timer = setTimeout(poll, getNextDelay());
+    };
+
+    timer = setTimeout(poll, 3_000);
+
+    return () => {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [refreshList, refreshQuota]);
 
   const coverageAutoRefreshDone = useRef(false);
@@ -432,10 +485,7 @@ export default function AppTranslateV4() {
       <TitleBar title={t("v4.title")} />
       <div className="v4-page" style={v4ContentStyle}>
         <div className="v4-enter">
-          <PageHeaderBar
-            credits={remainingCredits}
-            planType={planType}
-          />
+          <PageHeaderBar credits={remainingCredits} planType={planType} />
         </div>
 
         {translateQueue.length > 0 ? (
@@ -503,10 +553,7 @@ export default function AppTranslateV4() {
                   : null),
               }}
             >
-              <SummaryDonutCard
-                summary={coverage}
-                compact
-              />
+              <SummaryDonutCard summary={coverage} compact />
             </div>
             <div
               style={{
