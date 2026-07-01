@@ -29,6 +29,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { CaretDownOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
@@ -40,11 +41,6 @@ import AdvanceSettingCard from "./components/advanceSettingCard";
 import { setLanguageTableData } from "~/store/modules/languageTableData";
 import languageLocaleData from "~/utils/language-locale-data";
 import AppPageHeader from "~/ui/components/AppPageHeader";
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
-};
 
 const { Title, Text } = Typography;
 
@@ -62,6 +58,11 @@ export interface apiKeyConfiguration {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+
+  if (await isShopMigrated(shop)) {
+    throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
+  }
+
   return {
     shop,
     server: process.env.SERVER_URL,

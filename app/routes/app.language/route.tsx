@@ -664,7 +664,7 @@ const Index = () => {
   ];
 
   const navigateToTranslate = (selectedLanguageCode: string[]) => {
-    navigate("/app/translate-v4", {
+    navigate("/app/translate", {
       state: {
         from: "/app/language",
         selectedLanguageCode: selectedLanguageCode,
@@ -938,7 +938,7 @@ const Index = () => {
                       type="primary"
                       style={{ width: "100%" }}
                       onClick={() => {
-                        navigate("/app/translate-v4", {
+                        navigate("/app/translate", {
                           state: {
                             from: "/app/language",
                             selectedLanguageCode: [item.locale],
@@ -1031,7 +1031,7 @@ const Index = () => {
             <Button
               type="primary"
               onClick={() =>
-                navigate("/app/translate-v4", {
+                navigate("/app/translate", {
                   state: {
                     from: "/app/language",
                     selectedLanguageCode: [noFirstTranslationLocale],
