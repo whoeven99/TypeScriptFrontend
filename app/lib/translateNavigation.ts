@@ -1,8 +1,4 @@
-import { globalStore } from "~/globalStore";
-
-/** v4 店铺 → translate-v4；v2 白名单 → translate。 */
+/** 批量翻译页路径（全量 v4）。 */
 export function getTranslatePagePath(): string {
-  return globalStore.translateV4ExpressBeta
-    ? "/app/translate-v4"
-    : "/app/translate";
+  return "/app/translate-v4";
 }
