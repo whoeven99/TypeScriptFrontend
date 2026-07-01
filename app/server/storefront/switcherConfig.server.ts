@@ -7,8 +7,7 @@ import {
 } from "./switcherData.server";
 
 /**
- * 灰度入口：migratedToTsf 且 shop 在 TRANSLATE_V4_SHOP_ALLOWLIST 内时从 Prisma 读；allowlist 未配置则走 Java。
- * 对应 Java POST /widgetConfigurations/getData。
+ * Widget 配置读取。默认走 v4（Prisma）；v2PageWhitelist 中的店铺透明代理到 Java /widgetConfigurations/getData。
  */
 export async function getSwitcherConfig(
   shop: string,
