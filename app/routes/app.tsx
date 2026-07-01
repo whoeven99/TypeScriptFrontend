@@ -296,7 +296,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     server,
     apiKey: process.env.SHOPIFY_API_KEY || "",
-    translateV4Migrated: true,
     bootstrap,
   });
 };
@@ -603,8 +602,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, translateV4Migrated, bootstrap } =
-    useLoaderData<typeof loader>();
+  const { apiKey, shop, server, bootstrap } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
@@ -614,7 +612,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
-    globalStore.translateV4ExpressBeta = Boolean(translateV4Migrated);
+    globalStore.translateV4ExpressBeta = true;
     globalStore.source = bootstrap.source.code;
 
     dispatch(setShop({ shop }));
@@ -631,7 +629,7 @@ export default function App() {
       dispatch(setIsNew({ isNew: bootstrap.isNew }));
     }
     dispatch(setUserConfigIsLoading({ isLoading: false }));
-  }, [bootstrap, dispatch, server, shop, translateV4Migrated]);
+  }, [bootstrap, dispatch, server, shop]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -640,8 +638,8 @@ export default function App() {
         getPopupContainer={() => document.body}
       >
         <NavMenu>
-          <Link to={translateV4Migrated ? "/app/translate-v4" : "/app"} rel="home">
-            {translateV4Migrated ? t("v4.title") : "Home"}
+          <Link to="/app/translate-v4" rel="home">
+            {t("v4.title")}
           </Link>
           {isClient && (
             <>
