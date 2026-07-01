@@ -5,6 +5,7 @@ import { useNavigate } from "@remix-run/react";
 import ProgressBlock from "./progressBlock";
 import useReport from "scripts/eventReport";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import { getTranslatePagePath } from "~/lib/translateNavigation";
 
 const { Text } = Typography;
 
@@ -28,7 +29,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
   const navigate = useNavigate();
   const navigateToTranslate = () => {
     reportClick("dashboard_translate_button");
-    navigate("/app/translate-v4", {
+    navigate(getTranslatePagePath(), {
       state: { from: "/app", selectedLanguageCode: "" },
     });
   };

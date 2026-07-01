@@ -57,6 +57,7 @@ import languageLocaleData from "~/utils/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import { getTranslatePagePath } from "~/lib/translateNavigation";
 
 const { Text } = Typography;
 
@@ -664,7 +665,7 @@ const Index = () => {
   ];
 
   const navigateToTranslate = (selectedLanguageCode: string[]) => {
-    navigate("/app/translate", {
+    navigate(getTranslatePagePath(), {
       state: {
         from: "/app/language",
         selectedLanguageCode: selectedLanguageCode,
@@ -938,7 +939,7 @@ const Index = () => {
                       type="primary"
                       style={{ width: "100%" }}
                       onClick={() => {
-                        navigate("/app/translate", {
+                        navigate(getTranslatePagePath(), {
                           state: {
                             from: "/app/language",
                             selectedLanguageCode: [item.locale],
@@ -1031,7 +1032,7 @@ const Index = () => {
             <Button
               type="primary"
               onClick={() =>
-                navigate("/app/translate", {
+                navigate(getTranslatePagePath(), {
                   state: {
                     from: "/app/language",
                     selectedLanguageCode: [noFirstTranslationLocale],

@@ -1,13 +1,14 @@
 import prisma from "~/db.server";
+import { isV2PageWhitelistShop } from "./v2PageWhitelist";
 
-/** v4 为默认翻译链路，不再按 migratedToTsf 分流。 */
-export async function hasShopMigratedToTsf(_shop: string): Promise<boolean> {
-  return true;
+/** v4 为默认翻译链路；白名单店铺仍走 v2。 */
+export async function hasShopMigratedToTsf(shop: string): Promise<boolean> {
+  return !isV2PageWhitelistShop(shop);
 }
 
-/** @deprecated 保留兼容调用方；恒为 true。 */
-export async function isShopMigrated(_shop: string): Promise<boolean> {
-  return true;
+/** 是否使用 v4 体验（首页/翻译页入口、单字段翻译链路等）。 */
+export async function isShopMigrated(shop: string): Promise<boolean> {
+  return !isV2PageWhitelistShop(shop);
 }
 
 /** 迁移 API / 脚本写入后仍可调用；v4 默认模式下为 no-op。 */

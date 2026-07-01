@@ -1,5 +1,6 @@
 import { PhoneOutlined } from "@ant-design/icons";
 import { Progress, Button } from "antd";
+import { getTranslatePagePath } from "~/lib/translateNavigation";
 import { handleContactSupport } from "../route";
 import { Typography } from "antd";
 import { useTranslation } from "react-i18next";
@@ -96,7 +97,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   };
 
   const handleReTranslate = async () => {
-    navigate("/app/translate-v4");
+    navigate(getTranslatePagePath());
     reportClick("dashboard_translation_task_retranslate");
   };
 
