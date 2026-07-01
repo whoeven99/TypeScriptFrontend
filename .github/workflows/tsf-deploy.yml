@@ -100,13 +100,13 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }}
-          DEPLOY_BRANCH: ${{ github.ref_name }}
         run: |
-          echo "Deploying branch: $DEPLOY_BRANCH to Render TypescriptFD Test"
+          COMMIT="${{ github.sha }}"
+          echo "Deploying commit: $COMMIT"
           RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"branch\": \"$DEPLOY_BRANCH\"}")
+            -d "{\"commitId\": \"$COMMIT\"}")
           if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
             echo "Deploy to test Render triggered successfully. HTTP status: $RESPONSE"
           else
@@ -126,13 +126,13 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_PROD_SERVICE_ID }}
-          DEPLOY_BRANCH: ${{ github.ref_name }}
         run: |
-          echo "Deploying branch: $DEPLOY_BRANCH to Render TypescriptFD PROD"
+          COMMIT="${{ github.sha }}"
+          echo "Deploying commit: $COMMIT"
           RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"branch\": \"$DEPLOY_BRANCH\"}")
+            -d "{\"commitId\": \"$COMMIT\"}")
           if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
             echo "Deploy to prod Render triggered successfully. HTTP status: $RESPONSE"
           else

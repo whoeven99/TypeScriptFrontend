@@ -1,4 +1,4 @@
-# Render PROD — same as Dockerfile (kept for services still pointing at this path).
+# Spark-style deploy: prod deps only, build in image, fast container start (prisma generate only).
 FROM node:20-slim
 
 RUN apt-get update -y \

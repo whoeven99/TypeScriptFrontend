@@ -1,4 +1,4 @@
-import { ActionFunctionArgs } from "react-router";
+import type { ActionFunctionArgs } from "@remix-run/node";
 import { queryMarketDomainData } from "~/api/admin";
 import {
   InitCurrency,

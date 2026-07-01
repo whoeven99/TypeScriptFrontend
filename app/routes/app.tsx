@@ -23,20 +23,20 @@ import {
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
-  GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
-  IsOpenFreePlan,
   GetUnTranslatedWords,
-  IsInFreePlanTime,
-  QueryUserIpCount,
 } from "~/api/JavaServer";
-import { ShopLocalesType } from "./app.language/route";
-import { queryShopLanguages } from "~/api/admin";
+import {
+  bootstrapLocalesFromLoaded,
+  type AppBootstrapJavaData,
+} from "~/server/appBootstrap.server";
+import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
 import { useDispatch } from "react-redux";
+import type { Dispatch } from "@reduxjs/toolkit";
 import {
   setChars,
   setIpBalance,
@@ -57,25 +57,12 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 type AppBootstrapData = {
   source: { code: string; name: string };
-  targets: ShopLocalesType[];
-  plan: {
-    id: number;
-    type: string;
-    feeType: number;
-    isInFreePlanTime: boolean;
-  };
-  updateTime: string | null;
-  chars?: number;
-  totalChars?: number;
-  ipBalance?: number;
-  isNew: boolean | null;
-};
-
-const defaultPlan = {
-  id: 2,
-  type: "Free",
-  feeType: 0,
-  isInFreePlanTime: false,
+  targets: Array<{
+    locale: string;
+    name: string;
+    primary: boolean;
+    published: boolean;
+  }>;
 };
 
 const logGraphQLErrorDetail = (context: string, error: unknown) => {
@@ -132,19 +119,6 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(`[${context}] rawError`, e);
 };
 
-function formatPlanUpdateTime(value: unknown): string | null {
-  if (!value) return null;
-  const time = new Date(String(value));
-  if (Number.isNaN(time.getTime())) return null;
-  return time
-    .toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-    .replace(/\//g, "-");
-}
-
 async function runAppInitialization({
   shop,
   accessToken,
@@ -180,109 +154,53 @@ async function runAppInitialization({
   }
 }
 
-async function loadAppBootstrap({
+async function loadAppBootstrapLocales({
   shop,
   accessToken,
-  server,
 }: {
   shop: string;
   accessToken?: string;
-  server: string;
 }): Promise<AppBootstrapData> {
   let source = { code: "", name: "" };
-  let targets: ShopLocalesType[] = [];
+  let targets: AppBootstrapData["targets"] = [];
 
   try {
     if (accessToken) {
-      const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-        shop,
-        accessToken,
-      });
-      const primary = shopLanguagesIndex.find((language) => language?.primary);
-      source = {
-        code: primary?.locale || "",
-        name: primary?.name || "",
-      };
-      targets = shopLanguagesIndex
-        .filter((language) => !language.primary)
-        .map((language) => ({
-          ...language,
-          key: language?.key ?? language?.locale,
-        }));
+      const loaded = await loadShopLocalesForTranslation({ shop, accessToken });
+      const mapped = bootstrapLocalesFromLoaded(loaded);
+      source = mapped.source;
+      targets = mapped.targets;
     }
   } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap languages", error);
   }
 
-  const [
-    subscriptionResult,
-    freePlanTimeResult,
-    wordsResult,
-    ipBalanceResult,
-    openFreePlanResult,
-  ] = await Promise.allSettled([
-    GetUserSubscriptionPlan({ shop, server }),
-    IsInFreePlanTime({ shop, server }),
-    GetUserWords({ shop, server }),
-    QueryUserIpCount({ shop, server }),
-    IsOpenFreePlan({ shop, server }),
-  ]);
+  return { source, targets };
+}
 
-  const subscription =
-    subscriptionResult.status === "fulfilled"
-      ? subscriptionResult.value
-      : undefined;
-  const freePlanTime =
-    freePlanTimeResult.status === "fulfilled"
-      ? freePlanTimeResult.value
-      : undefined;
-  const words =
-    wordsResult.status === "fulfilled" ? wordsResult.value : undefined;
-  const ipBalance =
-    ipBalanceResult.status === "fulfilled"
-      ? ipBalanceResult.value
-      : undefined;
-  const openFreePlan =
-    openFreePlanResult.status === "fulfilled"
-      ? openFreePlanResult.value
-      : undefined;
-
-  const plan = {
-    ...defaultPlan,
-    ...(subscription?.success
-      ? {
-          id: subscription?.response?.userSubscriptionPlan || defaultPlan.id,
-          type: subscription?.response?.planType || defaultPlan.type,
-          feeType: subscription?.response?.feeType || defaultPlan.feeType,
-        }
-      : null),
-    isInFreePlanTime: freePlanTime?.success
-      ? Boolean(freePlanTime?.response)
-      : defaultPlan.isInFreePlanTime,
-  };
-
-  return {
-    source,
-    targets,
-    plan,
-    updateTime: subscription?.success
-      ? formatPlanUpdateTime(subscription?.response?.currentPeriodEnd)
-      : null,
-    chars: words?.success ? words?.response?.chars : undefined,
-    totalChars: words?.success ? words?.response?.totalChars : undefined,
-    ipBalance: ipBalance?.success ? ipBalance?.response : undefined,
-    isNew: openFreePlan?.success ? !openFreePlan?.response : null,
-  };
+function applyBootstrapJavaToStore(
+  dispatch: Dispatch,
+  bootstrap: AppBootstrapJavaData,
+) {
+  dispatch(setPlan({ plan: bootstrap.plan }));
+  if (bootstrap.updateTime) {
+    dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
+  }
+  dispatch(setChars({ chars: bootstrap.chars }));
+  dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
+  dispatch(setIpBalance({ ipBalance: bootstrap.ipBalance }));
+  if (bootstrap.isNew !== null) {
+    dispatch(setIsNew({ isNew: bootstrap.isNew }));
+  }
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const server = process.env.SERVER_URL || "";
-  const bootstrap = await loadAppBootstrap({
+  const bootstrap = await loadAppBootstrapLocales({
     shop,
     accessToken: accessToken as string | undefined,
-    server,
   });
 
   void runAppInitialization({
@@ -617,18 +535,37 @@ export default function App() {
 
     dispatch(setShop({ shop }));
     dispatch(setSource({ source: bootstrap.source }));
-    dispatch(setLanguageTableData(bootstrap.targets));
-    dispatch(setPlan({ plan: bootstrap.plan }));
-    if (bootstrap.updateTime) {
-      dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
-    }
-    dispatch(setChars({ chars: bootstrap.chars }));
-    dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
-    dispatch(setIpBalance({ ipBalance: bootstrap.ipBalance }));
-    if (bootstrap.isNew !== null) {
-      dispatch(setIsNew({ isNew: bootstrap.isNew }));
-    }
-    dispatch(setUserConfigIsLoading({ isLoading: false }));
+    dispatch(setLanguageTableData(
+      bootstrap.targets.map((language) => ({
+        ...language,
+        key: language.locale,
+      })),
+    ));
+
+    let cancelled = false;
+    dispatch(setUserConfigIsLoading({ isLoading: true }));
+
+    void fetch("/api/app-bootstrap")
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          ok?: boolean;
+          bootstrap?: AppBootstrapJavaData;
+        };
+        if (cancelled || !data?.ok || !data.bootstrap) return;
+        applyBootstrapJavaToStore(dispatch, data.bootstrap);
+      })
+      .catch((err) => {
+        console.error("[app] bootstrap java fetch failed:", err);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          dispatch(setUserConfigIsLoading({ isLoading: false }));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [bootstrap, dispatch, server, shop]);
 
   return (
