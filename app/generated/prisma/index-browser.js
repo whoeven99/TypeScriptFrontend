@@ -170,6 +170,17 @@ exports.Prisma.GlossaryScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PageFlyTranslationScalarFieldEnum = {
+  id: 'id',
+  shop: 'shop',
+  sourceText: 'sourceText',
+  targetText: 'targetText',
+  languageCode: 'languageCode',
+  isDeleted: 'isDeleted',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.LiquidRuleScalarFieldEnum = {
   id: 'id',
   shop: 'shop',
@@ -212,6 +223,7 @@ exports.Prisma.ModelName = {
   ShopTranslationSettings: 'ShopTranslationSettings',
   ShopTargetLocale: 'ShopTargetLocale',
   Glossary: 'Glossary',
+  PageFlyTranslation: 'PageFlyTranslation',
   LiquidRule: 'LiquidRule'
 };
 

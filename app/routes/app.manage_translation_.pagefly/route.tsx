@@ -17,11 +17,12 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { SingleTextTranslate } from "~/api/JavaServer";
+import { isPageFlyGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
-  EditTranslatedData,
-  ReadTranslatedText,
-  SingleTextTranslate,
-} from "~/api/JavaServer";
+  editPageFlyCompat,
+  readPageFlyCompat,
+} from "./pageflyClient";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import { globalStore } from "~/globalStore";
 import { authenticate } from "~/shopify.server";
@@ -36,12 +37,15 @@ const { Text, Title } = Typography;
 const { TextArea } = Input;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+  const pageFlyGrayEligible = await isPageFlyGrayEligible(session.shop);
 
   return {
     searchTerm,
     server: process.env.SERVER_URL,
+    pageFlyGrayEligible,
   };
 };
 
@@ -182,7 +186,8 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server } = useLoaderData<typeof loader>();
+  const { searchTerm, server, pageFlyGrayEligible } =
+    useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -612,7 +617,8 @@ const Index = () => {
       ...loadingStatus,
       shopNameLiquidDataIsPost: true,
     });
-    const data = await ReadTranslatedText({
+    const data = await readPageFlyCompat({
+      pageFlyGrayEligible,
       shop: globalStore?.shop || "",
       server: server || "",
       languageCode: language || selectedLanguage,
@@ -637,7 +643,8 @@ const Index = () => {
       targetText: item.value,
       languageCode: selectedLanguage,
     }));
-    const editTranslatedData = await EditTranslatedData({
+    const editTranslatedData = await editPageFlyCompat({
+      pageFlyGrayEligible,
       server: server || "",
       shop: globalStore?.shop || "",
       data,

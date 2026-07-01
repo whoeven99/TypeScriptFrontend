@@ -76,6 +76,20 @@ model Glossary {
   @@index([shop])
 }
 
+// 取代 Java `User_Page_Fly`；Int 主键对齐 Java id，迁移时保留原值
+model PageFlyTranslation {
+  id           Int      @id
+  shop         String
+  sourceText   String
+  targetText   String
+  languageCode String
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shop, languageCode, isDeleted])
+}
+
 // 取代 Java `User_Liquid`
 model LiquidRule {
   id                String   @id @default(cuid())

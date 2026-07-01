@@ -34,6 +34,11 @@ export type ShopTargetLocale = $Result.DefaultSelection<Prisma.$ShopTargetLocale
  */
 export type Glossary = $Result.DefaultSelection<Prisma.$GlossaryPayload>
 /**
+ * Model PageFlyTranslation
+ * 
+ */
+export type PageFlyTranslation = $Result.DefaultSelection<Prisma.$PageFlyTranslationPayload>
+/**
  * Model LiquidRule
  * 
  */
@@ -196,6 +201,16 @@ export class PrismaClient<
     * ```
     */
   get glossary(): Prisma.GlossaryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.pageFlyTranslation`: Exposes CRUD operations for the **PageFlyTranslation** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PageFlyTranslations
+    * const pageFlyTranslations = await prisma.pageFlyTranslation.findMany()
+    * ```
+    */
+  get pageFlyTranslation(): Prisma.PageFlyTranslationDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.liquidRule`: Exposes CRUD operations for the **LiquidRule** model.
@@ -651,6 +666,7 @@ export namespace Prisma {
     ShopTranslationSettings: 'ShopTranslationSettings',
     ShopTargetLocale: 'ShopTargetLocale',
     Glossary: 'Glossary',
+    PageFlyTranslation: 'PageFlyTranslation',
     LiquidRule: 'LiquidRule'
   };
 
@@ -670,7 +686,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "session" | "shopTranslationSettings" | "shopTargetLocale" | "glossary" | "liquidRule"
+      modelProps: "session" | "shopTranslationSettings" | "shopTargetLocale" | "glossary" | "pageFlyTranslation" | "liquidRule"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -970,6 +986,80 @@ export namespace Prisma {
           }
         }
       }
+      PageFlyTranslation: {
+        payload: Prisma.$PageFlyTranslationPayload<ExtArgs>
+        fields: Prisma.PageFlyTranslationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PageFlyTranslationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PageFlyTranslationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          findFirst: {
+            args: Prisma.PageFlyTranslationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PageFlyTranslationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          findMany: {
+            args: Prisma.PageFlyTranslationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>[]
+          }
+          create: {
+            args: Prisma.PageFlyTranslationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          createMany: {
+            args: Prisma.PageFlyTranslationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PageFlyTranslationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>[]
+          }
+          delete: {
+            args: Prisma.PageFlyTranslationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          update: {
+            args: Prisma.PageFlyTranslationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          deleteMany: {
+            args: Prisma.PageFlyTranslationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PageFlyTranslationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PageFlyTranslationUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>[]
+          }
+          upsert: {
+            args: Prisma.PageFlyTranslationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PageFlyTranslationPayload>
+          }
+          aggregate: {
+            args: Prisma.PageFlyTranslationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePageFlyTranslation>
+          }
+          groupBy: {
+            args: Prisma.PageFlyTranslationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PageFlyTranslationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PageFlyTranslationCountArgs<ExtArgs>
+            result: $Utils.Optional<PageFlyTranslationCountAggregateOutputType> | number
+          }
+        }
+      }
       LiquidRule: {
         payload: Prisma.$LiquidRulePayload<ExtArgs>
         fields: Prisma.LiquidRuleFieldRefs
@@ -1144,6 +1234,7 @@ export namespace Prisma {
     shopTranslationSettings?: ShopTranslationSettingsOmit
     shopTargetLocale?: ShopTargetLocaleOmit
     glossary?: GlossaryOmit
+    pageFlyTranslation?: PageFlyTranslationOmit
     liquidRule?: LiquidRuleOmit
   }
 
@@ -5564,6 +5655,1072 @@ export namespace Prisma {
 
 
   /**
+   * Model PageFlyTranslation
+   */
+
+  export type AggregatePageFlyTranslation = {
+    _count: PageFlyTranslationCountAggregateOutputType | null
+    _avg: PageFlyTranslationAvgAggregateOutputType | null
+    _sum: PageFlyTranslationSumAggregateOutputType | null
+    _min: PageFlyTranslationMinAggregateOutputType | null
+    _max: PageFlyTranslationMaxAggregateOutputType | null
+  }
+
+  export type PageFlyTranslationAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type PageFlyTranslationSumAggregateOutputType = {
+    id: number | null
+  }
+
+  export type PageFlyTranslationMinAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    sourceText: string | null
+    targetText: string | null
+    languageCode: string | null
+    isDeleted: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PageFlyTranslationMaxAggregateOutputType = {
+    id: number | null
+    shop: string | null
+    sourceText: string | null
+    targetText: string | null
+    languageCode: string | null
+    isDeleted: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PageFlyTranslationCountAggregateOutputType = {
+    id: number
+    shop: number
+    sourceText: number
+    targetText: number
+    languageCode: number
+    isDeleted: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PageFlyTranslationAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type PageFlyTranslationSumAggregateInputType = {
+    id?: true
+  }
+
+  export type PageFlyTranslationMinAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    languageCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PageFlyTranslationMaxAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    languageCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PageFlyTranslationCountAggregateInputType = {
+    id?: true
+    shop?: true
+    sourceText?: true
+    targetText?: true
+    languageCode?: true
+    isDeleted?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PageFlyTranslationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PageFlyTranslation to aggregate.
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PageFlyTranslations to fetch.
+     */
+    orderBy?: PageFlyTranslationOrderByWithRelationInput | PageFlyTranslationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PageFlyTranslationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PageFlyTranslations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PageFlyTranslations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PageFlyTranslations
+    **/
+    _count?: true | PageFlyTranslationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PageFlyTranslationAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PageFlyTranslationSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PageFlyTranslationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PageFlyTranslationMaxAggregateInputType
+  }
+
+  export type GetPageFlyTranslationAggregateType<T extends PageFlyTranslationAggregateArgs> = {
+        [P in keyof T & keyof AggregatePageFlyTranslation]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePageFlyTranslation[P]>
+      : GetScalarType<T[P], AggregatePageFlyTranslation[P]>
+  }
+
+
+
+
+  export type PageFlyTranslationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PageFlyTranslationWhereInput
+    orderBy?: PageFlyTranslationOrderByWithAggregationInput | PageFlyTranslationOrderByWithAggregationInput[]
+    by: PageFlyTranslationScalarFieldEnum[] | PageFlyTranslationScalarFieldEnum
+    having?: PageFlyTranslationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PageFlyTranslationCountAggregateInputType | true
+    _avg?: PageFlyTranslationAvgAggregateInputType
+    _sum?: PageFlyTranslationSumAggregateInputType
+    _min?: PageFlyTranslationMinAggregateInputType
+    _max?: PageFlyTranslationMaxAggregateInputType
+  }
+
+  export type PageFlyTranslationGroupByOutputType = {
+    id: number
+    shop: string
+    sourceText: string
+    targetText: string
+    languageCode: string
+    isDeleted: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: PageFlyTranslationCountAggregateOutputType | null
+    _avg: PageFlyTranslationAvgAggregateOutputType | null
+    _sum: PageFlyTranslationSumAggregateOutputType | null
+    _min: PageFlyTranslationMinAggregateOutputType | null
+    _max: PageFlyTranslationMaxAggregateOutputType | null
+  }
+
+  type GetPageFlyTranslationGroupByPayload<T extends PageFlyTranslationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PageFlyTranslationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PageFlyTranslationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PageFlyTranslationGroupByOutputType[P]>
+            : GetScalarType<T[P], PageFlyTranslationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PageFlyTranslationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    languageCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["pageFlyTranslation"]>
+
+  export type PageFlyTranslationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    languageCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["pageFlyTranslation"]>
+
+  export type PageFlyTranslationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    languageCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["pageFlyTranslation"]>
+
+  export type PageFlyTranslationSelectScalar = {
+    id?: boolean
+    shop?: boolean
+    sourceText?: boolean
+    targetText?: boolean
+    languageCode?: boolean
+    isDeleted?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type PageFlyTranslationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop" | "sourceText" | "targetText" | "languageCode" | "isDeleted" | "createdAt" | "updatedAt", ExtArgs["result"]["pageFlyTranslation"]>
+
+  export type $PageFlyTranslationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PageFlyTranslation"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      shop: string
+      sourceText: string
+      targetText: string
+      languageCode: string
+      isDeleted: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["pageFlyTranslation"]>
+    composites: {}
+  }
+
+  type PageFlyTranslationGetPayload<S extends boolean | null | undefined | PageFlyTranslationDefaultArgs> = $Result.GetResult<Prisma.$PageFlyTranslationPayload, S>
+
+  type PageFlyTranslationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PageFlyTranslationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PageFlyTranslationCountAggregateInputType | true
+    }
+
+  export interface PageFlyTranslationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PageFlyTranslation'], meta: { name: 'PageFlyTranslation' } }
+    /**
+     * Find zero or one PageFlyTranslation that matches the filter.
+     * @param {PageFlyTranslationFindUniqueArgs} args - Arguments to find a PageFlyTranslation
+     * @example
+     * // Get one PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PageFlyTranslationFindUniqueArgs>(args: SelectSubset<T, PageFlyTranslationFindUniqueArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PageFlyTranslation that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PageFlyTranslationFindUniqueOrThrowArgs} args - Arguments to find a PageFlyTranslation
+     * @example
+     * // Get one PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PageFlyTranslationFindUniqueOrThrowArgs>(args: SelectSubset<T, PageFlyTranslationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PageFlyTranslation that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationFindFirstArgs} args - Arguments to find a PageFlyTranslation
+     * @example
+     * // Get one PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PageFlyTranslationFindFirstArgs>(args?: SelectSubset<T, PageFlyTranslationFindFirstArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PageFlyTranslation that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationFindFirstOrThrowArgs} args - Arguments to find a PageFlyTranslation
+     * @example
+     * // Get one PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PageFlyTranslationFindFirstOrThrowArgs>(args?: SelectSubset<T, PageFlyTranslationFindFirstOrThrowArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PageFlyTranslations that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PageFlyTranslations
+     * const pageFlyTranslations = await prisma.pageFlyTranslation.findMany()
+     * 
+     * // Get first 10 PageFlyTranslations
+     * const pageFlyTranslations = await prisma.pageFlyTranslation.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pageFlyTranslationWithIdOnly = await prisma.pageFlyTranslation.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PageFlyTranslationFindManyArgs>(args?: SelectSubset<T, PageFlyTranslationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PageFlyTranslation.
+     * @param {PageFlyTranslationCreateArgs} args - Arguments to create a PageFlyTranslation.
+     * @example
+     * // Create one PageFlyTranslation
+     * const PageFlyTranslation = await prisma.pageFlyTranslation.create({
+     *   data: {
+     *     // ... data to create a PageFlyTranslation
+     *   }
+     * })
+     * 
+     */
+    create<T extends PageFlyTranslationCreateArgs>(args: SelectSubset<T, PageFlyTranslationCreateArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PageFlyTranslations.
+     * @param {PageFlyTranslationCreateManyArgs} args - Arguments to create many PageFlyTranslations.
+     * @example
+     * // Create many PageFlyTranslations
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PageFlyTranslationCreateManyArgs>(args?: SelectSubset<T, PageFlyTranslationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PageFlyTranslations and returns the data saved in the database.
+     * @param {PageFlyTranslationCreateManyAndReturnArgs} args - Arguments to create many PageFlyTranslations.
+     * @example
+     * // Create many PageFlyTranslations
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PageFlyTranslations and only return the `id`
+     * const pageFlyTranslationWithIdOnly = await prisma.pageFlyTranslation.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PageFlyTranslationCreateManyAndReturnArgs>(args?: SelectSubset<T, PageFlyTranslationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PageFlyTranslation.
+     * @param {PageFlyTranslationDeleteArgs} args - Arguments to delete one PageFlyTranslation.
+     * @example
+     * // Delete one PageFlyTranslation
+     * const PageFlyTranslation = await prisma.pageFlyTranslation.delete({
+     *   where: {
+     *     // ... filter to delete one PageFlyTranslation
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PageFlyTranslationDeleteArgs>(args: SelectSubset<T, PageFlyTranslationDeleteArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PageFlyTranslation.
+     * @param {PageFlyTranslationUpdateArgs} args - Arguments to update one PageFlyTranslation.
+     * @example
+     * // Update one PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PageFlyTranslationUpdateArgs>(args: SelectSubset<T, PageFlyTranslationUpdateArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PageFlyTranslations.
+     * @param {PageFlyTranslationDeleteManyArgs} args - Arguments to filter PageFlyTranslations to delete.
+     * @example
+     * // Delete a few PageFlyTranslations
+     * const { count } = await prisma.pageFlyTranslation.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PageFlyTranslationDeleteManyArgs>(args?: SelectSubset<T, PageFlyTranslationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PageFlyTranslations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PageFlyTranslations
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PageFlyTranslationUpdateManyArgs>(args: SelectSubset<T, PageFlyTranslationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PageFlyTranslations and returns the data updated in the database.
+     * @param {PageFlyTranslationUpdateManyAndReturnArgs} args - Arguments to update many PageFlyTranslations.
+     * @example
+     * // Update many PageFlyTranslations
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PageFlyTranslations and only return the `id`
+     * const pageFlyTranslationWithIdOnly = await prisma.pageFlyTranslation.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PageFlyTranslationUpdateManyAndReturnArgs>(args: SelectSubset<T, PageFlyTranslationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PageFlyTranslation.
+     * @param {PageFlyTranslationUpsertArgs} args - Arguments to update or create a PageFlyTranslation.
+     * @example
+     * // Update or create a PageFlyTranslation
+     * const pageFlyTranslation = await prisma.pageFlyTranslation.upsert({
+     *   create: {
+     *     // ... data to create a PageFlyTranslation
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PageFlyTranslation we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PageFlyTranslationUpsertArgs>(args: SelectSubset<T, PageFlyTranslationUpsertArgs<ExtArgs>>): Prisma__PageFlyTranslationClient<$Result.GetResult<Prisma.$PageFlyTranslationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PageFlyTranslations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationCountArgs} args - Arguments to filter PageFlyTranslations to count.
+     * @example
+     * // Count the number of PageFlyTranslations
+     * const count = await prisma.pageFlyTranslation.count({
+     *   where: {
+     *     // ... the filter for the PageFlyTranslations we want to count
+     *   }
+     * })
+    **/
+    count<T extends PageFlyTranslationCountArgs>(
+      args?: Subset<T, PageFlyTranslationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PageFlyTranslationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PageFlyTranslation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PageFlyTranslationAggregateArgs>(args: Subset<T, PageFlyTranslationAggregateArgs>): Prisma.PrismaPromise<GetPageFlyTranslationAggregateType<T>>
+
+    /**
+     * Group by PageFlyTranslation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PageFlyTranslationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PageFlyTranslationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PageFlyTranslationGroupByArgs['orderBy'] }
+        : { orderBy?: PageFlyTranslationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PageFlyTranslationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPageFlyTranslationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PageFlyTranslation model
+   */
+  readonly fields: PageFlyTranslationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PageFlyTranslation.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PageFlyTranslationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PageFlyTranslation model
+   */
+  interface PageFlyTranslationFieldRefs {
+    readonly id: FieldRef<"PageFlyTranslation", 'Int'>
+    readonly shop: FieldRef<"PageFlyTranslation", 'String'>
+    readonly sourceText: FieldRef<"PageFlyTranslation", 'String'>
+    readonly targetText: FieldRef<"PageFlyTranslation", 'String'>
+    readonly languageCode: FieldRef<"PageFlyTranslation", 'String'>
+    readonly isDeleted: FieldRef<"PageFlyTranslation", 'Boolean'>
+    readonly createdAt: FieldRef<"PageFlyTranslation", 'DateTime'>
+    readonly updatedAt: FieldRef<"PageFlyTranslation", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PageFlyTranslation findUnique
+   */
+  export type PageFlyTranslationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter, which PageFlyTranslation to fetch.
+     */
+    where: PageFlyTranslationWhereUniqueInput
+  }
+
+  /**
+   * PageFlyTranslation findUniqueOrThrow
+   */
+  export type PageFlyTranslationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter, which PageFlyTranslation to fetch.
+     */
+    where: PageFlyTranslationWhereUniqueInput
+  }
+
+  /**
+   * PageFlyTranslation findFirst
+   */
+  export type PageFlyTranslationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter, which PageFlyTranslation to fetch.
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PageFlyTranslations to fetch.
+     */
+    orderBy?: PageFlyTranslationOrderByWithRelationInput | PageFlyTranslationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PageFlyTranslations.
+     */
+    cursor?: PageFlyTranslationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PageFlyTranslations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PageFlyTranslations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PageFlyTranslations.
+     */
+    distinct?: PageFlyTranslationScalarFieldEnum | PageFlyTranslationScalarFieldEnum[]
+  }
+
+  /**
+   * PageFlyTranslation findFirstOrThrow
+   */
+  export type PageFlyTranslationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter, which PageFlyTranslation to fetch.
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PageFlyTranslations to fetch.
+     */
+    orderBy?: PageFlyTranslationOrderByWithRelationInput | PageFlyTranslationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PageFlyTranslations.
+     */
+    cursor?: PageFlyTranslationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PageFlyTranslations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PageFlyTranslations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PageFlyTranslations.
+     */
+    distinct?: PageFlyTranslationScalarFieldEnum | PageFlyTranslationScalarFieldEnum[]
+  }
+
+  /**
+   * PageFlyTranslation findMany
+   */
+  export type PageFlyTranslationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter, which PageFlyTranslations to fetch.
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PageFlyTranslations to fetch.
+     */
+    orderBy?: PageFlyTranslationOrderByWithRelationInput | PageFlyTranslationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PageFlyTranslations.
+     */
+    cursor?: PageFlyTranslationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PageFlyTranslations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PageFlyTranslations.
+     */
+    skip?: number
+    distinct?: PageFlyTranslationScalarFieldEnum | PageFlyTranslationScalarFieldEnum[]
+  }
+
+  /**
+   * PageFlyTranslation create
+   */
+  export type PageFlyTranslationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PageFlyTranslation.
+     */
+    data: XOR<PageFlyTranslationCreateInput, PageFlyTranslationUncheckedCreateInput>
+  }
+
+  /**
+   * PageFlyTranslation createMany
+   */
+  export type PageFlyTranslationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PageFlyTranslations.
+     */
+    data: PageFlyTranslationCreateManyInput | PageFlyTranslationCreateManyInput[]
+  }
+
+  /**
+   * PageFlyTranslation createManyAndReturn
+   */
+  export type PageFlyTranslationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * The data used to create many PageFlyTranslations.
+     */
+    data: PageFlyTranslationCreateManyInput | PageFlyTranslationCreateManyInput[]
+  }
+
+  /**
+   * PageFlyTranslation update
+   */
+  export type PageFlyTranslationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PageFlyTranslation.
+     */
+    data: XOR<PageFlyTranslationUpdateInput, PageFlyTranslationUncheckedUpdateInput>
+    /**
+     * Choose, which PageFlyTranslation to update.
+     */
+    where: PageFlyTranslationWhereUniqueInput
+  }
+
+  /**
+   * PageFlyTranslation updateMany
+   */
+  export type PageFlyTranslationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PageFlyTranslations.
+     */
+    data: XOR<PageFlyTranslationUpdateManyMutationInput, PageFlyTranslationUncheckedUpdateManyInput>
+    /**
+     * Filter which PageFlyTranslations to update
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * Limit how many PageFlyTranslations to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PageFlyTranslation updateManyAndReturn
+   */
+  export type PageFlyTranslationUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * The data used to update PageFlyTranslations.
+     */
+    data: XOR<PageFlyTranslationUpdateManyMutationInput, PageFlyTranslationUncheckedUpdateManyInput>
+    /**
+     * Filter which PageFlyTranslations to update
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * Limit how many PageFlyTranslations to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PageFlyTranslation upsert
+   */
+  export type PageFlyTranslationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PageFlyTranslation to update in case it exists.
+     */
+    where: PageFlyTranslationWhereUniqueInput
+    /**
+     * In case the PageFlyTranslation found by the `where` argument doesn't exist, create a new PageFlyTranslation with this data.
+     */
+    create: XOR<PageFlyTranslationCreateInput, PageFlyTranslationUncheckedCreateInput>
+    /**
+     * In case the PageFlyTranslation was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PageFlyTranslationUpdateInput, PageFlyTranslationUncheckedUpdateInput>
+  }
+
+  /**
+   * PageFlyTranslation delete
+   */
+  export type PageFlyTranslationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+    /**
+     * Filter which PageFlyTranslation to delete.
+     */
+    where: PageFlyTranslationWhereUniqueInput
+  }
+
+  /**
+   * PageFlyTranslation deleteMany
+   */
+  export type PageFlyTranslationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PageFlyTranslations to delete
+     */
+    where?: PageFlyTranslationWhereInput
+    /**
+     * Limit how many PageFlyTranslations to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PageFlyTranslation without action
+   */
+  export type PageFlyTranslationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PageFlyTranslation
+     */
+    select?: PageFlyTranslationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PageFlyTranslation
+     */
+    omit?: PageFlyTranslationOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Model LiquidRule
    */
 
@@ -6670,6 +7827,20 @@ export namespace Prisma {
   export type GlossaryScalarFieldEnum = (typeof GlossaryScalarFieldEnum)[keyof typeof GlossaryScalarFieldEnum]
 
 
+  export const PageFlyTranslationScalarFieldEnum: {
+    id: 'id',
+    shop: 'shop',
+    sourceText: 'sourceText',
+    targetText: 'targetText',
+    languageCode: 'languageCode',
+    isDeleted: 'isDeleted',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PageFlyTranslationScalarFieldEnum = (typeof PageFlyTranslationScalarFieldEnum)[keyof typeof PageFlyTranslationScalarFieldEnum]
+
+
   export const LiquidRuleScalarFieldEnum: {
     id: 'id',
     shop: 'shop',
@@ -7103,6 +8274,75 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Glossary"> | Date | string
   }
 
+  export type PageFlyTranslationWhereInput = {
+    AND?: PageFlyTranslationWhereInput | PageFlyTranslationWhereInput[]
+    OR?: PageFlyTranslationWhereInput[]
+    NOT?: PageFlyTranslationWhereInput | PageFlyTranslationWhereInput[]
+    id?: IntFilter<"PageFlyTranslation"> | number
+    shop?: StringFilter<"PageFlyTranslation"> | string
+    sourceText?: StringFilter<"PageFlyTranslation"> | string
+    targetText?: StringFilter<"PageFlyTranslation"> | string
+    languageCode?: StringFilter<"PageFlyTranslation"> | string
+    isDeleted?: BoolFilter<"PageFlyTranslation"> | boolean
+    createdAt?: DateTimeFilter<"PageFlyTranslation"> | Date | string
+    updatedAt?: DateTimeFilter<"PageFlyTranslation"> | Date | string
+  }
+
+  export type PageFlyTranslationOrderByWithRelationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    languageCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PageFlyTranslationWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: PageFlyTranslationWhereInput | PageFlyTranslationWhereInput[]
+    OR?: PageFlyTranslationWhereInput[]
+    NOT?: PageFlyTranslationWhereInput | PageFlyTranslationWhereInput[]
+    shop?: StringFilter<"PageFlyTranslation"> | string
+    sourceText?: StringFilter<"PageFlyTranslation"> | string
+    targetText?: StringFilter<"PageFlyTranslation"> | string
+    languageCode?: StringFilter<"PageFlyTranslation"> | string
+    isDeleted?: BoolFilter<"PageFlyTranslation"> | boolean
+    createdAt?: DateTimeFilter<"PageFlyTranslation"> | Date | string
+    updatedAt?: DateTimeFilter<"PageFlyTranslation"> | Date | string
+  }, "id">
+
+  export type PageFlyTranslationOrderByWithAggregationInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    languageCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PageFlyTranslationCountOrderByAggregateInput
+    _avg?: PageFlyTranslationAvgOrderByAggregateInput
+    _max?: PageFlyTranslationMaxOrderByAggregateInput
+    _min?: PageFlyTranslationMinOrderByAggregateInput
+    _sum?: PageFlyTranslationSumOrderByAggregateInput
+  }
+
+  export type PageFlyTranslationScalarWhereWithAggregatesInput = {
+    AND?: PageFlyTranslationScalarWhereWithAggregatesInput | PageFlyTranslationScalarWhereWithAggregatesInput[]
+    OR?: PageFlyTranslationScalarWhereWithAggregatesInput[]
+    NOT?: PageFlyTranslationScalarWhereWithAggregatesInput | PageFlyTranslationScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"PageFlyTranslation"> | number
+    shop?: StringWithAggregatesFilter<"PageFlyTranslation"> | string
+    sourceText?: StringWithAggregatesFilter<"PageFlyTranslation"> | string
+    targetText?: StringWithAggregatesFilter<"PageFlyTranslation"> | string
+    languageCode?: StringWithAggregatesFilter<"PageFlyTranslation"> | string
+    isDeleted?: BoolWithAggregatesFilter<"PageFlyTranslation"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"PageFlyTranslation"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PageFlyTranslation"> | Date | string
+  }
+
   export type LiquidRuleWhereInput = {
     AND?: LiquidRuleWhereInput | LiquidRuleWhereInput[]
     OR?: LiquidRuleWhereInput[]
@@ -7526,6 +8766,83 @@ export namespace Prisma {
     caseSensitive?: BoolFieldUpdateOperationsInput | boolean
     status?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PageFlyTranslationCreateInput = {
+    id: number
+    shop: string
+    sourceText: string
+    targetText: string
+    languageCode: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PageFlyTranslationUncheckedCreateInput = {
+    id: number
+    shop: string
+    sourceText: string
+    targetText: string
+    languageCode: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PageFlyTranslationUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PageFlyTranslationUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PageFlyTranslationCreateManyInput = {
+    id: number
+    shop: string
+    sourceText: string
+    targetText: string
+    languageCode: string
+    isDeleted?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PageFlyTranslationUpdateManyMutationInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PageFlyTranslationUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    shop?: StringFieldUpdateOperationsInput | string
+    sourceText?: StringFieldUpdateOperationsInput | string
+    targetText?: StringFieldUpdateOperationsInput | string
+    languageCode?: StringFieldUpdateOperationsInput | string
+    isDeleted?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type LiquidRuleCreateInput = {
@@ -8026,6 +9343,47 @@ export namespace Prisma {
   export type GlossarySumOrderByAggregateInput = {
     id?: SortOrder
     status?: SortOrder
+  }
+
+  export type PageFlyTranslationCountOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    languageCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PageFlyTranslationAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type PageFlyTranslationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    languageCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PageFlyTranslationMinOrderByAggregateInput = {
+    id?: SortOrder
+    shop?: SortOrder
+    sourceText?: SortOrder
+    targetText?: SortOrder
+    languageCode?: SortOrder
+    isDeleted?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PageFlyTranslationSumOrderByAggregateInput = {
+    id?: SortOrder
   }
 
   export type LiquidRuleCountOrderByAggregateInput = {
