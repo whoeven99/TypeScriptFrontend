@@ -13,7 +13,6 @@ import {
   SendPurchaseSuccessEmail,
   SendSubscribeSuccessEmail,
   Uninstall,
-  UpdateStatus,
   UpdateUserPlan,
   WebhookDefaultLanguage,
   WebhookDefaultTheme,
@@ -172,7 +171,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             });
             console.log("addChars: ", addChars);
             if (addChars?.success) {
-              UpdateStatus({ shop });
               SendPurchaseSuccessEmail({
                 shop,
                 credit: credits,
@@ -218,7 +216,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               subscriptionId: payload?.app_subscription.admin_graphql_api_id,
             });
             UpdateUserPlan({ shop, plan });
-            UpdateStatus({ shop });
             SendSubscribeSuccessEmail({
               id: payload?.app_subscription.admin_graphql_api_id,
               shopName: shop,
