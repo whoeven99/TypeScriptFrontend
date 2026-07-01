@@ -4,7 +4,6 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   getSwitcherConfigForAdmin,
   saveSwitcherConfigForAdmin,
@@ -19,18 +18,9 @@ function fail(errorMsg: string, errorCode = 10001) {
   return json({ success: false, errorCode, errorMsg, response: null });
 }
 
-async function assertStorefrontGrayEligible(shop: string) {
-  if (!(await isStorefrontGrayEligible(shop))) {
-    return fail("not eligible for storefront gray", 403);
-  }
-  return null;
-}
-
-/** GET /api/translate-v4/switcher —— 灰度店读取 Switcher 配置（Turso）。 */
+/** GET /api/translate-v4/switcher —— 读取 Switcher 配置（Turso）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const blocked = await assertStorefrontGrayEligible(session.shop);
-  if (blocked) return blocked;
 
   try {
     return ok(await getSwitcherConfigForAdmin(session.shop));
@@ -41,14 +31,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * POST /api/translate-v4/switcher —— 灰度店保存 Switcher 配置（Turso）。
+ * POST /api/translate-v4/switcher —— 保存 Switcher 配置（Turso）。
  * body 字段与 Java `saveAndUpdateData` 一致（不含 shopName/server）。
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
-  const blocked = await assertStorefrontGrayEligible(shop);
-  if (blocked) return blocked;
 
   const body = (await request.json().catch(() => ({}))) as Partial<
     SwitcherConfigWriteInput

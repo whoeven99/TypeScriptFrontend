@@ -25,7 +25,6 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { authenticate } from "~/shopify.server";
-import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   loadSwitcherConfigCompat,
   saveSwitcherConfigCompat,
@@ -93,10 +92,9 @@ const initialLocalization = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  const migrated = await isStorefrontGrayEligible(shop);
   return {
     shop,
-    migrated,
+    migrated: true,
     server: process.env.SERVER_URL,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
     ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
