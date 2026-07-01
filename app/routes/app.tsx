@@ -17,7 +17,6 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import {
   GetUserWords,
   GetLanguageStatus,
@@ -123,13 +122,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  const migrated = await isShopMigrated(shop);
-
   return json({
     shop,
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
-    translateV4Migrated: migrated,
+    translateV4Migrated: true,
   });
 };
 

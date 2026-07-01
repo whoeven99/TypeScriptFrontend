@@ -636,10 +636,7 @@ type SingleTextTranslateArgs = {
   resourceId: string | null; // 必传，但可 null
 };
 
-/**
- * - 已迁移店 → 走 TSF 端点 /api/translate-v4/single（LLM 翻译）。
- * - 未迁移店 → 直连 Java（原行为不变）。
- */
+/** 走 TSF 端点 /api/translate-v4/single（LLM 翻译）；全量 v4 后不再走 Java 直连。 */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
   if (!globalStore.translateV4ExpressBeta) {
     return singleTextTranslateV2ViaJava(args);
