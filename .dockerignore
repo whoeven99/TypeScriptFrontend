@@ -7,11 +7,10 @@ node_modules/.cache
 .git
 .gitignore
 *.md
-Dockerfile*
-docker-compose*
-.vscode
-extensions/
-.npm
 .cursor
+.vscode
+npm-debug.log*
 *.log
-.eslintcache
+scripts/tmp
+tmp
+extensions
