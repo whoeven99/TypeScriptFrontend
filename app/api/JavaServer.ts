@@ -426,20 +426,6 @@ export const AddSubscriptionQuotaRecord = async ({
   }
 };
 
-//付费后更新状态
-export const UpdateStatus = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/updateStatusV2?shopName=${shop}`,
-      method: "POST",
-    });
-
-    console.log(`${shop} updateStatusV2: `, response.data);
-  } catch (error) {
-    console.error("Error updateStatusV2:", error);
-  }
-};
-
 //修改用户计划
 export const UpdateUserPlan = async ({
   shop,
