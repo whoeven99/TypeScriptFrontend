@@ -5,6 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { v4Colors } from "./v4Styles";
 
 type SupportMessage = {
@@ -96,6 +97,7 @@ async function postSupport(body: Record<string, unknown>): Promise<{
 }
 
 export function SupportChatWidget() {
+  const { t } = useTranslation();
   useHideTawkWidget();
 
   const [open, setOpen] = useState(false);
@@ -150,19 +152,19 @@ export function SupportChatWidget() {
       const result = await postSupport({ intent: "send", content });
       setSending(false);
       if (!result.ok) {
-        setError("发送失败，请稍后重试");
+        setError(t("v4.support.sendFailed"));
         return;
       }
       setDraft("");
       await refresh(true);
     },
-    [draft, sending, refresh],
+    [draft, sending, refresh, t],
   );
 
   const handleSaveEmail = useCallback(async () => {
     const email = emailInput.trim();
     if (!EMAIL_RE.test(email)) {
-      setEmailError("请输入有效的邮箱地址");
+      setEmailError(t("v4.support.invalidEmail"));
       return;
     }
     setEmailError(null);
@@ -171,7 +173,7 @@ export function SupportChatWidget() {
       setEmailSaved(true);
       setConversation((prev) => (prev ? { ...prev, contactEmail: email } : prev));
     }
-  }, [emailInput]);
+  }, [emailInput, t]);
 
   const showEmailPrompt =
     open && conversation != null && !conversation.contactEmail && !emailSaved;
@@ -181,7 +183,7 @@ export function SupportChatWidget() {
       {!open && (
         <button
           type="button"
-          aria-label="联系客服"
+          aria-label={t("v4.support.open")}
           onClick={() => setOpen(true)}
           style={styles.launcher}
         >
@@ -191,12 +193,12 @@ export function SupportChatWidget() {
       )}
 
       {open && (
-        <div style={styles.panel} role="dialog" aria-label="在线客服">
+        <div style={styles.panel} role="dialog" aria-label={t("v4.support.dialogTitle")}>
           <div style={styles.header}>
-            <span style={styles.headerTitle}>在线客服</span>
+            <span style={styles.headerTitle}>{t("v4.support.dialogTitle")}</span>
             <button
               type="button"
-              aria-label="关闭"
+              aria-label={t("v4.support.close")}
               onClick={() => setOpen(false)}
               style={styles.closeBtn}
             >
@@ -206,31 +208,31 @@ export function SupportChatWidget() {
 
           <div style={styles.body}>
             <div style={styles.greeting}>
-              你好，有任何关于翻译的问题都可以在这里留言，我们会尽快回复。
+              {t("v4.support.greeting")}
             </div>
 
             {showEmailPrompt && (
               <div style={styles.emailBox}>
-                <div style={styles.emailPrompt}>留个邮箱，方便我们在你离线时回复你：</div>
+                <div style={styles.emailPrompt}>{t("v4.support.emailPrompt")}</div>
                 <div style={styles.emailRow}>
                   <input
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="your@email.com"
+                    placeholder={t("v4.support.emailPlaceholder")}
                     style={styles.emailInput}
                   />
                   <button type="button" onClick={handleSaveEmail} style={styles.emailBtn}>
-                    保存
+                    {t("v4.support.save")}
                   </button>
                 </div>
                 {emailError && <div style={styles.errorText}>{emailError}</div>}
               </div>
             )}
-            {emailSaved && <div style={styles.savedText}>邮箱已保存</div>}
+            {emailSaved && <div style={styles.savedText}>{t("v4.support.emailSaved")}</div>}
 
             {conversation && conversation.messages.length === 0 && (
-              <div style={styles.empty}>还没有消息，发一条开始对话吧。</div>
+              <div style={styles.empty}>{t("v4.support.empty")}</div>
             )}
 
             {conversation?.messages.map((m) => {
@@ -245,7 +247,7 @@ export function SupportChatWidget() {
                 >
                   <div style={mine ? styles.bubbleMine : styles.bubbleOps}>
                     {!mine && (
-                      <div style={styles.senderName}>{m.senderName || "客服"}</div>
+                      <div style={styles.senderName}>{m.senderName || t("v4.support.agent")}</div>
                     )}
                     <div style={styles.msgContent}>{m.content}</div>
                   </div>
@@ -262,7 +264,7 @@ export function SupportChatWidget() {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="输入消息…"
+              placeholder={t("v4.support.messagePlaceholder")}
               style={styles.textInput}
               disabled={sending}
             />
@@ -271,7 +273,7 @@ export function SupportChatWidget() {
               style={styles.sendBtn}
               disabled={sending || !draft.trim()}
             >
-              发送
+              {t("v4.support.send")}
             </button>
           </form>
         </div>
@@ -351,11 +353,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: v4Colors.text,
     padding: "12px 16px",
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    gap: 12,
     borderBottom: `1px solid ${v4Colors.cardBorder}`,
   },
-  headerTitle: { fontWeight: 600, fontSize: 14 },
+  headerTitle: { fontWeight: 600, fontSize: 14, lineHeight: 1.4, minWidth: 0, overflowWrap: "anywhere" },
   closeBtn: {
     background: "transparent",
     border: "none",
@@ -409,7 +412,9 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontSize: 12,
     fontWeight: 600,
-    whiteSpace: "nowrap",
+    whiteSpace: "normal",
+    textAlign: "center",
+    lineHeight: 1.35,
     minWidth: 56,
   },
   savedText: { fontSize: 12, color: v4Colors.success, paddingLeft: 4 },
@@ -479,5 +484,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 600,
     minWidth: 64,
+    whiteSpace: "normal",
+    textAlign: "center",
+    lineHeight: 1.35,
   },
 };

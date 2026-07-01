@@ -84,6 +84,10 @@ function useHydratedNow(enabled: boolean) {
   return nowMs;
 }
 
+function formatCreditsCount(count: number, locale?: string): string {
+  return count.toLocaleString(locale);
+}
+
 export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary }) {
   const { t, i18n } = useTranslation();
   const m = job.metrics;
@@ -135,7 +139,9 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
           <span>
             {t("v4.job.creditsUsed")}{" "}
             <strong style={{ color: v4Colors.text }}>
-              {t("v4.job.creditsShort", { count: credits })}
+              {t("v4.job.creditsShort", {
+                count: formatCreditsCount(credits, i18n.language),
+              })}
             </strong>
             <TaskIdSuffix taskId={job.taskId} />
           </span>
@@ -183,7 +189,11 @@ export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }
   if (startTime) items.push(t("v4.job.startedAt", { time: startTime }));
   if (elapsed != null) items.push(t("v4.job.elapsedShort", { time: formatV4Elapsed(elapsed, t) }));
   if (job.usedTokens > 0) {
-    items.push(t("v4.job.creditsShort", { count: credits }));
+    items.push(
+      t("v4.job.creditsShort", {
+        count: formatCreditsCount(credits, i18n.language),
+      }),
+    );
   } else if (!job.isTerminal) {
     items.push(t("v4.job.creditsCounting"));
   }
@@ -388,7 +398,7 @@ function TranslateWorkingIndicator({
   moduleLabel: string | null;
   usedCredits: number;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <>
       <div className="v4-indet-track" style={{ flex: 1 }}>
@@ -406,7 +416,9 @@ function TranslateWorkingIndicator({
         {t("v4.job.callingModel")}
         {moduleLabel ? ` · ${moduleLabel}` : ""}
         {usedCredits > 0
-          ? ` · ${t("v4.job.creditsUsedShort", { count: usedCredits })}`
+          ? ` · ${t("v4.job.creditsUsedShort", {
+              count: formatCreditsCount(usedCredits, i18n.language),
+            })}`
           : ""}
         <span className="v4-dots" />
       </span>
