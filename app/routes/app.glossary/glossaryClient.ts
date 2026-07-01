@@ -8,10 +8,13 @@ async function postTsfGlossary(body: Record<string, unknown>) {
 }
 
 export async function insertGlossaryCompat(args: {
+  migrated?: boolean;
+  shop?: string;
   sourceText: string;
   targetText: string;
   rangeCode: string;
   type: number;
+  server?: string;
 }) {
   return postTsfGlossary({
     intent: "insert",
@@ -23,6 +26,8 @@ export async function insertGlossaryCompat(args: {
 }
 
 export async function updateGlossaryCompat(args: {
+  migrated?: boolean;
+  shop?: string;
   data: {
     key: number;
     sourceText: string;
@@ -31,6 +36,7 @@ export async function updateGlossaryCompat(args: {
     type: number;
     status: number;
   };
+  server?: string;
 }) {
   const d = args.data;
   return postTsfGlossary({

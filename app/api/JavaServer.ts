@@ -3,6 +3,7 @@ import { queryShopBaseConfigData, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
+import { globalStore } from "~/globalStore";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -501,6 +502,54 @@ export const GetUserValue = async ({
   }
 };
 
+// export const SingleTextTranslate = async ({
+//   shopName,
+//   source,
+//   target,
+//   resourceType,
+//   context,
+//   key,
+//   type,
+//   server,
+// }: {
+//   shopName: string;
+//   source: string;
+//   target: string;
+//   resourceType: string;
+//   context: string;
+//   key: string;
+//   type: string;
+//   server: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${server}/translate/singleTextTranslate`,
+//       method: "POST",
+//       data: {
+//         shopName: shopName,
+//         source: source,
+//         target: target,
+//         resourceType: resourceType,
+//         context: context,
+//         key: key,
+//         type: type,
+//       },
+//     });
+
+//     console.log(`${shopName} SingleTextTranslate: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error SingleTextTranslate:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: "",
+//     };
+//   }
+// };
+
 type SingleTextTranslateArgs = {
   shopName: string;
   source: string;
@@ -513,8 +562,14 @@ type SingleTextTranslateArgs = {
   resourceId: string | null; // 必传，但可 null
 };
 
-/** 单字段手动翻译：走 TSF /api/translate-v4/single（LLM + 额度扣减）。 */
+/**
+ * - 已迁移店 → 走 TSF 端点 /api/translate-v4/single（LLM 翻译）。
+ * - 未迁移店 → 直连 Java（原行为不变）。
+ */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
+  if (!globalStore.translateV4ExpressBeta) {
+    return singleTextTranslateV2ViaJava(args);
+  }
   try {
     const res = await fetch("/api/translate-v4/single", {
       method: "POST",
@@ -524,6 +579,48 @@ export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
     return await res.json();
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
+/** 直连 Java singleTextTranslateV2（仅供 TSF 端点在未迁移分支代理调用，服务端使用）。 */
+export const singleTextTranslateV2ViaJava = async ({
+  shopName,
+  source,
+  target,
+  resourceType,
+  context,
+  key,
+  type,
+  server,
+  resourceId,
+}: SingleTextTranslateArgs) => {
+  try {
+    const response = await axios({
+      url: `${server}/translate/singleTextTranslateV2?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        shopName,
+        source,
+        target,
+        resourceType,
+        context,
+        key,
+        type,
+        resourceId,
+      },
+    });
+    return {
+      ...response.data,
+      response: response.data?.response?.targetText || "",
+    };
+  } catch (error) {
+    console.error("Error singleTextTranslateV2ViaJava:", error);
     return {
       success: false,
       errorCode: 10001,
@@ -816,6 +913,46 @@ export const SavePrivateKey = async ({
   } catch (error) {
     // console.error(`Error SavePrivateKey [${model}]:`, error);
     throw error; // 抛出错误以便前端捕获
+  }
+};
+
+//获取最新翻译状态
+export const GetTranslateDOByShopNameAndSource = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    if (source) {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          source: source,
+        },
+      });
+      console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
+      return response.data;
+    } else {
+      console.warn(`${shop} source disappear`);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
+    }
+  } catch (error) {
+    console.error("Error GetTranslateDOByShopNameAndSource:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
@@ -1407,6 +1544,43 @@ export const GetLanguageList = async ({
     },
     { fallback: [] },
   );
+};
+
+//翻译中语言状态返回
+export const GetLanguageStatus = async ({
+  shop,
+  source,
+  target,
+}: {
+  shop: string;
+  source: string;
+  target: string[];
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
+      method: "Post",
+      data: [
+        {
+          shopName: shop,
+          source: source,
+          target: target[0],
+        },
+      ],
+    });
+
+    console.log(`${shop} GetLanguageStatus: `, response.data?.response);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error GetLanguageStatus:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
+  }
 };
 
 // //查询语言待翻译字符数

@@ -292,6 +292,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const useV4LanguageStatus = true;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -343,6 +344,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const statusFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
   const location = useLocation();
@@ -453,7 +455,11 @@ const Index = () => {
           autoTranslateLoading: false,
         }));
         const GetLanguageLocaleInfoFront = async () => {
-          const languageList = await listLanguageStatusCompat();
+          const languageList = await listLanguageStatusCompat({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguageData[0]?.locale,
+          });
 
           data = data.map((lang: any) => ({
             ...lang,
@@ -473,7 +479,14 @@ const Index = () => {
         GetLanguageLocaleInfoFront();
       }
     }
-  }, [dispatch, loadingFetcher.data, server, shop]);
+  }, [
+    dispatch,
+    loadingFetcher.data,
+    server,
+    shop,
+    statusFetcher,
+    useV4LanguageStatus,
+  ]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -516,7 +529,11 @@ const Index = () => {
     if (!source?.code) return;
 
     const pollV4LanguageStatus = async () => {
-      const languageList = await listLanguageStatusCompat();
+      const languageList = await listLanguageStatusCompat({
+        shop,
+        server: server as string,
+        source: source.code,
+      });
       const rows = languageList?.response ?? [];
       for (const lang of dataSource) {
         const row = rows.find((r: { target: string }) =>
@@ -532,7 +549,7 @@ const Index = () => {
       void pollV4LanguageStatus();
     }, 3000);
     return () => clearInterval(intervalId);
-  }, [dataSource, source?.code, dispatch]);
+  }, [dataSource, source?.code, shop, server, dispatch]);
 
   const columns = [
     {

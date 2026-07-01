@@ -30,6 +30,7 @@ export async function parseLiquidTranslations(
   return readFromPrisma(shop, languageCode);
 }
 
+/** migratedToTsf=true 路径：从 Prisma LiquidRule 读取。 */
 async function readFromPrisma(
   shop: string,
   languageCode: string,

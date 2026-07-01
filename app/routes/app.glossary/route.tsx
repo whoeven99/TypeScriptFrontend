@@ -62,6 +62,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
+    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   };
 };
@@ -126,7 +127,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { mobile } = useLoaderData<typeof loader>();
+  const { server, mobile } = useLoaderData<typeof loader>();
+  const migrated = true;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -261,7 +263,10 @@ const Index = () => {
     };
 
     const data = await updateGlossaryCompat({
+      migrated,
+      shop: globalStore?.shop || "",
       data: updateInfo,
+      server: server as string,
     });
 
     if (data?.success) {
@@ -621,6 +626,9 @@ const Index = () => {
         isVisible={isGlossaryModalOpen}
         setIsModalOpen={setIsGlossaryModalOpen}
         shopLocales={shopLocales}
+        shop={globalStore?.shop || ""}
+        server={server as string}
+        migrated={migrated}
       />
       <Modal
         title={upgradeModalContent?.title}
