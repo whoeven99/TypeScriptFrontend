@@ -1,6 +1,6 @@
 import { Page } from "@shopify/polaris";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Card,
@@ -15,11 +15,15 @@ import {
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
-import { SyncUserIp, GetCurrencyByShopName } from "~/api/JavaServer";
+import { GetCurrencyByShopName } from "~/api/JavaServer";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
+import {
+  syncIpRedirections,
+  type IpRedirectionRow,
+} from "./ipRedirectionsClient";
 import { useSelector } from "react-redux";
-import { LanguagesDataType } from "../app.language/route";
-import { CurrencyDataType } from "../app.currency/route";
+import type { LanguagesDataType } from "../app.language/route";
+import type { CurrencyDataType } from "../app.currency/route";
 import { authenticate } from "~/shopify.server";
 import { queryMarketDomainData } from "~/api/admin";
 import languageLocaleData from "~/utils/language-locale-data";
@@ -110,14 +114,7 @@ const Index = () => {
 
   //表格数据源
   const [dataSource, setDataSource] = useState<
-    {
-      key: number;
-      status: boolean;
-      region: string;
-      regionName: string;
-      languageCode: string;
-      currencyCode: string;
-    }[]
+    (IpRedirectionRow & { regionName: string })[]
   >([]);
 
   //表格多选控制key
@@ -192,28 +189,24 @@ const Index = () => {
       }));
 
       const initCustomRedirectData = async () => {
-        const data = await SyncUserIp({
-          shop: globalStore?.shop || "",
-          server: server || "",
-          initData,
-        });
+        const data = await syncIpRedirections(initData);
 
-        if (data?.success) {
-          if (Array.isArray(data?.response) && data?.response?.length) {
-            const newData = data.response
-              .map((item: any) => ({
+        if (data.ok) {
+          if (Array.isArray(data.data)) {
+            const newData = data.data
+              .map((item) => ({
                 ...item,
                 regionName:
                   countryLocaleData[
-                  item?.region as keyof typeof countryLocaleData
+                  item.region as keyof typeof countryLocaleData
                   ] || "",
-                key: item?.id,
+                key: item.id,
               }))
-              .sort((a: any, b: any) =>
-                a?.regionName?.localeCompare(b?.regionName),
-              ); // 按region字段的首字母排序
+              .sort((a, b) => a.regionName.localeCompare(b.regionName)); // 按region字段的首字母排序
             setDataSource(newData);
           }
+        } else {
+          shopify.toast.show(data.error);
         }
         setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
       };
@@ -580,7 +573,6 @@ const Index = () => {
         languageTableData={languageTableData}
         currencyTableData={currencyDataSource}
         regionsData={regionsDataSource}
-        server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={({
           key,

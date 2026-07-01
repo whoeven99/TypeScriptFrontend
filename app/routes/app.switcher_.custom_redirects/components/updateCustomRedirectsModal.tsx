@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Space, Button, Typography, Flex, Select, Popover } from "antd";
-import { LanguagesDataType } from "~/routes/app.language/route";
+import { Modal, Space, Button, Typography, Flex, Select } from "antd";
+import type { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import { globalStore } from "~/globalStore";
-import { CurrencyDataType } from "~/routes/app.currency/route";
-import { UpdateUserIp } from "~/api/JavaServer";
-import { WarningOutlined } from "@ant-design/icons";
+import type { CurrencyDataType } from "~/routes/app.currency/route";
 import currencyLocaleData from "~/utils/currency-locale-data";
+import { updateIpRedirection } from "../ipRedirectionsClient";
 
 const { Text } = Typography;
 
@@ -14,7 +12,6 @@ interface UpdateCustomRedirectsModalProps {
   languageTableData: LanguagesDataType[];
   currencyTableData: CurrencyDataType[];
   regionsData: any[];
-  server: string;
   dataSource: {
     key: number;
     status: boolean;
@@ -50,7 +47,6 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
   languageTableData,
   currencyTableData,
   regionsData,
-  server,
   dataSource,
   defaultData,
   handleUpdateDataSource,
@@ -117,7 +113,7 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
       !formData.languageCode ||
       !formData.currencyCode ||
       JSON.stringify(formData) == JSON.stringify(defaultData),
-    [formData],
+    [defaultData, formData],
   );
 
   //加载状态数组，目前submitting表示正在提交
@@ -188,23 +184,20 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
 
     if (isSameRuleError) {
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
-      let data;
 
-      data = await UpdateUserIp({
+      const data = await updateIpRedirection({
         id: defaultData.key,
-        shop: globalStore?.shop || "",
-        server: server,
         region: formData.region,
         languageCode: formData.languageCode,
         currencyCode: formData.currencyCode,
       });
 
-      if (data.success) {
+      if (data.ok) {
         const newData = {
-          key: data.response?.id || defaultData?.key,
-          region: data.response?.region,
-          languageCode: data.response?.languageCode,
-          currencyCode: data.response?.currencyCode,
+          key: data.data.id || defaultData?.key,
+          region: data.data.region,
+          languageCode: data.data.languageCode,
+          currencyCode: data.data.currencyCode,
         };
         handleUpdateDataSource(newData);
         shopify.toast.show("Saved successfully");
@@ -216,10 +209,10 @@ const UpdateCustomRedirectsModal: React.FC<UpdateCustomRedirectsModalProps> = ({
         });
         setIsModalHide();
       } else {
-        shopify.toast.show(data.errorMsg);
+        shopify.toast.show(data.error);
       }
       setLoadingStatusArray(
-        loadingStatusArray.filter((item) => item == "submitting"),
+        loadingStatusArray.filter((item) => item !== "submitting"),
       );
     } else {
       shopify.toast.show(t("You cannot add two conflicting rules."));
