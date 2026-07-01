@@ -18,7 +18,6 @@
     "turso:migrate:test": "node scripts/turso-migrate.cjs test",
     "turso:migrate:prod": "node scripts/turso-migrate.cjs prod",
     "sync:filter": "node scripts/sync-translation-filter.mjs",
-    "sync:switcher": "node scripts/sync-switcher-from-java.mjs",
     "check:filter": "node scripts/sync-translation-filter.mjs --check",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "postinstall": "patch-package",

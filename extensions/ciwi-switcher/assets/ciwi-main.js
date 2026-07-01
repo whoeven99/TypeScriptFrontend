@@ -147,7 +147,7 @@ async function ciwiOnload() {
   const hadConfigCache = !!getWithTTL(configKey);
   const fetchSwitcherConfig = await useCacheThenRefresh(
     configKey,
-    async () => API.fetchSwitcherConfig({ blockId, shop: shop.value }),
+    async () => API.fetchSwitcherConfig({ shop: shop.value }),
     1000 * 60 * 60,
   );
 
@@ -503,7 +503,7 @@ async function ciwiOnload() {
   // 仅在命中缓存时后台刷新 config（异步，不阻塞）；
   // 首次无缓存时 useCacheThenRefresh 已经拉取并缓存，无需再请求一次
   if (hadConfigCache) {
-    API.fetchSwitcherConfig({ blockId, shop: shop.value })
+    API.fetchSwitcherConfig({ shop: shop.value })
       .then((fresh) => {
         if (fresh) {
           setWithTTL("ciwi_switcher_config", fresh);
