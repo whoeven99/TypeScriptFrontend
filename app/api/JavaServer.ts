@@ -15,7 +15,7 @@ const DEFAULT_API_TIMEOUT = 10_000;
  * 仅用于“成功直接 return response.data、失败返回统一 SERVER_ERROR”的简单接口；
  * 带 withRetry / pLimit / 多查询回退 / 自定义返回结构的接口保持原样。
  */
-export async function javaApiRequest<F = null>(
+async function javaApiRequest<F = null>(
   label: string,
   config: AxiosRequestConfig,
   options: { fallback?: F; logSuccess?: boolean } = {},
@@ -345,54 +345,6 @@ export const GetProductImageData = async ({
   );
 };
 
-// export const SingleTextTranslate = async ({
-//   shopName,
-//   source,
-//   target,
-//   resourceType,
-//   context,
-//   key,
-//   type,
-//   server,
-// }: {
-//   shopName: string;
-//   source: string;
-//   target: string;
-//   resourceType: string;
-//   context: string;
-//   key: string;
-//   type: string;
-//   server: string;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${server}/translate/singleTextTranslate`,
-//       method: "POST",
-//       data: {
-//         shopName: shopName,
-//         source: source,
-//         target: target,
-//         resourceType: resourceType,
-//         context: context,
-//         key: key,
-//         type: type,
-//       },
-//     });
-
-//     console.log(`${shopName} SingleTextTranslate: `, response.data);
-
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error SingleTextTranslate:", error);
-//     return {
-//       success: false,
-//       errorCode: 10001,
-//       errorMsg: "SERVER_ERROR",
-//       response: "",
-//     };
-//   }
-// };
-
 type SingleTextTranslateArgs = {
   shopName: string;
   source: string;
@@ -513,65 +465,6 @@ export const UpdateUserPlan = async ({
     console.error("Error UpdateUserPlan:", error);
   }
 };
-
-// export const GetUserInitTokenByShopName = async ({
-//   shop,
-//   server,
-// }: {
-//   shop: string;
-//   server: string;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${server}/userTypeToken/getUserInitTokenByShopName`,
-//       method: "POST",
-//       data: {
-//         shopName: shop,
-//       },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error GetUserInitTokenByShopName:", error);
-//     return {
-//       success: false,
-//       errorCode: 10001,
-//       errorMsg: "SERVER_ERROR",
-//       response: undefined,
-//     };
-//   }
-// };
-
-// //获取用户翻译字数
-// export const GetUserToken = async ({
-//   shop,
-//   accessToken,
-//   target,
-//   source,
-// }: {
-//   shop: string;
-//   accessToken: string;
-//   target: string;
-//   source: string;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
-//       method: "POST",
-//       data: {
-//         shopName: shop,
-//         accessToken: accessToken,
-//         target: target,
-//         source: source,
-//       },
-//     });
-
-//     console.log(`${shop} GetUserToken: `, response.data);
-
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error GetUserToken:", error);
-//   }
-// };
 
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
@@ -988,96 +881,6 @@ export const GetUserWords = async ({
     { fallback: undefined },
   );
 };
-
-//获取本地化信息
-// export const GetLanguageLocaleInfo = async ({
-//   server,
-//   locale,
-// }: {
-//   server: string;
-//   locale: string[];
-// }) => {
-//   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
-//   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
-
-//   try {
-//     const response = await axios({
-//       url: `${server}/shopify/getImageInfo`,
-//       method: "POST",
-//       data: updatedLocales,
-//     });
-//     if (response.data?.success) {
-//       const data = response.data?.response;
-//       const res = Object.keys(data).reduce(
-//         (
-//           acc: {
-//             [key: string]: {
-//               isoCode: string;
-//               Local: string;
-//               countries: [];
-//               Name: string;
-//             };
-//           },
-//           key,
-//         ) => {
-//           // 将 key 中的 "_" 替换为 "-"
-//           const newKey = key.replace("_", "-");
-//           // 保持原来的值，重新赋值给新键
-//           acc[newKey] = data[key];
-//           return acc;
-//         },
-//         {},
-//       );
-//       return {
-//         ...response.data,
-//         response: res,
-//       };
-//     } else {
-//       return {
-//         success: false,
-//         errorCode: 10001,
-//         errorMsg: "SERVER_ERROR",
-//         response: undefined,
-//       };
-//     }
-//   } catch (error) {
-//     console.error("Error occurred in the languageData:", error);
-//     return {
-//       success: false,
-//       errorCode: 10001,
-//       errorMsg: "SERVER_ERROR",
-//       response: undefined,
-//     };
-//   }
-// };
-
-// //查询语言待翻译字符数
-// export const GetTotalWords = async ({
-//   shop,
-//   accessToken,
-//   target,
-// }: {
-//   shop: string;
-//   accessToken: string;
-//   target: string;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
-//       method: "Post",
-//       data: {
-//         shopName: shop,
-//         accessToken: accessToken,
-//         target: target,
-//       },
-//     });
-
-//     const res = response.data.response;
-//     return res;
-//   } catch (error) {
-//     console.error("Error GetTotalWords:", error);
-//   }
-// };
 
 // 获取谷歌分析
 export const GoogleAnalyticClickReport = async (params: any, name: string) => {
