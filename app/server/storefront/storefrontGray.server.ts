@@ -1,17 +1,8 @@
-import { isV2PageWhitelistShop } from "~/server/translateV4/v2PageWhitelist";
-
-/**
- * Widget / Liquid / Switcher 是否走 TSF（v4）：
- * 默认走 v4；只有 v2PageWhitelist 中的店铺回退到 Java。
- */
-export async function isStorefrontGrayEligible(shop: string): Promise<boolean> {
-  return !isV2PageWhitelistShop(shop);
+/** 全量 v4：店面 Switcher / Liquid / PageFly 均走 TSF（Prisma）。 */
+export async function isStorefrontGrayEligible(_shop: string): Promise<boolean> {
+  return true;
 }
 
-/**
- * PageFly 是否走 TSF（v4）：
- * 默认走 v4；只有 v2PageWhitelist 中的店铺回退到 Java。
- */
-export async function isPageFlyGrayEligible(shop: string): Promise<boolean> {
-  return !isV2PageWhitelistShop(shop);
+export async function isPageFlyGrayEligible(_shop: string): Promise<boolean> {
+  return true;
 }

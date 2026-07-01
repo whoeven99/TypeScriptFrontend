@@ -1,4 +1,3 @@
-import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import {
   buildSwitcherEditDefaults,
   type SwitcherEditData,
@@ -14,41 +13,27 @@ type SwitcherApiResponse = {
   response?: SwitcherEditData;
 };
 
-/** 读配置：灰度 eligible 店走 Turso，否则走 Java。 */
-export async function loadSwitcherConfigCompat(args: {
-  migrated: boolean;
+/** 读配置：全量 v4，走 Turso。 */
+export async function loadSwitcherConfigCompat(_args: {
+  migrated?: boolean;
   shop: string;
-  server: string;
+  server?: string;
 }): Promise<SwitcherApiResponse> {
-  if (args.migrated) {
-    const res = await fetch("/api/translate-v4/switcher");
-    return res.json();
-  }
-
-  return WidgetConfigurations({
-    shop: args.shop,
-    server: args.server,
-  });
+  const res = await fetch("/api/translate-v4/switcher");
+  return res.json();
 }
 
-/** 保存配置：灰度 eligible 店写 Turso，否则写 Java。 */
+/** 保存配置：全量 v4，写 Turso。 */
 export async function saveSwitcherConfigCompat(args: {
-  migrated: boolean;
-  shop: string;
-  server: string;
+  migrated?: boolean;
+  shop?: string;
+  server?: string;
   data: SwitcherEditData;
 }): Promise<SwitcherApiResponse> {
-  if (args.migrated) {
-    const res = await fetch("/api/translate-v4/switcher", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args.data),
-    });
-    return res.json();
-  }
-
-  return SaveAndUpdateData({
-    ...args.data,
-    server: args.server,
+  const res = await fetch("/api/translate-v4/switcher", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args.data),
   });
+  return res.json();
 }

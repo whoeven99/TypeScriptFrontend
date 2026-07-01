@@ -4,7 +4,6 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   listLiquidDo,
   createLiquidDo,
@@ -20,18 +19,9 @@ function fail(errorMsg: string, errorCode = 10001) {
   return json({ success: false, errorCode, errorMsg, response: null });
 }
 
-async function assertStorefrontGrayEligible(shop: string) {
-  if (!(await isStorefrontGrayEligible(shop))) {
-    return fail("not eligible for storefront gray", 403);
-  }
-  return null;
-}
-
-/** GET /api/translate-v4/liquid —— 列出本店 Liquid 规则（仅灰度 eligible 店用）。 */
+/** GET /api/translate-v4/liquid —— 列出本店 Liquid 规则。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const blocked = await assertStorefrontGrayEligible(session.shop);
-  if (blocked) return blocked;
   try {
     return ok(await listLiquidDo(session.shop));
   } catch (err) {
@@ -41,14 +31,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * POST /api/translate-v4/liquid —— Liquid 增删改（仅迁移后的店用）。
+ * POST /api/translate-v4/liquid —— Liquid 增删改。
  * body: { intent: "insert"|"update"|"delete"|"toggleReplacementMethod", ... }
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
-  const blocked = await assertStorefrontGrayEligible(shop);
-  if (blocked) return blocked;
   const body = (await request.json().catch(() => ({}))) as {
     intent?: string;
     id?: string;

@@ -18,7 +18,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SingleTextTranslate } from "~/api/JavaServer";
-import { isPageFlyGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   editPageFlyCompat,
   readPageFlyCompat,
@@ -40,12 +39,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const pageFlyGrayEligible = await isPageFlyGrayEligible(session.shop);
-
   return {
     searchTerm,
     server: process.env.SERVER_URL,
-    pageFlyGrayEligible,
+    pageFlyGrayEligible: true,
   };
 };
 

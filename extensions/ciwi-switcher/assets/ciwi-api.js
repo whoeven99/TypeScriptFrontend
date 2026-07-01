@@ -16,8 +16,8 @@ export function switchUrl(blockId) {
 }
 
 /**
- * 店面读 API 基址：优先 App Proxy（Liquid 注入 #ciwiAppProxyBase），
- * 未注入时降级 Java 直连。灰度由 TSF 服务端 isStorefrontGrayEligible 决定读 Prisma 或代理 Java。
+ * 店面读 API 基址：优先 App Proxy（Liquid 注入 #ciwiAppProxyBase → TSF /api/storefront/*）。
+ * 未注入 App Proxy 时降级 Java 直连（仅作兜底；主题块已注入 ciwiAppProxyBase）。
  */
 function resolveStorefrontApiBase(blockId) {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
@@ -98,10 +98,8 @@ export async function IncludeCrawlerPrintLog({
 
 export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
   try {
-    // 优先使用 App Proxy（由 Liquid 块注入的 ciwiAppProxyBase）；
-    // TSF 侧按 PageFly 灰度资格（migratedToTsf + allowlist）决定读 Prisma 或代理 Java，
-    // switcher 无需感知，始终访问同一路径即可。
-    // 未注入时降级到 Java 直连（switchUrl 保留，不删除 Java 代码）。
+    // App Proxy → TSF /api/storefront/userPageFly/readTranslatedText（Prisma）。
+    // 未注入 ciwiAppProxyBase 时降级 Java 直连。
     const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
     const baseUrl = appProxyBase || switchUrl(blockId);
     const { data } = await fetchJson(

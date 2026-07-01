@@ -12,7 +12,7 @@ import { fail } from "~/server/storefront/response.server";
  * Shopify App Proxy 将 `https://{shop}/apps/ciwi/*` 转发到
  * `https://{tsf-host}/api/storefront/*`，并附带 shop/timestamp/signature。
  *
- * 路由策略：默认走 TSF（v4/Prisma）；v2PageWhitelist 中的店铺透明代理到 Java。
+ * 路由策略：全量 v4，App Proxy 读 TSF Prisma（Liquid / Switcher / PageFly）。
  */
 
 const CORS_HEADERS = {
@@ -109,8 +109,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
   }
 
-  // POST /api/storefront/userPageFly/readTranslatedText
-  // 默认走 v4（Prisma）；v2PageWhitelist 中的店铺透明代理 Java
+  // POST /api/storefront/userPageFly/readTranslatedText —— v4 Prisma
   if (path === "userPageFly/readTranslatedText") {
     const shopName = url.searchParams.get("shopName") ?? auth.shop;
     const languageCode = url.searchParams.get("languageCode") ?? "";
