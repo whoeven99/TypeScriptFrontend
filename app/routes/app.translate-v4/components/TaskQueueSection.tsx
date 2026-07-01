@@ -10,13 +10,18 @@ import { jobDisplayPercent } from "../jobStageUtils";
 import { ProgressRing, StatusTag, MiniStageTrack } from "./V4JobCardParts";
 import { AutoTaskBadge } from "./AutoTranslateMarkers";
 import { JobCollapsedMeta, JobSummaryStats, JobStageProgressList } from "./JobExpandedDetail";
-import { getV4JobStatusLabel, getV4VisibleStageLabel } from "../v4I18n";
+import {
+  getV4JobStatusLabel,
+  getV4VisibleStageLabel,
+} from "../v4I18n";
+import { getV4JobNotice } from "../v4JobNotice";
 
 type Props = {
   job: TranslationJobProgressSummary;
   translateSlotBusy: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
+  onBuyCredits: () => void;
   onAction: (
     taskId: string,
     action: "pause" | "resume" | "cancel" | "delete",
@@ -28,12 +33,14 @@ export function CompactJobCard({
   translateSlotBusy,
   expanded,
   onToggleExpand,
+  onBuyCredits,
   onAction,
 }: Props) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<null | "pause" | "resume" | "cancel" | "delete">(null);
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
+  const notice = getV4JobNotice(job.errorMessage, t);
 
   const percent = jobDisplayPercent(job);
 
@@ -79,13 +86,13 @@ export function CompactJobCard({
         <ProgressRing percent={percent} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text, minWidth: 0, overflowWrap: "anywhere" }}>
               {formatLocaleRoute(job.source, job.target)}
             </span>
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
             {stageSummary ? (
-              <span style={{ fontSize: 12, color: v4Colors.textFaint, fontWeight: 400 }}>
+              <span style={{ fontSize: 12, color: v4Colors.textFaint, fontWeight: 400, minWidth: 0, overflowWrap: "anywhere" }}>
                 {stageSummary}
               </span>
             ) : null}
@@ -104,6 +111,10 @@ export function CompactJobCard({
               borderRadius: 8,
               background: expanded ? v4Colors.primarySoft : v4Colors.cardSubdued,
               border: `1px solid ${expanded ? "#bfdbff" : v4Colors.cardBorder}`,
+              whiteSpace: "normal",
+              textAlign: "center",
+              height: "auto",
+              lineHeight: 1.35,
             }}
           >
             {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
@@ -165,10 +176,93 @@ export function CompactJobCard({
             </div>
           ) : null}
 
-          {job.errorMessage ? (
-            <div style={{ fontSize: 12, color: v4Colors.danger, marginTop: 8 }}>{job.errorMessage}</div>
-          ) : null}
         </div>
+      ) : null}
+
+      {notice.message ? (
+        <JobNoticeBar
+          message={notice.message}
+          tone={job.status === "FAILED" ? "danger" : "warning"}
+          actionLabel={notice.action === "buy_credits" ? t("Buy credits") : null}
+          onAction={notice.action === "buy_credits" ? onBuyCredits : undefined}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function JobNoticeBar({
+  message,
+  tone,
+  actionLabel,
+  onAction,
+}: {
+  message: string;
+  tone: "warning" | "danger";
+  actionLabel?: string | null;
+  onAction?: () => void;
+}) {
+  const isDanger = tone === "danger";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
+        marginTop: 12,
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: isDanger ? v4Colors.dangerBg : v4Colors.warningBg,
+        border: `1px solid ${isDanger ? "#ffccc7" : "#ffe58f"}`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            width: 6,
+            height: 6,
+            marginTop: 6,
+            borderRadius: "50%",
+            flexShrink: 0,
+            background: isDanger ? v4Colors.danger : v4Colors.warning,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: isDanger ? v4Colors.danger : v4Colors.warning,
+            overflowWrap: "anywhere",
+          }}
+        >
+          {message}
+        </span>
+      </div>
+      {actionLabel && onAction ? (
+        <Button
+          size="small"
+          type="primary"
+          onClick={onAction}
+          style={{
+            flexShrink: 0,
+            borderRadius: 8,
+            boxShadow: "none",
+          }}
+        >
+          {actionLabel}
+        </Button>
       ) : null}
     </div>
   );
@@ -200,6 +294,10 @@ function ActionChip({
       style={{
         fontWeight: 600,
         borderRadius: 8,
+        whiteSpace: "normal",
+        textAlign: "center",
+        height: "auto",
+        lineHeight: 1.35,
         ...(kind === "primary"
           ? {
               boxShadow: "none",
@@ -228,10 +326,12 @@ const deleteLinkButtonStyle: CSSProperties = {
 export function TaskQueueSection({
   jobs,
   translateSlotBusy,
+  onBuyCredits,
   onAction,
 }: {
   jobs: TranslationJobProgressSummary[];
   translateSlotBusy: boolean;
+  onBuyCredits: () => void;
   onAction: Props["onAction"];
 }) {
   const { t } = useTranslation();
@@ -288,7 +388,7 @@ export function TaskQueueSection({
             {helperText}
           </div>
         </div>
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: v4Colors.textFaint, fontWeight: 600 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: v4Colors.textFaint, fontWeight: 600, minWidth: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: v4Colors.successSoft }} />
           {t("v4.tasks.syncLive")}
         </span>
@@ -345,6 +445,7 @@ export function TaskQueueSection({
               job={job}
               translateSlotBusy={translateSlotBusy}
               expanded={expandedTaskId === job.taskId}
+              onBuyCredits={onBuyCredits}
               onToggleExpand={() =>
                 setExpandedTaskId((current) =>
                   current === job.taskId ? null : job.taskId,
@@ -377,13 +478,23 @@ const historyToggleStyle: CSSProperties = {
   paddingInline: 0,
   fontWeight: 600,
   marginTop: 4,
+  whiteSpace: "normal",
+  textAlign: "left",
+  height: "auto",
+  lineHeight: 1.35,
 };
 
 function tabLabelStyle(active: boolean): CSSProperties {
   return {
+    display: "inline-block",
+    maxWidth: "100%",
     color: active ? v4Colors.primary : v4Colors.textMuted,
     fontSize: 13,
     fontWeight: active ? 600 : 500,
+    lineHeight: 1.35,
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
     transition: "color 0.2s ease",
   };
 }

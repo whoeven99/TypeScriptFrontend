@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { message } from "antd";
+import { message } from "~/ui/message";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
+import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
-import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
+import type { ShopQuota } from "~/server/translateV4/quota.server";
 import { getCoverageSummaryFromCache,
   type CoverageSummary,
 } from "~/server/translateV4/coverage.server";
 import {
   createTranslateV4Tasks,
-  formatCreateTasksMessage,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { SupportChatWidget } from "./SupportChatWidget";
@@ -23,31 +24,19 @@ import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
+import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
+import { formatV4CreateTasksMessage, translateV4Message } from "./v4I18n";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { GetUserSubscriptionPlan } from "~/api/JavaServer";
-
-async function loadSubscriptionPlanType(shop: string): Promise<string | null> {
-  const server = process.env.SERVER_URL?.trim();
-  if (!server) return null;
-
-  const result = await GetUserSubscriptionPlan({ shop, server });
-  if (!result?.success) return null;
-
-  const planType = result?.response?.planType;
-  return typeof planType === "string" && planType.trim() ? planType.trim() : null;
-}
+import PaymentModal from "~/components/paymentModal";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  if (!(await isShopMigrated(session.shop))) {
-    throw redirect("/app");
-  }
 
   let locales: ShopLocaleOption[] = [];
   let primaryLocale = "en";
@@ -64,26 +53,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  try {
-    await syncShopTargetLocalesFromShopify(
-      session.shop,
-      shopLocaleRows,
-      primaryLocale,
-    );
-  } catch (syncErr) {
+  await ensureShopV4Settings(session.shop, primaryLocale);
+
+  // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
+  // 后台执行，避免 N 个串行 upsert 阻塞首屏。
+  void syncShopTargetLocalesFromShopify(
+    session.shop,
+    shopLocaleRows,
+    primaryLocale,
+  ).catch((syncErr) => {
     console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
-  }
+  });
 
   const targetLocales = selectShopTargetLocales(locales, primaryLocale);
-  const [jobs, quota, coverage, planType] = await Promise.all([
+
+  // 关键内容（任务列表 + 覆盖率）在 loader 阻塞等待；quota / planType 由客户端拉取，
+  // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
+  const [jobs, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
-    getShopQuota(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
       primaryLocale,
       targetLocales,
     }),
-    loadSubscriptionPlanType(session.shop),
   ]);
 
   return json({
@@ -91,27 +83,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     locales,
     primaryLocale,
     jobs,
-    quota,
     coverage,
-    planType,
   });
 };
 
 export default function AppTranslateV4() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     shop,
     locales,
     primaryLocale,
     jobs: initialJobs,
-    quota: initialQuota,
     coverage: initialCoverage,
-    planType,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
-  const [quota, setQuota] = useState<ShopQuota | null>(initialQuota);
+  const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
+  const { plan, isNew } = useSelector(
+    (state: {
+      userConfig?: {
+        plan?: { type?: string; isInFreePlanTime?: boolean };
+        isNew?: boolean | null;
+      };
+    }) => ({
+      plan: state.userConfig?.plan,
+      isNew: state.userConfig?.isNew ?? null,
+    }),
+  );
+  const planType = plan?.type?.trim() || null;
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
@@ -120,8 +121,13 @@ export default function AppTranslateV4() {
     () =>
       locales.length
         ? locales
-        : [{ value: "zh-CN", label: "中文 (zh-CN)", primary: true, published: true }],
-    [locales],
+        : [{
+            value: "zh-CN",
+            label: `${t("v4.locale.zhCnFallback")} (zh-CN)`,
+            primary: true,
+            published: true,
+          }],
+    [locales, t],
   );
 
   const targetOptions = useMemo(
@@ -137,6 +143,8 @@ export default function AppTranslateV4() {
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [quotaGateMode, setQuotaGateMode] = useState<"trial" | "pricing" | null>(null);
 
   const refreshCoverage = useCallback(async (forceRefresh = true) => {
     setCoverageLoading(true);
@@ -160,11 +168,11 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] refresh coverage failed:", err);
-      if (forceRefresh) message.error("刷新统计失败");
+      if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
     } finally {
       setCoverageLoading(false);
     }
-  }, [shop, targetOptions]);
+  }, [shop, targetOptions, t]);
 
   const refreshCoverageFromCache = useCallback(async () => {
     try {
@@ -227,6 +235,10 @@ export default function AppTranslateV4() {
     }
   }, [shop]);
 
+  useEffect(() => {
+    void refreshQuota();
+  }, [refreshQuota]);
+
   const handleAction = useCallback(
     async (
       taskId: string,
@@ -242,32 +254,50 @@ export default function AppTranslateV4() {
         if (data?.ok) {
           const label =
             actionType === "delete"
-              ? "已删除"
+              ? t("v4.deleted")
               : actionType === "resume"
-                ? "正在继续…"
+                ? t("v4.resuming")
                 : actionType === "pause"
                   ? data.pending
-                    ? "正在暂停…"
-                    : "已暂停"
+                    ? t("v4.pausing")
+                    : t("v4.paused")
                   : data.pending
-                    ? "正在取消…"
-                    : "已取消";
+                    ? t("v4.cancelling")
+                    : t("v4.cancelled");
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
           return true;
         }
-        message.error(data?.error || "操作失败");
+        message.error(data?.error || t("v4.actionFailed"));
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
-        message.error("操作失败，请稍后重试");
+        message.error(t("v4.actionFailedRetry"));
         return false;
       }
     },
-    [shop, refreshList, refreshQuota],
+    [shop, refreshList, refreshQuota, t],
   );
 
   const handleCreate = useCallback(async () => {
+    const normalizedPlanType = planType?.trim().toLowerCase() || "";
+    const hasPaidPlan = normalizedPlanType !== "" && normalizedPlanType !== "free";
+    const remainingCredits = quota?.remaining ?? null;
+    const shouldGateByCredits =
+      remainingCredits != null &&
+      remainingCredits <= 0 &&
+      !hasPaidPlan &&
+      !plan?.isInFreePlanTime;
+
+    if (shouldGateByCredits) {
+      if (isNew === null) {
+        message.info(t("Checking your trial eligibility. Please try again in a moment."));
+        return;
+      }
+      setQuotaGateMode(isNew ? "trial" : "pricing");
+      return;
+    }
+
     setCreating(true);
     try {
       const result = await createTranslateV4Tasks({
@@ -281,11 +311,11 @@ export default function AppTranslateV4() {
       });
 
       if (result.validationError) {
-        message.warning(result.validationError);
+        message.warning(translateV4Message(result.validationError, t));
         return;
       }
 
-      const summary = formatCreateTasksMessage(result);
+      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
       if (result.created.length > 0) {
         message.success(summary);
         await Promise.all([refreshList(), refreshQuota()]);
@@ -295,13 +325,15 @@ export default function AppTranslateV4() {
 
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
-          result.failed.map((f) => `${localeRegionCode(f.target)}: ${f.error}`).join("；"),
+          result.failed
+            .map((f) => `${localeRegionCode(f.target)}: ${translateV4Message(f.error, t)}`)
+            .join("；"),
           6,
         );
       }
     } catch (err) {
       console.error("[translateV4] create failed:", err);
-      message.error("创建失败，请稍后重试");
+      message.error(t("v4.createFailedRetry"));
     } finally {
       setCreating(false);
     }
@@ -315,6 +347,11 @@ export default function AppTranslateV4() {
     targetOptions,
     refreshList,
     refreshQuota,
+    plan,
+    planType,
+    quota,
+    isNew,
+    t,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -359,8 +396,8 @@ export default function AppTranslateV4() {
 
   return (
     <Page>
-      <TitleBar title="智能翻译" />
-      <div style={v4ContentStyle}>
+      <TitleBar title={t("v4.title")} />
+      <div className="v4-page" style={v4ContentStyle}>
         <div className="v4-enter">
           <PageHeaderBar
             credits={remainingCredits}
@@ -377,7 +414,7 @@ export default function AppTranslateV4() {
               borderRadius: 12,
               background: "var(--p-color-bg-surface-info)",
               color: "var(--p-color-text-info)",
-              border: "1px solid rgba(84, 103, 255, 0.12)",
+              border: "1px solid var(--v4-accent-primary-muted)",
               display: "flex",
               alignItems: "flex-start",
               gap: 8,
@@ -400,8 +437,8 @@ export default function AppTranslateV4() {
             />
             <span>
               {translateSlotBusy
-                ? `正在翻译一种语言，另有 ${translateQueue.length} 个语言任务排队等待（初始化可并行，翻译串行执行）。`
-                : `${translateQueue.length} 个语言任务等待开始翻译。`}
+                ? t("v4.queueBusy", { count: translateQueue.length })
+                : t("v4.queueWaiting", { count: translateQueue.length })}
             </span>
           </div>
         ) : null}
@@ -486,6 +523,7 @@ export default function AppTranslateV4() {
             <TaskQueueSection
               jobs={jobs}
               translateSlotBusy={translateSlotBusy}
+              onBuyCredits={() => setShowPaymentModal(true)}
               onAction={handleAction}
             />
           </div>
@@ -493,6 +531,15 @@ export default function AppTranslateV4() {
       </div>
 
       <SupportChatWidget />
+      <CreateTaskQuotaGateModal
+        open={quotaGateMode !== null}
+        mode={quotaGateMode ?? "pricing"}
+        onClose={() => setQuotaGateMode(null)}
+      />
+      <PaymentModal
+        visible={showPaymentModal}
+        setVisible={setShowPaymentModal}
+      />
     </Page>
   );
 }

@@ -137,7 +137,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server, mobile } = useLoaderData<typeof loader>();
-  const [loading, setLoading] = useState<boolean>(true);
+  // 跨页缓存：redux 已有上次拉到的货币行时，重进本页直接用缓存渲染、后台静默刷新，
+  // 不再整页 loading（首访无缓存时仍照常 loading）。
+  const hasCachedCurrency = useSelector(
+    (state: any) => (state.currencyTableData?.rows?.length ?? 0) > 0,
+  );
+  const [loading, setLoading] = useState<boolean>(!hasCachedCurrency);
   const [defaultCurrency, setDefaultCurrency] = useState<{
     code: string;
     symbol: string;

@@ -18,11 +18,25 @@ export type LoadedShopLocales = {
   }>;
 };
 
+// 店铺语言列表变动不频繁，但每次进首页都打一次 Shopify GraphQL（~200-400ms，
+// 在同步 SSR 的关键路径上）。加 45s 内存缓存，绝大多数进入直接命中。
+const CACHE_TTL_MS = 45_000;
+const localesCache = new Map<string, { value: LoadedShopLocales; expiresAt: number }>();
+
+/** 语言增删后调用（语言页），清掉缓存让下次读最新值。 */
+export function invalidateShopLocalesCache(shop: string): void {
+  localesCache.delete(shop);
+}
+
 /** 与语言页 `queryShopLanguages` 同源，保证 v4 目标语言列表一致。 */
 export async function loadShopLocalesForTranslation(args: {
   shop: string;
   accessToken: string;
 }): Promise<LoadedShopLocales> {
+  const now = Date.now();
+  const cached = localesCache.get(args.shop);
+  if (cached && cached.expiresAt > now) return cached.value;
+
   const raw = await queryShopLanguages(args);
   const rows: ShopLocaleRow[] = Array.isArray(raw)
     ? raw
@@ -43,5 +57,7 @@ export async function loadShopLocalesForTranslation(args: {
     published: r.published,
   }));
 
-  return { rows, primaryLocale, localeOptions };
+  const result = { rows, primaryLocale, localeOptions };
+  localesCache.set(args.shop, { value: result, expiresAt: now + CACHE_TTL_MS });
+  return result;
 }

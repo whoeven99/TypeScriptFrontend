@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type { CustomTagProps } from "rc-select/lib/BaseSelect";
 import { Button, Checkbox, Select, Space } from "antd";
+import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -9,6 +11,7 @@ import {
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
+import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -41,6 +44,7 @@ export function CreateTaskCard({
   isHandle,
   onIsHandleChange,
 }: Props) {
+  const { t } = useTranslation();
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
   // 高级设置默认收起，点击展开
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -54,27 +58,34 @@ export function CreateTaskCard({
     });
   }, [targetOptions, targets]);
 
-  const sortedModules = useMemo(() => {
-    return [...CREATE_TASK_MODULE_OPTIONS].sort((a, b) => {
-      const aSelected = modules.includes(a) ? 0 : 1;
-      const bSelected = modules.includes(b) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return (CREATE_TASK_MODULE_LABELS[a] ?? a).localeCompare(
-        CREATE_TASK_MODULE_LABELS[b] ?? b,
-      );
-    });
-  }, [modules]);
-
   const targetSelectOptions = sortedTargetOptions.map((opt) => ({
     value: opt.value,
     label: localeShortName(opt.value, opt.label),
     regionCode: localeRegionCode(opt.value),
   }));
 
-  const moduleSelectOptions = sortedModules.map((mod) => ({
+  const aiModelOptions = useMemo(
+    () =>
+      AI_MODEL_OPTIONS.map((option) => ({
+        ...option,
+        label: getV4AiModelLabel(option.value, t),
+      })),
+    [t],
+  );
+
+  // 翻译内容改为内联多选 chip：顺序固定（避免点选时跳动），选中态与上方语言同色。
+  const moduleChips = CREATE_TASK_MODULE_OPTIONS.map((mod) => ({
     value: mod,
-    label: CREATE_TASK_MODULE_LABELS[mod] ?? mod,
+    label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+
+  const toggleModule = (value: string) => {
+    onModulesChange(
+      modules.includes(value)
+        ? modules.filter((m) => m !== value)
+        : [...modules, value],
+    );
+  };
 
   return (
     <div
@@ -86,10 +97,29 @@ export function CreateTaskCard({
         boxShadow: "var(--app-shadow-card-strong)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: v4Colors.text }}>
-            新建翻译任务
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
+          marginBottom: 18,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: v4Colors.text,
+              lineHeight: 1.4,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {t("v4.createTask.title")}
           </h2>
         </div>
         <Button
@@ -98,23 +128,36 @@ export function CreateTaskCard({
           disabled={!canCreate}
           loading={creating}
           onClick={onCreate}
+          style={{
+            maxWidth: "100%",
+            height: "auto",
+            minHeight: 32,
+            whiteSpace: "normal",
+            textAlign: "center",
+            lineHeight: 1.35,
+            paddingBlock: 6,
+          }}
         >
-          {creating ? "创建中…" : targets.length > 1 ? `创建 ${targets.length} 个任务` : "创建任务"}
+          {creating
+            ? t("v4.createTask.creating")
+            : targets.length > 1
+              ? t("v4.createTask.createMultiple", { count: targets.length })
+              : t("v4.createTask.createOne")}
         </Button>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title="目标语言" />
+        <SectionHeader title={t("v4.createTask.targetLanguages")} />
         <Select
           mode="multiple"
-          placeholder="选择目标语言"
+          placeholder={t("v4.createTask.selectTargetLanguages")}
           value={targets}
           onChange={onTargetsChange}
           options={targetSelectOptions}
           maxTagCount="responsive"
           style={{ width: "100%" }}
           optionFilterProp="label"
-          tagRender={(props) => renderLocaleTag(props, targetSelectOptions)}
+          tagRender={(props) => renderLocaleTag(props, targetSelectOptions, t)}
           optionRender={(option) => (
             <span>
               <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
@@ -127,18 +170,23 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title="翻译内容" />
-        <Select
-          mode="multiple"
-          placeholder="选择翻译内容模块"
-          value={modules}
-          onChange={onModulesChange}
-          options={moduleSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={renderModuleTag}
-        />
+        <SectionHeader title={t("v4.createTask.content")} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {moduleChips.map((mod) => {
+            const selected = modules.includes(mod.value);
+            return (
+              <button
+                key={mod.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleModule(mod.value)}
+                style={moduleChipStyle(selected)}
+              >
+                {mod.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div
@@ -171,8 +219,10 @@ export function CreateTaskCard({
             userSelect: "none",
           }}
         >
-          <span>高级设置</span>
-          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden>
+          <span style={{ minWidth: 0, textAlign: "left", lineHeight: 1.35, overflowWrap: "anywhere" }}>
+            {t("v4.createTask.advancedSettings")}
+          </span>
+          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden style={{ flexShrink: 0 }}>
             ⌄
           </span>
         </button>
@@ -185,14 +235,14 @@ export function CreateTaskCard({
           }}
         >
           <div style={{ marginTop: 12 }}>
-            <SectionLabel>AI 模型</SectionLabel>
+            <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
             <Select
               value={aiModel}
               onChange={onAiModelChange}
-              options={AI_MODEL_OPTIONS}
+              options={aiModelOptions}
               style={{ width: "100%", marginBottom: 16 }}
             />
-            <SectionLabel>翻译选项</SectionLabel>
+            <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
             <Checkbox.Group
               value={[
                 ...(isCover ? ["cover"] : []),
@@ -205,8 +255,8 @@ export function CreateTaskCard({
               style={{ width: "100%" }}
             >
               <Space direction="vertical" size={10}>
-                <Checkbox value="cover">覆盖已有译文</Checkbox>
-                <Checkbox value="handle">翻译 handle</Checkbox>
+                <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
+                <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
               </Space>
             </Checkbox.Group>
           </div>
@@ -223,7 +273,7 @@ function SectionHeader({
 }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text, lineHeight: 1.35, overflowWrap: "anywhere" }}>
         {title}
       </div>
     </div>
@@ -231,7 +281,11 @@ function SectionHeader({
 }
 
 function SectionLabel({ children }: { children: string }) {
-  return <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8 }}>{children}</div>;
+  return (
+    <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+      {children}
+    </div>
+  );
 }
 
 type TargetOption = { value: string; label: string; regionCode: string };
@@ -239,6 +293,7 @@ type TargetOption = { value: string; label: string; regionCode: string };
 function renderLocaleTag(
   props: CustomTagProps,
   options: TargetOption[],
+  t: (key: string, options?: Record<string, unknown>) => string,
 ) {
   const { label, value, closable, onClose } = props;
   const opt = options.find((item) => item.value === value);
@@ -246,11 +301,18 @@ function renderLocaleTag(
   const name = typeof label === "string" ? label : opt?.label ?? String(value);
 
   return (
-    <span className="v4-select-tag v4-select-tag--locale">
+    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
       <span className="v4-select-tag__code">{code}</span>
-      <span>{name}</span>
+      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {name}
+      </span>
       {closable ? (
-        <button type="button" className="v4-select-tag__close" onClick={onClose} aria-label={`移除 ${name}`}>
+        <button
+          type="button"
+          className="v4-select-tag__close"
+          onClick={onClose}
+          aria-label={t("v4.createTask.removeTarget", { name })}
+        >
           ×
         </button>
       ) : null}
@@ -258,17 +320,24 @@ function renderLocaleTag(
   );
 }
 
-function renderModuleTag(props: CustomTagProps) {
-  const { label, closable, onClose } = props;
-
-  return (
-    <span className="v4-select-tag v4-select-tag--module">
-      <span>{label}</span>
-      {closable ? (
-        <button type="button" className="v4-select-tag__close" onClick={onClose} aria-label={`移除 ${label}`}>
-          ×
-        </button>
-      ) : null}
-    </span>
-  );
+/** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
+function moduleChipStyle(selected: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: "1px solid transparent",
+    background: selected ? v4Colors.primarySoft : v4Colors.cardSubdued,
+    color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1.35,
+    whiteSpace: "normal",
+    textAlign: "left",
+    overflowWrap: "anywhere",
+    cursor: "pointer",
+    transition: "background 0.15s, color 0.15s",
+    fontFamily: "inherit",
+  };
 }

@@ -1,6 +1,6 @@
 import prisma from "~/db.server";
 import { sameTranslationLocale } from "./locale";
-import { hasShopMigratedToTsf } from "./migration.server";
+import { ensureShopV4Settings } from "./migration.server";
 
 /**
  * 语言页「按语言自动翻译开关」的 TSF Prisma 读写（迁移后的店用）。
@@ -29,9 +29,9 @@ async function ensureTargetLocalesBackfilled(shop: string): Promise<void> {
 
   const settings = await prisma.shopTranslationSettings.findUnique({
     where: { shop },
-    select: { targets: true, migratedToTsf: true },
+    select: { targets: true },
   });
-  if (!settings?.migratedToTsf) return;
+  if (!settings) return;
 
   const targets = Array.isArray(settings.targets)
     ? (settings.targets as string[]).filter(Boolean)
@@ -79,14 +79,14 @@ export async function deleteTargetLocales(shop: string, locales: string[]): Prom
 
 /**
  * 将 Shopify 店铺语言同步到 TSF（ShopTargetLocale + settings.targets）。
- * 仅已迁移店执行；新增语言默认 autoTranslate=false，已有行保留原开关。
+ * 新增语言默认 autoTranslate=false，已有行保留原开关。
  */
 export async function syncShopTargetLocalesFromShopify(
   shop: string,
   shopLocales: Array<{ locale: string; primary?: boolean }>,
   primaryLocale: string,
 ): Promise<void> {
-  if (!(await hasShopMigratedToTsf(shop))) return;
+  await ensureShopV4Settings(shop, primaryLocale);
 
   const targetCodes = shopLocales
     .filter((l) => !l.primary && l.locale.trim())
@@ -115,8 +115,8 @@ export async function syncShopTargetLocalesFromShopify(
   }
 
   await prisma.shopTranslationSettings.updateMany({
-    where: { shop, migratedToTsf: true },
-    data: { targets: uniqueLocales },
+    where: { shop },
+    data: { targets: uniqueLocales, primaryLocale },
   });
 }
 

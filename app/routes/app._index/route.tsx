@@ -56,6 +56,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (await isShopMigrated(shop)) {
     throw redirect(withEmbeddedSearch("/app/translate-v4", new URL(request.url).search));
   }
+
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];

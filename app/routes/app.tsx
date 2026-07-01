@@ -667,10 +667,13 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider theme={appAntdTheme}>
+      <ConfigProvider
+        theme={appAntdTheme}
+        getPopupContainer={() => document.body}
+      >
         <NavMenu>
-          <Link to="/app" rel="home">
-            Home
+          <Link to={translateV4Migrated ? "/app/translate-v4" : "/app"} rel="home">
+            {translateV4Migrated ? t("v4.title") : "Home"}
           </Link>
           {isClient && (
             <>

@@ -26,7 +26,7 @@
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
-    "push:pr": "node scripts/cursor-push-pr.mjs"
+    "migration:next-shops": "node scripts/next-migration-shops.mjs"
   },
   "type": "module",
   "engines": {
@@ -104,6 +104,7 @@
     "eslint-config-prettier": "^9.1.0",
     "google-translate-api": "^2.3.0",
     "i18next-parser": "^9.3.0",
+    "mssql": "^11.0.1",
     "patch-package": "^8.0.1",
     "prettier": "^3.2.4",
     "prisma": "^6.16.3",

@@ -1,12 +1,10 @@
-import axios from "axios";
 import prisma from "~/db.server";
-import { routeStorefrontRead } from "./routing.server";
 import { ok, fail, type BaseResponse } from "./response.server";
 
 /** 对应 Java parseLiquidDataByShopNameAndLanguage 的响应 response 形状：
  *  { "原文": ["译文", replacementMethod(bool)], ... }
  */
-type LiquidMap = Record<string, [string, boolean]>;
+export type LiquidMap = Record<string, [string, boolean]>;
 
 /**
  * 判断字符串是否为 JSON 对象/数组（Java 侧会跳过这类 before/after）。
@@ -24,22 +22,15 @@ function isJsonObject(str: string): boolean {
   }
 }
 
-/**
- * 灰度入口：migratedToTsf 且 shop 在 TRANSLATE_V4_SHOP_ALLOWLIST 内时从 Prisma 读；allowlist 未配置则走 Java。
- * 保留 Java 路径，不删除 Java 对应逻辑。
- */
+/** 从 TSF Prisma 读取 Liquid 规则（v4 默认路径）。 */
 export async function parseLiquidTranslations(
   shop: string,
   languageCode: string,
 ): Promise<BaseResponse<LiquidMap>> {
-  return routeStorefrontRead(
-    shop,
-    () => readFromPrisma(shop, languageCode),
-    () => proxyToJava(shop, languageCode),
-  );
+  return readFromPrisma(shop, languageCode);
 }
 
-/** migratedToTsf 路径：从 Prisma LiquidRule 读取。 */
+/** migratedToTsf=true 路径：从 Prisma LiquidRule 读取。 */
 async function readFromPrisma(
   shop: string,
   languageCode: string,
@@ -66,30 +57,4 @@ async function readFromPrisma(
     return fail(10001, "no data");
   }
   return ok(map);
-}
-
-/** migratedToTsf=false 路径：透明代理到 Java，保留 Java 代码。 */
-async function proxyToJava(
-  shop: string,
-  languageCode: string,
-): Promise<BaseResponse<LiquidMap>> {
-  const base = process.env.SERVER_URL?.trim().replace(/\/+$/, "");
-  if (!base) {
-    console.error("[storefront/liquid] SERVER_URL not configured, cannot proxy to Java");
-    return fail(10001, "upstream not available");
-  }
-  try {
-    const res = await axios.post<BaseResponse<LiquidMap>>(
-      `${base}/liquid/parseLiquidDataByShopNameAndLanguage`,
-      null,
-      {
-        params: { shopName: shop, languageCode },
-        timeout: 10_000,
-      },
-    );
-    return res.data;
-  } catch (err) {
-    console.error(`[storefront/liquid] proxyToJava failed shop=${shop}:`, err);
-    return fail(10001, "upstream error");
-  }
 }

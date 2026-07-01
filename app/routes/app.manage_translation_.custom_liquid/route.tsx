@@ -3,7 +3,6 @@ import { Page } from "@shopify/polaris";
 import { useEffect, useMemo, useState } from "react";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { isStorefrontGrayEligible } from "~/server/storefront/storefrontGray.server";
 import {
   Button,
   Card,
@@ -40,17 +39,15 @@ const { Title, Text } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
-  const migrated = await isStorefrontGrayEligible(session.shop);
-
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
-    migrated,
   };
 };
 
 const Index = () => {
-  const { server, mobile, migrated } = useLoaderData<typeof loader>();
+  const { server, mobile } = useLoaderData<typeof loader>();
+  const migrated = true;
 
   const { t } = useTranslation();
   const navigate = useNavigate();

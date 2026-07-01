@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { verifyAppProxyHmac } from "~/server/storefront/auth.server";
 import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
 import { getSwitcherConfig } from "~/server/storefront/switcherConfig.server";
+import { readPageFlyTranslations } from "~/server/storefront/pagefly.server";
 import { fail } from "~/server/storefront/response.server";
 
 /**
@@ -103,6 +104,28 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return json(result, { headers: CORS_HEADERS });
     } catch (err) {
       console.error(`[storefront] getSwitcherConfig failed shop=${shop}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
+  // POST /api/storefront/userPageFly/readTranslatedText
+  // 灰度策略：migratedToTsf=true 且 shop 在 TRANSLATE_V4_SHOP_ALLOWLIST 中 → Prisma；否则透明代理 Java
+  if (path === "userPageFly/readTranslatedText") {
+    const shopName = url.searchParams.get("shopName") ?? auth.shop;
+    const languageCode = url.searchParams.get("languageCode") ?? "";
+
+    if (shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+    }
+
+    try {
+      const result = await readPageFlyTranslations(shopName, languageCode);
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] pagefly read failed shop=${shopName}:`, err);
       return json(fail(10001, "internal error"), {
         status: 500,
         headers: CORS_HEADERS,

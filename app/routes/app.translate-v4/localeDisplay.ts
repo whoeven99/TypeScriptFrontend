@@ -34,8 +34,13 @@ export function localeRegionCode(locale: string): string {
   return map[base] ?? base.toUpperCase().slice(0, 2);
 }
 
-/** 从 Shopify name 或 label 提取简短中文名。 */
+/** 从 Shopify name 或 label 提取简短展示名。 */
 export function localeShortName(locale: string, label?: string): string {
+  if (label) {
+    const name = label.split("(")[0]?.trim();
+    if (name) return name;
+  }
+
   const byLocale: Record<string, string> = {
     "zh-CN": "简体中文",
     en: "英语",
@@ -57,10 +62,6 @@ export function localeShortName(locale: string, label?: string): string {
     ru: "俄语",
   };
   if (byLocale[locale]) return byLocale[locale];
-  if (label) {
-    const name = label.split("(")[0]?.trim();
-    if (name) return name;
-  }
   return locale;
 }
 
