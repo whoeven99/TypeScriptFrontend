@@ -9,12 +9,9 @@ import {
 export type { PageFlyTranslationVO };
 
 /**
- * 灰度入口：PageFly 译文读取。
+ * PageFly 译文读取。
  *
- * 灰度条件（双重）：migratedToTsf=true 且 shop 在 TRANSLATE_V4_SHOP_ALLOWLIST 中
- *   → 从 Prisma PageFlyTranslation 读取
- * 未满足条件
- *   → 透明代理到 Java /userPageFly/readTranslatedText（保留 Java 路径）
+ * 默认走 v4（Prisma）；v2PageWhitelist 中的店铺透明代理到 Java /userPageFly/readTranslatedText。
  */
 export async function readPageFlyTranslations(
   shop: string,
