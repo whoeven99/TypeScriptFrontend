@@ -287,12 +287,12 @@ body {
    ========================================================================= */
 
 .v4-page {
-  --v4-accent-primary: #3355a8;
-  --v4-accent-primary-hover: #274488;
-  --v4-accent-primary-deep: #1c3268;
-  --v4-accent-primary-soft: rgba(51, 85, 168, 0.08);
-  --v4-accent-primary-muted: rgba(51, 85, 168, 0.12);
-  --v4-ring-track: rgba(51, 85, 168, 0.12);
+  --v4-accent-primary: #5b4bd6;
+  --v4-accent-primary-hover: #4c3bc0;
+  --v4-accent-primary-deep: #2f256f;
+  --v4-accent-primary-soft: rgba(91, 75, 214, 0.1);
+  --v4-accent-primary-muted: rgba(91, 75, 214, 0.14);
+  --v4-ring-track: rgba(91, 75, 214, 0.16);
 }
 
 .v4-page .ant-tabs-ink-bar {
@@ -393,7 +393,7 @@ body {
   font-weight: 600;
   background: var(--v4-accent-primary) !important;
   border-color: var(--v4-accent-primary) !important;
-  box-shadow: 0 4px 14px rgba(51, 85, 168, 0.22);
+  box-shadow: 0 4px 14px rgba(91, 75, 214, 0.28);
 }
 
 .v4-create-task-card__submit.ant-btn-primary:not(:disabled):hover {
