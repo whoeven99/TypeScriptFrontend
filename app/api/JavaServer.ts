@@ -72,63 +72,6 @@ export const WebhookDefaultTheme = async ({
   });
 };
 
-//ip自定义配置初始化
-export const SyncUserIp = async ({
-  shop,
-  server,
-  initData,
-}: {
-  shop: string;
-  server: string;
-  initData: {
-    region: string;
-    languageCode: string;
-    currencyCode: string;
-  }[];
-}) => {
-  return javaApiRequest(`${shop} SyncUserIp`, {
-    url: `${server}/userIp/syncUserIp?shopName=${shop}`,
-    method: "POST",
-    data: initData,
-  });
-};
-
-//更新ip自定义配置
-export const UpdateUserIp = async ({
-  shop,
-  server,
-  id,
-  region,
-  languageCode,
-  currencyCode,
-}: {
-  shop: string;
-  server: string;
-  id: number;
-  region: string;
-  languageCode: string;
-  currencyCode: string;
-}) => {
-  return javaApiRequest(`${shop} UpdateUserIp`, {
-    url: `${server}/userIp/updateUserIp?shopName=${shop}`,
-    method: "POST",
-    data: { id, region, languageCode, currencyCode },
-  });
-};
-
-export const QueryUserIpCount = async ({
-  shop,
-  server,
-}: {
-  shop: string;
-  server: string;
-}) => {
-  return javaApiRequest(`${shop} QueryUserIpCount`, {
-    url: `${server}/userIp/queryUserIpCount?shopName=${shop}`,
-    method: "POST",
-  });
-};
-
 export const IsInFreePlanTime = async ({
   shop,
   server,

@@ -107,16 +107,10 @@ async function ciwiOnload() {
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) return console.warn("ciwiBlock not found");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
-  // 爬虫检测
+  // 爬虫检测（仅拦截，不上报日志）
   const reason = isLikelyBotByUA();
   if (reason) {
     console.warn("⚠️ 疑似爬虫访问", reason);
-    API.IncludeCrawlerPrintLog({
-      shopName: shop.value,
-      blockId,
-      ua: navigator.userAgent,
-      reason,
-    });
     return;
   }
 
@@ -209,49 +203,14 @@ async function ciwiOnload() {
 
     if (!iptokenValue) return;
 
-    const checkUserIpStart = Date.now();
+    const IpData = await API.fetchUserCountryInfo(iptokenValue);
 
-    //获取是否能够ip定位
-    const userIp = await API.checkUserIp({ blockId, shop: shop.value });
-    const checkUserIpCost = Date.now() - checkUserIpStart;
+    localStorage.setItem(
+      "ciwi_iplocation_expire_at",
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
 
-    //能够定位则开始调用ipapi接口
-    if (Array.isArray(userIp?.response)) {
-      const fetchCountryStart = Date.now();
-
-      //调用ipapi接口
-      const IpData = await API.fetchUserCountryInfo(iptokenValue);
-
-      localStorage.setItem(
-        "ciwi_iplocation_expire_at",
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      );
-
-      //缓存定位时间
-      const fetchCountryCost = Date.now() - fetchCountryStart;
-
-      //暂存默认数据
-      detectedCountry = IpData?.countryCode;
-
-      //地区对应货币符号
-      const ipCurrency = countryCurMap[countryValue];
-
-      //打印日志
-      API.NoCrawlerPrintLog({
-        blockId,
-        shopName: shop.value,
-        ip: "0.0.0.0",
-        languageCode: browserLanguage,
-        langInclude: availableLanguages.includes(browserLanguage),
-        countryCode: detectedCountry,
-        counInclude: availableCountries.includes(detectedCountry),
-        currencyCode: ipCurrency,
-        checkUserIpCostTime: checkUserIpCost,
-        fetchUserCountryInfoCostTime: fetchCountryCost,
-        status: "",
-        error: "",
-      });
-    }
+    detectedCountry = IpData?.countryCode;
   }
 
   //查询当前或者需要定位的地区的语言货币配置

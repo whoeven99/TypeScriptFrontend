@@ -3,7 +3,6 @@ import {
   GetUserWords,
   IsInFreePlanTime,
   IsOpenFreePlan,
-  QueryUserIpCount,
 } from "~/api/JavaServer";
 import type { ShopLocalesType } from "~/routes/app.language/route";
 import type { LoadedShopLocales } from "~/server/translateV4/shopLocales.server";
@@ -20,7 +19,6 @@ export type AppBootstrapJavaData = {
   updateTime: string | null;
   chars?: number;
   totalChars?: number;
-  ipBalance?: number;
   isNew: boolean | null;
 };
 
@@ -78,13 +76,11 @@ export async function loadAppBootstrapJavaData({
     subscriptionResult,
     freePlanTimeResult,
     wordsResult,
-    ipBalanceResult,
     openFreePlanResult,
   ] = await Promise.allSettled([
     GetUserSubscriptionPlan({ shop, server }),
     IsInFreePlanTime({ shop, server }),
     GetUserWords({ shop, server }),
-    QueryUserIpCount({ shop, server }),
     IsOpenFreePlan({ shop, server }),
   ]);
 
@@ -98,8 +94,6 @@ export async function loadAppBootstrapJavaData({
       : undefined;
   const words =
     wordsResult.status === "fulfilled" ? wordsResult.value : undefined;
-  const ipBalance =
-    ipBalanceResult.status === "fulfilled" ? ipBalanceResult.value : undefined;
   const openFreePlan =
     openFreePlanResult.status === "fulfilled"
       ? openFreePlanResult.value
@@ -126,7 +120,6 @@ export async function loadAppBootstrapJavaData({
       : null,
     chars: words?.success ? words?.response?.chars : undefined,
     totalChars: words?.success ? words?.response?.totalChars : undefined,
-    ipBalance: ipBalance?.success ? ipBalance?.response : undefined,
     isNew: openFreePlan?.success ? !openFreePlan?.response : null,
   };
 }
