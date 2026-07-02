@@ -1184,36 +1184,3 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
   }
 };
 
-//客户可以向店主请求其数据
-export const RequestData = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/user/requestData`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
-    });
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error RequestData:", error);
-  }
-};
-
-//店主可以代表客户请求删除数据
-export const DeleteData = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/user/deleteData`,
-      method: "DELETE",
-      data: {
-        shopName: shop,
-      },
-    });
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error DeleteData:", error);
-  }
-};
