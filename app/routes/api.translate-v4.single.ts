@@ -24,10 +24,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
+  const source = (body.source ?? "en").trim() || "en";
+  const fieldKey = body.key?.trim() || "value";
+  const shopifyType = body.type?.trim() || body.resourceType?.trim();
 
   try {
     if (!target) return json({ success: false, errorMsg: "缺少目标语言", response: "" });
-    const { translatedText, usedTokens } = await translateSingleText({ shop, target, text });
+    const { translatedText, usedTokens } = await translateSingleText({
+      shop,
+      target,
+      text,
+      source,
+      fieldKey,
+      shopifyType,
+    });
     await deductQuota(shop, usedTokens);
     return json({ success: true, response: translatedText });
   } catch (err) {

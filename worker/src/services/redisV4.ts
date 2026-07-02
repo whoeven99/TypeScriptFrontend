@@ -30,7 +30,9 @@ function attachRedisListeners(redis: IORedis): void {
 export function getRedis(): IORedis {
   if (_redis) return _redis;
 
-  const url = process.env.REDIS_URL?.trim();
+  const url =
+    process.env.REDIS_URL?.trim() ||
+    process.env.REDIS_URL_V4?.trim();
   if (url) {
     _redis = new IORedis(url, REDIS_COMMON_OPTIONS);
     attachRedisListeners(_redis);

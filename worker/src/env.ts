@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
+const LOG = "[worker:env]";
+
 /** 去掉首尾空白与成对引号 */
 function normalize(value: string): string {
   let v = value.trim();
@@ -9,47 +11,11 @@ function normalize(value: string): string {
   return v;
 }
 
-function maskRedisUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const auth = parsed.password || parsed.username ? "***@" : "";
-    return `${parsed.protocol}//${auth}${parsed.host}${parsed.pathname}`;
-  } catch {
-    return url.length > 40 ? `${url.slice(0, 40)}…` : url;
-  }
-}
-
-function maskValue(key: string, value: string): string {
-  if (!value) return "(空)";
-  if (key === "REDIS_URL") return maskRedisUrl(value);
-  if (/token|secret|key|password|auth/i.test(key)) {
-    return `(已设置,len=${value.length})`;
-  }
-  return value.length > 40 ? `${value.slice(0, 40)}…` : value;
-}
-
-type EnvField = [key: string, value: string | undefined, defaultValue?: string];
-
-function formatEnvField([key, value, defaultValue]: EnvField): string {
-  if (value?.trim()) return `${key}=${maskValue(key, value)}`;
-  if (defaultValue) return `${key}=(默认 ${defaultValue})`;
-  return `${key}=❌ 缺失`;
-}
-
-/** 按服务分组打印诊断，ok 表示该服务至少有一种可用配置 */
-function logEnvCheck(service: string, ok: boolean, fields: EnvField[]): void {
-  console.info(`[worker:env]   [${ok ? "✅" : "❌"}] ${service}`);
-  for (const field of fields) {
-    console.info(`[worker:env]       ${formatEnvField(field)}`);
-  }
-}
-
 /** 加载单个 KEY=VALUE 文件，仅设置尚为空的键（不覆盖 Render 已注入的） */
-function loadEnvFile(filePath: string): { appliedCount: number; skipped: string[] } {
-  let appliedCount = 0;
-  const skipped: string[] = [];
+function loadEnvFile(filePath: string): number {
   try {
     const content = readFileSync(filePath, "utf8");
+    let appliedCount = 0;
     for (const rawLine of content.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (!line || line.startsWith("#")) continue;
@@ -58,17 +24,15 @@ function loadEnvFile(filePath: string): { appliedCount: number; skipped: string[
       const key = line.slice(0, eq).trim();
       if (!key) continue;
       const value = normalize(line.slice(eq + 1));
-      if (process.env[key] !== undefined && process.env[key] !== "") {
-        skipped.push(key);
-        continue;
-      }
+      if (process.env[key] !== undefined && process.env[key] !== "") continue;
       process.env[key] = value;
       appliedCount++;
     }
+    return appliedCount;
   } catch (err) {
-    console.error(`[worker:env] 读取 ${filePath} 失败:`, err);
+    console.error(`${LOG} 读取 ${filePath} 失败:`, err);
+    return 0;
   }
-  return { appliedCount, skipped };
 }
 
 const SECRET_PATHS = [
@@ -77,89 +41,112 @@ const SECRET_PATHS = [
   "/var/secrets/.env",
 ];
 
-/** 启动时加载 Render Secret File + 打印诊断 */
-export function ensureWorkerEnv(): void {
-  console.info(`[worker:env] NODE_ENV=${process.env.NODE_ENV}, RENDER=${process.env.RENDER}, cwd=${process.cwd()}`);
+type ServiceCheck = {
+  label: string;
+  ok: boolean;
+  /** 仅 ok=false 时打印 */
+  hint?: string;
+};
 
-  let anyLoaded = false;
-  for (const p of SECRET_PATHS) {
-    const exists = existsSync(p);
-    console.info(`[worker:env] 检查 ${p}: ${exists ? "存在" : "不存在"}`);
-    if (exists) {
-      const { appliedCount, skipped } = loadEnvFile(p);
-      if (appliedCount > 0) anyLoaded = true;
-      if (skipped.length > 0) {
-        console.info(`[worker:env] 跳过 ${skipped.length} 个已有键: ${skipped.join(", ")}`);
-      }
-    }
-  }
-
-  // 关键变量诊断（按 worker 实际读取逻辑，含 fallback）
-  console.info("[worker:env] ===== 关键变量 =====");
-  logEnvCheck("Cosmos", Boolean(process.env.COSMOS_ENDPOINT?.trim() && process.env.COSMOS_KEY?.trim()), [
-    ["COSMOS_ENDPOINT", process.env.COSMOS_ENDPOINT],
-    ["COSMOS_KEY", process.env.COSMOS_KEY],
-    ["COSMOS_TRANSLATION_DATABASE_ID", process.env.COSMOS_TRANSLATION_DATABASE_ID, "translation"],
-    [
-      "COSMOS_TRANSLATION_V4_JOBS_CONTAINER",
-      process.env.COSMOS_TRANSLATION_V4_JOBS_CONTAINER,
-      "translation_v4_jobs",
-    ],
-  ]);
-  const workerStages = process.env.WORKER_STAGES?.trim();
-  logEnvCheck("Worker stages", true, [
-    ["WORKER_STAGES", workerStages, "init,translate,writeback (default all)"],
-  ]);
-  const redisUrl = process.env.REDIS_URL?.trim();
-  const redisHost =
+function redisConfigured(): boolean {
+  if (process.env.REDIS_URL?.trim()) return true;
+  const host =
     process.env.REDIS_HOSTNAME?.trim() ||
     process.env.REDIS_HOST?.trim() ||
     process.env.REDISCACHEHOSTNAME?.trim();
-  const redisPassword =
+  const password =
     process.env.REDIS_PASSWORD?.trim() || process.env.REDISCACHEKEY?.trim();
-  logEnvCheck("Redis", Boolean(redisUrl || (redisHost && redisPassword)), redisUrl
-    ? [["REDIS_URL", redisUrl]]
-    : [
-        ["REDIS_HOSTNAME", process.env.REDIS_HOSTNAME],
-        ["REDIS_PASSWORD", process.env.REDIS_PASSWORD],
-        ["REDIS_PORT", process.env.REDIS_PORT, "6380"],
-      ]);
-  const blobConn = process.env.AZURE_BLOB_CONNECTION_STRING?.trim();
-  logEnvCheck("Blob", Boolean(blobConn), [
-    ["AZURE_BLOB_CONNECTION_STRING", blobConn],
-    ["AZURE_BLOB_TRANSLATION_CONTAINER", process.env.AZURE_BLOB_TRANSLATION_CONTAINER, "translation-content"],
-  ]);
+  return Boolean(host && password);
+}
+
+function llmConfigured(): boolean {
+  return Boolean(
+    process.env.DEEPSEEK_API_KEY?.trim() ||
+      process.env.DEEPSEEK_API_KEYS?.trim() ||
+      process.env.Gpt_ApiKey?.trim(),
+  );
+}
+
+function collectChecks(): ServiceCheck[] {
+  const cosmosOk = Boolean(
+    process.env.COSMOS_ENDPOINT?.trim() && process.env.COSMOS_KEY?.trim(),
+  );
+  const blobOk = Boolean(process.env.AZURE_BLOB_CONNECTION_STRING?.trim());
   const tsfTursoOk = Boolean(
     process.env.TSF_TURSO_DATABASE_URL?.trim()?.startsWith("libsql://") &&
       process.env.TSF_TURSO_AUTH_TOKEN?.trim(),
   );
-  logEnvCheck("Turso (TSF 翻译配置)", tsfTursoOk, [
-    ["TSF_TURSO_DATABASE_URL", process.env.TSF_TURSO_DATABASE_URL],
-    ["TSF_TURSO_AUTH_TOKEN", process.env.TSF_TURSO_AUTH_TOKEN],
-  ]);
+  const sesOk = Boolean(
+    process.env.TENCENT_CLOUD_KEY_ID?.trim() && process.env.TENCENT_CLOUD_KEY?.trim(),
+  );
+  const quotaOk = Boolean(process.env.TSF_SERVER_URL?.trim());
 
-  const tencentKeyId = process.env.TENCENT_CLOUD_KEY_ID?.trim();
-  const tencentKey = process.env.TENCENT_CLOUD_KEY?.trim();
-  logEnvCheck("Tencent SES (翻译邮件)", Boolean(tencentKeyId && tencentKey), [
-    ["TENCENT_CLOUD_KEY_ID", tencentKeyId],
-    ["TENCENT_CLOUD_KEY", tencentKey],
-    ["TENCENT_SES_REGION", process.env.TENCENT_SES_REGION, "ap-hongkong"],
-    ["TENCENT_FROM_EMAIL", process.env.TENCENT_FROM_EMAIL, "support@msg.ciwi.ai"],
-    ["EMAIL_WORKER_INTERVAL_MS", process.env.EMAIL_WORKER_INTERVAL_MS, "30000"],
-  ]);
+  return [
+    {
+      label: "Cosmos",
+      ok: cosmosOk,
+      hint: "COSMOS_ENDPOINT, COSMOS_KEY",
+    },
+    {
+      label: "Redis",
+      ok: redisConfigured(),
+      hint: "REDIS_URL 或 REDIS_HOSTNAME+REDIS_PASSWORD",
+    },
+    {
+      label: "Blob",
+      ok: blobOk,
+      hint: "AZURE_BLOB_CONNECTION_STRING",
+    },
+    {
+      label: "TSF Turso",
+      ok: tsfTursoOk,
+      hint: "TSF_TURSO_DATABASE_URL, TSF_TURSO_AUTH_TOKEN",
+    },
+    {
+      label: "LLM",
+      ok: llmConfigured(),
+      hint: "DEEPSEEK_API_KEY 或 Gpt_ApiKey",
+    },
+    {
+      label: "SES",
+      ok: sesOk,
+      hint: "TENCENT_CLOUD_KEY_ID, TENCENT_CLOUD_KEY（邮件可选）",
+    },
+    {
+      label: "Quota",
+      ok: quotaOk,
+      hint: "TSF_SERVER_URL（额度 API，可选）",
+    },
+  ];
+}
 
-  logEnvCheck("LLM (DeepSeek)", Boolean(process.env.DEEPSEEK_API_KEY?.trim()), [
-    ["DEEPSEEK_API_KEY", process.env.DEEPSEEK_API_KEY],
-    ["DEEPSEEK_BASE_URL", process.env.DEEPSEEK_BASE_URL, "https://api.deepseek.com"],
-    ["DEEPSEEK_MODEL", process.env.DEEPSEEK_MODEL, "deepseek-chat"],
-    ["DEEPSEEK_CONCURRENCY_LIMIT", process.env.DEEPSEEK_CONCURRENCY_LIMIT, "(auto: flash=2500, else=500)"],
-    ["DEEPSEEK_INITIAL_CONCURRENCY", process.env.DEEPSEEK_INITIAL_CONCURRENCY, "(auto: min(32, 10% ceiling))"],
-    ["DEEPSEEK_CONCURRENCY_UTIL", process.env.DEEPSEEK_CONCURRENCY_UTIL, "0.9"],
-  ]);
-  console.info(`[worker:env] process.env 总键数: ${Object.keys(process.env).length}`);
-  console.info("[worker:env] =================");
+/** 启动时加载 Render Secret File + 一行摘要诊断 */
+export function ensureWorkerEnv(): void {
+  let secretApplied = 0;
+  for (const p of SECRET_PATHS) {
+    if (existsSync(p)) {
+      secretApplied += loadEnvFile(p);
+    }
+  }
 
-  if (!anyLoaded && !process.env.COSMOS_ENDPOINT) {
-    console.warn("[worker:env] ⚠️ 未从 Secret File 加载任何变量，且 COSMOS_ENDPOINT 未设置。请检查 Render Environment Groups 是否包含 Secret File（文件名需为 .env）或是否已正确链接。");
+  const checks = collectChecks();
+  const summary = checks.map((c) => `${c.label}${c.ok ? "✅" : "❌"}`).join(" · ");
+  const stages = process.env.WORKER_STAGES?.trim() || "init,translate,writeback";
+  console.info(`${LOG} ${summary} | stages=${stages}`);
+
+  if (secretApplied > 0) {
+    console.info(`${LOG} secret file: +${secretApplied} keys`);
+  }
+
+  const failed = checks.filter((c) => !c.ok);
+  for (const c of failed) {
+    console.warn(`${LOG} ${c.label} 未就绪 → 需要 ${c.hint}`);
+  }
+
+  const cosmosOk = checks.find((c) => c.label === "Cosmos")?.ok;
+  if (!cosmosOk && secretApplied === 0) {
+    console.warn(
+      `${LOG} ⚠️ Cosmos 未配置且未从 Secret File 加载变量，请检查 Render Environment / Secret File`,
+    );
   }
 }

@@ -12,7 +12,10 @@ export const MODULE_LABELS: Record<string, string> = V4_MODULE_LABELS;
 export const DEFAULT_MODULE_KEYS = [...DEFAULT_V2_MODULE_KEYS];
 
 
-/** 任务消耗积分 = usedTokens × 此系数（与 Worker QUOTA_TOKEN_MULTIPLIER 对齐，1 = 与 API tokens 1:1）。 */
+/**
+ * Worker 写入的 usedTokens 已含 QUOTA_TOKEN_MULTIPLIER（默认 1.5），
+ * 前端展示积分时此处保持 1，避免重复乘系数。
+ */
 export const QUOTA_TOKEN_MULTIPLIER = 1;
 
 export const AI_MODEL_OPTIONS = [

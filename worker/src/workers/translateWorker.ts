@@ -304,7 +304,12 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       await heartbeat(shopName, jobId);
     }
   };
-  const tokenMultiplier = Math.max(0, Number(process.env.TRANSLATION_TOKEN_MULTIPLIER) || 1);
+  // 与 Spring 扣减共用 QUOTA_TOKEN_MULTIPLIER（TRANSLATION_TOKEN_MULTIPLIER 仅作兼容覆盖）
+  const translationMultOverride = Number(process.env.TRANSLATION_TOKEN_MULTIPLIER);
+  const tokenMultiplier =
+    Number.isFinite(translationMultOverride) && translationMultOverride > 0
+      ? translationMultOverride
+      : quotaTokenMultiplier();
   const fallbacks: Array<{ resourceId: string; module: string; key: string }> = [];
   const engineUsage: EngineUsage = {};
   // Record when this translate stage actually started (epoch ms string).
