@@ -1,6 +1,5 @@
 import axios from "axios";
 import { LanguagesDataType } from "~/routes/app.language/route";
-import { InsertShopTranslateInfo } from "./JavaServer";
 export interface PublishInfoType {
   locale: string;
   shopLocale: {
@@ -548,13 +547,6 @@ export const mutationShopLocaleEnable = async ({
 
         const res = response.data?.data?.shopLocaleEnable?.shopLocale;
 
-        await InsertShopTranslateInfo({
-          shop,
-          accessToken,
-          source,
-          target: language,
-        });
-
         console.log(`${shop} mutationShopLocaleEnable: `, res);
 
         return res;
@@ -605,16 +597,6 @@ export const mutationShopLocaleDisable = async ({
         "Content-Type": "application/json",
       },
       data: JSON.stringify({ query: mutation }),
-    });
-
-    await axios({
-      url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        source: primaryLanguageCode,
-        target: language.locale,
-      },
     });
 
     const res = response.data.data.shopLocaleDisable.locale;

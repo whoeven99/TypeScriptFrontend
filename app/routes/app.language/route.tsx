@@ -37,6 +37,7 @@ import {
 } from "~/store/modules/languageTableData";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import {
+  addTargetLocales,
   deleteTargetLocales,
   syncShopTargetLocalesFromShopify,
 } from "~/server/translateV4/targetLocale.server";
@@ -221,28 +222,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!addLanguages:
       try {
+        const targets = addLanguages?.selectedLanguages || [];
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
           source: addLanguages?.primaryLanguage || "",
-          targets: addLanguages?.selectedLanguages || [],
+          targets,
         }); // 处理逻辑
         // 语言已变更，清掉 v4 首页的语言列表缓存
         invalidateShopLocalesCache(shop);
 
         if (data?.length > 0) {
-          const successItems = data
+          const successLocales = data
             .filter(
-              (item): item is PromiseFulfilledResult<unknown> =>
+              (item): item is PromiseFulfilledResult<{ locale: string }> =>
                 item.status === "fulfilled" && Boolean(item.value),
             )
-            .map((item) => item.value);
+            .map((item) => (item.value as { locale: string }).locale)
+            .filter(Boolean);
+
+          // 迁移自 Spring /translate/insertShopTranslateInfo：写入 TSF ShopTargetLocale
+          if (successLocales.length > 0) {
+            await addTargetLocales(shop, successLocales);
+          }
 
           return {
             success: true,
             errorCode: 0,
             errorMsg: "",
-            response: successItems,
+            response: data
+              .filter(
+                (item): item is PromiseFulfilledResult<unknown> =>
+                  item.status === "fulfilled" && Boolean(item.value),
+              )
+              .map((item) => item.value),
           };
         } else {
           return {
