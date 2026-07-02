@@ -5,6 +5,10 @@ import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
 import { getSwitcherConfig } from "~/server/storefront/switcherConfig.server";
 import { readPageFlyTranslations } from "~/server/storefront/pagefly.server";
 import { fail } from "~/server/storefront/response.server";
+import {
+  getCurrencyByShopName,
+  getCurrencyCacheData,
+} from "~/server/currency/currency.server";
 
 /**
  * App Proxy storefront 路由：/api/storefront/*
@@ -44,11 +48,33 @@ function authenticate(
   return { ok: true, shop };
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const auth = authenticate(request);
   if (!auth.ok) {
     return json(fail(401, "unauthorized"), { status: 401, headers: CORS_HEADERS });
   }
+  const path = (params["*"] ?? "").replace(/^\/+/, "");
+  const url = new URL(request.url);
+
+  // GET /api/storefront/currency/getCurrencyByShopName
+  if (path === "currency/getCurrencyByShopName") {
+    const shopName = url.searchParams.get("shopName") ?? auth.shop;
+    if (shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+    }
+
+    try {
+      const result = await getCurrencyByShopName(shopName);
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] currency list failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
   return json(fail(404, "not found"), { status: 404, headers: CORS_HEADERS });
 };
 
@@ -123,6 +149,29 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return json(result, { headers: CORS_HEADERS });
     } catch (err) {
       console.error(`[storefront] pagefly read failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
+  // POST /api/storefront/currency/getCacheData
+  if (path === "currency/getCacheData") {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const shopName = typeof body.shopName === "string" ? body.shopName : auth.shop;
+    const currencyCode =
+      typeof body.currencyCode === "string" ? body.currencyCode : "";
+
+    if (shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+    }
+
+    try {
+      const result = await getCurrencyCacheData(shopName, currencyCode);
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] currency cache failed shop=${shopName}:`, err);
       return json(fail(10001, "internal error"), {
         status: 500,
         headers: CORS_HEADERS,

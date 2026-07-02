@@ -15,7 +15,7 @@ import {
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
-import { GetCurrencyByShopName } from "~/api/JavaServer";
+import { GetCurrencyByShopNameV4 } from "~/api/currencyV4";
 import UpdateCustomRedirectsModal from "./components/updateCustomRedirectsModal";
 import {
   syncIpRedirections,
@@ -37,7 +37,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return {
-    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   };
 };
@@ -82,7 +81,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -379,10 +378,7 @@ const Index = () => {
 
   //获取用户货币数据
   const getCurrencyByShopName = async () => {
-    const data = await GetCurrencyByShopName({
-      shop: globalStore?.shop || "",
-      server: server as string,
-    });
+    const data = await GetCurrencyByShopNameV4();
     if (data?.success) {
       setCurrencyDataSource(data?.response);
     }
