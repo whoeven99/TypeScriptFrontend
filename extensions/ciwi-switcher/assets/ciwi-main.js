@@ -162,9 +162,6 @@ async function ciwiOnload() {
     'input[name="country_code"]',
   )?.value;
 
-  //用户自定义ip配置数据
-  const ipRedirections = configData?.ipRedirections;
-
   //需要ip定位判断，为true则需要
   let needRedirection = !storedCountry && !storedCurrency;
 
@@ -213,21 +210,8 @@ async function ciwiOnload() {
     detectedCountry = IpData?.countryCode;
   }
 
-  //查询当前或者需要定位的地区的语言货币配置
-  const ipRedirection = ipRedirections?.find(
-    (item) => item?.region == detectedCountry,
-  );
-
-  //语言货币配置
-  const ipRedirectionLanguageValue = ipRedirection?.languageCode || "auto";
-  const ipRedirectionCurrencyValue = ipRedirection?.currencyCode || "auto";
-
   //更新应当跳转的货币和语言
-  detectedLanguage = storedLanguage
-    ? storedLanguage
-    : ipRedirectionLanguageValue == "auto"
-      ? browserLanguage
-      : ipRedirectionLanguageValue;
+  detectedLanguage = storedLanguage ? storedLanguage : browserLanguage;
 
   //判断语言是否可用
   detectedLanguage = availableLanguages.includes(detectedLanguage)
@@ -245,9 +229,7 @@ async function ciwiOnload() {
 
   detectedCurrency = storedCurrency
     ? storedCurrency
-    : ipRedirectionCurrencyValue == "auto"
-      ? countryCurMap[detectedCountry]
-      : ipRedirectionCurrencyValue;
+    : countryCurMap[detectedCountry];
 
   //缓存货币数据（与已存货币比较，变化时才写入）
   if (detectedCurrency != storedCurrency && detectedCurrency) {

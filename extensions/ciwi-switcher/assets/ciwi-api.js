@@ -127,7 +127,6 @@ export async function fetchSwitcherConfig({ shop }) {
     languageSelector: true,
     currencySelector: true,
     ipOpen: false,
-    ipRedirections: [],
     fontColor: "#303030",
     backgroundColor: "#ffffff",
     buttonColor: "#ffffff",

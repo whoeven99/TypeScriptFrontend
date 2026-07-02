@@ -1,4 +1,4 @@
-/** Switcher 配置字段（不含 shopName / ipRedirections），Admin、店面、Prisma 共用。 */
+/** Switcher 配置字段（不含 shopName），Admin、店面、Prisma 共用。 */
 export type SwitcherConfigWriteInput = {
   languageSelector: boolean;
   currencySelector: boolean;

@@ -4,15 +4,6 @@ import {
   type SwitcherConfigWriteInput,
 } from "~/lib/switcherConstants";
 
-/** 对应 Java WidgetReturnVO + UserIPRedirectionDO 的 ipRedirections 字段 */
-type IpRedirectionItem = {
-  id: number;
-  shopName: string;
-  region: string;
-  languageCode: string;
-  currencyCode: string;
-};
-
 export type WidgetConfigResponse = {
   shopName: string;
   languageSelector: boolean;
@@ -27,7 +18,6 @@ export type WidgetConfigResponse = {
   selectorPosition: string;
   positionData: string;
   isTransparent: boolean;
-  ipRedirections: IpRedirectionItem[];
 };
 
 function str(value: unknown, fallback: string): string {
@@ -60,27 +50,6 @@ function normalizeWriteInput(
   };
 }
 
-async function loadIpRedirections(shop: string): Promise<IpRedirectionItem[]> {
-  const redirections = await prisma.ipRedirection.findMany({
-    where: { shop, isDeleted: false },
-    orderBy: { id: "asc" },
-    select: {
-      id: true,
-      region: true,
-      languageCode: true,
-      currencyCode: true,
-    },
-  });
-
-  return redirections.map((r) => ({
-    id: r.id,
-    shopName: shop,
-    region: r.region,
-    languageCode: r.languageCode,
-    currencyCode: r.currencyCode,
-  }));
-}
-
 function toWidgetConfigResponse(
   shop: string,
   config: {
@@ -97,7 +66,6 @@ function toWidgetConfigResponse(
     positionData: string;
     isTransparent: boolean;
   },
-  ipRedirections: IpRedirectionItem[],
 ): WidgetConfigResponse {
   return {
     shopName: shop,
@@ -113,7 +81,6 @@ function toWidgetConfigResponse(
     selectorPosition: config.selectorPosition,
     positionData: config.positionData,
     isTransparent: config.isTransparent,
-    ipRedirections,
   };
 }
 
@@ -126,8 +93,7 @@ export async function readSwitcherConfigPayload(
   });
   if (!config) return null;
 
-  const ipRedirections = await loadIpRedirections(shop);
-  return toWidgetConfigResponse(shop, config, ipRedirections);
+  return toWidgetConfigResponse(shop, config);
 }
 
 /** 写入 Prisma SwitcherConfiguration 并返回完整 payload。 */
@@ -144,6 +110,5 @@ export async function upsertSwitcherConfig(
     update: { ...data, updatedAt: now },
   });
 
-  const ipRedirections = await loadIpRedirections(shop);
-  return toWidgetConfigResponse(shop, config, ipRedirections);
+  return toWidgetConfigResponse(shop, config);
 }
