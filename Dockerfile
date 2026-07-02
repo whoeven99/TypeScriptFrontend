@@ -9,8 +9,6 @@ EXPOSE 8080
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
 COPY package.json package-lock.json* .npmrc ./
 COPY patches ./patches
 
