@@ -74,6 +74,22 @@ export async function deleteTargetLocales(shop: string, locales: string[]): Prom
     where: { shop, locale: { in: locales } },
   });
   await syncShopAutoFlag(shop);
+
+  // 同步清理 ShopTranslationSettings.targets 数组
+  const settings = await prisma.shopTranslationSettings.findUnique({
+    where: { shop },
+    select: { targets: true },
+  });
+  if (settings) {
+    const filtered = (Array.isArray(settings.targets) ? (settings.targets as string[]) : []).filter(
+      (loc) => !locales.includes(loc),
+    );
+    await prisma.shopTranslationSettings.updateMany({
+      where: { shop },
+      data: { targets: filtered },
+    });
+  }
+
   return res.count;
 }
 
@@ -117,6 +133,44 @@ export async function syncShopTargetLocalesFromShopify(
   await prisma.shopTranslationSettings.updateMany({
     where: { shop },
     data: { targets: uniqueLocales, primaryLocale },
+  });
+}
+
+/**
+ * 语言页「启用语言」时写入（迁自 Spring /translate/insertShopTranslateInfo）。
+ * 新增行写 ShopTargetLocale，同时合并 ShopTranslationSettings.targets 数组。
+ * 若 ShopTranslationSettings 不存在（迁移中的老店），只写 ShopTargetLocale，跳过 settings。
+ */
+export async function addTargetLocales(
+  shop: string,
+  locales: string[],
+): Promise<void> {
+  if (!locales.length) return;
+
+  // 1. Upsert each locale into ShopTargetLocale
+  for (const locale of locales) {
+    if (!locale) continue;
+    await prisma.shopTargetLocale.upsert({
+      where: { shop_locale: { shop, locale } },
+      create: { shop, locale, autoTranslate: false },
+      update: {},
+    });
+  }
+
+  // 2. Merge new locales into ShopTranslationSettings.targets
+  const settings = await prisma.shopTranslationSettings.findUnique({
+    where: { shop },
+    select: { targets: true },
+  });
+  if (!settings) return;
+
+  const existing = Array.isArray(settings.targets)
+    ? (settings.targets as string[])
+    : [];
+  const merged = [...new Set([...existing, ...locales])];
+  await prisma.shopTranslationSettings.updateMany({
+    where: { shop },
+    data: { targets: merged },
   });
 }
 
