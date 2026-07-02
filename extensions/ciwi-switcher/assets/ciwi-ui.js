@@ -80,7 +80,11 @@ export async function initializeCurrency({
   shop,
   ciwiBlock,
 }) {
-  const selectedCurrencyCode = localStorage.getItem("ciwi_selected_currency");
+  const pageCurrencyCode = ciwiBlock.querySelector(
+    'input[name="currency_code"]',
+  )?.value;
+  const selectedCurrencyCode =
+    pageCurrencyCode || localStorage.getItem("ciwi_selected_currency");
 
   const moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
@@ -96,14 +100,11 @@ export async function initializeCurrency({
     "#currency-switcher-container",
   );
   const currencySelect = customSelector?.querySelector(".currency_selector_header");
-  const pageCurrencyCode = ciwiBlock.querySelector(
-    'input[name="currency_code"]',
-  )?.value;
 
   renderCurrencyOptions({
     currencySelect,
     currencyData,
-    selectedCurrencyCode: selectedCurrencyCode || pageCurrencyCode,
+    selectedCurrencyCode,
   });
 
   if (isValueInCurrencies) {
