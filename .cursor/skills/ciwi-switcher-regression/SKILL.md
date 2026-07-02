@@ -91,7 +91,7 @@ description: >-
 | ID | 步骤 | 通过标准 |
 |----|------|----------|
 | P5-1 | CDP 清空 IP 相关 localStorage 并 reload | 见 test-config 脚本 |
-| P5-2 | Network 监视 | 出现 `checkUserIp`；成功时后续有 localization 跳转 |
+| P5-2 | Network 监视 | `ipOpen` 开启时可能出现 `browsing_context_suggestions.json`；成功时后续有 localization 跳转 |
 | P5-3 | 对比 `Shopify.country` / URL | 与 `/app/switcher/custom_redirects` 中该地区规则一致 |
 | P5-4 | 再次刷新 | `ciwi_iplocation_expire_at` 存在，7 天内不重复强制定位 |
 

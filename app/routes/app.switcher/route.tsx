@@ -32,7 +32,7 @@ import {
   type SwitcherEditData,
 } from "./switcherClient";
 import { useSelector } from "react-redux";
-import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { queryShopBaseConfigData } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
@@ -40,7 +40,6 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
-import AppPageHeader from "~/ui/components/AppPageHeader";
 
 const initialLocalization = {
   languages: [
@@ -698,12 +697,6 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader
-          title={t("Switcher")}
-          description={t(
-            "Configure the storefront language and currency switcher with a lighter admin-style layout and a live preview.",
-          )}
-        />
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
@@ -785,22 +778,6 @@ const Index = () => {
                       }}
                     />
                   </Flex>
-
-                  <Button
-                    color="default"
-                    variant="text"
-                    onClick={() => navigate("custom_redirects")}
-                    style={{ padding: 0, width: "100%" }}
-                  >
-                    <Flex
-                      justify="space-between"
-                      align="center"
-                      style={{ width: "100%" }}
-                    >
-                      <Text>{t("Customize Redirects by Region")}</Text>
-                      <SettingOutlined />
-                    </Flex>
-                  </Button>
                 </Space>
               </Card>
               <Card

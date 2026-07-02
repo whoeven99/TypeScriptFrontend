@@ -33,7 +33,6 @@ import {
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  setIpBalance,
   setPlan,
   setUpdateTime,
 } from "~/store/modules/userConfig";
@@ -404,7 +403,6 @@ const Index = () => {
         }),
       );
       dispatch(setUpdateTime({ updateTime: "" }));
-      dispatch(setIpBalance({ ipBalance: 500 }));
       setCancelPlanWarnModal(false);
     }
   }, [dispatch, planCancelFetcher.data]);
@@ -589,15 +587,6 @@ const Index = () => {
       },
       {
         key: 10,
-        features: t("IP call limit"),
-        free: "",
-        basic: "10,000",
-        pro: "25,000",
-        premium: "50,000",
-        type: "text",
-      },
-      {
-        key: 11,
         features: t("Third-party app translation"),
         free: "",
         basic: t("support"),
@@ -606,7 +595,7 @@ const Index = () => {
         type: "text",
       },
       {
-        key: 12,
+        key: 11,
         features: t("Image Translation"),
         free: "",
         basic: t("support"),
@@ -615,7 +604,7 @@ const Index = () => {
         type: "text",
       },
       {
-        key: 13,
+        key: 12,
         features: t("Private API support"),
         free: t("support"),
         basic: t("support"),
@@ -624,7 +613,7 @@ const Index = () => {
         type: "text",
       },
       {
-        key: 14,
+        key: 13,
         features: t("Private API call limits"),
         free: "30,000",
         basic: "300,000",
@@ -633,7 +622,7 @@ const Index = () => {
         type: "text",
       },
       {
-        key: 15,
+        key: 14,
         features: t("Manual support"),
         free: "",
         basic: t("support"),
