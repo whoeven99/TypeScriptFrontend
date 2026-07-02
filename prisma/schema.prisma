@@ -95,6 +95,32 @@ model SwitcherConfiguration {
   updatedAt             DateTime @updatedAt
 }
 
+// 对应 Java `Currencies`，用于货币页和 storefront currency switcher。
+model Currency {
+  id            Int      @id @default(autoincrement())
+  shop          String                     // Java shop_name
+  currencyName  String                     // Java currency_name
+  currencyCode  String                     // ISO 4217 code
+  rounding      String?
+  exchangeRate  String?
+  primaryStatus Int      @default(0)       // 1=默认币种，0=可切换币种
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([shop, currencyCode])
+  @@index([shop])
+  @@index([shop, primaryStatus])
+}
+
+// 原 Java Redis `bogda:rate` 缓存迁到 Turso；Fixer 当前以 EUR 为 base。
+model CurrencyRate {
+  currencyCode String   @id
+  rate         Float
+  base         String   @default("EUR")
+  fetchedAt    DateTime @default(now())
+  expiresAt    DateTime
+}
+
 // 对应 Java User_IP_Redirection
 model IpRedirection {
   id           Int      @id                    // 迁移时写入 Java id；新建时由应用层取 max+1

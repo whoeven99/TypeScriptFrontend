@@ -192,8 +192,10 @@ export async function fetchSwitcherConfig({ shop }) {
 
 export async function fetchCurrencies({ blockId, shop }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) return [];
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/currency/getCurrencyByShopName?shopName=${shop}`,
+      `${baseUrl}/currency/getCurrencyByShopName?shopName=${shop}`,
       { method: "GET" },
     );
 
@@ -216,8 +218,10 @@ export async function fetchCurrencies({ blockId, shop }) {
 }
 
 export async function fetchAutoRate({ blockId, shop, currencyCode }) {
+  const baseUrl = resolveStorefrontApiBase();
+  if (!baseUrl) return undefined;
   const { data } = await fetchJson(
-    `${switchUrl(blockId)}/currency/getCacheData`,
+    `${baseUrl}/currency/getCacheData`,
     {
       method: "POST",
       body: JSON.stringify({

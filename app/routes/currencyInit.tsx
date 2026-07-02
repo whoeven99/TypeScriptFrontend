@@ -1,10 +1,10 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { queryMarketDomainData } from "~/api/admin";
 import {
-  InitCurrency,
-  AddCurrency,
-  UpdateDefaultCurrency,
-} from "~/api/JavaServer";
+  initCurrency,
+  insertCurrency,
+  updateDefaultCurrency,
+} from "~/server/currency/currency.server";
 import { authenticate } from "~/shopify.server";
 import currencyLocaleData from "~/utils/currency-locale-data";
 import countryCurMap from "~/utils/country-cur-map";
@@ -14,7 +14,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
-    const primaryCurrency = await InitCurrency({ shop });
+    const primaryCurrency = await initCurrency(shop);
     const marketDomainData = await queryMarketDomainData({
       shop,
       accessToken: accessToken as string,
@@ -96,23 +96,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
         return true;
       }).map((currency: any) =>
-        AddCurrency({
+        insertCurrency({
           shop,
-          server: process.env.SERVER_URL as string,
           currencyName: currency?.currencyName,
           currencyCode: currency?.currencyCode,
+          rounding: currency?.primaryStatus ? null : "",
+          exchangeRate: currency?.primaryStatus ? null : "Auto",
           primaryStatus: currency?.primaryStatus || 0,
         }),
       );
       await Promise.allSettled(promises);
     } else if (newPrimaryCode !== primaryCurrency?.response?.currencyCode) {
       //更新默认货币数据
-      await UpdateDefaultCurrency({
+      await updateDefaultCurrency({
         shop,
         currencyName:
           currencyLocaleData[newPrimaryCode as keyof typeof currencyLocaleData]
             ?.currencyName,
         currencyCode: newPrimaryCode,
+        rounding: null,
+        exchangeRate: null,
         primaryStatus: 1,
       });
     }

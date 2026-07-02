@@ -11,20 +11,14 @@ import {
   Checkbox,
   Pagination,
 } from "antd";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { json } from "@remix-run/node";
 import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  DeleteCurrency,
-  GetCacheData,
-  GetCurrencyByShopName,
-  UpdateCurrency,
-} from "~/api/JavaServer";
+import { GetCacheDataV4, GetCurrencyByShopNameV4 } from "~/api/currencyV4";
 import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
@@ -32,6 +26,10 @@ import { setTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import useReport from "scripts/eventReport";
+import {
+  deleteCurrency,
+  updateCurrency,
+} from "~/server/currency/currency.server";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -58,7 +56,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     shop,
-    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   });
 };
@@ -109,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (Array.isArray(deleteCurrencies) && deleteCurrencies.length > 0) {
     try {
       const promises = deleteCurrencies.map((currency) =>
-        DeleteCurrency({ shop, id: currency }),
+        deleteCurrency(shop, currency),
       );
       const data = await Promise.allSettled(promises);
       return data;
@@ -121,9 +118,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (updateCurrencies) {
     try {
-      const data = await UpdateCurrency({
+      const data = await updateCurrency({
         shop,
-        updateCurrencies,
+        id: updateCurrencies.id,
+        rounding: updateCurrencies.rounding,
+        exchangeRate: updateCurrencies.exchangeRate,
       });
       return data;
     } catch (error) {
@@ -136,7 +135,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, mobile } = useLoaderData<typeof loader>();
+  const { shop, mobile } = useLoaderData<typeof loader>();
   // 跨页缓存：redux 已有上次拉到的货币行时，重进本页直接用缓存渲染、后台静默刷新，
   // 不再整页 loading（首访无缓存时仍照常 loading）。
   const hasCachedCurrency = useSelector(
@@ -150,7 +149,6 @@ const Index = () => {
     code: "",
     symbol: "",
   });
-  const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
   const [currencyAutoRate, setCurrencyAutoRate] = useState<any>([]);
   const [deleteloading, setDeleteLoading] = useState(false);
   const [deleteCode, setDeleteCode] = useState<any>("");
@@ -230,7 +228,6 @@ const Index = () => {
         const currencyDataWithoutPrimary = currencyLocaleData.filter(
           (item: any) => item.currencyCode !== defaultCurrencyCode,
         );
-        setCurrencyData(currencyLocaleData);
         setAddCurrencies(currencyDataWithoutPrimary);
         const defaultCurrencySymbol = currencyLocaleData.find(
           (item: any) => item.currencyCode === defaultCurrencyCode,
@@ -367,10 +364,7 @@ const Index = () => {
   // };
 
   const getCurrencyByShopName = async () => {
-    const data = await GetCurrencyByShopName({
-      shop,
-      server: server as string,
-    });
+    const data = await GetCurrencyByShopNameV4();
     if (data?.success) {
       const tableData = data?.response?.filter(
         (item: any) => !item?.primaryStatus,
@@ -389,7 +383,7 @@ const Index = () => {
 
   const getAutoRateData = async (autoRateData: string[]) => {
     const promises = autoRateData.map((currencyCode: any) =>
-      GetCacheData({ shop, server: server as string, currencyCode }),
+      GetCacheDataV4({ currencyCode }),
     );
     const data = await Promise.allSettled(promises);
     if (data?.length) {
@@ -642,7 +636,6 @@ const Index = () => {
       </Space>
       <AddCurrencyModal
         shop={shop}
-        server={server as string}
         isVisible={isAddCurrencyModalOpen}
         setIsModalOpen={setIsAddCurrencyModalOpen}
         addCurrencies={addCurrencies}
