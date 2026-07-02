@@ -17,7 +17,7 @@ export function switchUrl(blockId) {
 
 /**
  * 店面 Widget / Liquid / PageFly 读 API：仅走 App Proxy（#ciwiAppProxyBase → TSF /api/storefront/*）。
- * 货币 / IP / 图片等仍走 Java（switchUrl）。
+ * 货币 / 图片等仍走 Java（switchUrl）；IP 定位走 Shopify / ipapi，不经额度接口。
  */
 function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
@@ -40,66 +40,6 @@ async function fetchJson(url, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
-}
-
-export async function NoCrawlerPrintLog({
-  blockId,
-  shopName,
-  ip,
-  languageCode,
-  langInclude,
-  countryCode,
-  counInclude,
-  currencyCode,
-  checkUserIpCostTime,
-  fetchUserCountryInfoCostTime,
-  status,
-  error,
-}) {
-  try {
-    await fetchJson(
-      `${switchUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          status: status,
-          userIp: ip,
-          languageCode: languageCode,
-          languageCodeStatus: langInclude,
-          countryCode: countryCode,
-          currencyCode: currencyCode,
-          currencyCodeStatus: counInclude,
-          costTime: checkUserIpCostTime,
-          ipApiCostTime: fetchUserCountryInfoCostTime,
-          errorMessage: error,
-        }),
-      },
-    );
-  } catch (err) {
-    console.error("Error NoCrawlerPrintLog:", err);
-  }
-}
-
-export async function IncludeCrawlerPrintLog({
-  shopName,
-  blockId,
-  ua,
-  reason,
-}) {
-  try {
-    await fetchJson(
-      `${switchUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          uaInformation: ua,
-          uaReason: reason,
-        }),
-      },
-    );
-  } catch (err) {
-    console.error("Error IncludeCrawlerPrintLog:", err);
-  }
 }
 
 export async function ReadTranslatedText({ shopName, languageCode }) {
@@ -187,7 +127,6 @@ export async function fetchSwitcherConfig({ shop }) {
     languageSelector: true,
     currencySelector: true,
     ipOpen: false,
-    ipRedirections: [],
     fontColor: "#303030",
     backgroundColor: "#ffffff",
     buttonColor: "#ffffff",
@@ -292,20 +231,6 @@ export async function fetchAutoRate({ blockId, shop, currencyCode }) {
     },
   );
   return data.response?.exchangeRate;
-}
-
-export async function checkUserIp({ blockId, shop }) {
-  try {
-    const { data } = await fetchJson(
-      `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
-      { method: "POST" },
-    );
-
-    return data;
-  } catch (err) {
-    console.error("Error checkUserIp:", err);
-    return null;
-  }
 }
 
 export async function fetchUserCountryInfo(access_key) {

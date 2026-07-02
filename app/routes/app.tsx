@@ -39,7 +39,6 @@ import { useDispatch } from "react-redux";
 import type { Dispatch } from "@reduxjs/toolkit";
 import {
   setChars,
-  setIpBalance,
   setIsNew,
   setPlan,
   setSource,
@@ -188,7 +187,6 @@ function applyBootstrapJavaToStore(
   }
   dispatch(setChars({ chars: bootstrap.chars }));
   dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
-  dispatch(setIpBalance({ ipBalance: bootstrap.ipBalance }));
   if (bootstrap.isNew !== null) {
     dispatch(setIsNew({ isNew: bootstrap.isNew }));
   }
