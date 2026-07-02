@@ -1,35 +1,5 @@
 import axios from "axios";
 import { LanguagesDataType } from "~/routes/app.language/route";
-export interface PublishInfoType {
-  locale: string;
-  shopLocale: {
-    published: boolean;
-    marketWebPresenceIds: string | null;
-  };
-}
-
-export interface UnpublishInfoType {
-  locale: string;
-  shopLocale: { published: boolean };
-}
-
-export interface TransType {
-  resourceId: string;
-  translatableContent: [
-    {
-      value: string;
-      key: string;
-      type: string;
-    },
-  ];
-  translations: [
-    {
-      value: string;
-      outdated: boolean;
-      key: string;
-    },
-  ];
-}
 
 export const queryMarketDomainData = async ({
   shop,

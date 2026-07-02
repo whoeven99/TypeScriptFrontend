@@ -423,11 +423,3 @@ export function coverageBarColor(percent: number | null): string {
   if (percent >= 60) return v4Colors.primary;
   return v4Colors.warning;
 }
-
-export const segmentBarStyle = (filled: boolean, color: string): CSSProperties => ({
-  flex: 1,
-  height: 6,
-  borderRadius: 3,
-  background: filled ? color : v4Colors.progressTrack,
-  transition: "background 0.2s",
-});

@@ -117,8 +117,6 @@ export const AUTO_TRANSLATE_V4_MODULES: TranslationV4Module[] = [
   "SELLING_PLAN_GROUP",
 ];
 
-/** @deprecated 使用 AUTO_TRANSLATE_V4_MODULES */
-export const V2_AUTO_TRANSLATE_MODULES = AUTO_TRANSLATE_V4_MODULES;
 
 /** v4 module 展示名（任务详情、进度条等）。 */
 export const V4_MODULE_LABELS: Record<TranslationV4Module, string> = {

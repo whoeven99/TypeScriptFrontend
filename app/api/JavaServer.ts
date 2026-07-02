@@ -2,7 +2,6 @@ import axios, { AxiosRequestConfig } from "axios";
 import { queryShopBaseConfigData } from "./admin";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
-import { globalStore } from "~/globalStore";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -565,35 +564,6 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
   }
 };
 
-//更新语言数据
-export const InsertShopTranslateInfo = async ({
-  shop,
-  accessToken,
-  source,
-  target,
-}: {
-  shop: string;
-  accessToken: string;
-  source: string;
-  target: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        source: source,
-        target: target,
-      },
-    });
-
-    console.log(`${shop} InsertShopTranslateInfo: `, response.data);
-  } catch (error) {
-    console.error("Error InsertShopTranslateInfo:", error);
-  }
-};
 
 //批量更新语言数据
 export const InsertTargets = async ({
@@ -808,16 +778,6 @@ export const updateManageTranslation = async ({
       target: string;
     } | null;
   }[] = [];
-  confirmData.filter((item) => {
-    // 移除所有 HTML 标签，只保留文本内容
-    const textContent = item.value?.replace(/<[^>]*>/g, "").trim();
-    console.log("Original:", item.value);
-    console.log("Text content:", textContent);
-
-    // 如果没有文本内容，返回 false（将被过滤掉）
-    return textContent !== "";
-  });
-
   const itemsToUpdate = confirmData.filter((item) => {
     if (!item.value) return false;
 

@@ -13,9 +13,3 @@ export function isProductionNodeEnv(): boolean {
   const env = normalizedNodeEnv();
   return env === "prod" || env === "production";
 }
-
-/** 是否为显式测试运行时（`test` / `testing`）。 */
-export function isTestNodeEnv(): boolean {
-  const env = normalizedNodeEnv();
-  return env === "test" || env === "testing";
-}
