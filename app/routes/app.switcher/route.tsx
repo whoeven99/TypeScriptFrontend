@@ -40,7 +40,6 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
-import AppPageHeader from "~/ui/components/AppPageHeader";
 
 const initialLocalization = {
   languages: [
@@ -160,9 +159,9 @@ const Index = () => {
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
   const [languageSelector, setLanguageSelector] = useState(true);
   const [currencySelector, setCurrencySelector] = useState(true);
-  const [fontColor, setFontColor] = useState("#303030");
+  const [fontColor, setFontColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [optionBorderColor, setOptionBorderColor] = useState("#d4d4d8");
+  const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
   const [selectorPosition, setSelectorPosition] = useState("top_left");
   const [positionData, setPositionData] = useState<string>("0");
   const [isTransparent, setIsTransparent] = useState(false);
@@ -697,13 +696,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      <Space direction="vertical" size="middle" style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-        <AppPageHeader
-          title={t("Switcher")}
-          description={t(
-            "Configure the storefront language and currency switcher with a lighter admin-style layout and a live preview.",
-          )}
-        />
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
@@ -715,14 +708,19 @@ const Index = () => {
         />
         <div className={styles.switcher_container}>
           <div className={styles.switcher_editor}>
-            <div className={styles.switcher_stack}>
-              <Card
-                loading={isLoading}
-                style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
-              >
-                <div className={styles.switcher_stack}>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Card loading={isLoading}>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
                   <Flex justify="space-between">
-                    <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                    <Title level={5}>
                       {t("Selector Auto IP position configuration:")}
                     </Title>
                     {(plan?.type == "Free" ||
@@ -793,19 +791,13 @@ const Index = () => {
                       <SettingOutlined />
                     </Flex>
                   </Button>
-                </div>
+                </Space>
               </Card>
               <Card
                 loading={isLoading}
-                style={{
-                  display: isTransparent ? "none" : "block",
-                  border: "none",
-                  boxShadow: "var(--app-shadow-card)",
-                }}
+                style={{ display: isTransparent ? "none" : "block" }}
               >
-                <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
-                  {t("Selector type configuration:")}
-                </Title>
+                <Title level={5}>{t("Selector type configuration:")}</Title>
                 <Select
                   options={switcherOptions}
                   style={{ width: "100%" }}
@@ -823,16 +815,14 @@ const Index = () => {
               </Card>
               <Card
                 loading={isLoading}
-                style={{
-                  display: isTransparent ? "none" : "block",
-                  border: "none",
-                  boxShadow: "var(--app-shadow-card)",
-                }}
+                style={{ display: isTransparent ? "none" : "block" }}
               >
-                <div className={styles.switcher_stack}>
-                  <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
-                    {t("Selector style configuration:")}
-                  </Title>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <Title level={5}>{t("Selector style configuration:")}</Title>
                   <div
                     style={{
                       display: "flex",
@@ -860,8 +850,21 @@ const Index = () => {
                       }}
                     />
                   </div>
-                  <div className={styles.style_color_grid}>
-                    <div className={styles.style_color_field}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 20,
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                        flexDirection: "column",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <Text>{t("Font Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -872,7 +875,14 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div className={styles.style_color_field}>
+                    <div
+                      style={{
+                        flex: 1,
+                        flexDirection: "column",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <Text>{t("Background Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -883,7 +893,14 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div className={styles.style_color_field}>
+                    <div
+                      style={{
+                        flex: 1,
+                        flexDirection: "column",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <Text>{t("Option Border Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -895,63 +912,52 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                  <div className={styles.style_position_fields}>
-                    <div>
-                      <Text style={{ display: "block" }}>
-                        {t("Selector position:")}
-                      </Text>
-                      <Select
-                        options={switcherPositionOptions}
-                        style={{ width: "100%" }}
-                        value={selectorPosition}
-                        onChange={(value) =>
-                          handleEditData({ selectorPosition: value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Text style={{ display: "block" }}>
-                        {t("Selector position data:")}
-                      </Text>
-                      <Slider
-                        value={Number(positionData)}
-                        onChange={(e) =>
-                          handleEditData({ positionData: e.toString() })
-                        }
-                      />
-                    </div>
+                  <div>
+                    <Text style={{ display: "block" }}>
+                      {t("Selector position:")}
+                    </Text>
+                    <Select
+                      options={switcherPositionOptions}
+                      style={{ width: "100%" }}
+                      value={selectorPosition}
+                      onChange={(value) =>
+                        handleEditData({ selectorPosition: value })
+                      }
+                    />
                   </div>
-                </div>
+                  <div>
+                    <Text style={{ display: "block" }}>
+                      {t("Selector position data:")}
+                    </Text>
+                    <Slider
+                      value={Number(positionData)}
+                      onChange={(e) =>
+                        handleEditData({ positionData: e.toString() })
+                      }
+                    />
+                  </div>
+                </Space>
               </Card>
-            </div>
+            </Space>
           </div>
           <div className={styles.switcher_preview}>
-            <Card
-              loading={isLoading}
-              style={{
-                height: "100%",
-                border: "none",
-                boxShadow: "var(--app-shadow-card)",
-              }}
-            >
-              <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
-                {t("Preview")}
-              </Title>
+            <Card loading={isLoading} style={{ height: "100%" }}>
+              <Title level={5}>{t("Preview")}</Title>
               <div
                 style={{
                   position: "relative",
                   width: "100%",
                   height: "400px",
-                  border: "1px solid var(--app-color-border-secondary)",
+                  border: "1px solid #eee",
                   borderRadius: "8px",
-                  background: "var(--app-color-surface-secondary)",
+                  background: "#f5f5f5",
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
                     height: "32px",
-                    background: "rgba(15, 23, 42, 0.04)",
+                    background: "#e8e8e8",
                     display: "flex",
                     alignItems: "center",
                     padding: "0 12px",
@@ -1080,7 +1086,6 @@ const Index = () => {
                               style={{
                                 backgroundColor: backgroundColor,
                                 border: `1px solid ${optionBorderColor}`,
-                                color: fontColor,
                               }}
                             >
                               <div
@@ -1191,7 +1196,6 @@ const Index = () => {
                               style={{
                                 backgroundColor: backgroundColor,
                                 border: `1px solid ${optionBorderColor}`,
-                                color: fontColor,
                               }}
                             >
                               <div
@@ -1282,7 +1286,6 @@ const Index = () => {
                       style={{
                         justifyContent: isIncludedFlag ? "" : "center",
                         background: backgroundColor,
-                        color: fontColor,
                       }}
                       onClick={handleSelectorClick}
                     >
