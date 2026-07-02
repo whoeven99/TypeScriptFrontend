@@ -2,14 +2,50 @@
   display: flex;
   flex-direction: row;
   gap: 20px;
+  align-items: flex-start;
 }
 
 .switcher_editor {
   flex: 1;
+  min-width: 0;
 }
 
 .switcher_preview {
   flex: 2;
+  min-width: 0;
+}
+
+.switcher_stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.style_color_grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.style_color_field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.style_position_fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.switcher_editor :global(.ant-slider) {
+  width: 100%;
+  margin: 8px 0 4px;
 }
 
 @media (max-width: 768px) {
@@ -39,6 +75,11 @@
     /* 取消 flex 比例 */
     width: 100%;
     /* 占满宽度 */
+    min-width: 0;
+  }
+
+  .style_color_grid {
+    grid-template-columns: 1fr;
   }
 
   .main_box {
