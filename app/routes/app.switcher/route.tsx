@@ -159,9 +159,9 @@ const Index = () => {
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
   const [languageSelector, setLanguageSelector] = useState(true);
   const [currencySelector, setCurrencySelector] = useState(true);
-  const [fontColor, setFontColor] = useState("#000000");
+  const [fontColor, setFontColor] = useState("#303030");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
+  const [optionBorderColor, setOptionBorderColor] = useState("#d4d4d8");
   const [selectorPosition, setSelectorPosition] = useState("top_left");
   const [positionData, setPositionData] = useState<string>("0");
   const [isTransparent, setIsTransparent] = useState(false);
@@ -713,14 +713,17 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
-              <Card loading={isLoading}>
+              <Card
+                loading={isLoading}
+                style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
+              >
                 <Space
                   direction="vertical"
                   size="middle"
                   style={{ display: "flex" }}
                 >
                   <Flex justify="space-between">
-                    <Title level={5}>
+                    <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
                       {t("Selector Auto IP position configuration:")}
                     </Title>
                     {(plan?.type == "Free" ||
@@ -779,9 +782,15 @@ const Index = () => {
               </Card>
               <Card
                 loading={isLoading}
-                style={{ display: isTransparent ? "none" : "block" }}
+                style={{
+                  display: isTransparent ? "none" : "block",
+                  border: "none",
+                  boxShadow: "var(--app-shadow-card)",
+                }}
               >
-                <Title level={5}>{t("Selector type configuration:")}</Title>
+                <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                  {t("Selector type configuration:")}
+                </Title>
                 <Select
                   options={switcherOptions}
                   style={{ width: "100%" }}
@@ -799,14 +808,20 @@ const Index = () => {
               </Card>
               <Card
                 loading={isLoading}
-                style={{ display: isTransparent ? "none" : "block" }}
+                style={{
+                  display: isTransparent ? "none" : "block",
+                  border: "none",
+                  boxShadow: "var(--app-shadow-card)",
+                }}
               >
                 <Space
                   direction="vertical"
                   size="middle"
                   style={{ display: "flex" }}
                 >
-                  <Title level={5}>{t("Selector style configuration:")}</Title>
+                  <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                    {t("Selector style configuration:")}
+                  </Title>
                   <div
                     style={{
                       display: "flex",
@@ -925,23 +940,32 @@ const Index = () => {
             </Space>
           </div>
           <div className={styles.switcher_preview}>
-            <Card loading={isLoading} style={{ height: "100%" }}>
-              <Title level={5}>{t("Preview")}</Title>
+            <Card
+              loading={isLoading}
+              style={{
+                height: "100%",
+                border: "none",
+                boxShadow: "var(--app-shadow-card)",
+              }}
+            >
+              <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                {t("Preview")}
+              </Title>
               <div
                 style={{
                   position: "relative",
                   width: "100%",
                   height: "400px",
-                  border: "1px solid #eee",
+                  border: "1px solid var(--app-color-border-secondary)",
                   borderRadius: "8px",
-                  background: "#f5f5f5",
+                  background: "var(--app-color-surface-secondary)",
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
                     height: "32px",
-                    background: "#e8e8e8",
+                    background: "rgba(15, 23, 42, 0.04)",
                     display: "flex",
                     alignItems: "center",
                     padding: "0 12px",
