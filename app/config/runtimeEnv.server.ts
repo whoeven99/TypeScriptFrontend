@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isProductionNodeEnv } from "./nodeEnv.server";
 
 const ENV_LOG = "[tsf:env]";
 
@@ -25,10 +24,6 @@ export function getProjectRoot(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 }
 
-/** 仅测试用：允许重复执行 ensureRuntimeEnv */
-export function resetRuntimeEnvLoaderForTests(): void {
-  runtimeEnvLoaded = false;
-}
 
 /** Shopify CLI 在 `shopify app dev` 时注入；本地 .env 不应覆盖（多 App toml 切换） */
 const PRESERVE_WHEN_SET_KEYS = new Set([

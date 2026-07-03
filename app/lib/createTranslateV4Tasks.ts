@@ -1,4 +1,3 @@
-import { localeRegionCode } from "~/routes/app.translate-v4/localeDisplay";
 
 export type ShopLocaleOption = {
   value: string;
@@ -127,19 +126,4 @@ export async function createTranslateV4Tasks(
   }
 
   return { created, failed };
-}
-
-export function formatCreateTasksMessage(result: CreateTranslateV4TasksResult): string {
-  if (result.validationError) return result.validationError;
-  if (result.created.length === 0) {
-    const first = result.failed[0];
-    if (!first) return "创建失败";
-    return `${localeRegionCode(first.target)}: ${first.error}`;
-  }
-  if (result.failed.length === 0) {
-    return result.created.length === 1
-      ? "任务已创建，worker 即将开始处理"
-      : `已创建 ${result.created.length} 个翻译任务`;
-  }
-  return `已创建 ${result.created.length} 个，失败 ${result.failed.length} 个`;
 }

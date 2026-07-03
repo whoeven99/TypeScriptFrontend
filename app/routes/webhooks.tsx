@@ -5,11 +5,9 @@ import {
   AddCharsByShopName,
   AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
-  DeleteData,
   GetUserSubscriptionPlan,
   InsertOrUpdateOrder,
   IsInFreePlanTime,
-  RequestData,
   SendPurchaseSuccessEmail,
   SendSubscribeSuccessEmail,
   Uninstall,
@@ -257,23 +255,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_DATA_REQUEST":
-      try {
-        new Response(null, { status: 200 });
-        await RequestData({ shop });
-        break;
-      } catch (error) {
-        console.error("Error CUSTOMERS_DATA_REQUEST:", error);
-        return new Response(null, { status: 200 });
-      }
+      // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
+      break;
     case "CUSTOMERS_REDACT":
-      try {
-        new Response(null, { status: 200 });
-        await DeleteData({ shop });
-        break;
-      } catch (error) {
-        console.error("Error CUSTOMERS_REDACT:", error);
-        return new Response(null, { status: 200 });
-      }
+      // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
+      break;
     case "SHOP_REDACT":
       try {
         new Response(null, { status: 200 });
