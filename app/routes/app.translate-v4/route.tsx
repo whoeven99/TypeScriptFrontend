@@ -68,6 +68,24 @@ function useIdleReady(timeout = 2500) {
   return ready;
 }
 
+function scheduleShopV4Bootstrap({
+  shop,
+  shopLocaleRows,
+  primaryLocale,
+}: {
+  shop: string;
+  shopLocaleRows: Array<{ locale: string; primary: boolean }>;
+  primaryLocale: string;
+}) {
+  const bootstrap = shopLocaleRows.length
+    ? syncShopTargetLocalesFromShopify(shop, shopLocaleRows, primaryLocale)
+    : ensureShopV4Settings(shop, primaryLocale);
+
+  void bootstrap.catch((err) => {
+    console.error("[translateV4] background bootstrap failed:", err);
+  });
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
@@ -86,16 +104,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("[translateV4] load shopLocales failed:", err);
   }
 
-  await ensureShopV4Settings(session.shop, primaryLocale);
-
-  // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
-  // 后台执行，避免 N 个串行 upsert 阻塞首屏。
-  void syncShopTargetLocalesFromShopify(
-    session.shop,
+  // The settings/target-locale sync is a best-effort write path. Keep it out of
+  // the SSR critical path so the v4 home can render from Shopify locales + caches.
+  scheduleShopV4Bootstrap({
+    shop: session.shop,
     shopLocaleRows,
     primaryLocale,
-  ).catch((syncErr) => {
-    console.error("[translateV4] syncShopTargetLocales failed:", syncErr);
   });
 
   const targetLocales = selectShopTargetLocales(locales, primaryLocale);

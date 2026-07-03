@@ -23,6 +23,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
 import {
+  getItemsCountByLabelsBatch,
   getItemsCountByLabel,
   invalidateAllItemsCountForLocale,
 } from "~/server/translateV4/itemsCount.server";
@@ -72,9 +73,6 @@ const ITEMS_COUNT_RESOURCE_TYPES = [
   "Shipping",
 ] as const;
 
-/** 避免 15 路并行 itemsCount 压满 Render 单实例（大店 Products 统计耗时长）。 */
-const ITEMS_COUNT_SUBMIT_GAP_MS = 400;
-
 function safeParseFormJson(value: FormDataEntryValue | null): unknown {
   if (value == null || value === "") return null;
   try {
@@ -119,6 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   const appInstalls = safeParseFormJson(formData.get("appInstalls"));
+  const itemsCountBatch = safeParseFormJson(formData.get("itemsCountBatch"));
   const itemsCount = safeParseFormJson(formData.get("itemsCount"));
   const translateImage = safeParseFormJson(formData.get("translateImage"));
   const replaceTranslateImage = safeParseFormJson(
@@ -144,6 +143,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
           response: null,
+        };
+      }
+
+    case !!itemsCountBatch:
+      try {
+        const batch = itemsCountBatch as {
+          target?: string;
+          resourceTypes?: string[];
+          forceRefresh?: boolean;
+          loadToken?: number;
+        };
+        const resourceTypes = Array.isArray(batch.resourceTypes)
+          ? batch.resourceTypes
+          : [...ITEMS_COUNT_RESOURCE_TYPES];
+        const response = await getItemsCountByLabelsBatch({
+          admin,
+          shop,
+          target: batch.target ?? "",
+          resourceTypeLabels: resourceTypes,
+          skipCache: batch.forceRefresh === true,
+        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
+          target: batch.target ?? "",
+          loadToken: batch.loadToken ?? null,
+        };
+      } catch (error) {
+        console.error("Error manage_translation itemsCountBatch:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+          target: (itemsCountBatch as { target?: string })?.target ?? "",
+          loadToken:
+            (itemsCountBatch as { loadToken?: number })?.loadToken ?? null,
         };
       }
 
@@ -265,103 +303,40 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const appFetcher = useFetcher<any>();
-  const productsFetcher = useFetcher<any>();
-  const collectionsFetcher = useFetcher<any>();
-  const articlesFetcher = useFetcher<any>();
-  const blog_titlesFetcher = useFetcher<any>();
-  const pagesFetcher = useFetcher<any>();
-  const filtersFetcher = useFetcher<any>();
-  const metaobjectsFetcher = useFetcher<any>();
-  const navigationFetcher = useFetcher<any>();
-  const emailFetcher = useFetcher<any>();
-  const policiesFetcher = useFetcher<any>();
-  const shopFetcher = useFetcher<any>();
-  const store_metadataFetcher = useFetcher<any>();
-  const themeFetcher = useFetcher<any>();
-  const deliveryFetcher = useFetcher<any>();
-  const shippingFetcher = useFetcher<any>();
+  const itemsCountFetcher = useFetcher<any>();
   const refreshStatsFetcher = useFetcher<any>();
 
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const pendingRefreshStatsRef = useRef(false);
   /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
   const refreshAwaitingProductsRef = useRef(false);
+  const refreshAwaitingLoadTokenRef = useRef<number | null>(null);
   /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
   const itemsCountLoadTokenRef = useRef(0);
   const loadedItemsCountLocaleRef = useRef<string | null>(null);
 
-  const itemsCountFetcherByType = useMemo(
-    () => ({
-      Products: productsFetcher,
-      Collection: collectionsFetcher,
-      Article: articlesFetcher,
-      "Blog titles": blog_titlesFetcher,
-      Pages: pagesFetcher,
-      Filters: filtersFetcher,
-      Metaobjects: metaobjectsFetcher,
-      Navigation: navigationFetcher,
-      Notifications: emailFetcher,
-      Policies: policiesFetcher,
-      Shop: shopFetcher,
-      "Store metadata": store_metadataFetcher,
-      Theme: themeFetcher,
-      Delivery: deliveryFetcher,
-      Shipping: shippingFetcher,
-    }),
-    [
-      productsFetcher,
-      collectionsFetcher,
-      articlesFetcher,
-      blog_titlesFetcher,
-      pagesFetcher,
-      filtersFetcher,
-      metaobjectsFetcher,
-      navigationFetcher,
-      emailFetcher,
-      policiesFetcher,
-      shopFetcher,
-      store_metadataFetcher,
-      themeFetcher,
-      deliveryFetcher,
-      shippingFetcher,
-    ],
-  );
-
   const fetchAllItemsCounts = useCallback(
     (target: string, sourceCode: string, forceRefresh = false) => {
-      if (!target || !sourceCode) return;
+      if (!target || !sourceCode) return null;
       const loadToken = ++itemsCountLoadTokenRef.current;
-
-      void (async () => {
-        for (const resourceType of ITEMS_COUNT_RESOURCE_TYPES) {
-          if (itemsCountLoadTokenRef.current !== loadToken) return;
-
-          const fetcher =
-            itemsCountFetcherByType[
-              resourceType as keyof typeof itemsCountFetcherByType
-            ];
-          const formData = new FormData();
-          formData.append(
-            "itemsCount",
-            JSON.stringify({
-              source: sourceCode,
-              target,
-              resourceType,
-              ...(forceRefresh ? { forceRefresh: true } : {}),
-            }),
-          );
-          fetcher.submit(formData, {
-            method: "post",
-            action: "/app/manage_translation",
-          });
-
-          await new Promise((resolve) =>
-            setTimeout(resolve, ITEMS_COUNT_SUBMIT_GAP_MS),
-          );
-        }
-      })();
+      const formData = new FormData();
+      formData.append(
+        "itemsCountBatch",
+        JSON.stringify({
+          source: sourceCode,
+          target,
+          resourceTypes: ITEMS_COUNT_RESOURCE_TYPES,
+          forceRefresh,
+          loadToken,
+        }),
+      );
+      itemsCountFetcher.submit(formData, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+      return loadToken;
     },
-    [itemsCountFetcherByType],
+    [itemsCountFetcher],
   );
 
   const productsDataSource: TableDataType[] = [
@@ -749,166 +724,18 @@ const Index = () => {
   }, [appFetcher.data]);
 
   useEffect(() => {
-    if (productsFetcher.data) {
-      if (
-        productsFetcher.data?.success &&
-        productsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(productsFetcher.data?.response));
-      }
+    const data = itemsCountFetcher.data;
+    if (!data) return;
+    if (
+      data.loadToken != null &&
+      data.loadToken !== itemsCountLoadTokenRef.current
+    ) {
+      return;
     }
-  }, [dispatch, productsFetcher.data]);
-
-  useEffect(() => {
-    if (collectionsFetcher.data) {
-      if (
-        collectionsFetcher.data?.success &&
-        collectionsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(collectionsFetcher.data?.response));
-      }
+    if (data?.success && data?.response?.length > 0) {
+      dispatch(updateData(data.response));
     }
-  }, [dispatch, collectionsFetcher.data]);
-
-  useEffect(() => {
-    if (articlesFetcher.data) {
-      if (
-        articlesFetcher.data?.success &&
-        articlesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(articlesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, articlesFetcher.data]);
-
-  useEffect(() => {
-    if (blog_titlesFetcher.data) {
-      if (
-        blog_titlesFetcher.data?.success &&
-        blog_titlesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(blog_titlesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, blog_titlesFetcher.data]);
-
-  useEffect(() => {
-    if (pagesFetcher.data) {
-      if (
-        pagesFetcher.data?.success &&
-        pagesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(pagesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, pagesFetcher.data]);
-
-  useEffect(() => {
-    if (filtersFetcher.data) {
-      if (
-        filtersFetcher.data?.success &&
-        filtersFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(filtersFetcher.data?.response));
-      }
-    }
-  }, [dispatch, filtersFetcher.data]);
-
-  useEffect(() => {
-    if (metaobjectsFetcher.data) {
-      if (
-        metaobjectsFetcher.data?.success &&
-        metaobjectsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(metaobjectsFetcher.data?.response));
-      }
-    }
-  }, [dispatch, metaobjectsFetcher.data]);
-
-  useEffect(() => {
-    if (emailFetcher.data) {
-      if (
-        emailFetcher.data?.success &&
-        emailFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(emailFetcher.data?.response));
-      }
-    }
-  }, [dispatch, emailFetcher.data]);
-
-  useEffect(() => {
-    if (navigationFetcher.data) {
-      if (
-        navigationFetcher.data?.success &&
-        navigationFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(navigationFetcher.data?.response));
-      }
-    }
-  }, [dispatch, navigationFetcher.data]);
-
-  useEffect(() => {
-    if (policiesFetcher.data) {
-      if (
-        policiesFetcher.data?.success &&
-        policiesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(policiesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, policiesFetcher.data]);
-
-  useEffect(() => {
-    if (shopFetcher.data) {
-      if (shopFetcher.data?.success && shopFetcher.data?.response?.length > 0) {
-        dispatch(updateData(shopFetcher.data?.response));
-      }
-    }
-  }, [dispatch, shopFetcher.data]);
-
-  useEffect(() => {
-    if (store_metadataFetcher.data) {
-      if (
-        store_metadataFetcher.data?.success &&
-        store_metadataFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(store_metadataFetcher.data?.response));
-      }
-    }
-  }, [dispatch, store_metadataFetcher.data]);
-
-  useEffect(() => {
-    if (themeFetcher.data) {
-      if (
-        themeFetcher.data?.success &&
-        themeFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(themeFetcher.data?.response));
-      }
-    }
-  }, [dispatch, themeFetcher.data]);
-
-  useEffect(() => {
-    if (deliveryFetcher.data) {
-      if (
-        deliveryFetcher.data?.success &&
-        deliveryFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(deliveryFetcher.data?.response));
-      }
-    }
-  }, [dispatch, deliveryFetcher.data]);
-
-  useEffect(() => {
-    if (shippingFetcher.data) {
-      if (
-        shippingFetcher.data?.success &&
-        shippingFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(shippingFetcher.data.response));
-      }
-    }
-  }, [dispatch, shippingFetcher.data]);
+  }, [dispatch, itemsCountFetcher.data]);
 
   useEffect(() => {
     const sourceCode = source?.code;
@@ -939,8 +766,13 @@ const Index = () => {
     if (refreshStatsFetcher.data.success && currentLocale && source?.code) {
       dispatch(clearLocaleStats(currentLocale));
       loadedItemsCountLocaleRef.current = null;
-      refreshAwaitingProductsRef.current = true;
-      fetchAllItemsCounts(currentLocale, source.code, true);
+      const refreshLoadToken = fetchAllItemsCounts(
+        currentLocale,
+        source.code,
+        true,
+      );
+      refreshAwaitingProductsRef.current = refreshLoadToken !== null;
+      refreshAwaitingLoadTokenRef.current = refreshLoadToken;
     } else {
       shopify.toast.show(t("Failed to refresh statistics"));
       setIsRefreshingStats(false);
@@ -957,15 +789,19 @@ const Index = () => {
 
   useEffect(() => {
     if (!refreshAwaitingProductsRef.current) return;
-    if (productsFetcher.state !== "idle") return;
+    if (itemsCountFetcher.state !== "idle" || !itemsCountFetcher.data) return;
+    if (itemsCountFetcher.data.loadToken !== refreshAwaitingLoadTokenRef.current) {
+      return;
+    }
     refreshAwaitingProductsRef.current = false;
+    refreshAwaitingLoadTokenRef.current = null;
     setIsRefreshingStats(false);
-    if (productsFetcher.data?.success) {
+    if (itemsCountFetcher.data?.success) {
       shopify.toast.show(t("Translation statistics refreshed"));
     } else {
       shopify.toast.show(t("Failed to refresh statistics"));
     }
-  }, [productsFetcher.state, productsFetcher.data, t]);
+  }, [itemsCountFetcher.state, itemsCountFetcher.data, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -1030,7 +866,10 @@ const Index = () => {
                 icon={<ReloadOutlined />}
                 onClick={handleRefreshStats}
                 loading={
-                  isRefreshingStats || refreshStatsFetcher.state !== "idle"
+                  isRefreshingStats ||
+                  refreshStatsFetcher.state !== "idle" ||
+                  (refreshAwaitingProductsRef.current &&
+                    itemsCountFetcher.state !== "idle")
                 }
                 disabled={!currentLocale || !source?.code}
               >

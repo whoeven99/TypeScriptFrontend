@@ -14,15 +14,17 @@ const languageItemsDataSlice = createSlice({
   initialState,
   reducers: {
     updateData: (state, action: PayloadAction<any[]>) => {
-      const index = state.findIndex(
-        (existingItem) =>
-          existingItem?.language === action.payload[0].language &&
-          existingItem?.type === action.payload[0].type,
-      );
-      if (index !== -1) {
-        state[index] = action.payload[0];
-      } else {
-        state.push(action.payload[0]);
+      for (const row of action.payload) {
+        const index = state.findIndex(
+          (existingItem) =>
+            existingItem?.language === row.language &&
+            existingItem?.type === row.type,
+        );
+        if (index !== -1) {
+          state[index] = row;
+        } else {
+          state.push(row);
+        }
       }
     },
     /** 刷新统计前清空某语言缓存，让汇总页显示 Syncing 而非旧数字。 */

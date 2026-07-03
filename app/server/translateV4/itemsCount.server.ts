@@ -271,6 +271,44 @@ function itemsCountKey(shop: string, locale: string): string {
 const ITEMS_COUNT_TTL = 7 * 24 * 3600; // 与 worker PROGRESS_TTL 一致
 
 /** 读 worker 写入的 module 统计缓存；无/异常返回 null。 */
+const ITEMS_COUNT_BATCH_COMPUTE_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.ITEMS_COUNT_BATCH_COMPUTE_CONCURRENCY) || 2,
+);
+
+async function runWithConcurrency<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+  const workerCount = Math.min(Math.max(limit, 1), items.length);
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      for (;;) {
+        const current = index++;
+        if (current >= items.length) return;
+        await fn(items[current]);
+      }
+    }),
+  );
+}
+
+function parseStoredModuleCount(
+  raw: string | null | undefined,
+): { total: number; translated: number } | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    if (typeof v?.total === "number" && typeof v?.translated === "number") {
+      return { total: v.total, translated: v.translated };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function readStoredModuleCount(
   shop: string,
   locale: string,
@@ -281,12 +319,26 @@ async function readStoredModuleCount(
       itemsCountKey(shop, locale),
       module,
     );
-    if (!raw) return null;
-    const v = JSON.parse(raw);
-    if (typeof v?.total === "number" && typeof v?.translated === "number") {
-      return { total: v.total, translated: v.translated };
-    }
+    return parseStoredModuleCount(raw);
+  } catch {
     return null;
+  }
+}
+
+async function readStoredModuleCounts(
+  shop: string,
+  locale: string,
+): Promise<Record<string, { total: number; translated: number }> | null> {
+  try {
+    const raw = await getTranslateV4RedisClient().hgetall(
+      itemsCountKey(shop, locale),
+    );
+    const out: Record<string, { total: number; translated: number }> = {};
+    for (const [module, value] of Object.entries(raw)) {
+      const parsed = parseStoredModuleCount(value);
+      if (parsed) out[module] = parsed;
+    }
+    return out;
   } catch {
     return null;
   }
@@ -422,6 +474,81 @@ export async function getItemsCountByLabel({
 }
 
 /** 从 Redis 缓存累加多个汇总卡片（Navigation/Theme 等多 module 卡片与单卡逻辑一致）。 */
+export async function getItemsCountByLabelsBatch({
+  admin,
+  shop,
+  target,
+  resourceTypeLabels,
+  skipCache = false,
+}: {
+  admin: AdminGraphqlClient;
+  shop: string;
+  target: string;
+  resourceTypeLabels: readonly string[];
+  skipCache?: boolean;
+}): Promise<ItemsCountRow[]> {
+  const labels = [...new Set(resourceTypeLabels)].filter(
+    isLocalItemsCountSupported,
+  );
+  const cachedByModule = skipCache
+    ? null
+    : await readStoredModuleCounts(shop, target);
+  const computedByModule = new Map<
+    string,
+    { total: number; translated: number }
+  >();
+  const modulesToCompute = new Set<string>();
+
+  for (const label of labels) {
+    const spec = LOCAL_COUNT_SPEC[label];
+    for (const module of spec.modules) {
+      if (!cachedByModule?.[module]) modulesToCompute.add(module);
+    }
+  }
+
+  await runWithConcurrency(
+    [...modulesToCompute],
+    ITEMS_COUNT_BATCH_COMPUTE_CONCURRENCY,
+    async (module) => {
+      try {
+        const count = await countModuleItems({ admin, module, target });
+        computedByModule.set(module, count);
+        await writeStoredModuleCount(shop, target, module, count);
+      } catch (err) {
+        console.error(
+          `[itemsCount] batch compute failed shop=${shop} locale=${target} module=${module}:`,
+          err,
+        );
+        const cached =
+          cachedByModule?.[module] ??
+          (await readStoredModuleCount(shop, target, module)) ??
+          { total: 0, translated: 0 };
+        computedByModule.set(module, cached);
+      }
+    },
+  );
+
+  return labels.map((label) => {
+    const spec = LOCAL_COUNT_SPEC[label];
+    let total = 0;
+    let translated = 0;
+    for (const module of spec.modules) {
+      const count =
+        cachedByModule?.[module] ??
+        computedByModule.get(module) ??
+        { total: 0, translated: 0 };
+      total += count.total;
+      translated += count.translated;
+    }
+    return {
+      language: target,
+      type: spec.type,
+      translatedNumber: translated,
+      totalNumber: total,
+    };
+  });
+}
+
 export async function sumItemsCountByLabelsFromCache(
   shop: string,
   locale: string,
@@ -430,6 +557,7 @@ export async function sumItemsCountByLabelsFromCache(
   let translated = 0;
   let total = 0;
   let cacheMissing = false;
+  const cachedByModule = await readStoredModuleCounts(shop, locale);
 
   for (const label of labels) {
     const spec = LOCAL_COUNT_SPEC[label];
@@ -438,7 +566,7 @@ export async function sumItemsCountByLabelsFromCache(
       continue;
     }
     for (const module of spec.modules) {
-      const cached = await readStoredModuleCount(shop, locale, module);
+      const cached = cachedByModule?.[module] ?? null;
       if (!cached) {
         cacheMissing = true;
         continue;
