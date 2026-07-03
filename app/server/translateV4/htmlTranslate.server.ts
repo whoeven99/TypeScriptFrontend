@@ -27,6 +27,17 @@ const ATTR_HASH_FILENAME_RE =
   /^[a-fA-F0-9]{8,}(-[a-zA-Z0-9]+)*$|^\S+\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|pdf)$/i;
 
 const BR_PLACEHOLDER = "⟦BR⟧";
+// 属性值占位符使用数学括号字符（U+27E6/U+27E7），不会被 HTML 解析器转义。
+// 历史上使用 \x00（NUL），但 node-html-parser 在序列化属性时会转义/丢弃 NUL，
+// 导致 restoreHtmlTextNodes 正则无法匹配，占位符泄漏进最终 HTML。
+const TEXT_PLACEHOLDER_OPEN = "⟦T";
+const TEXT_PLACEHOLDER_CLOSE = "⟧";
+const TEXT_PLACEHOLDER_RE = /⟦T(\d+)⟧/g;
+
+function textPlaceholder(idx: number): string {
+  return `${TEXT_PLACEHOLDER_OPEN}${idx}${TEXT_PLACEHOLDER_CLOSE}`;
+}
+
 const HTML_BLOCK_COALESCE_TAGS = "p|li|h[1-6]|dt|dd|blockquote|figcaption";
 const HTML_NESTED_BLOCK_RE =
   /<(p|li|h[1-6]|td|th|dt|dd|blockquote|figcaption|div|ul|ol|table|thead|tbody|tr)\b/i;
@@ -82,7 +93,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
       if (val == null || !isTranslatableAttrValue(val)) continue;
       const idx = texts.length;
       texts.push(val.trim());
-      el.setAttribute(attr, `\x00T${idx}\x00`);
+      el.setAttribute(attr, textPlaceholder(idx));
     }
   }
 
@@ -96,7 +107,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
       if (!core.trim()) return;
       const idx = texts.length;
       texts.push(core.trim());
-      node.rawText = `${leading}\x00T${idx}\x00${trailing}`;
+      node.rawText = `${leading}${textPlaceholder(idx)}${trailing}`;
       return;
     }
     if (node.nodeType !== NodeType.ELEMENT_NODE) return;
@@ -115,7 +126,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
 }
 
 function restoreHtmlTextNodes(template: string, translations: string[]): string {
-  return template.replace(/\x00T(\d+)\x00/g, (_, idx) => translations[Number(idx)] ?? "");
+  return template.replace(TEXT_PLACEHOLDER_RE, (_, idx) => translations[Number(idx)] ?? "");
 }
 
 function sanitizeHtmlTextTranslation(original: string, translated: string): string {
@@ -142,7 +153,7 @@ function coalesceBlockTextNodesInner(
     if (HTML_NESTED_BLOCK_RE.test(inner)) return full;
 
     const indices: number[] = [];
-    inner.replace(/\x00T(\d+)\x00/g, (_, idx: string) => {
+    inner.replace(TEXT_PLACEHOLDER_RE, (_, idx: string) => {
       indices.push(Number(idx));
       return "";
     });
@@ -158,7 +169,7 @@ function coalesceBlockTextNodesInner(
     newTexts.push(merged);
 
     const openTag = full.match(new RegExp(`<${tag}\\b[^>]*>`, "i"))![0];
-    return `${openTag}\x00T${newIdx}\x00</${tag}>`;
+    return `${openTag}${textPlaceholder(newIdx)}</${tag}>`;
   });
 
   return { template: newTemplate, texts: newTexts };
