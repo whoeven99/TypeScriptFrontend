@@ -7,6 +7,7 @@
 - **无** `BILLING_TSF_ENABLED` 环境变量。
 - Turso 存在 `Account` 行 → `isTsfBillingShop(shop) === true` → 走 TSF 本地计费。
 - 无 `Account` 行 → 仍走 Java Spring（`/quota/*`、`UserInitialization` 等）。
+- 安装/init 分流见 `resolveAppInitPath`：已有 Account → TSF；Java 已有额度/订阅 → Java；全新安装 → TSF。
 
 ## 表职责
 
@@ -55,4 +56,16 @@ npm run turso:migrate:prod
 ## Phase 0 范围
 
 - Schema + 模块骨架已就绪
-- **尚未**接入 `app.tsx` init、pricing action、webhook、worker quota（Phase 1+）
+
+## Phase 1 已接入
+
+- `app/routes/app.tsx` loader/action：`runAppInitialization` / `runLanguageTargetsSync`
+- `resolveAppInitPath` + `detectTsfInitialization` 本地 init 检测
+- `/api/app-bootstrap`：`loadAppBootstrapData`（TSF 读 Turso，老用户读 Java）
+- 新用户：200k 试用、`ShopProfile`、`ShopLanguagePack`、`CommonEventLog` 安装事件
+
+## Phase 2+ 待做
+
+- pricing action → `app/server/billing/*`
+- billing webhook 本地化（仅 TSF 用户）
+- worker `tsfQuota` 对 TSF 用户走本地扣费

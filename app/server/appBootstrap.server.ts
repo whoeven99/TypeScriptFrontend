@@ -5,6 +5,9 @@ import {
   IsOpenFreePlan,
 } from "~/api/JavaServer";
 import type { ShopLocalesType } from "~/routes/app.language/route";
+import { loadBillingContext } from "~/server/billing/billingContext.server";
+import { isTsfBillingShop } from "~/server/billing/isTsfBillingShop.server";
+import { APP_SUBSCRIPTION_STATUS } from "~/server/billing/types.server";
 import type { LoadedShopLocales } from "~/server/translateV4/shopLocales.server";
 
 export type AppBootstrapPlan = {
@@ -62,6 +65,59 @@ export function bootstrapLocalesFromLoaded(loaded: LoadedShopLocales): {
     }));
 
   return { source, targets };
+}
+
+function planFromTsfSubscription(planKey: string | null | undefined): AppBootstrapPlan {
+  if (!planKey) return defaultPlan;
+  if (planKey.includes("premium")) {
+    return { id: 6, type: "Premium", feeType: 0, isInFreePlanTime: false };
+  }
+  if (planKey.includes("pro")) {
+    return { id: 5, type: "Pro", feeType: 0, isInFreePlanTime: false };
+  }
+  if (planKey.includes("basic")) {
+    return { id: 4, type: "Basic", feeType: 0, isInFreePlanTime: false };
+  }
+  return defaultPlan;
+}
+
+/** TSF Turso 账本店铺的 bootstrap（与 Java 字段形状兼容）。 */
+export async function loadAppBootstrapTsfData(
+  shop: string,
+): Promise<AppBootstrapJavaData> {
+  const ctx = await loadBillingContext(shop);
+  const sub = ctx.subscription;
+
+  let plan = defaultPlan;
+  if (sub && sub.status === APP_SUBSCRIPTION_STATUS.ACTIVE) {
+    plan = {
+      ...planFromTsfSubscription(sub.planKey),
+      feeType: sub.billingInterval === "ANNUAL" ? 2 : 1,
+      isInFreePlanTime:
+        sub.trialEndsAt != null && new Date() < sub.trialEndsAt,
+    };
+  }
+
+  return {
+    plan,
+    updateTime: sub?.currentPeriodEnd
+      ? formatPlanUpdateTime(sub.currentPeriodEnd)
+      : null,
+    chars: ctx.usedTokens,
+    totalChars: ctx.availableTokens,
+    isNew: sub == null,
+  };
+}
+
+/** 按 shop 自动分流 TSF / Java bootstrap。 */
+export async function loadAppBootstrapData(params: {
+  shop: string;
+  server: string;
+}): Promise<AppBootstrapJavaData> {
+  if (await isTsfBillingShop(params.shop)) {
+    return loadAppBootstrapTsfData(params.shop);
+  }
+  return loadAppBootstrapJavaData(params);
 }
 
 /** Java 侧订阅/配额等 —— 非首屏阻塞，由客户端 `/api/app-bootstrap` 拉取。 */

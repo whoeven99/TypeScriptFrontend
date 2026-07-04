@@ -16,13 +16,6 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import {
-  GetUserWords,
-  AddUserFreeSubscription,
-  InitializationDetection,
-  UserInitialization,
-  AddDefaultLanguagePack,
-  InsertCharsByShopName,
-  InsertTargets,
   GoogleAnalyticClickReport,
   GetUnTranslatedWords,
 } from "~/api/JavaServer";
@@ -31,6 +24,7 @@ import {
   type AppBootstrapJavaData,
 } from "~/server/appBootstrap.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { runAppInitialization, runLanguageTargetsSync } from "~/server/onboarding/runAppInitialization.server";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -118,41 +112,6 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
   console.error(`[${context}] rawError`, e);
 };
 
-async function runAppInitialization({
-  shop,
-  accessToken,
-  source,
-  targets,
-}: {
-  shop: string;
-  accessToken?: string;
-  source: string;
-  targets: string[];
-}) {
-  try {
-    if (accessToken) {
-      await UserInitialization({ shop, accessToken });
-    }
-    const init = await InitializationDetection({ shop });
-    if (init?.success && accessToken) {
-      if (!init?.response?.insertCharsByShopName) {
-        await InsertCharsByShopName({ shop, accessToken });
-      }
-      if (!init?.response?.addUserFreeSubscription) {
-        await AddUserFreeSubscription({ shop });
-      }
-      if (!init?.response?.addDefaultLanguagePack) {
-        await AddDefaultLanguagePack({ shop });
-      }
-    }
-    if (accessToken && source && targets.length > 0) {
-      await InsertTargets({ shop, accessToken, source, targets });
-    }
-  } catch (error) {
-    logGraphQLErrorDetail("Error app bootstrap initialization", error);
-  }
-}
-
 async function loadAppBootstrapLocales({
   shop,
   accessToken,
@@ -194,7 +153,7 @@ function applyBootstrapJavaToStore(
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop, accessToken, id: sessionId } = adminAuthResult.session;
   const server = process.env.SERVER_URL || "";
   const bootstrap = await loadAppBootstrapLocales({
     shop,
@@ -204,8 +163,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   void runAppInitialization({
     shop,
     accessToken: accessToken as string | undefined,
+    sessionId,
     source: bootstrap.source.code,
-    targets: bootstrap.targets.map((item) => item.locale),
+    targetLocales: bootstrap.targets.map((item) => item.locale),
+  }).catch((error) => {
+    logGraphQLErrorDetail("Error app bootstrap initialization", error);
   });
 
   return json({
@@ -220,7 +182,7 @@ export const shouldRevalidate = shouldRevalidateAppShell;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop, accessToken, id: sessionId } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   try {
@@ -238,25 +200,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
     if (init) {
       try {
-        await UserInitialization({
+        const bootstrap = await loadAppBootstrapLocales({
           shop,
-          accessToken: accessToken as string,
+          accessToken: accessToken as string | undefined,
         });
-        const init = await InitializationDetection({ shop });
-        if (init?.success) {
-          if (!init?.response?.insertCharsByShopName) {
-            await InsertCharsByShopName({
-              shop,
-              accessToken: accessToken as string,
-            });
-          }
-          if (!init?.response?.addUserFreeSubscription) {
-            await AddUserFreeSubscription({ shop });
-          }
-          if (!init?.response?.addDefaultLanguagePack) {
-            await AddDefaultLanguagePack({ shop });
-          }
-        }
+        await runAppInitialization({
+          shop,
+          accessToken: accessToken as string | undefined,
+          sessionId,
+          source: bootstrap.source.code,
+          targetLocales: bootstrap.targets.map((item) => item.locale),
+        });
         return null;
       } catch (error) {
         logGraphQLErrorDetail("Error loading app", error);
@@ -266,7 +220,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageInit) {
       try {
-        await InsertTargets({
+        await runLanguageTargetsSync({
           shop,
           accessToken: accessToken!,
           source: languageInit?.source,
