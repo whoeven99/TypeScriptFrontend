@@ -30,6 +30,7 @@ import {
   deleteCurrency,
   updateCurrency,
 } from "~/server/currency/currency.server";
+import StorefrontTabs from "~/components/storefrontTabs";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -435,13 +436,14 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title={t("Currency")}></TitleBar>
+      <TitleBar title={t("Storefront")}></TitleBar>
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <StorefrontTabs active="currency" />
         <div>
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Currency")}

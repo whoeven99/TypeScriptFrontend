@@ -756,6 +756,8 @@
   "Settings not applied. Please publish the current language first.": "设置未应用。请先发布当前语言。",
   "Home": "首页",
   "Content": "内容",
+  "Storefront": "前台展示",
+  "Control what visitors see for language, currency, and localization.": "管理访客在前台看到的语言、货币和本地化展示。",
   "Products & catalog": "商品与目录",
   "Pages & blog content": "页面与博客内容",
   "Storefront & theme": "店铺与主题",

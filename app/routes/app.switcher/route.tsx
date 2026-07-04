@@ -40,6 +40,7 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import StorefrontTabs from "~/components/storefrontTabs";
 
 const initialLocalization = {
   languages: [
@@ -690,13 +691,14 @@ const Index = () => {
         ></button>
         <button onClick={handleCancel}></button>
       </SaveBar>
-      <TitleBar title={t("Switcher")} />
+      <TitleBar title={t("Storefront")} />
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <StorefrontTabs active="switcher" />
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
