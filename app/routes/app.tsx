@@ -24,7 +24,6 @@ import {
   InsertCharsByShopName,
   InsertTargets,
   GoogleAnalyticClickReport,
-  GetUnTranslatedWords,
 } from "~/api/JavaServer";
 import {
   bootstrapLocalesFromLoaded,
@@ -138,7 +137,7 @@ async function runAppInitialization({
       if (!init?.response?.insertCharsByShopName) {
         await InsertCharsByShopName({ shop, accessToken });
       }
-      if (!init?.response?.addUserFreeSubscription) {
+      if (!init?.response?.addUserSubscriptionPlan) {
         await AddUserFreeSubscription({ shop });
       }
       if (!init?.response?.addDefaultLanguagePack) {
@@ -235,7 +234,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("qualityEvaluation") as string,
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
-    const unTranslated = JSON.parse(formData.get("unTranslated") as string);
     if (init) {
       try {
         await UserInitialization({
@@ -250,7 +248,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               accessToken: accessToken as string,
             });
           }
-          if (!init?.response?.addUserFreeSubscription) {
+          if (!init?.response?.addUserSubscriptionPlan) {
             await AddUserFreeSubscription({ shop });
           }
           if (!init?.response?.addDefaultLanguagePack) {
@@ -444,63 +442,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       } catch (error) {
         logGraphQLErrorDetail(`${shop} findWebPixel failed`, error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (unTranslated) {
-      try {
-        const mutationResponse = await admin.graphql(
-          `query MyQuery {
-            shopLocales(published: true) {
-              locale
-              name
-              primary
-              published
-            }
-          }`,
-        );
-        const data = (await mutationResponse.json()) as any;
-        let source = "en";
-        if (data.data.shopLocales.length > 0) {
-          data.data.shopLocales.forEach((item: any) => {
-            if (item.primary === true) {
-              source = item.locale;
-            }
-          });
-        }
-        const { resourceModules } = unTranslated;
-        let totalWords = 0;
-        const results = await Promise.all(
-          resourceModules.map((module: string) =>
-            GetUnTranslatedWords({
-              shop,
-              module,
-              accessToken: accessToken as string,
-              source,
-            }),
-          ),
-        );
-
-        results.forEach((res) => {
-          if (res.success && res.response) {
-            totalWords += res.response;
-          }
-        });
-        console.log(`${shop} unTranslate words is ${totalWords}`);
-        return {
-          success: true,
-          response: {
-            totalWords,
-          },
-        };
-      } catch (error) {
-        logGraphQLErrorDetail(`${shop} get unTranslated words failed`, error);
         return {
           success: false,
           errorCode: 10001,

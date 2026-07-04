@@ -43,6 +43,8 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { listGlossaryDo } from "~/server/translateV4/glossary.server";
+import { getSwitcherConfigForAdmin } from "~/server/storefront/switcherAdmin.server";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 const LazySupportChatWidget = lazy(() =>
@@ -50,6 +52,35 @@ const LazySupportChatWidget = lazy(() =>
     default: module.SupportChatWidget,
   })),
 );
+
+type HomeDiagnostics = {
+  unpublishedLocales: Array<{ locale: string; label: string }>;
+  glossaryCount: number | null;
+  switcher: {
+    selectorsEnabled: boolean | null;
+    themeEnabled: boolean | null;
+  };
+};
+
+type HomeLocaleOption = ShopLocaleOption & {
+  primary?: boolean;
+  published?: boolean;
+};
+
+type AdminGraphqlLike = {
+  graphql: (
+    query: string,
+    options?: { variables?: Record<string, unknown> },
+  ) => Promise<Response>;
+};
+
+type HomeIssue = {
+  key: string;
+  text: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  tone?: "default" | "success" | "warning" | "critical";
+};
 
 function useIdleReady(timeout = 2500) {
   const [ready, setReady] = useState(false);
@@ -86,6 +117,94 @@ function scheduleShopV4Bootstrap({
   void bootstrap.catch((err) => {
     console.error("[translateV4] background bootstrap failed:", err);
   });
+}
+
+async function loadSwitcherThemeEnabled(
+  admin: AdminGraphqlLike,
+): Promise<boolean | null> {
+  const switcherBlockType = process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID;
+  if (!switcherBlockType) return null;
+
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        query HomeSwitcherThemeDiagnostics {
+          themes(roles: MAIN, first: 1) {
+            nodes {
+              files(filenames: "config/settings_data.json") {
+                nodes {
+                  body {
+                    ... on OnlineStoreThemeFileBodyText {
+                      content
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }`,
+    );
+    const data = await response.json();
+    const content =
+      data?.data?.themes?.nodes?.[0]?.files?.nodes?.[0]?.body?.content;
+    if (typeof content !== "string" || !content.trim()) return null;
+
+    const jsonString = content.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    const blocks = JSON.parse(jsonString)?.current?.blocks;
+    if (!blocks) return false;
+
+    const switcherBlock = Object.values(blocks).find(
+      (block: any) => block?.type === switcherBlockType,
+    ) as { disabled?: boolean } | undefined;
+    if (!switcherBlock) return false;
+    return !switcherBlock.disabled;
+  } catch (err) {
+    console.error("[translateV4] switcher theme diagnostics failed:", err);
+    return null;
+  }
+}
+
+async function loadHomeDiagnostics({
+  admin,
+  shop,
+  locales,
+}: {
+  admin: AdminGraphqlLike;
+  shop: string;
+  locales: HomeLocaleOption[];
+}): Promise<HomeDiagnostics> {
+  const unpublishedLocales = locales
+    .filter((locale) => !locale.primary && !locale.published)
+    .map((locale) => ({
+      locale: locale.value,
+      label: locale.label,
+    }));
+
+  const [glossaryRows, switcherConfig, switcherThemeEnabled] =
+    await Promise.all([
+      listGlossaryDo(shop).catch((err) => {
+        console.error("[translateV4] glossary diagnostics failed:", err);
+        return null;
+      }),
+      getSwitcherConfigForAdmin(shop).catch((err) => {
+        console.error("[translateV4] switcher diagnostics failed:", err);
+        return null;
+      }),
+      loadSwitcherThemeEnabled(admin),
+    ]);
+
+  return {
+    unpublishedLocales,
+    glossaryCount: Array.isArray(glossaryRows)
+      ? glossaryRows.filter((row) => row.status === 1).length
+      : null,
+    switcher: {
+      selectorsEnabled: switcherConfig
+        ? switcherConfig.languageSelector || switcherConfig.currencySelector
+        : null,
+      themeEnabled: switcherThemeEnabled,
+    },
+  };
 }
 
 const homeCardStyle: CSSProperties = {
@@ -179,9 +298,9 @@ function HomeActionButton({
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
 
-  let locales: ShopLocaleOption[] = [];
+  let locales: HomeLocaleOption[] = [];
   let primaryLocale = "en";
   let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
   try {
@@ -208,12 +327,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   // 关键内容（任务列表 + 覆盖率）在 loader 阻塞等待；quota / planType 由客户端拉取，
   // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
-  const [jobs, coverage] = await Promise.all([
+  const [jobs, coverage, diagnostics] = await Promise.all([
     listV4JobSummaries(session.shop),
     getCoverageSummaryFromCache({
       shop: session.shop,
       primaryLocale,
       targetLocales,
+    }),
+    loadHomeDiagnostics({
+      admin,
+      shop: session.shop,
+      locales,
+    }).catch((err) => {
+      console.error("[translateV4] home diagnostics failed:", err);
+      return {
+        unpublishedLocales: [],
+        glossaryCount: null,
+        switcher: { selectorsEnabled: null, themeEnabled: null },
+      } satisfies HomeDiagnostics;
     }),
   ]);
 
@@ -223,6 +354,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     primaryLocale,
     jobs,
     coverage,
+    diagnostics,
   });
 };
 
@@ -235,6 +367,7 @@ export default function AppTranslateV4() {
     primaryLocale,
     jobs: initialJobs,
     coverage: initialCoverage,
+    diagnostics,
   } = useLoaderData<typeof loader>();
 
   const [jobs, setJobs] =
@@ -594,6 +727,14 @@ export default function AppTranslateV4() {
     navigate("/app/switcher");
   }, [navigate]);
 
+  const openGlossaryPage = useCallback(() => {
+    navigate("/app/glossary");
+  }, [navigate]);
+
+  const openPricingPage = useCallback(() => {
+    navigate("/app/pricing");
+  }, [navigate]);
+
   const scrollToCreateTask = useCallback(() => {
     createTaskSectionRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -626,36 +767,138 @@ export default function AppTranslateV4() {
     [coverage.locales],
   );
   const pendingItems = Math.max(coverage.totalItems - coverage.translatedItems, 0);
-  const issueCount =
-    failedJobs.length +
-    pausedJobs.length +
-    lowCoverageLocales.length +
-    (coverage.languageCount === 0 ? 1 : 0) +
-    (remainingCredits != null && remainingCredits <= 0 ? 1 : 0);
-  const issueItems = useMemo(() => {
-    const items: string[] = [];
-    if (failedJobs.length > 0) items.push(t("v4.home.issueFailedTasks", { count: failedJobs.length }));
-    if (pausedJobs.length > 0) items.push(t("v4.home.issuePausedTasks", { count: pausedJobs.length }));
-    if (remainingCredits != null && remainingCredits <= 0) items.push(t("v4.home.issueNoCredits"));
-    if (coverage.languageCount === 0) items.push(t("v4.home.issueNoLanguages"));
+
+  const diagnosticIssues = useMemo<HomeIssue[]>(() => {
+    const issues: HomeIssue[] = [];
+
+    if (failedJobs.length > 0) {
+      issues.push({
+        key: "failed-tasks",
+        text: t("v4.home.issueFailedTasks", { count: failedJobs.length }),
+        actionLabel: t("v4.home.actionReviewTasks"),
+        onAction: scrollToTaskQueue,
+        tone: "critical",
+      });
+    }
+
+    if (pausedJobs.length > 0) {
+      issues.push({
+        key: "paused-tasks",
+        text: t("v4.home.issuePausedTasks", { count: pausedJobs.length }),
+        actionLabel: t("v4.home.actionReviewTasks"),
+        onAction: scrollToTaskQueue,
+        tone: "warning",
+      });
+    }
+
+    if (remainingCredits != null && remainingCredits <= 0) {
+      issues.push({
+        key: "no-credits",
+        text: t("v4.home.issueNoCredits"),
+        actionLabel: t("v4.home.actionBuyCredits"),
+        onAction: openPricingPage,
+        tone: "critical",
+      });
+    }
+
+    if (coverage.languageCount === 0) {
+      issues.push({
+        key: "no-languages",
+        text: t("v4.home.issueNoLanguages"),
+        actionLabel: t("v4.home.actionManageLanguages"),
+        onAction: openLanguagePage,
+        tone: "critical",
+      });
+    }
+
+    if (diagnostics.unpublishedLocales.length > 0) {
+      issues.push({
+        key: "unpublished-locales",
+        text: t("v4.home.issueUnpublishedLanguages", {
+          count: diagnostics.unpublishedLocales.length,
+        }),
+        actionLabel: t("v4.home.actionPublishLanguages"),
+        onAction: openLanguagePage,
+        tone: "warning",
+      });
+    }
+
     lowCoverageLocales.forEach((row) => {
-      items.push(
-        t("v4.home.issueLowCoverage", {
+      issues.push({
+        key: `low-coverage-${row.locale}`,
+        text: t("v4.home.issueLowCoverage", {
           language: row.label || row.locale,
           percent: row.percent ?? 0,
         }),
-      );
+        actionLabel: t("v4.home.actionFixContent"),
+        onAction: openContentPage,
+        tone: "warning",
+      });
     });
-    if (items.length === 0) items.push(t("v4.home.noIssues"));
-    return items.slice(0, 5);
+
+    if (diagnostics.glossaryCount === 0) {
+      issues.push({
+        key: "empty-glossary",
+        text: t("v4.home.issueEmptyGlossary"),
+        actionLabel: t("v4.home.actionAddGlossary"),
+        onAction: openGlossaryPage,
+        tone: "warning",
+      });
+    }
+
+    if (diagnostics.switcher.selectorsEnabled === false) {
+      issues.push({
+        key: "switcher-disabled",
+        text: t("v4.home.issueSwitcherDisabled"),
+        actionLabel: t("v4.home.actionConfigureStorefront"),
+        onAction: openStorefrontPage,
+        tone: "warning",
+      });
+    }
+
+    if (diagnostics.switcher.themeEnabled === false) {
+      issues.push({
+        key: "switcher-theme-disabled",
+        text: t("v4.home.issueSwitcherThemeDisabled"),
+        actionLabel: t("v4.home.actionConfigureStorefront"),
+        onAction: openStorefrontPage,
+        tone: "warning",
+      });
+    }
+
+    return issues;
   }, [
     coverage.languageCount,
+    diagnostics.glossaryCount,
+    diagnostics.switcher.selectorsEnabled,
+    diagnostics.switcher.themeEnabled,
+    diagnostics.unpublishedLocales.length,
     failedJobs.length,
     lowCoverageLocales,
+    openContentPage,
+    openGlossaryPage,
+    openLanguagePage,
+    openPricingPage,
+    openStorefrontPage,
     pausedJobs.length,
     remainingCredits,
+    scrollToTaskQueue,
     t,
   ]);
+  const issueCount = diagnosticIssues.length;
+  const issueItems = useMemo<HomeIssue[]>(
+    () =>
+      issueCount > 0
+        ? diagnosticIssues.slice(0, 5)
+        : [
+            {
+              key: "no-issues",
+              text: t("v4.home.noIssues"),
+              tone: "success",
+            },
+          ],
+    [diagnosticIssues, issueCount, t],
+  );
 
   return (
     <Page>
@@ -753,19 +996,48 @@ export default function AppTranslateV4() {
             >
               {issueItems.map((item) => (
                 <div
-                  key={item}
+                  key={item.key}
                   style={{
                     border: "1px solid var(--app-color-border-secondary)",
                     borderRadius: 10,
                     padding: "10px 12px",
-                    background: "var(--app-color-surface-secondary)",
+                    background:
+                      item.tone === "success"
+                        ? "var(--app-accent-growth-soft)"
+                        : item.tone === "critical"
+                          ? "var(--app-accent-critical-soft)"
+                          : "var(--app-color-surface-secondary)",
                     color: "var(--app-color-text)",
                     fontSize: 13,
                     lineHeight: "19px",
                     minHeight: 40,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
                   }}
                 >
-                  {item}
+                  <span>{item.text}</span>
+                  {item.actionLabel && item.onAction ? (
+                    <button
+                      type="button"
+                      onClick={item.onAction}
+                      style={{
+                        border: "1px solid var(--app-color-border-secondary)",
+                        borderRadius: 7,
+                        background: "var(--app-color-surface)",
+                        color: "var(--app-color-text)",
+                        minHeight: 30,
+                        padding: "4px 9px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.actionLabel}
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>

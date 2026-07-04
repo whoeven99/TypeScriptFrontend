@@ -729,31 +729,6 @@ export const GoogleAnalyticClickReport = async (params: any, name: string) => {
   }
 };
 
-// 查询未翻译的字符数
-export const GetUnTranslatedWords = async ({
-  shop,
-  module,
-  accessToken,
-  source,
-}: {
-  shop: string;
-  module: string;
-  accessToken: string;
-  source: string;
-}) => {
-  return javaApiRequest(
-    `${shop} GetUnTranslatedWords`,
-    {
-      method: "POST",
-      url: `${process.env.SERVER_URL}/shopify/getUnTranslatedToken?shopName=${shop}&source=${source}&modelType=${module}`,
-      data: {
-        accessToken,
-      },
-    },
-    { fallback: undefined },
-  );
-};
-
 //编辑翻译
 export const updateManageTranslation = async ({
   shop,
