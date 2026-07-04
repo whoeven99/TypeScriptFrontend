@@ -78,6 +78,12 @@ npm run turso:migrate:prod
 - `app/routes/webhooks`：`APP_SUBSCRIPTIONS_UPDATE` / `APP_PURCHASES_ONE_TIME_UPDATE` → TSF 本地 handler
 - UI 价格仍由前端传入（`priceOverride`），PlanCatalog 负责 tokens 与 Shopify 商品名
 
+## Phase 4 已接入
+
+- **卸载生命周期**：`APP_UNINSTALLED` / `SHOP_REDACT` → TSF 本地 `handleTsfAppUninstalled`（取消订阅池、CommonEventLog，不调 Java）
+- **店铺 webhook**：`SHOP_UPDATE` / `THEMES_PUBLISH` → TSF 刷新 `ShopProfile` + `primaryLocale`
+- **建任务门禁**：`POST /api/translate-v4/tasks` 对 TSF 用户调用 `requireBillingAccess`
+
 ## Phase 5 已接入（新用户路径 Java 清理）
 
 - `app.tsx` loader **await** `runAppInitialization`，消除 bootstrap/quota 竞态
@@ -92,3 +98,4 @@ npm run turso:migrate:prod
 - PlanCatalog 种子由产品覆盖（当前为简单占位）
 - Webhook 成功邮件（暂不实现）
 - manage-translation / switcher 等二级页面 Java 依赖（非新用户主路径）
+- `TaskTokenUsageLog` 写入（`recordBilledTaskTokenUsages` 尚未接入 worker 扣费链路）

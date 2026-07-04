@@ -17,6 +17,11 @@ import {
   type TranslationV4Module,
 } from "~/server/translateV4/types";
 import { defaultManualV4Modules } from "~/server/translateV4/moduleCatalog";
+import {
+  billingErrorToResponse,
+  requireBillingAccess,
+} from "~/server/billing";
+import { usesTsfBilling } from "~/server/billing/billingRoute.server";
 
 /** GET /api/translate-v4/tasks —— 列出本店 v4 任务（手动 + 自动）。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -56,6 +61,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ ok: false, error: "至少选择一个翻译模块" }, { status: 400 });
 
   const shopName = session.shop;
+
+  if (await usesTsfBilling(shopName)) {
+    try {
+      await requireBillingAccess(shopName);
+    } catch (error) {
+      const billingResponse = billingErrorToResponse(error);
+      if (billingResponse) {
+        const body = (await billingResponse.json()) as Record<string, unknown>;
+        return json(body, { status: billingResponse.status });
+      }
+      throw error;
+    }
+  }
 
   if (await existsBlockingV4Job(shopName, source, target)) {
     return json(

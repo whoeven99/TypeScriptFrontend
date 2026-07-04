@@ -32,6 +32,11 @@ export {
   usesTsfBilling,
   type BillingRoute,
 } from "./billingRoute.server";
+export {
+  handleTsfAppUninstalled,
+  shouldHandleTsfUninstall,
+} from "./lifecycle/handleTsfAppUninstalled.server";
+export { handleTsfShopProfileWebhook } from "./lifecycle/handleTsfShopProfileWebhook.server";
 export { appendBillingLog } from "./billingLog.server";
 export {
   BILLING_PAGE_PATH,

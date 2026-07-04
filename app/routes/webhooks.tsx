@@ -7,6 +7,12 @@ import {
   isTsfBillingShop,
 } from "~/server/billing";
 import {
+  handleTsfAppUninstalled,
+  shouldHandleTsfUninstall,
+} from "~/server/billing/lifecycle/handleTsfAppUninstalled.server";
+import { handleTsfShopProfileWebhook } from "~/server/billing/lifecycle/handleTsfShopProfileWebhook.server";
+import { usesTsfBilling } from "~/server/billing/billingRoute.server";
+import {
   AddCharsByShopName,
   AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
@@ -39,6 +45,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
+        if (await shouldHandleTsfUninstall(shop)) {
+          await handleTsfAppUninstalled({ shop, topic });
+          if (session) {
+            await db.session.deleteMany({ where: { shop } });
+          }
+          break;
+        }
         await Uninstall({ shop });
         await UpdateUserPlan({ shop, plan: 2 });
         if (session) {
@@ -249,6 +262,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       break;
     case "THEMES_PUBLISH":
       try {
+        if (await usesTsfBilling(shop)) {
+          await handleTsfShopProfileWebhook({
+            shop,
+            sessionAccessToken: session?.accessToken,
+          });
+          break;
+        }
         const JSONData = JSON.stringify(payload);
         await WebhookDefaultTheme({
           shop,
@@ -261,6 +281,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case "SHOP_UPDATE":
       try {
+        if (await usesTsfBilling(shop)) {
+          await handleTsfShopProfileWebhook({
+            shop,
+            sessionAccessToken: session?.accessToken,
+          });
+          break;
+        }
         const JSONData = JSON.stringify(payload);
         await WebhookDefaultLanguage({
           shop,
@@ -280,6 +307,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "SHOP_REDACT":
       try {
         new Response(null, { status: 200 });
+        if (await shouldHandleTsfUninstall(shop)) {
+          await handleTsfAppUninstalled({ shop, topic });
+          if (session) {
+            await db.session.deleteMany({ where: { shop } });
+          }
+          break;
+        }
         await Uninstall({ shop });
         await UpdateUserPlan({ shop, plan: 2 });
         if (session) {
