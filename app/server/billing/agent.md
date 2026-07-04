@@ -71,8 +71,15 @@ npm run turso:migrate:prod
 - `/api/translate-v4/quota`、单字段 `deductQuota` — 经 shopQuota 分流
 - Worker `tsfAccountQuota.ts` + `tsfQuota.ts`：TSF 用户直读 Turso Account 扣费
 
-## Phase 3+ 待做
+## Phase 3 已接入
 
-- pricing action → `app/server/billing/*`
-- billing webhook 本地化（仅 TSF 用户）
-- PlanCatalog 种子与 Spring 对齐
+- `app/routes/app.pricing` action：`isTsfBillingShop` → `startSubscriptionCheckout` / `startTokenPackCheckout`
+- `GET /api/billing/active-subscription` — TSF 读 Turso `AppSubscription`，老用户读 Java
+- `app/routes/webhooks`：`APP_SUBSCRIPTIONS_UPDATE` / `APP_PURCHASES_ONE_TIME_UPDATE` → TSF 本地 handler
+- UI 价格仍由前端传入（`priceOverride`），PlanCatalog 负责 tokens 与 Shopify 商品名
+
+## Phase 4+ 待做
+
+- PlanCatalog 种子与 Spring 对齐（价格/tokens 待产品补全）
+- 购包成功/订阅成功邮件（Java 有，TSF 暂未接）
+- 卸载时 Turso 计费状态清理

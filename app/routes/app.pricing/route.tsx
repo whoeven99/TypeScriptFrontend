@@ -19,10 +19,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import {
-  GetLatestActiveSubscribeId,
   InsertOrUpdateOrder,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
+import { handleTsfPricingAction } from "~/server/billing/pricing/handleTsfPricingAction.server";
+import { isTsfBillingShop } from "~/server/billing/isTsfBillingShop.server";
 import { useFetcher } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
 import { CheckOutlined } from "@ant-design/icons";
@@ -75,6 +76,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const payInfo = JSON.parse(formData.get("payInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
+
+  if (await isTsfBillingShop(shop)) {
+    return handleTsfPricingAction({
+      admin,
+      shop,
+      request,
+      payInfo,
+      payForPlan,
+      cancelId,
+    });
+  }
+
   switch (true) {
     case !!payInfo:
       try {
@@ -792,10 +805,8 @@ const Index = () => {
   };
 
   const handleCancelPlan = async () => {
-    const data = await GetLatestActiveSubscribeId({
-      shop: globalStore?.shop as string,
-      server: globalStore?.server as string,
-    });
+    const resp = await fetch("/api/billing/active-subscription");
+    const data = await resp.json();
     if (data.success) {
       planCancelFetcher.submit(
         {

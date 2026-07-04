@@ -1,3 +1,4 @@
+import type { BillingPriceOverride } from "./gateway/billingGateway.types";
 import type { ShopifyAdminGraphqlClient } from "./gateway/shopifyAdmin.types";
 import {
   BILLING_PAGE_PATH,
@@ -14,6 +15,7 @@ export async function startSubscriptionCheckout(params: {
   planKey: string;
   request: Request;
   trialDays?: number | null;
+  priceOverride?: BillingPriceOverride;
 }): Promise<{ confirmationUrl: string | null }> {
   const plan = await getPlanByKey(params.planKey);
   if (plan.kind !== PLAN_CATALOG_KIND.SUBSCRIPTION) {
@@ -37,6 +39,7 @@ export async function startSubscriptionCheckout(params: {
     plan,
     returnUrl,
     trialDays: params.trialDays,
+    priceOverride: params.priceOverride,
   });
 
   return { confirmationUrl: result.confirmationUrl };
@@ -47,6 +50,7 @@ export async function startTokenPackCheckout(params: {
   shop: string;
   planKey: string;
   request: Request;
+  priceOverride?: BillingPriceOverride;
 }): Promise<{ confirmationUrl: string | null }> {
   const plan = await getPlanByKey(params.planKey);
   if (plan.kind !== PLAN_CATALOG_KIND.ONE_TIME_PACK) {
@@ -69,6 +73,7 @@ export async function startTokenPackCheckout(params: {
     shop: params.shop,
     plan,
     returnUrl,
+    priceOverride: params.priceOverride,
   });
 
   return { confirmationUrl: result.confirmationUrl };

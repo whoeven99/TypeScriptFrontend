@@ -2,6 +2,11 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
+  handleAppPurchaseOneTimeWebhook,
+  handleAppSubscriptionWebhook,
+  isTsfBillingShop,
+} from "~/server/billing";
+import {
   AddCharsByShopName,
   AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
@@ -46,6 +51,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
+        if (await isTsfBillingShop(shop)) {
+          await handleAppPurchaseOneTimeWebhook({ shop, payload });
+          break;
+        }
         if (payload) {
           new Response(null, { status: 200 });
           let credits = 0;
@@ -186,6 +195,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case "APP_SUBSCRIPTIONS_UPDATE":
       try {
+        if (await isTsfBillingShop(shop)) {
+          await handleAppSubscriptionWebhook({
+            shop,
+            payload,
+            admin: admin ?? undefined,
+          });
+          break;
+        }
         new Response(null, { status: 200 });
         let plan = 0;
         switch (payload?.app_subscription.name) {

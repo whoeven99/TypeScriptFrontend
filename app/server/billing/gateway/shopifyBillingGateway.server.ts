@@ -8,14 +8,14 @@ import {
 } from "./shopifyGraphqlBilling.server";
 
 export const shopifyBillingGateway: BillingGateway = {
-  async createSubscription({ admin, shop, plan, returnUrl, trialDays }) {
+  async createSubscription({ admin, shop, plan, returnUrl, trialDays, priceOverride }) {
     const name = plan.shopifyPlanName ?? plan.displayName;
     const { confirmationUrl, subscriptionId } = await shopifyCreateSubscription(
       admin,
       {
         planName: name,
-        priceAmount: plan.priceAmount,
-        currencyCode: plan.currencyCode,
+        priceAmount: priceOverride?.amount ?? plan.priceAmount,
+        currencyCode: priceOverride?.currencyCode ?? plan.currencyCode,
         billingInterval: plan.billingInterval,
         returnUrl,
         trialDays: trialDays !== undefined ? trialDays : plan.trialDays,
@@ -49,14 +49,14 @@ export const shopifyBillingGateway: BillingGateway = {
     };
   },
 
-  async createOneTimePurchase({ admin, shop, plan, returnUrl }) {
+  async createOneTimePurchase({ admin, shop, plan, returnUrl, priceOverride }) {
     const name = plan.shopifyPlanName ?? plan.displayName;
     const { confirmationUrl, purchaseId } = await shopifyCreateOneTimePurchase(
       admin,
       {
         planName: name,
-        priceAmount: plan.priceAmount,
-        currencyCode: plan.currencyCode,
+        priceAmount: priceOverride?.amount ?? plan.priceAmount,
+        currencyCode: priceOverride?.currencyCode ?? plan.currencyCode,
         returnUrl,
       },
     );

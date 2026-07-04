@@ -50,6 +50,7 @@ const APP_SUBSCRIPTION_CREATE = `#graphql
     $lineItems: [AppSubscriptionLineItemInput!]!
     $test: Boolean
     $trialDays: Int
+    $replacementBehavior: AppSubscriptionReplacementBehavior
   ) {
     appSubscriptionCreate(
       name: $name
@@ -57,6 +58,7 @@ const APP_SUBSCRIPTION_CREATE = `#graphql
       lineItems: $lineItems
       test: $test
       trialDays: $trialDays
+      replacementBehavior: $replacementBehavior
     ) {
       appSubscription {
         id
@@ -146,6 +148,7 @@ export async function shopifyCreateSubscription(
     returnUrl: params.returnUrl,
     test: isBillingTestMode(),
     trialDays: params.trialDays ?? undefined,
+    replacementBehavior: "APPLY_IMMEDIATELY",
     lineItems: [
       {
         plan: {
