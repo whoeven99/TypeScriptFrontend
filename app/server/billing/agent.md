@@ -64,8 +64,15 @@ npm run turso:migrate:prod
 - `/api/app-bootstrap`：`loadAppBootstrapData`（TSF 读 Turso，老用户读 Java）
 - 新用户：200k 试用、`ShopProfile`、`ShopLanguagePack`、`CommonEventLog` 安装事件
 
-## Phase 2+ 待做
+## Phase 2 已接入
+
+- `app/server/taskTokenUsage/shopQuota.server.ts`：`getShopQuota` / `deductShopQuota`（TSF Turso / Java 分流）
+- `GET/POST /api/billing/quota` — 对齐 Java `/quota/*` 响应格式
+- `/api/translate-v4/quota`、单字段 `deductQuota` — 经 shopQuota 分流
+- Worker `tsfAccountQuota.ts` + `tsfQuota.ts`：TSF 用户直读 Turso Account 扣费
+
+## Phase 3+ 待做
 
 - pricing action → `app/server/billing/*`
 - billing webhook 本地化（仅 TSF 用户）
-- worker `tsfQuota` 对 TSF 用户走本地扣费
+- PlanCatalog 种子与 Spring 对齐

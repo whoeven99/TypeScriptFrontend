@@ -8,7 +8,8 @@
  * 这样额度越少并发越低，最大透支被锁在「在飞批次 × 每批 token」内。
  *
  * 启用规则：**TsFrontend / TsFrontend-Auto 来源默认开启**，QUOTA_ENFORCE=false 可显式关闭；其它来源始终关闭。
- * 未配置 TSF_SERVER_URL 时降级为「额度无限」（no-op），不影响现网。
+ * TSF 计费用户（Turso Account 行）：直读 Turso 扣费；老用户仍走 TSF_SERVER_URL → Java /quota/*。
+ * 未配置 TSF_SERVER_URL 且非 TSF 用户时降级为「额度无限」（no-op）。
  */
 
 export type QuotaDeductResult = {
@@ -22,6 +23,11 @@ import {
   TSF_AUTO_TASK_SOURCE,
   TS_FRONTEND_TASK_SOURCE,
 } from "./cosmosV4.js";
+import {
+  deductTsfAccountQuota,
+  isTsfBillingShopInDb,
+  queryTsfAccountQuota,
+} from "./tsfAccountQuota.js";
 
 /** TSF 手动 + 自动翻译任务来源（均扣 TSF 额度池）。 */
 const TSF_QUOTA_TASK_SOURCES = new Set([
@@ -85,6 +91,11 @@ function quotaBase(): string | null {
 }
 
 async function queryTsfRemaining(shop: string, attempts = 3): Promise<number | null> {
+  if (await isTsfBillingShopInDb(shop)) {
+    const quota = await queryTsfAccountQuota(shop);
+    return quota?.remaining ?? null;
+  }
+
   const base = quotaBase();
   if (!base) return null;
 
@@ -125,7 +136,10 @@ export async function getTsfRemainingWithRetry(
   shop: string,
   attempts = 3,
 ): Promise<number> {
-  // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为「无限」。
+  // TSF 计费用户走 Turso 本地额度；老用户走 HTTP（需 TSF_SERVER_URL）。
+  if (await isTsfBillingShopInDb(shop)) {
+    return (await queryTsfRemaining(shop, attempts)) ?? 1;
+  }
   if (!quotaBase()) return Number.MAX_SAFE_INTEGER;
   return (await queryTsfRemaining(shop, attempts)) ?? 1;
 }
@@ -161,7 +175,11 @@ export async function deductTsfQuota(
   shop: string,
   amount: number,
 ): Promise<QuotaDeductResult> {
-  // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为 no-op。
+  if (await isTsfBillingShopInDb(shop)) {
+    return deductTsfAccountQuota(shop, amount);
+  }
+
+  // 老用户：HTTP 扣 Java 额度；未配置后端时降级为 no-op。
   const base = quotaBase();
   if (!base) {
     return { ok: true, remaining: Number.MAX_SAFE_INTEGER };
