@@ -1,8 +1,5 @@
-export const TASK_TOKEN_TYPES = [
-  "manual_v4",
-  "auto_v4",
-  "single_field",
-] as const;
+/** 翻译任务 token 消耗类型（TaskTokenUsageLog.taskType）。 */
+export const TASK_TOKEN_TYPES = ["manual", "auto"] as const;
 
 export type TaskTokenType = (typeof TASK_TOKEN_TYPES)[number];
 

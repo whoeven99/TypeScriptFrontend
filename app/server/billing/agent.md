@@ -18,7 +18,7 @@
 | `PlanCatalog` | 套餐/购包目录（种子 `prisma/billing-plan-catalog-seed.sql`） |
 | `AccountPeriodUsage` | 订阅周期归档 |
 | `BillingLog` | 账务流水（含 `TRIAL_GRANTED` 幂等） |
-| `TaskTokenUsageLog` | 翻译任务消耗明细（`taskType`） |
+| `TaskTokenUsageLog` | 翻译任务消耗明细（`taskType`: `manual` / `auto`） |
 | `TokenBillingRule` | 翻译 LLM 乘数 |
 | `ShopProfile` | 取代 Java `Users` 元数据 |
 | `ShopLanguagePack` | 取代 Java `User_AILanguagePacks` |
@@ -78,8 +78,17 @@ npm run turso:migrate:prod
 - `app/routes/webhooks`：`APP_SUBSCRIPTIONS_UPDATE` / `APP_PURCHASES_ONE_TIME_UPDATE` → TSF 本地 handler
 - UI 价格仍由前端传入（`priceOverride`），PlanCatalog 负责 tokens 与 Shopify 商品名
 
-## Phase 4+ 待做
+## Phase 5 已接入（新用户路径 Java 清理）
 
-- PlanCatalog 种子与 Spring 对齐（价格/tokens 待产品补全）
-- 购包成功/订阅成功邮件（Java 有，TSF 暂未接）
-- 卸载时 Turso 计费状态清理
+- `app.tsx` loader **await** `runAppInitialization`，消除 bootstrap/quota 竞态
+- `usesTsfBilling` — Account / migratedToTsf / trial / 缓存路由 → 不走 Java bootstrap/quota
+- `resolveAppInitPath` — 分流结果写入 `CommonEventLog.BILLING_ROUTE_RESOLVED`，避免重复 `InitializationDetection`
+- TSF 用户 loader 不传 `SERVER_URL`；`globalStore.tsfBilling` 标记客户端跳过 Java
+- `hasPayForFreePlanModal` — TSF 用户跳过 `IsShowFreePlan` Java 调用
+- `TaskTokenUsageLog.taskType` 枚举：`manual` / `auto`
+
+## 待做
+
+- PlanCatalog 种子由产品覆盖（当前为简单占位）
+- Webhook 成功邮件（暂不实现）
+- manage-translation / switcher 等二级页面 Java 依赖（非新用户主路径）

@@ -1,4 +1,4 @@
--- PlanCatalog 占位种子（与 Spring 套餐对齐；价格/tokens 待产品补全后 UPDATE）
+-- PlanCatalog 简单占位（后续由产品/Spring 对齐脚本覆盖；勿依赖此处价格）
 DELETE FROM "PlanCatalog" WHERE "planKey" LIKE 'tsf_%';
 
 INSERT INTO "PlanCatalog" (

@@ -25,6 +25,7 @@ import {
 } from "~/server/appBootstrap.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { runAppInitialization, runLanguageTargetsSync } from "~/server/onboarding/runAppInitialization.server";
+import { usesTsfBilling } from "~/server/billing/billingRoute.server";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -154,25 +155,30 @@ function applyBootstrapJavaToStore(
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken, id: sessionId } = adminAuthResult.session;
-  const server = process.env.SERVER_URL || "";
   const bootstrap = await loadAppBootstrapLocales({
     shop,
     accessToken: accessToken as string | undefined,
   });
 
-  void runAppInitialization({
-    shop,
-    accessToken: accessToken as string | undefined,
-    sessionId,
-    source: bootstrap.source.code,
-    targetLocales: bootstrap.targets.map((item) => item.locale),
-  }).catch((error) => {
+  try {
+    await runAppInitialization({
+      shop,
+      accessToken: accessToken as string | undefined,
+      sessionId,
+      source: bootstrap.source.code,
+      targetLocales: bootstrap.targets.map((item) => item.locale),
+    });
+  } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
-  });
+  }
+
+  const tsfBilling = await usesTsfBilling(shop);
+  const server = tsfBilling ? "" : process.env.SERVER_URL || "";
 
   return json({
     shop,
     server,
+    tsfBilling,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
   });
@@ -472,7 +478,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, bootstrap } = useLoaderData<typeof loader>();
+  const { apiKey, shop, server, tsfBilling, bootstrap } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
@@ -482,6 +488,7 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
     globalStore.server = server as string;
+    globalStore.tsfBilling = tsfBilling;
     globalStore.translateV4ExpressBeta = true;
     globalStore.source = bootstrap.source.code;
 
@@ -507,7 +514,7 @@ export default function App() {
         applyBootstrapJavaToStore(dispatch, data.bootstrap);
       })
       .catch((err) => {
-        console.error("[app] bootstrap java fetch failed:", err);
+        console.error("[app] bootstrap fetch failed:", err);
       })
       .finally(() => {
         if (!cancelled) {
@@ -518,7 +525,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrap, dispatch, server, shop]);
+  }, [bootstrap, dispatch, server, shop, tsfBilling]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

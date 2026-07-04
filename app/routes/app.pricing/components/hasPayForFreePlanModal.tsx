@@ -24,6 +24,9 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({ }) => {
   }, [isNew]);
 
   const GetOrderStatus = async () => {
+    if (globalStore.tsfBilling || !globalStore?.server) {
+      return;
+    }
     if (!isNew && isNew !== null) {
       const hasShowModal = localStorage.getItem("ciwi-freetrial-hasShow");
       if (hasShowModal) {

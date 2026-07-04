@@ -25,6 +25,13 @@ export { handleAppPurchaseOneTimeWebhook } from "./purchase/handlePurchaseWebhoo
 export { getBillingGateway } from "./gateway/getBillingGateway.server";
 export { ensureAccount } from "./account/ensureAccount.server";
 export { isTsfBillingShop } from "./isTsfBillingShop.server";
+export {
+  getCachedBillingRoute,
+  hasTsfOnboardingMarkers,
+  persistBillingRoute,
+  usesTsfBilling,
+  type BillingRoute,
+} from "./billingRoute.server";
 export { appendBillingLog } from "./billingLog.server";
 export {
   BILLING_PAGE_PATH,

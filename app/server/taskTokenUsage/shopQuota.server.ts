@@ -1,6 +1,6 @@
 import axios from "axios";
 import prisma from "~/db.server";
-import { isTsfBillingShop } from "~/server/billing/isTsfBillingShop.server";
+import { usesTsfBilling } from "~/server/billing/billingRoute.server";
 import { ensureAccount } from "~/server/billing/account/ensureAccount.server";
 import {
   getAvailableTokens,
@@ -129,7 +129,7 @@ async function deductTsfShopQuota(
 
 /** 按 shop 自动分流 TSF Turso / Java Spring。 */
 export async function getShopQuota(shop: string): Promise<ShopQuota | null> {
-  if (await isTsfBillingShop(shop)) {
+  if (await usesTsfBilling(shop)) {
     return getTsfShopQuota(shop);
   }
   return getJavaShopQuota(shop);
@@ -149,7 +149,7 @@ export async function deductShopQuota(
     };
   }
 
-  if (await isTsfBillingShop(shop)) {
+  if (await usesTsfBilling(shop)) {
     return deductTsfShopQuota(shop, tokens);
   }
   return deductJavaShopQuota(shop, tokens);

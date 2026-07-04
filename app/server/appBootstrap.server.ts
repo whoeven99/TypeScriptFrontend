@@ -6,7 +6,7 @@ import {
 } from "~/api/JavaServer";
 import type { ShopLocalesType } from "~/routes/app.language/route";
 import { loadBillingContext } from "~/server/billing/billingContext.server";
-import { isTsfBillingShop } from "~/server/billing/isTsfBillingShop.server";
+import { usesTsfBilling } from "~/server/billing/billingRoute.server";
 import { APP_SUBSCRIPTION_STATUS } from "~/server/billing/types.server";
 import type { LoadedShopLocales } from "~/server/translateV4/shopLocales.server";
 
@@ -114,7 +114,7 @@ export async function loadAppBootstrapData(params: {
   shop: string;
   server: string;
 }): Promise<AppBootstrapJavaData> {
-  if (await isTsfBillingShop(params.shop)) {
+  if (await usesTsfBilling(params.shop)) {
     return loadAppBootstrapTsfData(params.shop);
   }
   return loadAppBootstrapJavaData(params);
