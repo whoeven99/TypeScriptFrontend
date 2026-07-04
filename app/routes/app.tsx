@@ -574,14 +574,12 @@ export default function App() {
       >
         <NavMenu>
           <Link to="/app/translate-v4" rel="home">
-            {t("v4.title")}
+            {t("Home")}
           </Link>
           {isClient && (
             <>
               <Link to="/app/language">{t("Language")}</Link>
-              <Link to="/app/manage_translation">
-                {t("Manage Translation")}
-              </Link>
+              <Link to="/app/manage_translation">{t("Content")}</Link>
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>

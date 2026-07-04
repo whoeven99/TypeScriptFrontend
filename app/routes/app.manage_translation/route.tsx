@@ -374,6 +374,23 @@ const Index = () => {
       navigation: "collection",
       withoutCount: false,
     },
+    {
+      key: "filters",
+      title: t("Filters"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "FILTER",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === currentLocale && item?.type === "FILTER",
+        )?.totalNumber ?? undefined,
+      sync_status: true,
+      navigation: "filter",
+      withoutCount: false,
+    },
   ];
 
   const onlineStoreThemeDataSource: TableDataType[] = [
@@ -667,6 +684,25 @@ const Index = () => {
     return list;
   }, [appInstallList, t]);
 
+  const merchandiseDataSource = [
+    ...productsDataSource,
+    ...imageDataSource,
+  ];
+  const contentDataSource = [
+    ...onlineStoreDataSource.filter((item) => item.key === "pages"),
+    ...blogAndArticleDataSource,
+    ...settingsDataSource.filter((item) => item.key === "policies"),
+  ];
+  const storeThemeDataSource = [
+    ...onlineStoreDataSource.filter((item) =>
+      ["shop", "navigation", "metaobjects", "store_metadata"].includes(item.key),
+    ),
+    ...onlineStoreThemeDataSource,
+  ];
+  const transactionDataSource = settingsDataSource.filter((item) =>
+    ["email", "shipping", "delivery"].includes(item.key),
+  );
+
   useEffect(() => {
     fetcher.submit(
       {
@@ -841,7 +877,7 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title={t("Manage Translation")} />
+      <TitleBar title={t("Content")} />
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
@@ -851,7 +887,7 @@ const Index = () => {
         <div className="manage-page">
         <div className="manage-page__inner">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AppPageHeader title={t("Manage Translation")} />
+          <AppPageHeader title={t("Content")} />
           <AppSectionCard bodyPadding="16px">
             <div className="manage-header">
               <div className="manage-header-left">
@@ -910,37 +946,27 @@ const Index = () => {
             <div className="manage-content-left">
               <div className="manage-card-grid">
                 <ManageTranslationsCard
-                  cardTitle={t("Products")}
-                  dataSource={productsDataSource}
+                  cardTitle={t("Products & catalog")}
+                  dataSource={merchandiseDataSource}
                   currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
-                  cardTitle={t("Online Store Theme")}
-                  dataSource={onlineStoreThemeDataSource}
+                  cardTitle={t("Pages & blog content")}
+                  dataSource={contentDataSource}
                   currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
-                  cardTitle={t("Online Store")}
-                  dataSource={onlineStoreDataSource}
+                  cardTitle={t("Storefront & theme")}
+                  dataSource={storeThemeDataSource}
                   currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
-                  cardTitle={t("Blogs and articles")}
-                  dataSource={blogAndArticleDataSource}
+                  cardTitle={t("Notifications & delivery")}
+                  dataSource={transactionDataSource}
                   currentLocale={currentLocale}
                 />
                 <ManageTranslationsCard
-                  cardTitle={t("Images data")}
-                  dataSource={imageDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Settings")}
-                  dataSource={settingsDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Liquid & Third-Party Apps")}
+                  cardTitle={t("Custom & third-party content")}
                   dataSource={liquidAndThirdPartyAppsDataSource}
                   currentLocale={currentLocale}
                 />

@@ -1,6 +1,8 @@
 import {
   Suspense,
   lazy,
+  type CSSProperties,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -35,7 +37,7 @@ import { CreateTaskCard } from "./components/CreateTaskCard";
 import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
-import { localeRegionCode } from "./localeDisplay";
+import { formatCredits, localeRegionCode } from "./localeDisplay";
 import { formatV4CreateTasksMessage, translateV4Message } from "./v4I18n";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
@@ -84,6 +86,96 @@ function scheduleShopV4Bootstrap({
   void bootstrap.catch((err) => {
     console.error("[translateV4] background bootstrap failed:", err);
   });
+}
+
+const homeCardStyle: CSSProperties = {
+  background: "var(--app-color-surface)",
+  border: "1px solid var(--app-color-border-secondary)",
+  borderRadius: 14,
+  boxShadow: "var(--app-shadow-card)",
+};
+
+function HomeMetricCard({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "warning" | "critical";
+}) {
+  const color =
+    tone === "success"
+      ? "var(--app-accent-growth)"
+      : tone === "warning"
+        ? "var(--app-accent-utility)"
+        : tone === "critical"
+          ? "var(--app-accent-critical)"
+          : "var(--app-color-text)";
+
+  return (
+    <div style={{ ...homeCardStyle, padding: "14px 16px", minWidth: 0 }}>
+      <div
+        style={{
+          color: "var(--app-color-text-secondary)",
+          fontSize: 12,
+          fontWeight: 700,
+          lineHeight: "16px",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          color,
+          fontSize: 26,
+          fontWeight: 750,
+          lineHeight: "34px",
+          marginTop: 6,
+          overflowWrap: "anywhere",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function HomeActionButton({
+  children,
+  primary = false,
+  onClick,
+}: {
+  children: ReactNode;
+  primary?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: primary
+          ? "1px solid var(--app-accent-primary)"
+          : "1px solid var(--app-color-border-secondary)",
+        background: primary
+          ? "var(--app-accent-primary)"
+          : "var(--app-color-surface)",
+        color: primary
+          ? "var(--app-color-brand-on-fill)"
+          : "var(--app-color-text)",
+        borderRadius: 8,
+        minHeight: 38,
+        padding: "8px 12px",
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        textAlign: "center",
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -494,12 +586,215 @@ export default function AppTranslateV4() {
     navigate("/app/language");
   }, [navigate]);
 
+  const openContentPage = useCallback(() => {
+    navigate("/app/manage_translation");
+  }, [navigate]);
+
+  const openStorefrontPage = useCallback(() => {
+    navigate("/app/switcher");
+  }, [navigate]);
+
+  const scrollToCreateTask = useCallback(() => {
+    createTaskSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
+  const scrollToTaskQueue = useCallback(() => {
+    taskQueueSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
+  const activeJobs = useMemo(() => jobs.filter((j) => !j.isTerminal), [jobs]);
+  const failedJobs = useMemo(
+    () => jobs.filter((j) => j.status === "FAILED"),
+    [jobs],
+  );
+  const pausedJobs = useMemo(
+    () => jobs.filter((j) => j.status === "PAUSED"),
+    [jobs],
+  );
+  const lowCoverageLocales = useMemo(
+    () =>
+      coverage.locales
+        .filter((row) => row.total > 0 && (row.percent ?? 0) < 80)
+        .sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0))
+        .slice(0, 3),
+    [coverage.locales],
+  );
+  const pendingItems = Math.max(coverage.totalItems - coverage.translatedItems, 0);
+  const issueCount =
+    failedJobs.length +
+    pausedJobs.length +
+    lowCoverageLocales.length +
+    (coverage.languageCount === 0 ? 1 : 0) +
+    (remainingCredits != null && remainingCredits <= 0 ? 1 : 0);
+  const issueItems = useMemo(() => {
+    const items: string[] = [];
+    if (failedJobs.length > 0) items.push(t("v4.home.issueFailedTasks", { count: failedJobs.length }));
+    if (pausedJobs.length > 0) items.push(t("v4.home.issuePausedTasks", { count: pausedJobs.length }));
+    if (remainingCredits != null && remainingCredits <= 0) items.push(t("v4.home.issueNoCredits"));
+    if (coverage.languageCount === 0) items.push(t("v4.home.issueNoLanguages"));
+    lowCoverageLocales.forEach((row) => {
+      items.push(
+        t("v4.home.issueLowCoverage", {
+          language: row.label || row.locale,
+          percent: row.percent ?? 0,
+        }),
+      );
+    });
+    if (items.length === 0) items.push(t("v4.home.noIssues"));
+    return items.slice(0, 5);
+  }, [
+    coverage.languageCount,
+    failedJobs.length,
+    lowCoverageLocales,
+    pausedJobs.length,
+    remainingCredits,
+    t,
+  ]);
+
   return (
     <Page>
       <TitleBar title={t("v4.title")} />
       <div className="v4-page" style={v4ContentStyle}>
         <div className="v4-enter">
           <PageHeaderBar credits={remainingCredits} planType={planType} />
+        </div>
+
+        <div
+          className="v4-enter"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <HomeMetricCard
+            label={t("v4.home.coverage")}
+            value={coverage.overallPercent == null ? "--" : `${coverage.overallPercent}%`}
+            tone={(coverage.overallPercent ?? 0) >= 80 ? "success" : "warning"}
+          />
+          <HomeMetricCard
+            label={t("v4.home.activeTasks")}
+            value={`${activeJobs.length}`}
+            tone={activeJobs.length > 0 ? "warning" : "default"}
+          />
+          <HomeMetricCard
+            label={t("v4.home.needsAttention")}
+            value={`${issueCount}`}
+            tone={issueCount > 0 ? "critical" : "success"}
+          />
+          <HomeMetricCard
+            label={t("v4.home.remainingCredits")}
+            value={remainingCredits == null ? "--" : formatCredits(remainingCredits)}
+            tone={remainingCredits != null && remainingCredits <= 0 ? "critical" : "default"}
+          />
+        </div>
+
+        <div
+          className="v4-enter"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+            marginBottom: 18,
+            alignItems: "stretch",
+          }}
+        >
+          <div
+            style={{
+              ...homeCardStyle,
+              padding: 18,
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 750, lineHeight: "24px" }}>
+                  {t("v4.home.statusTitle")}
+                </div>
+                <div
+                  style={{
+                    color: "var(--app-color-text-secondary)",
+                    fontSize: 13,
+                    lineHeight: "20px",
+                    marginTop: 4,
+                  }}
+                >
+                  {t("v4.home.statusSubtitle", {
+                    translated: coverage.translatedItems,
+                    pending: pendingItems,
+                  })}
+                </div>
+              </div>
+              <HomeActionButton onClick={scrollToTaskQueue}>
+                {t("v4.home.viewTasks")}
+              </HomeActionButton>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 10,
+              }}
+            >
+              {issueItems.map((item) => (
+                <div
+                  key={item}
+                  style={{
+                    border: "1px solid var(--app-color-border-secondary)",
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    background: "var(--app-color-surface-secondary)",
+                    color: "var(--app-color-text)",
+                    fontSize: 13,
+                    lineHeight: "19px",
+                    minHeight: 40,
+                  }}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div
+            style={{
+              ...homeCardStyle,
+              padding: 18,
+              display: "grid",
+              alignContent: "start",
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 750 }}>
+              {t("v4.home.nextActions")}
+            </div>
+            <HomeActionButton primary onClick={scrollToCreateTask}>
+              {activeJobs.length > 0 ? t("v4.home.continueTranslation") : t("v4.home.startTranslation")}
+            </HomeActionButton>
+            <HomeActionButton onClick={openContentPage}>
+              {t("v4.home.fixContent")}
+            </HomeActionButton>
+            <HomeActionButton onClick={openLanguagePage}>
+              {t("v4.home.manageLanguages")}
+            </HomeActionButton>
+            <HomeActionButton onClick={openStorefrontPage}>
+              {t("v4.home.configureStorefront")}
+            </HomeActionButton>
+          </div>
         </div>
 
         {translateQueue.length > 0 ? (
