@@ -163,3 +163,179 @@ model LiquidRule {
 
   @@index([shop])
 }
+
+// ─── 计费与 onboarding（Phase 0；新用户 Turso 账本，老用户仍走 Java）───
+
+/// 店铺计费账户（每 shop 一行，存在即表示走 TSF 本地计费）。
+model Account {
+  id                 String   @id @default(cuid())
+  shop               String   @unique
+  subscriptionTokens Int      @default(0)
+  purchasedTokens    Int      @default(0)
+  trialTokens        Int      @default(0)
+  usedTokens         Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  appSubscription    AppSubscription?
+  periodUsages       AccountPeriodUsage[]
+  billingLogs        BillingLog[]
+  taskTokenUsageLogs TaskTokenUsageLog[]
+}
+
+/// 套餐 / 购包目录（种子见 prisma/billing-plan-catalog-seed.sql）。
+model PlanCatalog {
+  planKey         String   @id
+  kind            String
+  billingInterval String?
+  displayName     String
+  tokens          Int
+  priceAmount     String
+  currencyCode    String   @default("USD")
+  trialDays       Int?
+  shopifyPlanName String?
+  sortOrder       Int      @default(0)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+}
+
+/// 当前生效的 Shopify 订阅（每 shop 最多一条）。
+model AppSubscription {
+  id                    String    @id @default(cuid())
+  shop                  String    @unique
+  planKey               String
+  shopifySubscriptionId String    @unique
+  billingInterval       String
+  status                String
+  tokensPerPeriod       Int
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelledAt           DateTime?
+  confirmationUrl       String?
+  rawPayload            Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  account      Account              @relation(fields: [shop], references: [shop])
+  periodUsages AccountPeriodUsage[]
+
+  @@index([status])
+}
+
+/// 订阅周期用量归档（续费时写入）。
+model AccountPeriodUsage {
+  id                          String   @id @default(cuid())
+  shop                        String
+  appSubscriptionId           String
+  planKey                     String
+  periodStart                 DateTime
+  periodEnd                   DateTime
+  usedTokens                  Int
+  subscriptionTokensAllocated Int
+  purchasedTokensRemaining    Int      @default(0)
+  trialTokensRemaining        Int      @default(0)
+  archivedAt                  DateTime @default(now())
+
+  account         Account         @relation(fields: [shop], references: [shop])
+  appSubscription AppSubscription @relation(fields: [appSubscriptionId], references: [id])
+
+  @@unique([appSubscriptionId, periodStart, periodEnd])
+  @@index([shop, periodEnd])
+}
+
+/// 计费账务流水。
+model BillingLog {
+  id          String   @id @default(cuid())
+  shop        String
+  eventType   String
+  planKey     String?
+  referenceId String?
+  tokensDelta Int?
+  usedTokens  Int?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([shop, createdAt])
+  @@index([eventType, createdAt])
+  @@index([referenceId])
+}
+
+/// 翻译任务 token 消耗明细（仅翻译任务，含 taskType）。
+model TaskTokenUsageLog {
+  id           String   @id @default(cuid())
+  shop         String
+  taskType     String
+  jobId        String?
+  modelKey     String?
+  rawTokens    Int
+  billedTokens Int
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([shop, taskType, createdAt])
+  @@index([shop, createdAt])
+}
+
+/// 翻译 LLM token 计费系数（种子见 prisma/token-billing-rule-seed.sql）。
+model TokenBillingRule {
+  ruleKey       String   @id
+  feature       String
+  modelKey      String
+  displayName   String
+  multiplier    Float
+  baseTokenCost Int?
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([feature, modelKey])
+  @@index([feature, enabled])
+}
+
+/// 安装 / 卸载 / scope 变更（与 BillingLog 分离）。
+model CommonEventLog {
+  id          String   @id @default(cuid())
+  shop        String
+  eventType   String
+  topic       String?
+  referenceId String?
+  payload     Json?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([shop, createdAt])
+  @@index([eventType, createdAt])
+  @@index([referenceId])
+}
+
+/// 取代 Java `Users` 店铺元数据。
+model ShopProfile {
+  shop             String   @id
+  email            String?
+  firstName        String?
+  lastName         String?
+  userTag          String?
+  defaultThemeId   String?
+  defaultThemeName String?
+  defaultLanguage  String?
+  accessToken      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// 取代 Java `User_AILanguagePacks`（默认 General 包）。
+model ShopLanguagePack {
+  shop      String   @id
+  packKey   String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

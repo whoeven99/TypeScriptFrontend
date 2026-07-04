@@ -23,6 +23,10 @@ const MIGRATION_MARKERS = [
     name: "20260629100000_add_switcher_configuration_ip_redirection",
     table: "SwitcherConfiguration",
   },
+  {
+    name: "20260704160000_add_billing_and_onboarding",
+    table: "Account",
+  },
 ];
 
 const PRISMA_MIGRATIONS_DDL = `
@@ -247,9 +251,26 @@ async function main() {
   console.log(
     `[turso:migrate:${target}] 共 ${status.rows.length} 条记录在 _prisma_migrations`,
   );
+  await runSeed(client, root);
+
   if (ran === 0 && repaired === 0) {
     console.log(`[turso:migrate:${target}] 无待执行 migration（已是最新）`);
   }
+}
+
+async function runSeedFile(client, root, fileName, label) {
+  const seedPath = path.join(root, "prisma", fileName);
+  if (!fs.existsSync(seedPath)) return;
+  const statements = splitStatements(fs.readFileSync(seedPath, "utf8"));
+  for (const statement of statements) {
+    await executeWithRetry(client, statement);
+  }
+  console.log(`[turso:migrate] ${label} 种子 ${statements.length} 条`);
+}
+
+async function runSeed(client, root) {
+  await runSeedFile(client, root, "billing-plan-catalog-seed.sql", "PlanCatalog");
+  await runSeedFile(client, root, "token-billing-rule-seed.sql", "TokenBillingRule");
 }
 
 main().catch((error) => {

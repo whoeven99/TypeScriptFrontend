@@ -1,0 +1,102 @@
+import prisma from "~/db.server";
+import { BillingError, BILLING_ERROR_CODE } from "../errors.server";
+import type { PlanCatalogKind } from "../types.server";
+
+export type PlanRecord = {
+  planKey: string;
+  kind: PlanCatalogKind;
+  billingInterval: string | null;
+  displayName: string;
+  tokens: number;
+  priceAmount: string;
+  currencyCode: string;
+  trialDays: number | null;
+  shopifyPlanName: string | null;
+};
+
+const PLAN_CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type CacheEntry<T> = { value: T; expiresAt: number };
+
+const listCache = new Map<string, CacheEntry<PlanRecord[]>>();
+const planByKeyCache = new Map<string, CacheEntry<PlanRecord>>();
+
+function readCache<T>(map: Map<string, CacheEntry<T>>, key: string): T | undefined {
+  const entry = map.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) {
+    map.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function writeCache<T>(map: Map<string, CacheEntry<T>>, key: string, value: T): void {
+  map.set(key, {
+    value,
+    expiresAt: Date.now() + PLAN_CATALOG_CACHE_TTL_MS,
+  });
+}
+
+function rowToPlanRecord(row: {
+  planKey: string;
+  kind: string;
+  billingInterval: string | null;
+  displayName: string;
+  tokens: number;
+  priceAmount: string;
+  currencyCode: string;
+  trialDays: number | null;
+  shopifyPlanName: string | null;
+}): PlanRecord {
+  return {
+    planKey: row.planKey,
+    kind: row.kind as PlanCatalogKind,
+    billingInterval: row.billingInterval,
+    displayName: row.displayName,
+    tokens: row.tokens,
+    priceAmount: row.priceAmount,
+    currencyCode: row.currencyCode,
+    trialDays: row.trialDays,
+    shopifyPlanName: row.shopifyPlanName,
+  };
+}
+
+export function invalidatePlanCatalogCache(): void {
+  listCache.clear();
+  planByKeyCache.clear();
+}
+
+export async function listEnabledPlans(): Promise<PlanRecord[]> {
+  const cacheKey = "all";
+  const cached = readCache(listCache, cacheKey);
+  if (cached) return cached;
+
+  const rows = await prisma.planCatalog.findMany({
+    where: { enabled: true },
+    orderBy: [{ sortOrder: "asc" }, { planKey: "asc" }],
+  });
+  const plans = rows.map(rowToPlanRecord);
+  writeCache(listCache, cacheKey, plans);
+  for (const plan of plans) {
+    writeCache(planByKeyCache, plan.planKey, plan);
+  }
+  return plans;
+}
+
+export async function getPlanByKey(planKey: string): Promise<PlanRecord> {
+  const cached = readCache(planByKeyCache, planKey);
+  if (cached) return cached;
+
+  const row = await prisma.planCatalog.findUnique({ where: { planKey } });
+  if (!row || !row.enabled) {
+    throw new BillingError(
+      `Plan not found: ${planKey}`,
+      BILLING_ERROR_CODE.PLAN_NOT_FOUND,
+      404,
+    );
+  }
+  const plan = rowToPlanRecord(row);
+  writeCache(planByKeyCache, planKey, plan);
+  return plan;
+}
