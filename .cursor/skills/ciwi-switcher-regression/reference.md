@@ -35,7 +35,7 @@
 | 国旗 | `includedFlag=true` | `.option-country-flag` / `#translate-float-btn-icon` 有 src |
 | Sidebar 模式 | 语言货币选择器均 false | 仅 `#translate-float-btn` 可见 |
 | 样式/位置 | Admin 配置 | `#ciwi-container` 的 top/bottom/left/right、颜色 |
-| IP 定位 | `ipOpen=true` + 无 localStorage 缓存 | 自动 `updateLocalization`；Network 见 `checkUserIp` |
+| IP 定位 | `ipOpen=true` + 无 localStorage 缓存 | 自动 `updateLocalization`；Network 见 `browsing_context_suggestions.json` 或 ipapi |
 | 隐身 IP | `isTransparent=true` + `ipOpen` | 无 `#ciwi-container` 可见 UI，但 locale/currency 仍变 |
 | 商品图 Alt | 切换语言后 | 商品页 `<img alt="...">` 变化（有后端翻译数据时） |
 | PageFly 文本 | PageFly 页切换语言 | DOM 文本块更新 |
@@ -50,7 +50,6 @@
 |------|------|
 | `widgetConfigurations/getData` | 读 Switcher 配置 |
 | `currency/getCurrencyByShopName` | 货币列表 |
-| `userIp/checkUserIp` | IP 额度检查 |
 | `browsing_context_suggestions.json` | Shopify IP/语言建议（优先） |
 | `api.ipapi.com` | IP 兜底 |
 

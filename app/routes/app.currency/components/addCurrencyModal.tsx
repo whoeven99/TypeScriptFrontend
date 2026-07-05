@@ -3,16 +3,15 @@ import { Modal, Input, Table, Space, Button, Typography } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import { useDispatch, useSelector } from "react-redux";
-import { CurrencyDataType, CurrencyType } from "../route";
+import type { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
-import { AddCurrency } from "~/api/JavaServer";
+import { AddCurrencyV4 } from "~/api/currencyV4";
 
 const { Text } = Typography;
 
 interface AddCurrencyModalProps {
   shop: string;
-  server: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   addCurrencies: CurrencyType[];
@@ -20,8 +19,6 @@ interface AddCurrencyModalProps {
 }
 
 const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
-  shop,
-  server,
   isVisible,
   setIsModalOpen,
   addCurrencies,
@@ -151,9 +148,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const handleConfirm = async () => {
     setAddLoading(true);
     const promises = allSelectedCurrency.map((currency: any) =>
-      AddCurrency({
-        shop,
-        server,
+      AddCurrencyV4({
         currencyName: currency.currencyName,
         currencyCode: currency.currencyCode,
         primaryStatus: currency?.primaryStatus || 0,

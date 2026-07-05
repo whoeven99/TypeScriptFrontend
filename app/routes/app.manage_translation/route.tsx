@@ -21,15 +21,10 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  GetTranslationItemsInfo,
-  TranslateImage,
-  storageTranslateImage,
-} from "~/api/JavaServer";
+import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
 import {
   getItemsCountByLabel,
   invalidateAllItemsCountForLocale,
-  isLocalItemsCountSupported,
 } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
@@ -154,26 +149,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!itemsCount:
       try {
-        // 已支持的类型改为 TSF 本地计算（v4 口径），其余仍走 Java。
-        if (isLocalItemsCountSupported(itemsCount.resourceType)) {
-          const response = await getItemsCountByLabel({
-            admin,
-            shop,
-            target: itemsCount.target,
-            resourceTypeLabel: itemsCount.resourceType,
-            skipCache: itemsCount.forceRefresh === true,
-          });
-          return { success: true, errorCode: 0, errorMsg: "", response };
-        }
-
-        const data = await GetTranslationItemsInfo({
+        const response = await getItemsCountByLabel({
+          admin,
           shop,
-          accessToken,
-          source: itemsCount.source,
           target: itemsCount.target,
-          resourceType: itemsCount.resourceType,
+          resourceTypeLabel: itemsCount.resourceType,
+          skipCache: itemsCount.forceRefresh === true,
         });
-        return data;
+        return { success: true, errorCode: 0, errorMsg: "", response };
       } catch (error) {
         console.error("Error manage_translation itemsCount:", error);
         return {

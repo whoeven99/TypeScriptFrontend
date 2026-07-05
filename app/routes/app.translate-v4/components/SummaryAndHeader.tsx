@@ -60,7 +60,7 @@ export function SummaryDonutCard({
           style={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             minWidth: 0,
             flex: 1,
             flexBasis: 320,
@@ -102,7 +102,7 @@ export function SummaryDonutCard({
               gap: 12,
               borderTop: `1px solid ${v4Colors.divider}`,
               paddingTop: 14,
-              marginTop: 18,
+              marginTop: 72,
             }}
           >
             <StatFoot
@@ -423,11 +423,3 @@ export function coverageBarColor(percent: number | null): string {
   if (percent >= 60) return v4Colors.primary;
   return v4Colors.warning;
 }
-
-export const segmentBarStyle = (filled: boolean, color: string): CSSProperties => ({
-  flex: 1,
-  height: 6,
-  borderRadius: 3,
-  background: filled ? color : v4Colors.progressTrack,
-  transition: "background 0.2s",
-});

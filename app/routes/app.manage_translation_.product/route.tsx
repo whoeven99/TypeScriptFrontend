@@ -13,7 +13,7 @@ import {
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import { SingleTextTranslate } from "~/api/JavaServer";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTableInput from "~/components/manageTableInput";
@@ -21,11 +21,15 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
-import { MenuItem } from "../app.manage_translation/components/itemsScroll";
+type MenuItem = { key: string; label: string };
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { SearchOutlined } from "@ant-design/icons";
 import { getItemOptions } from "../app.manage_translation/route";
+import {
+  getManageTranslationLanguage,
+  manageTranslationLanguageLoader,
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -40,7 +44,9 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
       ? {
           requestId: response.headers.get("x-request-id"),
           apiVersion: response.headers.get("x-shopify-api-version"),
-          apiVersionWarning: response.headers.get("x-shopify-api-version-warning"),
+          apiVersionWarning: response.headers.get(
+            "x-shopify-api-version-warning",
+          ),
         }
       : undefined;
 
@@ -98,22 +104,14 @@ type ManageDataSourceType = {
   translated: string | undefined;
 } | null;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
-  return json({
-    searchTerm,
-  });
-};
+export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const startCursor: any = JSON.parse(formData.get("startCursor") as string);
@@ -547,7 +545,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在翻译管理-产品页面`,
+        log: `${globalStore?.shop} 目前在翻译管�?产品页面`,
       },
       {
         method: "POST",
@@ -567,7 +565,7 @@ const Index = () => {
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data.success) {
-        // 处理刷新操作返回的数据（包含 nodes）
+        // 处理刷新操作返回的数据（包含 nodes�?
         if (dataFetcher.data.response?.nodes) {
           // 刷新操作：更新当前产品的翻译数据
           const refreshedNodes = dataFetcher.data.response.nodes;
@@ -579,9 +577,10 @@ const Index = () => {
                 (node: any) => node.resourceId === item.resourceId,
               );
               if (refreshedNode) {
-                const translatableContent = refreshedNode.translatableContent?.find(
-                  (c: any) => c.key === item.shopifyKey,
-                );
+                const translatableContent =
+                  refreshedNode.translatableContent?.find(
+                    (c: any) => c.key === item.shopifyKey,
+                  );
                 const translation = refreshedNode.translations?.find(
                   (t: any) => t.key === item.shopifyKey,
                 );
@@ -604,9 +603,10 @@ const Index = () => {
                 (node: any) => node.resourceId === item.resourceId,
               );
               if (refreshedNode) {
-                const translatableContent = refreshedNode.translatableContent?.find(
-                  (c: any) => c.key === item.shopifyKey,
-                );
+                const translatableContent =
+                  refreshedNode.translatableContent?.find(
+                    (c: any) => c.key === item.shopifyKey,
+                  );
                 const translation = refreshedNode.translations?.find(
                   (t: any) => t.key === item.shopifyKey,
                 );
@@ -628,7 +628,7 @@ const Index = () => {
           return;
         }
 
-        // 处理常规分页请求返回的数据（包含 data）
+        // 处理常规分页请求返回的数据（包含 data�?
         let refreshedData = dataFetcher.data.response.data;
         if (refreshOrderRef.current.length > 0) {
           refreshedData.sort((a: any, b: any) => {
@@ -659,7 +659,7 @@ const Index = () => {
     }
   }, [dataFetcher.data]);
 
-  // 更新 loadingItemsRef 的值
+  // 更新 loadingItemsRef 的�?
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
@@ -732,7 +732,7 @@ const Index = () => {
       if (productFetcher.data.success) {
         const response = productFetcher.data.response;
         const resourceId = response?.resourceId;
-        // 先把 translatableContent / translations 建成按 key 索引的查找表，
+        // 先把 translatableContent / translations 建成�?key 索引的查找表�?
         // 避免每个字段都对同一数组反复 .find()（原来每行扫 4 次）
         const contentByKey = new Map<string, any>(
           (response?.translatableContent ?? []).map((c: any) => [c.key, c]),
@@ -740,7 +740,7 @@ const Index = () => {
         const translationByKey = new Map<string, any>(
           (response?.translations ?? []).map((tr: any) => [tr.key, tr]),
         );
-        // emptyTranslated=true 时缺失译文回退为 ""（SEO 行的原行为），否则保留 undefined（基础行的原行为）
+        // emptyTranslated=true 时缺失译文回退�?""（SEO 行的原行为），否则保�?undefined（基础行的原行为）
         const buildRow = (
           shopifyKey: string,
           resource: string,
@@ -938,7 +938,7 @@ const Index = () => {
           } else {
             console.error("Request failed:", result.reason);
           }
-          return []; // 记得返回空数组避免 undefined
+          return []; // 记得返回空数组避�?undefined
         },
       );
 
@@ -1261,40 +1261,43 @@ const Index = () => {
     },
   ];
 
-  // useCallback 稳定函数引用，配合 ManageTableInput 的 React.memo，
+  // useCallback 稳定函数引用，配�?ManageTableInput �?React.memo�?
   // 避免 loadingItems/分页/菜单等无关状态变化时整表单元格重渲染
-  const handleInputChange = useCallback((record: any, value: string) => {
-    setTranslatedValues((prev) => ({
-      ...prev,
-      [record?.key]: value, // 更新对应的 key
-    }));
-    setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex(
-        (item) => item.id === record?.key,
-      );
-      if (existingItemIndex !== -1) {
-        // 如果 key 存在，更新其对应的 value
-        const updatedConfirmData = [...prevData];
-        updatedConfirmData[existingItemIndex] = {
-          ...updatedConfirmData[existingItemIndex],
-          value: value,
-        };
-        return updatedConfirmData;
-      } else {
-        const newItem = {
-          id: record?.key,
-          resourceId: record?.resourceId,
-          locale: globalStore?.source || "",
-          key: record?.shopifyKey,
-          value: value, // 初始为空字符串
-          translatableContentDigest: record?.digest,
-          target: searchTerm || "",
-        };
+  const handleInputChange = useCallback(
+    (record: any, value: string) => {
+      setTranslatedValues((prev) => ({
+        ...prev,
+        [record?.key]: value, // 更新对应�?key
+      }));
+      setConfirmData((prevData) => {
+        const existingItemIndex = prevData.findIndex(
+          (item) => item.id === record?.key,
+        );
+        if (existingItemIndex !== -1) {
+          // 如果 key 存在，更新其对应�?value
+          const updatedConfirmData = [...prevData];
+          updatedConfirmData[existingItemIndex] = {
+            ...updatedConfirmData[existingItemIndex],
+            value: value,
+          };
+          return updatedConfirmData;
+        } else {
+          const newItem = {
+            id: record?.key,
+            resourceId: record?.resourceId,
+            locale: globalStore?.source || "",
+            key: record?.shopifyKey,
+            value: value, // 初始为空字符�?
+            translatableContentDigest: record?.digest,
+            target: searchTerm || "",
+          };
 
-        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-      }
-    });
-  }, [searchTerm]);
+          return [...prevData, newItem]; // 将新数据添加�?confirmData �?
+        }
+      });
+    },
+    [searchTerm],
+  );
 
   const handleTranslate = async ({
     resourceType,
@@ -1307,7 +1310,7 @@ const Index = () => {
   }) => {
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管�?产品页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -1315,7 +1318,7 @@ const Index = () => {
       },
     );
     setLoadingItems((prev) => [...prev, record?.key]);
-    
+
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
@@ -1334,7 +1337,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管�?产品页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -1397,7 +1400,7 @@ const Index = () => {
     };
   };
 
-  // 下一页请求函数
+  // 下一页请求函�?
   const throttleNextSubmit = useMemo(() => {
     return throttle(async () => {
       dataFetcher.submit(
@@ -1416,7 +1419,7 @@ const Index = () => {
     }, 500);
   }, [productsData, searchTerm]);
 
-  // 上一页请求函数
+  // 上一页请求函�?
   const throttleBackSubmit = useMemo(() => {
     return throttle(() => {
       dataFetcher.submit(
@@ -1433,7 +1436,7 @@ const Index = () => {
         },
       );
     }, 500);
-  }, [productsData, searchTerm]); // ✅ 必须写依赖
+  }, [productsData, searchTerm]); // �?必须写依�?
 
   const throttleMenuChange = useMemo(() => {
     return throttle((key: string) => {
@@ -1441,8 +1444,8 @@ const Index = () => {
     }, 300);
   }, []);
 
-  const clickNextTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
-  const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
+  const clickNextTimestampsRef = useRef<number[]>([]); // 用于存储点击时间�?
+  const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间�?
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
@@ -1456,12 +1459,12 @@ const Index = () => {
   const handleSearch = (value: string) => {
     setQueryText(value);
 
-    // 清除上一次的定时器
+    // 清除上一次的定时�?
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
     }
 
-    // 延迟 0.5s 再执行请求
+    // 延迟 0.5s 再执行请�?
     timeoutIdRef.current = setTimeout(() => {
       dataFetcher.submit(
         {
@@ -1500,7 +1503,6 @@ const Index = () => {
     }
   };
 
-  
   const refreshCurrentPageData = () => {
     const currentResourceIds = productsData
       .map((item: any) => item?.id)
@@ -1519,7 +1521,7 @@ const Index = () => {
       },
     );
   };
-const onNext = () => {
+  const onNext = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
@@ -1542,7 +1544,7 @@ const onNext = () => {
 
   const handleConfirm = () => {
     const formData = new FormData();
-    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发�?
     confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/product?language=${searchTerm}`,
@@ -1585,7 +1587,7 @@ const onNext = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
     }
   };
 

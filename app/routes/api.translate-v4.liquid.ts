@@ -19,7 +19,7 @@ function fail(errorMsg: string, errorCode = 10001) {
   return json({ success: false, errorCode, errorMsg, response: null });
 }
 
-/** GET /api/translate-v4/liquid —— 列出本店 Liquid 规则（仅迁移后的店用）。 */
+/** GET /api/translate-v4/liquid —— 列出本店 Liquid 规则。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   try {
@@ -31,7 +31,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * POST /api/translate-v4/liquid —— Liquid 增删改（仅迁移后的店用）。
+ * POST /api/translate-v4/liquid —— Liquid 增删改。
  * body: { intent: "insert"|"update"|"delete"|"toggleReplacementMethod", ... }
  */
 export const action = async ({ request }: ActionFunctionArgs) => {

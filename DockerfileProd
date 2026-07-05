@@ -1,33 +1,23 @@
-# syntax=docker/dockerfile:1
-FROM node:20-alpine
+# Render PROD — same as Dockerfile (kept for services still pointing at this path).
+FROM node:20-slim
 
-# Prisma 运行时需要系统级 openssl（Alpine 默认不含）
-RUN apk add --no-cache openssl
+RUN apt-get update -y \
+  && apt-get install -y openssl \
+  && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 3000
+EXPOSE 8080
+
 WORKDIR /app
-
-# 先复制依赖文件，充分利用 Docker 层缓存
-COPY package.json package-lock.json .npmrc ./
-COPY patches ./patches
-
-# BuildKit 缓存挂载：persist npm 缓存目录，只下载新增/变更的包
-# 注意：安装阶段不能设 NODE_ENV=production，否则 devDependencies（patch-package、prisma 等）被跳过，
-# postinstall 会报 exit 127（command not found）
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
-    npm ci --legacy-peer-deps --prefer-offline
-
-# 生成 Prisma Client（构建时完成，非运行时）
-COPY prisma ./prisma
-RUN npx prisma generate
-
-# 复制源码并构建（Vite 缓存也持久化）
-COPY . .
-RUN npx patch-package
-RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
-    npm run build
 
 ENV NODE_ENV=production
 
-# Turso 远程数据库迁移 + 启动（prod 环境）
-CMD ["sh", "-c", "node scripts/turso-migrate.cjs prod && npx remix-serve ./build/server/index.js"]
+COPY package.json package-lock.json* .npmrc ./
+COPY patches ./patches
+
+RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
+
+COPY . .
+
+RUN npm run build
+
+CMD ["npm", "run", "docker-start"]

@@ -12,15 +12,3 @@ export function selectShopTargetLocales<T extends ShopLocaleLike>(
   const source = sourceLocale.trim();
   return locales.filter((l) => !l.primary && l.value !== source);
 }
-
-export function selectShopTargetLocaleCodes(
-  rows: Array<{ locale: string; primary?: boolean }>,
-  primaryLocale: string,
-): string[] {
-  const source = primaryLocale.trim();
-  const codes = rows
-    .filter((r) => !r.primary && r.locale.trim() !== source)
-    .map((r) => r.locale.trim())
-    .filter(Boolean);
-  return [...new Set(codes)];
-}

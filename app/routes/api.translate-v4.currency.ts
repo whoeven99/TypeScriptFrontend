@@ -1,0 +1,100 @@
+import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import { authenticate } from "~/shopify.server";
+import {
+  deleteCurrency,
+  getCurrencyCacheData,
+  getCurrencyTableByShopName,
+  insertCurrency,
+  updateCurrency,
+  updateDefaultCurrency,
+} from "~/server/currency/currency.server";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { shop } = session;
+
+  try {
+    const result = await getCurrencyTableByShopName(shop);
+    return json(result);
+  } catch (error) {
+    console.error("[currency] list failed:", error);
+    return json(
+      {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      },
+      { status: 500 },
+    );
+  }
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { shop } = session;
+
+  try {
+    const body = (await request.json().catch(() => ({}))) as Record<string, any>;
+    const actionType = String(body.action ?? "");
+
+    switch (actionType) {
+      case "insert":
+        return json(
+          await insertCurrency({
+            shop,
+            currencyName: body.currencyName,
+            currencyCode: body.currencyCode,
+            rounding: body.primaryStatus ? null : "",
+            exchangeRate: body.primaryStatus ? null : "Auto",
+            primaryStatus: Number(body.primaryStatus ?? 0),
+          }),
+        );
+      case "update":
+        return json(
+          await updateCurrency({
+            shop,
+            id: body.id,
+            rounding: body.rounding,
+            exchangeRate: body.exchangeRate,
+          }),
+        );
+      case "delete":
+        return json(await deleteCurrency(shop, body.id));
+      case "cache":
+        return json(await getCurrencyCacheData(shop, body.currencyCode));
+      case "updateDefault":
+        return json(
+          await updateDefaultCurrency({
+            shop,
+            currencyName: body.currencyName,
+            currencyCode: body.currencyCode,
+            rounding: null,
+            exchangeRate: null,
+            primaryStatus: 1,
+          }),
+        );
+      default:
+        return json(
+          {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "UNKNOWN_ACTION",
+            response: undefined,
+          },
+          { status: 400 },
+        );
+    }
+  } catch (error) {
+    console.error("[currency] action failed:", error);
+    return json(
+      {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      },
+      { status: 500 },
+    );
+  }
+};

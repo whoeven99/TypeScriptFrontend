@@ -15,6 +15,21 @@ export function switchUrl(blockId) {
   }
 }
 
+/**
+ * 店面 Widget / Liquid / PageFly 读 API：仅走 App Proxy（#ciwiAppProxyBase → TSF /api/storefront/*）。
+ * 货币 / 图片等仍走 Java（switchUrl）；IP 定位走 Shopify / ipapi，不经额度接口。
+ */
+function resolveStorefrontApiBase() {
+  const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
+  if (!appProxyBase) {
+    console.error(
+      "[ciwi] ciwiAppProxyBase missing; storefront reads require App Proxy (v4)",
+    );
+    return null;
+  }
+  return appProxyBase;
+}
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
     headers: {
@@ -27,70 +42,14 @@ async function fetchJson(url, options = {}) {
   return { status: res.status, data };
 }
 
-export async function NoCrawlerPrintLog({
-  blockId,
-  shopName,
-  ip,
-  languageCode,
-  langInclude,
-  countryCode,
-  counInclude,
-  currencyCode,
-  checkUserIpCostTime,
-  fetchUserCountryInfoCostTime,
-  status,
-  error,
-}) {
+export async function ReadTranslatedText({ shopName, languageCode }) {
   try {
-    await fetchJson(
-      `${switchUrl(blockId)}/userIp/noCrawlerPrintLog?shopName=${shopName}`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          status: status,
-          userIp: ip,
-          languageCode: languageCode,
-          languageCodeStatus: langInclude,
-          countryCode: countryCode,
-          currencyCode: currencyCode,
-          currencyCodeStatus: counInclude,
-          costTime: checkUserIpCostTime,
-          ipApiCostTime: fetchUserCountryInfoCostTime,
-          errorMessage: error,
-        }),
-      },
-    );
-  } catch (err) {
-    console.error("Error NoCrawlerPrintLog:", err);
-  }
-}
-
-export async function IncludeCrawlerPrintLog({
-  shopName,
-  blockId,
-  ua,
-  reason,
-}) {
-  try {
-    await fetchJson(
-      `${switchUrl(blockId)}/userIp/includeCrawlerPrintLog?shopName=${shopName}`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          uaInformation: ua,
-          uaReason: reason,
-        }),
-      },
-    );
-  } catch (err) {
-    console.error("Error IncludeCrawlerPrintLog:", err);
-  }
-}
-
-export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
-  try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return { success: false, errorCode: 10001, errorMsg: "APP_PROXY_MISSING", response: [] };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
+      `${baseUrl}/userPageFly/readTranslatedText?shopName=${shopName}&languageCode=${languageCode}`,
       {
         method: "POST",
       },
@@ -102,15 +61,14 @@ export async function ReadTranslatedText({ blockId, shopName, languageCode }) {
 }
 
 export async function ParseLiquidDataByShopNameAndLanguage({
-  blockId,
   shopName,
   languageCode,
 }) {
   try {
-    // 优先使用 App Proxy（由 Liquid 块注入的 ciwiAppProxyBase）；
-    // 未注入时降级到 Java 直连（switchUrl 保留，不删除 Java 代码）
-    const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value;
-    const baseUrl = appProxyBase || switchUrl(blockId);
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return { success: false, errorCode: 10001, errorMsg: "APP_PROXY_MISSING", response: [] };
+    }
     const { data } = await fetchJson(
       `${baseUrl}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
       {
@@ -161,28 +119,35 @@ export async function GetShopImageData({ shopName, languageCode, blockId }) {
   }
 }
 
-export async function fetchSwitcherConfig({ blockId, shop }) {
-  // 默认配置：成功但服务端无数据、以及网络异常时都回退到它，
-  // 保证 ciwi-main 永远拿到一个完整的 response（不会是 null 导致 UI 崩溃）。
+export async function fetchSwitcherConfig({ shop }) {
+  // 默认配置与 app/lib/switcherConstants.ts SWITCHER_UI_DEFAULTS 对齐
   const initData = {
     shopName: shop,
     includedFlag: true,
     languageSelector: true,
     currencySelector: true,
     ipOpen: false,
-    ipRedirections: [],
-    fontColor: "#000000",
+    fontColor: "#303030",
     backgroundColor: "#ffffff",
     buttonColor: "#ffffff",
-    buttonBackgroundColor: "#000000",
-    optionBorderColor: "#ccc",
+    buttonBackgroundColor: "#f6f6f7",
+    optionBorderColor: "#d4d4d8",
     selectorPosition: "bottom_left",
     positionData: 10,
   };
 
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: true,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: initData,
+      };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/widgetConfigurations/getData`,
+      `${baseUrl}/widgetConfigurations/getData`,
       {
         method: "POST",
         body: JSON.stringify({ shopName: shop }),
@@ -227,8 +192,10 @@ export async function fetchSwitcherConfig({ blockId, shop }) {
 
 export async function fetchCurrencies({ blockId, shop }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) return [];
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/currency/getCurrencyByShopName?shopName=${shop}`,
+      `${baseUrl}/currency/getCurrencyByShopName?shopName=${shop}`,
       { method: "GET" },
     );
 
@@ -251,8 +218,10 @@ export async function fetchCurrencies({ blockId, shop }) {
 }
 
 export async function fetchAutoRate({ blockId, shop, currencyCode }) {
+  const baseUrl = resolveStorefrontApiBase();
+  if (!baseUrl) return undefined;
   const { data } = await fetchJson(
-    `${switchUrl(blockId)}/currency/getCacheData`,
+    `${baseUrl}/currency/getCacheData`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -262,20 +231,6 @@ export async function fetchAutoRate({ blockId, shop, currencyCode }) {
     },
   );
   return data.response?.exchangeRate;
-}
-
-export async function checkUserIp({ blockId, shop }) {
-  try {
-    const { data } = await fetchJson(
-      `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
-      { method: "POST" },
-    );
-
-    return data;
-  } catch (err) {
-    console.error("Error checkUserIp:", err);
-    return null;
-  }
 }
 
 export async function fetchUserCountryInfo(access_key) {

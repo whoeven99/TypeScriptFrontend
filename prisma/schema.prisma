@@ -76,6 +76,80 @@ model Glossary {
   @@index([shop])
 }
 
+// 对应 Java WidgetConfigurations，每店一行
+model SwitcherConfiguration {
+  shop                  String   @id            // Java shop_name
+  languageSelector      Boolean  @default(true)
+  currencySelector      Boolean  @default(true)
+  ipOpen                Boolean  @default(false)
+  includedFlag          Boolean  @default(true)
+  fontColor             String   @default("#000000")
+  backgroundColor       String   @default("#ffffff")
+  buttonColor           String   @default("#ffffff")
+  buttonBackgroundColor String   @default("#000000")
+  optionBorderColor     String   @default("#ccc")
+  selectorPosition      String   @default("bottom_left")
+  positionData          String   @default("10")
+  isTransparent         Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// 对应 Java `Currencies`，用于货币页和 storefront currency switcher。
+model Currency {
+  id            Int      @id @default(autoincrement())
+  shop          String                     // Java shop_name
+  currencyName  String                     // Java currency_name
+  currencyCode  String                     // ISO 4217 code
+  rounding      String?
+  exchangeRate  String?
+  primaryStatus Int      @default(0)       // 1=默认币种，0=可切换币种
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([shop, currencyCode])
+  @@index([shop])
+  @@index([shop, primaryStatus])
+}
+
+// 原 Java Redis `bogda:rate` 缓存迁到 Turso；Fixer 当前以 EUR 为 base。
+model CurrencyRate {
+  currencyCode String   @id
+  rate         Float
+  base         String   @default("EUR")
+  fetchedAt    DateTime @default(now())
+  expiresAt    DateTime
+}
+
+// 对应 Java User_IP_Redirection
+model IpRedirection {
+  id           Int      @id                    // 迁移时写入 Java id；新建时由应用层取 max+1
+  shop         String
+  region       String   @default("")
+  languageCode String   @default("")
+  currencyCode String   @default("")
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shop, isDeleted])
+  @@index([shop, region])
+}
+
+// 取代 Java `User_Page_Fly`；Int 主键对齐 Java id，迁移时保留原值
+model PageFlyTranslation {
+  id           Int      @id
+  shop         String
+  sourceText   String
+  targetText   String
+  languageCode String
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shop, languageCode, isDeleted])
+}
+
 // 取代 Java `User_Liquid`
 model LiquidRule {
   id                String   @id @default(cuid())

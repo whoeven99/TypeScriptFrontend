@@ -19,12 +19,7 @@ import {
   Typography,
 } from "antd";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import {
-  DeleteGlossaryInfo,
-  GetGlossaryByShopNameLoading,
-} from "~/api/JavaServer";
 import { queryShopLanguages } from "~/api/admin";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { listGlossaryPagePayload, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
 import { updateGlossaryCompat } from "./glossaryClient";
 import { useDispatch, useSelector } from "react-redux";
@@ -66,12 +61,9 @@ export const planMapping = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
-  const migrated = await isShopMigrated(session.shop);
-
   return {
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
-    migrated,
   };
 };
 
@@ -85,30 +77,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const deleteInfo: number[] = JSON.parse(
       formData.get("deleteInfo") as string,
     );
-    const migrated = await isShopMigrated(shop);
     switch (true) {
       case !!loading:
         try {
-          if (migrated) {
-            const shopLanguages = await queryShopLanguages({
-              shop,
-              accessToken: accessToken as string,
-            });
-            const shopLocalesWithoutPrimary = shopLanguages.filter(
-              (language: { locale: string; name: string; primary?: boolean }) =>
-                !language.primary,
-            );
-            const response = await listGlossaryPagePayload(
-              shop,
-              shopLocalesWithoutPrimary,
-            );
-            return { success: true, errorCode: null, errorMsg: null, response };
-          }
-          const data = await GetGlossaryByShopNameLoading({
+          const shopLanguages = await queryShopLanguages({
             shop,
             accessToken: accessToken as string,
           });
-          return data;
+          const shopLocalesWithoutPrimary = shopLanguages.filter(
+            (language: { locale: string; name: string; primary?: boolean }) =>
+              !language.primary,
+          );
+          const response = await listGlossaryPagePayload(
+            shop,
+            shopLocalesWithoutPrimary,
+          );
+          return { success: true, errorCode: null, errorMsg: null, response };
         } catch (error) {
           console.error("Error glossary loading:", error);
           return {
@@ -121,21 +105,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!deleteInfo:
         try {
           if (deleteInfo.length > 0) {
-            if (migrated) {
-              const ids = deleteInfo.map((x) => Number(x));
-              await deleteGlossaryDo(shop, ids);
-              return json({
-                data: ids.map((id) => ({
-                  status: "fulfilled",
-                  value: { success: true, response: { id } },
-                })),
-              });
-            }
-            const promise = deleteInfo.map(async (item: number) => {
-              return DeleteGlossaryInfo({ id: item });
+            const ids = deleteInfo.map((x) => Number(x));
+            await deleteGlossaryDo(shop, ids);
+            return json({
+              data: ids.map((id) => ({
+                status: "fulfilled",
+                value: { success: true, response: { id } },
+              })),
             });
-            const data = await Promise.allSettled(promise);
-            return json({ data: data });
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
@@ -150,9 +127,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { server, mobile, migrated } = useLoaderData<typeof loader>();
-
-  const { t } = useTranslation();
+  const { server, mobile } = useLoaderData<typeof loader>();
+  const migrated = true;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -197,6 +173,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const { t } = useTranslation();
   const { reportClick, report } = useReport();
   useEffect(() => {
     loadingFetcher.submit(

@@ -5,16 +5,12 @@ import {
   AddCharsByShopName,
   AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
-  CleanData,
-  DeleteData,
   GetUserSubscriptionPlan,
   InsertOrUpdateOrder,
   IsInFreePlanTime,
-  RequestData,
   SendPurchaseSuccessEmail,
   SendSubscribeSuccessEmail,
   Uninstall,
-  UpdateStatus,
   UpdateUserPlan,
   WebhookDefaultLanguage,
   WebhookDefaultTheme,
@@ -173,7 +169,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             });
             console.log("addChars: ", addChars);
             if (addChars?.success) {
-              UpdateStatus({ shop });
               SendPurchaseSuccessEmail({
                 shop,
                 credit: credits,
@@ -219,7 +214,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               subscriptionId: payload?.app_subscription.admin_graphql_api_id,
             });
             UpdateUserPlan({ shop, plan });
-            UpdateStatus({ shop });
             SendSubscribeSuccessEmail({
               id: payload?.app_subscription.admin_graphql_api_id,
               shopName: shop,
@@ -261,23 +255,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_DATA_REQUEST":
-      try {
-        new Response(null, { status: 200 });
-        await RequestData({ shop });
-        break;
-      } catch (error) {
-        console.error("Error CUSTOMERS_DATA_REQUEST:", error);
-        return new Response(null, { status: 200 });
-      }
+      // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
+      break;
     case "CUSTOMERS_REDACT":
-      try {
-        new Response(null, { status: 200 });
-        await DeleteData({ shop });
-        break;
-      } catch (error) {
-        console.error("Error CUSTOMERS_REDACT:", error);
-        return new Response(null, { status: 200 });
-      }
+      // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
+      break;
     case "SHOP_REDACT":
       try {
         new Response(null, { status: 200 });

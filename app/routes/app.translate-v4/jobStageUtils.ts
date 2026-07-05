@@ -8,8 +8,6 @@ import {
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
-/** @deprecated Use V4_STAGE_KEYS + t() from v4I18n.ts */
-export const VISIBLE_STAGE_LABELS = ["初始化", "翻译", "写回"] as const;
 
 export type VisibleStageIndex = 0 | 1 | 2;
 
@@ -155,16 +153,6 @@ export function jobDisplayPercent(job: TranslationJobProgressSummary): number {
   return job.progressPercent ?? 0;
 }
 
-/** @deprecated Use formatV4Elapsed from v4I18n.ts */
-export function formatElapsed(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  const rs = s % 60;
-  if (m < 60) return rs ? `${m}m ${rs}s` : `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${m % 60}m`;
-}
 
 export function jobElapsedMs(
   job: TranslationJobProgressSummary,
@@ -180,19 +168,6 @@ export function jobElapsedMs(
   return Number.isFinite(ms) && ms >= 0 ? ms : null;
 }
 
-/** @deprecated Use formatV4JobStartTime from v4I18n.ts */
-export function formatJobStartTime(createdAt: string): string | null {
-  const d = new Date(createdAt);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
 
 export function jobQuotaCredits(usedTokens: number, multiplier = 1): number {
   return usedTokens > 0 ? Math.round(usedTokens * multiplier) : 0;

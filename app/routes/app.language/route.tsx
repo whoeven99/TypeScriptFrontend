@@ -35,10 +35,12 @@ import {
   setStatusState,
   setLanguageTableData,
 } from "~/store/modules/languageTableData";
-import { GetTranslate } from "~/api/JavaServer";
-import { isShopMigrated } from "~/server/translateV4/migration.server";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
-import { deleteTargetLocales, syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
+import {
+  addTargetLocales,
+  deleteTargetLocales,
+  syncShopTargetLocalesFromShopify,
+} from "~/server/translateV4/targetLocale.server";
 import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
 import {
   setAutoTranslateCompat,
@@ -58,6 +60,7 @@ import languageLocaleData from "~/utils/language-locale-data";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import { getTranslatePagePath } from "~/lib/translateNavigation";
 
 const { Text } = Typography;
 
@@ -101,13 +104,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop } = adminAuthResult.session;
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
-  const migrated = await isShopMigrated(shop);
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
-    migrated,
   });
 };
 
@@ -120,7 +121,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);
   const webPresences = JSON.parse(formData.get("webPresences") as string);
   const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
-  const translation = JSON.parse(formData.get("translation") as string);
   const deleteData = JSON.parse(formData.get("deleteData") as string);
 
   switch (true) {
@@ -131,11 +131,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken: accessToken as string,
         });
         const primaryLocale = data.find((lang) => lang.primary)?.locale;
-        if (primaryLocale && (await isShopMigrated(shop))) {
+        if (primaryLocale) {
           try {
             await syncShopTargetLocalesFromShopify(
               shop,
-              data.map((lang) => ({ locale: lang.locale, primary: lang.primary })),
+              data.map((lang) => ({
+                locale: lang.locale,
+                primary: lang.primary,
+              })),
               primaryLocale,
             );
           } catch (syncErr) {
@@ -219,28 +222,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!addLanguages:
       try {
+        const targets = addLanguages?.selectedLanguages || [];
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
           source: addLanguages?.primaryLanguage || "",
-          targets: addLanguages?.selectedLanguages || [],
+          targets,
         }); // 处理逻辑
         // 语言已变更，清掉 v4 首页的语言列表缓存
         invalidateShopLocalesCache(shop);
 
         if (data?.length > 0) {
-          const successItems = data
+          const successLocales = data
             .filter(
-              (item): item is PromiseFulfilledResult<unknown> =>
+              (item): item is PromiseFulfilledResult<{ locale: string }> =>
                 item.status === "fulfilled" && Boolean(item.value),
             )
-            .map((item) => item.value);
+            .map((item) => (item.value as { locale: string }).locale)
+            .filter(Boolean);
+
+          // 迁移自 Spring /translate/insertShopTranslateInfo：写入 TSF ShopTargetLocale
+          if (successLocales.length > 0) {
+            await addTargetLocales(shop, successLocales);
+          }
 
           return {
             success: true,
             errorCode: 0,
             errorMsg: "",
-            response: successItems,
+            response: data
+              .filter(
+                (item): item is PromiseFulfilledResult<unknown> =>
+                  item.status === "fulfilled" && Boolean(item.value),
+              )
+              .map((item) => item.value),
           };
         } else {
           return {
@@ -258,26 +273,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "",
           response: [],
         };
-      }
-
-    case !!translation:
-      try {
-        // 字符数未超限，调用翻译接口
-        const data = await GetTranslate({
-          shop,
-          accessToken: accessToken as string,
-          source: translation.primaryLanguage,
-          target: translation.selectedLanguage,
-          translateSettings1: translation.translateSettings1,
-          translateSettings2: translation.translateSettings2,
-          translateSettings3: translation.translateSettings3,
-          customKey: translation.customKey,
-          translateSettings5: translation.translateSettings5,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error translation language:", error);
-        return json({ error: "Error translation language" }, { status: 500 });
       }
 
     case !!deleteData:
@@ -298,12 +293,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           invalidateShopLocalesCache(shop);
 
           // 迁移过的店：同步清掉 TSF 的目标语言行，避免 worker 继续给已删语言建任务
-          if (await isShopMigrated(shop)) {
-            await deleteTargetLocales(
-              shop,
-              deleteData.targets.map((t: LanguagesDataType) => t.locale),
-            );
-          }
+          await deleteTargetLocales(
+            shop,
+            deleteData.targets.map((t: LanguagesDataType) => t.locale),
+          );
 
           return json({ data: data });
         }
@@ -318,9 +311,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server, migrated } =
-    useLoaderData<typeof loader>();
-  const useV4LanguageStatus = migrated;
+  const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const useV4LanguageStatus = true;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -484,7 +476,6 @@ const Index = () => {
         }));
         const GetLanguageLocaleInfoFront = async () => {
           const languageList = await listLanguageStatusCompat({
-            migrated,
             shop,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
@@ -501,21 +492,6 @@ const Index = () => {
                 sameTranslationLocale(language.target, lang.locale),
               )?.autoTranslate ?? false,
           }));
-          const findItem = data.find((data: any) => data.status === 2);
-          if (findItem && shopPrimaryLanguageData && !useV4LanguageStatus) {
-            const formData = new FormData();
-            formData.append(
-              "statusData",
-              JSON.stringify({
-                source: shopPrimaryLanguageData[0]?.locale,
-                target: [findItem.locale],
-              }),
-            );
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }
           dispatch(setLanguageTableData(data));
           setLoading(false);
         };
@@ -526,11 +502,9 @@ const Index = () => {
   }, [
     dispatch,
     loadingFetcher.data,
-    migrated,
     server,
     shop,
     statusFetcher,
-    migrated,
     useV4LanguageStatus,
   ]);
 
@@ -571,104 +545,85 @@ const Index = () => {
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
-    if (useV4LanguageStatus) return;
-    if (statusFetcher.data) {
-      if (statusFetcher.data?.success) {
-        const items =
-          statusFetcher.data?.response?.translatesDOResult?.filter((item: any) => {
-            if (item?.status === 2) {
-              return true;
-            }
-            dispatch(
-              setStatusState({ target: item?.target, status: item?.status }),
-            );
-            return false;
-          }) ?? [];
-        if (items[0] !== undefined && items[0].status === 2) {
-          // 加入10秒的延时
-          const delayTimeout = setTimeout(() => {
-            const formData = new FormData();
-            formData.append(
-              "statusData",
-              JSON.stringify({
-                source: source.code,
-                target: [items[0]?.target],
-              }),
-            );
-
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }, 10000); // 10秒延时（10000毫秒）
-
-          // 清除超时定时器，以防组件卸载后仍然尝试执行
-          return () => clearTimeout(delayTimeout);
-        }
-      }
-    }
-  }, [dispatch, source?.code, statusFetcher.data, useV4LanguageStatus]);
-
-  useEffect(() => {
-    if (!useV4LanguageStatus) return;
     if (!dataSource?.some((item: any) => item.status === 2)) return;
     if (!source?.code) return;
 
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stablePollCount = 0;
+    let lastStatusSignature = dataSource
+      .map((item) => `${item.locale}:${item.status ?? ""}`)
+      .join("|");
+
+    const scheduleNextPoll = () => {
+      const delay =
+        typeof document !== "undefined" && document.hidden
+          ? 30_000
+          : Math.min(30_000, 3_000 * 2 ** Math.min(stablePollCount, 3));
+      timer = setTimeout(() => {
+        void pollV4LanguageStatus();
+      }, delay);
+    };
+
     const pollV4LanguageStatus = async () => {
-      const languageList = await listLanguageStatusCompat({
-        migrated,
-        shop,
-        server: server as string,
-        source: source.code,
-      });
-      const rows = languageList?.response ?? [];
-      for (const lang of dataSource) {
-        const row = rows.find((r: { target: string }) =>
-          sameTranslationLocale(r.target, lang.locale),
-        );
-        if (row) {
-          dispatch(setStatusState({ target: lang.locale, status: row.status }));
+      if (disposed) return;
+      if (typeof document !== "undefined" && document.hidden) {
+        scheduleNextPoll();
+        return;
+      }
+
+      try {
+        const languageList = await listLanguageStatusCompat({
+          shop,
+          server: server as string,
+          source: source.code,
+        });
+        const rows = languageList?.response ?? [];
+        const nextStatusSignature = dataSource
+          .map((lang) => {
+            const row = rows.find((r: { target: string }) =>
+              sameTranslationLocale(r.target, lang.locale),
+            );
+            return `${lang.locale}:${row?.status ?? lang.status ?? ""}`;
+          })
+          .join("|");
+
+        stablePollCount =
+          nextStatusSignature === lastStatusSignature ? stablePollCount + 1 : 0;
+        lastStatusSignature = nextStatusSignature;
+
+        let hasPendingStatus = false;
+        for (const lang of dataSource) {
+          const row = rows.find((r: { target: string }) =>
+            sameTranslationLocale(r.target, lang.locale),
+          );
+          const nextStatus = row?.status ?? lang.status;
+          if (nextStatus === 2) hasPendingStatus = true;
+          if (row) {
+            dispatch(
+              setStatusState({ target: lang.locale, status: row.status }),
+            );
+          }
         }
+
+        if (hasPendingStatus) {
+          scheduleNextPoll();
+        }
+      } catch (error) {
+        console.error("[language] poll v4 language status failed:", error);
+        stablePollCount += 1;
+        scheduleNextPoll();
       }
     };
 
-    const intervalId = setInterval(() => {
+    timer = setTimeout(() => {
       void pollV4LanguageStatus();
     }, 3000);
-    return () => clearInterval(intervalId);
-  }, [
-    dataSource,
-    useV4LanguageStatus,
-    source?.code,
-    shop,
-    server,
-    migrated,
-    dispatch,
-  ]);
-
-  useEffect(() => {
-    if (useV4LanguageStatus) return;
-    if (dataSource && dataSource.find((item: any) => item.status === 2)) {
-      if (source?.code) {
-        const formData = new FormData();
-        formData.append(
-          "statusData",
-          JSON.stringify({
-            source: source?.code,
-            target: [dataSource.find((item: any) => item.status === 2)?.locale],
-          }),
-        );
-        const timeoutId = setTimeout(() => {
-          statusFetcher.submit(formData, {
-            method: "POST",
-            action: "/app",
-          });
-        }, 2000); // 2秒延时
-        // 在组件卸载时清除定时器
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [dataSource, source?.code, useV4LanguageStatus]);
+    return () => {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [dataSource, source?.code, shop, server, dispatch]);
 
   const columns = [
     {
@@ -761,7 +716,7 @@ const Index = () => {
   ];
 
   const navigateToTranslate = (selectedLanguageCode: string[]) => {
-    navigate("/app/translate", {
+    navigate(getTranslatePagePath(), {
       state: {
         from: "/app/language",
         selectedLanguageCode: selectedLanguageCode,
@@ -840,12 +795,8 @@ const Index = () => {
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
       const data = await setAutoTranslateCompat({
-        migrated,
-        shopName: shop,
-        source: source?.code,
         target: row.locale,
         autoTranslate: checked,
-        server: server || "",
       });
       if (data?.success) {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
@@ -919,164 +870,166 @@ const Index = () => {
         )}
       />
       <div className={styles.languagePage}>
-      <div className={styles.languagePageInner}>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
-        <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
-          <div className={styles.languageTable_action}>
-          <Flex
-            className={styles.languageToolbar}
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                disabled={!hasSelected}
-                loading={deleteloading}
-                onClick={() => {
-                  if (dontPromptAgain) {
-                    handleDelete();
-                  } else {
-                    setDeleteConfirmModalVisible(true);
-                  }
-                }}
-              >
-                {t("Delete")}
-              </Button>
-              <Text style={{ color: "var(--app-color-text-secondary)" }}>
-                {hasSelected
-                  ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                  : null}
-              </Text>
-            </Flex>
-            {loading ? (
-              <Space>
-                <Skeleton.Button active />
-                <Skeleton.Button active />
-              </Space>
-            ) : (
-              <Space>
-                {!isMobile && (
-                  <Button type="default" onClick={PreviewClick}>
-                    {t("Preview store")}
-                  </Button>
-                )}
-                <Button type="primary" onClick={handleOpenModal}>
-                  {t("Add Language")}
-                </Button>
-              </Space>
-            )}
-          </Flex>
-          {isMobile ? (
-            <Card
-              className={styles.languageMobileCard}
-              title={
-                <Checkbox
-                  checked={allCurrentPageSelected && !loading}
-                  indeterminate={
-                    someCurrentPageSelected && !allCurrentPageSelected
-                  }
-                  onChange={(e: any) =>
-                    setSelectedRowKeys(
-                      e.target.checked
-                        ? dataSource.map((item) => item.key)
-                        : [],
-                    )
-                  }
+        <div className={styles.languagePageInner}>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <AppPageHeader title={t("Languages")} extra={<PrimaryLanguage />} />
+            <AppSectionCard bodyPadding="16px" style={{ width: "100%" }}>
+              <div className={styles.languageTable_action}>
+                <Flex
+                  className={styles.languageToolbar}
+                  align="center"
+                  justify="space-between" // 使按钮左右分布
+                  style={{ width: "100%", marginBottom: "16px" }}
                 >
-                  {t("Languages")}
-                </Checkbox>
-              }
-              loading={loading}
-              style={{ border: "none", boxShadow: "none" }}
-            >
-              {dataSource.map((item: any) => (
-                <Card.Grid key={item.key} style={{ width: "100%" }}>
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ width: "100%" }}
-                  >
-                    <Checkbox
-                      checked={selectedRowKeys.includes(item.key)}
-                      onChange={(e: any) => {
-                        setSelectedRowKeys(
-                          e.target.checked
-                            ? [...selectedRowKeys, item.key]
-                            : selectedRowKeys.filter((key) => key !== item.key),
-                        );
+                  <Flex align="center" gap="middle">
+                    <Button
+                      disabled={!hasSelected}
+                      loading={deleteloading}
+                      onClick={() => {
+                        if (dontPromptAgain) {
+                          handleDelete();
+                        } else {
+                          setDeleteConfirmModalVisible(true);
+                        }
                       }}
                     >
-                      {item.name}
-                    </Checkbox>
-                    <div>
-                      <TranslatedIcon status={item.status} />
-                    </div>
-                    <Flex justify="space-between">
-                      <Text>{t("Publish")}</Text>
-                      <Switch
-                        checked={item.published}
-                        onChange={(checked) =>
-                          handlePublishChange(item.locale, checked)
+                      {t("Delete")}
+                    </Button>
+                    <Text style={{ color: "var(--app-color-text-secondary)" }}>
+                      {hasSelected
+                        ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                        : null}
+                    </Text>
+                  </Flex>
+                  {loading ? (
+                    <Space>
+                      <Skeleton.Button active />
+                      <Skeleton.Button active />
+                    </Space>
+                  ) : (
+                    <Space>
+                      {!isMobile && (
+                        <Button type="default" onClick={PreviewClick}>
+                          {t("Preview store")}
+                        </Button>
+                      )}
+                      <Button type="primary" onClick={handleOpenModal}>
+                        {t("Add Language")}
+                      </Button>
+                    </Space>
+                  )}
+                </Flex>
+                {isMobile ? (
+                  <Card
+                    className={styles.languageMobileCard}
+                    title={
+                      <Checkbox
+                        checked={allCurrentPageSelected && !loading}
+                        indeterminate={
+                          someCurrentPageSelected && !allCurrentPageSelected
                         }
-                      />
-                    </Flex>
-                    <Flex justify="space-between">
-                      <Text>{t("Auto translation")}</Text>
-                      <Switch
-                        checked={item.autoTranslate}
-                        onChange={(checked) =>
-                          handleAutoUpdateTranslationChange(
-                            item.locale,
-                            checked,
-                            item.status,
+                        onChange={(e: any) =>
+                          setSelectedRowKeys(
+                            e.target.checked
+                              ? dataSource.map((item) => item.key)
+                              : [],
                           )
                         }
-                      />
-                    </Flex>
-                    <Button
-                      type="primary"
-                      style={{ width: "100%" }}
-                      onClick={() => {
-                        navigate("/app/translate", {
-                          state: {
-                            from: "/app/language",
-                            selectedLanguageCode: [item.locale],
-                          },
-                        });
-                      }}
-                    >
-                      {t("Translate")}
-                    </Button>
-                    <Button
-                      style={{ width: "100%" }}
-                      onClick={() => {
-                        navigate(
-                          `/app/manage_translation?language=${item?.locale}`,
-                        );
-                      }}
-                    >
-                      {t("Manage")}
-                    </Button>
-                  </Space>
-                </Card.Grid>
-              ))}
-            </Card>
-          ) : (
-            <Table
-              className={styles.languageTable}
-              rowSelection={rowSelection}
-              columns={columns}
-              dataSource={dataSource}
-              rowKey={(record) => record.key ?? record.locale}
-              loading={deleteloading || loading}
-            />
-          )}
-          </div>
-        </AppSectionCard>
-      </Space>
-      </div>
+                      >
+                        {t("Languages")}
+                      </Checkbox>
+                    }
+                    loading={loading}
+                    style={{ border: "none", boxShadow: "none" }}
+                  >
+                    {dataSource.map((item: any) => (
+                      <Card.Grid key={item.key} style={{ width: "100%" }}>
+                        <Space
+                          direction="vertical"
+                          size="middle"
+                          style={{ width: "100%" }}
+                        >
+                          <Checkbox
+                            checked={selectedRowKeys.includes(item.key)}
+                            onChange={(e: any) => {
+                              setSelectedRowKeys(
+                                e.target.checked
+                                  ? [...selectedRowKeys, item.key]
+                                  : selectedRowKeys.filter(
+                                      (key) => key !== item.key,
+                                    ),
+                              );
+                            }}
+                          >
+                            {item.name}
+                          </Checkbox>
+                          <div>
+                            <TranslatedIcon status={item.status} />
+                          </div>
+                          <Flex justify="space-between">
+                            <Text>{t("Publish")}</Text>
+                            <Switch
+                              checked={item.published}
+                              onChange={(checked) =>
+                                handlePublishChange(item.locale, checked)
+                              }
+                            />
+                          </Flex>
+                          <Flex justify="space-between">
+                            <Text>{t("Auto translation")}</Text>
+                            <Switch
+                              checked={item.autoTranslate}
+                              onChange={(checked) =>
+                                handleAutoUpdateTranslationChange(
+                                  item.locale,
+                                  checked,
+                                  item.status,
+                                )
+                              }
+                            />
+                          </Flex>
+                          <Button
+                            type="primary"
+                            style={{ width: "100%" }}
+                            onClick={() => {
+                              navigate(getTranslatePagePath(), {
+                                state: {
+                                  from: "/app/language",
+                                  selectedLanguageCode: [item.locale],
+                                },
+                              });
+                            }}
+                          >
+                            {t("Translate")}
+                          </Button>
+                          <Button
+                            style={{ width: "100%" }}
+                            onClick={() => {
+                              navigate(
+                                `/app/manage_translation?language=${item?.locale}`,
+                              );
+                            }}
+                          >
+                            {t("Manage")}
+                          </Button>
+                        </Space>
+                      </Card.Grid>
+                    ))}
+                  </Card>
+                ) : (
+                  <Table
+                    className={styles.languageTable}
+                    rowSelection={rowSelection}
+                    columns={columns}
+                    dataSource={dataSource}
+                    rowKey={(record) => record.key ?? record.locale}
+                    loading={deleteloading || loading}
+                  />
+                )}
+              </div>
+            </AppSectionCard>
+          </Space>
+        </div>
       </div>
       <AddLanguageModal
         shop={shop}
@@ -1132,7 +1085,7 @@ const Index = () => {
             <Button
               type="primary"
               onClick={() =>
-                navigate("/app/translate", {
+                navigate(getTranslatePagePath(), {
                   state: {
                     from: "/app/language",
                     selectedLanguageCode: [noFirstTranslationLocale],

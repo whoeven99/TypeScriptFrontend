@@ -60,63 +60,15 @@ const rtlLanguages = [
 ];
 
 async function ciwiOnload() {
-  //超过7天清理缓存
-  const expireAt = Number(localStorage.getItem("ciwi_iplocation_expire_at"));
-  const now = Date.now();
-
-  if (expireAt && now > expireAt) {
-    localStorage.removeItem("ciwi_selected_language");
-    localStorage.removeItem("ciwi_selected_currency");
-    localStorage.removeItem("ciwi_selected_country");
-    localStorage.removeItem("ciwi_iplocation_expire_at");
-  }
-
-  const languageInputs = document.querySelectorAll(
-    'input[name="language_code"], input[name="locale_code"]',
-  );
-  const countryInputs = document.querySelectorAll('input[name="country_code"]');
-
-  // 创建 MutationObserver 监听器
-  const observeValueChange = (inputElement, storageKey) => {
-    const observer = new MutationObserver((mutationsList) => {
-      mutationsList.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "value"
-        ) {
-          localStorage.setItem(storageKey, inputElement.value);
-        }
-      });
-    });
-
-    observer.observe(inputElement, { attributes: true });
-  };
-
-  // 为每个语言输入字段添加 MutationObserver
-  languageInputs.forEach((languageInput) => {
-    observeValueChange(languageInput, "ciwi_selected_language");
-  });
-
-  // 为每个地区输入字段添加 MutationObserver
-  countryInputs.forEach((countryInput) => {
-    observeValueChange(countryInput, "ciwi_selected_country");
-  });
-
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) return console.warn("ciwiBlock not found");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
-  // 爬虫检测
+  // 爬虫检测（仅拦截，不上报日志）
   const reason = isLikelyBotByUA();
   if (reason) {
     console.warn("⚠️ 疑似爬虫访问", reason);
-    API.IncludeCrawlerPrintLog({
-      shopName: shop.value,
-      blockId,
-      ua: navigator.userAgent,
-      reason,
-    });
     return;
   }
 
@@ -147,18 +99,13 @@ async function ciwiOnload() {
   const hadConfigCache = !!getWithTTL(configKey);
   const fetchSwitcherConfig = await useCacheThenRefresh(
     configKey,
-    async () => API.fetchSwitcherConfig({ blockId, shop: shop.value }),
+    async () => API.fetchSwitcherConfig({ shop: shop.value }),
     1000 * 60 * 60,
   );
 
   const configData = fetchSwitcherConfig?.success
     ? fetchSwitcherConfig?.response
     : null;
-
-  //获取语言信息、地区信息和货币信息的缓存，用来判断是否需要ip定位
-  const storedLanguage = localStorage.getItem("ciwi_selected_language");
-  const storedCurrency = localStorage.getItem("ciwi_selected_currency");
-  const storedCountry = localStorage.getItem("ciwi_selected_country");
 
   //获取当前语言和地区
   const languageValue = ciwiBlock.querySelector(
@@ -167,12 +114,6 @@ async function ciwiOnload() {
   const countryValue = ciwiBlock.querySelector(
     'input[name="country_code"]',
   )?.value;
-
-  //用户自定义ip配置数据
-  const ipRedirections = configData?.ipRedirections;
-
-  //需要ip定位判断，为true则需要
-  let needRedirection = !storedCountry && !storedCurrency;
 
   //浏览器语言
   let browserLanguage = navigator.language || navigator.userLanguage;
@@ -184,12 +125,8 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
 
-  //获取地区对应货币数据（country-cur-map.js 加载失败时兜底为空表，避免后续索引报错）
-  const countryCurMap = window.countryCurMap || {};
-
   let detectedCountry = countryValue;
   let detectedLanguage = browserLanguage;
-  let detectedCurrency = countryCurMap[countryValue];
 
   //所有可用语言
   const availableLanguages = Array.from(
@@ -201,99 +138,29 @@ async function ciwiOnload() {
     ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
   ).map((link) => link.getAttribute("data-value"));
 
-  // IP 定位逻辑
-  if (needRedirection && configData?.ipOpen) {
+  // IP 定位：每次进入都重新请求，不使用 localStorage 缓存
+  if (configData?.ipOpen) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
 
     if (!iptokenValue) return;
 
-    const checkUserIpStart = Date.now();
-
-    //获取是否能够ip定位
-    const userIp = await API.checkUserIp({ blockId, shop: shop.value });
-    const checkUserIpCost = Date.now() - checkUserIpStart;
-
-    //能够定位则开始调用ipapi接口
-    if (Array.isArray(userIp?.response)) {
-      const fetchCountryStart = Date.now();
-
-      //调用ipapi接口
-      const IpData = await API.fetchUserCountryInfo(iptokenValue);
-
-      localStorage.setItem(
-        "ciwi_iplocation_expire_at",
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      );
-
-      //缓存定位时间
-      const fetchCountryCost = Date.now() - fetchCountryStart;
-
-      //暂存默认数据
-      detectedCountry = IpData?.countryCode;
-
-      //地区对应货币符号
-      const ipCurrency = countryCurMap[countryValue];
-
-      //打印日志
-      API.NoCrawlerPrintLog({
-        blockId,
-        shopName: shop.value,
-        ip: "0.0.0.0",
-        languageCode: browserLanguage,
-        langInclude: availableLanguages.includes(browserLanguage),
-        countryCode: detectedCountry,
-        counInclude: availableCountries.includes(detectedCountry),
-        currencyCode: ipCurrency,
-        checkUserIpCostTime: checkUserIpCost,
-        fetchUserCountryInfoCostTime: fetchCountryCost,
-        status: "",
-        error: "",
-      });
+    const IpData = await API.fetchUserCountryInfo(iptokenValue);
+    if (IpData?.countryCode) {
+      detectedCountry = IpData.countryCode;
     }
   }
-
-  //查询当前或者需要定位的地区的语言货币配置
-  const ipRedirection = ipRedirections?.find(
-    (item) => item?.region == detectedCountry,
-  );
-
-  //语言货币配置
-  const ipRedirectionLanguageValue = ipRedirection?.languageCode || "auto";
-  const ipRedirectionCurrencyValue = ipRedirection?.currencyCode || "auto";
-
-  //更新应当跳转的货币和语言
-  detectedLanguage = storedLanguage
-    ? storedLanguage
-    : ipRedirectionLanguageValue == "auto"
-      ? browserLanguage
-      : ipRedirectionLanguageValue;
 
   //判断语言是否可用
   detectedLanguage = availableLanguages.includes(detectedLanguage)
     ? detectedLanguage
     : languageValue;
 
-  localStorage.setItem("ciwi_selected_language", detectedLanguage);
-
   //判断地区是否可用
   detectedCountry = availableCountries.includes(detectedCountry)
     ? detectedCountry
     : countryValue;
-
-  localStorage.setItem("ciwi_selected_country", detectedCountry);
-
-  detectedCurrency = storedCurrency
-    ? storedCurrency
-    : ipRedirectionCurrencyValue == "auto"
-      ? countryCurMap[detectedCountry]
-      : ipRedirectionCurrencyValue;
-
-  //缓存货币数据（与已存货币比较，变化时才写入）
-  if (detectedCurrency != storedCurrency && detectedCurrency) {
-    localStorage.setItem("ciwi_selected_currency", detectedCurrency);
-  }
 
   //判断是否在主题编辑器内
   const isInThemeEditor = document.documentElement.classList.contains(
@@ -503,7 +370,7 @@ async function ciwiOnload() {
   // 仅在命中缓存时后台刷新 config（异步，不阻塞）；
   // 首次无缓存时 useCacheThenRefresh 已经拉取并缓存，无需再请求一次
   if (hadConfigCache) {
-    API.fetchSwitcherConfig({ blockId, shop: shop.value })
+    API.fetchSwitcherConfig({ shop: shop.value })
       .then((fresh) => {
         if (fresh) {
           setWithTTL("ciwi_switcher_config", fresh);
