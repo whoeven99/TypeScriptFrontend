@@ -1,4 +1,4 @@
--- PlanCatalog 简单占位（后续由产品/Spring 对齐脚本覆盖；勿依赖此处价格）
+-- PlanCatalog 与 Pricing 页对齐（月度/年度订阅 + 购包 base 价；订阅购包折扣由 UI priceOverride 处理）
 DELETE FROM "PlanCatalog" WHERE "planKey" LIKE 'tsf_%';
 
 INSERT INTO "PlanCatalog" (
