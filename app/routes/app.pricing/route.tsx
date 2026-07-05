@@ -43,23 +43,14 @@ import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
+import {
+  eNumPlanType,
+  formatCreditsLabel,
+  SUBSCRIPTION_PLAN_DEFINITIONS,
+  TOKEN_PACK_DEFINITIONS,
+} from "./pricingCatalog";
 
 const { Title, Text } = Typography;
-
-//计划名与其对应价格Map
-const priceTable: Record<
-  string,
-  { base: number; Premium: number; Pro: number; Basic: number }
-> = {
-  "500K": { base: 3.99, Premium: 1.99, Pro: 2.99, Basic: 3.59 },
-  "1M": { base: 7.99, Premium: 3.99, Pro: 5.99, Basic: 7.19 },
-  "2M": { base: 15.99, Premium: 7.99, Pro: 11.99, Basic: 14.39 },
-  "3M": { base: 23.99, Premium: 11.99, Pro: 17.99, Basic: 21.79 },
-  "5M": { base: 39.99, Premium: 19.99, Pro: 29.99, Basic: 35.99 },
-  "10M": { base: 79.99, Premium: 39.99, Pro: 59.99, Basic: 71.99 },
-  "20M": { base: 159.99, Premium: 79.99, Pro: 119.99, Basic: 143.99 },
-  "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
-};
 
 export const loader = async () => {
   return {
@@ -252,90 +243,18 @@ const Index = () => {
 
   const { reportClick, report } = useReport();
 
-  //价格选项数组
   const creditOptions: OptionType[] = useMemo(
-    () => [
-      {
-        key: "option-1",
-        name: "500K",
-        Credits: 500000,
+    () =>
+      TOKEN_PACK_DEFINITIONS.map((pack, index) => ({
+        key: `option-${index + 1}`,
+        name: pack.name,
+        Credits: pack.credits,
         price: eNumPlanType({
           planType: plan?.type,
-          optionName: "500K",
+          optionName: pack.name,
           isInTrial: plan?.isInFreePlanTime,
         }),
-      },
-      {
-        key: "option-2",
-        name: "1M",
-        Credits: 1000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "1M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-3",
-        name: "2M",
-        Credits: 2000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "2M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-4",
-        name: "3M",
-        Credits: 3000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "3M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-5",
-        name: "5M",
-        Credits: 5000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "5M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-6",
-        name: "10M",
-        Credits: 10000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "10M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-7",
-        name: "20M",
-        Credits: 20000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "20M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-      {
-        key: "option-8",
-        name: "30M",
-        Credits: 30000000,
-        price: eNumPlanType({
-          planType: plan?.type,
-          optionName: "30M",
-          isInTrial: plan?.isInFreePlanTime,
-        }),
-      },
-    ],
+      })),
     [plan],
   );
 
@@ -421,100 +340,91 @@ const Index = () => {
   }, [dispatch, planCancelFetcher.data]);
 
   const plans = useMemo(
-    () => [
-      {
-        title: "Basic",
-        yearlyTitle: "Basic - Yearly",
-        monthlyPrice: 7.99,
-        yearlyPrice: 6.39,
-        yearlyBillingAmount: 76.68,
+    () =>
+      SUBSCRIPTION_PLAN_DEFINITIONS.map((def) => ({
+        title: def.title,
+        yearlyTitle: def.yearlyTitle,
+        monthlyPrice: def.monthlyPrice,
+        yearlyPrice: def.yearlyPrice,
+        yearlyBillingAmount: def.yearlyBillingAmount,
         buttonText:
-          plan.type === "Basic" && yearly === !!(plan.feeType === 2)
+          plan.type === def.title && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        fitLabel: t("适合刚开始做多语言运营、需要基础商品与页面翻译的店铺"),
-        disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
-        features: [
-          t("{{credits}} credits/month", { credits: "1,500,000" }),
-          t("Glossary ({{count}} entries)", { count: 10 }),
-          t("basic_features1"),
-          t("basic_features2"),
-          t("basic_features3"),
-          t("basic_features4"),
-          t("basic_features5"),
-          t("basic_features6"),
-          t("basic_features7"),
-          t("basic_features8"),
-          t("basic_features9"),
-        ],
-      },
-      {
-        title: "Pro",
-        yearlyTitle: "Pro - Yearly",
-        monthlyPrice: 19.99,
-        yearlyPrice: 15.99,
-        yearlyBillingAmount: 191.88,
-        buttonText:
-          plan.type === "Pro" && yearly === !!(plan.feeType === 2)
-            ? t("pricing.current_plan")
-            : t("pricing.get_start"),
-        fitLabel: t("适合稳定扩展多个语言市场、持续更新商品内容的店铺"),
-        disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
-        features: [
-          t("all in Basic Plan"),
-          t("{{credits}} credits/month", { credits: "3,000,000" }),
-          t("Glossary ({{count}} entries)", { count: 50 }),
-          t("pro_features1"),
-          t("pro_features2"),
-          t("pro_features3"),
-          t("pro_features4"),
-          t("pro_features5"),
-          t("pro_features6"),
-          t("pro_features7"),
-          t("pro_features8"),
-        ],
-      },
-      {
-        title: "Premium",
-        yearlyTitle: "Premium - Yearly",
-        monthlyPrice: 39.99,
-        yearlyPrice: 31.99,
-        yearlyBillingAmount: 383.88,
-        buttonText:
-          plan.type === "Premium" && yearly === !!(plan.feeType === 2)
-            ? t("pricing.current_plan")
-            : t("pricing.get_start"),
-        fitLabel: t("适合高频上新、多区域运营和更重度翻译协作的团队"),
-        disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
-        isRecommended: true,
-        features: [
-          t("all in Pro Plan"),
-          t("{{credits}} credits/month", { credits: "8,000,000" }),
-          t("Glossary ({{count}} entries)", { count: 100 }),
-          t("premium_features1"),
-          t("premium_features2"),
-          t("premium_features3"),
-          t("premium_features4"),
-          t("premium_features5"),
-          t("premium_features6"),
-          t("premium_features7"),
-          t("premium_features8"),
-          t("premium_features9"),
-        ],
-      },
-    ],
+        fitLabel:
+          def.title === "Basic"
+            ? t("适合刚开始做多语言运营、需要基础商品与页面翻译的店铺")
+            : def.title === "Pro"
+              ? t("适合稳定扩展多个语言市场、持续更新商品内容的店铺")
+              : t("适合高频上新、多区域运营和更重度翻译协作的团队"),
+        disabled: plan.type === def.title && yearly === !!(plan.feeType === 2),
+        isRecommended: def.isRecommended,
+        features:
+          def.title === "Basic"
+            ? [
+                t("{{credits}} credits/month", {
+                  credits: formatCreditsLabel(def.monthlyCredits),
+                }),
+                t("Glossary ({{count}} entries)", { count: def.glossaryCount }),
+                t("basic_features1"),
+                t("basic_features2"),
+                t("basic_features3"),
+                t("basic_features4"),
+                t("basic_features5"),
+                t("basic_features6"),
+                t("basic_features7"),
+                t("basic_features8"),
+                t("basic_features9"),
+              ]
+            : def.title === "Pro"
+              ? [
+                  t("all in Basic Plan"),
+                  t("{{credits}} credits/month", {
+                    credits: formatCreditsLabel(def.monthlyCredits),
+                  }),
+                  t("Glossary ({{count}} entries)", { count: def.glossaryCount }),
+                  t("pro_features1"),
+                  t("pro_features2"),
+                  t("pro_features3"),
+                  t("pro_features4"),
+                  t("pro_features5"),
+                  t("pro_features6"),
+                  t("pro_features7"),
+                  t("pro_features8"),
+                ]
+              : [
+                  t("all in Pro Plan"),
+                  t("{{credits}} credits/month", {
+                    credits: formatCreditsLabel(def.monthlyCredits),
+                  }),
+                  t("Glossary ({{count}} entries)", { count: def.glossaryCount }),
+                  t("premium_features1"),
+                  t("premium_features2"),
+                  t("premium_features3"),
+                  t("premium_features4"),
+                  t("premium_features5"),
+                  t("premium_features6"),
+                  t("premium_features7"),
+                  t("premium_features8"),
+                  t("premium_features9"),
+                ],
+      })),
     [plan, yearly, t],
   );
 
   const tableData = useMemo(
-    () => [
+    () => {
+      const basic = SUBSCRIPTION_PLAN_DEFINITIONS[0];
+      const pro = SUBSCRIPTION_PLAN_DEFINITIONS[1];
+      const premium = SUBSCRIPTION_PLAN_DEFINITIONS[2];
+      return [
       {
         key: 0,
         features: t("Monthly Payment"),
         free: "0",
-        basic: "7.99",
-        pro: "19.99",
-        premium: "39.99",
+        basic: basic.monthlyPrice.toFixed(2),
+        pro: pro.monthlyPrice.toFixed(2),
+        premium: premium.monthlyPrice.toFixed(2),
         type: "text",
       },
       {
@@ -530,27 +440,33 @@ const Index = () => {
         key: 2,
         features: t("Monthly payment after discount"),
         free: "",
-        basic: "6.39",
-        pro: "15.99",
-        premium: "31.99",
+        basic: basic.yearlyPrice.toFixed(2),
+        pro: pro.yearlyPrice.toFixed(2),
+        premium: premium.yearlyPrice.toFixed(2),
         type: "text",
       },
       {
         key: 3,
         features: t("Annual payment after discount"),
         free: "",
-        basic: "76.68",
-        pro: "191.88",
-        premium: "383.88",
+        basic: basic.yearlyBillingAmount.toFixed(2),
+        pro: pro.yearlyBillingAmount.toFixed(2),
+        premium: premium.yearlyBillingAmount.toFixed(2),
         type: "text",
       },
       {
         key: 4,
         features: t("Monthly points gift"),
         free: "0",
-        basic: t("{{credits}} credits/month", { credits: "1,500,000" }),
-        pro: t("{{credits}} credits/month", { credits: "3,000,000" }),
-        premium: t("{{credits}} credits/month", { credits: "8,000,000" }),
+        basic: t("{{credits}} credits/month", {
+          credits: formatCreditsLabel(basic.monthlyCredits),
+        }),
+        pro: t("{{credits}} credits/month", {
+          credits: formatCreditsLabel(pro.monthlyCredits),
+        }),
+        premium: t("{{credits}} credits/month", {
+          credits: formatCreditsLabel(premium.monthlyCredits),
+        }),
         type: "text",
       },
       {
@@ -643,7 +559,8 @@ const Index = () => {
         premium: t("1v1 support"),
         type: "text",
       },
-    ],
+    ];
+    },
     [t],
   );
 
@@ -1315,47 +1232,3 @@ const Index = () => {
 };
 
 export default Index;
-
-//根据计划类型返回价格数据
-export const eNumPlanType = ({
-  planType,
-  optionName,
-  isInTrial,
-}: {
-  planType: string;
-  optionName: string;
-  isInTrial: boolean;
-}) => {
-  const findTableData = priceTable[optionName];
-
-  if (!findTableData)
-    return {
-      currentPrice: 239.99,
-      comparedPrice: 239.99,
-      currencyCode: "USD",
-    };
-
-  // 免费期 = base 原价
-  if (isInTrial) {
-    return {
-      currentPrice: findTableData.base,
-      comparedPrice: findTableData.base,
-      currencyCode: "USD",
-    };
-  }
-
-  // 未知类型 → base
-  const map: Record<string, number> = {
-    Premium: findTableData.Premium,
-    Pro: findTableData.Pro,
-    Basic: findTableData.Basic,
-  };
-
-  const currentPrice = map[planType ?? ""] ?? findTableData.base;
-
-  return {
-    currentPrice,
-    comparedPrice: findTableData.base,
-    currencyCode: "USD",
-  };
-};

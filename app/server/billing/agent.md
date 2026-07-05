@@ -15,7 +15,7 @@
 |----|------|
 | `Account` | 三池 token + `usedTokens` |
 | `AppSubscription` | 当前 Shopify 订阅 |
-| `PlanCatalog` | 套餐/购包目录（种子 `prisma/billing-plan-catalog-seed.sql`） |
+| `PlanCatalog` | 套餐/购包目录（数据源 `app/routes/app.pricing/pricingCatalog.ts`，种子 `billing-plan-catalog-seed.sql`） |
 | `AccountPeriodUsage` | 订阅周期归档 |
 | `BillingLog` | 账务流水（含 `TRIAL_GRANTED` 幂等） |
 | `TaskTokenUsageLog` | 翻译任务消耗明细（`taskType`: `manual` / `auto`） |
@@ -95,7 +95,7 @@ npm run turso:migrate:prod
 
 ## 待做
 
-- PlanCatalog 种子与 Pricing 页对齐（订阅价/积分/购包 base 价；订阅购包折扣仍由 UI 计算）
+- PlanCatalog 与 Pricing 页共用 `app/routes/app.pricing/pricingCatalog.ts`；部署时跑 `billing-plan-catalog-seed.sql` 清 tsf_ 后重写
 - Webhook 成功邮件（暂不实现）
 - manage-translation / switcher 等二级页面 Java 依赖（非新用户主路径）
 - `TaskTokenUsageLog` 写入（`recordBilledTaskTokenUsages` 尚未接入 worker 扣费链路）

@@ -1,4 +1,6 @@
--- PlanCatalog 与 Pricing 页对齐（月度/年度订阅 + 购包 base 价；订阅购包折扣由 UI priceOverride 处理）
+-- PlanCatalog：与 app/routes/app.pricing/pricingCatalog.ts 保持一致
+-- 部署前清 tsf_ 套餐后全量写入；改价只改 pricingCatalog.ts 再同步本文件。
+
 DELETE FROM "PlanCatalog" WHERE "planKey" LIKE 'tsf_%';
 
 INSERT INTO "PlanCatalog" (
@@ -16,13 +18,14 @@ INSERT INTO "PlanCatalog" (
     "createdAt",
     "updatedAt"
 ) VALUES
+    -- Basic Monthly: $7.99, 1,500,000 credits/month
     (
         'tsf_basic_monthly',
         'SUBSCRIPTION',
         'MONTHLY',
         'Basic (Monthly)',
         1500000,
-        '9.99',
+        '7.99',
         'USD',
         5,
         'Basic',
@@ -31,13 +34,14 @@ INSERT INTO "PlanCatalog" (
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Pro Monthly: $19.99, 3,000,000 credits/month
     (
         'tsf_pro_monthly',
         'SUBSCRIPTION',
         'MONTHLY',
         'Pro (Monthly)',
         3000000,
-        '29.99',
+        '19.99',
         'USD',
         5,
         'Pro',
@@ -46,13 +50,14 @@ INSERT INTO "PlanCatalog" (
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Premium Monthly: $39.99, 8,000,000 credits/month
     (
         'tsf_premium_monthly',
         'SUBSCRIPTION',
         'MONTHLY',
         'Premium (Monthly)',
         8000000,
-        '79.99',
+        '39.99',
         'USD',
         5,
         'Premium',
@@ -61,51 +66,55 @@ INSERT INTO "PlanCatalog" (
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Basic Yearly: $76.68/year ($6.39/mo), 1,500,000 credits/month
     (
         'tsf_basic_annual',
         'SUBSCRIPTION',
         'ANNUAL',
         'Basic (Annual)',
-        18000000,
-        '99.99',
+        1500000,
+        '76.68',
         'USD',
         5,
-        'Basic Annual',
+        'Basic - Yearly',
         11,
         1,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Pro Yearly: $191.88/year ($15.99/mo), 3,000,000 credits/month
     (
         'tsf_pro_annual',
         'SUBSCRIPTION',
         'ANNUAL',
         'Pro (Annual)',
-        36000000,
-        '299.99',
+        3000000,
+        '191.88',
         'USD',
         5,
-        'Pro Annual',
+        'Pro - Yearly',
         21,
         1,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Premium Yearly: $383.88/year ($31.99/mo), 8,000,000 credits/month
     (
         'tsf_premium_annual',
         'SUBSCRIPTION',
         'ANNUAL',
         'Premium (Annual)',
-        96000000,
-        '799.99',
+        8000000,
+        '383.88',
         'USD',
         5,
-        'Premium Annual',
+        'Premium - Yearly',
         31,
         1,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
+    -- Token packs (Free tier base price; subscriber discount at checkout via UI)
     (
         'tsf_pack_500k',
         'ONE_TIME_PACK',
@@ -225,16 +234,4 @@ INSERT INTO "PlanCatalog" (
         1,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
-    )
-ON CONFLICT("planKey") DO UPDATE SET
-    "kind" = excluded."kind",
-    "billingInterval" = excluded."billingInterval",
-    "displayName" = excluded."displayName",
-    "tokens" = excluded."tokens",
-    "priceAmount" = excluded."priceAmount",
-    "currencyCode" = excluded."currencyCode",
-    "trialDays" = excluded."trialDays",
-    "shopifyPlanName" = excluded."shopifyPlanName",
-    "sortOrder" = excluded."sortOrder",
-    "enabled" = excluded."enabled",
-    "updatedAt" = CURRENT_TIMESTAMP;
+    );
