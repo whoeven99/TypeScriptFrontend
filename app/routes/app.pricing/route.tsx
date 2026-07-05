@@ -45,7 +45,7 @@ import {
   startClientLogTrace,
 } from "~/utils/clientLog";
 
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
 //计划名与其对应价格Map
 const priceTable: Record<
@@ -745,6 +745,13 @@ const Index = () => {
     [t],
   );
 
+  const paidPlanColSpan = useMemo(() => {
+    if (plans.length <= 1) return 24;
+    if (plans.length === 2) return 12;
+    if (plans.length === 3) return 8;
+    return 6;
+  }, [plans.length]);
+
   const columns = [
     {
       title: t("Features"),
@@ -981,124 +988,13 @@ const Index = () => {
                 </Flex>
               </div>
               <Row gutter={[16, 16]}>
-                <Col
-                  key={t("Free")}
-                  xs={24}
-                  sm={24}
-                  md={12}
-                  lg={6}
-                  style={{
-                    display: "flex",
-                    width: "100%",
-                  }}
-                >
-                  <Card
-                    className={`pricing-plan-card ${
-                      plan.type === "Free" ? "pricing-plan-card--current" : ""
-                    }`}
-                    hoverable
-                    style={{
-                      flex: 1,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      position: "relative",
-                      minWidth: "220px",
-                    }}
-                    styles={{
-                      body: {
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        padding: "20px",
-                      },
-                    }}
-                    loading={!plan.id}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={12}
-                      style={{ display: "flex" }}
-                    >
-                      {plan.type === "Free" ? (
-                        <AppStatusBadge tone="info">
-                          {t("Current plan")}
-                        </AppStatusBadge>
-                      ) : null}
-                      <div>
-                        <Title level={4} style={{ margin: 0 }}>
-                          {t("Free")}
-                        </Title>
-                      </div>
-                      <div>
-                        <Text className="pricing-plan-card__price">$0</Text>
-                        <Text className="pricing-plan-card__unit">
-                          {t("/month")}
-                        </Text>
-                      </div>
-                    </Space>
-
-                    <Button
-                      type="default"
-                      block
-                      disabled={plan.type === "Free" || selectedPayPlanOption}
-                      style={{
-                        marginTop: 20,
-                        marginBottom: isNew ? "60px" : "20px",
-                      }}
-                      onClick={() => {
-                        setCancelPlanWarnModal(true);
-                        reportClick("pricing_plan_trial");
-                      }}
-                    >
-                      {plan.type === "Free"
-                        ? t("pricing.current_plan")
-                        : t("pricing.get_start")}
-                    </Button>
-                    <div style={{ flex: 1 }}>
-                      <div key={0} className="pricing-plan-card__feature">
-                        <CheckOutlined
-                          style={{
-                            color: "var(--p-color-text-success)",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Text style={{ fontSize: "13px" }}>
-                          {t("starter_features1")}
-                        </Text>
-                      </div>
-                      <div key={1} className="pricing-plan-card__feature">
-                        <CheckOutlined
-                          style={{
-                            color: "var(--p-color-text-success)",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Text style={{ fontSize: "13px" }}>
-                          {t("starter_features2")}
-                        </Text>
-                      </div>
-                      <div key={2} className="pricing-plan-card__feature">
-                        <CheckOutlined
-                          style={{
-                            color: "var(--p-color-text-success)",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Text style={{ fontSize: "13px" }}>
-                          {t("starter_features3")}
-                        </Text>
-                      </div>
-                    </div>
-                  </Card>
-                </Col>
                 {plans.map((item, index) => (
                   <Col
                     key={item.title}
                     xs={24}
                     sm={24}
                     md={12}
-                    lg={6}
+                    lg={paidPlanColSpan}
                     style={{
                       display: "flex",
                       width: "100%",
@@ -1233,6 +1129,25 @@ const Index = () => {
                   </Col>
                 ))}
               </Row>
+              <div className="pricing-plan-downgrade">
+                {plan.type === "Free" ? (
+                  <Text type="secondary">
+                    {t("You are currently on the free plan.")}
+                  </Text>
+                ) : (
+                  <Text type="secondary">
+                    {t("Looking for the free plan?")}{" "}
+                    <Link
+                      onClick={() => {
+                        setCancelPlanWarnModal(true);
+                        reportClick("pricing_plan_downgrade");
+                      }}
+                    >
+                      {t("Switch to free plan")}
+                    </Link>
+                  </Text>
+                )}
+              </div>
             </section>
             <section className="pricing-section pricing-section--compact">
               <div className="pricing-section__header">
