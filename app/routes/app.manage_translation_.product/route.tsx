@@ -684,7 +684,6 @@ const Index = () => {
       setOptionsData([]);
       setMetafieldsData([]);
       setVariantsData([]);
-      setIsLoading(false);
       return;
     }
     setProductBaseData([]);
