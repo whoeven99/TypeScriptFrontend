@@ -41,6 +41,11 @@ import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -284,6 +289,7 @@ const Index = () => {
 
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const pendingRefreshStatsRef = useRef(false);
+  const refreshStatsTraceRef = useRef<ClientLogTrace | null>(null);
   /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
   const refreshAwaitingProductsRef = useRef(false);
   /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
@@ -942,6 +948,15 @@ const Index = () => {
       refreshAwaitingProductsRef.current = true;
       fetchAllItemsCounts(currentLocale, source.code, true);
     } else {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message: refreshStatsFetcher.data?.errorMsg || "Failed to refresh statistics",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Failed to refresh statistics"));
       setIsRefreshingStats(false);
     }
@@ -961,11 +976,27 @@ const Index = () => {
     refreshAwaitingProductsRef.current = false;
     setIsRefreshingStats(false);
     if (productsFetcher.data?.success) {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        status: "success",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Translation statistics refreshed"));
     } else {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message: "Products statistics refresh failed",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Failed to refresh statistics"));
     }
-  }, [productsFetcher.state, productsFetcher.data, t]);
+  }, [productsFetcher.state, productsFetcher.data, currentLocale, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -994,6 +1025,15 @@ const Index = () => {
     if (!currentLocale || !source?.code) return;
     setIsRefreshingStats(true);
     pendingRefreshStatsRef.current = true;
+    refreshStatsTraceRef.current = startClientLogTrace({
+      event: "manage_refresh_statistics",
+      action: "refresh_statistics",
+      shop: globalStore?.shop,
+      context: {
+        locale: currentLocale,
+        source: source.code,
+      },
+    });
     reportClick("manage_refresh_stats");
     const formData = new FormData();
     formData.append("refreshItemsCountTarget", currentLocale);

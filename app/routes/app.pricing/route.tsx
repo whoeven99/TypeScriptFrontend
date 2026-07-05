@@ -15,7 +15,7 @@ import {
   Modal,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import {
@@ -42,6 +42,11 @@ import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const { Title, Text } = Typography;
 
@@ -353,6 +358,9 @@ const Index = () => {
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
+  const payCreditsTraceRef = useRef<ClientLogTrace | null>(null);
+  const payPlanTraceRef = useRef<ClientLogTrace | null>(null);
+  const cancelPlanTraceRef = useRef<ClientLogTrace | null>(null);
 
   useEffect(() => {
     setIsLoading(false);
@@ -369,6 +377,18 @@ const Index = () => {
 
   useEffect(() => {
     if (payFetcher.data) {
+      if (payCreditsTraceRef.current) {
+        finishClientLogTrace(payCreditsTraceRef.current, {
+          level: payFetcher.data?.success ? "info" : "warn",
+          status: payFetcher.data?.success ? "success" : "failure",
+          message: payFetcher.data?.errorMsg,
+          context: {
+            errorCode: payFetcher.data?.errorCode,
+            hasConfirmationUrl: Boolean(payFetcher.data?.response?.confirmationUrl),
+          },
+        });
+        payCreditsTraceRef.current = null;
+      }
       if (payFetcher.data?.success) {
         const confirmationUrl = payFetcher.data?.response?.confirmationUrl;
         open(confirmationUrl, "_top");
@@ -380,6 +400,20 @@ const Index = () => {
 
   useEffect(() => {
     if (payForPlanFetcher.data) {
+      if (payPlanTraceRef.current) {
+        finishClientLogTrace(payPlanTraceRef.current, {
+          level: payForPlanFetcher.data?.success ? "info" : "warn",
+          status: payForPlanFetcher.data?.success ? "success" : "failure",
+          message: payForPlanFetcher.data?.errorMsg,
+          context: {
+            errorCode: payForPlanFetcher.data?.errorCode,
+            hasConfirmationUrl: Boolean(
+              payForPlanFetcher.data?.response?.confirmationUrl,
+            ),
+          },
+        });
+        payPlanTraceRef.current = null;
+      }
       if (payForPlanFetcher.data?.success) {
         const confirmationUrl =
           payForPlanFetcher.data?.response?.confirmationUrl;
@@ -392,6 +426,15 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
+      if (cancelPlanTraceRef.current) {
+        finishClientLogTrace(cancelPlanTraceRef.current, {
+          status: "success",
+          context: {
+            planType: plan?.type,
+          },
+        });
+        cancelPlanTraceRef.current = null;
+      }
       dispatch(
         setPlan({
           plan: {
@@ -405,7 +448,7 @@ const Index = () => {
       dispatch(setUpdateTime({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
-  }, [dispatch, planCancelFetcher.data]);
+  }, [dispatch, plan?.type, planCancelFetcher.data]);
 
   const plans = useMemo(
     () => [
@@ -792,17 +835,41 @@ const Index = () => {
   };
 
   const handleCancelPlan = async () => {
-    const data = await GetLatestActiveSubscribeId({
-      shop: globalStore?.shop as string,
-      server: globalStore?.server as string,
+    cancelPlanTraceRef.current = startClientLogTrace({
+      event: "pricing_cancel_plan",
+      action: "cancel_plan",
+      shop: globalStore?.shop,
+      context: {
+        planType: plan?.type,
+      },
     });
-    if (data.success) {
-      planCancelFetcher.submit(
-        {
-          cancelId: JSON.stringify(data.response),
-        },
-        { method: "POST" },
-      );
+    try {
+      const data = await GetLatestActiveSubscribeId({
+        shop: globalStore?.shop as string,
+        server: globalStore?.server as string,
+      });
+      if (data.success) {
+        planCancelFetcher.submit(
+          {
+            cancelId: JSON.stringify(data.response),
+          },
+          { method: "POST" },
+        );
+        return;
+      }
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message: data?.errorMsg || "Failed to load latest active subscription",
+      });
+      cancelPlanTraceRef.current = null;
+    } catch (error) {
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        level: "error",
+        status: "failure",
+        error,
+      });
+      cancelPlanTraceRef.current = null;
     }
   };
 
@@ -816,6 +883,17 @@ const Index = () => {
     const selectedOption = creditOptions.find(
       (item) => item.key === selectedOptionKey,
     );
+    payCreditsTraceRef.current = startClientLogTrace({
+      event: "pricing_buy_credits",
+      action: "buy_credits",
+      shop: globalStore?.shop,
+      context: {
+        optionKey: selectedOption?.key,
+        optionName: selectedOption?.name,
+        amount: selectedOption?.price.currentPrice,
+        currencyCode: selectedOption?.price.currencyCode,
+      },
+    });
 
     const payInfo = {
       name: selectedOption?.name,
@@ -841,6 +919,16 @@ const Index = () => {
     id: string;
   }) => {
     setPayForPlanButtonLoading(id);
+    payPlanTraceRef.current = startClientLogTrace({
+      event: "pricing_buy_plan",
+      action: "buy_plan",
+      shop: globalStore?.shop,
+      context: {
+        planTitle: plan?.title,
+        yearly,
+        trialDays,
+      },
+    });
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },

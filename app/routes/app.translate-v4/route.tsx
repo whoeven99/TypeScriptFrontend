@@ -41,6 +41,10 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import {
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 const LazySupportChatWidget = lazy(() =>
@@ -189,6 +193,17 @@ export default function AppTranslateV4() {
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
       setCoverageLoading(true);
+      const trace = forceRefresh
+        ? startClientLogTrace({
+            event: "translate_v4_refresh_coverage",
+            action: "refresh_coverage",
+            shop,
+            context: {
+              source,
+              targets: targetOptions.map((item) => item.value),
+            },
+          })
+        : null;
       try {
         if (!forceRefresh) {
           const res = await fetch(
@@ -196,6 +211,14 @@ export default function AppTranslateV4() {
           );
           const data = await res.json();
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
+          if (trace) {
+            finishClientLogTrace(trace, {
+              status: "success",
+              context: {
+                localeCount: targetOptions.length,
+              },
+            });
+          }
           return;
         }
 
@@ -207,14 +230,29 @@ export default function AppTranslateV4() {
           const data = await res.json();
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
         }
+        if (trace) {
+          finishClientLogTrace(trace, {
+            status: "success",
+            context: {
+              localeCount: targetOptions.length,
+            },
+          });
+        }
       } catch (err) {
         console.error("[translateV4] refresh coverage failed:", err);
+        if (trace) {
+          finishClientLogTrace(trace, {
+            level: "error",
+            status: "failure",
+            error: err,
+          });
+        }
         if (forceRefresh) message.error(t("v4.refreshStatsFailed"));
       } finally {
         setCoverageLoading(false);
       }
     },
-    [shop, targetOptions, t],
+    [shop, source, targetOptions, t],
   );
 
   const refreshCoverageFromCache = useCallback(async () => {
@@ -287,6 +325,14 @@ export default function AppTranslateV4() {
       taskId: string,
       actionType: "pause" | "resume" | "cancel" | "delete",
     ) => {
+      const trace = startClientLogTrace({
+        event: "translate_v4_task_action",
+        action: actionType,
+        shop,
+        context: {
+          taskId,
+        },
+      });
       try {
         const res = await fetch("/api/translate-v4/task-action", {
           method: "POST",
@@ -309,12 +355,37 @@ export default function AppTranslateV4() {
                     : t("v4.cancelled");
           message.success(label);
           await Promise.all([refreshList(), refreshQuota()]);
+          finishClientLogTrace(trace, {
+            status: "success",
+            context: {
+              taskId,
+              pending: Boolean(data.pending),
+              httpStatus: res.status,
+            },
+          });
           return true;
         }
+        finishClientLogTrace(trace, {
+          level: "warn",
+          status: "failure",
+          message: data?.error || t("v4.actionFailed"),
+          context: {
+            taskId,
+            httpStatus: res.status,
+          },
+        });
         message.error(data?.error || t("v4.actionFailed"));
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
+        finishClientLogTrace(trace, {
+          level: "error",
+          status: "failure",
+          error: err,
+          context: {
+            taskId,
+          },
+        });
         message.error(t("v4.actionFailedRetry"));
         return false;
       }
@@ -345,6 +416,19 @@ export default function AppTranslateV4() {
     }
 
     setCreating(true);
+    const trace = startClientLogTrace({
+      event: "translate_v4_create_tasks",
+      action: "create_tasks",
+      shop,
+      context: {
+        source,
+        targets,
+        moduleKeys,
+        aiModel,
+        isCover,
+        isHandle,
+      },
+    });
     try {
       const result = await createTranslateV4Tasks({
         source,
@@ -354,9 +438,15 @@ export default function AppTranslateV4() {
         isCover,
         isHandle,
         targetOptions,
+        shop,
       });
 
       if (result.validationError) {
+        finishClientLogTrace(trace, {
+          level: "warn",
+          status: "failure",
+          message: result.validationError,
+        });
         message.warning(translateV4Message(result.validationError, t));
         return;
       }
@@ -369,6 +459,27 @@ export default function AppTranslateV4() {
       } else {
         message.error(summary);
       }
+
+      finishClientLogTrace(trace, {
+        level:
+          result.failed.length > 0
+            ? result.created.length > 0
+              ? "warn"
+              : "error"
+            : "info",
+        status:
+          result.failed.length > 0 && result.created.length === 0
+            ? "failure"
+            : "success",
+        message: summary,
+        context: {
+          created: result.created.map((item) => item.target),
+          failed: result.failed.map((item) => ({
+            target: item.target,
+            error: item.error,
+          })),
+        },
+      });
 
       if (result.failed.length > 0 && result.created.length > 0) {
         message.warning(
@@ -383,6 +494,11 @@ export default function AppTranslateV4() {
       }
     } catch (err) {
       console.error("[translateV4] create failed:", err);
+      finishClientLogTrace(trace, {
+        level: "error",
+        status: "failure",
+        error: err,
+      });
       message.error(t("v4.createFailedRetry"));
     } finally {
       setCreating(false);

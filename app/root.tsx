@@ -11,8 +11,10 @@ import {
 } from "@remix-run/react";
 import { Provider } from "react-redux";
 import store from "./store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createHead } from "remix-island";
+import { globalStore } from "./globalStore";
+import { reportClientError } from "./utils/clientLog";
 
 import "./styles.css";
 
@@ -37,8 +39,8 @@ function runWhenIdle(callback: () => void): () => void {
     const id = window.requestIdleCallback(callback, { timeout: 3000 });
     return () => window.cancelIdleCallback(id);
   }
-  const id = window.setTimeout(callback, 1500);
-  return () => window.clearTimeout(id);
+  const id = globalThis.setTimeout(callback, 1500);
+  return () => globalThis.clearTimeout(id);
 }
 
 function appendExternalScript(id: string, src: string) {
@@ -80,9 +82,32 @@ function loadSupportChatScript() {
   );
 }
 
+function summarizeConsoleArg(value: unknown) {
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+    };
+  }
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    value == null
+  ) {
+    return value;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "[unserializable]";
+  }
+}
+
 export function ErrorBoundary() {
   const error = useRouteError();
   console.error("Root Error:", error);
+  const loggedRef = useRef(false);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
@@ -142,6 +167,24 @@ export function ErrorBoundary() {
   };
 
   const currentError = errorMessages[errorCode] || errorMessages["500"];
+
+  useEffect(() => {
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+    void reportClientError("root_error_boundary", error, {
+      shop: globalStore.shop,
+      route:
+        typeof window === "undefined"
+          ? undefined
+          : `${window.location.pathname}${window.location.search}`,
+      message: currentError.title,
+      context: {
+        errorCode,
+        isRouteErrorResponse: isRouteErrorResponse(error),
+        isNetworkFetchError: isNetworkFetchError(error),
+      },
+    });
+  }, [currentError.title, error, errorCode]);
 
 
   // 服务器端渲染时直接返回基础结构
@@ -231,6 +274,66 @@ export default function App() {
     }
     return runWhenIdle(loadSupportChatScript);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleError = (event: ErrorEvent) => {
+      void reportClientError("window_error", event.error ?? event.message, {
+        shop: globalStore.shop,
+        route: `${window.location.pathname}${window.location.search}`,
+        context: {
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+        },
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      void reportClientError("unhandled_rejection", event.reason, {
+        shop: globalStore.shop,
+        route: `${window.location.pathname}${window.location.search}`,
+        context: {
+          reasonType: typeof event.reason,
+        },
+      });
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const originalConsoleError = console.error.bind(console);
+    let reporting = false;
+
+    console.error = (...args: unknown[]) => {
+      originalConsoleError(...args);
+      if (reporting) return;
+      reporting = true;
+      const errorArg = args.find((item) => item instanceof Error) ?? args[0];
+      void reportClientError("console_error", errorArg, {
+        shop: globalStore.shop,
+        route: `${window.location.pathname}${window.location.search}`,
+        context: {
+          consoleArgs: args.slice(0, 5).map(summarizeConsoleArg),
+        },
+      }).finally(() => {
+        reporting = false;
+      });
+    };
+
+    return () => {
+      console.error = originalConsoleError;
+    };
+  }, []);
 
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用

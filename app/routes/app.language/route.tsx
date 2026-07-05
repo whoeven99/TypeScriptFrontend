@@ -61,6 +61,12 @@ import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 import { getTranslatePagePath } from "~/lib/translateNavigation";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  reportClientLog,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const { Text } = Typography;
 
@@ -330,6 +336,8 @@ const Index = () => {
   }, [dataSource]);
 
   const prevLocaleDataRef = useRef<string[]>();
+  const deleteTraceRef = useRef<ClientLogTrace | null>(null);
+  const pollFailureLoggedRef = useRef(false);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -521,6 +529,9 @@ const Index = () => {
         },
         [],
       );
+      const failedTargets = deleteFetcher.data.data
+        .filter((item: any) => item.status !== "fulfilled")
+        .map((item: any) => item.reason ?? "unknown");
       // 从 data 中过滤掉成功删除的数据
       const newData = dataSource.filter(
         (item) => !deleteData.includes(item.locale),
@@ -531,6 +542,15 @@ const Index = () => {
       setSelectedRowKeys([]);
       // 结束加载状态
       setDeleteLoading(false);
+      finishClientLogTrace(deleteTraceRef.current, {
+        level: failedTargets.length > 0 ? "warn" : "info",
+        status: failedTargets.length > 0 ? "failure" : "success",
+        context: {
+          deletedLocales: deleteData,
+          failedTargets,
+        },
+      });
+      deleteTraceRef.current = null;
       shopify.toast.show(t("Delete successfully"));
       fetcher.submit(
         {
@@ -606,11 +626,50 @@ const Index = () => {
           }
         }
 
+        if (pollFailureLoggedRef.current) {
+          pollFailureLoggedRef.current = false;
+          void reportClientLog({
+            event: "language_poll_v4_status",
+            action: "poll_status",
+            shop,
+            kind: "action",
+            level: "info",
+            status: "success",
+            context: {
+              localeCount: rows.length,
+            },
+          });
+        }
+
         if (hasPendingStatus) {
           scheduleNextPoll();
         }
       } catch (error) {
         console.error("[language] poll v4 language status failed:", error);
+        if (!pollFailureLoggedRef.current) {
+          pollFailureLoggedRef.current = true;
+          void reportClientLog({
+            event: "language_poll_v4_status",
+            action: "poll_status",
+            shop,
+            kind: "network",
+            level: "error",
+            status: "failure",
+            error:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : {
+                    message: String(error),
+                  },
+            context: {
+              source: source.code,
+            },
+          });
+        }
         stablePollCount += 1;
         scheduleNextPoll();
       }
@@ -783,24 +842,62 @@ const Index = () => {
     checked: boolean,
     status: number,
   ) => {
+    const trace = startClientLogTrace({
+      event: "language_toggle_auto_translate",
+      action: checked ? "enable_auto_translate" : "disable_auto_translate",
+      shop,
+      context: {
+        locale,
+        currentStatus: status,
+      },
+    });
     if (!plan) {
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: "Plan not loaded",
+      });
       return;
     }
     if (status === 0) {
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: "Auto translate requires an initial translation",
+      });
       setNoFirstTranslationLocale(locale);
       setNoFirstTranslation(true);
       return;
     }
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
     const row = dataSource.find((item: any) => item.locale === locale);
-    if (row) {
+    if (!row) {
+      dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: "Language row not found",
+        context: {
+          locale,
+        },
+      });
+      return;
+    }
+    try {
       const data = await setAutoTranslateCompat({
         target: row.locale,
         autoTranslate: checked,
       });
+      dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
       if (data?.success) {
-        dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
         dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
+        finishClientLogTrace(trace, {
+          status: "success",
+          context: {
+            locale: row.locale,
+            autoTranslate: checked,
+          },
+        });
         shopify.toast.show(t("Auto translate updated successfully"));
         fetcher.submit(
           {
@@ -811,7 +908,28 @@ const Index = () => {
             action: "/log",
           },
         );
+      } else {
+        finishClientLogTrace(trace, {
+          level: "warn",
+          status: "failure",
+          message: data?.errorMsg || "Auto translate update failed",
+          context: {
+            locale: row.locale,
+            autoTranslate: checked,
+          },
+        });
       }
+    } catch (error) {
+      dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+      finishClientLogTrace(trace, {
+        level: "error",
+        status: "failure",
+        error,
+        context: {
+          locale,
+          autoTranslate: checked,
+        },
+      });
     }
     report(
       {
@@ -843,6 +961,14 @@ const Index = () => {
         primaryLanguage: source?.code,
       }),
     ); // 将选中的语言作为字符串发送
+    deleteTraceRef.current = startClientLogTrace({
+      event: "language_delete",
+      action: "delete_languages",
+      shop,
+      context: {
+        targets: targets.map((item) => item.locale),
+      },
+    });
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
     setDeleteLoading(true);
     reportClick("language_list_delete");

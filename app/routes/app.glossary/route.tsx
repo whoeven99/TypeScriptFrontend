@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -37,6 +37,11 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -173,6 +178,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const deleteTraceRef = useRef<ClientLogTrace | null>(null);
   const { t } = useTranslation();
   const { reportClick, report } = useReport();
   useEffect(() => {
@@ -216,6 +222,7 @@ const Index = () => {
   useEffect(() => {
     if (deleteFetcher.data) {
       let newData = [...dataSource];
+      const failedIds: Array<string | number> = [];
       // 遍历 deleteFetcher.data
       deleteFetcher.data.data.forEach((res: any) => {
         if (res.value?.success) {
@@ -224,17 +231,35 @@ const Index = () => {
             (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
+          failedIds.push(res.value?.response?.id ?? "unknown");
           shopify.toast.show(res.value.errorMsg);
         }
       });
+      finishClientLogTrace(deleteTraceRef.current, {
+        level: failedIds.length > 0 ? "warn" : "info",
+        status: failedIds.length > 0 ? "failure" : "success",
+        context: {
+          selectedCount: selectedRowKeys.length,
+          failedIds,
+        },
+      });
+      deleteTraceRef.current = null;
       dispatch(setGLossaryTableData(newData)); // 更新表格数据
       setSelectedRowKeys([]);
       setDeleteLoading(false);
       shopify.toast.show(t("Delete successfully"));
     }
-  }, [deleteFetcher.data]);
+  }, [dataSource, deleteFetcher.data, dispatch, selectedRowKeys.length, t]);
 
   const handleDelete = () => {
+    deleteTraceRef.current = startClientLogTrace({
+      event: "glossary_delete_rules",
+      action: "delete_rules",
+      shop: globalStore?.shop,
+      context: {
+        selectedRowKeys,
+      },
+    });
     const formData = new FormData();
     formData.append("deleteInfo", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/glossary" }); // 提交表单请求
@@ -243,6 +268,15 @@ const Index = () => {
 
   const handleApplication = async (key: number) => {
     const row = dataSource.find((item: any) => item.key === key);
+    const trace = startClientLogTrace({
+      event: "glossary_toggle_rule",
+      action: row?.status === 0 ? "enable_rule" : "disable_rule",
+      shop: globalStore?.shop,
+      context: {
+        glossaryId: key,
+        previousStatus: row?.status,
+      },
+    });
     if (row.status === 0) {
       const activeItemsCount = dataSource.filter(
         (item: any) => item.status === 1,
@@ -250,6 +284,11 @@ const Index = () => {
       if (
         activeItemsCount >= planMapping[plan?.type as keyof typeof planMapping]
       ) {
+        finishClientLogTrace(trace, {
+          level: "warn",
+          status: "failure",
+          message: "Glossary term limit reached",
+        });
         modalShowForPlan();
         return;
       }
@@ -272,6 +311,13 @@ const Index = () => {
 
     if (data?.success) {
       shopify.toast.show(t("Saved successfully"));
+      finishClientLogTrace(trace, {
+        status: "success",
+        context: {
+          glossaryId: data.response.id,
+          nextStatus: data.response.status,
+        },
+      });
       dispatch(
         setGLossaryStatusLoadingState({
           key: data.response.id,
@@ -281,6 +327,14 @@ const Index = () => {
       );
     } else {
       shopify.toast.show(data?.errorMsg);
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: data?.errorMsg,
+        context: {
+          glossaryId: data?.response?.id ?? key,
+        },
+      });
       dispatch(
         setGLossaryStatusLoadingState({
           key: data.response.id,
