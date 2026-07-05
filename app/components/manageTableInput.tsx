@@ -1,7 +1,6 @@
 import { Input } from "antd";
 import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import Commands from "app/components/richTextInput/commands";
 import "./styles.css";
 import "./manageTableInput.css";
 
@@ -112,22 +111,15 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       if (!mounted) return fallback;
       return (
         <div className="manage-table-input manage-table-input--html">
-          <div className="tiptap-container readOnly-input">
-            <Commands
-              editor={null}
-              readOnly={true}
-              handleTiptap={() => {}}
-              className="tiptap-commands tiptap-commands--readonly"
-            />
-            <div
-              className={`tiptap-content readOnly-input ${isRtl ? "rtl-input" : ""}`}
-            >
-              <div
-                className={`tiptap html-preview-input html-preview-input--shell ${isRtl ? "rtl-input" : ""}`}
-                dangerouslySetInnerHTML={{ __html: readonlyHtml }}
-              />
-            </div>
-          </div>
+          <ManageTableInputEditor
+            mode={mode}
+            record={record}
+            translatedValues={translatedValues}
+            handleInputChange={handleInputChange}
+            isSuccess={isSuccess}
+            isRtl={isRtl}
+            defaultValue={readonlyHtml}
+          />
         </div>
       );
     }
