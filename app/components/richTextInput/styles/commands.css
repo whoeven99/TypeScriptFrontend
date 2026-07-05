@@ -1,6 +1,7 @@
 .commands {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: center;
   padding-top: 10px;

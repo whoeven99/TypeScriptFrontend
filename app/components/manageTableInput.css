@@ -1,3 +1,96 @@
+.manage-table-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.manage-table-input .ant-input,
+.manage-table-input .ant-input-textarea,
+.manage-table-input .ant-input-textarea-affix-wrapper,
+.manage-table-input .ant-input-textarea-show-count,
+.manage-table-input .tiptap-container,
+.manage-table-input .tiptap-content,
+.manage-table-input .tiptap,
+.manage-table-input .ProseMirror,
+.manage-table-input .html-input,
+.manage-table-input .html-preview-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.manage-table-input .ant-input-textarea,
+.manage-table-input .ant-input-textarea-show-count {
+  display: block;
+}
+
+.manage-table-input .tiptap-container {
+  margin: 0;
+}
+
+.manage-table-input .tiptap-content,
+.manage-table-input .tiptap,
+.manage-table-input .ProseMirror,
+.manage-table-input .html-preview-input,
+.manage-table-input .html-input {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.manage-table-input .ProseMirror p,
+.manage-table-input .ProseMirror li,
+.manage-table-input .ProseMirror td,
+.manage-table-input .ProseMirror th,
+.manage-table-input .html-preview-input p,
+.manage-table-input .html-preview-input li,
+.manage-table-input .html-preview-input td,
+.manage-table-input .html-preview-input th {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.manage-table-input .ProseMirror img,
+.manage-table-input .ProseMirror iframe,
+.manage-table-input .ProseMirror video,
+.manage-table-input .html-preview-input img,
+.manage-table-input .html-preview-input iframe,
+.manage-table-input .html-preview-input video {
+  max-width: 100%;
+  height: auto;
+}
+
+.manage-table-input .ProseMirror img,
+.manage-table-input .html-preview-input img {
+  display: block !important;
+  float: none !important;
+  clear: both;
+  width: auto !important;
+  margin: 8px auto !important;
+}
+
+.manage-table-input .ProseMirror figure,
+.manage-table-input .html-preview-input figure {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 8px 0;
+}
+
+.manage-table-input .ProseMirror pre,
+.manage-table-input .html-preview-input pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.manage-table-input .ProseMirror table,
+.manage-table-input .html-preview-input table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
 .html-preview-input {
   min-height: 98px;
   max-height: 220px;
