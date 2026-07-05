@@ -49,6 +49,7 @@ const normalizeText = (text) =>
 
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
+const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -101,8 +102,8 @@ export function syncCompactSwitcherLayout(ciwiBlock) {
     const textWidth = measureTextWidth(displayTextElement, label);
     const hasMainFlag = Boolean(mainBoxFlag && !mainBoxFlag.hidden && mainBoxFlag.src);
     const triggerWidth = clampNumber(
-      textWidth + (hasMainFlag ? 88 : 60),
-      112,
+      textWidth + (hasMainFlag ? 78 : 48),
+      108,
       maxInlineWidth,
     );
 
@@ -1595,6 +1596,17 @@ export class CiwiswitcherForm extends HTMLElement {
     const form = this.querySelector("form");
 
     if (form) {
+      const returnToUrl = new URL(window.location.href);
+      returnToUrl.searchParams.set(CIWI_MANUAL_LOCALIZATION_QUERY_KEY, "1");
+      let returnToInput = form.querySelector('input[name="return_to"]');
+      if (!returnToInput) {
+        returnToInput = document.createElement("input");
+        returnToInput.type = "hidden";
+        returnToInput.name = "return_to";
+        form.appendChild(returnToInput);
+      }
+      returnToInput.value =
+        `${returnToUrl.pathname}${returnToUrl.search}${returnToUrl.hash}`;
       persistManualLocalizationPreference({
         country: this.elements.countryInput?.value,
         language: this.elements.languageInput?.value,
