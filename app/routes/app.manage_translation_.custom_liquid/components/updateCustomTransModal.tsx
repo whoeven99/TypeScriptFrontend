@@ -1,22 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Modal,
-  Input,
-  Space,
-  Button,
-  Typography,
-  Select,
-  Flex,
-} from "antd";
+import { Alert, Modal, Input, Space, Typography, Select, Flex } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useSelector } from "react-redux";
 import type { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
-import {
-  insertLiquidCompat,
-  type LiquidTableRow,
-} from "../liquidClient";
+import { insertLiquidCompat, type LiquidTableRow } from "../liquidClient";
 import {
   getTranslateV4ErrorMessage,
   TRANSLATE_V4_ERROR_KEYS,

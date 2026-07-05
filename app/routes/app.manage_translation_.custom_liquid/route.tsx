@@ -4,7 +4,6 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import {
   Alert,
-  Button,
   Card,
   Checkbox,
   Flex,
@@ -15,6 +14,7 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import {
@@ -266,9 +266,9 @@ const Index = () => {
       const newData = dataSource.map((item) =>
         item.key === id
           ? {
-            ...item,
-            replacementMethod: !!updateLiquidReplacementMethod?.response,
-          }
+              ...item,
+              replacementMethod: !!updateLiquidReplacementMethod?.response,
+            }
           : item,
       );
       setDataSource(newData);
@@ -395,16 +395,16 @@ const Index = () => {
                     setSelectedRowKeys(
                       e.target.checked
                         ? [
-                          ...currentPageKeys,
-                          ...selectedRowKeys.filter(
-                            (key) => !currentPageKeys.includes(key),
-                          ),
-                        ]
+                            ...currentPageKeys,
+                            ...selectedRowKeys.filter(
+                              (key) => !currentPageKeys.includes(key),
+                            ),
+                          ]
                         : [
-                          ...selectedRowKeys.filter(
-                            (key) => !currentPageKeys.includes(key),
-                          ),
-                        ],
+                            ...selectedRowKeys.filter(
+                              (key) => !currentPageKeys.includes(key),
+                            ),
+                          ],
                     )
                   }
                 >
@@ -428,8 +428,8 @@ const Index = () => {
                             e.target.checked
                               ? [...selectedRowKeys, item.key]
                               : selectedRowKeys.filter(
-                                (key) => key !== item.key,
-                              ),
+                                  (key) => key !== item.key,
+                                ),
                           );
                         }}
                       >

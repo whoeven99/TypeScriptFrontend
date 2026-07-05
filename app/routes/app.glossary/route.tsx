@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  Button,
   Card,
   Checkbox,
   Flex,
@@ -18,9 +17,13 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { queryShopLanguages } from "~/api/admin";
-import { listGlossaryPagePayload, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
+import {
+  listGlossaryPagePayload,
+  deleteGlossaryDo,
+} from "~/server/translateV4/glossary.server";
 import { updateGlossaryCompat } from "./glossaryClient";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -291,23 +294,23 @@ const Index = () => {
           );
         } else {
           failedIds.push(res.value?.response?.id ?? "unknown");
-            failedMessages.push(
-              getTranslateV4ErrorMessage(
-                t,
-                res.value?.errorMsg,
-                TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
-              ),
-            );
+          failedMessages.push(
+            getTranslateV4ErrorMessage(
+              t,
+              res.value?.errorMsg,
+              TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+            ),
+          );
         }
       });
 
       if (!results.length) {
         failedMessages.push(
-            getTranslateV4ErrorMessage(
-              t,
-              deleteFetcher.data?.errorMsg,
-              TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
-            ),
+          getTranslateV4ErrorMessage(
+            t,
+            deleteFetcher.data?.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+          ),
         );
       }
 
@@ -415,12 +418,11 @@ const Index = () => {
         return;
       }
 
-      const errorMsg =
-        getTranslateV4ErrorMessage(
-          t,
-          data?.errorMsg,
-          TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
-        );
+      const errorMsg = getTranslateV4ErrorMessage(
+        t,
+        data?.errorMsg,
+        TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+      );
       shopify.toast.show(errorMsg);
       finishClientLogTrace(trace, {
         level: "warn",
@@ -668,16 +670,16 @@ const Index = () => {
                         setSelectedRowKeys(
                           e.target.checked
                             ? [
-                              ...currentPageKeys,
-                              ...selectedRowKeys.filter(
-                                (key) => !currentPageKeys.includes(key),
-                              ),
-                            ]
+                                ...currentPageKeys,
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ]
                             : [
-                              ...selectedRowKeys.filter(
-                                (key) => !currentPageKeys.includes(key),
-                              ),
-                            ],
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ],
                         )
                       }
                     >
@@ -701,8 +703,8 @@ const Index = () => {
                                 e.target.checked
                                   ? [...selectedRowKeys, item.key]
                                   : selectedRowKeys.filter(
-                                    (key) => key !== item.key,
-                                  ),
+                                      (key) => key !== item.key,
+                                    ),
                               );
                             }}
                           >

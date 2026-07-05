@@ -86,6 +86,101 @@ body {
   --p-color-text-brand-on-bg-fill: #ffffff;
 }
 
+.app-button.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  border-radius: var(--app-radius-md);
+  font-weight: 600;
+  box-shadow: none;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.app-button.ant-btn.ant-btn-sm {
+  min-height: 28px;
+  border-radius: var(--app-radius-sm);
+}
+
+.app-button.ant-btn.ant-btn-lg {
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+.app-button.ant-btn:not(:disabled):focus-visible {
+  box-shadow: 0 0 0 3px rgba(84, 103, 255, 0.18);
+}
+
+.app-button.ant-btn-default {
+  background: var(--app-color-surface);
+  border-color: var(--app-color-border-secondary);
+  color: var(--app-color-text);
+}
+
+.app-button.ant-btn-default:not(:disabled):hover,
+.app-button.ant-btn-default:not(:disabled):active {
+  background: var(--app-color-surface);
+  border-color: var(--app-accent-primary);
+  color: var(--app-color-text);
+}
+
+.app-button.ant-btn-primary {
+  background: var(--app-accent-primary);
+  border-color: var(--app-accent-primary);
+  color: var(--app-color-brand-on-fill);
+}
+
+.app-button.ant-btn-primary:not(:disabled):hover,
+.app-button.ant-btn-primary:not(:disabled):active {
+  background: var(--app-accent-primary-hover);
+  border-color: var(--app-accent-primary-hover);
+  color: var(--app-color-brand-on-fill);
+}
+
+.app-button.ant-btn-text,
+.app-button.ant-btn-link {
+  color: var(--app-color-text-secondary);
+}
+
+.app-button.ant-btn-text:not(:disabled):hover,
+.app-button.ant-btn-text:not(:disabled):active {
+  background: var(--app-color-surface-secondary);
+  color: var(--app-color-text);
+}
+
+.app-button.ant-btn-link:not(:disabled):hover,
+.app-button.ant-btn-link:not(:disabled):active {
+  color: var(--app-accent-primary);
+}
+
+.app-button.ant-btn-dangerous.ant-btn-default {
+  color: var(--app-accent-critical);
+  border-color: rgba(208, 77, 95, 0.2);
+}
+
+.app-button.ant-btn-dangerous.ant-btn-default:not(:disabled):hover,
+.app-button.ant-btn-dangerous.ant-btn-default:not(:disabled):active {
+  color: var(--app-accent-critical);
+  border-color: var(--app-accent-critical);
+  background: var(--app-color-surface-critical);
+}
+
+.app-button.ant-btn-dangerous.ant-btn-text,
+.app-button.ant-btn-dangerous.ant-btn-link {
+  color: var(--app-accent-critical);
+}
+
+.app-button.ant-btn-dangerous.ant-btn-text:not(:disabled):hover,
+.app-button.ant-btn-dangerous.ant-btn-text:not(:disabled):active {
+  color: var(--app-accent-critical);
+  background: var(--app-color-surface-critical);
+}
+
 .app-subtle-chip {
   display: inline-flex;
   align-items: center;
@@ -116,8 +211,11 @@ body {
 }
 
 .app-tonal-card {
-  background:
-    linear-gradient(180deg, rgba(84, 103, 255, 0.06), rgba(255, 255, 255, 0.92)),
+  background: linear-gradient(
+      180deg,
+      rgba(84, 103, 255, 0.06),
+      rgba(255, 255, 255, 0.92)
+    ),
     var(--app-color-surface);
 }
 
@@ -241,8 +339,10 @@ body {
 
 /* 卡片悬浮上浮 + 阴影加重 */
 .v4-lift {
-  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
-    box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1), border-color 0.2s ease;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.2s ease;
 }
 .v4-lift:hover {
   transform: translateY(-3px);
@@ -260,7 +360,8 @@ body {
 /* 展开/收起容器：高度 + 透明度过渡 */
 .v4-collapse {
   overflow: hidden;
-  transition: max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+  transition:
+    max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
     opacity 0.32s ease;
 }
 

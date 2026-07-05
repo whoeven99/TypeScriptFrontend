@@ -1,4 +1,5 @@
-import { Card, Space, Button, Typography } from "antd";
+import { Card, Space, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import AppSectionCard from "~/ui/components/AppSectionCard";

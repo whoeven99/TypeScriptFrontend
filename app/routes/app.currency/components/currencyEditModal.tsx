@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Button,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Typography,
-} from "antd";
+import { Alert, InputNumber, Modal, Select, Space, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher } from "@remix-run/react";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { CurrencyDataType } from "../route";
@@ -101,12 +94,11 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         setExRateValue(0);
         setModalError("");
       } else {
-        const errorMsg =
-          getTranslateV4ErrorMessage(
-            t,
-            updateFetcher.data?.errorMsg,
-            TRANSLATE_V4_ERROR_KEYS.CURRENCY_UPDATE_FAILED,
-          );
+        const errorMsg = getTranslateV4ErrorMessage(
+          t,
+          updateFetcher.data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.CURRENCY_UPDATE_FAILED,
+        );
         setExRateError(true);
         setExRateErrorMsg(errorMsg);
         setExRateStatus("error");

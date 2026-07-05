@@ -5,7 +5,6 @@ import {
   Row,
   Col,
   Card,
-  Button,
   Typography,
   Alert,
   Flex,
@@ -14,6 +13,7 @@ import {
   Collapse,
   Modal,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
@@ -32,10 +32,7 @@ import {
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setPlan,
-  setUpdateTime,
-} from "~/store/modules/userConfig";
+import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
@@ -384,7 +381,9 @@ const Index = () => {
           message: payFetcher.data?.errorMsg,
           context: {
             errorCode: payFetcher.data?.errorCode,
-            hasConfirmationUrl: Boolean(payFetcher.data?.response?.confirmationUrl),
+            hasConfirmationUrl: Boolean(
+              payFetcher.data?.response?.confirmationUrl,
+            ),
           },
         });
         payCreditsTraceRef.current = null;
@@ -941,301 +940,331 @@ const Index = () => {
     <Page>
       <TitleBar title={t("Pricing")} />
       <div className="pricing-page">
-      <div className="pricing-page__inner">
-      <Space direction="vertical" size="large" style={{ display: "flex" }}>
-        <AppPageHeader
-          title={t("Pricing")}
-          extra={
-            plan.type ? (
-              <div className="app-status-cluster">
-                <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
-              </div>
-            ) : null
-          }
-        />
+        <div className="pricing-page__inner">
+          <Space direction="vertical" size="large" style={{ display: "flex" }}>
+            <AppPageHeader
+              title={t("Pricing")}
+              extra={
+                plan.type ? (
+                  <div className="app-status-cluster">
+                    <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+                  </div>
+                ) : null
+              }
+            />
 
-        <AcountInfoCard
-          loading={isLoading}
-          translation_balance={totalChars - chars || 0}
-          onBuyCredits={handleOpenAddCreditsModal}
-        />
+            <AcountInfoCard
+              loading={isLoading}
+              translation_balance={totalChars - chars || 0}
+              onBuyCredits={handleOpenAddCreditsModal}
+            />
 
-        {isQuotaExceeded && (
-          <Alert
-            message={t("The quota has been used up")}
-            type="warning"
-            showIcon
-          />
-        )}
-        <section className="pricing-section" id="pricing-plans">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Plans")}</h2>
-            </div>
-            <Flex align="center" gap={8} wrap="wrap">
-              <Text type="secondary">{t("Monthly")}</Text>
-              <Switch checked={yearly} onChange={handleSetYearlyReport} />
-              <Text strong>{t("Yearly")}</Text>
-              <div className="yearly_save">
-                <Text strong>{t("Save 20%")}</Text>
+            {isQuotaExceeded && (
+              <Alert
+                message={t("The quota has been used up")}
+                type="warning"
+                showIcon
+              />
+            )}
+            <section className="pricing-section" id="pricing-plans">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">{t("Plans")}</h2>
+                </div>
+                <Flex align="center" gap={8} wrap="wrap">
+                  <Text type="secondary">{t("Monthly")}</Text>
+                  <Switch checked={yearly} onChange={handleSetYearlyReport} />
+                  <Text strong>{t("Yearly")}</Text>
+                  <div className="yearly_save">
+                    <Text strong>{t("Save 20%")}</Text>
+                  </div>
+                </Flex>
               </div>
-            </Flex>
-          </div>
-          <Row gutter={[16, 16]}>
-          <Col
-            key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "flex",
-              width: "100%",
-            }}
-          >
-            <Card
-              className={`pricing-plan-card ${
-                plan.type === "Free" ? "pricing-plan-card--current" : ""
-              }`}
-              hoverable
-              style={{
-                flex: 1,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
-                minWidth: "220px",
-              }}
-              styles={{
-                body: {
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  padding: "20px",
-                },
-              }}
-              loading={!plan.id}
-            >
-              <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                {plan.type === "Free" ? (
-                  <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
-                ) : null}
-                <div>
-                  <Title level={4} style={{ margin: 0 }}>
-                    {t("Free")}
-                  </Title>
-                </div>
-                <div>
-                  <Text className="pricing-plan-card__price">$0</Text>
-                  <Text className="pricing-plan-card__unit">{t("/month")}</Text>
-                </div>
-              </Space>
-
-              <Button
-                type="default"
-                block
-                disabled={plan.type === "Free" || selectedPayPlanOption}
-                style={{ marginTop: 20, marginBottom: isNew ? "60px" : "20px" }}
-                onClick={() => {
-                  setCancelPlanWarnModal(true);
-                  reportClick("pricing_plan_trial");
-                }}
-              >
-                {plan.type === "Free"
-                  ? t("pricing.current_plan")
-                  : t("pricing.get_start")}
-              </Button>
-              <div style={{ flex: 1 }}>
-                <div
-                  key={0}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features1")}
-                  </Text>
-                </div>
-                <div
-                  key={1}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features2")}
-                  </Text>
-                </div>
-                <div
-                  key={2}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features3")}
-                  </Text>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          {plans.map((item, index) => (
-            <Col
-              key={item.title}
-              xs={24}
-              sm={24}
-              md={12}
-              lg={6}
-              style={{
-                display: "flex",
-                width: "100%",
-              }}
-            >
-                <Card
-                  className={`pricing-plan-card ${
-                    item.disabled ? "pricing-plan-card--current" : item.isRecommended && plan.type === "Free" && plan.id ? "pricing-plan-card--recommended" : ""
-                  }`}
+              <Row gutter={[16, 16]}>
+                <Col
+                  key={t("Free")}
+                  xs={24}
+                  sm={24}
+                  md={12}
+                  lg={6}
                   style={{
-                    flex: 1,
-                    height: "100%",
                     display: "flex",
-                    flexDirection: "column",
-                    position: "relative",
-                    minWidth: "220px",
+                    width: "100%",
                   }}
-                  styles={{
-                    body: {
+                >
+                  <Card
+                    className={`pricing-plan-card ${
+                      plan.type === "Free" ? "pricing-plan-card--current" : ""
+                    }`}
+                    hoverable
+                    style={{
                       flex: 1,
+                      height: "100%",
                       display: "flex",
                       flexDirection: "column",
-                      padding: "20px",
-                    },
-                  }}
-                  loading={!plan.id}
-                >
-                  <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                    {item.disabled ? (
-                      <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
-                    ) : item.isRecommended && plan.type === "Free" && plan.id ? (
-                      <AppStatusBadge tone="caution">{t("Recommended")}</AppStatusBadge>
-                    ) : null}
-                    <div>
-                      <Title level={4} style={{ margin: 0 }}>
-                        {yearly ? item.yearlyTitle : item.title}
-                      </Title>
-                    </div>
-                    <div>
-                      <Text className="pricing-plan-card__price">
-                        ${yearly ? item.yearlyPrice : item.monthlyPrice}
-                      </Text>
-                      <Text className="pricing-plan-card__unit">{t("/month")}</Text>
-                    </div>
-                  </Space>
-                  {yearly && (
-                    <div className="pricing-plan-card__billing-note">
-                      <strong>{t("Yearly billing")}</strong>
-                      <div>
-                        {t("$ {{amount}} billed once a year", {
-                          amount: item.yearlyBillingAmount.toFixed(2),
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  <Button
-                    id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
-                    type={item.isRecommended && !isNew ? "primary" : "default"}
-                    block
-                    disabled={item.disabled || selectedPayPlanOption}
-                    style={{ marginBottom: "20px" }}
-                    onClick={() =>
-                      handlePayForPlan({
-                        plan: item,
-                        trialDays: 0,
-                        id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
-                      })
-                    }
-                    loading={
-                      payForPlanButtonLoading ==
-                      `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
-                    }
+                      position: "relative",
+                      minWidth: "220px",
+                    }}
+                    styles={{
+                      body: {
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        padding: "20px",
+                      },
+                    }}
+                    loading={!plan.id}
                   >
-                    {item.buttonText}
-                  </Button>
-                  {isNew && (
-                    <Button
-                      id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                      type={item.isRecommended ? "primary" : "default"}
-                      block
-                      disabled={item.disabled || selectedPayPlanOption}
-                      style={{ marginBottom: "20px" }}
-                      onClick={() =>
-                        handlePayForPlan({
-                          plan: item,
-                          trialDays: 5,
-                          id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
-                        })
-                      }
-                      loading={
-                        payForPlanButtonLoading ==
-                        `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
-                      }
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ display: "flex" }}
                     >
-                      {t("Free trial")}
+                      {plan.type === "Free" ? (
+                        <AppStatusBadge tone="info">
+                          {t("Current plan")}
+                        </AppStatusBadge>
+                      ) : null}
+                      <div>
+                        <Title level={4} style={{ margin: 0 }}>
+                          {t("Free")}
+                        </Title>
+                      </div>
+                      <div>
+                        <Text className="pricing-plan-card__price">$0</Text>
+                        <Text className="pricing-plan-card__unit">
+                          {t("/month")}
+                        </Text>
+                      </div>
+                    </Space>
+
+                    <Button
+                      type="default"
+                      block
+                      disabled={plan.type === "Free" || selectedPayPlanOption}
+                      style={{
+                        marginTop: 20,
+                        marginBottom: isNew ? "60px" : "20px",
+                      }}
+                      onClick={() => {
+                        setCancelPlanWarnModal(true);
+                        reportClick("pricing_plan_trial");
+                      }}
+                    >
+                      {plan.type === "Free"
+                        ? t("pricing.current_plan")
+                        : t("pricing.get_start")}
                     </Button>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    {item.features.map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="pricing-plan-card__feature"
-                      >
+                    <div style={{ flex: 1 }}>
+                      <div key={0} className="pricing-plan-card__feature">
                         <CheckOutlined
                           style={{
                             color: "var(--p-color-text-success)",
                             fontSize: "12px",
                           }}
                         />
-                        <Text style={{ fontSize: "13px" }}>{feature}</Text>
+                        <Text style={{ fontSize: "13px" }}>
+                          {t("starter_features1")}
+                        </Text>
                       </div>
-                    ))}
-                  </div>
-                </Card>
-            </Col>
-          ))}
-          </Row>
-        </section>
-        <section className="pricing-section pricing-section--compact">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Compare plans")}</h2>
-            </div>
-          </div>
-          <Table
-            className="pricing-comparison-table"
-            dataSource={tableData}
-            columns={columns}
-            rowKey={(record) => String(record.key)}
-            pagination={false}
-          />
-        </section>
-        <section className="pricing-section pricing-section--compact">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("FAQs")}</h2>
-            </div>
-          </div>
-          <Collapse
-            items={collapseData}
-            onChange={() => {
-              reportClick("pricing_faq_click");
-            }}
-          />
-        </section>
-      </Space>
-      </div>
+                      <div key={1} className="pricing-plan-card__feature">
+                        <CheckOutlined
+                          style={{
+                            color: "var(--p-color-text-success)",
+                            fontSize: "12px",
+                          }}
+                        />
+                        <Text style={{ fontSize: "13px" }}>
+                          {t("starter_features2")}
+                        </Text>
+                      </div>
+                      <div key={2} className="pricing-plan-card__feature">
+                        <CheckOutlined
+                          style={{
+                            color: "var(--p-color-text-success)",
+                            fontSize: "12px",
+                          }}
+                        />
+                        <Text style={{ fontSize: "13px" }}>
+                          {t("starter_features3")}
+                        </Text>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                {plans.map((item, index) => (
+                  <Col
+                    key={item.title}
+                    xs={24}
+                    sm={24}
+                    md={12}
+                    lg={6}
+                    style={{
+                      display: "flex",
+                      width: "100%",
+                    }}
+                  >
+                    <Card
+                      className={`pricing-plan-card ${
+                        item.disabled
+                          ? "pricing-plan-card--current"
+                          : item.isRecommended &&
+                              plan.type === "Free" &&
+                              plan.id
+                            ? "pricing-plan-card--recommended"
+                            : ""
+                      }`}
+                      style={{
+                        flex: 1,
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        position: "relative",
+                        minWidth: "220px",
+                      }}
+                      styles={{
+                        body: {
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "20px",
+                        },
+                      }}
+                      loading={!plan.id}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={12}
+                        style={{ display: "flex" }}
+                      >
+                        {item.disabled ? (
+                          <AppStatusBadge tone="info">
+                            {t("Current plan")}
+                          </AppStatusBadge>
+                        ) : item.isRecommended &&
+                          plan.type === "Free" &&
+                          plan.id ? (
+                          <AppStatusBadge tone="caution">
+                            {t("Recommended")}
+                          </AppStatusBadge>
+                        ) : null}
+                        <div>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {yearly ? item.yearlyTitle : item.title}
+                          </Title>
+                        </div>
+                        <div>
+                          <Text className="pricing-plan-card__price">
+                            ${yearly ? item.yearlyPrice : item.monthlyPrice}
+                          </Text>
+                          <Text className="pricing-plan-card__unit">
+                            {t("/month")}
+                          </Text>
+                        </div>
+                      </Space>
+                      {yearly && (
+                        <div className="pricing-plan-card__billing-note">
+                          <strong>{t("Yearly billing")}</strong>
+                          <div>
+                            {t("$ {{amount}} billed once a year", {
+                              amount: item.yearlyBillingAmount.toFixed(2),
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
+                        type={
+                          item.isRecommended && !isNew ? "primary" : "default"
+                        }
+                        block
+                        disabled={item.disabled || selectedPayPlanOption}
+                        style={{ marginBottom: "20px" }}
+                        onClick={() =>
+                          handlePayForPlan({
+                            plan: item,
+                            trialDays: 0,
+                            id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
+                          })
+                        }
+                        loading={
+                          payForPlanButtonLoading ==
+                          `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
+                        }
+                      >
+                        {item.buttonText}
+                      </Button>
+                      {isNew && (
+                        <Button
+                          id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
+                          type={item.isRecommended ? "primary" : "default"}
+                          block
+                          disabled={item.disabled || selectedPayPlanOption}
+                          style={{ marginBottom: "20px" }}
+                          onClick={() =>
+                            handlePayForPlan({
+                              plan: item,
+                              trialDays: 5,
+                              id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
+                            })
+                          }
+                          loading={
+                            payForPlanButtonLoading ==
+                            `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
+                          }
+                        >
+                          {t("Free trial")}
+                        </Button>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        {item.features.map((feature, idx) => (
+                          <div key={idx} className="pricing-plan-card__feature">
+                            <CheckOutlined
+                              style={{
+                                color: "var(--p-color-text-success)",
+                                fontSize: "12px",
+                              }}
+                            />
+                            <Text style={{ fontSize: "13px" }}>{feature}</Text>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </section>
+            <section className="pricing-section pricing-section--compact">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">
+                    {t("Compare plans")}
+                  </h2>
+                </div>
+              </div>
+              <Table
+                className="pricing-comparison-table"
+                dataSource={tableData}
+                columns={columns}
+                rowKey={(record) => String(record.key)}
+                pagination={false}
+              />
+            </section>
+            <section className="pricing-section pricing-section--compact">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">{t("FAQs")}</h2>
+                </div>
+              </div>
+              <Collapse
+                items={collapseData}
+                onChange={() => {
+                  reportClick("pricing_faq_click");
+                }}
+              />
+            </section>
+          </Space>
+        </div>
       </div>
       <HasPayForFreePlanModal />
       <Modal
@@ -1327,7 +1356,11 @@ const Index = () => {
                   ) : (
                     <Title
                       level={3}
-                      style={{ margin: 0, color: "var(--app-color-text)", fontWeight: 700 }}
+                      style={{
+                        margin: 0,
+                        color: "var(--app-color-text)",
+                        fontWeight: 700,
+                      }}
                     >
                       ${option.price.currentPrice.toFixed(2)}
                     </Title>

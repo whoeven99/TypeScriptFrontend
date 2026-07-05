@@ -4,7 +4,6 @@ import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import {
   Alert,
-  Button,
   Card,
   Divider,
   Input,
@@ -15,6 +14,7 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -24,10 +24,7 @@ import {
 } from "~/utils/translateV4Errors";
 import { useSelector } from "react-redux";
 import { SingleTextTranslate } from "~/api/JavaServer";
-import {
-  editPageFlyCompat,
-  readPageFlyCompat,
-} from "./pageflyClient";
+import { editPageFlyCompat, readPageFlyCompat } from "./pageflyClient";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import { globalStore } from "~/globalStore";
 import { authenticate } from "~/shopify.server";
@@ -114,13 +111,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: themeJsonData,
         };
       } catch (error) {
-          const appError = buildTranslateV4Error(
-            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-          );
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+        );
         return {
           success: false,
-            errorCode: appError.errorCode,
-            errorMsg: appError.errorMsg,
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
@@ -168,23 +165,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           };
         }
 
-          const appError = buildTranslateV4Error(
-            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-          );
-          return {
-            success: false,
-            errorCode: appError.errorCode,
-            errorMsg: appError.errorMsg,
-            response: undefined,
-          };
-        } catch (error) {
-          const appError = buildTranslateV4Error(
-            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-          );
-          return {
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+        );
+        return {
           success: false,
-            errorCode: appError.errorCode,
-            errorMsg: appError.errorMsg,
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
+          response: undefined,
+        };
+      } catch (error) {
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+        );
+        return {
+          success: false,
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
@@ -410,11 +407,7 @@ const Index = () => {
         setResourceData(tableData);
       }
     }
-  }, [
-    contentFetcher.data,
-    loadingStatus.shopNameLiquidDataIsPost,
-    t,
-  ]);
+  }, [contentFetcher.data, loadingStatus.shopNameLiquidDataIsPost, t]);
 
   const resourceColumns = [
     {
@@ -462,7 +455,7 @@ const Index = () => {
             value={
               confirmData.find((item: any) => item.key === record?.key)
                 ? confirmData.find((item: any) => item.key === record?.key)
-                  ?.value
+                    ?.value
                 : record?.translated
             }
             onChange={(e) => handleInputChange(record, e.target.value)}
@@ -518,13 +511,13 @@ const Index = () => {
     const matches = cleaned.match(/>([^<]+)</g);
     const normalTexts = matches
       ? matches
-        .map((m) => decodeHtmlEntities(m.replace(/[><]/g, "").trim()))
-        .filter((t) => {
-          if (!t) return false;
-          if (/{{[\s\S]*?}}/.test(t)) return false;
-          if (/{%[\s\S]*?%}/.test(t)) return false;
-          return true;
-        })
+          .map((m) => decodeHtmlEntities(m.replace(/[><]/g, "").trim()))
+          .filter((t) => {
+            if (!t) return false;
+            if (/{{[\s\S]*?}}/.test(t)) return false;
+            if (/{%[\s\S]*?%}/.test(t)) return false;
+            return true;
+          })
       : [];
 
     // ⭐ 去重输出
@@ -968,8 +961,8 @@ const Index = () => {
                                     (item: any) => item.key === item?.key,
                                   )
                                     ? confirmData.find(
-                                      (item: any) => item.key === item?.key,
-                                    )?.value
+                                        (item: any) => item.key === item?.key,
+                                      )?.value
                                     : item?.translated
                                 }
                                 onChange={(e) =>

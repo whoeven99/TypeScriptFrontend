@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Table, Space, Button, Typography } from "antd";
+import { Modal, Input, Table, Space, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import { useDispatch, useSelector } from "react-redux";

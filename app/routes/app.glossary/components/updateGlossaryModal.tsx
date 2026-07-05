@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  Modal,
-  Input,
-  Space,
-  Button,
-  Typography,
-  Select,
-  Checkbox,
-  Alert,
-} from "antd";
+import { Modal, Input, Space, Typography, Select, Checkbox, Alert } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
@@ -239,12 +231,11 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           setConfirmButtonDisable(false);
           handleCloseModal();
         } else {
-          const errorMsg =
-            getTranslateV4ErrorMessage(
-              t,
-              data.errorMsg,
-              TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
-            );
+          const errorMsg = getTranslateV4ErrorMessage(
+            t,
+            data.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+          );
           setModalAlert({ type: "error", message: errorMsg });
           setConfirmButtonDisable(false);
         }

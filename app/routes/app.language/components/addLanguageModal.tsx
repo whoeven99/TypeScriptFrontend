@@ -5,13 +5,13 @@ import {
   Table,
   Space,
   message,
-  Button,
   InputRef,
   Collapse,
   Checkbox,
   Spin,
   Empty,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import {
@@ -367,7 +367,16 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         addLanguageTraceRef.current = null;
       }
     }
-  }, [addFetcher.data, allSelectedKeys, dispatch, fetcher, languageLocaleData, shop, t, updatedLocales]);
+  }, [
+    addFetcher.data,
+    allSelectedKeys,
+    dispatch,
+    fetcher,
+    languageLocaleData,
+    shop,
+    t,
+    updatedLocales,
+  ]);
 
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -595,8 +604,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
                       e.stopPropagation(); // 阻止事件冒泡，防止触发面板展开/收起
                       handleRegionChange(state, !isRegionChecked(state));
                     }}
-                  // onChange={(e) => handleRegionChange(state, e.target.checked)}
-                  // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
+                    // onChange={(e) => handleRegionChange(state, e.target.checked)}
+                    // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
                   />
                   <span style={{ marginLeft: 8 }}>{state.name}</span>
                 </>

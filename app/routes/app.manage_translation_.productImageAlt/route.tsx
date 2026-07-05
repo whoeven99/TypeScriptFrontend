@@ -3,7 +3,6 @@ import { json, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Pagination, Select } from "@shopify/polaris";
 import {
-  Button,
   Card,
   Layout,
   Space,
@@ -14,6 +13,7 @@ import {
   Table,
   Input,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";

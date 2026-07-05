@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   Divider,
   Input,
@@ -10,6 +9,7 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";

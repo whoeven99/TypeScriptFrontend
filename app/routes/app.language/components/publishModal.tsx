@@ -1,14 +1,6 @@
 import { useFetcher } from "@remix-run/react";
-import {
-  Alert,
-  Button,
-  Flex,
-  Modal,
-  Space,
-  Switch,
-  Table,
-  Typography,
-} from "antd";
+import { Alert, Flex, Modal, Space, Switch, Table, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -240,9 +232,9 @@ const PublishModal: React.FC<PublishModalProps> = ({
                 dataSource.map((item) =>
                   item.key === record.key
                     ? {
-                      ...item,
-                      published: checked,
-                    }
+                        ...item,
+                        published: checked,
+                      }
                     : item,
                 ),
               );

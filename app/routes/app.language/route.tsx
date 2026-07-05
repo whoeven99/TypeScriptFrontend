@@ -3,7 +3,6 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import {
   Alert,
   Typography,
-  Button,
   Space,
   Flex,
   Table,
@@ -13,6 +12,7 @@ import {
   Card,
   Checkbox,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useState, startTransition, useMemo, useRef } from "react";
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";

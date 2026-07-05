@@ -1,4 +1,5 @@
-import { Button, Skeleton, Statistic, Typography } from "antd";
+import { Skeleton, Statistic, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useTranslation } from "react-i18next";
 import "../style.css";
 
@@ -26,7 +27,11 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
       </div>
       <div className="pricing-usage-card__content">
         {loading ? (
-          <Skeleton active paragraph={{ rows: 1, width: ["40%"] }} title={false} />
+          <Skeleton
+            active
+            paragraph={{ rows: 1, width: ["40%"] }}
+            title={false}
+          />
         ) : (
           <div className="pricing-usage-card__metric-main">
             <Statistic
