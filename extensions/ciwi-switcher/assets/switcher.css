@@ -123,18 +123,20 @@
 }
 
 .ciwi_main_box {
-  min-width: 168px;
+  width: fit-content;
+  min-width: 0;
+  max-width: min(260px, calc(100vw - 24px));
   position: relative;
-  padding: 0 38px 0 14px;
+  padding: 0 34px 0 12px;
   border-radius: 12px;
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 8px;
   height: 44px;
-  text-align: center;
+  text-align: left;
   box-sizing: border-box;
   overflow: hidden;
   background-clip: padding-box;
@@ -150,7 +152,8 @@
 }
 
 .main_box_text {
-  display: inline-block;
+  display: block;
+  min-width: 0;
   line-height: 20px;
   vertical-align: middle;
   padding: 0;
@@ -159,8 +162,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: center;
-  flex: 1;
+  text-align: left;
+  flex: 0 1 auto;
+}
+
+.ciwi_main_box.has-flag {
+  padding-left: 38px;
 }
 
 .mainarrow_icon {
@@ -188,6 +195,27 @@
 .currency_title {
   margin-bottom: 5px;
   font: weight 600px;
+}
+
+#translate-float-btn {
+  min-height: 84px;
+}
+
+#translate-float-btn-text {
+  display: block;
+  padding: 0 18px;
+  font-size: 14px;
+  line-height: 30px;
+  height: 30px;
+  font-weight: 700;
+  overflow: hidden;
+  transform: rotate(90deg);
+  transform-origin: right top;
+  position: absolute;
+  right: 0;
+  white-space: nowrap;
+  max-width: 320px;
+  user-select: none;
 }
 
 /* 插件样式 */
@@ -398,6 +426,16 @@ a[href="https://translate.google.com"] {
   padding-right: 38px;
 }
 
+.selector_box.direct-select-mode .switcher-native-select,
+.selector_box.direct-select-mode .language_selector_header,
+.selector_box.direct-select-mode .currency_selector_header {
+  padding-right: 34px;
+}
+
+.selector_box.direct-select-mode .native-selector::after {
+  right: 12px;
+}
+
 .switcher-native-select:focus,
 .language_selector_header:focus,
 .currency_selector_header:focus {
@@ -421,7 +459,7 @@ a[href="https://translate.google.com"] {
 
 .translate_float_btn_icon {
   position: absolute;
-  left: 10px;
+  left: 50%;
   width: 30px;
   height: 20px;
   object-fit: cover;
@@ -433,7 +471,8 @@ a[href="https://translate.google.com"] {
   /* 初始状态完全透明 */
   transition: opacity 0.3s ease;
   /* 平滑过渡效果 */
-  bottom: 15px;
+  bottom: 12px;
+  transform: translateX(-50%);
 }
 
 .option-country-flag {

@@ -13,6 +13,7 @@ import {
   CIWI_TRANSLATION_TTL_MS,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
+import { persistManualLocalizationPreference } from "./ciwi-utils.js";
 import { transformPrices } from "./ciwi-utils.js";
 
 /**
@@ -48,6 +49,112 @@ const normalizeText = (text) =>
 
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
+
+const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
+
+function measureTextWidth(referenceElement, text) {
+  if (!referenceElement || !text) return 0;
+
+  const measurement = document.createElement("span");
+  const computedStyle = window.getComputedStyle(referenceElement);
+
+  measurement.textContent = text;
+  measurement.style.position = "fixed";
+  measurement.style.left = "-9999px";
+  measurement.style.top = "-9999px";
+  measurement.style.visibility = "hidden";
+  measurement.style.pointerEvents = "none";
+  measurement.style.whiteSpace = "nowrap";
+  measurement.style.fontFamily = computedStyle.fontFamily;
+  measurement.style.fontSize = computedStyle.fontSize;
+  measurement.style.fontWeight = computedStyle.fontWeight;
+  measurement.style.fontStyle = computedStyle.fontStyle;
+  measurement.style.letterSpacing = computedStyle.letterSpacing;
+  measurement.style.lineHeight = computedStyle.lineHeight;
+  measurement.style.textTransform = computedStyle.textTransform;
+
+  document.body.appendChild(measurement);
+  const width = Math.ceil(measurement.getBoundingClientRect().width);
+  measurement.remove();
+
+  return width;
+}
+
+export function syncCompactSwitcherLayout(ciwiBlock) {
+  if (!ciwiBlock) return;
+
+  const mainBox = ciwiBlock.querySelector("#main-box");
+  const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const displayTextElement = ciwiBlock.querySelector("#display-text");
+  const mainBoxFlag = ciwiBlock.querySelector("#main-language-flag");
+  const floatButton = ciwiBlock.querySelector("#translate-float-btn");
+  const floatButtonText = ciwiBlock.querySelector("#translate-float-btn-text");
+  const floatButtonIcon = ciwiBlock.querySelector("#translate-float-btn-icon");
+  const languageSelectorFlag = ciwiBlock.querySelector("#language-selector-flag");
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  const currencySelect = ciwiBlock.querySelector(".currency_selector_header");
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const maxInlineWidth = clampNumber(viewportWidth - 24, 156, 260);
+
+  if (mainBox && displayTextElement) {
+    const label = displayTextElement.textContent?.trim() || "";
+    const textWidth = measureTextWidth(displayTextElement, label);
+    const hasMainFlag = Boolean(mainBoxFlag && !mainBoxFlag.hidden && mainBoxFlag.src);
+    const triggerWidth = clampNumber(
+      textWidth + (hasMainFlag ? 88 : 60),
+      112,
+      maxInlineWidth,
+    );
+
+    if (mainBox.style.display !== "none") {
+      mainBox.style.width = `${triggerWidth}px`;
+    }
+
+    if (selectorBox && selectorBox.dataset.mode === "overlay") {
+      selectorBox.style.width = `${clampNumber(
+        Math.max(triggerWidth, 184),
+        156,
+        maxInlineWidth,
+      )}px`;
+    }
+  }
+
+  if (selectorBox?.dataset.mode === "direct") {
+    const activeSelect =
+      languageSelect &&
+      languageSelect.closest("#language-switcher-container")?.style.display === "block"
+        ? languageSelect
+        : currencySelect;
+    const activeLabel = activeSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
+    const hasLanguageFlag = Boolean(
+      languageSelectorFlag && !languageSelectorFlag.hidden && languageSelectorFlag.src,
+    );
+    const directWidthBase = hasLanguageFlag ? 76 : 46;
+    const directMinWidth = hasLanguageFlag ? 124 : 104;
+    const directWidth = clampNumber(
+      measureTextWidth(activeSelect, activeLabel) + directWidthBase,
+      directMinWidth,
+      maxInlineWidth,
+    );
+
+    selectorBox.style.width = `${directWidth}px`;
+  }
+
+  if (floatButton && floatButtonText && floatButton.style.display !== "none") {
+    const floatLabel = floatButtonText.textContent?.trim() || "";
+    const textWidth = measureTextWidth(floatButtonText, floatLabel);
+    const hasFloatFlag = Boolean(
+      floatButtonIcon && !floatButtonIcon.hidden && floatButtonIcon.src,
+    );
+    const floatHeight = clampNumber(
+      textWidth + (hasFloatFlag ? 56 : 34),
+      84,
+      180,
+    );
+
+    floatButton.style.height = `${floatHeight}px`;
+  }
+}
 
 /**
  * 渲染货币选项
@@ -202,6 +309,8 @@ export function updateDisplayText(lang, cur, ciwiBlock) {
       displayTextElement.textContent = selectedCurrencyText;
     }
   }
+
+  syncCompactSwitcherLayout(ciwiBlock);
 }
 
 /**
@@ -357,9 +466,15 @@ export function renderLanguageFlags(data, ciwiBlock) {
     translateFloatBtnIcon.hidden = false;
   }
   const mainBoxText = ciwiBlock.querySelector(".main_box_text");
-  if (mainBoxText && countryCode) {
-    mainBoxText.style.margin = "0 20px 0px 25px";
+  const mainBox = ciwiBlock.querySelector("#main-box");
+  if (mainBox) {
+    mainBox.classList.toggle(
+      "has-flag",
+      Boolean(mainBoxText && mainLanguageFlag && !mainLanguageFlag.hidden && countryCode),
+    );
   }
+
+  syncCompactSwitcherLayout(ciwiBlock);
 
   _languageFlagsRendered = true;
 }
@@ -1337,8 +1452,17 @@ export class CiwiswitcherForm extends HTMLElement {
       this.handleCancelClick.bind(this),
     );
 
+    window.addEventListener("resize", this.handleWindowResize.bind(this));
+
     // 点击外部关闭
     document.addEventListener("click", this.handleOutsideClick.bind(this));
+  }
+
+  handleWindowResize() {
+    syncCompactSwitcherLayout(this.elements.ciwiBlock);
+    if (this.elements.selectorBox?.classList.contains("is-open")) {
+      this.updateSelectorPlacement();
+    }
   }
 
   isDirectSelectorMode() {
@@ -1471,6 +1595,10 @@ export class CiwiswitcherForm extends HTMLElement {
     const form = this.querySelector("form");
 
     if (form) {
+      persistManualLocalizationPreference({
+        country: this.elements.countryInput?.value,
+        language: this.elements.languageInput?.value,
+      });
       form.submit();
     }
   }
