@@ -61,8 +61,8 @@ function useIdleReady(timeout = 2500) {
       return () => window.cancelIdleCallback(id);
     }
 
-    const id = window.setTimeout(() => setReady(true), timeout);
-    return () => window.clearTimeout(id);
+    const id = globalThis.setTimeout(() => setReady(true), timeout);
+    return () => globalThis.clearTimeout(id);
   }, [ready, timeout]);
 
   return ready;
@@ -183,6 +183,7 @@ export default function AppTranslateV4() {
   const [quotaGateMode, setQuotaGateMode] = useState<
     "trial" | "pricing" | null
   >(null);
+  const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>([]);
   const supportChatReady = useIdleReady();
 
   const refreshCoverage = useCallback(
@@ -362,8 +363,9 @@ export default function AppTranslateV4() {
 
       const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
       if (result.created.length > 0) {
-        message.success(summary);
+        message.success(`${summary} ${t("v4.create.createdBelow")}`);
         await Promise.all([refreshList(), refreshQuota()]);
+        setSpotlightTaskIds(result.created.map((item) => item.jobId));
       } else {
         message.error(summary);
       }
@@ -475,6 +477,26 @@ export default function AppTranslateV4() {
   const remainingCredits = quota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (spotlightTaskIds.length === 0) return;
+    if (typeof window === "undefined") return;
+
+    const scrollTimer = window.setTimeout(() => {
+      taskQueueSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 140);
+    const clearTimer = window.setTimeout(() => {
+      setSpotlightTaskIds([]);
+    }, 7_000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [spotlightTaskIds]);
 
   const openLanguagePage = useCallback(() => {
     navigate("/app/language");
@@ -602,6 +624,7 @@ export default function AppTranslateV4() {
           >
             <TaskQueueSection
               jobs={jobs}
+              spotlightTaskIds={spotlightTaskIds}
               translateSlotBusy={translateSlotBusy}
               onBuyCredits={() => setShowPaymentModal(true)}
               onAction={handleAction}

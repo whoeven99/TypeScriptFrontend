@@ -210,6 +210,21 @@ body {
   }
 }
 
+@keyframes v4-task-spotlight {
+  0% {
+    transform: translateY(0) scale(0.992);
+    box-shadow: 0 0 0 0 rgba(91, 75, 214, 0.24);
+  }
+  30% {
+    transform: translateY(-1px) scale(1);
+    box-shadow: 0 0 0 8px rgba(91, 75, 214, 0.14);
+  }
+  100% {
+    transform: none;
+    box-shadow: 0 0 0 0 rgba(91, 75, 214, 0);
+  }
+}
+
 /* 进场：卡片自下而上淡入，可用 delay 类做错峰 */
 .v4-enter {
   animation: v4-rise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
@@ -259,6 +274,10 @@ body {
   animation: v4-pop 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+.v4-task-card-spotlight {
+  animation: v4-task-spotlight 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) 2;
+}
+
 /* 折叠箭头旋转 */
 .v4-caret {
   display: inline-block;
@@ -271,7 +290,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .v4-enter,
   .v4-row-enter,
-  .v4-livedot {
+  .v4-livedot,
+  .v4-task-card-spotlight {
     animation: none !important;
   }
   .v4-lift,
