@@ -519,6 +519,7 @@ export default function App() {
           </Link>
           {isClient && (
             <>
+              <Link to="/app/translate-v4/diagnostics">{t("Health")}</Link>
               <Link to="/app/language">{t("Language")}</Link>
               <Link to="/app/manage_translation">{t("Content")}</Link>
               <Link to="/app/switcher">{t("Storefront")}</Link>
