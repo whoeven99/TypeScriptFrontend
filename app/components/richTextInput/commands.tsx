@@ -78,7 +78,7 @@ const Commands = ({ editor, handleTiptap, className, readOnly }: any) => {
           <Button
             variant="tertiary"
             onClick={toggleHtmlMode}
-            disabled={!editor}
+            disabled={!editor || readOnly}
             icon={CodeIcon}
           ></Button>
         </Tooltip>

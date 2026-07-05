@@ -111,9 +111,14 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       if (!mounted) return fallback;
       return (
         <div className="manage-table-input manage-table-input--html">
-          <div
-            className={`html-preview-input ${isRtl ? "rtl-input" : ""}`}
-            dangerouslySetInnerHTML={{ __html: readonlyHtml }}
+          <ManageTableInputEditor
+            mode={mode}
+            record={record}
+            translatedValues={translatedValues}
+            handleInputChange={handleInputChange}
+            isSuccess={isSuccess}
+            isRtl={isRtl}
+            defaultValue={readonlyHtml}
           />
         </div>
       );

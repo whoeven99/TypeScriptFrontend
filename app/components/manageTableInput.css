@@ -29,6 +29,12 @@
   margin: 0;
 }
 
+.manage-table-input--html .html-preview-input {
+  height: 350px;
+  min-height: 350px;
+  max-height: 350px;
+}
+
 .manage-table-input .tiptap-content,
 .manage-table-input .tiptap,
 .manage-table-input .ProseMirror,
