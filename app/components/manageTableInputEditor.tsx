@@ -5,11 +5,14 @@ import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import { Table } from "@tiptap/extension-table";
+import Link from "@tiptap/extension-link";
 import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
+import Typography from "@tiptap/extension-typography";
+import Underline from "@tiptap/extension-underline";
 import Tiptap from "app/components/richTextInput/richTextInput";
 
 // 该文件单独成 chunk（tiptap + prosemirror 约 468K），由 manageTableInput 懒加载，
@@ -17,9 +20,20 @@ import Tiptap from "app/components/richTextInput/richTextInput";
 
 const buildExtensions = () => [
   StarterKit,
+  Typography,
   TextStyle,
   Color,
   Highlight,
+  Underline,
+  Link.configure({
+    autolink: true,
+    linkOnPaste: true,
+    openOnClick: false,
+    HTMLAttributes: {
+      rel: "noopener noreferrer nofollow",
+      target: "_blank",
+    },
+  }),
   Image,
   Table.configure({ resizable: true }),
   TableRow,

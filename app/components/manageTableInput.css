@@ -35,6 +35,18 @@
   max-height: 350px;
 }
 
+.manage-table-input--html .html-preview-input--shell {
+  height: 100%;
+  min-height: 100%;
+  max-height: none;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.68);
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  line-height: 1.6;
+}
+
 .manage-table-input .tiptap-content,
 .manage-table-input .tiptap,
 .manage-table-input .ProseMirror,
@@ -108,6 +120,34 @@
   border-radius: 6px;
   line-height: 1.5715;
   word-break: break-word;
+}
+
+.html-preview-input a {
+  color: #1677ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.html-preview-input p,
+.html-preview-input ul,
+.html-preview-input ol,
+.html-preview-input blockquote,
+.html-preview-input pre,
+.html-preview-input table,
+.html-preview-input figure {
+  margin-top: 0;
+  margin-bottom: 0.75em;
+}
+
+.html-preview-input h1,
+.html-preview-input h2,
+.html-preview-input h3,
+.html-preview-input h4,
+.html-preview-input h5,
+.html-preview-input h6 {
+  margin-top: 0;
+  margin-bottom: 0.6em;
+  line-height: 1.35;
 }
 
 .html-preview-input :first-child {

@@ -9,6 +9,15 @@
   justify-content: space-between;
 }
 
+.tiptap-commands--readonly {
+  opacity: 0.6;
+}
+
+.tiptap-commands--readonly .commands {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .ProseMirror iframe {
   width: 100%;
   height: 300px;
