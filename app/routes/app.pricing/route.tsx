@@ -1070,6 +1070,7 @@ const Index = () => {
                       )}
                       <Button
                         id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
+                        className="pricing-plan-card__primary-action"
                         type={
                           item.isRecommended && !isNew ? "primary" : "default"
                         }

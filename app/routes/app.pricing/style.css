@@ -221,6 +221,10 @@
   margin-bottom: 4px;
 }
 
+.pricing-plan-card__primary-action {
+  margin-top: 20px;
+}
+
 .pricing-plan-card__feature {
   display: flex;
   align-items: flex-start;
