@@ -11,7 +11,6 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
-import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import Tiptap from "app/components/richTextInput/richTextInput";
 
@@ -20,7 +19,6 @@ import Tiptap from "app/components/richTextInput/richTextInput";
 
 const buildExtensions = () => [
   StarterKit,
-  Typography,
   TextStyle,
   Color,
   Highlight,
