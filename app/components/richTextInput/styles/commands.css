@@ -1,11 +1,21 @@
 .commands {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: center;
   padding-top: 10px;
   padding: 10px 10px 0 10px;
   justify-content: space-between;
+}
+
+.tiptap-commands--readonly {
+  opacity: 0.6;
+}
+
+.tiptap-commands--readonly .commands {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .ProseMirror iframe {
