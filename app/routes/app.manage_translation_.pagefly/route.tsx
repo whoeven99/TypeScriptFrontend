@@ -1,8 +1,9 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import {
+  Alert,
   Button,
   Card,
   Divider,
@@ -16,6 +17,11 @@ import {
 } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 import { useSelector } from "react-redux";
 import { SingleTextTranslate } from "~/api/JavaServer";
 import {
@@ -36,7 +42,7 @@ const { Text, Title } = Typography;
 const { TextArea } = Input;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  await authenticate.admin(request);
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   return {
@@ -108,10 +114,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: themeJsonData,
         };
       } catch (error) {
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          );
         return {
           success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
@@ -159,17 +168,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           };
         }
 
-        return {
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          );
+          return {
+            success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+            response: undefined,
+          };
+        } catch (error) {
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          );
+          return {
           success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: undefined,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
@@ -212,6 +227,7 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("pagefly");
+  const [pageAlert, setPageAlert] = useState<string>("");
   const [loadingStatus, setLoadingStatus] = useState<{
     shopNameLiquidDataIsPost: boolean;
     isSaving: boolean;
@@ -258,114 +274,146 @@ const Index = () => {
 
   useEffect(() => {
     if (dataFetcher.data) {
-      if (dataFetcher.data?.success) {
-        const data = dataFetcher.data?.response
-          ?.map((item: any) => {
-            const content = item?.body?.content || "";
-            if (!content) return null;
+      if (!dataFetcher.data?.success) {
+        setMenuData([]);
+        setSelectedMenuKey("");
+        setResourceData([]);
+        setPageAlert(
+          getTranslateV4ErrorMessage(
+            t,
+            dataFetcher.data?.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          ),
+        );
+        setIsLoading(false);
+        return;
+      }
 
-            // 1) 先匹配 pageTitle: "xxx"
-            const pageTitleMatch = content.match(/"pageTitle"\s*:\s*"([^"]+)"/);
-            if (pageTitleMatch) {
-              return { label: pageTitleMatch[1], key: item?.filename };
-            }
+      const data = dataFetcher.data?.response
+        ?.map((item: any) => {
+          const content = item?.body?.content || "";
+          if (!content) return null;
 
-            // 2) 再从 PAGEFLY_AI_SALES_PAGE 脚本里直接提取 campaign.title（兼容单/双引号）
-            //    先把脚本块抓出来（贪婪匹配到最近的 </script>）
-            const scriptBlockMatch = content.match(
-              /<script[^>]*>[\s\S]*?PAGEFLY_AI_SALES_PAGE[\s\S]*?<\/script>/i,
-            );
-            if (scriptBlockMatch) {
-              const scriptBlock = scriptBlockMatch[0];
+          // 1) 先匹配 pageTitle: "xxx"
+          const pageTitleMatch = content.match(/"pageTitle"\s*:\s*"([^"]+)"/);
+          if (pageTitleMatch) {
+            return { label: pageTitleMatch[1], key: item?.filename };
+          }
 
-              // 在脚本块里寻找 campaign: { ... title: 'xxx' ... } 的 title
-              const campaignTitleMatch = scriptBlock.match(
-                /campaign\s*:\s*\{[\s\S]*?title\s*:\s*['"]([^'"]+)['"]/i,
-              );
-
-              if (campaignTitleMatch) {
-                return { label: campaignTitleMatch[1], key: item?.filename };
-              }
-
-              // 额外尝试直接找 window.PAGEFLY_AI_SALES_PAGE.*title = 'xxx' 或 PAGEFLY_AI_SALES_PAGE.*title:'xxx'
-              const genericTitleMatch = scriptBlock.match(
-                /PAGEFLY_AI_SALES_PAGE[\s\S]*?title\s*[:=]\s*['"]([^'"]+)['"]/i,
-              );
-              if (genericTitleMatch) {
-                return { label: genericTitleMatch[1], key: item?.filename };
-              }
-            }
-
-            // 3) 若两者都没有，跳过该项（返回 null）
-            if (item?.filename)
-              return {
-                label: item?.filename,
-                key: item?.filename,
-              };
-
-            return null;
-          })
-          // 过滤掉 null（不会出现 undefined）
-          .filter(Boolean);
-
-        if (Array.isArray(data)) {
-          setMenuData(data);
-          setSelectedMenuKey(data[0]?.key);
-          isManualChangeRef.current = false; // 重置
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 100);
-          contentFetcher.submit(
-            {
-              getContentDataByFilename: JSON.stringify({
-                filename: data[0]?.key,
-              }),
-            },
-            { method: "POST" },
+          // 2) 再从 PAGEFLY_AI_SALES_PAGE 脚本里直接提取 campaign.title（兼容单/双引号）
+          //    先把脚本块抓出来（贪婪匹配到最近的 </script>）
+          const scriptBlockMatch = content.match(
+            /<script[^>]*>[\s\S]*?PAGEFLY_AI_SALES_PAGE[\s\S]*?<\/script>/i,
           );
-        }
+          if (scriptBlockMatch) {
+            const scriptBlock = scriptBlockMatch[0];
+
+            // 在脚本块里寻找 campaign: { ... title: 'xxx' ... } 的 title
+            const campaignTitleMatch = scriptBlock.match(
+              /campaign\s*:\s*\{[\s\S]*?title\s*:\s*['"]([^'"]+)['"]/i,
+            );
+
+            if (campaignTitleMatch) {
+              return { label: campaignTitleMatch[1], key: item?.filename };
+            }
+
+            // 额外尝试直接找 window.PAGEFLY_AI_SALES_PAGE.*title = 'xxx' 或 PAGEFLY_AI_SALES_PAGE.*title:'xxx'
+            const genericTitleMatch = scriptBlock.match(
+              /PAGEFLY_AI_SALES_PAGE[\s\S]*?title\s*[:=]\s*['"]([^'"]+)['"]/i,
+            );
+            if (genericTitleMatch) {
+              return { label: genericTitleMatch[1], key: item?.filename };
+            }
+          }
+
+          // 3) 若两者都没有，跳过该项（返回 null）
+          if (item?.filename)
+            return {
+              label: item?.filename,
+              key: item?.filename,
+            };
+
+          return null;
+        })
+        // 过滤掉 null（不会出现 undefined）
+        .filter(Boolean);
+
+      if (Array.isArray(data)) {
+        setMenuData(data);
+        setSelectedMenuKey(data[0]?.key);
+        isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+        contentFetcher.submit(
+          {
+            getContentDataByFilename: JSON.stringify({
+              filename: data[0]?.key,
+            }),
+          },
+          { method: "POST" },
+        );
+      } else {
+        setMenuData([]);
+        setSelectedMenuKey("");
+        setResourceData([]);
+        setPageAlert(
+          getTranslateV4ErrorMessage(
+            t,
+            null,
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          ),
+        );
+        setIsLoading(false);
       }
     }
-  }, [dataFetcher.data]);
+  }, [contentFetcher, dataFetcher.data, t]);
 
   useEffect(() => {
     if (contentFetcher.data) {
+      if (!contentFetcher.data?.success) {
+        setResourceData([]);
+        setPageAlert(
+          getTranslateV4ErrorMessage(
+            t,
+            contentFetcher.data?.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+          ),
+        );
+        return;
+      }
+
       if (
-        contentFetcher.data?.success &&
         shopNameLiquidDataRef.current &&
         !loadingStatus.shopNameLiquidDataIsPost
       ) {
         const pfLiquidData = contentFetcher.data?.response?.content;
-
         const pfLiquidTexts = extractTextSegmentsFromLiquid(pfLiquidData);
-
-        if (pfLiquidTexts.length) {
-          const tableData = pfLiquidTexts.map((item: any, index: number) => {
-            return {
-              id:
-                shopNameLiquidDataRef.current?.find(
-                  (shopNameLiquidDataRefItem: any) =>
-                    shopNameLiquidDataRefItem?.sourceText == item,
-                )?.id || null,
-              key: index,
-              resource: "Text",
-              default_language: item,
-              translated:
-                shopNameLiquidDataRef.current?.find(
-                  (shopNameLiquidDataRefItem: any) =>
-                    shopNameLiquidDataRefItem?.sourceText == item,
-                )?.targetText || "",
-              type: "SINGLE_LINE_TEXT_FIELD",
-            };
-          });
-          setResourceData(tableData);
-        }
+        const tableData = pfLiquidTexts.map((item: any, index: number) => {
+          return {
+            id:
+              shopNameLiquidDataRef.current?.find(
+                (shopNameLiquidDataRefItem: any) =>
+                  shopNameLiquidDataRefItem?.sourceText == item,
+              )?.id || null,
+            key: index,
+            resource: "Text",
+            default_language: item,
+            translated:
+              shopNameLiquidDataRef.current?.find(
+                (shopNameLiquidDataRefItem: any) =>
+                  shopNameLiquidDataRefItem?.sourceText == item,
+              )?.targetText || "",
+            type: "SINGLE_LINE_TEXT_FIELD",
+          };
+        });
+        setResourceData(tableData);
       }
     }
   }, [
     contentFetcher.data,
-    shopNameLiquidDataRef.current,
     loadingStatus.shopNameLiquidDataIsPost,
+    t,
   ]);
 
   const resourceColumns = [
@@ -527,6 +575,7 @@ const Index = () => {
     if (!record) {
       return;
     }
+    setPageAlert("");
     setLoadingItems((prev) => [...prev, record?.key]);
     console.log({
       shopName: globalStore?.shop || "",
@@ -557,7 +606,13 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      shopify.toast.show(data.errorMsg);
+      setPageAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          data.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
+        ),
+      );
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -575,6 +630,7 @@ const Index = () => {
           action: `/app/manage_translation/pagefly?language=${language}`,
         },
       ); // 提交表单请求
+      setPageAlert("");
       axiosForTranslatedData(language);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
@@ -590,6 +646,7 @@ const Index = () => {
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedItem(item);
+      setPageAlert("");
       navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
     }
   };
@@ -601,6 +658,7 @@ const Index = () => {
       shopify.saveBar.hide("save-bar");
       setLoadingItems([]);
       setSelectedMenuKey(key);
+      setPageAlert("");
       axiosForTranslatedData();
       contentFetcher.submit(
         { getContentDataByFilename: JSON.stringify({ filename: key }) },
@@ -610,10 +668,10 @@ const Index = () => {
   };
 
   const axiosForTranslatedData = async (language?: string) => {
-    setLoadingStatus({
-      ...loadingStatus,
+    setLoadingStatus((prev) => ({
+      ...prev,
       shopNameLiquidDataIsPost: true,
-    });
+    }));
     const data = await readPageFlyCompat({
       pageFlyGrayEligible,
       shop: globalStore?.shop || "",
@@ -622,18 +680,28 @@ const Index = () => {
     });
     if (data.success) {
       shopNameLiquidDataRef.current = data.response || [];
+      setPageAlert("");
+    } else {
+      setPageAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          data.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+        ),
+      );
     }
-    setLoadingStatus({
-      ...loadingStatus,
+    setLoadingStatus((prev) => ({
+      ...prev,
       shopNameLiquidDataIsPost: false,
-    });
+    }));
   };
 
   const handleConfirm = async () => {
-    setLoadingStatus({
-      ...loadingStatus,
+    setPageAlert("");
+    setLoadingStatus((prev) => ({
+      ...prev,
       isSaving: true,
-    });
+    }));
     const data = confirmData.map((item) => ({
       id: item?.id || null,
       sourceText: item.default_language,
@@ -650,7 +718,13 @@ const Index = () => {
     if (editTranslatedData?.success) {
       shopify.toast.show(t("Saved successfully"));
     } else {
-      shopify.toast.show(t("Some items saved failed"));
+      setPageAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          editTranslatedData?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_SAVE_FAILED,
+        ),
+      );
     }
 
     if (confirmData.length > 0) {
@@ -766,6 +840,16 @@ const Index = () => {
                 overflow: "auto",
               }}
             >
+              {pageAlert ? (
+                <Alert
+                  type="error"
+                  showIcon
+                  message={pageAlert}
+                  closable
+                  onClose={() => setPageAlert("")}
+                  style={{ marginBottom: "16px" }}
+                />
+              ) : null}
               {isMobile ? (
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <div

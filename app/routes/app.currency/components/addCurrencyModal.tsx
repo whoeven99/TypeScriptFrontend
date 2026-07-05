@@ -7,6 +7,10 @@ import type { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import { AddCurrencyV4 } from "~/api/currencyV4";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const { Text } = Typography;
 
@@ -156,8 +160,12 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     );
     const data = await Promise.allSettled(promises);
     if (data?.length) {
-      data?.map((res: any) => {
-        if (res?.value?.success) {
+      let hasSuccess = false;
+      const failedMessages: string[] = [];
+
+      data.forEach((res: any) => {
+        if (res?.status === "fulfilled" && res?.value?.success) {
+          hasSuccess = true;
           const data = [
             {
               key: res.value.response.id, // 将 id 转换为 key
@@ -169,17 +177,36 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             },
           ];
           dispatch(updateTableData(data));
-          shopify.toast.show(t("Add success"));
-          setFilteredCurrencies(defaultData);
-          setAllSelectedKeys([]);
-          setSearchInput("");
-          setAllSelectedCurrency([]);
-          setIsModalOpen(false);
         } else {
-          shopify.toast.show(res.value?.errorMsg);
+          const errorMsg =
+            res?.status === "fulfilled"
+              ? getTranslateV4ErrorMessage(
+                  t,
+                  res?.value?.errorMsg,
+                  TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+                )
+              : getTranslateV4ErrorMessage(
+                  t,
+                  TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+                );
+          failedMessages.push(errorMsg);
         }
       });
+
+      if (hasSuccess) {
+        shopify.toast.show(t("Add success"));
+        setFilteredCurrencies(defaultData);
+        setAllSelectedKeys([]);
+        setSearchInput("");
+        setAllSelectedCurrency([]);
+        setIsModalOpen(false);
+      }
+
+      failedMessages.forEach((message) => shopify.toast.show(message));
     } else {
+      shopify.toast.show(
+        getTranslateV4ErrorMessage(t, TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR),
+      );
     }
     setAddLoading(false);
   };

@@ -10,13 +10,26 @@ import {
   updateGlossaryDo,
   deleteGlossaryDo,
 } from "~/server/translateV4/glossary.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 /** 统一返回 Java BaseResponse 形状，前端迁移前后渲染逻辑一致。 */
 function ok(response: unknown) {
   return json({ success: true, errorCode: null, errorMsg: null, response });
 }
-function fail(errorMsg: string, errorCode = 10001) {
-  return json({ success: false, errorCode, errorMsg, response: null });
+function fail(errorKey: keyof typeof TRANSLATE_V4_ERROR_KEYS) {
+  const error = buildTranslateV4Error(TRANSLATE_V4_ERROR_KEYS[errorKey]);
+  return json(
+    {
+      success: false,
+      errorCode: error.errorCode,
+      errorMsg: error.errorMsg,
+      response: null,
+    },
+    { status: error.status },
+  );
 }
 
 /** GET /api/translate-v4/glossary —— 列出本店术语表（仅迁移后的店用）。 */
@@ -26,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return ok(await listGlossaryDo(session.shop));
   } catch (err) {
     console.error("[glossary] list failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+    return fail("GLOSSARY_LIST_FAILED");
   }
 };
 
@@ -52,7 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (body.intent) {
       case "insert": {
         if (!body.sourceText || !body.targetText) {
-          return fail("sourceText/targetText 不能为空");
+            return fail("GLOSSARY_REQUIRED_FIELDS");
         }
         const row = await createGlossaryDo(shop, {
           sourceText: body.sourceText,
@@ -64,7 +77,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return ok(row);
       }
       case "update": {
-        if (body.id == null) return fail("缺少 id");
+          if (body.id == null) return fail("GLOSSARY_ID_REQUIRED");
         const row = await updateGlossaryDo(shop, Number(body.id), {
           sourceText: body.sourceText ?? "",
           targetText: body.targetText ?? "",
@@ -72,19 +85,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           type: body.type,
           status: body.status,
         });
-        if (!row) return fail("术语不存在或无权限", 10404);
+          if (!row) return fail("GLOSSARY_NOT_FOUND");
         return ok(row);
       }
       case "delete": {
         const ids = (body.ids ?? []).map((x) => Number(x)).filter((n) => !Number.isNaN(n));
-        const count = await deleteGlossaryDo(shop, ids);
-        return ok({ count });
+          if (!ids.length) return fail("INVALID_REQUEST");
+          const count = await deleteGlossaryDo(shop, ids);
+          if (count !== ids.length) return fail("GLOSSARY_NOT_FOUND");
+          return ok({ count });
       }
       default:
-        return fail("未知 intent");
+          return fail("UNKNOWN_ACTION");
     }
   } catch (err) {
     console.error("[glossary] action failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+      return fail("GLOSSARY_SAVE_FAILED");
   }
 };

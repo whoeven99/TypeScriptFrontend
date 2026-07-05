@@ -1,31 +1,26 @@
-import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { useEffect, useMemo, useState } from "react";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import {
+  Alert,
   Button,
   Card,
   Checkbox,
   Flex,
-  Modal,
   Pagination,
-  Popover,
   Select,
   Skeleton,
   Space,
-  Switch,
   Table,
   Typography,
 } from "antd";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import { useDispatch, useSelector } from "react-redux";
-import { WarningOutlined } from "@ant-design/icons";
-import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
-import ScrollNotice from "~/components/ScrollNotice";
-import styles from "../app.language/styles.module.css";
-import { LanguagesDataType } from "../app.language/route";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 import { globalStore } from "~/globalStore";
 import {
   deleteLiquidCompat,
@@ -34,10 +29,10 @@ import {
   type LiquidTableRow,
 } from "./liquidClient";
 import UpdateCustomTransModal from "./components/updateCustomTransModal";
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
     server: process.env.SERVER_URL,
@@ -63,6 +58,7 @@ const Index = () => {
 
   //表格多选控制key
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [pageAlert, setPageAlert] = useState<string>("");
 
   //编辑表单类型及数据控制
   const [createOrEditModal, setCreateOrEditModal] = useState<{
@@ -129,6 +125,16 @@ const Index = () => {
       if (selectShopNameLiquidData.success) {
         setDataSource(selectShopNameLiquidData.response ?? []);
         setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
+        setPageAlert("");
+      } else {
+        setPageAlert(
+          getTranslateV4ErrorMessage(
+            t,
+            selectShopNameLiquidData.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.LIQUID_LIST_FAILED,
+          ),
+        );
+        setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
       }
     }, 100);
 
@@ -144,6 +150,7 @@ const Index = () => {
 
   //表格数据删除方法
   const handleDelete = async () => {
+    setPageAlert("");
     const data = await deleteLiquidCompat({
       migrated,
       shop: globalStore?.shop || "",
@@ -157,6 +164,14 @@ const Index = () => {
       );
       setDataSource(newData);
       shopify.toast.show("Delete successfully");
+    } else {
+      setPageAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          data.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.LIQUID_DELETE_FAILED,
+        ),
+      );
     }
     setSelectedRowKeys([]);
   };
@@ -239,6 +254,7 @@ const Index = () => {
 
   //编辑替换方式
   const handleSwitchReplaceMethod = async ({ id }: { id: string }) => {
+    setPageAlert("");
     const updateLiquidReplacementMethod =
       await toggleLiquidReplacementMethodCompat({
         migrated,
@@ -257,7 +273,13 @@ const Index = () => {
       );
       setDataSource(newData);
     } else {
-      shopify.toast.show(updateLiquidReplacementMethod?.errorMsg);
+      setPageAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          updateLiquidReplacementMethod?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.LIQUID_SAVE_FAILED,
+        ),
+      );
     }
   };
 
@@ -315,6 +337,15 @@ const Index = () => {
         size="middle"
         style={{ display: "flex", width: "100%" }}
       >
+        {pageAlert ? (
+          <Alert
+            type="error"
+            showIcon
+            message={pageAlert}
+            closable
+            onClose={() => setPageAlert("")}
+          />
+        ) : null}
         <Flex
           align="center"
           justify="space-between" // 使按钮左右分布

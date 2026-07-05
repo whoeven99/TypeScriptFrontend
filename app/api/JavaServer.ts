@@ -1,7 +1,11 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { type AxiosRequestConfig } from "axios";
 import { queryShopBaseConfigData } from "./admin";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
+import {
+  getTranslateV4ErrorDefaultMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -307,13 +311,25 @@ export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(args),
     });
-    return await res.json();
+    const data = await res.json();
+    if (!data?.success && data?.errorMsg) {
+      return {
+        ...data,
+        errorMsg: getTranslateV4ErrorDefaultMessage(
+          data.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
+        ),
+      };
+    }
+    return data;
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
     return {
       success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
+      errorCode: 50000,
+      errorMsg: getTranslateV4ErrorDefaultMessage(
+        TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
+      ),
       response: "",
     };
   }
@@ -1143,4 +1159,3 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
     console.error("Error Uninstall:", error);
   }
 };
-

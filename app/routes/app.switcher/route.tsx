@@ -1,6 +1,7 @@
 import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import {
+  Alert,
   Space,
   Card,
   Typography,
@@ -14,10 +15,15 @@ import {
   Modal,
 } from "antd";
 import { useTranslation } from "react-i18next";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useFetcher,
   useLoaderData,
@@ -34,12 +40,13 @@ import {
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { queryShopBaseConfigData } from "~/api/admin";
-import SwitcherSettingCard from "./components/switcherSettingCard";
-const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
+import SwitcherSettingCard from "./components/switcherSettingCard";
+
+const { Text, Title } = Typography;
 
 const initialLocalization = {
   languages: [
@@ -126,30 +133,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           };
         } else {
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.SWITCHER_LOAD_FAILED,
+          );
           return {
             success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
             response: undefined,
           };
         }
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.SWITCHER_LOAD_FAILED,
+        );
         return {
           success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
-    default:
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: undefined,
-      };
-  }
+      default: {
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.UNKNOWN_ACTION,
+        );
+        return {
+          success: false,
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
+          response: undefined,
+        };
+      }
+    }
 };
 
 const Index = () => {
@@ -193,6 +210,7 @@ const Index = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [saveAlert, setSaveAlert] = useState<string>("");
   const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
     useState<boolean>(false);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
@@ -597,6 +615,7 @@ const Index = () => {
 
   const handleSave = async () => {
     setUpdateLoading(true);
+    setSaveAlert("");
     const data = await saveSwitcherConfigCompat({
       migrated,
       shop,
@@ -608,7 +627,13 @@ const Index = () => {
       setEditData(data.response);
       shopify.toast.show(t("Switcher configuration updated successfully"));
     } else {
-      shopify.toast.show(t("Switcher configuration update failed"));
+      setSaveAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.SWITCHER_SAVE_FAILED,
+        ),
+      );
     }
     setUpdateLoading(false);
     if (isGeoLocationEnabled) {
@@ -628,6 +653,7 @@ const Index = () => {
 
   const handleCancel = () => {
     shopify.saveBar.hide("switcher-save-bar");
+    setSaveAlert("");
     if (originalData) {
       setIsIncludedFlag(originalData.includedFlag);
       setLanguageSelector(originalData.languageSelector);
@@ -713,6 +739,15 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
+              {saveAlert ? (
+                <Alert
+                  type="error"
+                  showIcon
+                  message={saveAlert}
+                  closable
+                  onClose={() => setSaveAlert("")}
+                />
+              ) : null}
               <Card
                 loading={isLoading}
                 style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}

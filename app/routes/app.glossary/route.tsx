@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -42,6 +42,11 @@ import {
   finishClientLogTrace,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -64,7 +69,7 @@ export const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
     server: process.env.SERVER_URL,
@@ -100,19 +105,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return { success: true, errorCode: null, errorMsg: null, response };
         } catch (error) {
           console.error("Error glossary loading:", error);
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_LIST_FAILED,
+          );
           return {
             success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
             response: undefined,
           };
         }
-      case !!deleteInfo:
+      case !!deleteInfo: {
+        const ids = Array.isArray(deleteInfo)
+          ? deleteInfo.map((x) => Number(x)).filter((id) => !Number.isNaN(id))
+          : [];
         try {
-          if (deleteInfo.length > 0) {
-            const ids = deleteInfo.map((x) => Number(x));
+          if (ids.length > 0) {
             await deleteGlossaryDo(shop, ids);
             return json({
+              success: true,
+              errorCode: null,
+              errorMsg: null,
               data: ids.map((id) => ({
                 status: "fulfilled",
                 value: { success: true, response: { id } },
@@ -121,13 +134,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+          );
+          return json(
+            {
+              success: false,
+              errorCode: appError.errorCode,
+              errorMsg: appError.errorMsg,
+              data: ids.map((id) => ({
+                status: "fulfilled",
+                value: {
+                  success: false,
+                  errorMsg: appError.errorMsg,
+                  response: { id },
+                },
+              })),
+            },
+            { status: appError.status },
+          );
         }
+      }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.INVALID_REQUEST,
+        );
+        return json(
+          {
+            success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+            data: [],
+          },
+          { status: appError.status },
+        );
     }
   } catch (error) {
     console.error("Error action glossary:", error);
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        data: [],
+      },
+      { status: appError.status },
+    );
   }
 };
 
@@ -221,33 +277,63 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
+      const results = Array.isArray(deleteFetcher.data?.data)
+        ? deleteFetcher.data.data
+        : [];
       let newData = [...dataSource];
       const failedIds: Array<string | number> = [];
-      // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((res: any) => {
+      const failedMessages: string[] = [];
+
+      results.forEach((res: any) => {
         if (res.value?.success) {
-          // 过滤掉需要删除的项
           newData = newData.filter(
             (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
           failedIds.push(res.value?.response?.id ?? "unknown");
-          shopify.toast.show(res.value.errorMsg);
+            failedMessages.push(
+              getTranslateV4ErrorMessage(
+                t,
+                res.value?.errorMsg,
+                TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+              ),
+            );
         }
       });
+
+      if (!results.length) {
+        failedMessages.push(
+            getTranslateV4ErrorMessage(
+              t,
+              deleteFetcher.data?.errorMsg,
+              TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+            ),
+        );
+      }
+
       finishClientLogTrace(deleteTraceRef.current, {
-        level: failedIds.length > 0 ? "warn" : "info",
-        status: failedIds.length > 0 ? "failure" : "success",
+        level: failedIds.length > 0 || !results.length ? "warn" : "info",
+        status: failedIds.length > 0 || !results.length ? "failure" : "success",
         context: {
           selectedCount: selectedRowKeys.length,
           failedIds,
         },
       });
       deleteTraceRef.current = null;
-      dispatch(setGLossaryTableData(newData)); // 更新表格数据
-      setSelectedRowKeys([]);
+
+      if (newData.length !== dataSource.length) {
+        dispatch(setGLossaryTableData(newData));
+        setSelectedRowKeys([]);
+      }
+
       setDeleteLoading(false);
-      shopify.toast.show(t("Delete successfully"));
+
+      if (failedMessages.length) {
+        failedMessages.forEach((message) => shopify.toast.show(message));
+      }
+      if (newData.length !== dataSource.length) {
+        shopify.toast.show(t("Delete successfully"));
+      }
     }
   }, [dataSource, deleteFetcher.data, dispatch, selectedRowKeys.length, t]);
 
@@ -302,42 +388,71 @@ const Index = () => {
       status: row.status === 0 ? 1 : 0,
     };
 
-    const data = await updateGlossaryCompat({
-      migrated,
-      shop: globalStore?.shop || "",
-      data: updateInfo,
-      server: server as string,
-    });
-
-    if (data?.success) {
-      shopify.toast.show(t("Saved successfully"));
-      finishClientLogTrace(trace, {
-        status: "success",
-        context: {
-          glossaryId: data.response.id,
-          nextStatus: data.response.status,
-        },
+    try {
+      const data = await updateGlossaryCompat({
+        migrated,
+        shop: globalStore?.shop || "",
+        data: updateInfo,
+        server: server as string,
       });
-      dispatch(
-        setGLossaryStatusLoadingState({
-          key: data.response.id,
-          loading: false,
-          status: data.response.status,
-        }),
-      );
-    } else {
-      shopify.toast.show(data?.errorMsg);
+
+      if (data?.success) {
+        shopify.toast.show(t("Saved successfully"));
+        finishClientLogTrace(trace, {
+          status: "success",
+          context: {
+            glossaryId: data.response.id,
+            nextStatus: data.response.status,
+          },
+        });
+        dispatch(
+          setGLossaryStatusLoadingState({
+            key: data.response.id,
+            loading: false,
+            status: data.response.status,
+          }),
+        );
+        return;
+      }
+
+      const errorMsg =
+        getTranslateV4ErrorMessage(
+          t,
+          data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+        );
+      shopify.toast.show(errorMsg);
       finishClientLogTrace(trace, {
         level: "warn",
         status: "failure",
-        message: data?.errorMsg,
+        message: errorMsg,
         context: {
           glossaryId: data?.response?.id ?? key,
         },
       });
       dispatch(
         setGLossaryStatusLoadingState({
-          key: data.response.id,
+          key: data?.response?.id ?? key,
+          loading: false,
+        }),
+      );
+    } catch {
+      const errorMsg = getTranslateV4ErrorMessage(
+        t,
+        TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+      );
+      shopify.toast.show(errorMsg);
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: errorMsg,
+        context: {
+          glossaryId: key,
+        },
+      });
+      dispatch(
+        setGLossaryStatusLoadingState({
+          key,
           loading: false,
         }),
       );

@@ -30,6 +30,11 @@ import {
   deleteCurrency,
   updateCurrency,
 } from "~/server/currency/currency.server";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -109,10 +114,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         deleteCurrency(shop, currency),
       );
       const data = await Promise.allSettled(promises);
-      return data;
+      return json({ success: true, data });
     } catch (error) {
       console.error("Error deleteCurrencies currency:", error);
-      return [];
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.CURRENCY_DELETE_FAILED,
+        );
+      return json(
+        {
+          success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+          data: [],
+        },
+          { status: appError.status },
+      );
     }
   }
 
@@ -127,7 +143,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return data;
     } catch (error) {
       console.error("Error updateCurrencies currency:", error);
-      return json({ error: "update currencies failed" }, { status: 500 });
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.CURRENCY_UPDATE_FAILED,
+        );
+      return json(
+        {
+          success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+          response: null,
+        },
+          { status: appError.status },
+      );
     }
   }
 
@@ -243,27 +270,50 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
-      if (deleteFetcher.data?.length) {
-        let newData = [...dataSource];
-        // 遍历 deleteFetcher.data
-        deleteFetcher.data?.forEach((item: any) => {
-          if (item?.value?.success) {
-            newData = newData.filter(
-              (currency) => currency.key !== item?.value?.response,
-            );
-          } else {
-            shopify.toast.show(item?.value?.errorMsg);
-          }
-        });
+      const payload = Array.isArray(deleteFetcher.data)
+        ? { success: true, data: deleteFetcher.data }
+        : deleteFetcher.data;
+      const results = Array.isArray(payload?.data) ? payload.data : [];
+      let newData = [...dataSource];
+      const failedMessages: string[] = [];
+
+      results.forEach((item: any) => {
+        if (item?.value?.success) {
+          newData = newData.filter(
+            (currency) => currency.key !== item?.value?.response,
+          );
+        } else {
+          failedMessages.push(
+            getTranslateV4ErrorMessage(
+              t,
+              item?.value?.errorMsg,
+              TRANSLATE_V4_ERROR_KEYS.CURRENCY_DELETE_FAILED,
+            ),
+          );
+        }
+      });
+
+      if (!results.length) {
+        failedMessages.push(
+            getTranslateV4ErrorMessage(
+              t,
+              payload?.errorMsg,
+              TRANSLATE_V4_ERROR_KEYS.CURRENCY_DELETE_FAILED,
+            ),
+        );
+      }
+
+      if (newData.length !== dataSource.length) {
         dispatch(setTableData(newData));
         shopify.toast.show(t("Delete successfully"));
-        setDeleteLoading(false);
-        setSelectedRowKeys([]);
-        setDeleteCode("");
         setFilteredData(newData);
       }
+      failedMessages.forEach((message) => shopify.toast.show(message));
+      setDeleteLoading(false);
+      setSelectedRowKeys([]);
+      setDeleteCode("");
     }
-  }, [deleteFetcher.data]);
+  }, [dataSource, deleteFetcher.data, dispatch, t]);
 
   useEffect(() => {
     setFilteredData(dataSource);

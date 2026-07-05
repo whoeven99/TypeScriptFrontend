@@ -1,3 +1,8 @@
+import {
+  TRANSLATE_V4_ERROR_KEYS,
+  getTranslateV4ErrorDefaultMessage,
+} from "~/utils/translateV4Errors";
+
 async function currencyApiRequest<T = any>(
   body: Record<string, unknown>,
   fallback: T,
@@ -13,8 +18,10 @@ async function currencyApiRequest<T = any>(
     console.error("currencyV4 request error:", error);
     return {
       success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
+      errorCode: 50000,
+      errorMsg: getTranslateV4ErrorDefaultMessage(
+        TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+      ),
       response: fallback,
     };
   }
@@ -48,8 +55,10 @@ export const GetCurrencyByShopNameV4 = async () => {
     console.error("GetCurrencyByShopNameV4 error:", error);
     return {
       success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
+      errorCode: 50000,
+      errorMsg: getTranslateV4ErrorDefaultMessage(
+        TRANSLATE_V4_ERROR_KEYS.CURRENCY_LIST_FAILED,
+      ),
       response: [],
     };
   }

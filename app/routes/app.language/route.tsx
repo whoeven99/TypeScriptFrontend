@@ -1,6 +1,7 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import {
+  Alert,
   Typography,
   Button,
   Space,
@@ -67,6 +68,10 @@ import {
   reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const { Text } = Typography;
 
@@ -354,6 +359,7 @@ const Index = () => {
   const [noFirstTranslationLocale, setNoFirstTranslationLocale] =
     useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [autoTranslateAlert, setAutoTranslateAlert] = useState<string>("");
   const hasSelected = useMemo(
     () => selectedRowKeys.length > 0,
     [selectedRowKeys],
@@ -884,6 +890,7 @@ const Index = () => {
       return;
     }
     try {
+      setAutoTranslateAlert("");
       const data = await setAutoTranslateCompat({
         target: row.locale,
         autoTranslate: checked,
@@ -909,18 +916,30 @@ const Index = () => {
           },
         );
       } else {
+        const errorMsg = getTranslateV4ErrorMessage(
+          t,
+          data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_SAVE_FAILED,
+        );
         finishClientLogTrace(trace, {
           level: "warn",
           status: "failure",
-          message: data?.errorMsg || "Auto translate update failed",
+          message: errorMsg,
           context: {
             locale: row.locale,
             autoTranslate: checked,
           },
         });
+        setAutoTranslateAlert(errorMsg);
       }
     } catch (error) {
       dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+      setAutoTranslateAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_SAVE_FAILED,
+        ),
+      );
       finishClientLogTrace(trace, {
         level: "error",
         status: "failure",
@@ -1045,6 +1064,15 @@ const Index = () => {
                     </Space>
                   )}
                 </Flex>
+                {autoTranslateAlert ? (
+                  <Alert
+                    type="error"
+                    showIcon
+                    message={autoTranslateAlert}
+                    closable
+                    onClose={() => setAutoTranslateAlert("")}
+                  />
+                ) : null}
                 {isMobile ? (
                   <Card
                     className={styles.languageMobileCard}

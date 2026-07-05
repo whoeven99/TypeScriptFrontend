@@ -1,5 +1,10 @@
 import prisma from "~/db.server";
 import currencyLocaleData from "~/utils/currency-locale-data";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+  type TranslateV4ErrorKey,
+} from "~/utils/translateV4Errors";
 
 type CurrencyLocaleInfo = {
   currencyName?: string;
@@ -68,8 +73,14 @@ function ok<T>(response: T): BaseResponse<T> {
   return { success: true, errorCode: 0, errorMsg: "", response };
 }
 
-function fail<T>(errorMsg: string, response: T): BaseResponse<T> {
-  return { success: false, errorCode: 10001, errorMsg, response };
+function fail<T>(errorKey: TranslateV4ErrorKey, response: T): BaseResponse<T> {
+  const error = buildTranslateV4Error(errorKey);
+  return {
+    success: false,
+    errorCode: error.errorCode,
+    errorMsg: error.errorMsg,
+    response,
+  };
 }
 
 function normalizeCurrencyCode(code: string | null | undefined): string {
@@ -197,7 +208,9 @@ export async function insertCurrency(
   input: CurrencyWriteInput,
 ): Promise<BaseResponse<CurrencyPayload | undefined>> {
   const currencyCode = normalizeCurrencyCode(input.currencyCode);
-  if (!currencyCode) return fail("CURRENCY_CODE_NOT_NULL", undefined);
+  if (!currencyCode) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_CODE_REQUIRED, undefined);
+  }
 
   const currencyName =
     String(input.currencyName ?? "").trim() ||
@@ -231,7 +244,9 @@ export async function updateCurrency(
   input: CurrencyUpdateInput,
 ): Promise<BaseResponse<CurrencyUpdateInput>> {
   const id = Number(input.id);
-  if (!Number.isInteger(id)) return fail("INVALID_ID", input);
+  if (!Number.isInteger(id)) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.INVALID_ID, input);
+  }
 
   const result = await prisma.currency.updateMany({
     where: { id, shop: input.shop },
@@ -241,7 +256,9 @@ export async function updateCurrency(
     },
   });
 
-  if (result.count <= 0) return fail("SQL_UPDATE_ERROR", input);
+  if (result.count <= 0) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_NOT_FOUND, input);
+  }
   return ok({
     ...input,
     id,
@@ -255,24 +272,28 @@ export async function deleteCurrency(
   id: number | string,
 ): Promise<BaseResponse<number | undefined>> {
   const currencyId = Number(id);
-  if (!Number.isInteger(currencyId)) return fail("INVALID_ID", undefined);
+  if (!Number.isInteger(currencyId)) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.INVALID_ID, undefined);
+  }
 
   const result = await prisma.currency.deleteMany({
     where: { id: currencyId, shop },
   });
 
-  if (result.count <= 0) return fail("SQL_DELETE_ERROR", undefined);
+  if (result.count <= 0) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_NOT_FOUND, undefined);
+  }
   return ok(currencyId);
 }
 
 export async function getCurrencyByShopName(
   shop: string,
-): Promise<BaseResponse<CurrencyPayload[] | false>> {
+): Promise<BaseResponse<CurrencyPayload[]>> {
   const rows = await prisma.currency.findMany({
     where: { shop },
     orderBy: [{ primaryStatus: "desc" }, { id: "asc" }],
   });
-  if (rows.length === 0) return fail("query error", false);
+  if (rows.length === 0) return ok([]);
   return ok(rows.map(toCurrencyPayload));
 }
 
@@ -281,7 +302,7 @@ export async function getCurrencyTableByShopName(
 ): Promise<BaseResponse<CurrencyTableRow[]>> {
   const result = await getCurrencyByShopName(shop);
   if (!result.success || !Array.isArray(result.response)) {
-    return fail("SERVER_ERROR", []);
+    return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_LIST_FAILED, []);
   }
   return ok(result.response.map(toCurrencyTableRow));
 }
@@ -300,7 +321,9 @@ export async function updateDefaultCurrency(
   input: CurrencyWriteInput,
 ): Promise<BaseResponse<CurrencyPayload | undefined>> {
   const currencyCode = normalizeCurrencyCode(input.currencyCode);
-  if (!currencyCode) return fail("CURRENCY_CODE_NOT_NULL", undefined);
+  if (!currencyCode) {
+    return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_CODE_REQUIRED, undefined);
+  }
 
   const currencyName =
     String(input.currencyName ?? "").trim() ||
@@ -338,7 +361,7 @@ export async function getCurrencyCacheData(
   const row = await prisma.currency.findUnique({
     where: { shop_currencyCode: { shop, currencyCode } },
   });
-  if (!row) return fail("SERVER_ERROR", undefined);
+  if (!row) return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_NOT_FOUND, undefined);
 
   const payload = toCurrencyPayload(row);
   if (payload.primaryStatus !== 0 || payload.exchangeRate !== "Auto") {

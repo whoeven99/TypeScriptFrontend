@@ -1,5 +1,9 @@
-import { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -143,12 +147,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             ?.filter(Boolean)
             ?.join(", ")}`,
         );
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_PARTIAL_FAILED,
+        );
 
         return {
           success: true,
-          errorCode: 10001,
-          errorMsg:
-            "Errors occurred when binding languages ​​to certain domains",
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
           response: {
             shopLocaleUpdate,
             webPresenceUpdate,
@@ -167,20 +173,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           ?.filter(Boolean)
           ?.join(", ")}`,
       );
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_FAILED,
+      );
 
       return {
         success: false,
-        errorCode: 10002,
-        errorMsg: "Errors occurred when binding languages ​​to certain domains",
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
         response: undefined,
       };
     }
   } catch (error) {
     console.error("Error publishAction:", error);
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_FAILED,
+    );
     return {
       success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
+      errorCode: appError.errorCode,
+      errorMsg: appError.errorMsg,
       response: undefined,
     };
   }
