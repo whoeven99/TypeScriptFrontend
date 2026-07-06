@@ -110,6 +110,56 @@ export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string
   return token ? String(token) : null;
 }
 
+/**
+ * 读取 shop 的账本归属（新系统 tsf / 老系统 legacy）。
+ * 无 binding 表记录或未配置 Turso → 返回 null（调用方回退 Java）。
+ */
+export async function getShopBillingSystem(shop: string): Promise<string | null> {
+  if (!hasTsfDbCredentials()) return null;
+  const rs = await getTsfDb().execute({
+    sql: "SELECT billingSystem FROM ShopBillingBinding WHERE shop = ? LIMIT 1",
+    args: [shop],
+  });
+  const v = rs.rows[0]?.billingSystem;
+  return v != null ? String(v) : null;
+}
+
+/** 读 tsf 账户剩余额度（三池之和 - 已用）。无账户返回 null。 */
+export async function getTsfAccountRemaining(shop: string): Promise<number | null> {
+  if (!hasTsfDbCredentials()) return null;
+  const rs = await getTsfDb().execute({
+    sql: "SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits FROM Account WHERE shop = ? LIMIT 1",
+    args: [shop],
+  });
+  const r = rs.rows[0];
+  if (!r) return null;
+  const total =
+    Number(r.subscriptionCredits ?? 0) +
+    Number(r.purchasedCredits ?? 0) +
+    Number(r.trialCredits ?? 0);
+  return total - Number(r.usedCredits ?? 0);
+}
+
+/**
+ * tsf 账户周期内扣减：仅自增 usedCredits（分池结算在续费时做），返回扣减后剩余。
+ * 无账户或未配置 Turso → 返回 null（调用方视为扣减失败）。
+ */
+export async function deductTsfAccountCredits(
+  shop: string,
+  amount: number,
+): Promise<number | null> {
+  if (!hasTsfDbCredentials()) return null;
+  const amt = Math.max(0, Math.ceil(amount));
+  if (amt > 0) {
+    const res = await getTsfDb().execute({
+      sql: "UPDATE Account SET usedCredits = usedCredits + ?, updatedAt = datetime('now') WHERE shop = ?",
+      args: [amt, shop],
+    });
+    if (!res.rowsAffected) return null;
+  }
+  return getTsfAccountRemaining(shop);
+}
+
 export type TsfGlossaryRow = {
   sourceText: string;
   targetText: string;

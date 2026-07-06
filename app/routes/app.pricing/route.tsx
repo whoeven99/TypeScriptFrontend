@@ -18,10 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
-import {
-  GetLatestActiveSubscribeId,
-  InsertOrUpdateOrder,
-} from "~/api/JavaServer";
+import { InsertOrUpdateOrder } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
@@ -68,6 +65,12 @@ export const loader = async () => {
   };
 };
 
+/** Shopify Billing 测试模式：BILLING_TEST=true 显式开启，或本地/测试环境自动开启（不产生真实扣费）。 */
+const isBillingTestMode = (): boolean =>
+  process.env.BILLING_TEST === "true" ||
+  process.env.NODE_ENV === "development" ||
+  process.env.NODE_ENV === "test";
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -89,9 +92,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           name: payInfo.name,
           price: payInfo.price,
           returnUrl,
-          test:
-            process.env.NODE_ENV === "development" ||
-            process.env.NODE_ENV === "test",
+          test: isBillingTestMode(),
         });
 
         if (res) {
@@ -151,9 +152,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
           trialDays: payForPlan.trialDays,
           returnUrl,
-          test:
-            process.env.NODE_ENV === "development" ||
-            process.env.NODE_ENV === "test",
+          test: isBillingTestMode(),
         });
 
         if (res) {
@@ -682,7 +681,7 @@ const Index = () => {
         key: 0,
         label: t("How does the 5-day free trial work?"),
         children: t(
-          "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+          "Choosing Pro or Premium gives you 5 days of full access to all features, including your plan's full monthly credits. Cancel anytime before the trial ends to avoid billing.",
         ),
       },
       {
@@ -850,14 +849,16 @@ const Index = () => {
       },
     });
     try {
-      const data = await GetLatestActiveSubscribeId({
-        shop: globalStore?.shop as string,
-        server: globalStore?.server as string,
-      });
-      if (data.success) {
+      const res = await fetch(
+        `/api/billing/active-subscription?shopName=${encodeURIComponent(
+          globalStore?.shop as string,
+        )}`,
+      );
+      const data = await res.json();
+      if (data?.ok && data?.subscriptionId) {
         planCancelFetcher.submit(
           {
-            cancelId: JSON.stringify(data.response),
+            cancelId: JSON.stringify(data.subscriptionId),
           },
           { method: "POST" },
         );
@@ -866,7 +867,7 @@ const Index = () => {
       finishClientLogTrace(cancelPlanTraceRef.current, {
         level: "warn",
         status: "failure",
-        message: data?.errorMsg || "Failed to load latest active subscription",
+        message: "Failed to load latest active subscription",
       });
       cancelPlanTraceRef.current = null;
     } catch (error) {

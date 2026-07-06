@@ -121,17 +121,14 @@ INSERT OR IGNORE INTO "PlanCatalog" ("planKey","kind","billingInterval","display
   ('premium-monthly','SUBSCRIPTION','MONTHLY','Premium',8000000,'39.99','USD',NULL,'Premium',30,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
   ('premium-annual','SUBSCRIPTION','ANNUAL','Premium - Yearly',8000000,'31.99','USD',NULL,'Premium',31,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
--- 内置试用：新用户安装赠送（结转、不随续费刷新）
-INSERT OR IGNORE INTO "PlanCatalog" ("planKey","kind","billingInterval","displayName","credits","priceAmount","currencyCode","trialDays","shopifyPlanName","sortOrder","enabled","createdAt","updatedAt") VALUES
-  ('trial-install','INTERNAL_TRIAL',NULL,'Install Trial Credits',200000,'0','USD',NULL,NULL,5,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
-
 -- 一次性加量包（priceAmount 记 base 原价；实际扣费按 Shopify 动态定价）
+-- shopifyPlanName 对齐 webhook 的 app_purchase_one_time.name（"500K Credits" ...）
 INSERT OR IGNORE INTO "PlanCatalog" ("planKey","kind","billingInterval","displayName","credits","priceAmount","currencyCode","trialDays","shopifyPlanName","sortOrder","enabled","createdAt","updatedAt") VALUES
-  ('pack-500k','ONE_TIME_PACK',NULL,'500K Credits',500000,'3.99','USD',NULL,'500K',100,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-1m','ONE_TIME_PACK',NULL,'1M Credits',1000000,'7.99','USD',NULL,'1M',101,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-2m','ONE_TIME_PACK',NULL,'2M Credits',2000000,'15.99','USD',NULL,'2M',102,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-3m','ONE_TIME_PACK',NULL,'3M Credits',3000000,'23.99','USD',NULL,'3M',103,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-5m','ONE_TIME_PACK',NULL,'5M Credits',5000000,'39.99','USD',NULL,'5M',104,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-10m','ONE_TIME_PACK',NULL,'10M Credits',10000000,'79.99','USD',NULL,'10M',105,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-20m','ONE_TIME_PACK',NULL,'20M Credits',20000000,'159.99','USD',NULL,'20M',106,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-  ('pack-30m','ONE_TIME_PACK',NULL,'30M Credits',30000000,'239.99','USD',NULL,'30M',107,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+  ('pack-500k','ONE_TIME_PACK',NULL,'500K Credits',500000,'3.99','USD',NULL,'500K Credits',100,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-1m','ONE_TIME_PACK',NULL,'1M Credits',1000000,'7.99','USD',NULL,'1M Credits',101,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-2m','ONE_TIME_PACK',NULL,'2M Credits',2000000,'15.99','USD',NULL,'2M Credits',102,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-3m','ONE_TIME_PACK',NULL,'3M Credits',3000000,'23.99','USD',NULL,'3M Credits',103,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-5m','ONE_TIME_PACK',NULL,'5M Credits',5000000,'39.99','USD',NULL,'5M Credits',104,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-10m','ONE_TIME_PACK',NULL,'10M Credits',10000000,'79.99','USD',NULL,'10M Credits',105,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-20m','ONE_TIME_PACK',NULL,'20M Credits',20000000,'159.99','USD',NULL,'20M Credits',106,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
+  ('pack-30m','ONE_TIME_PACK',NULL,'30M Credits',30000000,'239.99','USD',NULL,'30M Credits',107,true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);

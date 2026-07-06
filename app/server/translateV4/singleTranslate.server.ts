@@ -2,6 +2,7 @@
  * 单字段手动翻译 —— 委托 worker 的 translateResources 管线，与自动任务逻辑一致。
  */
 import { translateSingleField } from "@worker/services/syncTranslate";
+import { deductShopCredits } from "~/server/billing/quota/quotaRouter.server";
 import { llmTokensToQuotaCredits } from "./quotaMultiplier.server";
 
 export type TranslateSingleTextArgs = {
@@ -29,21 +30,9 @@ export async function translateSingleText(
   return { translatedText, usedTokens };
 }
 
-/** 扣额度（Spring /quota/deduct；tokens 为 LLM 原始用量，内部 × QUOTA_TOKEN_MULTIPLIER）。 */
+/** 扣额度（tokens 为 LLM 原始用量，内部 × QUOTA_TOKEN_MULTIPLIER；按 binding 分叉 tsf/Java）。 */
 export async function deductQuota(shop: string, rawLlmTokens: number): Promise<void> {
-  const tokens = llmTokensToQuotaCredits(rawLlmTokens);
-  if (tokens <= 0) return;
-  const base = (process.env.TSF_SERVER_URL?.trim() || process.env.SERVER_URL?.trim() || "").replace(
-    /\/+$/,
-    "",
-  );
-  if (!base) return;
-  try {
-    await fetch(
-      `${base}/quota/deduct?shopName=${encodeURIComponent(shop)}&tokens=${tokens}`,
-      { method: "POST" },
-    );
-  } catch (err) {
-    console.error(`[single] 扣额度失败 shop=${shop}:`, err);
-  }
+  const credits = llmTokensToQuotaCredits(rawLlmTokens);
+  if (credits <= 0) return;
+  await deductShopCredits(shop, credits);
 }
