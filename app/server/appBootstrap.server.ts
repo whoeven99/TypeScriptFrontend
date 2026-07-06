@@ -29,17 +29,11 @@ const defaultPlan: AppBootstrapPlan = {
   isInFreePlanTime: false,
 };
 
-function formatPlanUpdateTime(value: unknown): string | null {
+function normalizePlanUpdateTime(value: unknown): string | null {
   if (!value) return null;
   const time = new Date(String(value));
   if (Number.isNaN(time.getTime())) return null;
-  return time
-    .toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-    .replace(/\//g, "-");
+  return time.toISOString();
 }
 
 /** 从已加载的店铺语言构造 Redux 用的 source / targets。 */
@@ -116,7 +110,7 @@ export async function loadAppBootstrapJavaData({
   return {
     plan,
     updateTime: subscription?.success
-      ? formatPlanUpdateTime(subscription?.response?.currentPeriodEnd)
+      ? normalizePlanUpdateTime(subscription?.response?.currentPeriodEnd)
       : null,
     chars: words?.success ? words?.response?.chars : undefined,
     totalChars: words?.success ? words?.response?.totalChars : undefined,

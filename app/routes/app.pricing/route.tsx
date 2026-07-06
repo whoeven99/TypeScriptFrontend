@@ -233,10 +233,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
 
-  const { plan, chars, totalChars, isNew } = useSelector(
+  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
@@ -340,6 +340,9 @@ const Index = () => {
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
+  const [localNextPaymentText, setLocalNextPaymentText] = useState<
+    string | null
+  >(null);
 
   //各个表单开启状态
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
@@ -376,6 +379,29 @@ const Index = () => {
       { beacon: true },
     );
   }, []);
+
+  useEffect(() => {
+    if (!updateTime || plan?.type === "Free") {
+      setLocalNextPaymentText(null);
+      return;
+    }
+
+    const nextPaymentTime = new Date(updateTime);
+    if (Number.isNaN(nextPaymentTime.getTime())) {
+      setLocalNextPaymentText(null);
+      return;
+    }
+
+    setLocalNextPaymentText(
+      new Intl.DateTimeFormat(i18n.resolvedLanguage || undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(nextPaymentTime),
+    );
+  }, [i18n.resolvedLanguage, plan?.type, updateTime]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -958,8 +984,15 @@ const Index = () => {
               title={t("Pricing")}
               extra={
                 plan.type ? (
-                  <div className="app-status-cluster">
-                    <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+                  <div className="pricing-page__plan-meta">
+                    <div className="app-status-cluster">
+                      <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+                    </div>
+                    {localNextPaymentText ? (
+                      <Text className="pricing-page__next-payment" type="secondary">
+                        {t("Next payment")}: {localNextPaymentText}
+                      </Text>
+                    ) : null}
                   </div>
                 ) : null
               }
