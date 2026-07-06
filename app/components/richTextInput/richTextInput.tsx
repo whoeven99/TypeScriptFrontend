@@ -41,7 +41,7 @@ const Tiptap = ({
           editor={editor}
           readOnly={readOnly}
           handleTiptap={hideTiptap}
-          className="tiptap-commands"
+          className={`tiptap-commands ${readOnly ? "tiptap-commands--readonly" : ""}`}
         />
       )}
       {showTiptap ? (

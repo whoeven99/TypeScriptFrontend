@@ -34,6 +34,17 @@ const sanitizeHtmlForPreview = (html: string) => {
     });
   });
 
+  doc.body.querySelectorAll("img").forEach((node) => {
+    node.removeAttribute("width");
+    node.removeAttribute("height");
+    node.removeAttribute("align");
+    node.style.maxWidth = "100%";
+    node.style.height = "auto";
+    node.style.float = "none";
+    node.style.display = "block";
+    node.style.margin = "8px auto";
+  });
+
   return doc.body.innerHTML;
 };
 
@@ -85,36 +96,49 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
 
   const renderEditor = (mode: "edit" | "readonly") => {
     const fallback = (
-      <TextArea
-        rows={4}
-        disabled
-        value={mode === "edit" ? translatedValues?.[record?.key] : defaultValue}
-        className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
-      />
+      <div className="manage-table-input">
+        <TextArea
+          rows={4}
+          disabled
+          value={
+            mode === "edit" ? translatedValues?.[record?.key] : defaultValue
+          }
+          className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
+        />
+      </div>
     );
     if (mode === "readonly") {
       if (!mounted) return fallback;
       return (
-        <div
-          className={`html-preview-input ${isRtl ? "rtl-input" : ""}`}
-          dangerouslySetInnerHTML={{ __html: readonlyHtml }}
-        />
+        <div className="manage-table-input manage-table-input--html">
+          <ManageTableInputEditor
+            mode={mode}
+            record={record}
+            translatedValues={translatedValues}
+            handleInputChange={handleInputChange}
+            isSuccess={isSuccess}
+            isRtl={isRtl}
+            defaultValue={readonlyHtml}
+          />
+        </div>
       );
     }
 
     if (!mounted) return fallback;
     return (
-      <Suspense fallback={fallback}>
-        <ManageTableInputEditor
-          mode={mode}
-          record={record}
-          translatedValues={translatedValues}
-          handleInputChange={handleInputChange}
-          isSuccess={isSuccess}
-          isRtl={isRtl}
-          defaultValue={defaultValue}
-        />
-      </Suspense>
+      <div className="manage-table-input manage-table-input--html">
+        <Suspense fallback={fallback}>
+          <ManageTableInputEditor
+            mode={mode}
+            record={record}
+            translatedValues={translatedValues}
+            handleInputChange={handleInputChange}
+            isSuccess={isSuccess}
+            isRtl={isRtl}
+            defaultValue={defaultValue}
+          />
+        </Suspense>
+      </div>
     );
   };
 
@@ -144,24 +168,28 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       return renderEditor("edit");
     }
     return (
-      <TextArea
-        rows={4}
-        value={translatedValues[record?.key]}
-        onChange={(e) => handleInputChange(record, e.target.value)}
-        className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
-      />
+      <div className="manage-table-input">
+        <TextArea
+          rows={4}
+          value={translatedValues[record?.key]}
+          onChange={(e) => handleInputChange(record, e.target.value)}
+          className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
+        />
+      </div>
     );
   } else {
     if (isHtml) {
       return renderEditor("readonly");
     }
     return (
-      <TextArea
-        rows={4}
-        disabled
-        value={defaultValue}
-        className={locale === "ar" ? "rtl-input" : ""}
-      />
+      <div className="manage-table-input">
+        <TextArea
+          rows={4}
+          disabled
+          value={defaultValue}
+          className={locale === "ar" ? "rtl-input" : ""}
+        />
+      </div>
     );
   }
 };
