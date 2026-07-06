@@ -1,4 +1,5 @@
 import prisma from "../../db.server";
+import { sendSupportMessageFeishuNotify } from "../feishu/sendSupportMessageFeishuNotify.server";
 
 /**
  * 翻译 v4 人工客服存储（TSF 自有 Turso）。
@@ -126,7 +127,7 @@ export async function appendShopMessage(
     data: { conversationId: conversation.id, sender: "shop", content },
   });
 
-  await prisma.supportConversation.update({
+  const updated = await prisma.supportConversation.update({
     where: { shop_source: { shop, source: SOURCE } },
     data: {
       lastMessage: content.slice(0, PREVIEW_LEN),
@@ -134,6 +135,17 @@ export async function appendShopMessage(
       unreadForOps: { increment: 1 },
       status: "open",
     },
+  });
+
+  void sendSupportMessageFeishuNotify({
+    shop,
+    content,
+    contactEmail: updated.contactEmail,
+    shopEmail: updated.shopEmail,
+    unreadForOps: updated.unreadForOps,
+    at: message.createdAt,
+  }).catch((error) => {
+    console.error("[support] feishu notify failed:", error);
   });
 
   return toMessageDTO(message);
