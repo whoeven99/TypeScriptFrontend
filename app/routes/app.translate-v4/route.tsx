@@ -72,6 +72,23 @@ function useIdleReady(timeout = 2500) {
   return ready;
 }
 
+async function readJsonResponse<T = any>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) {
+    throw new Error(`Empty response body (${res.status})`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    const contentType = res.headers.get("content-type") || "unknown";
+    throw new Error(
+      `Invalid JSON response (${res.status}, ${contentType}): ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
@@ -216,7 +233,7 @@ export default function AppTranslateV4() {
           const res = await fetch(
             `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
           );
-          const data = await res.json();
+          const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
           if (trace) {
             finishClientLogTrace(trace, {
@@ -234,7 +251,7 @@ export default function AppTranslateV4() {
           const res = await fetch(
             `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
           );
-          const data = await res.json();
+          const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
         }
         if (trace) {
@@ -267,7 +284,7 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (data?.ok) setCoverage(data.summary as CoverageSummary);
     } catch (err) {
       // Passive cache refresh should not pollute exception telemetry.
@@ -303,7 +320,7 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (data?.ok) {
         applyJobsUpdate(data.jobs as TranslationJobProgressSummary[]);
       }
@@ -317,7 +334,7 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (data?.ok) setQuota(data.quota as ShopQuota | null);
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
@@ -347,7 +364,7 @@ export default function AppTranslateV4() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ taskId, shopName: shop, action: actionType }),
         });
-        const data = await res.json();
+        const data = await readJsonResponse(res);
         if (data?.ok) {
           const label =
             actionType === "delete"

@@ -24,6 +24,7 @@ import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
 
 const { Sider, Content } = Layout;
 
@@ -162,7 +163,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.error("Error refreshing current page:", error);
+        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
         return {
           success: false,
           errorCode: 10001,

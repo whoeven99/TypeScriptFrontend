@@ -30,6 +30,7 @@ import {
 import {
   getManageTranslationLoadErrorMessage,
   isManageTranslationRateLimitedError,
+  logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
@@ -161,7 +162,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.error("Error refreshing current page:", error);
+        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
         return {
           success: false,
           errorCode: 10001,

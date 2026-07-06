@@ -468,7 +468,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.error("Error refreshing current page:", error);
+        logGraphQLErrorDetail("Error refreshing current page", error);
         return {
           success: false,
           errorCode: 10001,

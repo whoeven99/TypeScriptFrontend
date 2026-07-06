@@ -553,7 +553,8 @@ export default function App() {
         applyBootstrapJavaToStore(dispatch, data.bootstrap);
       })
       .catch((err) => {
-        console.error("[app] bootstrap java fetch failed:", err);
+        // Bootstrap Java data is non-blocking; fetch failures should not pollute exception telemetry.
+        console.warn("[app] bootstrap java fetch failed:", err);
       })
       .finally(() => {
         if (!cancelled) {

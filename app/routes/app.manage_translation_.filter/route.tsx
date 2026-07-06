@@ -30,6 +30,7 @@ import {
 import {
   getManageTranslationLoadErrorMessage,
   isManageTranslationRateLimitedError,
+  logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
 
 const { Content } = Layout;
@@ -160,7 +161,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.error("Error refreshing current page:", error);
+        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
         return {
           success: false,
           errorCode: 10001,

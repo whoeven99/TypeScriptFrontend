@@ -39,6 +39,7 @@ import {
   reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -128,7 +129,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       await invalidateAllItemsCountForLocale(shop, refreshItemsCountTarget);
       return { success: true, errorCode: 0, errorMsg: "", response: null };
     } catch (error) {
-      console.error("Error manage_translation refreshItemsCount:", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error manage_translation refreshItemsCount",
+        error,
+      );
       return {
         success: false,
         errorCode: 10001,
@@ -158,7 +162,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: appByHandle,
         };
       } catch (error) {
-        console.error("Error manage_translation appInstalls:", error);
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation appInstalls",
+          error,
+        );
         return {
           success: false,
           errorCode: 10001,
@@ -178,7 +185,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return { success: true, errorCode: 0, errorMsg: "", response };
       } catch (error) {
-        console.error("Error manage_translation itemsCount:", error);
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation itemsCount",
+          error,
+        );
         return {
           success: false,
           errorCode: 10001,

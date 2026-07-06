@@ -5,6 +5,14 @@ export const MANAGE_TRANSLATION_ERROR_KEYS = {
   SERVER_ERROR: "SERVER_ERROR",
 } as const;
 
+function safeStringify(value: unknown, replacer?: any): string {
+  try {
+    return JSON.stringify(value, replacer, 2);
+  } catch {
+    return "[unserializable]";
+  }
+}
+
 function collectErrorTexts(error: unknown): string[] {
   const e = error as any;
   const texts: string[] = [];
@@ -44,6 +52,65 @@ function collectErrorTexts(error: unknown): string[] {
 export function isManageTranslationRateLimitedError(error: unknown): boolean {
   const texts = collectErrorTexts(error).join(" ").toLowerCase();
   return /429|throttl|rate limit|too many requests|max cost exceeded/.test(texts);
+}
+
+export function logManageTranslationGraphQLErrorDetail(
+  context: string,
+  error: unknown,
+): void {
+  const e = error as any;
+  const response = e?.response;
+  const responseHeaders =
+    typeof response?.headers?.get === "function"
+      ? {
+          requestId: response.headers.get("x-request-id"),
+          apiVersion: response.headers.get("x-shopify-api-version"),
+          apiVersionWarning: response.headers.get(
+            "x-shopify-api-version-warning",
+          ),
+        }
+      : undefined;
+
+  const graphQLErrorList = [
+    ...(Array.isArray(e?.graphQLErrors) ? e.graphQLErrors : []),
+    ...(Array.isArray(e?.errors?.graphQLErrors) ? e.errors.graphQLErrors : []),
+    ...(Array.isArray(e?.body?.errors) ? e.body.errors : []),
+  ];
+
+  const graphQLErrors = graphQLErrorList.map((gqlError: any) => ({
+    message: gqlError?.message,
+    path: gqlError?.path,
+    extensions: gqlError?.extensions,
+    locations: gqlError?.locations,
+  }));
+
+  console.error(`[${context}] GraphQL request failed`, {
+    name: e?.name,
+    message: e?.message,
+    networkStatusCode: e?.networkStatusCode ?? e?.errors?.networkStatusCode,
+    response: response
+      ? {
+          status: response?.status,
+          statusText: response?.statusText,
+          url: response?.url,
+          headers: responseHeaders,
+        }
+      : undefined,
+    stack: e?.stack,
+  });
+  console.error(
+    `[${context}] graphQLErrors_full=${safeStringify(graphQLErrors)}`,
+  );
+  graphQLErrors.forEach((item: any, index: number) => {
+    console.error(`[${context}] graphQLError[${index}]`, item);
+  });
+  console.error(
+    `[${context}] rawError_full=${safeStringify(
+      e,
+      Object.getOwnPropertyNames(e || {}),
+    )}`,
+  );
+  console.error(`[${context}] rawError`, e);
 }
 
 export function getManageTranslationLoadErrorMessage(

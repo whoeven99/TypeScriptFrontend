@@ -84,8 +84,9 @@ function shouldIgnoreConsoleErrorReport(args: unknown[]): boolean {
   const firstArg = typeof args[0] === "string" ? args[0] : "";
   const errorArg = args.find((item) => item instanceof Error) ?? args[1];
   return (
-    /^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) &&
-    (isNetworkFetchError(errorArg) || isAbortLikeError(errorArg))
+    ((/^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) ||
+      /^\[app\] bootstrap java fetch failed:/i.test(firstArg)) &&
+      (isNetworkFetchError(errorArg) || isAbortLikeError(errorArg)))
   );
 }
 
