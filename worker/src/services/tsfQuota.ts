@@ -22,6 +22,30 @@ import {
   TSF_AUTO_TASK_SOURCE,
   TS_FRONTEND_TASK_SOURCE,
 } from "./cosmosV4.js";
+import {
+  deductTsfAccountCredits,
+  getShopBillingSystem,
+  getTsfAccountRemaining,
+} from "./tsfDb.js";
+
+/** shop 归属缓存（tsf 走 Turso 账本，legacy 走 Java）；仅缓存已确定结果。 */
+const bindingCache = new Map<string, "tsf" | "legacy">();
+
+/** 判断 shop 是否走新系统（tsf）。未判定/未配置 Turso → false（回退 Java）。 */
+async function isTsfShop(shop: string): Promise<boolean> {
+  const cached = bindingCache.get(shop);
+  if (cached) return cached === "tsf";
+  try {
+    const sys = await getShopBillingSystem(shop);
+    if (sys === "tsf" || sys === "legacy") {
+      bindingCache.set(shop, sys);
+      return sys === "tsf";
+    }
+  } catch (err) {
+    console.error(`[tsfQuota] binding lookup error shop=${shop}:`, err);
+  }
+  return false;
+}
 
 /** TSF 手动 + 自动翻译任务来源（均扣 TSF 额度池）。 */
 const TSF_QUOTA_TASK_SOURCES = new Set([
@@ -125,6 +149,10 @@ export async function getTsfRemainingWithRetry(
   shop: string,
   attempts = 3,
 ): Promise<number> {
+  // 新系统（tsf）：直连 Turso 账本读取剩余额度。
+  if (await isTsfShop(shop)) {
+    return (await getTsfAccountRemaining(shop)) ?? 1;
+  }
   // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为「无限」。
   if (!quotaBase()) return Number.MAX_SAFE_INTEGER;
   return (await queryTsfRemaining(shop, attempts)) ?? 1;
@@ -132,6 +160,9 @@ export async function getTsfRemainingWithRetry(
 
 /** 邮件展示用：查询剩余额度；不可查或失败时返回 null。 */
 export async function getTsfRemainingForEmail(shop: string): Promise<number | null> {
+  if (await isTsfShop(shop)) {
+    return getTsfAccountRemaining(shop);
+  }
   return queryTsfRemaining(shop, 3);
 }
 
@@ -161,6 +192,16 @@ export async function deductTsfQuota(
   shop: string,
   amount: number,
 ): Promise<QuotaDeductResult> {
+  // 新系统（tsf）：直连 Turso 账本自增 usedCredits。
+  if (await isTsfShop(shop)) {
+    const remaining = await deductTsfAccountCredits(shop, amount);
+    if (remaining === null) {
+      console.warn(`[tsfQuota] tsf deduct failed (no account?) shop=${shop}`);
+      return { ok: false, remaining: 0 };
+    }
+    return { ok: true, remaining };
+  }
+
   // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为 no-op。
   const base = quotaBase();
   if (!base) {

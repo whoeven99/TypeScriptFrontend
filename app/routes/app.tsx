@@ -30,6 +30,8 @@ import {
   bootstrapLocalesFromLoaded,
   type AppBootstrapJavaData,
 } from "~/server/appBootstrap.server";
+import { resolveBillingBinding } from "~/server/billing/index.server";
+import { BILLING_SYSTEM } from "~/server/billing/types.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -130,17 +132,26 @@ async function runAppInitialization({
   targets: string[];
 }) {
   try {
+    // 判定并锁定账本归属；新用户（tsf）建账户 + 赠送安装试用额度
+    const binding = await resolveBillingBinding(shop);
+    const isTsf = binding.billingSystem === BILLING_SYSTEM.TSF;
+
+    // 保留：翻译流水线仍依赖 Java Users.access_token（billing 归属与翻译解耦）
     if (accessToken) {
       await UserInitialization({ shop, accessToken });
     }
     const init = await InitializationDetection({ shop });
     if (init?.success && accessToken) {
-      if (!init?.response?.insertCharsByShopName) {
-        await InsertCharsByShopName({ shop, accessToken });
+      // 老系统计费初始化：仅 legacy 用户执行（tsf 用户走 Turso 分池）
+      if (!isTsf) {
+        if (!init?.response?.insertCharsByShopName) {
+          await InsertCharsByShopName({ shop, accessToken });
+        }
+        if (!init?.response?.addUserFreeSubscription) {
+          await AddUserFreeSubscription({ shop });
+        }
       }
-      if (!init?.response?.addUserFreeSubscription) {
-        await AddUserFreeSubscription({ shop });
-      }
+      // 翻译配置（与计费无关），所有用户保留
       if (!init?.response?.addDefaultLanguagePack) {
         await AddDefaultLanguagePack({ shop });
       }

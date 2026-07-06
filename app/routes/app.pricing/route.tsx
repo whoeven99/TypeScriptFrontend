@@ -18,10 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
-import {
-  GetLatestActiveSubscribeId,
-  InsertOrUpdateOrder,
-} from "~/api/JavaServer";
+import { InsertOrUpdateOrder } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
@@ -31,8 +28,16 @@ import {
   mutationAppPurchaseOneTimeCreate,
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
+import type { Dispatch } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
-import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
+import {
+  setChars,
+  setIsNew,
+  setPlan,
+  setTotalChars,
+  setUpdateTime,
+} from "~/store/modules/userConfig";
+import type { AppBootstrapJavaData } from "~/server/appBootstrap.server";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
@@ -42,8 +47,68 @@ import AppStatusBadge from "~/ui/components/AppStatusBadge";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+
+async function refreshBillingBootstrap(
+  dispatch: Dispatch,
+  previousTotalChars?: number,
+): Promise<void> {
+  const retryDelaysMs = [0, 600, 1200, 2000, 3000];
+
+  for (const delayMs of retryDelaysMs) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    try {
+      const res = await fetch("/api/app-bootstrap");
+      const data = (await res.json()) as {
+        ok?: boolean;
+        bootstrap?: AppBootstrapJavaData;
+      };
+      if (!data.ok || !data.bootstrap) continue;
+
+      const bootstrap = data.bootstrap;
+      dispatch(setPlan({ plan: bootstrap.plan }));
+      dispatch(setChars({ chars: bootstrap.chars }));
+      dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
+      if (bootstrap.updateTime) {
+        dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
+      } else {
+        dispatch(setUpdateTime({ updateTime: "" }));
+      }
+      if (bootstrap.isNew !== null && bootstrap.isNew !== undefined) {
+        dispatch(setIsNew({ isNew: bootstrap.isNew }));
+      }
+
+      if (
+        previousTotalChars === undefined ||
+        bootstrap.totalChars !== previousTotalChars
+      ) {
+        return;
+      }
+    } catch {
+      // webhook 入账可能略滞后，继续重试
+    }
+  }
+}
+
+function redirectToBillingConfirmation(confirmationUrl: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    window.open(confirmationUrl, "_top");
+    return true;
+  } catch {
+    try {
+      window.top!.location.href = confirmationUrl;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
 const { Title, Text, Link } = Typography;
 
@@ -68,10 +133,16 @@ export const loader = async () => {
   };
 };
 
+/** Shopify Billing 测试模式：BILLING_TEST=true 显式开启，或本地/测试环境自动开启（不产生真实扣费）。 */
+const isBillingTestMode = (): boolean =>
+  process.env.BILLING_TEST === "true" ||
+  process.env.NODE_ENV === "development" ||
+  process.env.NODE_ENV === "test";
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const { admin, redirect: shopifyRedirect } = adminAuthResult;
 
   const formData = await request.formData();
   const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -89,9 +160,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           name: payInfo.name,
           price: payInfo.price,
           returnUrl,
-          test:
-            process.env.NODE_ENV === "development" ||
-            process.env.NODE_ENV === "test",
+          test: isBillingTestMode(),
         });
 
         if (res) {
@@ -109,6 +178,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             confirmationUrl: confirmationUrl,
           });
 
+          if (confirmationUrl) {
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+          }
+
           return {
             ...orderData,
             response: {
@@ -124,6 +197,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       } catch (error) {
+        if (error instanceof Response) {
+          throw error;
+        }
         console.error("Error payInfo pricing action: ", error);
         return {
           success: false,
@@ -151,9 +227,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
           trialDays: payForPlan.trialDays,
           returnUrl,
-          test:
-            process.env.NODE_ENV === "development" ||
-            process.env.NODE_ENV === "test",
+          test: isBillingTestMode(),
         });
 
         if (res) {
@@ -173,6 +247,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             confirmationUrl: confirmationUrl,
           });
 
+          if (confirmationUrl) {
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+          }
+
           return {
             ...orderData,
             response: {
@@ -188,6 +266,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       } catch (error) {
+        if (error instanceof Response) {
+          throw error;
+        }
         console.error("Error payForPlan pricing action:", error);
         return {
           success: false,
@@ -336,6 +417,7 @@ const Index = () => {
 
   //各种加载状态
   const [isLoading, setIsLoading] = useState(true);
+  const [creditsRefreshing, setCreditsRefreshing] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
@@ -351,103 +433,146 @@ const Index = () => {
     [chars, totalChars],
   );
 
-  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
   const payCreditsTraceRef = useRef<ClientLogTrace | null>(null);
   const payPlanTraceRef = useRef<ClientLogTrace | null>(null);
   const cancelPlanTraceRef = useRef<ClientLogTrace | null>(null);
+  const cancelRefreshHandledRef = useRef(false);
+  const payCreditsSubmittingRef = useRef(false);
+  const payPlanSubmittingRef = useRef(false);
+  const payCreditsAwaitingResponseRef = useRef(false);
+  const payPlanAwaitingResponseRef = useRef(false);
 
   useEffect(() => {
     setIsLoading(false);
-    fetcher.submit(
-      {
-        log: `${globalStore?.shop} 目前在付费页面`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  }, [fetcher]);
+    void reportClientLog({
+      event: "pricing_page_view",
+      message: `${globalStore?.shop} 目前在付费页面`,
+    });
+  }, []);
 
   useEffect(() => {
-    if (payFetcher.data) {
-      if (payCreditsTraceRef.current) {
-        finishClientLogTrace(payCreditsTraceRef.current, {
-          level: payFetcher.data?.success ? "info" : "warn",
-          status: payFetcher.data?.success ? "success" : "failure",
-          message: payFetcher.data?.errorMsg,
-          context: {
-            errorCode: payFetcher.data?.errorCode,
-            hasConfirmationUrl: Boolean(
-              payFetcher.data?.response?.confirmationUrl,
-            ),
-          },
-        });
-        payCreditsTraceRef.current = null;
-      }
-      if (payFetcher.data?.success) {
-        const confirmationUrl = payFetcher.data?.response?.confirmationUrl;
-        open(confirmationUrl, "_top");
-      } else {
+    if (payFetcher.state === "submitting" || payFetcher.state === "loading") {
+      payCreditsAwaitingResponseRef.current = true;
+      return;
+    }
+
+    if (payFetcher.state !== "idle") return;
+
+    if (!payFetcher.data) {
+      if (
+        payCreditsSubmittingRef.current &&
+        payCreditsAwaitingResponseRef.current
+      ) {
+        payCreditsSubmittingRef.current = false;
+        payCreditsAwaitingResponseRef.current = false;
         setBuyButtonLoading(false);
       }
+      return;
     }
-  }, [payFetcher.data]);
+
+    payCreditsAwaitingResponseRef.current = false;
+    const confirmationUrl = payFetcher.data?.response?.confirmationUrl as
+      | string
+      | undefined;
+    const succeeded = Boolean(payFetcher.data?.success && confirmationUrl);
+
+    if (payCreditsTraceRef.current) {
+      finishClientLogTrace(payCreditsTraceRef.current, {
+        level: succeeded ? "info" : "warn",
+        status: succeeded ? "success" : "failure",
+        message: payFetcher.data?.errorMsg,
+        context: {
+          errorCode: payFetcher.data?.errorCode,
+          hasConfirmationUrl: Boolean(confirmationUrl),
+        },
+      });
+      payCreditsTraceRef.current = null;
+    }
+
+    payCreditsSubmittingRef.current = false;
+    setBuyButtonLoading(false);
+
+    if (succeeded && confirmationUrl) {
+      redirectToBillingConfirmation(confirmationUrl);
+    }
+  }, [payFetcher.state, payFetcher.data]);
 
   useEffect(() => {
-    if (payForPlanFetcher.data) {
-      if (payPlanTraceRef.current) {
-        finishClientLogTrace(payPlanTraceRef.current, {
-          level: payForPlanFetcher.data?.success ? "info" : "warn",
-          status: payForPlanFetcher.data?.success ? "success" : "failure",
-          message: payForPlanFetcher.data?.errorMsg,
-          context: {
-            errorCode: payForPlanFetcher.data?.errorCode,
-            hasConfirmationUrl: Boolean(
-              payForPlanFetcher.data?.response?.confirmationUrl,
-            ),
-          },
-        });
-        payPlanTraceRef.current = null;
-      }
-      if (payForPlanFetcher.data?.success) {
-        const confirmationUrl =
-          payForPlanFetcher.data?.response?.confirmationUrl;
-        open(confirmationUrl, "_top");
-      } else {
+    if (
+      payForPlanFetcher.state === "submitting" ||
+      payForPlanFetcher.state === "loading"
+    ) {
+      payPlanAwaitingResponseRef.current = true;
+      return;
+    }
+
+    if (payForPlanFetcher.state !== "idle") return;
+
+    if (!payForPlanFetcher.data) {
+      if (
+        payPlanSubmittingRef.current &&
+        payPlanAwaitingResponseRef.current
+      ) {
+        payPlanSubmittingRef.current = false;
+        payPlanAwaitingResponseRef.current = false;
         setPayForPlanButtonLoading("");
       }
+      return;
     }
-  }, [payForPlanFetcher.data]);
+
+    payPlanAwaitingResponseRef.current = false;
+    const confirmationUrl = payForPlanFetcher.data?.response?.confirmationUrl as
+      | string
+      | undefined;
+    const succeeded = Boolean(
+      payForPlanFetcher.data?.success && confirmationUrl,
+    );
+
+    if (payPlanTraceRef.current) {
+      finishClientLogTrace(payPlanTraceRef.current, {
+        level: succeeded ? "info" : "warn",
+        status: succeeded ? "success" : "failure",
+        message: payForPlanFetcher.data?.errorMsg,
+        context: {
+          errorCode: payForPlanFetcher.data?.errorCode,
+          hasConfirmationUrl: Boolean(confirmationUrl),
+        },
+      });
+      payPlanTraceRef.current = null;
+    }
+
+    payPlanSubmittingRef.current = false;
+    setPayForPlanButtonLoading("");
+
+    if (succeeded && confirmationUrl) {
+      redirectToBillingConfirmation(confirmationUrl);
+    }
+  }, [payForPlanFetcher.state, payForPlanFetcher.data]);
 
   useEffect(() => {
-    if (planCancelFetcher.data) {
-      if (cancelPlanTraceRef.current) {
-        finishClientLogTrace(cancelPlanTraceRef.current, {
-          status: "success",
-          context: {
-            planType: plan?.type,
-          },
-        });
-        cancelPlanTraceRef.current = null;
-      }
-      dispatch(
-        setPlan({
-          plan: {
-            id: 2,
-            type: "Free",
-            feeType: 0,
-            isInFreePlanTime: false,
-          },
-        }),
-      );
-      dispatch(setUpdateTime({ updateTime: "" }));
-      setCancelPlanWarnModal(false);
+    if (!planCancelFetcher.data || cancelRefreshHandledRef.current) return;
+    cancelRefreshHandledRef.current = true;
+
+    if (cancelPlanTraceRef.current) {
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        status: "success",
+        context: {
+          planType: plan?.type,
+        },
+      });
+      cancelPlanTraceRef.current = null;
     }
-  }, [dispatch, plan?.type, planCancelFetcher.data]);
+
+    setCancelPlanWarnModal(false);
+    setCreditsRefreshing(true);
+    const previousTotalChars = totalChars;
+    void refreshBillingBootstrap(dispatch, previousTotalChars).finally(() => {
+      setCreditsRefreshing(false);
+    });
+  }, [dispatch, plan?.type, planCancelFetcher.data, totalChars]);
 
   const plans = useMemo(
     () => [
@@ -682,7 +807,7 @@ const Index = () => {
         key: 0,
         label: t("How does the 5-day free trial work?"),
         children: t(
-          "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+          "Choosing Pro or Premium gives you 5 days of full access to all features, including your plan's full monthly credits. Cancel anytime before the trial ends to avoid billing.",
         ),
       },
       {
@@ -841,6 +966,7 @@ const Index = () => {
   };
 
   const handleCancelPlan = async () => {
+    cancelRefreshHandledRef.current = false;
     cancelPlanTraceRef.current = startClientLogTrace({
       event: "pricing_cancel_plan",
       action: "cancel_plan",
@@ -850,14 +976,16 @@ const Index = () => {
       },
     });
     try {
-      const data = await GetLatestActiveSubscribeId({
-        shop: globalStore?.shop as string,
-        server: globalStore?.server as string,
-      });
-      if (data.success) {
+      const res = await fetch(
+        `/api/billing/active-subscription?shopName=${encodeURIComponent(
+          globalStore?.shop as string,
+        )}`,
+      );
+      const data = await res.json();
+      if (data?.ok && data?.subscriptionId) {
         planCancelFetcher.submit(
           {
-            cancelId: JSON.stringify(data.response),
+            cancelId: JSON.stringify(data.subscriptionId),
           },
           { method: "POST" },
         );
@@ -866,7 +994,7 @@ const Index = () => {
       finishClientLogTrace(cancelPlanTraceRef.current, {
         level: "warn",
         status: "failure",
-        message: data?.errorMsg || "Failed to load latest active subscription",
+        message: "Failed to load latest active subscription",
       });
       cancelPlanTraceRef.current = null;
     } catch (error) {
@@ -886,6 +1014,8 @@ const Index = () => {
 
   const handlePayForCredits = () => {
     setBuyButtonLoading(true);
+    payCreditsSubmittingRef.current = true;
+    payCreditsAwaitingResponseRef.current = false;
     const selectedOption = creditOptions.find(
       (item) => item.key === selectedOptionKey,
     );
@@ -925,6 +1055,8 @@ const Index = () => {
     id: string;
   }) => {
     setPayForPlanButtonLoading(id);
+    payPlanSubmittingRef.current = true;
+    payPlanAwaitingResponseRef.current = false;
     payPlanTraceRef.current = startClientLogTrace({
       event: "pricing_buy_plan",
       action: "buy_plan",
@@ -961,7 +1093,7 @@ const Index = () => {
             />
 
             <AcountInfoCard
-              loading={isLoading}
+              loading={isLoading || creditsRefreshing}
               translation_balance={totalChars - chars || 0}
               onBuyCredits={handleOpenAddCreditsModal}
             />

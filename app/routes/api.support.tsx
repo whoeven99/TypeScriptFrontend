@@ -1,16 +1,20 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import {
-  getConversation,
-  sendMessage,
-  setContactEmail,
-} from "~/server/translateV4/support.server";
+  getConversationForShop,
+  appendShopMessage,
+  setContactEmailForShop,
+} from "~/server/support/supportStore.server";
 
-/** 翻译v4 商家端客服面板：GET 拉会话+消息（轮询），POST 发消息 / 留邮箱。 */
+/** 翻译v4 商家端客服面板：GET 拉会话+消息（轮询），POST 发消息 / 留邮箱。数据读写 TSF 本库。 */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const markSeen = new URL(request.url).searchParams.get("markSeen") === "true";
-  const conversation = await getConversation(session.shop, markSeen);
+  const conversation = await getConversationForShop(
+    session.shop,
+    session.email ?? null,
+    { markSeen },
+  );
   return json({ ok: true, conversation });
 };
 
@@ -25,8 +29,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     if (body.intent === "setEmail") {
-      const ok = await setContactEmail(session.shop, body.email ?? "");
-      return json({ ok });
+      await setContactEmailForShop(session.shop, body.email ?? "", session.email ?? null);
+      return json({ ok: true });
     }
 
     if (body.intent === "send") {
@@ -34,10 +38,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (!content.trim()) {
         return json({ ok: false, error: "消息内容不能为空" }, { status: 400 });
       }
-      const message = await sendMessage(session.shop, content);
-      if (!message) {
-        return json({ ok: false, error: "发送失败" }, { status: 502 });
-      }
+      const message = await appendShopMessage(
+        session.shop,
+        content,
+        session.email ?? null,
+      );
       return json({ ok: true, message });
     }
 
