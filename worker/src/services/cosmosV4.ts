@@ -568,14 +568,16 @@ export async function heartbeat(shopName: string, jobId: string): Promise<void> 
 export async function findPendingJobs(
   queuedStatus: TranslationV4Status,
   limit = 5,
+  offset = 0,
 ): Promise<PendingJobRef[]> {
   try {
     const { resources } = await getContainer()
       .items.query<PendingJobRef>({
         query:
-          "SELECT c.id, c.shopName, c.taskSource FROM c WHERE c.status = @status ORDER BY c.createdAt ASC OFFSET 0 LIMIT @limit",
+          "SELECT c.id, c.shopName, c.taskSource FROM c WHERE c.status = @status ORDER BY c.createdAt ASC OFFSET @offset LIMIT @limit",
         parameters: [
           { name: "@status", value: queuedStatus },
+          { name: "@offset", value: offset },
           { name: "@limit", value: limit },
         ],
       })
