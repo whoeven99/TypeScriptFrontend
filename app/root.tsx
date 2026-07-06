@@ -33,6 +33,61 @@ function isNetworkFetchError(error: unknown): boolean {
   );
 }
 
+function getErrorDetails(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+  if (error && typeof error === "object") {
+    const value = error as Record<string, unknown>;
+    return {
+      name: typeof value.name === "string" ? value.name : undefined,
+      message: typeof value.message === "string" ? value.message : undefined,
+      stack: typeof value.stack === "string" ? value.stack : undefined,
+    };
+  }
+  if (typeof error === "string") {
+    return {
+      name: undefined,
+      message: error,
+      stack: undefined,
+    };
+  }
+  return {
+    name: undefined,
+    message: undefined,
+    stack: undefined,
+  };
+}
+
+function isAbortLikeError(error: unknown): boolean {
+  const { name, message } = getErrorDetails(error);
+  if (name === "AbortError") return true;
+  if (!message) return false;
+  return /signal is aborted without reason|aborted|aborterror/i.test(message);
+}
+
+function getHtmlErrorStatusCode(error: unknown): string | null {
+  const { message } = getErrorDetails(error);
+  if (!message || !/<!doctype html/i.test(message)) return null;
+  const titleMatch = message.match(/<title>\s*(\d{3})\s*<\/title>/i);
+  if (titleMatch?.[1]) return titleMatch[1];
+  const headingMatch = message.match(/<h1[^>]*>\s*(\d{3})\s*<\/h1>/i);
+  return headingMatch?.[1] ?? null;
+}
+
+function shouldIgnoreConsoleErrorReport(args: unknown[]): boolean {
+  const firstArg = typeof args[0] === "string" ? args[0] : "";
+  const errorArg = args.find((item) => item instanceof Error) ?? args[1];
+  return (
+    /^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) &&
+    (isNetworkFetchError(errorArg) || isAbortLikeError(errorArg))
+  );
+}
+
 function runWhenIdle(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   if ("requestIdleCallback" in window) {
@@ -108,9 +163,12 @@ export function ErrorBoundary() {
   const error = useRouteError();
   console.error("Root Error:", error);
   const loggedRef = useRef(false);
+  const htmlErrorStatusCode = getHtmlErrorStatusCode(error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
+  } else if (htmlErrorStatusCode) {
+    errorCode = htmlErrorStatusCode;
   } else if (isNetworkFetchError(error)) {
     errorCode = "503";
   }
@@ -180,6 +238,7 @@ export function ErrorBoundary() {
       message: currentError.title,
       context: {
         errorCode,
+        htmlErrorStatusCode,
         isRouteErrorResponse: isRouteErrorResponse(error),
         isNetworkFetchError: isNetworkFetchError(error),
       },
@@ -291,6 +350,7 @@ export default function App() {
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (isAbortLikeError(event.reason)) return;
       void reportClientError("unhandled_rejection", event.reason, {
         shop: globalStore.shop,
         route: `${window.location.pathname}${window.location.search}`,
@@ -316,7 +376,7 @@ export default function App() {
 
     console.error = (...args: unknown[]) => {
       originalConsoleError(...args);
-      if (reporting) return;
+      if (reporting || shouldIgnoreConsoleErrorReport(args)) return;
       reporting = true;
       const errorArg = args.find((item) => item instanceof Error) ?? args[0];
       void reportClientError("console_error", errorArg, {

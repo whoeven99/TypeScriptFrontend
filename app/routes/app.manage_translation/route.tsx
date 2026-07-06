@@ -36,6 +36,7 @@ import AppSectionCard from "~/ui/components/AppSectionCard";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
 
@@ -69,8 +70,8 @@ const ITEMS_COUNT_RESOURCE_TYPES = [
   "Shipping",
 ] as const;
 
-/** 避免 15 路并行 itemsCount 压满 Render 单实例（大店 Products 统计耗时长）。 */
-const ITEMS_COUNT_SUBMIT_GAP_MS = 400;
+/** 避免 15 路统计在首屏持续压满 Render 单实例（大店 Products 统计耗时更长）。 */
+const ITEMS_COUNT_SUBMIT_GAP_MS = 800;
 
 function safeParseFormJson(value: FormDataEntryValue | null): unknown {
   if (value == null || value === "") return null;
@@ -260,7 +261,6 @@ const Index = () => {
     pagefly: false,
   });
 
-  const fetcher = useFetcher<any>();
   const appFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
@@ -691,14 +691,19 @@ const Index = () => {
   }, [appInstallList, t]);
 
   useEffect(() => {
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 目前在翻译管理页面`,
+        event: "manage_translation_page_view",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 目前在翻译管理页面`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
     appFetcher.submit(
       {
@@ -1006,14 +1011,20 @@ const Index = () => {
 
   const navigateToPricing = () => {
     navigate("/app/pricing");
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        event: "manage_translation_to_pricing",
+        action: "navigate_pricing",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
   };
 
@@ -1182,14 +1193,21 @@ const Index = () => {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                fetcher.submit(
+                void reportClientLog(
                   {
-                    log: `${globalStore?.shop} 下载批量导入文件`,
+                    event: "manage_translation_download_template",
+                    action: "download_template",
+                    shop: globalStore?.shop,
+                    level: "info",
+                    kind: "event",
+                    status: "success",
+                    message: `${globalStore?.shop} 下载批量导入文件`,
+                    context: {
+                      legacy: true,
+                      fileName: "Shop_translation.csv",
+                    },
                   },
-                  {
-                    method: "POST",
-                    action: "/log",
-                  },
+                  { beacon: true },
                 );
               }}
             >

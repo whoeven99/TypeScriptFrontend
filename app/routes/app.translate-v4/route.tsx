@@ -270,7 +270,8 @@ export default function AppTranslateV4() {
       const data = await res.json();
       if (data?.ok) setCoverage(data.summary as CoverageSummary);
     } catch (err) {
-      console.error("[translateV4] refresh coverage from cache failed:", err);
+      // Passive cache refresh should not pollute exception telemetry.
+      console.warn("[translateV4] refresh coverage from cache failed:", err);
     }
   }, [shop]);
 

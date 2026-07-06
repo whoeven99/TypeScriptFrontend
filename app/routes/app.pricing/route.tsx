@@ -42,6 +42,7 @@ import AppStatusBadge from "~/ui/components/AppStatusBadge";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
 
@@ -351,7 +352,6 @@ const Index = () => {
     [chars, totalChars],
   );
 
-  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
@@ -361,16 +361,21 @@ const Index = () => {
 
   useEffect(() => {
     setIsLoading(false);
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 目前在付费页面`,
+        event: "pricing_page_view",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 目前在付费页面`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
-  }, [fetcher]);
+  }, []);
 
   useEffect(() => {
     if (payFetcher.data) {
