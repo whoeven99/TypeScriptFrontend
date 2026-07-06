@@ -39,8 +39,24 @@ import AppStatusBadge from "~/ui/components/AppStatusBadge";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+
+function redirectToBillingConfirmation(confirmationUrl: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    window.open(confirmationUrl, "_top");
+    return true;
+  } catch {
+    try {
+      window.top!.location.href = confirmationUrl;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
 const { Title, Text, Link } = Typography;
 
@@ -74,7 +90,7 @@ const isBillingTestMode = (): boolean =>
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const { admin, redirect: shopifyRedirect } = adminAuthResult;
 
   const formData = await request.formData();
   const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -110,6 +126,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             confirmationUrl: confirmationUrl,
           });
 
+          if (confirmationUrl) {
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+          }
+
           return {
             ...orderData,
             response: {
@@ -125,6 +145,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       } catch (error) {
+        if (error instanceof Response) {
+          throw error;
+        }
         console.error("Error payInfo pricing action: ", error);
         return {
           success: false,
@@ -172,6 +195,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             confirmationUrl: confirmationUrl,
           });
 
+          if (confirmationUrl) {
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+          }
+
           return {
             ...orderData,
             response: {
@@ -187,6 +214,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: null,
         };
       } catch (error) {
+        if (error instanceof Response) {
+          throw error;
+        }
         console.error("Error payForPlan pricing action:", error);
         return {
           success: false,
@@ -350,77 +380,123 @@ const Index = () => {
     [chars, totalChars],
   );
 
-  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
   const payCreditsTraceRef = useRef<ClientLogTrace | null>(null);
   const payPlanTraceRef = useRef<ClientLogTrace | null>(null);
   const cancelPlanTraceRef = useRef<ClientLogTrace | null>(null);
+  const payCreditsSubmittingRef = useRef(false);
+  const payPlanSubmittingRef = useRef(false);
+  const payCreditsAwaitingResponseRef = useRef(false);
+  const payPlanAwaitingResponseRef = useRef(false);
 
   useEffect(() => {
     setIsLoading(false);
-    fetcher.submit(
-      {
-        log: `${globalStore?.shop} 目前在付费页面`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  }, [fetcher]);
+    void reportClientLog({
+      event: "pricing_page_view",
+      message: `${globalStore?.shop} 目前在付费页面`,
+    });
+  }, []);
 
   useEffect(() => {
-    if (payFetcher.data) {
-      if (payCreditsTraceRef.current) {
-        finishClientLogTrace(payCreditsTraceRef.current, {
-          level: payFetcher.data?.success ? "info" : "warn",
-          status: payFetcher.data?.success ? "success" : "failure",
-          message: payFetcher.data?.errorMsg,
-          context: {
-            errorCode: payFetcher.data?.errorCode,
-            hasConfirmationUrl: Boolean(
-              payFetcher.data?.response?.confirmationUrl,
-            ),
-          },
-        });
-        payCreditsTraceRef.current = null;
-      }
-      if (payFetcher.data?.success) {
-        const confirmationUrl = payFetcher.data?.response?.confirmationUrl;
-        open(confirmationUrl, "_top");
-      } else {
+    if (payFetcher.state === "submitting" || payFetcher.state === "loading") {
+      payCreditsAwaitingResponseRef.current = true;
+      return;
+    }
+
+    if (payFetcher.state !== "idle") return;
+
+    if (!payFetcher.data) {
+      if (
+        payCreditsSubmittingRef.current &&
+        payCreditsAwaitingResponseRef.current
+      ) {
+        payCreditsSubmittingRef.current = false;
+        payCreditsAwaitingResponseRef.current = false;
         setBuyButtonLoading(false);
       }
+      return;
     }
-  }, [payFetcher.data]);
+
+    payCreditsAwaitingResponseRef.current = false;
+    const confirmationUrl = payFetcher.data?.response?.confirmationUrl as
+      | string
+      | undefined;
+    const succeeded = Boolean(payFetcher.data?.success && confirmationUrl);
+
+    if (payCreditsTraceRef.current) {
+      finishClientLogTrace(payCreditsTraceRef.current, {
+        level: succeeded ? "info" : "warn",
+        status: succeeded ? "success" : "failure",
+        message: payFetcher.data?.errorMsg,
+        context: {
+          errorCode: payFetcher.data?.errorCode,
+          hasConfirmationUrl: Boolean(confirmationUrl),
+        },
+      });
+      payCreditsTraceRef.current = null;
+    }
+
+    payCreditsSubmittingRef.current = false;
+    setBuyButtonLoading(false);
+
+    if (succeeded && confirmationUrl) {
+      redirectToBillingConfirmation(confirmationUrl);
+    }
+  }, [payFetcher.state, payFetcher.data]);
 
   useEffect(() => {
-    if (payForPlanFetcher.data) {
-      if (payPlanTraceRef.current) {
-        finishClientLogTrace(payPlanTraceRef.current, {
-          level: payForPlanFetcher.data?.success ? "info" : "warn",
-          status: payForPlanFetcher.data?.success ? "success" : "failure",
-          message: payForPlanFetcher.data?.errorMsg,
-          context: {
-            errorCode: payForPlanFetcher.data?.errorCode,
-            hasConfirmationUrl: Boolean(
-              payForPlanFetcher.data?.response?.confirmationUrl,
-            ),
-          },
-        });
-        payPlanTraceRef.current = null;
-      }
-      if (payForPlanFetcher.data?.success) {
-        const confirmationUrl =
-          payForPlanFetcher.data?.response?.confirmationUrl;
-        open(confirmationUrl, "_top");
-      } else {
+    if (
+      payForPlanFetcher.state === "submitting" ||
+      payForPlanFetcher.state === "loading"
+    ) {
+      payPlanAwaitingResponseRef.current = true;
+      return;
+    }
+
+    if (payForPlanFetcher.state !== "idle") return;
+
+    if (!payForPlanFetcher.data) {
+      if (
+        payPlanSubmittingRef.current &&
+        payPlanAwaitingResponseRef.current
+      ) {
+        payPlanSubmittingRef.current = false;
+        payPlanAwaitingResponseRef.current = false;
         setPayForPlanButtonLoading("");
       }
+      return;
     }
-  }, [payForPlanFetcher.data]);
+
+    payPlanAwaitingResponseRef.current = false;
+    const confirmationUrl = payForPlanFetcher.data?.response?.confirmationUrl as
+      | string
+      | undefined;
+    const succeeded = Boolean(
+      payForPlanFetcher.data?.success && confirmationUrl,
+    );
+
+    if (payPlanTraceRef.current) {
+      finishClientLogTrace(payPlanTraceRef.current, {
+        level: succeeded ? "info" : "warn",
+        status: succeeded ? "success" : "failure",
+        message: payForPlanFetcher.data?.errorMsg,
+        context: {
+          errorCode: payForPlanFetcher.data?.errorCode,
+          hasConfirmationUrl: Boolean(confirmationUrl),
+        },
+      });
+      payPlanTraceRef.current = null;
+    }
+
+    payPlanSubmittingRef.current = false;
+    setPayForPlanButtonLoading("");
+
+    if (succeeded && confirmationUrl) {
+      redirectToBillingConfirmation(confirmationUrl);
+    }
+  }, [payForPlanFetcher.state, payForPlanFetcher.data]);
 
   useEffect(() => {
     if (planCancelFetcher.data) {
@@ -887,6 +963,8 @@ const Index = () => {
 
   const handlePayForCredits = () => {
     setBuyButtonLoading(true);
+    payCreditsSubmittingRef.current = true;
+    payCreditsAwaitingResponseRef.current = false;
     const selectedOption = creditOptions.find(
       (item) => item.key === selectedOptionKey,
     );
@@ -926,6 +1004,8 @@ const Index = () => {
     id: string;
   }) => {
     setPayForPlanButtonLoading(id);
+    payPlanSubmittingRef.current = true;
+    payPlanAwaitingResponseRef.current = false;
     payPlanTraceRef.current = startClientLogTrace({
       event: "pricing_buy_plan",
       action: "buy_plan",
