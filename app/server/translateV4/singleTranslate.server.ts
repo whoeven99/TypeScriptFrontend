@@ -1,5 +1,6 @@
 /**
- * 单字段手动翻译 —— 委托 worker 的 translateResources 管线，与自动任务逻辑一致。
+ * 单字段手动翻译 —— 委托 worker 的 translateResources 管线。
+ * 译文无值时先查 TM 缓存；已有译文时跳过缓存、强制 LLM 重译。
  */
 import { translateSingleField } from "@worker/services/syncTranslate";
 import { llmTokensToQuotaCredits } from "./quotaMultiplier.server";
@@ -12,6 +13,8 @@ export type TranslateSingleTextArgs = {
   fieldKey?: string;
   shopifyType?: string;
   aiModel?: string;
+  /** 当前已有译文；非空时跳过 TM 缓存。 */
+  existingTranslation?: string;
 };
 
 export async function translateSingleText(
@@ -25,6 +28,7 @@ export async function translateSingleText(
     fieldKey: args.fieldKey,
     shopifyType: args.shopifyType,
     aiModel: args.aiModel,
+    existingTranslation: args.existingTranslation,
   });
   return { translatedText, usedTokens };
 }

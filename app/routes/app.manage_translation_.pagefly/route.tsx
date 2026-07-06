@@ -576,6 +576,10 @@ const Index = () => {
       target: searchTerm || "",
       resourceType: record?.type,
       context: record?.default_language,
+      translated:
+        confirmData.find((item: any) => item.key === record?.key)?.value ??
+        record?.translated ??
+        "",
       key: record?.key,
       type: record?.type,
       server: server || "",
@@ -587,6 +591,10 @@ const Index = () => {
       target: searchTerm || "",
       resourceType: record?.type,
       context: record?.default_language,
+      translated:
+        confirmData.find((item: any) => item.key === record?.key)?.value ??
+        record?.translated ??
+        "",
       key: record?.key,
       type: record?.type,
       server: server || "",

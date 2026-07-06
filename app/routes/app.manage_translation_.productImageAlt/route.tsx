@@ -794,6 +794,10 @@ const Index = () => {
       target: searchTerm || "",
       resourceType: resourceType,
       context: record?.altText,
+      translated:
+        confirmData.find((item: any) => item.key === record?.imageId)?.value ??
+        record?.targetAltText ??
+        "",
       key: record?.key,
       type: "SINGLE_LINE_TEXT_FIELD",
       server: globalStore?.server || "",

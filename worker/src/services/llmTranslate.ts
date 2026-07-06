@@ -2853,6 +2853,8 @@ export type TranslatedResourceOutput = {
 export type TranslateResourcesOptions = {
   /** 与 TSF `isHandle` 对齐：`false` 时 handle 原样跳过；默认 `true`（INIT 已过滤时 blob 里本就不含 handle）。 */
   translateHandle?: boolean;
+  /** 为 true 时跳过 TM 读（digest / value cache），直接走翻译引擎。 */
+  skipTmCache?: boolean;
 };
 
 export async function translateResources(
@@ -2869,6 +2871,7 @@ export async function translateResources(
   const abortRequested = async (): Promise<boolean> =>
     shouldAbort ? Boolean(await shouldAbort()) : false;
   const translateHandle = options?.translateHandle !== false;
+  const skipTmCache = options?.skipTmCache === true;
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
@@ -2925,10 +2928,12 @@ export async function translateResources(
 
   const tmWrites: Promise<void>[] = [];
 
-  // 1b. Fire all TM digest lookups in parallel.
-  const cacheHits = await Promise.all(
-    fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
-  );
+  // 1b. Fire all TM digest lookups in parallel (skipped when caller forces fresh translate).
+  const cacheHits = skipTmCache
+    ? fieldWorks.map(() => null)
+    : await Promise.all(
+        fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
+      );
 
   // 1c. Process results: hit → credit immediately; miss → value cache or add to plan.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
@@ -2938,7 +2943,7 @@ export async function translateResources(
       rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
       continue;
     }
-    const cached = cacheHits[wi];
+    const cached = skipTmCache ? null : cacheHits[wi];
     if (cached !== null) {
       const cacheLeaked =
         (klass === "html" || klass === "json" || klass === "list") &&
@@ -2951,7 +2956,7 @@ export async function translateResources(
     }
 
     // Secondary: value-based cache for short plain-text fields.
-    if (klass === "plain") {
+    if (!skipTmCache && klass === "plain") {
       const valueCacheSource = isHandleFieldKey(f.key) ? prepareHandleSourceText(f.value) : f.value;
       const cachedByValue = await tmGetByValue(valueCacheSource, source, target, cacheModel);
       if (cachedByValue !== null) {

@@ -301,6 +301,8 @@ type SingleTextTranslateArgs = {
   type: string;
   server: string;
   resourceId: string | null; // 必传，但可 null
+  /** 管理页当前译文；有值时跳过 TM 缓存、强制 LLM 重译。 */
+  translated?: string;
 };
 
 /** 走 TSF /api/translate-v4/single（LLM 翻译 + Java 额度扣减）。 */

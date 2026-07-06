@@ -25,9 +25,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     key?: string;
     type?: string;
     resourceId?: string | null;
+    /** 管理页当前译文；有值时跳过 TM 缓存、强制 LLM 重译。 */
+    translated?: string;
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
+  const existingTranslation = body.translated ?? "";
   const source = (body.source ?? "en").trim() || "en";
   const fieldKey = body.key?.trim() || "value";
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
@@ -54,6 +57,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       source,
       fieldKey,
       shopifyType,
+      existingTranslation,
     });
     await deductQuota(shop, usedTokens);
     return json({ success: true, response: translatedText });

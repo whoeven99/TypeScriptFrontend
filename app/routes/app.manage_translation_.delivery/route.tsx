@@ -507,6 +507,7 @@ const Index = () => {
       target: searchTerm || "",
       resourceType: resourceType,
       context: record?.default_language,
+      translated: translatedValues[record?.key as string] ?? record?.translated ?? "",
       key: record?.shopifyKey,
       type: record?.type,
       server: globalStore?.server || "",

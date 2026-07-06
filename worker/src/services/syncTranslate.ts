@@ -36,6 +36,8 @@ export type TranslateSingleFieldArgs = {
   /** 字段 key，影响 handle 路由与 classifyField。默认 value。 */
   fieldKey?: string;
   shopifyType?: string;
+  /** 当前已有译文；非空时跳过 TM 缓存、强制 LLM 重译。 */
+  existingTranslation?: string;
 };
 
 export type TranslateSingleFieldResult = {
@@ -69,12 +71,19 @@ export async function translateSingleField(
     shopifyType: args.shopifyType,
   };
 
+  // 手动单行翻译：译文无值时先查 TM；已有译文时跳过缓存、强制 LLM。
+  const skipTmCache = Boolean((args.existingTranslation ?? "").trim());
+
   const { resources, usage } = await translateResources(
     [{ resourceId: "__single__", fields: [item] }],
     source,
     target,
     aiModel,
     args.shop,
+    undefined,
+    undefined,
+    undefined,
+    { skipTmCache },
   );
 
   const result = resources[0]?.results[0];
