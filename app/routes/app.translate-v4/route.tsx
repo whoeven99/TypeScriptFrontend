@@ -642,7 +642,8 @@ export default function AppTranslateV4() {
               borderRadius: 12,
               background: "var(--p-color-bg-surface-info)",
               color: "var(--p-color-text-info)",
-              border: "1px solid var(--v4-accent-primary-muted)",
+              border:
+                "1px solid var(--v4-accent-primary-muted, var(--app-accent-primary-muted))",
               display: "flex",
               alignItems: "flex-start",
               gap: 8,

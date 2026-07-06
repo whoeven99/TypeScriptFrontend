@@ -277,15 +277,9 @@ export function CreateTaskCard({
         <div
           style={{
             marginTop: 22,
-            padding: "18px 0 2px",
-            borderTop: `1px solid ${v4Colors.divider}`,
+            paddingTop: 18,
             display: "flex",
             justifyContent: "center",
-            position: "sticky",
-            bottom: -22,
-            background: v4Colors.cardBg,
-            boxShadow: "0 -8px 18px rgba(15, 23, 42, 0.06)",
-            zIndex: 2,
           }}
         >
           {submitButton}
