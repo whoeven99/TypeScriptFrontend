@@ -34,3 +34,9 @@
 - 已在 `app/root.tsx` 中增加 HTML 错误页状态码识别，后续若再次拿到 Render `502` 页面，不再统一误标为 `500`
 - 已将 `app/routes/app.manage_translation/route.tsx` 的 `ITEMS_COUNT_SUBMIT_GAP_MS` 从 `400` 调整为 `800`，先做保守降压
 - 已将 `manage_translation` 页面内纯埋点类 `/log` 请求改为 `reportClientLog(..., { beacon: true })`，减少首屏与跳转时对 fetcher/action 通道的占用
+- 已在 `app/server/translateV4/itemsCount.server.ts` 中加入 Shopify GraphQL `extensions.cost.throttleStatus` 感知，对限流场景采用自适应等待
+- 已将 `manage_translation` 首屏统计拆成优先批次与延后批次，先拉核心卡片，重统计模块延后，降低进入页面时的 cost bucket 峰值压力
+
+## Current Hypothesis
+- 结合 Shopify GraphQL Admin API 的 cost bucket 机制，`manage_translation` 的首屏 itemsCount 更可能是触发了 Shopify throttling，再被 Render 放大为上游 `502`
+- 现有改动已经从“请求间隔 + 非业务埋点卸载 + throttleStatus 自适应等待 + 首屏分批”四个方向同时降压

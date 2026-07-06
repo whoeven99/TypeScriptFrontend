@@ -27,6 +27,10 @@ import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
+import {
+  getManageTranslationLoadErrorMessage,
+  isManageTranslationRateLimitedError,
+} from "~/utils/manageTranslationErrors";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -71,7 +75,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: undefined,
         };
       }
@@ -90,14 +98,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: "",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "",
           response,
         };
       } catch (error) {
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: undefined,
         };
       }
@@ -136,7 +152,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: "",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "",
           response: {
             nodes: data.data?.translatableResourcesByIds?.nodes || [],
             pageInfo: null,
@@ -147,7 +167,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: undefined,
         };
       }
@@ -162,7 +186,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return {
         success: true,
         errorCode: 0,
-        errorMsg: "",
+        errorMsg: isManageTranslationRateLimitedError(error)
+
+          ? "RATE_LIMITED"
+
+          : "",
         response: data,
       };
 
@@ -357,6 +385,14 @@ const Index = () => {
       }
     }
   }, [dataFetcher.data]);
+  useEffect(() => {
+    if (!dataFetcher.data || dataFetcher.data.success) return;
+    setIsLoading(false);
+    shopify.toast.show(
+      getManageTranslationLoadErrorMessage(t, dataFetcher.data?.errorMsg),
+    );
+  }, [dataFetcher.data, t]);
+
 
   useEffect(() => {
     if (confirmFetcher.data?.success) {
