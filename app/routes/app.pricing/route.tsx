@@ -28,8 +28,16 @@ import {
   mutationAppPurchaseOneTimeCreate,
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
+import type { Dispatch } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
-import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
+import {
+  setChars,
+  setIsNew,
+  setPlan,
+  setTotalChars,
+  setUpdateTime,
+} from "~/store/modules/userConfig";
+import type { AppBootstrapJavaData } from "~/server/appBootstrap.server";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
@@ -42,6 +50,50 @@ import {
   reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+
+async function refreshBillingBootstrap(
+  dispatch: Dispatch,
+  previousTotalChars?: number,
+): Promise<void> {
+  const retryDelaysMs = [0, 600, 1200, 2000, 3000];
+
+  for (const delayMs of retryDelaysMs) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    try {
+      const res = await fetch("/api/app-bootstrap");
+      const data = (await res.json()) as {
+        ok?: boolean;
+        bootstrap?: AppBootstrapJavaData;
+      };
+      if (!data.ok || !data.bootstrap) continue;
+
+      const bootstrap = data.bootstrap;
+      dispatch(setPlan({ plan: bootstrap.plan }));
+      dispatch(setChars({ chars: bootstrap.chars }));
+      dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
+      if (bootstrap.updateTime) {
+        dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
+      } else {
+        dispatch(setUpdateTime({ updateTime: "" }));
+      }
+      if (bootstrap.isNew !== null && bootstrap.isNew !== undefined) {
+        dispatch(setIsNew({ isNew: bootstrap.isNew }));
+      }
+
+      if (
+        previousTotalChars === undefined ||
+        bootstrap.totalChars !== previousTotalChars
+      ) {
+        return;
+      }
+    } catch {
+      // webhook 入账可能略滞后，继续重试
+    }
+  }
+}
 
 function redirectToBillingConfirmation(confirmationUrl: string) {
   if (typeof window === "undefined") return false;
@@ -365,6 +417,7 @@ const Index = () => {
 
   //各种加载状态
   const [isLoading, setIsLoading] = useState(true);
+  const [creditsRefreshing, setCreditsRefreshing] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
@@ -386,6 +439,7 @@ const Index = () => {
   const payCreditsTraceRef = useRef<ClientLogTrace | null>(null);
   const payPlanTraceRef = useRef<ClientLogTrace | null>(null);
   const cancelPlanTraceRef = useRef<ClientLogTrace | null>(null);
+  const cancelRefreshHandledRef = useRef(false);
   const payCreditsSubmittingRef = useRef(false);
   const payPlanSubmittingRef = useRef(false);
   const payCreditsAwaitingResponseRef = useRef(false);
@@ -499,30 +553,26 @@ const Index = () => {
   }, [payForPlanFetcher.state, payForPlanFetcher.data]);
 
   useEffect(() => {
-    if (planCancelFetcher.data) {
-      if (cancelPlanTraceRef.current) {
-        finishClientLogTrace(cancelPlanTraceRef.current, {
-          status: "success",
-          context: {
-            planType: plan?.type,
-          },
-        });
-        cancelPlanTraceRef.current = null;
-      }
-      dispatch(
-        setPlan({
-          plan: {
-            id: 2,
-            type: "Free",
-            feeType: 0,
-            isInFreePlanTime: false,
-          },
-        }),
-      );
-      dispatch(setUpdateTime({ updateTime: "" }));
-      setCancelPlanWarnModal(false);
+    if (!planCancelFetcher.data || cancelRefreshHandledRef.current) return;
+    cancelRefreshHandledRef.current = true;
+
+    if (cancelPlanTraceRef.current) {
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        status: "success",
+        context: {
+          planType: plan?.type,
+        },
+      });
+      cancelPlanTraceRef.current = null;
     }
-  }, [dispatch, plan?.type, planCancelFetcher.data]);
+
+    setCancelPlanWarnModal(false);
+    setCreditsRefreshing(true);
+    const previousTotalChars = totalChars;
+    void refreshBillingBootstrap(dispatch, previousTotalChars).finally(() => {
+      setCreditsRefreshing(false);
+    });
+  }, [dispatch, plan?.type, planCancelFetcher.data, totalChars]);
 
   const plans = useMemo(
     () => [
@@ -916,6 +966,7 @@ const Index = () => {
   };
 
   const handleCancelPlan = async () => {
+    cancelRefreshHandledRef.current = false;
     cancelPlanTraceRef.current = startClientLogTrace({
       event: "pricing_cancel_plan",
       action: "cancel_plan",
@@ -1042,7 +1093,7 @@ const Index = () => {
             />
 
             <AcountInfoCard
-              loading={isLoading}
+              loading={isLoading || creditsRefreshing}
               translation_balance={totalChars - chars || 0}
               onBuyCredits={handleOpenAddCreditsModal}
             />
