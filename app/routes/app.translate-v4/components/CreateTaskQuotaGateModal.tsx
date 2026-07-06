@@ -1,8 +1,9 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { Button, Modal, Space, Typography } from "antd";
+import { Modal, Space, Typography } from "antd";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { v4CardStyle, v4Colors } from "../v4Styles";
+import Button from "~/ui/components/AppButton";
 
 const { Paragraph, Text, Title } = Typography;
 
