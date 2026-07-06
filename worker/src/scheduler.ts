@@ -2,6 +2,11 @@ import { runInitWorker } from "./workers/initWorker.js";
 import { runTranslateWorker } from "./workers/translateWorker.js";
 import { runWritebackWorker } from "./workers/writebackWorker.js";
 import { runEmailWorker } from "./workers/emailWorker.js";
+import { runShopScanWorker } from "./workers/shopScanWorker.js";
+import {
+  resetStaleShopScanJobs,
+  wakeQueuedShopScanJobsAfterDeploy,
+} from "./services/shopScanCosmos.js";
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
 import { runAutoTranslateScan } from "./services/autoTranslate.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
@@ -29,6 +34,12 @@ const EMAIL_WORKER_INTERVAL_MS = (() => {
   const n = Number(process.env.EMAIL_WORKER_INTERVAL_MS);
   return n > 0 ? n : 30_000;
 })();
+
+/** 店铺画像扫描轮询间隔（默认 10 秒；hint 立即唤醒，轮询兜底）。 */
+const SHOP_SCAN_POLL_INTERVAL_MS = Math.max(
+  2_000,
+  Number(process.env.SHOP_SCAN_POLL_INTERVAL_MS) || 10_000,
+);
 
 const ALL_STAGES = ["init", "translate", "writeback"] as const;
 type Stage = (typeof ALL_STAGES)[number];
@@ -106,6 +117,31 @@ export function startScheduler(): void {
       () => safeRun("autoJobCleanup", () => cleanupStaleEmptyAutoJobs()),
       AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS,
     );
+  }
+
+  // 店铺画像扫描：与 init 同 gate（做 Shopify 读扫描）。hint 立即唤醒 + 轮询兜底，
+  // stale-reset 自愈崩溃任务，部署重启后 re-hint 待处理扫描。
+  if (stages.has("init")) {
+    safeRun("shopScanDeployWake", async () => {
+      await wakeQueuedShopScanJobsAfterDeploy();
+    });
+    safeRun("shopScanStaleReset", async () => {
+      await resetStaleShopScanJobs();
+    });
+    setInterval(
+      () =>
+        safeRun("shopScanStaleReset", async () => {
+          await resetStaleShopScanJobs();
+        }),
+      STALE_RESET_INTERVAL_MS,
+    );
+    safeRun("shopScan", () => runShopScanWorker());
+    setInterval(
+      () => safeRun("shopScan", () => runShopScanWorker()),
+      SHOP_SCAN_POLL_INTERVAL_MS,
+    );
+  } else {
+    console.log('[scheduler] init stage 关闭，跳过店铺画像扫描');
   }
 
   // 邮件通知：翻译任务完成后发送通知邮件（独立于 pipeline stages，始终运行）。

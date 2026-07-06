@@ -60,6 +60,24 @@ export function v4ProgressKey(taskId: string): string {
   return `translate:v4:progress:${taskId}`;
 }
 
+/** 店铺画像扫描 hint 队列 key（与 worker redisV4.SHOP_SCAN_HINT_KEY 一致）。 */
+export const SHOP_SCAN_HINT_KEY = "tsf:shop_scan:hints";
+
+/** 触发端 push 一条扫描 hint，唤醒 shopScanWorker 立即处理。best-effort。 */
+export async function pushShopScanHint(payload: {
+  scanId: string;
+  shopName: string;
+}): Promise<void> {
+  try {
+    await getTranslateV4RedisClient().lpush(
+      SHOP_SCAN_HINT_KEY,
+      JSON.stringify(payload),
+    );
+  } catch {
+    // best-effort：hint 只做立即唤醒，兜底靠 worker 轮询 Cosmos
+  }
+}
+
 /** 运行时控制键：worker 在阶段中途读取后优雅暂停/取消。 */
 export function v4ControlKey(taskId: string): string {
   return `translate:v4:control:${taskId}`;

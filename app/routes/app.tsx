@@ -33,6 +33,7 @@ import {
 import { resolveBillingBinding } from "~/server/billing/index.server";
 import { BILLING_SYSTEM } from "~/server/billing/types.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIdleReady } from "~/hooks/useIdleReady";
@@ -166,6 +167,10 @@ async function runAppInitialization({
     if (accessToken && source && targets.length > 0) {
       await InsertTargets({ shop, accessToken, source, targets });
     }
+
+    // 店铺画像扫描：安装/首次进 App 触发一次性店铺扫描（内容量/画像/覆盖率/术语表）。
+    // 幂等（已有扫描则跳过），best-effort 不阻断初始化。worker 异步消费。
+    void enqueueShopScan({ shop, trigger: "install" });
   } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
   }
@@ -604,6 +609,7 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
+              <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}

@@ -71,9 +71,27 @@ model Glossary {
   rangeCode     String? // 适用语言范围（Java rangeCode）
   caseSensitive Boolean  @default(false) // Java Integer(0/1) → Boolean
   status        Int      @default(1) // 1=启用 0=停用（Java status），worker 只注入启用的
+  createdBy     String? // null=用户手动创建；"ai-shop-scan"=店铺画像扫描 AI 生成（默认 status=0 待确认）
   createdAt     DateTime @default(now())
 
   @@index([shop])
+}
+
+// 店铺画像（Shop Profile）——由「店铺画像扫描」worker 生成，每店一行（当前生效）。
+// 供翻译时注入 prompt 上下文。扫描任务与历史在 Cosmos shop_scan_jobs，大块明细在 Blob。
+model ShopProfile {
+  shop          String    @id // myshopify 域名
+  shopName      String? // 店铺展示名
+  primaryLocale String? // 默认语言
+  industry      String? // AI 推断的行业/品类
+  keywords      Json? // AI 提取的关键词 string[]
+  description   String? // AI 生成的店铺描述（翻译 prompt 上下文）
+  brandTone     String? // AI 推断的品牌语气（可选注入 prompt）
+  aiModel       String? // 生成所用模型，便于追溯
+  lastScanId    String? // 指向 Cosmos shop_scan_jobs 的最新完成扫描
+  lastScannedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 // 对应 Java WidgetConfigurations，每店一行

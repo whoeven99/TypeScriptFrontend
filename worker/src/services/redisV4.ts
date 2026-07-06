@@ -128,6 +128,42 @@ export async function requeueHintTail(
   }
 }
 
+// ── 店铺画像扫描（Shop Profile Scan）hint 队列 ─────────────────────────────────
+// 与翻译 v4 pipeline 解耦，独立 key。触发端 push、shopScanWorker 消费；
+// 兜底靠 worker 轮询 Cosmos shop_scan_jobs（CREATED/QUEUED），hint 只做「立即唤醒」。
+export const SHOP_SCAN_HINT_KEY = "tsf:shop_scan:hints";
+
+export type ShopScanHintPayload = { scanId: string; shopName: string };
+
+export async function popShopScanHint(): Promise<ShopScanHintPayload | null> {
+  try {
+    const raw = await getRedis().lpop(SHOP_SCAN_HINT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ShopScanHintPayload;
+  } catch {
+    return null;
+  }
+}
+
+export async function pushShopScanHint(payload: ShopScanHintPayload): Promise<void> {
+  try {
+    await getRedis().lpush(SHOP_SCAN_HINT_KEY, JSON.stringify(payload));
+  } catch {
+    // best-effort
+  }
+}
+
+/** Re-queue at tail so LPOP head can pick a different shop's hint next tick. */
+export async function requeueShopScanHintTail(
+  payload: ShopScanHintPayload,
+): Promise<void> {
+  try {
+    await getRedis().rpush(SHOP_SCAN_HINT_KEY, JSON.stringify(payload));
+  } catch {
+    // best-effort
+  }
+}
+
 const PROGRESS_TTL = 7 * 24 * 3600; // 7 days in seconds
 
 export function progressKey(taskId: string): string {
