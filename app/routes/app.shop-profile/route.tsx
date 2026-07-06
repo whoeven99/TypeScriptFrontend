@@ -147,6 +147,9 @@ const STAGE_STATE_LABEL: Record<ShopScanStageState, string> = {
   FAILED: "失败",
 };
 
+/** 扫描状态 Tag：白底描边，避免 success 等预设色的深色填充 */
+const SCAN_TAG_STYLE = { variant: "outlined" as const };
+
 const ACTIVE_STATUSES: ShopScanStatus[] = ["CREATED", "QUEUED", "SCANNING"];
 
 function formatDate(iso: string | null | undefined): string {
@@ -236,11 +239,15 @@ export default function ShopProfilePage() {
                   <Text>
                     状态：
                     {scan ? (
-                      <Tag color={STATUS_COLOR[scan.status]} style={{ marginLeft: 8 }}>
+                      <Tag
+                        color={STATUS_COLOR[scan.status]}
+                        style={{ marginLeft: 8 }}
+                        {...SCAN_TAG_STYLE}
+                      >
                         {STATUS_LABEL[scan.status]}
                       </Tag>
                     ) : (
-                      <Tag>未知</Tag>
+                      <Tag {...SCAN_TAG_STYLE}>未知</Tag>
                     )}
                   </Text>
                   <Text type="secondary">触发来源：{scan?.trigger ?? "-"}</Text>
@@ -254,7 +261,11 @@ export default function ShopProfilePage() {
                             stage
                           ];
                           return (
-                            <Tag key={stage} color={st ? STAGE_STATE_COLOR[st] : "default"}>
+                            <Tag
+                              key={stage}
+                              color={st ? STAGE_STATE_COLOR[st] : "default"}
+                              {...SCAN_TAG_STYLE}
+                            >
                               {STAGE_LABEL[stage]}：{st ? STAGE_STATE_LABEL[st] : "-"}
                             </Tag>
                           );

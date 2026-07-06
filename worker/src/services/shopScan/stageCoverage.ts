@@ -8,7 +8,18 @@ import type { ShopLocaleRow } from "./shopContext.js";
 /**
  * 阶段3：把已发布的非主语言同步到 ShopTargetLocale，并逐语言统计翻译覆盖率。
  * 逐模块回填 Redis items_count 缓存（v4 首页覆盖率直接受益），逐语言明细写 Blob。
+ *
+ * 覆盖率统计的模块 = 管理翻译汇总页全部卡片对应的 module，因此回填的缓存可被
+ * 管理翻译页 getItemsCountByLabel 直接命中（预热），各卡片「已翻译/总数」秒出。
+ * 相比自动翻译模块（AUTO_TRANSLATE_V4_MODULES）额外补齐两个仅手动翻译的 module：
+ *   - EMAIL_TEMPLATE（管理翻译「电子邮件通知」卡片）
+ *   - ONLINE_STORE_THEME_LOCALE_CONTENT（主题语言内容，Theme 卡片累加项之一）
  */
+const COVERAGE_MODULES: readonly string[] = [
+  ...AUTO_TRANSLATE_V4_MODULES,
+  "EMAIL_TEMPLATE",
+  "ONLINE_STORE_THEME_LOCALE_CONTENT",
+];
 
 export type CoverageRow = {
   locale: string;
@@ -61,7 +72,7 @@ export async function runCoverageStage(args: {
     let translated = 0;
     let total = 0;
 
-    for (const module of AUTO_TRANSLATE_V4_MODULES) {
+    for (const module of COVERAGE_MODULES) {
       const c = await countModuleScan(shop, accessToken, module, target.locale, heartbeat);
       perModule[module] = { total: c.total, translated: c.translated };
       total += c.total;
