@@ -198,3 +198,48 @@ export function updateLocalization({ country, language }) {
   document.body.insertAdjacentHTML("beforeend", formHtml);
   document.getElementById(formId).submit();
 }
+
+const CIWI_MANUAL_LOCALIZATION_KEY = "ciwi_manual_localization_preference";
+const CIWI_MANUAL_LOCALIZATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+export function persistManualLocalizationPreference({ country, language }) {
+  if (typeof localStorage === "undefined") return;
+  if (!country && !language) return;
+
+  try {
+    localStorage.setItem(
+      CIWI_MANUAL_LOCALIZATION_KEY,
+      JSON.stringify({
+        country: country || "",
+        language: language || "",
+        updatedAt: Date.now(),
+      }),
+    );
+  } catch {}
+}
+
+export function getManualLocalizationPreference() {
+  if (typeof localStorage === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(CIWI_MANUAL_LOCALIZATION_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    const updatedAt =
+      typeof parsed.updatedAt === "number" ? parsed.updatedAt : 0;
+
+    if (!updatedAt || Date.now() - updatedAt > CIWI_MANUAL_LOCALIZATION_TTL_MS) {
+      localStorage.removeItem(CIWI_MANUAL_LOCALIZATION_KEY);
+      return null;
+    }
+
+    return {
+      country: typeof parsed.country === "string" ? parsed.country : "",
+      language: typeof parsed.language === "string" ? parsed.language : "",
+    };
+  } catch {
+    return null;
+  }
+}

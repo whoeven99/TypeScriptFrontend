@@ -1,4 +1,6 @@
 
+import { reportClientLog } from "~/utils/clientLog";
+
 export type ShopLocaleOption = {
   value: string;
   label: string;
@@ -12,6 +14,7 @@ export type CreateTranslateV4TasksParams = {
   isCover: boolean;
   isHandle: boolean;
   targetOptions: ShopLocaleOption[];
+  shop?: string;
   fetchFn?: typeof fetch;
   apiUrl?: string;
 };
@@ -64,6 +67,7 @@ async function createOneTask(
   url: string,
   body: Record<string, unknown>,
   target: string,
+  shop?: string,
 ): Promise<{ target: string; jobId?: string; error?: string }> {
   try {
     const response = await fetchFn(url, {
@@ -77,13 +81,70 @@ async function createOneTask(
       error?: string;
     };
     if (!response.ok || payload.ok === false) {
+      void reportClientLog({
+        event: "translate_v4_create_task_request",
+        action: "create_target_task",
+        shop,
+        kind: "action",
+        level: response.ok ? "warn" : "error",
+        status: "failure",
+        message: payload.error || `HTTP ${response.status}`,
+        context: {
+          target,
+          source: body.source,
+          modules: body.modules,
+          aiModel: body.aiModel,
+          httpStatus: response.status,
+        },
+      });
       return { target, error: payload.error || `HTTP ${response.status}` };
     }
     if (!payload.jobId) {
+      void reportClientLog({
+        event: "translate_v4_create_task_request",
+        action: "create_target_task",
+        shop,
+        kind: "action",
+        level: "error",
+        status: "failure",
+        message: "Missing job id in create task response",
+        context: {
+          target,
+          source: body.source,
+          modules: body.modules,
+          aiModel: body.aiModel,
+          httpStatus: response.status,
+        },
+      });
       return { target, error: "v4.create.missingJobId" };
     }
     return { target, jobId: payload.jobId };
-  } catch {
+  } catch (error) {
+    void reportClientLog({
+      event: "translate_v4_create_task_request",
+      action: "create_target_task",
+      shop,
+      kind: "network",
+      level: "error",
+      status: "failure",
+      message: "Create task request failed",
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : {
+              message: String(error),
+            },
+      context: {
+        target,
+        source: body.source,
+        modules: body.modules,
+        aiModel: body.aiModel,
+      },
+    });
     return { target, error: "v4.create.networkError" };
   }
 }
@@ -111,7 +172,7 @@ export async function createTranslateV4Tasks(
 
   const settled = await Promise.allSettled(
     targets.map((target) =>
-      createOneTask(fetchFn, url, { ...baseBody, target }, target),
+      createOneTask(fetchFn, url, { ...baseBody, target }, target, params.shop),
     ),
   );
 

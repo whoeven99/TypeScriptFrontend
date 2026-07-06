@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   Divider,
   Layout,
@@ -9,6 +8,7 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
@@ -613,7 +613,6 @@ const Index = () => {
     }
   };
 
-  
   const refreshCurrentPageData = () => {
     const currentResourceIds = navigationsData
       .map((item: any) => item?.resourceId)
@@ -632,7 +631,7 @@ const Index = () => {
       },
     );
   };
-const onNext = () => {
+  const onNext = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {

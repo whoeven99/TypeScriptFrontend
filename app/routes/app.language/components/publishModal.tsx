@@ -1,10 +1,15 @@
 import { useFetcher } from "@remix-run/react";
-import { Button, Flex, Modal, Space, Switch, Table, Typography } from "antd";
+import { Alert, Flex, Modal, Space, Switch, Table, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { LanguagesDataType, MarketType } from "../route";
 import styles from "../styles.module.css";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 import {
   setPublishLoadingState,
   setPublishState,
@@ -44,21 +49,35 @@ const PublishModal: React.FC<PublishModalProps> = ({
 
   const [published, setPublished] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
+  const [modalAlert, setModalAlert] = useState<{
+    type: "warning" | "error";
+    message: string;
+  } | null>(null);
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
   // 2. 用一个 ref 缓存上一次的值
   const fetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
+  const handleCloseModal = () => {
+    setModalAlert(null);
+    setIsModalOpen(false);
+  };
 
   useEffect(() => {
+    if (!publishFetcher.data) {
+      return;
+    }
+
+    dispatch(
+      setPublishLoadingState({
+        locale: publishLangaugeCode,
+        loading: false,
+      }),
+    );
+
     if (publishFetcher.data?.success) {
       const errorMsg = publishFetcher.data?.errorMsg;
-      if (errorMsg) {
-        shopify.toast.show(publishFetcher.data?.errorMsg);
-        const errorCode = publishFetcher.data?.errorCode;
-        if (errorCode == 10002) return;
-      }
       const shopLocaleUpdate = publishFetcher.data?.response?.shopLocaleUpdate;
       const webPresenceUpdate =
         publishFetcher.data?.response?.webPresenceUpdate;
@@ -145,11 +164,32 @@ const PublishModal: React.FC<PublishModalProps> = ({
           }
         }
       }
+      if (errorMsg) {
+        setModalAlert({
+          type: "warning",
+          message: getTranslateV4ErrorMessage(
+            t,
+            errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_PARTIAL_FAILED,
+          ),
+        });
+        return;
+      }
 
+      setModalAlert(null);
       shopify.toast.show(t("Save successfully"));
       setIsModalOpen(false);
+      return;
     }
-  }, [publishFetcher.data]);
+    setModalAlert({
+      type: "error",
+      message: getTranslateV4ErrorMessage(
+        t,
+        publishFetcher.data?.errorMsg,
+        TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_FAILED,
+      ),
+    });
+  }, [dispatch, publishFetcher.data, publishLangaugeCode, t]);
 
   useEffect(() => {
     if (!publishLangaugeCode) return;
@@ -167,6 +207,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
       ),
     );
     setPublished(selectedLanguage?.published || false);
+    setModalAlert(null);
   }, [markets, publishLangaugeCode, isVisible]);
 
   const columns = [
@@ -186,13 +227,14 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Switch
             checked={record.published}
             onChange={(checked) => {
+              setModalAlert(null);
               setDataSource(
                 dataSource.map((item) =>
                   item.key === record.key
                     ? {
-                      ...item,
-                      published: checked,
-                    }
+                        ...item,
+                        published: checked,
+                      }
                     : item,
                 ),
               );
@@ -204,6 +246,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
   ];
 
   const onSave = () => {
+    setModalAlert(null);
     let publishInfo = null;
     let webPresencesData = null;
     if (selectedLanguage) {
@@ -261,10 +304,10 @@ const PublishModal: React.FC<PublishModalProps> = ({
         languageName: selectedLanguage?.localeName,
       })}
       open={isVisible}
-      onCancel={() => setIsModalOpen(false)}
+      onCancel={handleCloseModal}
       footer={
         <Space>
-          <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
+          <Button onClick={handleCloseModal}>{t("Cancel")}</Button>
           <Button
             type="primary"
             disabled={
@@ -288,9 +331,24 @@ const PublishModal: React.FC<PublishModalProps> = ({
         size={"large"}
         style={{ width: "100%", margin: "12px 0 0" }}
       >
+        {modalAlert ? (
+          <Alert
+            type={modalAlert.type}
+            showIcon
+            message={modalAlert.message}
+            closable
+            onClose={() => setModalAlert(null)}
+          />
+        ) : null}
         <Flex justify="space-between" align="center">
           <Text strong>{t("Language Publishing Status")}</Text>
-          <Switch value={published} onChange={(e) => setPublished(e)} />
+          <Switch
+            value={published}
+            onChange={(e) => {
+              setModalAlert(null);
+              setPublished(e);
+            }}
+          />
         </Flex>
         <div className={styles.publishModal_webpresence_card}>
           <Text strong>{t("Publish to Selected Domains")}</Text>

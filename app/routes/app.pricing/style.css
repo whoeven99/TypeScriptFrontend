@@ -61,8 +61,11 @@
   border-radius: 20px;
   border: 1px solid rgba(84, 103, 255, 0.16);
   box-shadow: var(--app-shadow-card);
-  background:
-    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.92) 100%),
+  background: linear-gradient(
+      180deg,
+      rgba(84, 103, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.92) 100%
+    ),
     var(--p-color-bg-surface);
 }
 
@@ -77,8 +80,11 @@
   border: 1px solid rgba(84, 103, 255, 0.16) !important;
   box-shadow: var(--app-shadow-card) !important;
   border-radius: 20px !important;
-  background:
-    linear-gradient(180deg, rgba(84, 103, 255, 0.08), rgba(255,255,255,0.96)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(84, 103, 255, 0.08),
+    rgba(255, 255, 255, 0.96)
+  ) !important;
 }
 
 .pricing-page .ant-alert {
@@ -161,14 +167,20 @@
 }
 
 .pricing-plan-card--current {
-  background:
-    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.98) 100%),
+  background: linear-gradient(
+      180deg,
+      rgba(84, 103, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.98) 100%
+    ),
     var(--p-color-bg-surface);
 }
 
 .pricing-plan-card--recommended {
-  background:
-    linear-gradient(180deg, rgba(84, 103, 255, 0.10) 0%, rgba(255, 255, 255, 0.98) 100%),
+  background: linear-gradient(
+      180deg,
+      rgba(84, 103, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.98) 100%
+    ),
     var(--p-color-bg-surface);
   border-color: rgba(84, 103, 255, 0.22) !important;
   box-shadow: var(--app-shadow-card-strong);
@@ -209,11 +221,29 @@
   margin-bottom: 4px;
 }
 
+.pricing-plan-card__primary-action {
+  margin-top: 20px;
+}
+
 .pricing-plan-card__feature {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.pricing-plan-downgrade {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.pricing-plan-downgrade .ant-typography {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.pricing-plan-downgrade .ant-typography a {
+  font-weight: 500;
 }
 
 .pricing-comparison-table .ant-table-thead > tr > th {

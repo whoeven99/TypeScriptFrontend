@@ -8,6 +8,10 @@ import {
   setAutoTranslate,
 } from "~/server/translateV4/targetLocale.server";
 import { listLanguageStatusFromV4 } from "~/server/translateV4/languageStatus.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 /**
  * GET /api/translate-v4/target-locale —— 列出本店每语言状态。
@@ -23,7 +27,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (err) {
     console.error("[target-locale] list failed:", err);
-    return json({ success: false, response: [] });
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_LIST_FAILED,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        response: [],
+      },
+      { status: appError.status },
+    );
   }
 };
 
@@ -41,13 +56,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     if (body.intent === "setAuto") {
-      if (!body.locale) return json({ success: false, errorMsg: "缺少 locale" });
+      if (!body.locale) {
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_REQUIRED,
+        );
+        return json(
+          {
+            success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+          },
+          { status: appError.status },
+        );
+      }
       await setAutoTranslate(session.shop, body.locale, Boolean(body.autoTranslate));
       return json({ success: true, response: { locale: body.locale, autoTranslate: !!body.autoTranslate } });
     }
-    return json({ success: false, errorMsg: "未知 intent" });
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.UNKNOWN_ACTION,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+      },
+      { status: appError.status },
+    );
   } catch (err) {
     console.error("[target-locale] action failed:", err);
-    return json({ success: false, errorMsg: err instanceof Error ? err.message : String(err) });
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_SAVE_FAILED,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+      },
+      { status: appError.status },
+    );
   }
 };

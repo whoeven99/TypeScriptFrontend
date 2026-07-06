@@ -9,13 +9,26 @@ import {
   saveSwitcherConfigForAdmin,
 } from "~/server/storefront/switcherAdmin.server";
 import type { SwitcherConfigWriteInput } from "~/lib/switcherConstants";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 function ok(response: unknown) {
   return json({ success: true, errorCode: null, errorMsg: null, response });
 }
 
-function fail(errorMsg: string, errorCode = 10001) {
-  return json({ success: false, errorCode, errorMsg, response: null });
+function fail(errorKey: keyof typeof TRANSLATE_V4_ERROR_KEYS) {
+  const error = buildTranslateV4Error(TRANSLATE_V4_ERROR_KEYS[errorKey]);
+  return json(
+    {
+      success: false,
+      errorCode: error.errorCode,
+      errorMsg: error.errorMsg,
+      response: null,
+    },
+    { status: error.status },
+  );
 }
 
 /** GET /api/translate-v4/switcher —— 读取 Switcher 配置（Turso）。 */
@@ -26,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return ok(await getSwitcherConfigForAdmin(session.shop));
   } catch (err) {
     console.error("[switcher] get failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+    return fail("SWITCHER_LOAD_FAILED");
   }
 };
 
@@ -47,6 +60,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return ok(saved);
   } catch (err) {
     console.error("[switcher] save failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+    return fail("SWITCHER_SAVE_FAILED");
   }
 };

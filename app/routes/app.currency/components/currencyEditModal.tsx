@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, InputNumber, Modal, Select, Space, Typography } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, InputNumber, Modal, Select, Space, Typography } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher } from "@remix-run/react";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { CurrencyDataType } from "../route";
@@ -7,6 +8,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const { Title, Text } = Typography;
 
@@ -58,6 +63,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">(
     "",
   );
+  const [modalError, setModalError] = useState<string>("");
 
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.currencyTableData.rows);
@@ -86,12 +92,21 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         setExRateSelectValue(undefined);
         setRoundingSelectValue(undefined);
         setExRateValue(0);
+        setModalError("");
       } else {
+        const errorMsg = getTranslateV4ErrorMessage(
+          t,
+          updateFetcher.data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.CURRENCY_UPDATE_FAILED,
+        );
         setExRateError(true);
-        setExRateErrorMsg(updateFetcher.data?.errorMsg);
+        setExRateErrorMsg(errorMsg);
+        setExRateStatus("error");
+        setUpdateFetcherLoading(false);
+        setModalError(errorMsg);
       }
     }
-  }, [updateFetcher.data]);
+  }, [dataSource, dispatch, setIsModalOpen, t, updateFetcher.data]);
 
   useEffect(() => {
     if (selectedRow?.exchangeRate === "Auto") {
@@ -130,6 +145,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
 
   const handleConfirm = () => {
     setUpdateFetcherLoading(true);
+    setModalError("");
     if (exRateSelectValue === "Auto") {
       updateFetcher.submit(
         {
@@ -162,6 +178,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       }
       setExRateError(false);
       setExRateErrorMsg("");
+      setModalError("");
 
       updateFetcher.submit(
         {
@@ -185,14 +202,19 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
     setRoundingSelectValue(undefined);
     setExRateError(false);
     setExRateErrorMsg("");
+    setExRateStatus("");
     setExRateValue(0);
+    setUpdateFetcherLoading(false);
+    setModalError("");
   };
 
   const handleExRateSelectChange = (value: string) => {
+    setModalError("");
     setExRateSelectValue(value);
   };
 
   const handleRoundingSelectChange = (value: string) => {
+    setModalError("");
     setRoundingSelectValue(value);
   };
 
@@ -235,6 +257,15 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        {modalError ? (
+          <Alert
+            type="error"
+            showIcon
+            message={modalError}
+            closable
+            onClose={() => setModalError("")}
+          />
+        ) : null}
         <div>
           <Title level={5}>{t("Exchange rate")}</Title>
           <Select
@@ -259,7 +290,10 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
                 placeholder={t("Please enter Exchange rate")}
                 value={exRateValue}
                 style={{ width: 120 }}
-                onChange={(e) => setExRateValue(e || 0)}
+                onChange={(e) => {
+                  setModalError("");
+                  setExRateValue(e || 0);
+                }}
                 status={exRateStatus}
               />
               <Text>{selectedRow?.currencyCode}</Text>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEditor } from "@tiptap/react";
 import TextAlign from "@tiptap/extension-text-align";
 import TableRow from "@tiptap/extension-table-row";
@@ -13,6 +13,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import Tiptap from "app/components/richTextInput/richTextInput";
+import { normalizeManageTableRichTextContent } from "./manageTableRichText";
 
 // 该文件单独成 chunk（tiptap + prosemirror 约 468K），由 manageTableInput 懒加载，
 // 只有渲染 HTML 字段时才会下载，纯文本字段完全不引入编辑器。
@@ -55,18 +56,32 @@ const EditableEditor: React.FC<EditableEditorProps> = ({
   isSuccess,
   isRtl,
 }) => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [htmlContent, setHtmlContent] = useState<string>("");
+  const extensions = useMemo(() => buildExtensions(), []);
+  const initializedRef = useRef(false);
+  const latestRecordRef = useRef(record);
+  const latestHandleInputChangeRef = useRef(handleInputChange);
+  const rawValue = translatedValues[record?.key] || "";
+  const normalizedValue = useMemo(
+    () => normalizeManageTableRichTextContent(rawValue),
+    [rawValue],
+  );
+
+  useEffect(() => {
+    latestRecordRef.current = record;
+    latestHandleInputChangeRef.current = handleInputChange;
+  }, [record, handleInputChange]);
 
   const targetEditor = useEditor(
     {
-      extensions: buildExtensions(),
-      content: translatedValues[record?.key] || "",
+      extensions,
+      content: normalizedValue,
       immediatelyRender: false,
       onUpdate: ({ editor }) => {
-        if (!isInitialized) return;
-        const html = editor.getHTML(); // 原始 HTML
-        handleInputChange(record, html);
+        if (!initializedRef.current) return;
+        latestHandleInputChangeRef.current(
+          latestRecordRef.current,
+          editor.getHTML(),
+        );
       },
     },
     [],
@@ -75,28 +90,25 @@ const EditableEditor: React.FC<EditableEditorProps> = ({
   useEffect(() => {
     if (!targetEditor) return;
 
-    const externalHtml = translatedValues[record?.key] || "";
-
     // 只在首次加载或内容真的不同的时候才更新
-    if (!isInitialized) {
-      targetEditor.commands.setContent(externalHtml, { emitUpdate: false });
-      setIsInitialized(true);
-    } else {
-      // 如果外部内容变了但和当前内容不同，再更新
-      const currentHtml = targetEditor.getHTML();
-      if (currentHtml !== externalHtml) {
-        targetEditor.commands.setContent(externalHtml, {
-          emitUpdate: false,
-        });
-        setHtmlContent(externalHtml);
-      }
+    if (!initializedRef.current) {
+      targetEditor.commands.setContent(normalizedValue, { emitUpdate: false });
+      initializedRef.current = true;
+      return;
     }
-  }, [targetEditor, translatedValues, record.key]);
+
+    const currentHtml = targetEditor.getHTML();
+    if (currentHtml !== normalizedValue) {
+      targetEditor.commands.setContent(normalizedValue, {
+        emitUpdate: false,
+      });
+    }
+  }, [targetEditor, normalizedValue]);
 
   return (
     <Tiptap
       editor={targetEditor}
-      htmlContent={translatedValues[record?.key]}
+      htmlContent={normalizedValue}
       setHtmlContent={(e) => handleInputChange(record, e)}
       isSuccess={isSuccess}
       isrtl={isRtl}
@@ -113,18 +125,26 @@ const ReadonlyEditor: React.FC<ReadonlyEditorProps> = ({
   defaultValue,
   isRtl,
 }) => {
-  const [htmlContent, setHtmlContent] = useState<string>(defaultValue);
+  const extensions = useMemo(() => buildExtensions(), []);
+  const normalizedValue = useMemo(
+    () => normalizeManageTableRichTextContent(defaultValue),
+    [defaultValue],
+  );
+  const [htmlContent, setHtmlContent] = useState<string>(normalizedValue);
 
   const originalEditor = useEditor({
     editable: false,
-    extensions: buildExtensions(),
-    content: defaultValue || "", // initial content
+    extensions,
+    content: normalizedValue || "", // initial content
     immediatelyRender: false, // 🔹 SSR 环境下必须加这个
   });
 
   useEffect(() => {
-    originalEditor?.commands.setContent(defaultValue);
-  }, [defaultValue]);
+    if (!originalEditor) return;
+    if (originalEditor.getHTML() === normalizedValue) return;
+    originalEditor.commands.setContent(normalizedValue, { emitUpdate: false });
+    setHtmlContent(normalizedValue);
+  }, [normalizedValue, originalEditor]);
 
   return (
     <Tiptap

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Empty, Popconfirm, Tabs } from "antd";
 import { useTranslation } from "react-i18next";
 import type { CSSProperties } from "react";
@@ -19,6 +19,7 @@ import { getV4JobNotice } from "../v4JobNotice";
 type Props = {
   job: TranslationJobProgressSummary;
   translateSlotBusy: boolean;
+  highlighted?: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
   onBuyCredits: () => void;
@@ -31,6 +32,7 @@ type Props = {
 export function CompactJobCard({
   job,
   translateSlotBusy,
+  highlighted = false,
   expanded,
   onToggleExpand,
   onBuyCredits,
@@ -73,12 +75,17 @@ export function CompactJobCard({
 
   return (
     <div
+      className={highlighted ? "v4-task-card-spotlight" : undefined}
       style={{
         ...v4CardStyle,
         padding: expanded ? "14px 16px" : "12px 16px",
         marginBottom: 10,
         background: expanded ? v4Colors.cardSubdued : v4Colors.cardBg,
-        border: expanded ? "1px solid #d6e4ff" : "none",
+        border: highlighted
+          ? `1px solid ${v4Colors.primary}`
+          : expanded
+            ? "1px solid #d6e4ff"
+            : "none",
         boxShadow: "var(--app-shadow-card)",
       }}
     >
@@ -89,6 +96,7 @@ export function CompactJobCard({
             <span style={{ fontWeight: 800, fontSize: 14, color: v4Colors.text, minWidth: 0, overflowWrap: "anywhere" }}>
               {formatLocaleRoute(job.source, job.target)}
             </span>
+            {highlighted ? <JustCreatedBadge /> : null}
             {isAutoV4TaskSource(job.taskSource) ? <AutoTaskBadge /> : null}
             <StatusTag status={job.status} label={displayStatusLabel} />
             {stageSummary ? (
@@ -188,6 +196,28 @@ export function CompactJobCard({
         />
       ) : null}
     </div>
+  );
+}
+
+function JustCreatedBadge() {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "2px 8px",
+        borderRadius: 999,
+        background: v4Colors.primarySoft,
+        color: v4Colors.primary,
+        fontSize: 11,
+        fontWeight: 700,
+        lineHeight: 1.5,
+      }}
+    >
+      {t("v4.tasks.justCreated")}
+    </span>
   );
 }
 
@@ -325,11 +355,13 @@ const deleteLinkButtonStyle: CSSProperties = {
 
 export function TaskQueueSection({
   jobs,
+  spotlightTaskIds = [],
   translateSlotBusy,
   onBuyCredits,
   onAction,
 }: {
   jobs: TranslationJobProgressSummary[];
+  spotlightTaskIds?: string[];
   translateSlotBusy: boolean;
   onBuyCredits: () => void;
   onAction: Props["onAction"];
@@ -340,6 +372,17 @@ export function TaskQueueSection({
   );
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const spotlightTaskIdSet = useMemo(
+    () => new Set(spotlightTaskIds),
+    [spotlightTaskIds],
+  );
+
+  useEffect(() => {
+    if (spotlightTaskIds.length === 0) return;
+    setTab("current");
+    setExpandedTaskId(spotlightTaskIds[0] ?? null);
+    setHistoryExpanded(false);
+  }, [spotlightTaskIds]);
 
   const currentJobs = useMemo(
     () =>
@@ -394,6 +437,39 @@ export function TaskQueueSection({
         </span>
       </div>
 
+      {spotlightTaskIds.length > 0 ? (
+        <div
+          className="v4-row-enter"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            marginBottom: 12,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: v4Colors.infoBg,
+            border: `1px solid ${v4Colors.primarySoft}`,
+            color: v4Colors.info,
+          }}
+        >
+          <span
+            aria-hidden
+            className="v4-livedot"
+            style={{
+              width: 8,
+              height: 8,
+              marginTop: 6,
+              borderRadius: "50%",
+              background: "currentColor",
+              flexShrink: 0,
+            }}
+          />
+          <span style={{ fontSize: 13, lineHeight: "20px", overflowWrap: "anywhere" }}>
+            {t("v4.tasks.createdHint", { count: spotlightTaskIds.length })}
+          </span>
+        </div>
+      ) : null}
+
       <div style={{ marginBottom: 12 }}>
         <Tabs
           activeKey={tab}
@@ -443,6 +519,7 @@ export function TaskQueueSection({
             <CompactJobCard
               key={job.taskId}
               job={job}
+              highlighted={spotlightTaskIdSet.has(job.taskId)}
               translateSlotBusy={translateSlotBusy}
               expanded={expandedTaskId === job.taskId}
               onBuyCredits={onBuyCredits}

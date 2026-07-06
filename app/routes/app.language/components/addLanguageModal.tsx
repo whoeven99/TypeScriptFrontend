@@ -5,13 +5,13 @@ import {
   Table,
   Space,
   message,
-  Button,
   InputRef,
   Collapse,
   Checkbox,
   Spin,
   Empty,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import {
@@ -22,6 +22,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateLanguageTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const { Panel } = Collapse;
 
@@ -292,6 +297,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   const dispatch = useDispatch();
   const searchRef = useRef<InputRef>(null);
+  const addLanguageTraceRef = useRef<ClientLogTrace | null>(null);
 
   const fetcher = useFetcher<any>();
   const addFetcher = useFetcher<any>();
@@ -331,6 +337,13 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         setFilteredLanguages(updatedLocales);
         setIsModalOpen(false);
         setConfirmButtonDisable(false);
+        finishClientLogTrace(addLanguageTraceRef.current, {
+          status: "success",
+          context: {
+            locales: data?.map((item: any) => item?.locale) || [],
+          },
+        });
+        addLanguageTraceRef.current = null;
         fetcher.submit(
           {
             log: `${shop} 添加语言${data?.map((item: any) => item?.locale)}`,
@@ -343,9 +356,27 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       } else if (addFetcher.data && !addFetcher.data?.success) {
         shopify.toast.show(t("Add failed"));
         setConfirmButtonDisable(false);
+        finishClientLogTrace(addLanguageTraceRef.current, {
+          level: "warn",
+          status: "failure",
+          message: "Add language failed",
+          context: {
+            locales: allSelectedKeys,
+          },
+        });
+        addLanguageTraceRef.current = null;
       }
     }
-  }, [addFetcher.data]);
+  }, [
+    addFetcher.data,
+    allSelectedKeys,
+    dispatch,
+    fetcher,
+    languageLocaleData,
+    shop,
+    t,
+    updatedLocales,
+  ]);
 
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -447,6 +478,15 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
+    addLanguageTraceRef.current = startClientLogTrace({
+      event: "language_add",
+      action: "add_languages",
+      shop,
+      context: {
+        locales: allSelectedKeys,
+        primaryLanguage: source?.code,
+      },
+    });
     const formData = new FormData();
     formData.append(
       "addLanguages",
@@ -564,8 +604,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
                       e.stopPropagation(); // 阻止事件冒泡，防止触发面板展开/收起
                       handleRegionChange(state, !isRegionChecked(state));
                     }}
-                  // onChange={(e) => handleRegionChange(state, e.target.checked)}
-                  // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
+                    // onChange={(e) => handleRegionChange(state, e.target.checked)}
+                    // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
                   />
                   <span style={{ marginLeft: 8 }}>{state.name}</span>
                 </>

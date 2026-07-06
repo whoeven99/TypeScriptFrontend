@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Input, Space, Button, Typography, Select, Flex } from "antd";
+import { Alert, Modal, Input, Space, Typography, Select, Flex } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useSelector } from "react-redux";
-import { LanguagesDataType } from "~/routes/app.language/route";
+import type { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { globalStore } from "~/globalStore";
+import { insertLiquidCompat, type LiquidTableRow } from "../liquidClient";
 import {
-  insertLiquidCompat,
-  type LiquidTableRow,
-} from "../liquidClient";
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const { Text } = Typography;
 
@@ -69,6 +71,10 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
   );
 
   const [loadingStatusArray, setLoadingStatusArray] = useState<string[]>([]);
+  const [modalAlert, setModalAlert] = useState<{
+    type: "warning" | "error";
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (defaultData) {
@@ -81,7 +87,13 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
         languageCode: "",
       });
     }
+    setModalAlert(null);
   }, [defaultData]);
+
+  const handleCloseModal = () => {
+    setModalAlert(null);
+    setIsModalHide();
+  };
 
   const handleConfirm = async (id?: string) => {
     let isSameRuleError = true;
@@ -99,6 +111,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     }
 
     if (isSameRuleError) {
+      setModalAlert(null);
       setLoadingStatusArray((prev) => [...prev, "submitting"]);
       const data = await insertLiquidCompat({
         migrated,
@@ -135,13 +148,23 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
         });
         setIsModalHide();
       } else {
-        shopify.toast.show(data.errorMsg);
+        setModalAlert({
+          type: "error",
+          message: getTranslateV4ErrorMessage(
+            t,
+            data.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.LIQUID_SAVE_FAILED,
+          ),
+        });
       }
       setLoadingStatusArray((prev) =>
         prev.filter((item) => item !== "submitting"),
       );
     } else {
-      shopify.toast.show(t("You cannot add two conflicting rules."));
+      setModalAlert({
+        type: "warning",
+        message: t("You cannot add two conflicting rules."),
+      });
     }
   };
 
@@ -149,11 +172,11 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
     <Modal
       title={title}
       open={open}
-      onCancel={setIsModalHide}
+      onCancel={handleCloseModal}
       centered
       footer={[
         <Space key="updateCustomTransModal_footer">
-          <Button onClick={setIsModalHide}>{t("Cancel")}</Button>
+          <Button onClick={handleCloseModal}>{t("Cancel")}</Button>
           <Button
             onClick={() => handleConfirm(defaultData?.key)}
             type="primary"
@@ -166,6 +189,15 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        {modalAlert ? (
+          <Alert
+            type={modalAlert.type}
+            showIcon
+            message={modalAlert.message}
+            closable
+            onClose={() => setModalAlert(null)}
+          />
+        ) : null}
         <Text>{t("Keep translation consistent across your store")}</Text>
         <Flex
           gap={8}
@@ -187,6 +219,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
               placeholder={t("Please enter original text")}
               value={formData.sourceText}
               onChange={(e) => {
+                setModalAlert(null);
                 setFormData({
                   ...formData,
                   sourceText: e.target.value,
@@ -208,6 +241,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
               placeholder={t("Please enter escaped text")}
               value={formData.targetText}
               onChange={(e) => {
+                setModalAlert(null);
                 setFormData({
                   ...formData,
                   targetText: e.target.value,
@@ -223,8 +257,10 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
             options={options}
             style={{ width: "100%" }}
             onChange={(e) => {
+              setModalAlert(null);
               setFormData({
                 ...formData,
+                languageCode: e,
                 languageCode: e,
               });
             }}
