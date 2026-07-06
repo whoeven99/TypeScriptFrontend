@@ -255,9 +255,12 @@ export default function ShopProfilePage() {
             </Title>
             {scan && (
               <Tag
-                color={STATUS_COLOR[scan.status]}
-                style={{ marginLeft: 4 }}
-                {...SCAN_TAG_STYLE}
+                style={{
+                  marginLeft: 4,
+                  color: STATUS_TONE[scan.status],
+                  borderColor: STATUS_TONE[scan.status],
+                  background: "transparent",
+                }}
               >
                 {STATUS_LABEL[scan.status]}
               </Tag>
@@ -519,7 +522,6 @@ export default function ShopProfilePage() {
                     size="small"
                     pagination={false}
                     dataSource={moduleRows}
-                    scroll={{ y: 260 }}
                     columns={[
                       { title: "模块", dataIndex: "module", key: "module", ellipsis: true },
                       {
@@ -561,7 +563,6 @@ export default function ShopProfilePage() {
                       size="small"
                       pagination={false}
                       dataSource={coverageRows}
-                      scroll={{ y: 260 }}
                       columns={[
                         { title: "语言", dataIndex: "locale", key: "locale", width: 80 },
                         {
