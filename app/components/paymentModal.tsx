@@ -1,5 +1,4 @@
 import {
-  Button,
   Divider,
   Modal,
   Space,
@@ -14,6 +13,7 @@ import { useSelector } from "react-redux";
 import useReport from "../../scripts/eventReport";
 import "./styles.css";
 import { v4CardStyle, v4Colors } from "~/routes/app.translate-v4/v4Styles";
+import Button from "~/ui/components/AppButton";
 
 const { Title, Text } = Typography;
 
@@ -39,7 +39,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
-  const orderFetcher = useFetcher<any>();
   const { reportClick } = useReport();
   const { plan } = useSelector((state: any) => state.userConfig);
   const isV4 = variant === "v4";

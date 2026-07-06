@@ -13,7 +13,14 @@ import {
   Checkbox,
 } from "antd";
 import Button from "~/ui/components/AppButton";
-import { useEffect, useState, startTransition, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  startTransition,
+  useMemo,
+  useRef,
+} from "react";
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -62,6 +69,7 @@ import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
 import { getTranslatePagePath } from "~/lib/translateNavigation";
+import { message } from "~/ui/message";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
@@ -72,6 +80,21 @@ import {
   getTranslateV4ErrorMessage,
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
+import {
+  createTranslateV4Tasks,
+  type ShopLocaleOption,
+} from "~/lib/createTranslateV4Tasks";
+import type { ShopQuota } from "~/server/translateV4/quota.server";
+import { DEFAULT_AI_MODEL, DEFAULT_MODULE_KEYS } from "../app.translate-v4/constants";
+import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
+import { CreateTaskCard } from "../app.translate-v4/components/CreateTaskCard";
+import { CreateTaskQuotaGateModal } from "../app.translate-v4/components/CreateTaskQuotaGateModal";
+import {
+  formatV4CreateTasksMessage,
+  translateV4Message,
+} from "../app.translate-v4/v4I18n";
+import { localeRegionCode } from "../app.translate-v4/localeDisplay";
+import { v4Colors } from "../app.translate-v4/v4Styles";
 
 const { Text } = Typography;
 
@@ -327,10 +350,11 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { plan } = useSelector((state: any) => state.userConfig);
-
-  //用户默认语言数据
-  const { source } = useSelector((state: any) => state.userConfig);
+  const { plan, source, isNew } = useSelector((state: any) => ({
+    plan: state.userConfig?.plan,
+    source: state.userConfig?.source,
+    isNew: state.userConfig?.isNew ?? null,
+  }));
 
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -360,6 +384,19 @@ const Index = () => {
     useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [autoTranslateAlert, setAutoTranslateAlert] = useState<string>("");
+  const [translateModalOpen, setTranslateModalOpen] = useState(false);
+  const [translateTargets, setTranslateTargets] = useState<string[]>([]);
+  const [translateModuleKeys, setTranslateModuleKeys] =
+    useState<string[]>(DEFAULT_MODULE_KEYS);
+  const [translateAiModel, setTranslateAiModel] =
+    useState<string>(DEFAULT_AI_MODEL);
+  const [translateIsCover, setTranslateIsCover] = useState(false);
+  const [translateIsHandle, setTranslateIsHandle] = useState(false);
+  const [translateCreating, setTranslateCreating] = useState(false);
+  const [translateQuotaGateMode, setTranslateQuotaGateMode] = useState<
+    "trial" | "pricing" | null
+  >(null);
+  const [quota, setQuota] = useState<ShopQuota | null>(null);
   const hasSelected = useMemo(
     () => selectedRowKeys.length > 0,
     [selectedRowKeys],
@@ -382,6 +419,28 @@ const Index = () => {
   const webPresencesFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
   const location = useLocation();
+  const planType = plan?.type?.trim() || null;
+
+  const targetOptions = useMemo<ShopLocaleOption[]>(
+    () =>
+      dataSource.map((item) => ({
+        value: item.locale,
+        label: item.localeName ? `${item.name} (${item.localeName})` : item.name,
+      })),
+    [dataSource],
+  );
+
+  const refreshQuota = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
+      );
+      const data = await res.json();
+      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+    } catch (error) {
+      console.error("[language] refresh v4 quota failed:", error);
+    }
+  }, [shop]);
 
   useEffect(() => {
     const formData = new FormData();
@@ -420,6 +479,10 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    void refreshQuota();
+  }, [refreshQuota]);
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -766,7 +829,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => navigateToTranslate([record.locale])}
+            onClick={() => openTranslateModal([record.locale])}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -780,13 +843,17 @@ const Index = () => {
     },
   ];
 
-  const navigateToTranslate = (selectedLanguageCode: string[]) => {
-    navigate(getTranslatePagePath(), {
-      state: {
-        from: "/app/language",
-        selectedLanguageCode: selectedLanguageCode,
-      },
-    });
+  const openTranslateModal = (selectedLanguageCode: string[]) => {
+    const nextTargets = selectedLanguageCode.filter((locale) =>
+      targetOptions.some((option) => option.value === locale),
+    );
+    setTranslateTargets(nextTargets);
+    setTranslateModuleKeys(DEFAULT_MODULE_KEYS);
+    setTranslateAiModel(DEFAULT_AI_MODEL);
+    setTranslateIsCover(false);
+    setTranslateIsHandle(false);
+    setTranslateModalOpen(true);
+    void refreshQuota();
     fetcher.submit(
       {
         log: `${shop} 前往翻译${selectedLanguageCode?.join(",")}, 从语言页面点击`,
@@ -798,6 +865,94 @@ const Index = () => {
     );
     reportClick("language_list_translate");
   };
+
+  const handleCreateTranslateTasks = useCallback(async () => {
+    if (!source?.code) {
+      message.warning(t("Primary language not found"));
+      return;
+    }
+
+    const normalizedPlanType = planType?.trim().toLowerCase() || "";
+    const hasPaidPlan =
+      normalizedPlanType !== "" && normalizedPlanType !== "free";
+    const remainingCredits = quota?.remaining ?? null;
+    const shouldGateByCredits =
+      remainingCredits != null &&
+      remainingCredits <= 0 &&
+      !hasPaidPlan &&
+      !plan?.isInFreePlanTime;
+
+    if (shouldGateByCredits) {
+      if (isNew === null) {
+        message.info(
+          t("Checking your trial eligibility. Please try again in a moment."),
+        );
+        return;
+      }
+      setTranslateQuotaGateMode(isNew ? "trial" : "pricing");
+      return;
+    }
+
+    setTranslateCreating(true);
+    try {
+      const result = await createTranslateV4Tasks({
+        source: source.code,
+        targets: translateTargets,
+        modules: expandV2ModuleKeys(translateModuleKeys),
+        aiModel: translateAiModel,
+        isCover: translateIsCover,
+        isHandle: translateIsHandle,
+        targetOptions,
+        shop,
+      });
+
+      if (result.validationError) {
+        message.warning(translateV4Message(result.validationError, t));
+        return;
+      }
+
+      const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
+      if (result.created.length === 0) {
+        message.error(summary);
+        return;
+      }
+
+      if (result.failed.length > 0) {
+        message.warning(summary, 4);
+      } else {
+        message.success(summary);
+      }
+
+      setTranslateModalOpen(false);
+      navigate(getTranslatePagePath(), {
+        state: {
+          from: "/app/language",
+          focusTaskQueue: true,
+          spotlightTaskIds: result.created.map((item) => item.jobId),
+        },
+      });
+    } catch (error) {
+      console.error("[language] create v4 task failed:", error);
+      message.error(t("v4.createFailedRetry"));
+    } finally {
+      setTranslateCreating(false);
+    }
+  }, [
+    isNew,
+    navigate,
+    plan,
+    planType,
+    quota?.remaining,
+    shop,
+    source?.code,
+    t,
+    targetOptions,
+    translateAiModel,
+    translateIsCover,
+    translateIsHandle,
+    translateModuleKeys,
+    translateTargets,
+  ]);
 
   const navigateToManage = (selectedLanguageCode: string) => {
     navigate(`/app/manage_translation?language=${selectedLanguageCode}`);
@@ -1145,14 +1300,7 @@ const Index = () => {
                           <Button
                             type="primary"
                             style={{ width: "100%" }}
-                            onClick={() => {
-                              navigate(getTranslatePagePath(), {
-                                state: {
-                                  from: "/app/language",
-                                  selectedLanguageCode: [item.locale],
-                                },
-                              });
-                            }}
+                            onClick={() => openTranslateModal([item.locale])}
                           >
                             {t("Translate")}
                           </Button>
@@ -1191,6 +1339,64 @@ const Index = () => {
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleData={languageLocaleData}
       />
+      <Modal
+        open={translateModalOpen}
+        onCancel={() => setTranslateModalOpen(false)}
+        footer={null}
+        centered
+        destroyOnHidden
+        width={760}
+        closeIcon={
+          <span
+            aria-hidden
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 24,
+              height: 24,
+              fontSize: 18,
+              color: v4Colors.textMuted,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </span>
+        }
+        styles={{
+          content: {
+            padding: 0,
+            overflow: "hidden",
+            borderRadius: 20,
+            border: `1px solid ${v4Colors.cardBorder}`,
+            background: v4Colors.cardBg,
+            boxShadow: "var(--app-shadow-card-strong)",
+          },
+          body: {
+            padding: 0,
+            maxHeight: "min(720px, calc(100vh - 96px))",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <CreateTaskCard
+          targetOptions={targetOptions}
+          targets={translateTargets}
+          onTargetsChange={setTranslateTargets}
+          modules={translateModuleKeys}
+          onModulesChange={setTranslateModuleKeys}
+          creating={translateCreating}
+          onCreate={handleCreateTranslateTasks}
+          aiModel={translateAiModel}
+          onAiModelChange={setTranslateAiModel}
+          isCover={translateIsCover}
+          onIsCoverChange={setTranslateIsCover}
+          isHandle={translateIsHandle}
+          onIsHandleChange={setTranslateIsHandle}
+          advancedDefaultOpen
+          submitPlacement="footer-center"
+        />
+      </Modal>
       <DeleteConfirmModal
         isVisible={deleteConfirmModalVisible}
         setVisible={setDeleteConfirmModalVisible}
@@ -1238,14 +1444,10 @@ const Index = () => {
             </Button>
             <Button
               type="primary"
-              onClick={() =>
-                navigate(getTranslatePagePath(), {
-                  state: {
-                    from: "/app/language",
-                    selectedLanguageCode: [noFirstTranslationLocale],
-                  },
-                })
-              }
+              onClick={() => {
+                setNoFirstTranslation(false);
+                openTranslateModal([noFirstTranslationLocale]);
+              }}
             >
               {t("Translate")}
             </Button>
@@ -1263,6 +1465,11 @@ const Index = () => {
           )}
         </Text>
       </Modal>
+      <CreateTaskQuotaGateModal
+        open={translateQuotaGateMode !== null}
+        mode={translateQuotaGateMode ?? "pricing"}
+        onClose={() => setTranslateQuotaGateMode(null)}
+      />
     </Page>
   );
 };
