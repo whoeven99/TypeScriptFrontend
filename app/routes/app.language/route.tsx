@@ -1346,6 +1346,23 @@ const Index = () => {
         centered
         destroyOnHidden
         width={760}
+        closeIcon={
+          <span
+            aria-hidden
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 24,
+              height: 24,
+              fontSize: 18,
+              color: v4Colors.textMuted,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </span>
+        }
         styles={{
           content: {
             padding: 0,
@@ -1374,6 +1391,8 @@ const Index = () => {
           onIsCoverChange={setTranslateIsCover}
           isHandle={translateIsHandle}
           onIsHandleChange={setTranslateIsHandle}
+          advancedDefaultOpen
+          submitPlacement="footer-center"
         />
       </Modal>
       <DeleteConfirmModal
