@@ -4,6 +4,7 @@ import {
   applyJsonSlotTranslations,
   extractJsonTextSlots,
   isListFormat,
+  shouldTranslateMetafieldJson,
   tryParseJsonContainer,
   type JsonTextSlot,
   type JsonValue,
@@ -1772,7 +1773,9 @@ export function classifyField(
     if (shopifyType === "LIST_SINGLE_LINE_TEXT_FIELD" && isListFormat(value)) {
       return "list";
     }
-    if (tryParseJsonContainer(value) !== undefined) return "json";
+    if (tryParseJsonContainer(value) !== undefined) {
+      return shouldTranslateMetafieldJson(value, shopifyType) ? "json" : "skip";
+    }
   }
   if (value !== undefined && isHtml(value)) return "html";
   return "plain";
