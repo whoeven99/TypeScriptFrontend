@@ -18,9 +18,61 @@ type ToastApi = {
   hide?: (id: unknown) => void;
 };
 
+type ToastPatchState = {
+  originalShow: ToastApi["show"];
+};
+
+const toastPatchStateMap = new WeakMap<object, ToastPatchState>();
+
 function getToast(): ToastApi | null {
   const s = (globalThis as { shopify?: { toast?: ToastApi } }).shopify;
   return s?.toast ?? null;
+}
+
+export function patchToastDeduplication(dedupeWindowMs = 1200): () => void {
+  const toast = getToast();
+  if (!toast?.show) return () => {};
+
+  const toastObject = toast as object;
+  const currentState = toastPatchStateMap.get(toastObject);
+  if (currentState) {
+    return () => {};
+  }
+
+  const originalShow = toast.show.bind(toast);
+  const recentToastMap = new Map<string, number>();
+
+  toast.show = ((content: string, options?: ToastShowOptions) => {
+    const text =
+      typeof content === "string" ? content.trim() : String(content ?? "").trim();
+    const now = Date.now();
+
+    for (const [key, timestamp] of recentToastMap) {
+      if (now - timestamp > Math.max(dedupeWindowMs * 4, 8000)) {
+        recentToastMap.delete(key);
+      }
+    }
+
+    if (text) {
+      const dedupeKey = `${options?.isError ? "error" : "normal"}:${text}`;
+      const lastShownAt = recentToastMap.get(dedupeKey);
+      if (typeof lastShownAt === "number" && now - lastShownAt < dedupeWindowMs) {
+        return undefined;
+      }
+      recentToastMap.set(dedupeKey, now);
+    }
+
+    return originalShow(content, options);
+  }) as ToastApi["show"];
+
+  toastPatchStateMap.set(toastObject, { originalShow });
+
+  return () => {
+    const state = toastPatchStateMap.get(toastObject);
+    if (!state) return;
+    toast.show = state.originalShow;
+    toastPatchStateMap.delete(toastObject);
+  };
 }
 
 /** antd 用秒，App Bridge 用毫秒；未传用 3s。 */

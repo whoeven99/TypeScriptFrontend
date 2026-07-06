@@ -14,6 +14,7 @@ import store from "./store";
 import { useEffect, useRef } from "react";
 import { createHead } from "remix-island";
 import { globalStore } from "./globalStore";
+import { patchToastDeduplication } from "./ui/message";
 import { reportClientError } from "./utils/clientLog";
 
 import "./styles.css";
@@ -333,6 +334,37 @@ export default function App() {
     }
     return runWhenIdle(loadSupportChatScript);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let cleanup = () => {};
+    let patchTimer: number | null = null;
+
+    const tryPatchToast = () => {
+      const hasToast = Boolean(
+        (globalThis as { shopify?: { toast?: { show?: unknown } } }).shopify?.toast
+          ?.show,
+      );
+      if (!hasToast) return false;
+      cleanup = patchToastDeduplication(1500);
+      return true;
+    };
+
+    if (!tryPatchToast()) {
+      patchTimer = window.setInterval(() => {
+        if (tryPatchToast() && patchTimer != null) {
+          window.clearInterval(patchTimer);
+          patchTimer = null;
+        }
+      }, 500);
+    }
+
+    return () => {
+      if (patchTimer != null) window.clearInterval(patchTimer);
+      cleanup();
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
