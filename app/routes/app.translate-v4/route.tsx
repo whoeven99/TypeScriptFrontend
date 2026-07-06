@@ -593,11 +593,6 @@ export default function AppTranslateV4() {
     [jobs],
   );
 
-  const translateQueue = useMemo(
-    () => jobs.filter((j) => !j.isTerminal && j.status === "TRANSLATE_QUEUED"),
-    [jobs],
-  );
-
   const remainingCredits = quota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
@@ -633,45 +628,6 @@ export default function AppTranslateV4() {
         <div className="v4-enter">
           <PageHeaderBar credits={remainingCredits} planType={planType} />
         </div>
-
-        {translateQueue.length > 0 ? (
-          <div
-            className="v4-enter"
-            style={{
-              marginBottom: 16,
-              padding: "12px 16px",
-              borderRadius: 12,
-              background: "var(--p-color-bg-surface-info)",
-              color: "var(--p-color-text-info)",
-              border:
-                "1px solid var(--v4-accent-primary-muted, var(--app-accent-primary-muted))",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              fontSize: 13,
-              lineHeight: "20px",
-              boxShadow: "var(--app-shadow-card)",
-            }}
-          >
-            <span
-              aria-hidden
-              className="v4-livedot"
-              style={{
-                width: 8,
-                height: 8,
-                marginTop: 6,
-                borderRadius: "50%",
-                background: "currentColor",
-                flexShrink: 0,
-              }}
-            />
-            <span>
-              {translateSlotBusy
-                ? t("v4.queueBusy", { count: translateQueue.length })
-                : t("v4.queueWaiting", { count: translateQueue.length })}
-            </span>
-          </div>
-        ) : null}
 
         <div
           style={{
