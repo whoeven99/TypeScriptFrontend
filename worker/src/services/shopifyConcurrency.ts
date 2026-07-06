@@ -1,9 +1,9 @@
 /**
- * 按 shop 的 Shopify 写入自适应并发。
+ * 按 shop 的 Shopify API 自适应并发。
  *
  * shopifyFetch 每次响应后调用 noteShopifyThrottle，依据 extensions.cost.throttleStatus
  * 与 429 实时调节并发：桶富余 → 提速，桶紧张 / 429 → 降速。
- * writeback / verify 用 runShopifyAdaptive 跑，并发随 cap 动态增减。
+ * init / writeback / verify 用 runShopifyAdaptive 跑，并发随 cap 动态增减。
  */
 const MIN_CAP = 1;
 const MAX_CAP = Math.max(1, Number(process.env.SHOPIFY_MAX_CONCURRENCY) || 10);
@@ -91,6 +91,22 @@ export function noteShopifyThrottle(
   }
 }
 
+export type RunShopifyAdaptiveOptions = {
+  /** 并发上限（如 init 的 module 数）；默认仅受 getShopifyCap / MAX_CAP 约束。 */
+  maxConcurrency?: number;
+  /** 为 true 时任一项失败则 reject（init 需要）；默认 false 仅打日志（writeback）。 */
+  propagateErrors?: boolean;
+};
+
+function effectiveShopifyCap(shop: string, maxConcurrency?: number): number {
+  const adaptive = getShopifyCap(shop);
+  const ceiling =
+    maxConcurrency != null && maxConcurrency > 0
+      ? Math.min(maxConcurrency, MAX_CAP)
+      : MAX_CAP;
+  return Math.max(MIN_CAP, Math.min(adaptive, ceiling));
+}
+
 /**
  * 自适应并发跑一批任务：在飞数量随 getShopifyCap(shop) 动态增减。
  * cap 上升时通过定时 pump 尽快加并发（不必等慢请求先完成）。
@@ -99,29 +115,48 @@ export async function runShopifyAdaptive<T>(
   shop: string,
   items: T[],
   fn: (item: T, index: number) => Promise<void>,
+  options: RunShopifyAdaptiveOptions = {},
 ): Promise<void> {
   if (items.length === 0) return;
 
+  const { maxConcurrency, propagateErrors = false } = options;
+
   let next = 0;
   let active = 0;
-  let lastSeenCap = getShopifyCap(shop);
+  let lastSeenCap = effectiveShopifyCap(shop, maxConcurrency);
   let capWatch: ReturnType<typeof setInterval> | null = null;
+  let firstError: unknown = null;
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    const finish = () => {
+      if (capWatch) clearInterval(capWatch);
+      if (firstError) reject(firstError);
+      else resolve();
+    };
+
     const pump = () => {
-      if (next >= items.length && active === 0) {
-        if (capWatch) clearInterval(capWatch);
-        resolve();
+      if (firstError) {
+        if (active === 0) finish();
         return;
       }
-      const cap = Math.max(MIN_CAP, getShopifyCap(shop));
+      if (next >= items.length && active === 0) {
+        finish();
+        return;
+      }
+      const cap = effectiveShopifyCap(shop, maxConcurrency);
       lastSeenCap = cap;
       while (active < cap && next < items.length) {
         const i = next++;
         active++;
         Promise.resolve()
           .then(() => fn(items[i], i))
-          .catch((e) => console.error(`[shopifyAdaptive] item ${i} failed:`, e))
+          .catch((e) => {
+            if (propagateErrors) {
+              if (!firstError) firstError = e;
+            } else {
+              console.error(`[shopifyAdaptive] item ${i} failed:`, e);
+            }
+          })
           .finally(() => {
             active--;
             pump();
@@ -130,8 +165,8 @@ export async function runShopifyAdaptive<T>(
     };
 
     capWatch = setInterval(() => {
-      const cap = getShopifyCap(shop);
-      if (cap > lastSeenCap && next < items.length) {
+      const cap = effectiveShopifyCap(shop, maxConcurrency);
+      if (cap > lastSeenCap && next < items.length && !firstError) {
         lastSeenCap = cap;
         pump();
       }
