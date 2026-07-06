@@ -1,6 +1,7 @@
 import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import {
+  Alert,
   Space,
   Card,
   Typography,
@@ -8,16 +9,21 @@ import {
   Select,
   ColorPicker,
   Slider,
-  Button,
   Popconfirm,
   Flex,
   Modal,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useTranslation } from "react-i18next";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useFetcher,
   useLoaderData,
@@ -34,13 +40,14 @@ import {
 import { useSelector } from "react-redux";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { queryShopBaseConfigData } from "~/api/admin";
-import SwitcherSettingCard from "./components/switcherSettingCard";
-const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import StorefrontTabs from "~/components/storefrontTabs";
+import SwitcherSettingCard from "./components/switcherSettingCard";
+
+const { Text, Title } = Typography;
 
 const initialLocalization = {
   languages: [
@@ -127,29 +134,39 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           };
         } else {
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.SWITCHER_LOAD_FAILED,
+          );
           return {
             success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
             response: undefined,
           };
         }
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.SWITCHER_LOAD_FAILED,
+        );
         return {
           success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
           response: undefined,
         };
       }
-    default:
+    default: {
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.UNKNOWN_ACTION,
+      );
       return {
         success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
         response: undefined,
       };
+    }
   }
 };
 
@@ -194,6 +211,7 @@ const Index = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [saveAlert, setSaveAlert] = useState<string>("");
   const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
     useState<boolean>(false);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
@@ -598,6 +616,7 @@ const Index = () => {
 
   const handleSave = async () => {
     setUpdateLoading(true);
+    setSaveAlert("");
     const data = await saveSwitcherConfigCompat({
       migrated,
       shop,
@@ -609,7 +628,13 @@ const Index = () => {
       setEditData(data.response);
       shopify.toast.show(t("Switcher configuration updated successfully"));
     } else {
-      shopify.toast.show(t("Switcher configuration update failed"));
+      setSaveAlert(
+        getTranslateV4ErrorMessage(
+          t,
+          data?.errorMsg,
+          TRANSLATE_V4_ERROR_KEYS.SWITCHER_SAVE_FAILED,
+        ),
+      );
     }
     setUpdateLoading(false);
     if (isGeoLocationEnabled) {
@@ -629,6 +654,7 @@ const Index = () => {
 
   const handleCancel = () => {
     shopify.saveBar.hide("switcher-save-bar");
+    setSaveAlert("");
     if (originalData) {
       setIsIncludedFlag(originalData.includedFlag);
       setLanguageSelector(originalData.languageSelector);
@@ -715,6 +741,15 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
+              {saveAlert ? (
+                <Alert
+                  type="error"
+                  showIcon
+                  message={saveAlert}
+                  closable
+                  onClose={() => setSaveAlert("")}
+                />
+              ) : null}
               <Card
                 loading={isLoading}
                 style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
@@ -725,26 +760,29 @@ const Index = () => {
                   style={{ display: "flex" }}
                 >
                   <Flex justify="space-between">
-                    <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                    <Title
+                      level={5}
+                      style={{ fontSize: 14, color: "var(--app-color-text)" }}
+                    >
                       {t("Selector Auto IP position configuration:")}
                     </Title>
                     {(plan?.type == "Free" ||
                       typeof plan?.type === "undefined") && (
-                        <Popconfirm
-                          title=""
-                          description={t(
-                            "This feature is available only with the paid plan.",
-                          )}
-                          trigger="hover"
-                          showCancel={false}
-                          okText={t("Upgrade")}
-                          onConfirm={() => navigate("/app/pricing")}
-                        >
-                          <InfoCircleOutlined
-                            style={{ paddingBottom: "0.5rem" }}
-                          />
-                        </Popconfirm>
-                      )}
+                      <Popconfirm
+                        title=""
+                        description={t(
+                          "This feature is available only with the paid plan.",
+                        )}
+                        trigger="hover"
+                        showCancel={false}
+                        okText={t("Upgrade")}
+                        onConfirm={() => navigate("/app/pricing")}
+                      >
+                        <InfoCircleOutlined
+                          style={{ paddingBottom: "0.5rem" }}
+                        />
+                      </Popconfirm>
+                    )}
                   </Flex>
 
                   <Flex justify="space-between">
@@ -752,7 +790,7 @@ const Index = () => {
                     <Switch
                       className={
                         plan?.type == "Free" ||
-                          typeof plan?.type === "undefined"
+                        typeof plan?.type === "undefined"
                           ? defaultStyles.Switch_disable
                           : ""
                       }
@@ -790,7 +828,10 @@ const Index = () => {
                   boxShadow: "var(--app-shadow-card)",
                 }}
               >
-                <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                <Title
+                  level={5}
+                  style={{ fontSize: 14, color: "var(--app-color-text)" }}
+                >
                   {t("Selector type configuration:")}
                 </Title>
                 <Select
@@ -821,7 +862,10 @@ const Index = () => {
                   size="middle"
                   style={{ display: "flex" }}
                 >
-                  <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+                  <Title
+                    level={5}
+                    style={{ fontSize: 14, color: "var(--app-color-text)" }}
+                  >
                     {t("Selector style configuration:")}
                   </Title>
                   <div
@@ -950,7 +994,10 @@ const Index = () => {
                 boxShadow: "var(--app-shadow-card)",
               }}
             >
-              <Title level={5} style={{ fontSize: 14, color: "var(--app-color-text)" }}>
+              <Title
+                level={5}
+                style={{ fontSize: 14, color: "var(--app-color-text)" }}
+              >
                 {t("Preview")}
               </Title>
               <div
@@ -1004,12 +1051,12 @@ const Index = () => {
                     position: "relative",
                     top:
                       selectorPosition === "top_left" ||
-                        selectorPosition === "top_right"
+                      selectorPosition === "top_right"
                         ? ((Number(positionData) * 81) / 100).toString() + "%"
                         : (
-                          ((100 - Number(positionData)) * 81) /
-                          100
-                        ).toString() + "%",
+                            ((100 - Number(positionData)) * 81) /
+                            100
+                          ).toString() + "%",
                     height: "auto",
                     display: "block",
                     zIndex: "1000",
@@ -1023,12 +1070,12 @@ const Index = () => {
                       position: "absolute", // 改为绝对定位
                       left:
                         selectorPosition === "top_left" ||
-                          selectorPosition === "bottom_left"
+                        selectorPosition === "bottom_left"
                           ? "0"
                           : "auto",
                       right:
                         selectorPosition === "top_right" ||
-                          selectorPosition === "bottom_right"
+                        selectorPosition === "bottom_right"
                           ? "0"
                           : "auto",
                       background: backgroundColor,
@@ -1047,12 +1094,12 @@ const Index = () => {
                           position: "absolute",
                           bottom:
                             selectorPosition === "bottom_left" ||
-                              selectorPosition === "bottom_right"
+                            selectorPosition === "bottom_right"
                               ? "100%"
                               : "auto",
                           top:
                             selectorPosition === "top_left" ||
-                              selectorPosition === "top_right"
+                            selectorPosition === "top_right"
                               ? "100%"
                               : "auto",
                           background: backgroundColor,
@@ -1141,12 +1188,12 @@ const Index = () => {
                               style={{
                                 bottom:
                                   selectorPosition === "bottom_left" ||
-                                    selectorPosition === "bottom_right"
+                                  selectorPosition === "bottom_right"
                                     ? "100%"
                                     : "auto",
                                 top:
                                   selectorPosition === "top_left" ||
-                                    selectorPosition === "top_right"
+                                  selectorPosition === "top_right"
                                     ? "100%"
                                     : "auto",
                                 display: isLanguageOpen ? "block" : "none",
@@ -1249,12 +1296,12 @@ const Index = () => {
                                 display: isCurrencyOpen ? "block" : "none",
                                 bottom:
                                   selectorPosition === "bottom_left" ||
-                                    selectorPosition === "bottom_right"
+                                  selectorPosition === "bottom_right"
                                     ? "100%"
                                     : "auto",
                                 top:
                                   selectorPosition === "top_left" ||
-                                    selectorPosition === "top_right"
+                                  selectorPosition === "top_right"
                                     ? "100%"
                                     : "auto",
                               }}
@@ -1310,10 +1357,10 @@ const Index = () => {
                       )}
                       <span id="display-text" className={styles.main_box_text}>
                         {(languageSelector && currencySelector) ||
-                          (!languageSelector && !currencySelector)
+                        (!languageSelector && !currencySelector)
                           ? selectedLanguage?.localeName +
-                          " / " +
-                          selectedCurrency?.localeName
+                            " / " +
+                            selectedCurrency?.localeName
                           : languageSelector
                             ? selectedLanguage?.localeName
                             : selectedCurrency?.localeName}

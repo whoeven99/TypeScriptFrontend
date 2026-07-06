@@ -3,50 +3,13 @@ import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import "./styles.css";
 import "./manageTableInput.css";
+import { sanitizeManageTableHtml } from "./manageTableRichText";
 
 // tiptap 富文本编辑器（约 468K，含 prosemirror）单独拆成 chunk，
 // 仅在渲染 HTML 字段时按需加载，纯文本字段不会引入它。
 const ManageTableInputEditor = lazy(() => import("./manageTableInputEditor"));
 
 const { TextArea } = Input;
-
-const sanitizeHtmlForPreview = (html: string) => {
-  if (typeof document === "undefined") return "";
-
-  const doc = document.implementation.createHTMLDocument("");
-  doc.body.innerHTML = html;
-
-  doc.body
-    .querySelectorAll("script, iframe, object, embed, link, meta, style")
-    .forEach((node) => node.remove());
-
-  doc.body.querySelectorAll("*").forEach((node) => {
-    [...node.attributes].forEach((attr) => {
-      const attrName = attr.name.toLowerCase();
-      const attrValue = attr.value.trim().toLowerCase();
-      const unsafeUrl =
-        (attrName === "href" || attrName === "src") &&
-        (attrValue.startsWith("javascript:") || attrValue.startsWith("data:"));
-
-      if (attrName.startsWith("on") || attrName === "srcdoc" || unsafeUrl) {
-        node.removeAttribute(attr.name);
-      }
-    });
-  });
-
-  doc.body.querySelectorAll("img").forEach((node) => {
-    node.removeAttribute("width");
-    node.removeAttribute("height");
-    node.removeAttribute("align");
-    node.style.maxWidth = "100%";
-    node.style.height = "auto";
-    node.style.float = "none";
-    node.style.display = "block";
-    node.style.margin = "8px auto";
-  });
-
-  return doc.body.innerHTML;
-};
 
 interface ManageTableInputProps {
   record: any;
@@ -91,7 +54,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
 
   const readonlyHtml = useMemo(() => {
     if (!mounted) return "";
-    return sanitizeHtmlForPreview(defaultValue);
+    return sanitizeManageTableHtml(defaultValue);
   }, [defaultValue, mounted]);
 
   const renderEditor = (mode: "edit" | "readonly") => {
@@ -157,7 +120,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         };
       });
     }
-  }, [record]);
+  }, [record, setTranslatedValues]);
 
   if (
     handleInputChange &&

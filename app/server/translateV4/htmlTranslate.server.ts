@@ -27,6 +27,63 @@ const ATTR_HASH_FILENAME_RE =
   /^[a-fA-F0-9]{8,}(-[a-zA-Z0-9]+)*$|^\S+\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|pdf)$/i;
 
 const BR_PLACEHOLDER = "⟦BR⟧";
+// ASCII 占位符：属性经 node-html-parser 序列化后仍完整保留。
+// 历史上 \x00T{n}\x00 在属性里会变成 u0000T{n}u0000，正则无法还原。
+const TEXT_PLACEHOLDER_PREFIX = "__HXLAT_";
+const TEXT_PLACEHOLDER_SUFFIX = "__";
+
+/** 还原时需兼容的历史占位符（含属性序列化后的 NUL 残骸）。 */
+const PLACEHOLDER_REPLACE_RES: readonly RegExp[] = [
+  /__HXLAT_(\d+)__/g,
+  /⟦T(\d+)⟧/g,
+  /\x00T(\d+)\x00/g,
+  /u0000T(\d+)u0000/g,
+];
+
+const HTML_PLACEHOLDER_LEAK_RE =
+  /__HXLAT_\d+__|⟦T\d+⟧|\x00T\d+\x00|u0000T\d+u0000/;
+
+function textPlaceholder(idx: number): string {
+  return `${TEXT_PLACEHOLDER_PREFIX}${idx}${TEXT_PLACEHOLDER_SUFFIX}`;
+}
+
+/** 译文 HTML 中是否仍残留内部占位符（含 TM 缓存的脏数据）。 */
+export function hasHtmlPlaceholderLeak(html: string): boolean {
+  return HTML_PLACEHOLDER_LEAK_RE.test(html);
+}
+
+function replacePlaceholdersInString(value: string, translations: string[]): string {
+  let out = value;
+  for (const re of PLACEHOLDER_REPLACE_RES) {
+    re.lastIndex = 0;
+    out = out.replace(re, (_, idx) => translations[Number(idx)] ?? "");
+  }
+  return out;
+}
+
+function collectPlaceholderIndices(segment: string): number[] {
+  const indices: number[] = [];
+  for (const re of PLACEHOLDER_REPLACE_RES) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(segment)) !== null) {
+      indices.push(Number(m[1]));
+    }
+  }
+  return indices;
+}
+
+const HTML_PARSE_OPTIONS = {
+  lowerCaseTagName: false,
+  comment: false,
+  blockTextElements: {
+    script: true,
+    noscript: true,
+    style: true,
+    pre: true,
+  },
+} as const;
+
 const HTML_BLOCK_COALESCE_TAGS = "p|li|h[1-6]|dt|dd|blockquote|figcaption";
 const HTML_NESTED_BLOCK_RE =
   /<(p|li|h[1-6]|td|th|dt|dd|blockquote|figcaption|div|ul|ol|table|thead|tbody|tr)\b/i;
@@ -65,16 +122,7 @@ function elementTagName(el: HTMLElement): string {
 
 function extractHtmlTextNodes(html: string): { template: string; texts: string[] } {
   const texts: string[] = [];
-  const root = parse(html, {
-    lowerCaseTagName: false,
-    comment: false,
-    blockTextElements: {
-      script: true,
-      noscript: true,
-      style: true,
-      pre: true,
-    },
-  });
+  const root = parse(html, HTML_PARSE_OPTIONS);
 
   for (const el of root.querySelectorAll("*")) {
     for (const attr of TRANSLATABLE_ATTRS) {
@@ -82,7 +130,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
       if (val == null || !isTranslatableAttrValue(val)) continue;
       const idx = texts.length;
       texts.push(val.trim());
-      el.setAttribute(attr, `\x00T${idx}\x00`);
+      el.setAttribute(attr, textPlaceholder(idx));
     }
   }
 
@@ -96,7 +144,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
       if (!core.trim()) return;
       const idx = texts.length;
       texts.push(core.trim());
-      node.rawText = `${leading}\x00T${idx}\x00${trailing}`;
+      node.rawText = `${leading}${textPlaceholder(idx)}${trailing}`;
       return;
     }
     if (node.nodeType !== NodeType.ELEMENT_NODE) return;
@@ -115,7 +163,37 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
 }
 
 function restoreHtmlTextNodes(template: string, translations: string[]): string {
-  return template.replace(/\x00T(\d+)\x00/g, (_, idx) => translations[Number(idx)] ?? "");
+  const root = parse(template, HTML_PARSE_OPTIONS);
+
+  for (const el of root.querySelectorAll("*")) {
+    for (const attr of TRANSLATABLE_ATTRS) {
+      const val = el.getAttribute(attr);
+      if (val == null || !HTML_PLACEHOLDER_LEAK_RE.test(val)) continue;
+      const restored = replacePlaceholdersInString(val, translations);
+      if (restored !== val) el.setAttribute(attr, restored);
+    }
+  }
+
+  function walkRestore(node: Node): void {
+    if (node.nodeType === NodeType.TEXT_NODE) {
+      const raw = node.rawText ?? "";
+      if (!HTML_PLACEHOLDER_LEAK_RE.test(raw)) return;
+      node.rawText = replacePlaceholdersInString(raw, translations);
+      return;
+    }
+    if (node.nodeType !== NodeType.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    if (SKIP_TAGS.has(elementTagName(el))) return;
+    for (const child of [...node.childNodes]) walkRestore(child);
+  }
+
+  for (const child of [...root.childNodes]) walkRestore(child);
+
+  let result = root.toString();
+  if (hasHtmlPlaceholderLeak(result)) {
+    result = replacePlaceholdersInString(result, translations);
+  }
+  return result;
 }
 
 function sanitizeHtmlTextTranslation(original: string, translated: string): string {
@@ -141,11 +219,7 @@ function coalesceBlockTextNodesInner(
   const newTemplate = template.replace(blockRe, (full, tag: string, inner: string) => {
     if (HTML_NESTED_BLOCK_RE.test(inner)) return full;
 
-    const indices: number[] = [];
-    inner.replace(/\x00T(\d+)\x00/g, (_, idx: string) => {
-      indices.push(Number(idx));
-      return "";
-    });
+    const indices = collectPlaceholderIndices(inner);
     if (indices.length <= 1) return full;
     if (INLINE_PRESERVE_RE.test(inner)) return full;
 
@@ -158,7 +232,7 @@ function coalesceBlockTextNodesInner(
     newTexts.push(merged);
 
     const openTag = full.match(new RegExp(`<${tag}\\b[^>]*>`, "i"))![0];
-    return `${openTag}\x00T${newIdx}\x00</${tag}>`;
+    return `${openTag}${textPlaceholder(newIdx)}</${tag}>`;
   });
 
   return { template: newTemplate, texts: newTexts };

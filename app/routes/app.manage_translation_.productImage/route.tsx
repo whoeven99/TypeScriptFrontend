@@ -1,5 +1,4 @@
 import {
-  Button,
   Image,
   Layout,
   Result,
@@ -15,6 +14,7 @@ import {
   Select as SelectAnt,
   Input,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { SearchOutlined, UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";

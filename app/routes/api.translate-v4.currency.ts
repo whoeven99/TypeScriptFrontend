@@ -8,6 +8,10 @@ import {
   updateCurrency,
   updateDefaultCurrency,
 } from "~/server/currency/currency.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -18,14 +22,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json(result);
   } catch (error) {
     console.error("[currency] list failed:", error);
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.CURRENCY_LIST_FAILED,
+    );
     return json(
       {
         success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
         response: [],
       },
-      { status: 500 },
+      { status: appError.status },
     );
   }
 };
@@ -75,26 +82,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
       default:
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.UNKNOWN_ACTION,
+        );
         return json(
           {
             success: false,
-            errorCode: 10001,
-            errorMsg: "UNKNOWN_ACTION",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
             response: undefined,
           },
-          { status: 400 },
+          { status: appError.status },
         );
     }
   } catch (error) {
     console.error("[currency] action failed:", error);
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+    );
     return json(
       {
         success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
         response: undefined,
       },
-      { status: 500 },
+      { status: appError.status },
     );
   }
 };

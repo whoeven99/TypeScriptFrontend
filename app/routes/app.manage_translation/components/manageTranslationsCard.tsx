@@ -1,5 +1,6 @@
 import { useNavigate } from "@remix-run/react";
-import { Space, Button, Table } from "antd";
+import { Space, Table } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
@@ -42,64 +43,61 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
     [navigate, report],
   );
 
-  const columns = useMemo(
-    () => {
-      const baseColumns = [
-        {
-          title: cardTitle,
-          dataIndex: "title",
-          key: "title",
-          width: "30%",
-        },
-      ];
+  const columns = useMemo(() => {
+    const baseColumns = [
+      {
+        title: cardTitle,
+        dataIndex: "title",
+        key: "title",
+        width: "30%",
+      },
+    ];
 
-      const countColumn = dataSource.some((item: any) => !item.withoutCount)
-        ? [
-            {
-              title: t("Items Translated"),
-              dataIndex: "items",
-              key: "items",
-              width: "30%",
-              render: (_: any, record: any) => {
-                if (record.withoutCount) return null;
-                return record.allItems === undefined ||
-                  record.allTranslatedItems === undefined ? (
-                  <div>{t("Syncing")}</div>
-                ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
-                  <div>--</div>
-                ) : (
-                  <div>
-                    {record.allTranslatedItems}/{record.allItems}
-                  </div>
-                );
-              },
+    const countColumn = dataSource.some((item: any) => !item.withoutCount)
+      ? [
+          {
+            title: t("Items Translated"),
+            dataIndex: "items",
+            key: "items",
+            width: "30%",
+            render: (_: any, record: any) => {
+              if (record.withoutCount) return null;
+              return record.allItems === undefined ||
+                record.allTranslatedItems === undefined ? (
+                <div>{t("Syncing")}</div>
+              ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
+                <div>--</div>
+              ) : (
+                <div>
+                  {record.allTranslatedItems}/{record.allItems}
+                </div>
+              );
             },
-          ]
-        : [];
-
-      return [
-        ...baseColumns,
-        ...countColumn,
-        {
-          title: t("Action"),
-          dataIndex: "operation",
-          key: "operation",
-          width: "40%",
-          render: (_: any, record: any) => {
-            return (
-              <Button
-                type="default"
-                onClick={() => handleEdit(record, currentLocale)}
-              >
-                {t("Edit")}
-              </Button>
-            );
           },
+        ]
+      : [];
+
+    return [
+      ...baseColumns,
+      ...countColumn,
+      {
+        title: t("Action"),
+        dataIndex: "operation",
+        key: "operation",
+        width: "40%",
+        render: (_: any, record: any) => {
+          return (
+            <Button
+              type="default"
+              onClick={() => handleEdit(record, currentLocale)}
+            >
+              {t("Edit")}
+            </Button>
+          );
         },
-      ];
-    },
-    [cardTitle, currentLocale, dataSource, handleEdit, t],
-  );
+      },
+    ];
+  }, [cardTitle, currentLocale, dataSource, handleEdit, t]);
   return (
     <AppSectionCard title={cardTitle} bodyPadding="12px 16px">
       <Space direction="vertical" size="small" style={{ display: "flex" }}>

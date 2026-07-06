@@ -2,13 +2,13 @@ import {
   Layout,
   Table,
   Result,
-  Button,
   Typography,
   Spin,
   Space,
   Card,
   Divider,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json } from "@remix-run/node";

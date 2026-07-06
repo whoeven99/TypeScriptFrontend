@@ -4,6 +4,10 @@ import {
   translateSingleText,
   deductQuota,
 } from "~/server/translateV4/singleTranslate.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 /**
  * POST /api/translate-v4/single —— 单字段手动翻译（TSF LLM + Java 额度扣减）。
@@ -29,7 +33,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
 
   try {
-    if (!target) return json({ success: false, errorMsg: "缺少目标语言", response: "" });
+    if (!target) {
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.SINGLE_TARGET_REQUIRED,
+      );
+      return json(
+        {
+          success: false,
+          errorCode: appError.errorCode,
+          errorMsg: appError.errorMsg,
+          response: "",
+        },
+        { status: appError.status },
+      );
+    }
     const { translatedText, usedTokens } = await translateSingleText({
       shop,
       target,
@@ -42,6 +59,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ success: true, response: translatedText });
   } catch (err) {
     console.error(`[single] ${shop} failed:`, err);
-    return json({ success: false, errorMsg: err instanceof Error ? err.message : String(err), response: "" });
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        response: "",
+      },
+      { status: appError.status },
+    );
   }
 };

@@ -19,6 +19,7 @@ import {
 } from "./translateQuality.js";
 import {
   effectiveTranslation,
+  hasHtmlPlaceholderLeak,
   htmlNodePartsOf,
   restoreBrPlaceholders,
   restoreHtmlTextNodes,
@@ -2718,6 +2719,10 @@ function reconstructPlan(
     });
     const originalOut = plan.nodeParts.map((parts) => parts.join(""));
     let value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, out));
+    if (hasHtmlPlaceholderLeak(value)) {
+      anyFallback = true;
+      value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
+    }
     if (hasPromptSentinelLeakage(value)) {
       anyFallback = true;
       value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
@@ -2751,10 +2756,12 @@ function reconstructPlan(
           const joined = pieces.join("");
           return effectiveTranslation(parts.join(""), joined.trim());
         });
-        translatedSlots[i] = sanitizeJsonSlotTranslation(
-          slot.text,
-          restoreBrPlaceholders(restoreHtmlTextNodes(slot.htmlPlan.template, out)),
-        );
+        let slotHtml = restoreBrPlaceholders(restoreHtmlTextNodes(slot.htmlPlan.template, out));
+        if (hasHtmlPlaceholderLeak(slotHtml)) {
+          anyFallback = true;
+          slotHtml = slot.text;
+        }
+        translatedSlots[i] = sanitizeJsonSlotTranslation(slot.text, slotHtml);
         if (hasPromptSentinelLeakage(translatedSlots[i]!)) {
           anyFallback = true;
           translatedSlots[i] = slot.text;
@@ -2799,7 +2806,12 @@ function reconstructPlan(
           const joined = pieces.join("");
           return effectiveTranslation(parts.join(""), joined.trim());
         });
-        result[el.index] = restoreBrPlaceholders(restoreHtmlTextNodes(el.htmlPlan.template, out));
+        let elHtml = restoreBrPlaceholders(restoreHtmlTextNodes(el.htmlPlan.template, out));
+        if (hasHtmlPlaceholderLeak(elHtml)) {
+          anyFallback = true;
+          elHtml = el.text;
+        }
+        result[el.index] = elHtml;
       } else {
         const r = lookup(plan.poolSig, el.text);
         if (!r || r.status === "fallback") {
@@ -2925,9 +2937,14 @@ export async function translateResources(
     }
     const cached = cacheHits[wi];
     if (cached !== null) {
-      rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
-      cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
-      continue;
+      const cacheLeaked =
+        (klass === "html" || klass === "json" || klass === "list") &&
+        hasHtmlPlaceholderLeak(cached);
+      if (!cacheLeaked) {
+        rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
+        cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
+        continue;
+      }
     }
 
     // Secondary: value-based cache for short plain-text fields.

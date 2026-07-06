@@ -4,6 +4,7 @@ import { useCacheThenRefresh, setWithTTL, getWithTTL } from "./ciwi-storage.js";
 import {
   CiwiswitcherForm,
   updateDisplayText,
+  syncCompactSwitcherLayout,
   ProductImgTranslate,
   CurrencySelectorTakeEffect,
   LanguageSelectorTakeEffect,
@@ -13,7 +14,10 @@ import {
   renderLanguageFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
-import { updateLocalization } from "./ciwi-utils.js";
+import {
+  getManualLocalizationPreference,
+  updateLocalization,
+} from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
 
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
@@ -58,6 +62,7 @@ const rtlLanguages = [
   "کوردی",
   "ئۇيغۇرچە",
 ];
+const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
 async function ciwiOnload() {
   const blockId = document.querySelector('input[name="block_id"]')?.value;
@@ -114,6 +119,42 @@ async function ciwiOnload() {
   const countryValue = ciwiBlock.querySelector(
     'input[name="country_code"]',
   )?.value;
+  const currentUrl = new URL(window.location.href);
+  const hasManualLocalizationQuery =
+    currentUrl.searchParams.get(CIWI_MANUAL_LOCALIZATION_QUERY_KEY) === "1";
+  //所有可用语言
+  const availableLanguages = Array.from(
+    ciwiBlock.querySelectorAll(".language_selector_header option"),
+  ).map((opt) => opt.value);
+
+  //所有可用地区
+  const availableCountries = Array.from(
+    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
+  ).map((link) => link.getAttribute("data-value"));
+
+  const manualLocalizationPreference = getManualLocalizationPreference();
+  const preferredLanguage = availableLanguages.includes(
+    manualLocalizationPreference?.language,
+  )
+    ? manualLocalizationPreference?.language
+    : "";
+  const preferredCountry = availableCountries.includes(
+    manualLocalizationPreference?.country,
+  )
+    ? manualLocalizationPreference?.country
+    : "";
+  const hasUserLocalizationData = Boolean(
+    hasManualLocalizationQuery || preferredLanguage || preferredCountry,
+  );
+
+  if (hasManualLocalizationQuery) {
+    currentUrl.searchParams.delete(CIWI_MANUAL_LOCALIZATION_QUERY_KEY);
+    window.history.replaceState(
+      {},
+      document.title,
+      `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
+    );
+  }
 
   //浏览器语言
   let browserLanguage = navigator.language || navigator.userLanguage;
@@ -125,21 +166,11 @@ async function ciwiOnload() {
     browserLanguage = browserLanguage.split("-")[0]; // 只保留语言部分
   }
 
-  let detectedCountry = countryValue;
-  let detectedLanguage = browserLanguage;
-
-  //所有可用语言
-  const availableLanguages = Array.from(
-    ciwiBlock.querySelectorAll(".language_selector_header option"),
-  ).map((opt) => opt.value);
-
-  //所有可用地区
-  const availableCountries = Array.from(
-    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
-  ).map((link) => link.getAttribute("data-value"));
+  let detectedCountry = preferredCountry || countryValue;
+  let detectedLanguage = preferredLanguage || browserLanguage;
 
   // IP 定位：每次进入都重新请求，不使用 localStorage 缓存
-  if (configData?.ipOpen) {
+  if (configData?.ipOpen && !hasUserLocalizationData) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
@@ -168,7 +199,7 @@ async function ciwiOnload() {
   );
 
   //不在主题编辑器内
-  if (!isInThemeEditor && configData?.ipOpen) {
+  if (!isInThemeEditor && configData?.ipOpen && !hasUserLocalizationData) {
     //需要定位逻辑
     if (
       detectedCountry &&
@@ -322,14 +353,14 @@ async function ciwiOnload() {
       }
 
       if (isDirectSelectorMode) {
-        selectorBox.style.width = "168px";
+        selectorBox.style.removeProperty("width");
         selectorBox.style.border = "none";
         selectorBox.style.backgroundColor = "transparent";
         selectorBox.style.display = "flex";
         mainBox.style.display = "none";
         translateFloatBtn.style.display = "none";
       } else if (shouldUseSidebarWidget) {
-        selectorBox.style.width = "168px";
+        selectorBox.style.removeProperty("width");
         selectorBox.style.backgroundColor = configData.backgroundColor;
         selectorBox.style.display = "none";
         mainBox.style.display = "none";
@@ -347,7 +378,7 @@ async function ciwiOnload() {
         );
         mainBox.style.display = "flex";
       } else {
-        selectorBox.style.width = "168px";
+        selectorBox.style.removeProperty("width");
         selectorBox.style.display = "none";
         mainBox.style.display = "none";
         translateFloatBtn.style.display = "none";
@@ -361,11 +392,10 @@ async function ciwiOnload() {
   const isRtlLanguage = rtlLanguages.includes(currentLanguage);
 
   if (isRtlLanguage && selectedLanguageText) {
-    selectedLanguageText.style.transform = "rotate(90deg)";
-    selectedLanguageText.style.right = "0";
-    translateFloatBtnIcon.style.right = "10px";
     selectorBox.style.right = "0";
   }
+
+  syncCompactSwitcherLayout(ciwiBlock);
 
   // 仅在命中缓存时后台刷新 config（异步，不阻塞）；
   // 首次无缓存时 useCacheThenRefresh 已经拉取并缓存，无需再请求一次

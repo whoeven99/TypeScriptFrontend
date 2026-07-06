@@ -1,25 +1,14 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import {
-  Space,
-  Select,
-  Typography,
-  Button,
-  Popconfirm,
-  Flex,
-  Modal,
-} from "antd";
+import { Space, Select, Typography, Popconfirm, Flex, Modal } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { queryAppByHandle } from "~/api/admin";
 import type { LanguagesDataType, ShopLocalesType } from "../app.language/route";
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-} from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
 import {
@@ -29,7 +18,10 @@ import {
 } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import { updateData, clearLocaleStats } from "~/store/modules/languageItemsData";
+import {
+  updateData,
+  clearLocaleStats,
+} from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -42,6 +34,11 @@ import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -308,6 +305,7 @@ const Index = () => {
 
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const pendingRefreshStatsRef = useRef(false);
+  const refreshStatsTraceRef = useRef<ClientLogTrace | null>(null);
   /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
   const refreshAwaitingProductsRef = useRef(false);
   const refreshAwaitingLoadTokenRef = useRef<number | null>(null);
@@ -786,7 +784,10 @@ const Index = () => {
     const sourceCode = source?.code;
     if (!sourceCode) return;
     return onTranslationStatsUpdated((detail) => {
-      if (!currentLocale || !sameTranslationLocale(detail.target, currentLocale)) {
+      if (
+        !currentLocale ||
+        !sameTranslationLocale(detail.target, currentLocale)
+      ) {
         return;
       }
       fetchAllItemsCounts(currentLocale, sourceCode, false);
@@ -810,6 +811,16 @@ const Index = () => {
       refreshAwaitingProductsRef.current = refreshLoadToken !== null;
       refreshAwaitingLoadTokenRef.current = refreshLoadToken;
     } else {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message:
+          refreshStatsFetcher.data?.errorMsg || "Failed to refresh statistics",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Failed to refresh statistics"));
       setIsRefreshingStats(false);
     }
@@ -833,11 +844,27 @@ const Index = () => {
     refreshAwaitingLoadTokenRef.current = null;
     setIsRefreshingStats(false);
     if (itemsCountFetcher.data?.success) {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        status: "success",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Translation statistics refreshed"));
     } else {
+      finishClientLogTrace(refreshStatsTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message: "Products statistics refresh failed",
+        context: {
+          locale: currentLocale,
+        },
+      });
+      refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Failed to refresh statistics"));
     }
-  }, [itemsCountFetcher.state, itemsCountFetcher.data, t]);
+  }, [itemsCountFetcher.state, itemsCountFetcher.data, currentLocale, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -866,6 +893,15 @@ const Index = () => {
     if (!currentLocale || !source?.code) return;
     setIsRefreshingStats(true);
     pendingRefreshStatsRef.current = true;
+    refreshStatsTraceRef.current = startClientLogTrace({
+      event: "manage_refresh_statistics",
+      action: "refresh_statistics",
+      shop: globalStore?.shop,
+      context: {
+        locale: currentLocale,
+        source: source.code,
+      },
+    });
     reportClick("manage_refresh_stats");
     const formData = new FormData();
     formData.append("refreshItemsCountTarget", currentLocale);
@@ -885,97 +921,113 @@ const Index = () => {
       />
       {loading || !!selectOptions?.length ? (
         <div className="manage-page">
-        <div className="manage-page__inner">
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AppPageHeader title={t("Content")} />
-          <AppSectionCard bodyPadding="16px">
-            <div className="manage-header">
-              <div className="manage-header-left">
-              <Text strong>{t("Localized content:")}</Text>
-              <Select
-                options={selectOptions}
-                value={currentLocale}
-                onChange={(value) => setCurrentLocale(value)}
-                style={{ minWidth: "200px" }}
-              />
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleRefreshStats}
-                loading={
-                  isRefreshingStats ||
-                  refreshStatsFetcher.state !== "idle" ||
-                  (refreshAwaitingProductsRef.current &&
-                    itemsCountFetcher.state !== "idle")
-                }
-                disabled={!currentLocale || !source?.code}
-              >
-                {t("Refresh statistics")}
-              </Button>
-              </div>
-              <div className="manage-header-right">
-              {plan?.type == "Free" ||
-                plan?.type == "Basic" ||
-                typeof plan === "undefined" ? (
-                <Flex align="center" gap="middle">
-                  <Popconfirm
-                    title=""
-                    description={t(
-                      "This feature is available only with the paid plan.",
+          <div className="manage-page__inner">
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <AppPageHeader title={t("Manage Translation")} />
+              <AppSectionCard bodyPadding="16px">
+                <div className="manage-header">
+                  <div className="manage-header-left">
+                    <Text strong>{t("Localized content:")}</Text>
+                    <Select
+                      options={selectOptions}
+                      value={currentLocale}
+                      onChange={(value) => setCurrentLocale(value)}
+                      style={{ minWidth: "200px" }}
+                    />
+                    <Button
+                      icon={<ReloadOutlined />}
+                      onClick={handleRefreshStats}
+                      loading={
+                        isRefreshingStats ||
+                        refreshStatsFetcher.state !== "idle" ||
+                        (refreshAwaitingProductsRef.current &&
+                          itemsCountFetcher.state !== "idle")
+                      }
+                      disabled={!currentLocale || !source?.code}
+                    >
+                      {t("Refresh statistics")}
+                    </Button>
+                  </div>
+                  <div className="manage-header-right">
+                    {plan?.type == "Free" ||
+                    plan?.type == "Basic" ||
+                    typeof plan === "undefined" ? (
+                      <Flex align="center" gap="middle">
+                        <Popconfirm
+                          title=""
+                          description={t(
+                            "This feature is available only with the paid plan.",
+                          )}
+                          trigger="hover"
+                          showCancel={false}
+                          okText={t("Upgrade")}
+                          onConfirm={() => navigateToPricing()}
+                        >
+                          <InfoCircleOutlined />
+                        </Popconfirm>
+                        <Button
+                          className={defaultStyles.Button_disable}
+                          onClick={handleShowWarnModal}
+                        >
+                          {t("Import")}
+                        </Button>
+                      </Flex>
+                    ) : (
+                      <Button onClick={handleShowImportModal}>
+                        {t("Import")}
+                      </Button>
                     )}
-                    trigger="hover"
-                    showCancel={false}
-                    okText={t("Upgrade")}
-                    onConfirm={() => navigateToPricing()}
-                  >
-                    <InfoCircleOutlined />
-                  </Popconfirm>
-                  <Button
-                    className={defaultStyles.Button_disable}
-                    onClick={handleShowWarnModal}
-                  >
-                    {t("Import")}
-                  </Button>
-                </Flex>
-              ) : (
-                <Button onClick={handleShowImportModal}>{t("Import")}</Button>
-              )}
+                  </div>
+                </div>
+              </AppSectionCard>
+              <div className="manage-content-wrap">
+                <div className="manage-content-left">
+                  <div className="manage-card-grid">
+                    <ManageTranslationsCard
+                      cardTitle={t("Products")}
+                      dataSource={productsDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Online Store Theme")}
+                      dataSource={onlineStoreThemeDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Online Store")}
+                      dataSource={onlineStoreDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Blogs and articles")}
+                      dataSource={blogAndArticleDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Images data")}
+                      dataSource={imageDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Settings")}
+                      dataSource={settingsDataSource}
+                      currentLocale={currentLocale}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle={t("Liquid & Third-Party Apps")}
+                      dataSource={liquidAndThirdPartyAppsDataSource}
+                      currentLocale={currentLocale}
+                    />
+                  </div>
+                </div>
+                {/* <div className="manage-content-right"></div> */}
               </div>
-            </div>
-          </AppSectionCard>
-          <div className="manage-content-wrap">
-            <div className="manage-content-left">
-              <div className="manage-card-grid">
-                <ManageTranslationsCard
-                  cardTitle={t("Products & catalog")}
-                  dataSource={merchandiseDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Pages & blog content")}
-                  dataSource={contentDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Storefront & theme")}
-                  dataSource={storeThemeDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Notifications & delivery")}
-                  dataSource={transactionDataSource}
-                  currentLocale={currentLocale}
-                />
-                <ManageTranslationsCard
-                  cardTitle={t("Custom & third-party content")}
-                  dataSource={liquidAndThirdPartyAppsDataSource}
-                  currentLocale={currentLocale}
-                />
-              </div>
-            </div>
-            {/* <div className="manage-content-right"></div> */}
+            </Space>
           </div>
-        </Space>
-        </div>
         </div>
       ) : (
         <NoLanguageSetCard />

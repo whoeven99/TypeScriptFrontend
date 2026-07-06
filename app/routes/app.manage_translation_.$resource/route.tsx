@@ -1,5 +1,4 @@
-﻿import {
-  Button,
+import {
   Card,
   Divider,
   Layout,
@@ -9,13 +8,9 @@
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams,
-} from "@remix-run/react"; // 寮曞叆 useNavigate
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
@@ -37,36 +32,10 @@ const { Content } = Layout;
 
 const { Text } = Typography;
 
-
-type SimpleResourceConfig = {
-  slug: string;
-  resourceType: string;
-  itemValue: string;
-  fieldKey?: string;
-  fieldLabel?: string;
-  expandAllContent?: boolean;
-};
-
-const SIMPLE_RESOURCE_CONFIG: Record<string, SimpleResourceConfig> = {
-  filter: { slug: "filter", resourceType: "FILTER", itemValue: "filter", fieldKey: "label", fieldLabel: "label" },
-  metafield: { slug: "metafield", resourceType: "METAFIELD", itemValue: "metafield", fieldKey: "value", fieldLabel: "value" },
-  metaobject: { slug: "metaobject", resourceType: "METAOBJECT", itemValue: "metaobject", fieldLabel: "name" },
-  delivery: { slug: "delivery", resourceType: "DELIVERY_METHOD_DEFINITION", itemValue: "delivery", fieldKey: "name", fieldLabel: "name" },
-  shop: { slug: "shop", resourceType: "SHOP", itemValue: "shop", expandAllContent: true },
-};
-
-function resolveSimpleResourceConfig(resource?: string): SimpleResourceConfig {
-  const config = resource ? SIMPLE_RESOURCE_CONFIG[resource] : null;
-  if (!config) {
-    throw new Response("Not Found", { status: 404 });
-  }
-  return config;
-}
 export const loader = manageTranslationLanguageLoader;
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   const searchTerm = getManageTranslationLanguage(request);
-  const config = resolveSimpleResourceConfig(params.resource);
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -85,11 +54,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         const response = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: config.resourceType,
+          resourceType: "FILTER",
           startCursor: startCursor.cursor,
           locale: searchTerm || "",
-        }); // 澶勭悊閫昏緫
-        console.log(`Manage translation simple resource previous page: ${shop}`);
+        }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-筛选器页面翻到上一页`);
 
         return {
           success: true,
@@ -110,11 +79,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         const response = await queryNextTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: config.resourceType,
+          resourceType: "FILTER",
           endCursor: endCursor.cursor,
           locale: searchTerm || "",
-        }); // 澶勭悊閫昏緫
-        console.log(`Manage translation simple resource next page: ${shop}`);
+        }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-筛选器页面翻到下一页`);
 
         return {
           success: true,
@@ -134,7 +103,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       try {
         const response = await admin.graphql(
           `#graphql
-            query refreshSimpleResources($resourceIds: [ID!]!, $locale: String!) {
+            query refreshFilterResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
                   resourceId
@@ -195,7 +164,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       };
 
     default:
-      // 浣犲彲浠ュ湪杩欓噷澶勭悊涓€涓粯璁ょ殑鎯呭喌锛屽鏋滄病鏈夌鍚堢殑鏉′欢
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
       return {
         success: false,
         errorCode: 10001,
@@ -208,8 +177,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const params = useParams();
-  const config = resolveSimpleResourceConfig(params.resource);
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -242,7 +209,7 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
   );
-  const [selectedItem, setSelectedItem] = useState<string>(config.itemValue);
+  const [selectedItem, setSelectedItem] = useState<string>("filter");
   const [pageInfo, setPageInfo] = useState<{
     hasNextPage: boolean;
     hasPreviousPage: boolean;
@@ -270,7 +237,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 鐩墠鍦ㄧ炕璇戠锟?绛涢€夊櫒椤甸潰`,
+        log: `${globalStore?.shop} 目前在翻译管�?筛选器页面`,
       },
       {
         method: "POST",
@@ -327,7 +294,7 @@ const Index = () => {
         const newPageInfo = dataFetcher.data.response?.pageInfo;
 
         if (newPageInfo) setPageInfo(newPageInfo);
-        isManualChangeRef.current = false; // 閲嶇疆
+        isManualChangeRef.current = false; // 重置
         setTimeout(() => {
           setIsLoading(false);
         }, 100);
@@ -374,7 +341,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 缈昏瘧绠＄悊-绛涢€夊櫒椤甸潰淇敼鏁版嵁淇濆瓨鎴愬姛`,
+            log: `${globalStore?.shop} 翻译管理-筛选器页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -445,7 +412,7 @@ const Index = () => {
           <Button
             onClick={() => {
               handleTranslate({
-                resourceType: config.resourceType,
+                resourceType: "FILTER",
                 record,
                 handleInputChange,
               });
@@ -459,59 +426,38 @@ const Index = () => {
     },
   ];
 
-  const buildResourceRow = (item: any, content: any, index: number) => {
-    const shopifyKey = config.fieldKey ?? content?.key;
-    const resourceLabel = config.fieldLabel ?? content?.key ?? "";
-    const translated = item?.translations?.find(
-      (translation: any) => translation?.key === shopifyKey,
-    )?.value;
-    const currentItem = {
-      key: `${shopifyKey}_${item?.resourceId}_${index}`,
-      resourceId: item?.resourceId,
-      shopifyKey,
-      index,
-      resource: config.fieldLabel ? t(resourceLabel) : resourceLabel,
-      digest: content?.digest || "",
-      type: content?.type || "",
-      default_language: content?.value || "",
-      translated,
-    };
-
-    return currentItem.default_language !== "" ? currentItem : null;
-  };
-
   const generateMenuItemsArray = (items: any) => {
-    if (config.expandAllContent) {
-      const firstItem = items?.[0];
-      if (!firstItem?.translatableContent?.length) return [];
-
-      return firstItem.translatableContent
-        .map((content: any, index: number) =>
-          buildResourceRow(firstItem, content, index),
-        )
-        .filter(Boolean);
-    }
-
     return items.flatMap((item: any, index: number) => {
-      const content = item?.translatableContent?.[0];
-      if (!content) return [];
-
-      const currentItem = buildResourceRow(item, content, index);
-      return currentItem ? [currentItem] : [];
+      if (item?.translatableContent.length !== 0) {
+        // 创建当前项的对象
+        const currentItem = {
+          key: `label_${item?.resourceId}_${index}`,
+          resourceId: item?.resourceId,
+          shopifyKey: "label",
+          index,
+          resource: t("label"),
+          digest: item?.translatableContent[0]?.digest || "",
+          type: item?.translatableContent[0]?.type || "",
+          default_language: item?.translatableContent[0]?.value || "",
+          translated: item?.translations[0]?.value,
+        };
+        return currentItem.default_language !== "" ? [currentItem] : [];
+      }
+      return [];
     });
   };
 
   const handleInputChange = (record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
-      [record?.key]: value, // 鏇存柊瀵瑰簲锟?key
+      [record?.key]: value, // 更新对应�?key
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
         (item) => item.id === record?.key,
       );
       if (existingItemIndex !== -1) {
-        // 濡傛灉 key 瀛樺湪锛屾洿鏂板叾瀵瑰簲锟?value
+        // 如果 key 存在，更新其对应�?value
         const updatedConfirmData = [...prevData];
         updatedConfirmData[existingItemIndex] = {
           ...updatedConfirmData[existingItemIndex],
@@ -524,12 +470,12 @@ const Index = () => {
           resourceId: record?.resourceId,
           locale: globalStore?.source || "",
           key: record?.shopifyKey,
-          value: value, // 鍒濆涓虹┖瀛楃锟?
+          value: value, // 初始为空字符�?
           translatableContentDigest: record?.digest,
           target: searchTerm || "",
         };
 
-        return [...prevData, newItem]; // 灏嗘柊鏁版嵁娣诲姞锟?confirmData 锟?
+        return [...prevData, newItem]; // 将新数据添加�?confirmData �?
       }
     });
   };
@@ -545,7 +491,7 @@ const Index = () => {
   }) => {
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 浠庣炕璇戠锟?绛涢€夊櫒椤甸潰鐐瑰嚮鍗曡缈昏瘧`,
+        log: `${globalStore?.shop} 从翻译管�?筛选器页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -572,7 +518,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 浠庣炕璇戠锟?绛涢€夊櫒椤甸潰鐐瑰嚮鍗曡缈昏瘧杩斿洖缁撴灉 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管�?筛选器页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -601,12 +547,12 @@ const Index = () => {
         },
         {
           method: "post",
-          action: `/app/manage_translation/${config.slug}?language=${language}`,
+          action: `/app/manage_translation/filter?language=${language}`,
         },
-      ); // 鎻愪氦琛ㄥ崟璇锋眰
+      ); // 提交表单请求
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
-      navigate(`/app/manage_translation/${config.slug}?language=${language}`);
+      navigate(`/app/manage_translation/filter?language=${language}`);
     }
   };
 
@@ -636,9 +582,9 @@ const Index = () => {
         },
         {
           method: "post",
-          action: `/app/manage_translation/${config.slug}?language=${searchTerm}`,
+          action: `/app/manage_translation/filter?language=${searchTerm}`,
         },
-      ); // 鎻愪氦琛ㄥ崟璇锋眰
+      ); // 提交表单请求
     }
   };
 
@@ -656,7 +602,7 @@ const Index = () => {
       },
       {
         method: "post",
-        action: `/app/manage_translation/${config.slug}?language=${selectedLanguage}`,
+        action: `/app/manage_translation/filter?language=${selectedLanguage}`,
       },
     );
   };
@@ -674,22 +620,22 @@ const Index = () => {
         },
         {
           method: "post",
-          action: `/app/manage_translation/${config.slug}?language=${searchTerm}`,
+          action: `/app/manage_translation/filter?language=${searchTerm}`,
         },
-      ); // 鎻愪氦琛ㄥ崟璇锋眰
+      ); // 提交表单请求
     }
   };
 
   const handleConfirm = () => {
     const formData = new FormData();
-    formData.append("confirmData", JSON.stringify(confirmData)); // 灏嗛€変腑鐨勮瑷€浣滀负瀛楃涓插彂锟?
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发�?
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/${config.slug}?language=${searchTerm}`,
-    }); // 鎻愪氦琛ㄥ崟璇锋眰
+      action: `/app/manage_translation/filter?language=${searchTerm}`,
+    }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 鎻愪氦缈昏瘧绠＄悊-绛涢€夊櫒椤甸潰淇敼鏁版嵁`,
+        log: `${globalStore?.shop} 提交翻译管理-筛选器页面修改数据`,
       },
       {
         method: "POST",
@@ -710,7 +656,7 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`); // 璺宠浆锟?/app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
     }
   };
 
@@ -854,7 +800,7 @@ const Index = () => {
                             <Button
                               onClick={() => {
                                 handleTranslate({
-                                  resourceType: config.resourceType,
+                                  resourceType: "FILTER",
                                   record: item,
                                   handleInputChange,
                                 });
@@ -925,5 +871,3 @@ const Index = () => {
 };
 
 export default Index;
-
-

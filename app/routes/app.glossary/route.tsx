@@ -1,10 +1,9 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  Button,
   Card,
   Checkbox,
   Flex,
@@ -18,9 +17,13 @@ import {
   Table,
   Typography,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { queryShopLanguages } from "~/api/admin";
-import { listGlossaryPagePayload, deleteGlossaryDo } from "~/server/translateV4/glossary.server";
+import {
+  listGlossaryPagePayload,
+  deleteGlossaryDo,
+} from "~/server/translateV4/glossary.server";
 import { updateGlossaryCompat } from "./glossaryClient";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -37,6 +40,16 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
+import {
+  buildTranslateV4Error,
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -59,7 +72,7 @@ export const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
     server: process.env.SERVER_URL,
@@ -95,19 +108,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return { success: true, errorCode: null, errorMsg: null, response };
         } catch (error) {
           console.error("Error glossary loading:", error);
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_LIST_FAILED,
+          );
           return {
             success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
             response: undefined,
           };
         }
-      case !!deleteInfo:
+      case !!deleteInfo: {
+        const ids = Array.isArray(deleteInfo)
+          ? deleteInfo.map((x) => Number(x)).filter((id) => !Number.isNaN(id))
+          : [];
         try {
-          if (deleteInfo.length > 0) {
-            const ids = deleteInfo.map((x) => Number(x));
+          if (ids.length > 0) {
             await deleteGlossaryDo(shop, ids);
             return json({
+              success: true,
+              errorCode: null,
+              errorMsg: null,
               data: ids.map((id) => ({
                 status: "fulfilled",
                 value: { success: true, response: { id } },
@@ -116,13 +137,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+          );
+          return json(
+            {
+              success: false,
+              errorCode: appError.errorCode,
+              errorMsg: appError.errorMsg,
+              data: ids.map((id) => ({
+                status: "fulfilled",
+                value: {
+                  success: false,
+                  errorMsg: appError.errorMsg,
+                  response: { id },
+                },
+              })),
+            },
+            { status: appError.status },
+          );
         }
+      }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
+        const appError = buildTranslateV4Error(
+          TRANSLATE_V4_ERROR_KEYS.INVALID_REQUEST,
+        );
+        return json(
+          {
+            success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+            data: [],
+          },
+          { status: appError.status },
+        );
     }
   } catch (error) {
     console.error("Error action glossary:", error);
+    const appError = buildTranslateV4Error(
+      TRANSLATE_V4_ERROR_KEYS.INTERNAL_ERROR,
+    );
+    return json(
+      {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        data: [],
+      },
+      { status: appError.status },
+    );
   }
 };
 
@@ -173,6 +237,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const deleteTraceRef = useRef<ClientLogTrace | null>(null);
   const { t } = useTranslation();
   const { reportClick, report } = useReport();
   useEffect(() => {
@@ -215,26 +280,75 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
+      const results = Array.isArray(deleteFetcher.data?.data)
+        ? deleteFetcher.data.data
+        : [];
       let newData = [...dataSource];
-      // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((res: any) => {
+      const failedIds: Array<string | number> = [];
+      const failedMessages: string[] = [];
+
+      results.forEach((res: any) => {
         if (res.value?.success) {
-          // 过滤掉需要删除的项
           newData = newData.filter(
             (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
-          shopify.toast.show(res.value.errorMsg);
+          failedIds.push(res.value?.response?.id ?? "unknown");
+          failedMessages.push(
+            getTranslateV4ErrorMessage(
+              t,
+              res.value?.errorMsg,
+              TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+            ),
+          );
         }
       });
-      dispatch(setGLossaryTableData(newData)); // 更新表格数据
-      setSelectedRowKeys([]);
+
+      if (!results.length) {
+        failedMessages.push(
+          getTranslateV4ErrorMessage(
+            t,
+            deleteFetcher.data?.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_DELETE_FAILED,
+          ),
+        );
+      }
+
+      finishClientLogTrace(deleteTraceRef.current, {
+        level: failedIds.length > 0 || !results.length ? "warn" : "info",
+        status: failedIds.length > 0 || !results.length ? "failure" : "success",
+        context: {
+          selectedCount: selectedRowKeys.length,
+          failedIds,
+        },
+      });
+      deleteTraceRef.current = null;
+
+      if (newData.length !== dataSource.length) {
+        dispatch(setGLossaryTableData(newData));
+        setSelectedRowKeys([]);
+      }
+
       setDeleteLoading(false);
-      shopify.toast.show(t("Delete successfully"));
+
+      if (failedMessages.length) {
+        failedMessages.forEach((message) => shopify.toast.show(message));
+      }
+      if (newData.length !== dataSource.length) {
+        shopify.toast.show(t("Delete successfully"));
+      }
     }
-  }, [deleteFetcher.data]);
+  }, [dataSource, deleteFetcher.data, dispatch, selectedRowKeys.length, t]);
 
   const handleDelete = () => {
+    deleteTraceRef.current = startClientLogTrace({
+      event: "glossary_delete_rules",
+      action: "delete_rules",
+      shop: globalStore?.shop,
+      context: {
+        selectedRowKeys,
+      },
+    });
     const formData = new FormData();
     formData.append("deleteInfo", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/glossary" }); // 提交表单请求
@@ -243,6 +357,15 @@ const Index = () => {
 
   const handleApplication = async (key: number) => {
     const row = dataSource.find((item: any) => item.key === key);
+    const trace = startClientLogTrace({
+      event: "glossary_toggle_rule",
+      action: row?.status === 0 ? "enable_rule" : "disable_rule",
+      shop: globalStore?.shop,
+      context: {
+        glossaryId: key,
+        previousStatus: row?.status,
+      },
+    });
     if (row.status === 0) {
       const activeItemsCount = dataSource.filter(
         (item: any) => item.status === 1,
@@ -250,6 +373,11 @@ const Index = () => {
       if (
         activeItemsCount >= planMapping[plan?.type as keyof typeof planMapping]
       ) {
+        finishClientLogTrace(trace, {
+          level: "warn",
+          status: "failure",
+          message: "Glossary term limit reached",
+        });
         modalShowForPlan();
         return;
       }
@@ -263,27 +391,70 @@ const Index = () => {
       status: row.status === 0 ? 1 : 0,
     };
 
-    const data = await updateGlossaryCompat({
-      migrated,
-      shop: globalStore?.shop || "",
-      data: updateInfo,
-      server: server as string,
-    });
+    try {
+      const data = await updateGlossaryCompat({
+        migrated,
+        shop: globalStore?.shop || "",
+        data: updateInfo,
+        server: server as string,
+      });
 
-    if (data?.success) {
-      shopify.toast.show(t("Saved successfully"));
+      if (data?.success) {
+        shopify.toast.show(t("Saved successfully"));
+        finishClientLogTrace(trace, {
+          status: "success",
+          context: {
+            glossaryId: data.response.id,
+            nextStatus: data.response.status,
+          },
+        });
+        dispatch(
+          setGLossaryStatusLoadingState({
+            key: data.response.id,
+            loading: false,
+            status: data.response.status,
+          }),
+        );
+        return;
+      }
+
+      const errorMsg = getTranslateV4ErrorMessage(
+        t,
+        data?.errorMsg,
+        TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+      );
+      shopify.toast.show(errorMsg);
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: errorMsg,
+        context: {
+          glossaryId: data?.response?.id ?? key,
+        },
+      });
       dispatch(
         setGLossaryStatusLoadingState({
-          key: data.response.id,
+          key: data?.response?.id ?? key,
           loading: false,
-          status: data.response.status,
         }),
       );
-    } else {
-      shopify.toast.show(data?.errorMsg);
+    } catch {
+      const errorMsg = getTranslateV4ErrorMessage(
+        t,
+        TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+      );
+      shopify.toast.show(errorMsg);
+      finishClientLogTrace(trace, {
+        level: "warn",
+        status: "failure",
+        message: errorMsg,
+        context: {
+          glossaryId: key,
+        },
+      });
       dispatch(
         setGLossaryStatusLoadingState({
-          key: data.response.id,
+          key,
           loading: false,
         }),
       );
@@ -499,16 +670,16 @@ const Index = () => {
                         setSelectedRowKeys(
                           e.target.checked
                             ? [
-                              ...currentPageKeys,
-                              ...selectedRowKeys.filter(
-                                (key) => !currentPageKeys.includes(key),
-                              ),
-                            ]
+                                ...currentPageKeys,
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ]
                             : [
-                              ...selectedRowKeys.filter(
-                                (key) => !currentPageKeys.includes(key),
-                              ),
-                            ],
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ],
                         )
                       }
                     >
@@ -532,8 +703,8 @@ const Index = () => {
                                 e.target.checked
                                   ? [...selectedRowKeys, item.key]
                                   : selectedRowKeys.filter(
-                                    (key) => key !== item.key,
-                                  ),
+                                      (key) => key !== item.key,
+                                    ),
                               );
                             }}
                           >

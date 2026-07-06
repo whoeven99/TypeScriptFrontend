@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  Modal,
-  Input,
-  Space,
-  Button,
-  Typography,
-  Select,
-  Checkbox,
-} from "antd";
+import { Modal, Input, Space, Typography, Select, Checkbox, Alert } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
@@ -16,6 +9,10 @@ import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { insertGlossaryCompat, updateGlossaryCompat } from "../glossaryClient";
+import {
+  getTranslateV4ErrorMessage,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 const { Text } = Typography;
 
@@ -67,6 +64,10 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   const [sourceTextErrorMsg, setSourceTextErrorMsg] = useState<string>("");
   const [targetTextErrorMsg, setTargetTextErrorMsg] = useState<string>("");
   const [rangeCodeErrorMsg, setRangeCodeErrorMsg] = useState<string>("");
+  const [modalAlert, setModalAlert] = useState<{
+    type: "warning" | "error";
+    message: string;
+  } | null>(null);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -112,18 +113,21 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setSourceTextStatus("error");
       setSourceTextError(true);
       setSourceTextErrorMsg(t("Please enter original text"));
+      setModalAlert(null);
       isValid = false;
     }
     if (!targetText) {
       setTargetTextStatus("error");
       setTargetTextError(true);
       setTargetTextErrorMsg(t("Please enter escaped text"));
+      setModalAlert(null);
       isValid = false;
     }
     if (!rangeCode || !options.find((option) => option.value === rangeCode)) {
       setRangeCodeStatus("error");
       setRangeCodeError(true);
       setRangeCodeErrorMsg(t("Please select a language"));
+      setModalAlert(null);
       isValid = false;
     }
 
@@ -159,6 +163,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
     if (isValid && isSameRuleError && isOversizeError) {
       setConfirmButtonDisable(true);
+      setModalAlert(null);
       setSourceTextStatus("");
       setSourceTextError(false);
       setSourceTextErrorMsg("");
@@ -168,72 +173,95 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setRangeCodeStatus("");
       setRangeCodeError(false);
       setRangeCodeErrorMsg("");
-      const item = dataSource.find((item: any) => item.key === id);
-      let data;
-      if (item) {
-        data = await updateGlossaryCompat({
-          migrated,
-          shop: shop,
-          data: {
-            key: id,
+
+      try {
+        const item = dataSource.find((item: any) => item.key === id);
+        let data;
+        if (item) {
+          data = await updateGlossaryCompat({
+            migrated,
+            shop: shop,
+            data: {
+              key: id,
+              sourceText: sourceText,
+              targetText: targetText,
+              rangeCode: rangeCode,
+              type: checked ? 1 : 0,
+              status: item?.status,
+            },
+            server: server as string,
+          });
+        } else {
+          data = await insertGlossaryCompat({
+            migrated,
+            shop: shop,
             sourceText: sourceText,
             targetText: targetText,
             rangeCode: rangeCode,
             type: checked ? 1 : 0,
-            status: item?.status,
-          },
-          server: server as string,
-        });
-      } else {
-        data = await insertGlossaryCompat({
-          migrated,
-          shop: shop,
-          sourceText: sourceText,
-          targetText: targetText,
-          rangeCode: rangeCode,
-          type: checked ? 1 : 0,
-          server: server as string,
-        });
-      }
-
-      if (data.success) {
-        let res = data.response;
-        if (
-          shopLocales.find((language: ShopLocalesType) => {
-            return language.locale == res.rangeCode;
-          }) ||
-          res.rangeCode === "ALL"
-        ) {
-          res = {
-            key: res?.id,
-            sourceText: res?.sourceText,
-            targetText: res?.targetText,
-            language:
-              shopLocales.find((language: ShopLocalesType) => {
-                return language.locale === res.rangeCode;
-              })?.name || "All Languages",
-            rangeCode: res?.rangeCode,
-            type: res?.caseSensitive,
-            status: res?.status,
-            loading: false,
-            createdDate: res?.createdDate,
-          };
+            server: server as string,
+          });
         }
-        dispatch(updateGLossaryTableData(res));
-        shopify.toast.show("Saved successfully");
-        setConfirmButtonDisable(false);
-        handleCloseModal();
-      } else {
-        shopify.toast.show(data.errorMsg);
+
+        if (data.success) {
+          let res = data.response;
+          if (
+            shopLocales.find((language: ShopLocalesType) => {
+              return language.locale == res.rangeCode;
+            }) ||
+            res.rangeCode === "ALL"
+          ) {
+            res = {
+              key: res?.id,
+              sourceText: res?.sourceText,
+              targetText: res?.targetText,
+              language:
+                shopLocales.find((language: ShopLocalesType) => {
+                  return language.locale === res.rangeCode;
+                })?.name || "All Languages",
+              rangeCode: res?.rangeCode,
+              type: res?.caseSensitive,
+              status: res?.status,
+              loading: false,
+              createdDate: res?.createdDate,
+            };
+          }
+          dispatch(updateGLossaryTableData(res));
+          shopify.toast.show("Saved successfully");
+          setConfirmButtonDisable(false);
+          handleCloseModal();
+        } else {
+          const errorMsg = getTranslateV4ErrorMessage(
+            t,
+            data.errorMsg,
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+          );
+          setModalAlert({ type: "error", message: errorMsg });
+          setConfirmButtonDisable(false);
+        }
+      } catch {
+        setModalAlert({
+          type: "error",
+          message: getTranslateV4ErrorMessage(
+            t,
+            TRANSLATE_V4_ERROR_KEYS.GLOSSARY_SAVE_FAILED,
+          ),
+        });
         setConfirmButtonDisable(false);
       }
     } else if (!isOversizeError) {
-      shopify.toast.show(
-        t("You can add up to {{count}} translation rules", { count: 10 }),
-      );
+      setModalAlert({
+        type: "warning",
+        message: t("You can add up to {{count}} translation rules", {
+          count: planMapping[plan?.type as keyof typeof planMapping] ?? 10,
+        }),
+      });
       return;
     } else if (!isSameRuleError) {
-      shopify.toast.show(t("You cannot add two conflicting rules."));
+      setModalAlert({
+        type: "warning",
+        message: t("You cannot add two conflicting rules."),
+      });
       return;
     }
   };
@@ -260,6 +288,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     setSourceTextErrorMsg("");
     setTargetTextErrorMsg("");
     setRangeCodeErrorMsg("");
+    setModalAlert(null);
   };
 
   return (
@@ -296,6 +325,15 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        {modalAlert ? (
+          <Alert
+            type={modalAlert.type}
+            showIcon
+            message={modalAlert.message}
+            closable
+            onClose={() => setModalAlert(null)}
+          />
+        ) : null}
         <Text>{t("Keep translation consistent across your store")}</Text>
         <div
           style={{
@@ -311,6 +349,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               placeholder={t("Please enter original text")}
               value={sourceText}
               onChange={(e) => {
+                setModalAlert(null);
                 setSourceText(e.target.value);
               }}
               status={sourceTextStatus}
@@ -333,6 +372,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               placeholder={t("Please enter escaped text")}
               value={targetText}
               onChange={(e) => {
+                setModalAlert(null);
                 setTargetText(e.target.value);
               }}
               status={targetTextStatus}
@@ -356,6 +396,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             options={options}
             style={{ width: "100%" }}
             onChange={(e) => {
+              setModalAlert(null);
               setRangeCode(e);
             }}
             value={rangeCode}

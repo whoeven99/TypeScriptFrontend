@@ -5,7 +5,6 @@ import {
   Row,
   Col,
   Card,
-  Button,
   Typography,
   Alert,
   Flex,
@@ -14,8 +13,9 @@ import {
   Collapse,
   Modal,
 } from "antd";
+import Button from "~/ui/components/AppButton";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import {
@@ -32,18 +32,20 @@ import {
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setPlan,
-  setUpdateTime,
-} from "~/store/modules/userConfig";
+import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
+import {
+  type ClientLogTrace,
+  finishClientLogTrace,
+  startClientLogTrace,
+} from "~/utils/clientLog";
 
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
 //计划名与其对应价格Map
 const priceTable: Record<
@@ -353,6 +355,9 @@ const Index = () => {
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
+  const payCreditsTraceRef = useRef<ClientLogTrace | null>(null);
+  const payPlanTraceRef = useRef<ClientLogTrace | null>(null);
+  const cancelPlanTraceRef = useRef<ClientLogTrace | null>(null);
 
   useEffect(() => {
     setIsLoading(false);
@@ -369,6 +374,20 @@ const Index = () => {
 
   useEffect(() => {
     if (payFetcher.data) {
+      if (payCreditsTraceRef.current) {
+        finishClientLogTrace(payCreditsTraceRef.current, {
+          level: payFetcher.data?.success ? "info" : "warn",
+          status: payFetcher.data?.success ? "success" : "failure",
+          message: payFetcher.data?.errorMsg,
+          context: {
+            errorCode: payFetcher.data?.errorCode,
+            hasConfirmationUrl: Boolean(
+              payFetcher.data?.response?.confirmationUrl,
+            ),
+          },
+        });
+        payCreditsTraceRef.current = null;
+      }
       if (payFetcher.data?.success) {
         const confirmationUrl = payFetcher.data?.response?.confirmationUrl;
         open(confirmationUrl, "_top");
@@ -380,6 +399,20 @@ const Index = () => {
 
   useEffect(() => {
     if (payForPlanFetcher.data) {
+      if (payPlanTraceRef.current) {
+        finishClientLogTrace(payPlanTraceRef.current, {
+          level: payForPlanFetcher.data?.success ? "info" : "warn",
+          status: payForPlanFetcher.data?.success ? "success" : "failure",
+          message: payForPlanFetcher.data?.errorMsg,
+          context: {
+            errorCode: payForPlanFetcher.data?.errorCode,
+            hasConfirmationUrl: Boolean(
+              payForPlanFetcher.data?.response?.confirmationUrl,
+            ),
+          },
+        });
+        payPlanTraceRef.current = null;
+      }
       if (payForPlanFetcher.data?.success) {
         const confirmationUrl =
           payForPlanFetcher.data?.response?.confirmationUrl;
@@ -392,6 +425,15 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
+      if (cancelPlanTraceRef.current) {
+        finishClientLogTrace(cancelPlanTraceRef.current, {
+          status: "success",
+          context: {
+            planType: plan?.type,
+          },
+        });
+        cancelPlanTraceRef.current = null;
+      }
       dispatch(
         setPlan({
           plan: {
@@ -405,7 +447,7 @@ const Index = () => {
       dispatch(setUpdateTime({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
-  }, [dispatch, planCancelFetcher.data]);
+  }, [dispatch, plan?.type, planCancelFetcher.data]);
 
   const plans = useMemo(
     () => [
@@ -703,6 +745,13 @@ const Index = () => {
     [t],
   );
 
+  const paidPlanColSpan = useMemo(() => {
+    if (plans.length <= 1) return 24;
+    if (plans.length === 2) return 12;
+    if (plans.length === 3) return 8;
+    return 6;
+  }, [plans.length]);
+
   const columns = [
     {
       title: t("Features"),
@@ -792,17 +841,41 @@ const Index = () => {
   };
 
   const handleCancelPlan = async () => {
-    const data = await GetLatestActiveSubscribeId({
-      shop: globalStore?.shop as string,
-      server: globalStore?.server as string,
+    cancelPlanTraceRef.current = startClientLogTrace({
+      event: "pricing_cancel_plan",
+      action: "cancel_plan",
+      shop: globalStore?.shop,
+      context: {
+        planType: plan?.type,
+      },
     });
-    if (data.success) {
-      planCancelFetcher.submit(
-        {
-          cancelId: JSON.stringify(data.response),
-        },
-        { method: "POST" },
-      );
+    try {
+      const data = await GetLatestActiveSubscribeId({
+        shop: globalStore?.shop as string,
+        server: globalStore?.server as string,
+      });
+      if (data.success) {
+        planCancelFetcher.submit(
+          {
+            cancelId: JSON.stringify(data.response),
+          },
+          { method: "POST" },
+        );
+        return;
+      }
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        level: "warn",
+        status: "failure",
+        message: data?.errorMsg || "Failed to load latest active subscription",
+      });
+      cancelPlanTraceRef.current = null;
+    } catch (error) {
+      finishClientLogTrace(cancelPlanTraceRef.current, {
+        level: "error",
+        status: "failure",
+        error,
+      });
+      cancelPlanTraceRef.current = null;
     }
   };
 
@@ -816,6 +889,17 @@ const Index = () => {
     const selectedOption = creditOptions.find(
       (item) => item.key === selectedOptionKey,
     );
+    payCreditsTraceRef.current = startClientLogTrace({
+      event: "pricing_buy_credits",
+      action: "buy_credits",
+      shop: globalStore?.shop,
+      context: {
+        optionKey: selectedOption?.key,
+        optionName: selectedOption?.name,
+        amount: selectedOption?.price.currentPrice,
+        currencyCode: selectedOption?.price.currencyCode,
+      },
+    });
 
     const payInfo = {
       name: selectedOption?.name,
@@ -841,6 +925,16 @@ const Index = () => {
     id: string;
   }) => {
     setPayForPlanButtonLoading(id);
+    payPlanTraceRef.current = startClientLogTrace({
+      event: "pricing_buy_plan",
+      action: "buy_plan",
+      shop: globalStore?.shop,
+      context: {
+        planTitle: plan?.title,
+        yearly,
+        trialDays,
+      },
+    });
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
@@ -853,301 +947,240 @@ const Index = () => {
     <Page>
       <TitleBar title={t("Pricing")} />
       <div className="pricing-page">
-      <div className="pricing-page__inner">
-      <Space direction="vertical" size="large" style={{ display: "flex" }}>
-        <AppPageHeader
-          title={t("Pricing")}
-          extra={
-            plan.type ? (
-              <div className="app-status-cluster">
-                <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
-              </div>
-            ) : null
-          }
-        />
-
-        <AcountInfoCard
-          loading={isLoading}
-          translation_balance={totalChars - chars || 0}
-          onBuyCredits={handleOpenAddCreditsModal}
-        />
-
-        {isQuotaExceeded && (
-          <Alert
-            message={t("The quota has been used up")}
-            type="warning"
-            showIcon
-          />
-        )}
-        <section className="pricing-section" id="pricing-plans">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Plans")}</h2>
-            </div>
-            <Flex align="center" gap={8} wrap="wrap">
-              <Text type="secondary">{t("Monthly")}</Text>
-              <Switch checked={yearly} onChange={handleSetYearlyReport} />
-              <Text strong>{t("Yearly")}</Text>
-              <div className="yearly_save">
-                <Text strong>{t("Save 20%")}</Text>
-              </div>
-            </Flex>
-          </div>
-          <Row gutter={[16, 16]}>
-          <Col
-            key={t("Free")}
-            xs={24}
-            sm={24}
-            md={12}
-            lg={6}
-            style={{
-              display: "flex",
-              width: "100%",
-            }}
-          >
-            <Card
-              className={`pricing-plan-card ${
-                plan.type === "Free" ? "pricing-plan-card--current" : ""
-              }`}
-              hoverable
-              style={{
-                flex: 1,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
-                minWidth: "220px",
-              }}
-              styles={{
-                body: {
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  padding: "20px",
-                },
-              }}
-              loading={!plan.id}
-            >
-              <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                {plan.type === "Free" ? (
-                  <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
-                ) : null}
-                <div>
-                  <Title level={4} style={{ margin: 0 }}>
-                    {t("Free")}
-                  </Title>
-                </div>
-                <div>
-                  <Text className="pricing-plan-card__price">$0</Text>
-                  <Text className="pricing-plan-card__unit">{t("/month")}</Text>
-                </div>
-              </Space>
-
-              <Button
-                type="default"
-                block
-                disabled={plan.type === "Free" || selectedPayPlanOption}
-                style={{ marginTop: 20, marginBottom: isNew ? "60px" : "20px" }}
-                onClick={() => {
-                  setCancelPlanWarnModal(true);
-                  reportClick("pricing_plan_trial");
-                }}
-              >
-                {plan.type === "Free"
-                  ? t("pricing.current_plan")
-                  : t("pricing.get_start")}
-              </Button>
-              <div style={{ flex: 1 }}>
-                <div
-                  key={0}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features1")}
-                  </Text>
-                </div>
-                <div
-                  key={1}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features2")}
-                  </Text>
-                </div>
-                <div
-                  key={2}
-                  className="pricing-plan-card__feature"
-                >
-                  <CheckOutlined
-                    style={{ color: "var(--p-color-text-success)", fontSize: "12px" }}
-                  />
-                  <Text style={{ fontSize: "13px" }}>
-                    {t("starter_features3")}
-                  </Text>
-                </div>
-              </div>
-            </Card>
-          </Col>
-          {plans.map((item, index) => (
-            <Col
-              key={item.title}
-              xs={24}
-              sm={24}
-              md={12}
-              lg={6}
-              style={{
-                display: "flex",
-                width: "100%",
-              }}
-            >
-                <Card
-                  className={`pricing-plan-card ${
-                    item.disabled ? "pricing-plan-card--current" : item.isRecommended && plan.type === "Free" && plan.id ? "pricing-plan-card--recommended" : ""
-                  }`}
-                  style={{
-                    flex: 1,
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    position: "relative",
-                    minWidth: "220px",
-                  }}
-                  styles={{
-                    body: {
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      padding: "20px",
-                    },
-                  }}
-                  loading={!plan.id}
-                >
-                  <Space direction="vertical" size={12} style={{ display: "flex" }}>
-                    {item.disabled ? (
-                      <AppStatusBadge tone="info">{t("Current plan")}</AppStatusBadge>
-                    ) : item.isRecommended && plan.type === "Free" && plan.id ? (
-                      <AppStatusBadge tone="caution">{t("Recommended")}</AppStatusBadge>
-                    ) : null}
-                    <div>
-                      <Title level={4} style={{ margin: 0 }}>
-                        {yearly ? item.yearlyTitle : item.title}
-                      </Title>
-                    </div>
-                    <div>
-                      <Text className="pricing-plan-card__price">
-                        ${yearly ? item.yearlyPrice : item.monthlyPrice}
-                      </Text>
-                      <Text className="pricing-plan-card__unit">{t("/month")}</Text>
-                    </div>
-                  </Space>
-                  {yearly && (
-                    <div className="pricing-plan-card__billing-note">
-                      <strong>{t("Yearly billing")}</strong>
-                      <div>
-                        {t("$ {{amount}} billed once a year", {
-                          amount: item.yearlyBillingAmount.toFixed(2),
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  <Button
-                    id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
-                    type={item.isRecommended && !isNew ? "primary" : "default"}
-                    block
-                    disabled={item.disabled || selectedPayPlanOption}
-                    style={{ marginBottom: "20px" }}
-                    onClick={() =>
-                      handlePayForPlan({
-                        plan: item,
-                        trialDays: 0,
-                        id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
-                      })
-                    }
-                    loading={
-                      payForPlanButtonLoading ==
-                      `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
-                    }
-                  >
-                    {item.buttonText}
-                  </Button>
-                  {isNew && (
-                    <Button
-                      id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                      type={item.isRecommended ? "primary" : "default"}
-                      block
-                      disabled={item.disabled || selectedPayPlanOption}
-                      style={{ marginBottom: "20px" }}
-                      onClick={() =>
-                        handlePayForPlan({
-                          plan: item,
-                          trialDays: 5,
-                          id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
-                        })
-                      }
-                      loading={
-                        payForPlanButtonLoading ==
-                        `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
-                      }
-                    >
-                      {t("Free trial")}
-                    </Button>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    {item.features.map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="pricing-plan-card__feature"
-                      >
-                        <CheckOutlined
-                          style={{
-                            color: "var(--p-color-text-success)",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Text style={{ fontSize: "13px" }}>{feature}</Text>
-                      </div>
-                    ))}
+        <div className="pricing-page__inner">
+          <Space direction="vertical" size="large" style={{ display: "flex" }}>
+            <AppPageHeader
+              title={t("Pricing")}
+              extra={
+                plan.type ? (
+                  <div className="app-status-cluster">
+                    <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
                   </div>
-                </Card>
-            </Col>
-          ))}
-          </Row>
-        </section>
-        <section className="pricing-section pricing-section--compact">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("Compare plans")}</h2>
-            </div>
-          </div>
-          <Table
-            className="pricing-comparison-table"
-            dataSource={tableData}
-            columns={columns}
-            rowKey={(record) => String(record.key)}
-            pagination={false}
-          />
-        </section>
-        <section className="pricing-section pricing-section--compact">
-          <div className="pricing-section__header">
-            <div className="pricing-section__title-wrap">
-              <h2 className="pricing-section__title">{t("FAQs")}</h2>
-            </div>
-          </div>
-          <Collapse
-            items={collapseData}
-            onChange={() => {
-              reportClick("pricing_faq_click");
-            }}
-          />
-        </section>
-      </Space>
-      </div>
+                ) : null
+              }
+            />
+
+            <AcountInfoCard
+              loading={isLoading}
+              translation_balance={totalChars - chars || 0}
+              onBuyCredits={handleOpenAddCreditsModal}
+            />
+
+            {isQuotaExceeded && (
+              <Alert
+                message={t("The quota has been used up")}
+                type="warning"
+                showIcon
+              />
+            )}
+            <section className="pricing-section" id="pricing-plans">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">{t("Plans")}</h2>
+                </div>
+                <Flex align="center" gap={8} wrap="wrap">
+                  <Text type="secondary">{t("Monthly")}</Text>
+                  <Switch checked={yearly} onChange={handleSetYearlyReport} />
+                  <Text strong>{t("Yearly")}</Text>
+                  <div className="yearly_save">
+                    <Text strong>{t("Save 20%")}</Text>
+                  </div>
+                </Flex>
+              </div>
+              <Row gutter={[16, 16]}>
+                {plans.map((item, index) => (
+                  <Col
+                    key={item.title}
+                    xs={24}
+                    sm={24}
+                    md={12}
+                    lg={paidPlanColSpan}
+                    style={{
+                      display: "flex",
+                      width: "100%",
+                    }}
+                  >
+                    <Card
+                      className={`pricing-plan-card ${
+                        item.disabled
+                          ? "pricing-plan-card--current"
+                          : item.isRecommended &&
+                              plan.type === "Free" &&
+                              plan.id
+                            ? "pricing-plan-card--recommended"
+                            : ""
+                      }`}
+                      style={{
+                        flex: 1,
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        position: "relative",
+                        minWidth: "220px",
+                      }}
+                      styles={{
+                        body: {
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "20px",
+                        },
+                      }}
+                      loading={!plan.id}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={12}
+                        style={{ display: "flex" }}
+                      >
+                        {item.disabled ? (
+                          <AppStatusBadge tone="info">
+                            {t("Current plan")}
+                          </AppStatusBadge>
+                        ) : item.isRecommended &&
+                          plan.type === "Free" &&
+                          plan.id ? (
+                          <AppStatusBadge tone="caution">
+                            {t("Recommended")}
+                          </AppStatusBadge>
+                        ) : null}
+                        <div>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {yearly ? item.yearlyTitle : item.title}
+                          </Title>
+                        </div>
+                        <div>
+                          <Text className="pricing-plan-card__price">
+                            ${yearly ? item.yearlyPrice : item.monthlyPrice}
+                          </Text>
+                          <Text className="pricing-plan-card__unit">
+                            {t("/month")}
+                          </Text>
+                        </div>
+                      </Space>
+                      {yearly && (
+                        <div className="pricing-plan-card__billing-note">
+                          <strong>{t("Yearly billing")}</strong>
+                          <div>
+                            {t("$ {{amount}} billed once a year", {
+                              amount: item.yearlyBillingAmount.toFixed(2),
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
+                        className="pricing-plan-card__primary-action"
+                        type={
+                          item.isRecommended && !isNew ? "primary" : "default"
+                        }
+                        block
+                        disabled={item.disabled || selectedPayPlanOption}
+                        style={{ marginBottom: "20px" }}
+                        onClick={() =>
+                          handlePayForPlan({
+                            plan: item,
+                            trialDays: 0,
+                            id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
+                          })
+                        }
+                        loading={
+                          payForPlanButtonLoading ==
+                          `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
+                        }
+                      >
+                        {item.buttonText}
+                      </Button>
+                      {isNew && (
+                        <Button
+                          id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
+                          type={item.isRecommended ? "primary" : "default"}
+                          block
+                          disabled={item.disabled || selectedPayPlanOption}
+                          style={{ marginBottom: "20px" }}
+                          onClick={() =>
+                            handlePayForPlan({
+                              plan: item,
+                              trialDays: 5,
+                              id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
+                            })
+                          }
+                          loading={
+                            payForPlanButtonLoading ==
+                            `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
+                          }
+                        >
+                          {t("Free trial")}
+                        </Button>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        {item.features.map((feature, idx) => (
+                          <div key={idx} className="pricing-plan-card__feature">
+                            <CheckOutlined
+                              style={{
+                                color: "var(--p-color-text-success)",
+                                fontSize: "12px",
+                              }}
+                            />
+                            <Text style={{ fontSize: "13px" }}>{feature}</Text>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+              <div className="pricing-plan-downgrade">
+                {plan.type === "Free" ? (
+                  <Text type="secondary">
+                    {t("You are currently on the free plan.")}
+                  </Text>
+                ) : (
+                  <Text type="secondary">
+                    {t("Looking for the free plan?")}{" "}
+                    <Link
+                      onClick={() => {
+                        setCancelPlanWarnModal(true);
+                        reportClick("pricing_plan_downgrade");
+                      }}
+                    >
+                      {t("Switch to free plan")}
+                    </Link>
+                  </Text>
+                )}
+              </div>
+            </section>
+            <section className="pricing-section pricing-section--compact">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">
+                    {t("Compare plans")}
+                  </h2>
+                </div>
+              </div>
+              <Table
+                className="pricing-comparison-table"
+                dataSource={tableData}
+                columns={columns}
+                rowKey={(record) => String(record.key)}
+                pagination={false}
+              />
+            </section>
+            <section className="pricing-section pricing-section--compact">
+              <div className="pricing-section__header">
+                <div className="pricing-section__title-wrap">
+                  <h2 className="pricing-section__title">{t("FAQs")}</h2>
+                </div>
+              </div>
+              <Collapse
+                items={collapseData}
+                onChange={() => {
+                  reportClick("pricing_faq_click");
+                }}
+              />
+            </section>
+          </Space>
+        </div>
       </div>
       <HasPayForFreePlanModal />
       <Modal
@@ -1239,7 +1272,11 @@ const Index = () => {
                   ) : (
                     <Title
                       level={3}
-                      style={{ margin: 0, color: "var(--app-color-text)", fontWeight: 700 }}
+                      style={{
+                        margin: 0,
+                        color: "var(--app-color-text)",
+                        fontWeight: 700,
+                      }}
                     >
                       ${option.price.currentPrice.toFixed(2)}
                     </Title>

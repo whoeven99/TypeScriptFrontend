@@ -9,12 +9,25 @@ import {
   listPageFlyTranslations,
   type PageFlyEditItem,
 } from "~/server/translateV4/pageflyTranslation.server";
+import {
+  buildTranslateV4Error,
+  TRANSLATE_V4_ERROR_KEYS,
+} from "~/utils/translateV4Errors";
 
 function ok(response: unknown) {
   return json({ success: true, errorCode: null, errorMsg: null, response });
 }
-function fail(errorMsg: string, errorCode = 10001) {
-  return json({ success: false, errorCode, errorMsg, response: null });
+function fail(errorKey: keyof typeof TRANSLATE_V4_ERROR_KEYS) {
+  const error = buildTranslateV4Error(TRANSLATE_V4_ERROR_KEYS[errorKey]);
+  return json(
+    {
+      success: false,
+      errorCode: error.errorCode,
+      errorMsg: error.errorMsg,
+      response: null,
+    },
+    { status: error.status },
+  );
 }
 
 /** GET /api/translate-v4/pagefly?languageCode= —— 列出本店 PageFly 译文。 */
@@ -23,13 +36,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const languageCode =
     new URL(request.url).searchParams.get("languageCode")?.trim() ?? "";
-  if (!languageCode) return fail("languageCode 不能为空");
+  if (!languageCode) return fail("PAGEFLY_LANGUAGE_REQUIRED");
 
   try {
     return ok(await listPageFlyTranslations(session.shop, languageCode));
   } catch (err) {
     console.error("[pagefly] list failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+    return fail("PAGEFLY_LIST_FAILED");
   }
 };
 
@@ -44,11 +57,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     items?: PageFlyEditItem[];
   };
   const items = Array.isArray(body.items) ? body.items : [];
+  if (!items.length) return fail("PAGEFLY_INVALID_ITEMS");
 
   try {
     return ok(await editPageFlyTranslations(session.shop, items));
   } catch (err) {
     console.error("[pagefly] edit failed:", err);
-    return fail(err instanceof Error ? err.message : String(err));
+    return fail("PAGEFLY_SAVE_FAILED");
   }
 };
