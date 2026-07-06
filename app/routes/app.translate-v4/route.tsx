@@ -47,30 +47,6 @@ import {
 } from "~/utils/clientLog";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
-const LazySupportChatWidget = lazy(() =>
-  import("./SupportChatWidget").then((module) => ({
-    default: module.SupportChatWidget,
-  })),
-);
-
-function useIdleReady(timeout = 2500) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (ready) return;
-    if (typeof window === "undefined") return;
-
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(() => setReady(true), { timeout });
-      return () => window.cancelIdleCallback(id);
-    }
-
-    const id = globalThis.setTimeout(() => setReady(true), timeout);
-    return () => globalThis.clearTimeout(id);
-  }, [ready, timeout]);
-
-  return ready;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -195,8 +171,6 @@ export default function AppTranslateV4() {
       | undefined;
     return state?.spotlightTaskIds ?? [];
   });
-  const supportChatReady = useIdleReady();
-
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
       setCoverageLoading(true);
@@ -757,11 +731,6 @@ export default function AppTranslateV4() {
         </div>
       </div>
 
-      {supportChatReady ? (
-        <Suspense fallback={null}>
-          <LazySupportChatWidget />
-        </Suspense>
-      ) : null}
       <CreateTaskQuotaGateModal
         open={quotaGateMode !== null}
         mode={quotaGateMode ?? "pricing"}
