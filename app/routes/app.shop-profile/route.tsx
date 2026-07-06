@@ -430,71 +430,66 @@ export default function ShopProfilePage() {
               </Flex>
             </Card>
 
-            {/* 店铺画像 + 内容规模：双栏 */}
-            <Row gutter={[20, 20]}>
-              <Col xs={24} lg={14}>
-                <Card
-                  title={
-                    <Flex align="center" gap={8}>
-                      <DatabaseOutlined style={{ color: "var(--app-accent-primary)" }} />
-                      <span>店铺画像</span>
-                    </Flex>
-                  }
-                  style={{ boxShadow: "var(--app-shadow-card)", height: "100%" }}
-                >
-                  {profile ? (
-                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
-                      <Descriptions.Item label="店铺名称">
-                        {profile.shopName || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="默认语言">
-                        <Tag>{profile.primaryLocale || "-"}</Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="行业/品类">
-                        <Tag color="blue">{profile.industry || "-"}</Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="品牌语气">
-                        {profile.brandTone || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="关键词" span={2}>
-                        {profile.keywords.length ? (
-                          <Flex gap={4} wrap="wrap">
-                            {profile.keywords.map((k) => (
-                              <Tag key={k} color="purple">{k}</Tag>
-                            ))}
-                          </Flex>
-                        ) : (
-                          "-"
-                        )}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="店铺描述" span={2}>
-                        <Paragraph
-                          style={{ margin: 0 }}
-                          ellipsis={{ rows: 2, expandable: true }}
-                        >
-                          {profile.description || "-"}
-                        </Paragraph>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="生成信息" span={2}>
-                        <Flex vertical gap={2}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {profile.aiModel || "-"}
-                          </Text>
-                          {profile.lastScannedAt && (
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              最后扫描：{formatDate(profile.lastScannedAt)}
-                            </Text>
-                          )}
-                        </Flex>
-                      </Descriptions.Item>
-                    </Descriptions>
-                  ) : (
-                    <Empty description="画像尚未生成（可能素材不足或 AI 未配置）" />
-                  )}
-                </Card>
-              </Col>
+            {/* 店铺画像：独占一行 */}
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <DatabaseOutlined style={{ color: "var(--app-accent-primary)" }} />
+                  <span>店铺画像</span>
+                </Flex>
+              }
+              style={{ boxShadow: "var(--app-shadow-card)" }}
+            >
+              {profile ? (
+                <Descriptions column={{ xs: 1, sm: 2, lg: 3 }} size="small" bordered>
+                  <Descriptions.Item label="店铺名称">
+                    {profile.shopName || "-"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="默认语言">
+                    <Tag>{profile.primaryLocale || "-"}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="行业/品类">
+                    <Tag color="blue">{profile.industry || "-"}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="品牌语气">
+                    {profile.brandTone || "-"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="AI 模型" span={2}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {profile.aiModel || "-"}
+                      {profile.lastScannedAt
+                        ? `　·　最后扫描：${formatDate(profile.lastScannedAt)}`
+                        : ""}
+                    </Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="关键词" span={3}>
+                    {profile.keywords.length ? (
+                      <Flex gap={4} wrap="wrap">
+                        {profile.keywords.map((k) => (
+                          <Tag key={k} color="purple">{k}</Tag>
+                        ))}
+                      </Flex>
+                    ) : (
+                      "-"
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="店铺描述" span={3}>
+                    <Paragraph
+                      style={{ margin: 0 }}
+                      ellipsis={{ rows: 2, expandable: true }}
+                    >
+                      {profile.description || "-"}
+                    </Paragraph>
+                  </Descriptions.Item>
+                </Descriptions>
+              ) : (
+                <Empty description="画像尚未生成（可能素材不足或 AI 未配置）" />
+              )}
+            </Card>
 
-              <Col xs={24} lg={10}>
+            {/* 内容规模 + 语言覆盖率：双栏 */}
+            <Row gutter={[20, 20]}>
+              <Col xs={24} lg={12}>
                 <Card
                   title={
                     <Flex align="center" gap={8}>
@@ -524,6 +519,7 @@ export default function ShopProfilePage() {
                     size="small"
                     pagination={false}
                     dataSource={moduleRows}
+                    scroll={{ y: 260 }}
                     columns={[
                       { title: "模块", dataIndex: "module", key: "module", ellipsis: true },
                       {
@@ -531,7 +527,7 @@ export default function ShopProfilePage() {
                         dataIndex: "items",
                         key: "items",
                         align: "right",
-                        width: 80,
+                        width: 72,
                         render: (v: number) => formatNumber(v),
                         sorter: (a, b) => a.items - b.items,
                       },
@@ -540,7 +536,7 @@ export default function ShopProfilePage() {
                         dataIndex: "chars",
                         key: "chars",
                         align: "right",
-                        width: 80,
+                        width: 72,
                         render: (v: number) => formatNumber(v),
                         sorter: (a, b) => a.chars - b.chars,
                       },
@@ -549,79 +545,81 @@ export default function ShopProfilePage() {
                   />
                 </Card>
               </Col>
-            </Row>
 
-            {/* 语言覆盖率 */}
-            <Card
-              title={
-                <Flex align="center" gap={8}>
-                  <GlobalOutlined style={{ color: "var(--app-accent-primary)" }} />
-                  <span>已发布语言覆盖率</span>
-                </Flex>
-              }
-              style={{ boxShadow: "var(--app-shadow-card)" }}
-            >
-              {coverageRows.length > 0 ? (
-                <Table
-                  size="small"
-                  pagination={false}
-                  dataSource={coverageRows}
-                  columns={[
-                    { title: "语言", dataIndex: "locale", key: "locale", width: 120 },
-                    {
-                      title: "翻译进度",
-                      key: "count",
-                      align: "right",
-                      width: 120,
-                      render: (_: unknown, r: (typeof coverageRows)[number]) =>
-                        `${formatNumber(r.translated)} / ${formatNumber(r.total)}`,
-                    },
-                    {
-                      title: "覆盖率",
-                      dataIndex: "percent",
-                      key: "percent",
-                      render: (percent: number | null) =>
-                        percent === null ? (
-                          <Text type="secondary">-</Text>
-                        ) : (
-                          <Flex align="center" gap={8}>
-                            <Progress
-                              percent={percent}
-                              size="small"
-                              status={percent >= 100 ? "success" : "active"}
-                              style={{ flex: 1, margin: 0 }}
-                              strokeColor={
-                                percent >= 100
-                                  ? "var(--app-accent-growth)"
-                                  : percent >= 50
-                                    ? "var(--app-accent-primary)"
-                                    : "var(--app-accent-utility)"
-                              }
-                            />
-                            <Text
-                              strong
-                              style={{
-                                fontSize: 13,
-                                minWidth: 42,
-                                textAlign: "right",
-                                color:
-                                  percent >= 100
-                                    ? "var(--app-accent-growth)"
-                                    : "var(--app-color-text)",
-                              }}
-                            >
-                              {percent}%
-                            </Text>
-                          </Flex>
-                        ),
-                    },
-                  ]}
-                  locale={{ emptyText: "无已发布的目标语言" }}
-                />
-              ) : (
-                <Empty description="无已发布的目标语言" />
-              )}
-            </Card>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={
+                    <Flex align="center" gap={8}>
+                      <GlobalOutlined style={{ color: "var(--app-accent-primary)" }} />
+                      <span>已发布语言覆盖率</span>
+                    </Flex>
+                  }
+                  style={{ boxShadow: "var(--app-shadow-card)", height: "100%" }}
+                >
+                  {coverageRows.length > 0 ? (
+                    <Table
+                      size="small"
+                      pagination={false}
+                      dataSource={coverageRows}
+                      scroll={{ y: 260 }}
+                      columns={[
+                        { title: "语言", dataIndex: "locale", key: "locale", width: 80 },
+                        {
+                          title: "进度",
+                          key: "count",
+                          align: "right",
+                          width: 100,
+                          render: (_: unknown, r: (typeof coverageRows)[number]) =>
+                            `${formatNumber(r.translated)} / ${formatNumber(r.total)}`,
+                        },
+                        {
+                          title: "覆盖率",
+                          dataIndex: "percent",
+                          key: "percent",
+                          render: (percent: number | null) =>
+                            percent === null ? (
+                              <Text type="secondary">-</Text>
+                            ) : (
+                              <Flex align="center" gap={8}>
+                                <Progress
+                                  percent={percent}
+                                  size="small"
+                                  status={percent >= 100 ? "success" : "active"}
+                                  style={{ flex: 1, margin: 0 }}
+                                  strokeColor={
+                                    percent >= 100
+                                      ? "var(--app-accent-growth)"
+                                      : percent >= 50
+                                        ? "var(--app-accent-primary)"
+                                        : "var(--app-accent-utility)"
+                                  }
+                                />
+                                <Text
+                                  strong
+                                  style={{
+                                    fontSize: 13,
+                                    minWidth: 40,
+                                    textAlign: "right",
+                                    color:
+                                      percent >= 100
+                                        ? "var(--app-accent-growth)"
+                                        : "var(--app-color-text)",
+                                  }}
+                                >
+                                  {percent}%
+                                </Text>
+                              </Flex>
+                            ),
+                        },
+                      ]}
+                      locale={{ emptyText: "无已发布的目标语言" }}
+                    />
+                  ) : (
+                    <Empty description="无已发布的目标语言" />
+                  )}
+                </Card>
+              </Col>
+            </Row>
 
             {/* AI 术语表 */}
             <Card
