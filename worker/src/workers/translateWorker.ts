@@ -67,6 +67,15 @@ const TRANSLATE_HINT_DRAIN_MAX = Math.max(
   1,
   Number(process.env.TRANSLATE_HINT_DRAIN_MAX) || 32,
 );
+/** Cosmos 兜底扫描：每批条数 × 最大批次数（跳过同店已在译的 queued）。 */
+const TRANSLATE_CLAIM_SCAN_BATCH = Math.max(
+  10,
+  Number(process.env.TRANSLATE_CLAIM_SCAN_BATCH) || 50,
+);
+const TRANSLATE_CLAIM_SCAN_MAX_BATCHES = Math.max(
+  1,
+  Number(process.env.TRANSLATE_CLAIM_SCAN_MAX_BATCHES) || 5,
+);
 /** Serialize shared counter + Redis updates across concurrent chunk handlers. */
 function createExclusiveRunner() {
   let chain: Promise<void> = Promise.resolve();
@@ -217,6 +226,44 @@ async function isStaleTranslateHint(hint: HintPayload): Promise<boolean> {
   return job.status !== "TRANSLATE_QUEUED";
 }
 
+async function isShopTranslateBusy(shopName: string): Promise<boolean> {
+  return (await countShopTranslatingJobs(shopName)) > 0;
+}
+
+/**
+ * 分页扫描 TRANSLATE_QUEUED，跳过「同店已有 TRANSLATING」的 queued，
+ * 避免队头全是同店任务时其它店永远 claim 不到（见 findPendingJobs top-N 陷阱）。
+ */
+async function claimNextTranslateJobFromCosmos(): Promise<TranslationV4Job | null> {
+  const busyShops = new Set<string>();
+
+  for (let batch = 0; batch < TRANSLATE_CLAIM_SCAN_MAX_BATCHES; batch++) {
+    const offset = batch * TRANSLATE_CLAIM_SCAN_BATCH;
+    const candidates = await findPendingJobs(
+      "TRANSLATE_QUEUED",
+      TRANSLATE_CLAIM_SCAN_BATCH,
+      offset,
+    );
+    if (candidates.length === 0) break;
+
+    for (const candidate of candidates) {
+      if (busyShops.has(candidate.shopName)) continue;
+      if (!stageSlots.hasCapacity("translate", stagePoolKindForJob(candidate))) {
+        continue;
+      }
+      if (await isShopTranslateBusy(candidate.shopName)) {
+        busyShops.add(candidate.shopName);
+        continue;
+      }
+      const job = await tryClaimTranslateJob(candidate.shopName, candidate.id);
+      if (job) return job;
+    }
+
+    if (candidates.length < TRANSLATE_CLAIM_SCAN_BATCH) break;
+  }
+  return null;
+}
+
 async function claimNextJob(): Promise<TranslationV4Job | null> {
   for (let n = 0; n < TRANSLATE_HINT_DRAIN_MAX; n++) {
     const hint = await popHint("translate");
@@ -238,23 +285,18 @@ async function claimNextJob(): Promise<TranslationV4Job | null> {
       continue;
     }
 
+    // 同店已在译：任务仍留在 Cosmos，由 wakeNextTranslateForShop 再 hint；勿塞回队尾阻塞其它店。
+    if (await isShopTranslateBusy(hint.shopName)) {
+      continue;
+    }
+
     const job = await tryClaimTranslateJob(hint.shopName, hint.taskId);
     if (job) return job;
 
     await requeueHintTail("translate", hint);
   }
 
-  const candidates = await findPendingJobs("TRANSLATE_QUEUED", 10);
-  for (const candidate of candidates) {
-    if (
-      !stageSlots.hasCapacity("translate", stagePoolKindForJob(candidate))
-    ) {
-      continue;
-    }
-    const job = await tryClaimTranslateJob(candidate.shopName, candidate.id);
-    if (job) return job;
-  }
-  return null;
+  return claimNextTranslateJobFromCosmos();
 }
 
 // All chunks within a module are translated concurrently.
