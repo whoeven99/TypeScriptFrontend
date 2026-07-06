@@ -1374,6 +1374,8 @@ const Index = () => {
           },
           body: {
             padding: 0,
+            maxHeight: "min(720px, calc(100vh - 96px))",
+            overflowY: "auto",
           },
         }}
       >

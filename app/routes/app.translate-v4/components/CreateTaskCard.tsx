@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { CustomTagProps } from "rc-select/lib/BaseSelect";
-import { Button, Checkbox, Select, Space } from "antd";
+import { Checkbox, Select, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -12,6 +12,7 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
+import Button from "~/ui/components/AppButton";
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -276,10 +277,15 @@ export function CreateTaskCard({
         <div
           style={{
             marginTop: 22,
-            paddingTop: 18,
+            padding: "18px 0 2px",
             borderTop: `1px solid ${v4Colors.divider}`,
             display: "flex",
             justifyContent: "center",
+            position: "sticky",
+            bottom: -22,
+            background: v4Colors.cardBg,
+            boxShadow: "0 -8px 18px rgba(15, 23, 42, 0.06)",
+            zIndex: 2,
           }}
         >
           {submitButton}
