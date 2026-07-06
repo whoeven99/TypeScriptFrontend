@@ -33,8 +33,9 @@ import {
 import { resolveBillingBinding } from "~/server/billing/index.server";
 import { BILLING_SYSTEM } from "~/server/billing/types.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useIdleReady } from "~/hooks/useIdleReady";
 
 import { ConfigProvider } from "antd";
 import { useDispatch } from "react-redux";
@@ -55,6 +56,12 @@ import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+
+const LazySupportChatWidget = lazy(() =>
+  import("~/components/SupportChatWidget").then((module) => ({
+    default: module.SupportChatWidget,
+  })),
+);
 
 type AppBootstrapData = {
   source: { code: string; name: string };
@@ -531,6 +538,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function App() {
   const { apiKey, shop, server, bootstrap } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
+  const supportChatReady = useIdleReady();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -601,6 +609,11 @@ export default function App() {
           )}
         </NavMenu>
         <Outlet />
+        {isClient && supportChatReady ? (
+          <Suspense fallback={null}>
+            <LazySupportChatWidget />
+          </Suspense>
+        ) : null}
       </ConfigProvider>
     </AppProvider>
   );
