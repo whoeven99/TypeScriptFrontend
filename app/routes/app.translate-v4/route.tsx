@@ -11,7 +11,7 @@ import { message } from "~/ui/message";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
@@ -127,6 +127,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function AppTranslateV4() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     shop,
     locales,
@@ -187,7 +188,13 @@ export default function AppTranslateV4() {
   const [quotaGateMode, setQuotaGateMode] = useState<
     "trial" | "pricing" | null
   >(null);
-  const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>([]);
+  const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>(() => {
+    const state = location.state as
+      | { spotlightTaskIds?: string[] }
+      | null
+      | undefined;
+    return state?.spotlightTaskIds ?? [];
+  });
   const supportChatReady = useIdleReady();
 
   const refreshCoverage = useCallback(
@@ -635,7 +642,8 @@ export default function AppTranslateV4() {
               borderRadius: 12,
               background: "var(--p-color-bg-surface-info)",
               color: "var(--p-color-text-info)",
-              border: "1px solid var(--v4-accent-primary-muted)",
+              border:
+                "1px solid var(--v4-accent-primary-muted, var(--app-accent-primary-muted))",
               display: "flex",
               alignItems: "flex-start",
               gap: 8,

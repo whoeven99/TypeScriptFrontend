@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { CustomTagProps } from "rc-select/lib/BaseSelect";
-import { Button, Checkbox, Select, Space } from "antd";
+import { Checkbox, Select, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -12,6 +12,7 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
+import Button from "~/ui/components/AppButton";
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -27,6 +28,8 @@ type Props = {
   onIsCoverChange: (v: boolean) => void;
   isHandle: boolean;
   onIsHandleChange: (v: boolean) => void;
+  advancedDefaultOpen?: boolean;
+  submitPlacement?: "header" | "footer-center";
 };
 
 export function CreateTaskCard({
@@ -43,11 +46,12 @@ export function CreateTaskCard({
   onIsCoverChange,
   isHandle,
   onIsHandleChange,
+  advancedDefaultOpen = false,
+  submitPlacement = "header",
 }: Props) {
   const { t } = useTranslation();
   const canCreate = targets.length > 0 && modules.length > 0 && !creating;
-  // 高级设置默认收起，点击展开
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
   const sortedTargetOptions = useMemo(() => {
     return [...targetOptions].sort((a, b) => {
@@ -87,6 +91,33 @@ export function CreateTaskCard({
     );
   };
 
+  const submitButton = (
+    <Button
+      type="primary"
+      className="v4-create-task-card__submit"
+      disabled={!canCreate}
+      loading={creating}
+      onClick={onCreate}
+      style={{
+        maxWidth: "100%",
+        minWidth: submitPlacement === "footer-center" ? 220 : undefined,
+        height: "auto",
+        minHeight: 36,
+        whiteSpace: "normal",
+        textAlign: "center",
+        lineHeight: 1.35,
+        paddingBlock: 8,
+        paddingInline: 24,
+      }}
+    >
+      {creating
+        ? t("v4.createTask.creating")
+        : targets.length > 1
+          ? t("v4.createTask.createMultiple", { count: targets.length })
+          : t("v4.createTask.createOne")}
+    </Button>
+  );
+
   return (
     <div
       className="v4-create-task-card v4-lift"
@@ -122,28 +153,7 @@ export function CreateTaskCard({
             {t("v4.createTask.title")}
           </h2>
         </div>
-        <Button
-          type="primary"
-          className="v4-create-task-card__submit"
-          disabled={!canCreate}
-          loading={creating}
-          onClick={onCreate}
-          style={{
-            maxWidth: "100%",
-            height: "auto",
-            minHeight: 32,
-            whiteSpace: "normal",
-            textAlign: "center",
-            lineHeight: 1.35,
-            paddingBlock: 6,
-          }}
-        >
-          {creating
-            ? t("v4.createTask.creating")
-            : targets.length > 1
-              ? t("v4.createTask.createMultiple", { count: targets.length })
-              : t("v4.createTask.createOne")}
-        </Button>
+        {submitPlacement === "header" ? submitButton : null}
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -262,6 +272,19 @@ export function CreateTaskCard({
           </div>
         </div>
       </div>
+
+      {submitPlacement === "footer-center" ? (
+        <div
+          style={{
+            marginTop: 22,
+            paddingTop: 18,
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          {submitButton}
+        </div>
+      ) : null}
     </div>
   );
 }
