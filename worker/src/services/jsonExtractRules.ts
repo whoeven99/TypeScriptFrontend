@@ -27,6 +27,22 @@ const RULE_MODE_PATH = "path";
 
 const HTML_FIELD_NAMES = new Set(["body_html", "content_html", "html"]);
 
+export const JSON_NEED_TRANSLATE_JUDGE = {
+  allowedShopifyTypes: [
+    "RICH_TEXT_FIELD",
+    "STRING",
+    "SINGLE_LINE_TEXT_FIELD",
+    "MULTI_LINE_TEXT_FIELD",
+    "JSON",
+  ],
+  jsonMustContainAny: [
+    '"type":"text"',
+    '"virtual_options"',
+    '"photo_gallery"',
+    '"reviews"',
+  ],
+} as const;
+
 /** Spring JsonTranslateStrategyService.buildDefaultRules when Redis config is empty. */
 const DEFAULT_JSON_EXTRACT_RULES: JsonExtractRule[] = [
   {
@@ -35,9 +51,40 @@ const DEFAULT_JSON_EXTRACT_RULES: JsonExtractRule[] = [
     typeValue: "text",
     translateField: "value",
   },
+  {
+    mode: "typeFieldMatch",
+    typeField: "type",
+    typeValue: "paragraph",
+    translateField: "value",
+  },
+  {
+    mode: "typeFieldMatch",
+    typeField: "type",
+    typeValue: "list",
+    translateField: "value",
+  },
   { mode: "path", path: "virtual_options[*].title" },
   { mode: "path", path: "virtual_options[*].values[*].key" },
+  { mode: "path", path: "reviews[*].title" },
+  { mode: "path", path: "reviews[*].body" },
+  { mode: "path", path: "photo_gallery[*].title" },
+  { mode: "path", path: "photo_gallery[*].body_html" },
 ];
+
+export function passesJsonNeedTranslateJudge(
+  value: string,
+  shopifyType?: string,
+): boolean {
+  if (
+    shopifyType &&
+    !JSON_NEED_TRANSLATE_JUDGE.allowedShopifyTypes.includes(
+      shopifyType as (typeof JSON_NEED_TRANSLATE_JUDGE.allowedShopifyTypes)[number],
+    )
+  ) {
+    return false;
+  }
+  return JSON_NEED_TRANSLATE_JUDGE.jsonMustContainAny.some((marker) => value.includes(marker));
+}
 
 function isHtmlFieldName(fieldName: string): boolean {
   return HTML_FIELD_NAMES.has(fieldName) || fieldName.endsWith("_html");
@@ -192,6 +239,12 @@ export function jsonHasExtractableText(value: string, rules?: JsonExtractRule[])
   const root = tryParseJsonContainer(value);
   if (root === undefined) return false;
   return extractJsonTextSlots(root, rules ?? loadJsonExtractRules()).length > 0;
+}
+
+/** INIT gate + worker classify: type marker, content marker, and extract rules. */
+export function shouldTranslateMetafieldJson(value: string, shopifyType?: string): boolean {
+  if (!passesJsonNeedTranslateJudge(value, shopifyType)) return false;
+  return jsonHasExtractableText(value);
 }
 
 export function tryParseJsonContainer(value: string): JsonValue | undefined {
