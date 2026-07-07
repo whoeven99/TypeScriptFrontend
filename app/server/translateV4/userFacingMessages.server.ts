@@ -1,10 +1,4 @@
-/** Worker / 协调器内部原因，不向商户展示。 */
-const INTERNAL_V4_USER_MESSAGES = new Set([
-  "任务已被其它 worker 接管",
-  "任务已不存在",
-  "任务已重新排队",
-  "已暂停",
-]);
+import { V4_INTERNAL_USER_MESSAGES } from "~/shared/translateV4MessageTokens";
 
 /** 过滤内部运维文案；商户可见的暂停原因（额度不足等）原样返回。 */
 export function sanitizeV4UserErrorMessage(

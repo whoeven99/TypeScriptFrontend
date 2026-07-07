@@ -1,4 +1,7 @@
 {
+  "Translation prompt": "翻譯提示詞",
+  "Describe the direction or style for this translation. It is applied to manual single-field translation on this page.": "描述本次翻譯的方向或風格，會套用於本頁面的手動單條翻譯。",
+  "e.g. Use a formal tone; keep brand names in English": "例如：使用正式語氣；品牌名保留英文",
   "loading": "載入中",
   "Dashboard": "儀表板",
   "Faster, higher-quality localization translation tool": "更快、更高品質的在地化翻譯工具",

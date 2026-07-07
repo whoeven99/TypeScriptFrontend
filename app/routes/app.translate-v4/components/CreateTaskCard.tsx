@@ -30,6 +30,8 @@ type Props = {
   onIsHandleChange: (v: boolean) => void;
   advancedDefaultOpen?: boolean;
   submitPlacement?: "header" | "footer-center";
+  createDisabled?: boolean;
+  disabledMessage?: string | null;
 };
 
 export function CreateTaskCard({
@@ -48,9 +50,12 @@ export function CreateTaskCard({
   onIsHandleChange,
   advancedDefaultOpen = false,
   submitPlacement = "header",
+  createDisabled = false,
+  disabledMessage = null,
 }: Props) {
   const { t } = useTranslation();
-  const canCreate = targets.length > 0 && modules.length > 0 && !creating;
+  const canCreate =
+    targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
   const sortedTargetOptions = useMemo(() => {
@@ -152,6 +157,18 @@ export function CreateTaskCard({
           >
             {t("v4.createTask.title")}
           </h2>
+          {disabledMessage ? (
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                lineHeight: 1.5,
+                color: v4Colors.textMuted,
+              }}
+            >
+              {disabledMessage}
+            </div>
+          ) : null}
         </div>
         {submitPlacement === "header" ? submitButton : null}
       </div>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Empty, Popconfirm, Tabs } from "antd";
+import { Empty, Popconfirm, Tabs } from "antd";
 import { useTranslation } from "react-i18next";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
+import Button from "~/ui/components/AppButton";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { formatLocaleRoute } from "../localeDisplay";
 import { jobDisplayPercent } from "../jobStageUtils";
@@ -43,18 +44,39 @@ export function CompactJobCard({
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
   const notice = getV4JobNotice(job.errorMessage, t);
+  const isCancelledLike = job.status === "CANCELLED" || notice.kind === "cancelled";
 
   const percent = jobDisplayPercent(job);
 
-  const canResume = job.canResume;
+  const canResume = job.canResume && !isCancelledLike;
   const canPause = canPauseV4Job(job.status) && !job.isStopping;
-  const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED" && !job.isStopping;
+  const canCancel =
+    job.status !== "COMPLETED" &&
+    job.status !== "CANCELLED" &&
+    !job.isStopping &&
+    !isCancelledLike;
   const canDelete =
     job.isTerminal ||
     job.status === "PAUSED" ||
     job.status === "CANCELLED" ||
     job.status === "FAILED" ||
+    isCancelledLike ||
     job.status === "COMPLETED";
+
+  useEffect(() => {
+    if (!pending) return;
+    if (pending === "resume" && !canResume) {
+      setPending(null);
+      return;
+    }
+    if (pending === "pause" && !canPause) {
+      setPending(null);
+      return;
+    }
+    if (pending === "cancel" && (isCancelledLike || !canCancel)) {
+      setPending(null);
+    }
+  }, [pending, canResume, canPause, canCancel, isCancelledLike]);
 
   const runAction = (action: "pause" | "resume" | "cancel" | "delete") => {
     setPending(action);
@@ -69,7 +91,7 @@ export function CompactJobCard({
     ? job.status === "COMPLETED"
       ? ""
       : job.status === "CANCELLED"
-        ? t("v4.tasks.cancelled")
+        ? ""
         : t("v4.tasks.ended")
     : t("v4.tasks.inProgress", { stage: getV4VisibleStageLabel(job, t) });
 
@@ -78,7 +100,7 @@ export function CompactJobCard({
       className={highlighted ? "v4-task-card-spotlight" : undefined}
       style={{
         ...v4CardStyle,
-        padding: expanded ? "14px 16px" : "12px 16px",
+        padding: expanded ? "16px 18px" : "14px 16px",
         marginBottom: 10,
         background: expanded ? v4Colors.cardSubdued : v4Colors.cardBg,
         border: highlighted
@@ -113,17 +135,7 @@ export function CompactJobCard({
             type="text"
             size="small"
             onClick={onToggleExpand}
-            style={{
-              color: expanded ? v4Colors.primaryHover : v4Colors.primary,
-              fontWeight: 600,
-              borderRadius: 8,
-              background: expanded ? v4Colors.primarySoft : v4Colors.cardSubdued,
-              border: `1px solid ${expanded ? "#bfdbff" : v4Colors.cardBorder}`,
-              whiteSpace: "normal",
-              textAlign: "center",
-              height: "auto",
-              lineHeight: 1.35,
-            }}
+            style={detailToggleButtonStyle(expanded)}
           >
             {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
           </Button>
@@ -134,7 +146,7 @@ export function CompactJobCard({
         <div
           style={{
             marginTop: 14,
-            paddingTop: 14,
+            padding: "14px 14px 12px",
             borderTop: `1px solid ${v4Colors.divider}`,
             background: "rgba(255,255,255,0.6)",
             borderRadius: 10,
@@ -176,7 +188,7 @@ export function CompactJobCard({
                   cancelText={t("Cancel")}
                   onConfirm={() => runAction("delete")}
                 >
-                  <Button type="link" size="small" danger style={deleteLinkButtonStyle}>
+                  <Button type="default" size="small" danger style={deleteButtonStyle}>
                     {t("v4.tasks.deleteRecord")}
                   </Button>
                 </Popconfirm>
@@ -309,17 +321,17 @@ function ActionChip({
   loading?: boolean;
   kind: "primary" | "ghost" | "danger";
 }) {
-  const typeMap: Record<"primary" | "ghost" | "danger", "primary" | "default" | "text"> = {
+  const typeMap: Record<"primary" | "ghost" | "danger", "primary" | "default" | "default"> = {
     primary: "primary",
     ghost: "default",
-    danger: "text",
+    danger: "default",
   };
   return (
     <Button
       type={typeMap[kind]}
       danger={kind === "danger"}
       size="small"
-      disabled={loading}
+      loading={loading}
       onClick={onClick}
       style={{
         fontWeight: 600,
@@ -328,6 +340,7 @@ function ActionChip({
         textAlign: "center",
         height: "auto",
         lineHeight: 1.35,
+        padding: kind === "danger" ? "4px 6px" : "4px 10px",
         ...(kind === "primary"
           ? {
               boxShadow: "none",
@@ -339,7 +352,8 @@ function ActionChip({
                 color: v4Colors.text,
               }
             : {
-                paddingInline: 4,
+                background: "var(--app-color-surface-critical)",
+                borderColor: "rgba(208, 77, 95, 0.2)",
               }),
       }}
     >
@@ -348,9 +362,27 @@ function ActionChip({
   );
 }
 
-const deleteLinkButtonStyle: CSSProperties = {
-  paddingInline: 0,
-  fontWeight: 500,
+function detailToggleButtonStyle(expanded: boolean): CSSProperties {
+  return {
+    color: expanded ? v4Colors.primary : v4Colors.textMuted,
+    fontWeight: 600,
+    borderRadius: 8,
+    background: expanded ? v4Colors.primarySoft : "transparent",
+    border: `1px solid ${expanded ? "#bfdbff" : "transparent"}`,
+    whiteSpace: "normal",
+    textAlign: "center",
+    height: "auto",
+    lineHeight: 1.35,
+    padding: "4px 8px",
+  };
+}
+
+const deleteButtonStyle: CSSProperties = {
+  padding: "4px 10px",
+  fontWeight: 600,
+  borderRadius: 8,
+  background: "var(--app-color-surface-critical)",
+  borderColor: "rgba(208, 77, 95, 0.2)",
 };
 
 export function TaskQueueSection({
@@ -533,7 +565,7 @@ export function TaskQueueSection({
           ))}
           {tab === "history" && historyJobs.length > 6 ? (
             <Button
-              type="link"
+              type="text"
               size="small"
               onClick={() => setHistoryExpanded((v) => !v)}
               style={historyToggleStyle}
@@ -552,13 +584,15 @@ export function TaskQueueSection({
 }
 
 const historyToggleStyle: CSSProperties = {
-  paddingInline: 0,
+  padding: "4px 8px",
   fontWeight: 600,
   marginTop: 4,
   whiteSpace: "normal",
   textAlign: "left",
   height: "auto",
   lineHeight: 1.35,
+  borderRadius: 8,
+  color: v4Colors.textMuted,
 };
 
 function tabLabelStyle(active: boolean): CSSProperties {

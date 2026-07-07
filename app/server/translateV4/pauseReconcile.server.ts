@@ -7,6 +7,7 @@ import type { TranslationV4MergedMetrics } from "./progress.server";
 import { reconcileTranslateUnitMetrics } from "./metricsUtils";
 import { EMPTY_V4_METRICS, type TranslationV4Job } from "./types";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
+import { V4_MESSAGE_MANUAL_PAUSE } from "~/shared/translateV4MessageTokens";
 
 /** worker 未能在该时长内收尾暂停 → TSF 直接落 PAUSED（不再先写回）。 */
 const STUCK_PAUSE_ESCALATE_MS = 120_000;
@@ -53,7 +54,7 @@ export async function escalateStuckPauseIfNeeded(
     claimedBy: null,
     pauseAfterWriteback: null,
     errorMessage:
-      sanitizeV4UserErrorMessage(metrics.pauseReason) ?? "已手动暂停",
+      sanitizeV4UserErrorMessage(metrics.pauseReason) ?? V4_MESSAGE_MANUAL_PAUSE,
     errorStage: "TRANSLATE",
     metrics: {
       ...jobMetrics,

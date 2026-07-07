@@ -9,18 +9,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { queryAppByHandle } from "~/api/admin";
 import type { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
 import {
-  getItemsCountByLabel,
+  getManageTranslationLocaleSnapshotFromCache,
   invalidateAllItemsCountForLocale,
+  refreshManageTranslationLocaleSummary,
+  type ManageTranslationLocaleSnapshot,
 } from "~/server/translateV4/itemsCount.server";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import {
-  updateData,
-  clearLocaleStats,
-} from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -36,8 +34,10 @@ import AppSectionCard from "~/ui/components/AppSectionCard";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -50,27 +50,42 @@ interface TableDataType {
   withoutCount: boolean;
 }
 
-/** 汇总页各卡片对应的 itemsCount resourceType（与 action 请求一致）。 */
-const ITEMS_COUNT_RESOURCE_TYPES = [
-  "Products",
-  "Collection",
-  "Article",
-  "Blog titles",
-  "Pages",
-  "Filters",
-  "Metaobjects",
-  "Navigation",
-  "Notifications",
-  "Policies",
-  "Shop",
-  "Store metadata",
-  "Theme",
-  "Delivery",
-  "Shipping",
-] as const;
+type LocaleSummary = ManageTranslationLocaleSnapshot;
 
-/** 避免 15 路并行 itemsCount 压满 Render 单实例（大店 Products 统计耗时长）。 */
-const ITEMS_COUNT_SUBMIT_GAP_MS = 400;
+type RowCountRef = { type?: string; module?: string };
+
+function buildDataRow(
+  key: string,
+  title: string,
+  navigation: string,
+  snapshot: LocaleSummary | null,
+  locale: string,
+  loading: boolean,
+  countRef?: RowCountRef,
+  opts?: { sync_status?: boolean },
+): TableDataType {
+  const withoutCount = !countRef;
+  const row: TableDataType = {
+    key,
+    title,
+    navigation,
+    sync_status: opts?.sync_status ?? false,
+    withoutCount,
+  };
+  if (withoutCount) return row;
+  if (loading || !snapshot || snapshot.locale !== locale) return row;
+  const counts = countRef.module
+    ? snapshot.byModule[countRef.module]
+    : countRef.type
+      ? snapshot.byType[countRef.type]
+      : undefined;
+  if (!counts) return row;
+  return {
+    ...row,
+    allTranslatedItems: counts.translated,
+    allItems: counts.total,
+  };
+}
 
 function safeParseFormJson(value: FormDataEntryValue | null): unknown {
   if (value == null || value === "") return null;
@@ -98,14 +113,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
-  const refreshItemsCountTarget = formData.get("refreshItemsCountTarget");
-  if (typeof refreshItemsCountTarget === "string" && refreshItemsCountTarget) {
+  const itemsCountSummary = safeParseFormJson(formData.get("itemsCountSummary")) as
+    | { target?: string; forceRefresh?: boolean }
+    | null;
+  if (itemsCountSummary?.target) {
+    const target = itemsCountSummary.target.trim();
+    const forceRefresh = itemsCountSummary.forceRefresh === true;
     try {
-      // 与管理翻译/v4 共用 Redis：tsf:items_count:{shop}:{locale}（见 itemsCountRedisKey）
-      await invalidateAllItemsCountForLocale(shop, refreshItemsCountTarget);
-      return { success: true, errorCode: 0, errorMsg: "", response: null };
+      if (forceRefresh) {
+        await invalidateAllItemsCountForLocale(shop, target);
+        const response = await refreshManageTranslationLocaleSummary({
+          admin,
+          shop,
+          locale: target,
+        });
+        return { success: true, errorCode: 0, errorMsg: "", response };
+      }
+      const response = await getManageTranslationLocaleSnapshotFromCache(shop, target);
+      return { success: true, errorCode: 0, errorMsg: "", response };
     } catch (error) {
-      console.error("Error manage_translation refreshItemsCount:", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error manage_translation refreshItemsCount",
+        error,
+      );
       return {
         success: false,
         errorCode: 10001,
@@ -116,7 +146,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   const appInstalls = safeParseFormJson(formData.get("appInstalls"));
-  const itemsCount = safeParseFormJson(formData.get("itemsCount"));
   const translateImage = safeParseFormJson(formData.get("translateImage"));
   const replaceTranslateImage = safeParseFormJson(
     formData.get("replaceTranslateImage"),
@@ -135,7 +164,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: appByHandle,
         };
       } catch (error) {
-        console.error("Error manage_translation appInstalls:", error);
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation appInstalls",
+          error,
+        );
         return {
           success: false,
           errorCode: 10001,
@@ -155,7 +187,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return { success: true, errorCode: 0, errorMsg: "", response };
       } catch (error) {
-        console.error("Error manage_translation itemsCount:", error);
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation itemsCount",
+          error,
+        );
         return {
           success: false,
           errorCode: 10001,
@@ -218,10 +253,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
+function manageRow(
+  key: string,
+  title: string,
+  navigation: string,
+  opts?: { withoutCount?: boolean; sync_status?: boolean },
+): TableDataType {
+  return {
+    key,
+    title,
+    sync_status: opts?.sync_status ?? false,
+    navigation,
+    withoutCount: opts?.withoutCount ?? true,
+  };
+}
+
 const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
-  const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -232,10 +281,6 @@ const Index = () => {
 
   const languageTableData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
-  );
-
-  const languageItemsData = useSelector(
-    (state: any) => state.languageItemsData,
   );
 
   const loading = useMemo(() => {
@@ -254,451 +299,228 @@ const Index = () => {
   const [currentLocale, setCurrentLocale] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [localeSummary, setLocaleSummary] = useState<LocaleSummary | null>(null);
   const [appInstallList, setAppInstallList] = useState<{
     pagefly: boolean;
   }>({
     pagefly: false,
   });
 
-  const fetcher = useFetcher<any>();
   const appFetcher = useFetcher<any>();
-  const productsFetcher = useFetcher<any>();
-  const collectionsFetcher = useFetcher<any>();
-  const articlesFetcher = useFetcher<any>();
-  const blog_titlesFetcher = useFetcher<any>();
-  const pagesFetcher = useFetcher<any>();
-  const filtersFetcher = useFetcher<any>();
-  const metaobjectsFetcher = useFetcher<any>();
-  const navigationFetcher = useFetcher<any>();
-  const emailFetcher = useFetcher<any>();
-  const policiesFetcher = useFetcher<any>();
-  const shopFetcher = useFetcher<any>();
-  const store_metadataFetcher = useFetcher<any>();
-  const themeFetcher = useFetcher<any>();
-  const deliveryFetcher = useFetcher<any>();
-  const shippingFetcher = useFetcher<any>();
-  const refreshStatsFetcher = useFetcher<any>();
+  const summaryFetcher = useFetcher<any>();
 
-  const [isRefreshingStats, setIsRefreshingStats] = useState(false);
-  const pendingRefreshStatsRef = useRef(false);
   const refreshStatsTraceRef = useRef<ClientLogTrace | null>(null);
-  /** 刷新统计：等 Products（首个本地重算）完成后再 toast，避免假成功。 */
-  const refreshAwaitingProductsRef = useRef(false);
-  /** 切换语言或重复 effect 时作废进行中的错峰拉取。 */
-  const itemsCountLoadTokenRef = useRef(0);
-  const loadedItemsCountLocaleRef = useRef<string | null>(null);
+  const loadedSummaryLocaleRef = useRef<string | null>(null);
+  const pendingForceRefreshRef = useRef(false);
 
-  const itemsCountFetcherByType = useMemo(
-    () => ({
-      Products: productsFetcher,
-      Collection: collectionsFetcher,
-      Article: articlesFetcher,
-      "Blog titles": blog_titlesFetcher,
-      Pages: pagesFetcher,
-      Filters: filtersFetcher,
-      Metaobjects: metaobjectsFetcher,
-      Navigation: navigationFetcher,
-      Notifications: emailFetcher,
-      Policies: policiesFetcher,
-      Shop: shopFetcher,
-      "Store metadata": store_metadataFetcher,
-      Theme: themeFetcher,
-      Delivery: deliveryFetcher,
-      Shipping: shippingFetcher,
-    }),
-    [
-      productsFetcher,
-      collectionsFetcher,
-      articlesFetcher,
-      blog_titlesFetcher,
-      pagesFetcher,
-      filtersFetcher,
-      metaobjectsFetcher,
-      navigationFetcher,
-      emailFetcher,
-      policiesFetcher,
-      shopFetcher,
-      store_metadataFetcher,
-      themeFetcher,
-      deliveryFetcher,
-      shippingFetcher,
+  const fetchLocaleSummary = useCallback(
+    (target: string, forceRefresh = false) => {
+      if (!target) return;
+      if (forceRefresh) pendingForceRefreshRef.current = true;
+      const formData = new FormData();
+      formData.append(
+        "itemsCountSummary",
+        JSON.stringify({ target, forceRefresh }),
+      );
+      summaryFetcher.submit(formData, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+    },
+    [summaryFetcher],
+  );
+
+  const isSummaryLoading = summaryFetcher.state !== "idle";
+
+  const productsDataSource = useMemo(
+    () => [
+      buildDataRow(
+        "products",
+        t("Products"),
+        "product",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "PRODUCT" },
+        { sync_status: true },
+      ),
+      buildDataRow(
+        "collections",
+        t("Collections"),
+        "collection",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "COLLECTION" },
+        { sync_status: true },
+      ),
     ],
+    [localeSummary, currentLocale, isSummaryLoading, t],
   );
 
-  const fetchAllItemsCounts = useCallback(
-    (target: string, sourceCode: string, forceRefresh = false) => {
-      if (!target || !sourceCode) return;
-      const loadToken = ++itemsCountLoadTokenRef.current;
-
-      void (async () => {
-        for (const resourceType of ITEMS_COUNT_RESOURCE_TYPES) {
-          if (itemsCountLoadTokenRef.current !== loadToken) return;
-
-          const fetcher =
-            itemsCountFetcherByType[
-              resourceType as keyof typeof itemsCountFetcherByType
-            ];
-          const formData = new FormData();
-          formData.append(
-            "itemsCount",
-            JSON.stringify({
-              source: sourceCode,
-              target,
-              resourceType,
-              ...(forceRefresh ? { forceRefresh: true } : {}),
-            }),
-          );
-          fetcher.submit(formData, {
-            method: "post",
-            action: "/app/manage_translation",
-          });
-
-          await new Promise((resolve) =>
-            setTimeout(resolve, ITEMS_COUNT_SUBMIT_GAP_MS),
-          );
-        }
-      })();
-    },
-    [itemsCountFetcherByType],
+  const onlineStoreThemeDataSource = useMemo(
+    () => [
+      buildDataRow(
+        "locale_content",
+        t("Locale Content"),
+        "locale_content",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { module: "ONLINE_STORE_THEME_LOCALE_CONTENT" },
+      ),
+      manageRow("json_template", t("Json Template"), "json_template"),
+      manageRow("section_group", t("Section Group"), "section_group"),
+      manageRow("settings_category", t("Settings Category"), "settings_category"),
+      manageRow(
+        "settings_data_sections",
+        t("Settings Data Sections"),
+        "settings_data_sections",
+      ),
+    ],
+    [localeSummary, currentLocale, isSummaryLoading, t],
   );
 
-  const productsDataSource: TableDataType[] = [
-    {
-      key: "products",
-      title: t("Products"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "PRODUCT",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "PRODUCT",
-        )?.totalNumber ?? undefined,
-      sync_status: true,
-      navigation: "product",
-      withoutCount: false,
-    },
-    {
-      key: "collections",
-      title: t("Collections"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "COLLECTION",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "COLLECTION",
-        )?.totalNumber ?? undefined,
-      sync_status: true,
-      navigation: "collection",
-      withoutCount: false,
-    },
-  ];
+  const onlineStoreDataSource = useMemo(
+    () => [
+      buildDataRow("shop", t("Shop"), "shop", localeSummary, currentLocale, isSummaryLoading, {
+        type: "SHOP",
+      }),
+      buildDataRow("pages", t("Pages"), "page", localeSummary, currentLocale, isSummaryLoading, {
+        type: "PAGE",
+      }),
+      buildDataRow(
+        "metaobjects",
+        t("Metaobjects"),
+        "metaobject",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "METAOBJECT" },
+      ),
+      buildDataRow(
+        "navigation",
+        t("Navigation"),
+        "navigation",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "LINK" },
+      ),
+      buildDataRow(
+        "store_metadata",
+        t("Metafield"),
+        "metafield",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "METAFIELD" },
+      ),
+    ],
+    [localeSummary, currentLocale, isSummaryLoading, t],
+  );
 
-  const onlineStoreThemeDataSource: TableDataType[] = [
-    {
-      key: "locale_content",
-      title: t("Locale Content"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "ONLINE_STORE_THEME",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "ONLINE_STORE_THEME",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "locale_content",
-      withoutCount: false,
-    },
-    {
-      key: "json_template",
-      title: t("Json Template"),
-      sync_status: false,
-      navigation: "json_template",
-      withoutCount: true,
-    },
-    {
-      key: "section_group",
-      title: t("Section Group"),
-      sync_status: false,
-      navigation: "section_group",
-      withoutCount: true,
-    },
-    {
-      key: "settings_category",
-      title: t("Settings Category"),
-      sync_status: false,
-      navigation: "settings_category",
-      withoutCount: true,
-    },
-    {
-      key: "settings_data_sections",
-      title: t("Settings Data Sections"),
-      sync_status: false,
-      navigation: "settings_data_sections",
-      withoutCount: true,
-    },
-  ];
+  const blogAndArticleDataSource = useMemo(
+    () => [
+      buildDataRow(
+        "articles",
+        t("Articles"),
+        "article",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "ARTICLE" },
+      ),
+      buildDataRow(
+        "blog_titles",
+        t("Blog titles"),
+        "blog",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "BLOG" },
+      ),
+    ],
+    [localeSummary, currentLocale, isSummaryLoading, t],
+  );
 
-  const onlineStoreDataSource: TableDataType[] = [
-    {
-      key: "shop",
-      title: t("Shop"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "SHOP",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "SHOP",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "shop",
-      withoutCount: false,
-    },
-    {
-      key: "pages",
-      title: t("Pages"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "PAGE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "PAGE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "page",
-      withoutCount: false,
-    },
-    {
-      key: "metaobjects",
-      title: t("Metaobjects"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "METAOBJECT",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "METAOBJECT",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "metaobject",
-      withoutCount: false,
-    },
-    {
-      key: "navigation",
-      title: t("Navigation"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "LINK",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "LINK",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "navigation",
-      withoutCount: false,
-    },
-    {
-      key: "store_metadata",
-      title: t("Metafield"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "METAFIELD",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "METAFIELD",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "metafield",
-      withoutCount: false,
-    },
-  ];
+  const imageDataSource = useMemo(
+    () => [
+      manageRow("product_images", t("Product images"), "productImage"),
+      manageRow("product_image_alt", t("Product image alt text"), "productImageAlt"),
+    ],
+    [t],
+  );
 
-  const blogAndArticleDataSource: TableDataType[] = [
-    {
-      key: "articles",
-      title: t("Articles"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "ARTICLE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "ARTICLE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "article",
-      withoutCount: false,
-    },
-    {
-      key: "blog_titles",
-      title: t("Blog titles"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "BLOG",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "BLOG",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "blog",
-      withoutCount: false,
-    },
-  ];
+  const settingsDataSource = useMemo(
+    () => [
+      buildDataRow(
+        "policies",
+        t("Policies"),
+        "policy",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "SHOP_POLICY" },
+      ),
+      buildDataRow(
+        "email",
+        t("Email"),
+        "email",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "EMAIL_TEMPLATE" },
+      ),
+      buildDataRow(
+        "shipping",
+        t("Shipping"),
+        "shipping",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "PACKING_SLIP_TEMPLATE" },
+      ),
+      buildDataRow(
+        "delivery",
+        t("Delivery"),
+        "delivery",
+        localeSummary,
+        currentLocale,
+        isSummaryLoading,
+        { type: "DELIVERY_METHOD_DEFINITION" },
+      ),
+    ],
+    [localeSummary, currentLocale, isSummaryLoading, t],
+  );
 
-  const imageDataSource: TableDataType[] = [
-    {
-      key: "product_images",
-      title: t("Product images"),
-      sync_status: false,
-      navigation: "productImage",
-      withoutCount: true,
-    },
-    {
-      key: "product_image_alt",
-      title: t("Product image alt text"),
-      sync_status: false,
-      navigation: "productImageAlt",
-      withoutCount: true,
-    },
-  ];
-
-  const settingsDataSource: TableDataType[] = [
-    {
-      key: "policies",
-      title: t("Policies"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "SHOP_POLICY",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "SHOP_POLICY",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "policy",
-      withoutCount: false,
-    },
-    {
-      key: "email",
-      title: t("Email"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "EMAIL_TEMPLATE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale && item?.type === "EMAIL_TEMPLATE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "email",
-      withoutCount: false,
-    },
-    {
-      key: "shipping",
-      title: t("Shipping"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "PACKING_SLIP_TEMPLATE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "PACKING_SLIP_TEMPLATE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "shipping",
-      withoutCount: false,
-    },
-    {
-      key: "delivery",
-      title: t("Delivery"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "DELIVERY_METHOD_DEFINITION",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === currentLocale &&
-            item?.type === "DELIVERY_METHOD_DEFINITION",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "delivery",
-      withoutCount: false,
-    },
-  ];
-
-  const liquidAndThirdPartyAppsDataSource: TableDataType[] = useMemo(() => {
+  const liquidAndThirdPartyAppsDataSource = useMemo(() => {
     const list: TableDataType[] = [
-      {
-        key: "custom_liquid",
-        title: t("Custom Liquid"),
-        sync_status: false,
-        navigation: "custom_liquid",
-        withoutCount: true,
-      },
+      manageRow("custom_liquid", t("Custom Liquid"), "custom_liquid"),
     ];
 
     if (appInstallList.pagefly) {
-      list.push({
-        key: "pagefly",
-        title: t("PageFly"),
-        sync_status: false,
-        navigation: "pagefly",
-        withoutCount: true,
-      });
+      list.push(manageRow("pagefly", t("PageFly"), "pagefly"));
     }
 
     return list;
   }, [appInstallList, t]);
 
+
   useEffect(() => {
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 目前在翻译管理页面`,
+        event: "manage_translation_page_view",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 目前在翻译管理页面`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
     appFetcher.submit(
       {
@@ -747,179 +569,14 @@ const Index = () => {
   }, [appFetcher.data]);
 
   useEffect(() => {
-    if (productsFetcher.data) {
-      if (
-        productsFetcher.data?.success &&
-        productsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(productsFetcher.data?.response));
-      }
-    }
-  }, [dispatch, productsFetcher.data]);
+    if (!currentLocale) return;
+    if (loadedSummaryLocaleRef.current === currentLocale) return;
+    loadedSummaryLocaleRef.current = currentLocale;
+    fetchLocaleSummary(currentLocale, false);
+  }, [currentLocale, fetchLocaleSummary]);
 
+  /** v4 任务完成后读 Redis 缓存刷新当前语言汇总。 */
   useEffect(() => {
-    if (collectionsFetcher.data) {
-      if (
-        collectionsFetcher.data?.success &&
-        collectionsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(collectionsFetcher.data?.response));
-      }
-    }
-  }, [dispatch, collectionsFetcher.data]);
-
-  useEffect(() => {
-    if (articlesFetcher.data) {
-      if (
-        articlesFetcher.data?.success &&
-        articlesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(articlesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, articlesFetcher.data]);
-
-  useEffect(() => {
-    if (blog_titlesFetcher.data) {
-      if (
-        blog_titlesFetcher.data?.success &&
-        blog_titlesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(blog_titlesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, blog_titlesFetcher.data]);
-
-  useEffect(() => {
-    if (pagesFetcher.data) {
-      if (
-        pagesFetcher.data?.success &&
-        pagesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(pagesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, pagesFetcher.data]);
-
-  useEffect(() => {
-    if (filtersFetcher.data) {
-      if (
-        filtersFetcher.data?.success &&
-        filtersFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(filtersFetcher.data?.response));
-      }
-    }
-  }, [dispatch, filtersFetcher.data]);
-
-  useEffect(() => {
-    if (metaobjectsFetcher.data) {
-      if (
-        metaobjectsFetcher.data?.success &&
-        metaobjectsFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(metaobjectsFetcher.data?.response));
-      }
-    }
-  }, [dispatch, metaobjectsFetcher.data]);
-
-  useEffect(() => {
-    if (emailFetcher.data) {
-      if (
-        emailFetcher.data?.success &&
-        emailFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(emailFetcher.data?.response));
-      }
-    }
-  }, [dispatch, emailFetcher.data]);
-
-  useEffect(() => {
-    if (navigationFetcher.data) {
-      if (
-        navigationFetcher.data?.success &&
-        navigationFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(navigationFetcher.data?.response));
-      }
-    }
-  }, [dispatch, navigationFetcher.data]);
-
-  useEffect(() => {
-    if (policiesFetcher.data) {
-      if (
-        policiesFetcher.data?.success &&
-        policiesFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(policiesFetcher.data?.response));
-      }
-    }
-  }, [dispatch, policiesFetcher.data]);
-
-  useEffect(() => {
-    if (shopFetcher.data) {
-      if (shopFetcher.data?.success && shopFetcher.data?.response?.length > 0) {
-        dispatch(updateData(shopFetcher.data?.response));
-      }
-    }
-  }, [dispatch, shopFetcher.data]);
-
-  useEffect(() => {
-    if (store_metadataFetcher.data) {
-      if (
-        store_metadataFetcher.data?.success &&
-        store_metadataFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(store_metadataFetcher.data?.response));
-      }
-    }
-  }, [dispatch, store_metadataFetcher.data]);
-
-  useEffect(() => {
-    if (themeFetcher.data) {
-      if (
-        themeFetcher.data?.success &&
-        themeFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(themeFetcher.data?.response));
-      }
-    }
-  }, [dispatch, themeFetcher.data]);
-
-  useEffect(() => {
-    if (deliveryFetcher.data) {
-      if (
-        deliveryFetcher.data?.success &&
-        deliveryFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(deliveryFetcher.data?.response));
-      }
-    }
-  }, [dispatch, deliveryFetcher.data]);
-
-  useEffect(() => {
-    if (shippingFetcher.data) {
-      if (
-        shippingFetcher.data?.success &&
-        shippingFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(shippingFetcher.data.response));
-      }
-    }
-  }, [dispatch, shippingFetcher.data]);
-
-  useEffect(() => {
-    const sourceCode = source?.code;
-    if (!sourceCode || !currentLocale) return;
-    if (loadedItemsCountLocaleRef.current === currentLocale) return;
-    loadedItemsCountLocaleRef.current = currentLocale;
-    fetchAllItemsCounts(currentLocale, sourceCode);
-  }, [currentLocale, source?.code, fetchAllItemsCounts]);
-
-  /** v4 任务完成后读 Redis 缓存刷新当前语言统计（无需点「刷新统计」）。 */
-  useEffect(() => {
-    const sourceCode = source?.code;
-    if (!sourceCode) return;
     return onTranslationStatsUpdated((detail) => {
       if (
         !currentLocale ||
@@ -927,72 +584,38 @@ const Index = () => {
       ) {
         return;
       }
-      fetchAllItemsCounts(currentLocale, sourceCode, false);
+      fetchLocaleSummary(currentLocale, false);
     });
-  }, [currentLocale, source?.code, fetchAllItemsCounts]);
+  }, [currentLocale, fetchLocaleSummary]);
 
   useEffect(() => {
-    if (!pendingRefreshStatsRef.current) return;
-    if (refreshStatsFetcher.state !== "idle" || !refreshStatsFetcher.data) {
+    if (summaryFetcher.state !== "idle" || !summaryFetcher.data) return;
+    const data = summaryFetcher.data;
+    if (data.success && data.response) {
+      setLocaleSummary(data.response as LocaleSummary);
+      if (pendingForceRefreshRef.current) {
+        pendingForceRefreshRef.current = false;
+        finishClientLogTrace(refreshStatsTraceRef.current, {
+          status: "success",
+          context: { locale: currentLocale },
+        });
+        refreshStatsTraceRef.current = null;
+        shopify.toast.show(t("Translation statistics refreshed"));
+      }
       return;
     }
-    pendingRefreshStatsRef.current = false;
-    if (refreshStatsFetcher.data.success && currentLocale && source?.code) {
-      dispatch(clearLocaleStats(currentLocale));
-      loadedItemsCountLocaleRef.current = null;
-      refreshAwaitingProductsRef.current = true;
-      fetchAllItemsCounts(currentLocale, source.code, true);
-    } else {
+    if (pendingForceRefreshRef.current) {
+      pendingForceRefreshRef.current = false;
       finishClientLogTrace(refreshStatsTraceRef.current, {
         level: "warn",
         status: "failure",
-        message:
-          refreshStatsFetcher.data?.errorMsg || "Failed to refresh statistics",
-        context: {
-          locale: currentLocale,
-        },
-      });
-      refreshStatsTraceRef.current = null;
-      shopify.toast.show(t("Failed to refresh statistics"));
-      setIsRefreshingStats(false);
-    }
-  }, [
-    refreshStatsFetcher.data,
-    refreshStatsFetcher.state,
-    currentLocale,
-    source?.code,
-    fetchAllItemsCounts,
-    dispatch,
-    t,
-  ]);
-
-  useEffect(() => {
-    if (!refreshAwaitingProductsRef.current) return;
-    if (productsFetcher.state !== "idle") return;
-    refreshAwaitingProductsRef.current = false;
-    setIsRefreshingStats(false);
-    if (productsFetcher.data?.success) {
-      finishClientLogTrace(refreshStatsTraceRef.current, {
-        status: "success",
-        context: {
-          locale: currentLocale,
-        },
-      });
-      refreshStatsTraceRef.current = null;
-      shopify.toast.show(t("Translation statistics refreshed"));
-    } else {
-      finishClientLogTrace(refreshStatsTraceRef.current, {
-        level: "warn",
-        status: "failure",
-        message: "Products statistics refresh failed",
-        context: {
-          locale: currentLocale,
-        },
+        message: data?.errorMsg || "Failed to refresh statistics",
+        context: { locale: currentLocale },
       });
       refreshStatsTraceRef.current = null;
       shopify.toast.show(t("Failed to refresh statistics"));
     }
-  }, [productsFetcher.state, productsFetcher.data, currentLocale, t]);
+  }, [summaryFetcher.data, summaryFetcher.state, currentLocale, t]);
 
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
@@ -1006,21 +629,25 @@ const Index = () => {
 
   const navigateToPricing = () => {
     navigate("/app/pricing");
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        event: "manage_translation_to_pricing",
+        action: "navigate_pricing",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
   };
 
   const handleRefreshStats = () => {
     if (!currentLocale || !source?.code) return;
-    setIsRefreshingStats(true);
-    pendingRefreshStatsRef.current = true;
     refreshStatsTraceRef.current = startClientLogTrace({
       event: "manage_refresh_statistics",
       action: "refresh_statistics",
@@ -1031,13 +658,17 @@ const Index = () => {
       },
     });
     reportClick("manage_refresh_stats");
-    const formData = new FormData();
-    formData.append("refreshItemsCountTarget", currentLocale);
-    refreshStatsFetcher.submit(formData, {
-      method: "post",
-      action: "/app/manage_translation",
-    });
+    fetchLocaleSummary(currentLocale, true);
   };
+
+  const summaryDisplay = useMemo(() => {
+    if (isSummaryLoading && !localeSummary) return t("Syncing");
+    if (!localeSummary || localeSummary.locale !== currentLocale) return "—";
+    if (localeSummary.total <= 0) return "—";
+    const pct =
+      localeSummary.percent != null ? ` (${localeSummary.percent}%)` : "";
+    return `${localeSummary.translated.toLocaleString()} / ${localeSummary.total.toLocaleString()}${pct}`;
+  }, [currentLocale, isSummaryLoading, localeSummary, t]);
 
   return (
     <Page>
@@ -1063,16 +694,17 @@ const Index = () => {
                     <Select
                       options={selectOptions}
                       value={currentLocale}
-                      onChange={(value) => setCurrentLocale(value)}
+                      onChange={(value) => {
+                        loadedSummaryLocaleRef.current = null;
+                        setLocaleSummary(null);
+                        setCurrentLocale(value);
+                      }}
                       style={{ minWidth: "200px" }}
                     />
                     <Button
                       icon={<ReloadOutlined />}
                       onClick={handleRefreshStats}
-                      loading={
-                        isRefreshingStats ||
-                        refreshStatsFetcher.state !== "idle"
-                      }
+                      loading={isSummaryLoading}
                       disabled={!currentLocale || !source?.code}
                     >
                       {t("Refresh statistics")}
@@ -1109,6 +741,16 @@ const Index = () => {
                     )}
                   </div>
                 </div>
+              </AppSectionCard>
+              <AppSectionCard bodyPadding="16px 20px">
+                <Flex align="center" gap={24} wrap="wrap">
+                  <Flex vertical gap={4}>
+                    <Text type="secondary">{t("Items Translated")}</Text>
+                    <Text strong style={{ fontSize: 20 }}>
+                      {summaryDisplay}
+                    </Text>
+                  </Flex>
+                </Flex>
               </AppSectionCard>
               <div className="manage-content-wrap">
                 <div className="manage-content-left">
@@ -1182,14 +824,21 @@ const Index = () => {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                fetcher.submit(
+                void reportClientLog(
                   {
-                    log: `${globalStore?.shop} 下载批量导入文件`,
+                    event: "manage_translation_download_template",
+                    action: "download_template",
+                    shop: globalStore?.shop,
+                    level: "info",
+                    kind: "event",
+                    status: "success",
+                    message: `${globalStore?.shop} 下载批量导入文件`,
+                    context: {
+                      legacy: true,
+                      fileName: "Shop_translation.csv",
+                    },
                   },
-                  {
-                    method: "POST",
-                    action: "/log",
-                  },
+                  { beacon: true },
                 );
               }}
             >

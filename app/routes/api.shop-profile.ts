@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
 import { getLatestShopScanJob } from "~/server/shopScan/cosmos.server";
+import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 
 /**
  * GET /api/shop-profile —— 店铺画像 + 最近一次扫描状态。
@@ -10,6 +11,9 @@ import { getLatestShopScanJob } from "~/server/shopScan/cosmos.server";
  * 预留给后续 UI（初始化进度页 / 术语表确认引导），本期仅提供查询。
  */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  if (isProductionNodeEnv()) {
+    return json({ ok: false, error: "not available" }, { status: 404 });
+  }
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 

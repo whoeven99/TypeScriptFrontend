@@ -143,6 +143,56 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type GraphqlThrottleStatus = {
+  maximumAvailable?: number;
+  currentlyAvailable?: number;
+  restoreRate?: number;
+};
+
+type GraphqlCostExtension = {
+  requestedQueryCost?: number;
+  actualQueryCost?: number;
+  throttleStatus?: GraphqlThrottleStatus;
+};
+
+function getGraphqlCostExtension(data: any): GraphqlCostExtension | null {
+  const cost = data?.extensions?.cost;
+  if (!cost || typeof cost !== "object") return null;
+  return cost as GraphqlCostExtension;
+}
+
+function getThrottleDelayMs(
+  cost: GraphqlCostExtension | null,
+  minimumAvailable: number,
+): number | null {
+  const throttleStatus = cost?.throttleStatus;
+  const currentlyAvailable = throttleStatus?.currentlyAvailable;
+  const restoreRate = throttleStatus?.restoreRate;
+  if (
+    typeof currentlyAvailable !== "number" ||
+    typeof restoreRate !== "number" ||
+    restoreRate <= 0 ||
+    currentlyAvailable >= minimumAvailable
+  ) {
+    return null;
+  }
+  const deficit = minimumAvailable - Math.max(0, currentlyAvailable);
+  return Math.ceil((deficit / restoreRate) * 1000) + 250;
+}
+
+function getThrottleRetryDelayMs(
+  cost: GraphqlCostExtension | null,
+  attempt: number,
+): number {
+  const requestedCost =
+    typeof cost?.requestedQueryCost === "number" ? cost.requestedQueryCost : 50;
+  const adaptiveDelay = getThrottleDelayMs(
+    cost,
+    Math.max(50, Math.min(250, requestedCost)),
+  );
+  return adaptiveDelay ?? 1200 * (attempt + 1);
+}
+
 /** Shopify GraphQL with light retry (throttle / transient errors during active jobs). */
 async function adminGraphqlJson(
   admin: AdminGraphqlClient,
@@ -155,15 +205,28 @@ async function adminGraphqlJson(
     try {
       const response = await admin.graphql(query, { variables });
       const data = await response.json();
+      const cost = getGraphqlCostExtension(data);
       const errors = data?.errors as Array<{ message?: string }> | undefined;
       if (errors?.length) {
         const msg = errors.map((e) => e.message ?? "GraphQL error").join("; ");
-        const throttled = /throttl|rate limit|429/i.test(msg);
+        const throttled =
+          /throttl|rate limit|429/i.test(msg) ||
+          (typeof cost?.throttleStatus?.currentlyAvailable === "number" &&
+            cost.throttleStatus.currentlyAvailable <= 0);
         if (throttled && attempt < retries) {
-          await sleep(1200 * (attempt + 1));
+          await sleep(getThrottleRetryDelayMs(cost, attempt));
           continue;
         }
         throw new Error(msg);
+      }
+      const actualCost =
+        typeof cost?.actualQueryCost === "number" ? cost.actualQueryCost : 0;
+      const preemptiveDelay = getThrottleDelayMs(
+        cost,
+        Math.max(40, Math.min(180, actualCost || PAGE_SIZE / 2)),
+      );
+      if (preemptiveDelay) {
+        await sleep(preemptiveDelay);
       }
       return data;
     } catch (err) {
@@ -290,6 +353,133 @@ async function readStoredModuleCount(
   } catch {
     return null;
   }
+}
+
+function parseModuleCountJson(
+  raw: string,
+): { total: number; translated: number } | null {
+  try {
+    const v = JSON.parse(raw);
+    if (typeof v?.total === "number" && typeof v?.translated === "number") {
+      return { total: v.total, translated: v.translated };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 一次 hgetall 读取该语言下全部 module 统计（管理翻译单请求用）。 */
+async function readAllModuleCountsFromCache(
+  shop: string,
+  locale: string,
+): Promise<Map<string, { total: number; translated: number }>> {
+  const map = new Map<string, { total: number; translated: number }>();
+  try {
+    const all = await getTranslateV4RedisClient().hgetall(itemsCountKey(shop, locale));
+    for (const [module, raw] of Object.entries(all)) {
+      const parsed = parseModuleCountJson(raw);
+      if (parsed) map.set(module, parsed);
+    }
+  } catch {
+    // best-effort
+  }
+  return map;
+}
+
+export type ManageTranslationLocaleSnapshot = {
+  locale: string;
+  translated: number;
+  total: number;
+  percent: number | null;
+  cacheMissing: boolean;
+  /** 按 UI type 键（PRODUCT / LINK / …）索引，与管理翻译行匹配。 */
+  byType: Record<string, { translated: number; total: number }>;
+  /** 按 Shopify module 键索引（主题 Locale Content 等子行）。 */
+  byModule: Record<string, { translated: number; total: number }>;
+};
+
+function buildSnapshotFromModuleMap(
+  locale: string,
+  moduleMap: Map<string, { total: number; translated: number }>,
+  labels: readonly string[] = MANAGE_TRANSLATION_COUNT_LABELS,
+): ManageTranslationLocaleSnapshot {
+  const byType: Record<string, { translated: number; total: number }> = {};
+  const byModule: Record<string, { translated: number; total: number }> = {};
+  let translated = 0;
+  let total = 0;
+  let cacheMissing = false;
+
+  for (const [module, counts] of moduleMap) {
+    byModule[module] = counts;
+  }
+
+  for (const label of labels) {
+    const spec = LOCAL_COUNT_SPEC[label];
+    if (!spec) {
+      cacheMissing = true;
+      continue;
+    }
+    let labelTranslated = 0;
+    let labelTotal = 0;
+    let labelMissing = false;
+    for (const module of spec.modules) {
+      const cached = moduleMap.get(module);
+      if (!cached) {
+        labelMissing = true;
+        continue;
+      }
+      labelTranslated += cached.translated;
+      labelTotal += cached.total;
+    }
+    if (labelMissing) cacheMissing = true;
+    byType[spec.type] = { translated: labelTranslated, total: labelTotal };
+    translated += labelTranslated;
+    total += labelTotal;
+  }
+
+  return {
+    locale,
+    translated,
+    total,
+    percent:
+      total > 0
+        ? Math.min(100, Math.round((translated / total) * 1000) / 10)
+        : null,
+    cacheMissing,
+    byType,
+    byModule,
+  };
+}
+
+/** 管理翻译汇总页：单语言全卡片 + 各行明细（一次 Redis hgetall）。 */
+export async function getManageTranslationLocaleSnapshotFromCache(
+  shop: string,
+  locale: string,
+): Promise<ManageTranslationLocaleSnapshot> {
+  const moduleMap = await readAllModuleCountsFromCache(shop, locale);
+  return buildSnapshotFromModuleMap(locale, moduleMap);
+}
+
+/** @deprecated 使用 getManageTranslationLocaleSnapshotFromCache */
+export async function getManageTranslationLocaleSummaryFromCache(
+  shop: string,
+  locale: string,
+): Promise<{
+  locale: string;
+  translated: number;
+  total: number;
+  percent: number | null;
+  cacheMissing: boolean;
+}> {
+  const snap = await getManageTranslationLocaleSnapshotFromCache(shop, locale);
+  return {
+    locale: snap.locale,
+    translated: snap.translated,
+    total: snap.total,
+    percent: snap.percent,
+    cacheMissing: snap.cacheMissing,
+  };
 }
 
 /**
@@ -508,6 +698,20 @@ export async function refreshItemsCountForLocale({
     labels,
     skipCache: true,
   });
+}
+
+/** 强制刷新后返回最新汇总与各行明细（单请求）。 */
+export async function refreshManageTranslationLocaleSummary({
+  admin,
+  shop,
+  locale,
+}: {
+  admin: AdminGraphqlClient;
+  shop: string;
+  locale: string;
+}): Promise<ManageTranslationLocaleSnapshot> {
+  await refreshItemsCountForLocale({ admin, shop, locale });
+  return getManageTranslationLocaleSnapshotFromCache(shop, locale);
 }
 
 /** 批量刷新多语言（v4 覆盖率「刷新统计」）；单语言失败不阻断其余语言。 */

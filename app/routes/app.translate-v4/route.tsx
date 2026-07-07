@@ -27,6 +27,7 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { normalizeShopQuota } from "~/lib/translationQuota";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
@@ -47,6 +48,23 @@ import {
 } from "~/utils/clientLog";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
+
+async function readJsonResponse<T = any>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) {
+    throw new Error(`Empty response body (${res.status})`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    const contentType = res.headers.get("content-type") || "unknown";
+    throw new Error(
+      `Invalid JSON response (${res.status}, ${contentType}): ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -115,6 +133,7 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const { plan, isNew } = useSelector(
     (state: {
@@ -128,6 +147,8 @@ export default function AppTranslateV4() {
     }),
   );
   const planType = plan?.type?.trim() || null;
+  const createDisabledMessage =
+    normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
@@ -190,7 +211,7 @@ export default function AppTranslateV4() {
           const res = await fetch(
             `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
           );
-          const data = await res.json();
+          const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
           if (trace) {
             finishClientLogTrace(trace, {
@@ -208,7 +229,7 @@ export default function AppTranslateV4() {
           const res = await fetch(
             `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&refresh=1&locales=${encodeURIComponent(loc.value)}`,
           );
-          const data = await res.json();
+          const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
         }
         if (trace) {
@@ -241,10 +262,11 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (data?.ok) setCoverage(data.summary as CoverageSummary);
     } catch (err) {
-      console.error("[translateV4] refresh coverage from cache failed:", err);
+      // Passive cache refresh should not pollute exception telemetry.
+      console.warn("[translateV4] refresh coverage from cache failed:", err);
     }
   }, [shop]);
 
@@ -276,7 +298,7 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (data?.ok) {
         applyJobsUpdate(data.jobs as TranslationJobProgressSummary[]);
       }
@@ -290,8 +312,8 @@ export default function AppTranslateV4() {
       const res = await fetch(
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
-      const data = await res.json();
-      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+      const data = await readJsonResponse(res);
+      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
     }
@@ -320,7 +342,7 @@ export default function AppTranslateV4() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ taskId, shopName: shop, action: actionType }),
         });
-        const data = await res.json();
+        const data = await readJsonResponse(res);
         if (data?.ok) {
           const label =
             actionType === "delete"
@@ -349,13 +371,15 @@ export default function AppTranslateV4() {
         finishClientLogTrace(trace, {
           level: "warn",
           status: "failure",
-          message: data?.error || t("v4.actionFailed"),
+          message: data?.error
+            ? translateV4Message(data.error, t)
+            : t("v4.actionFailed"),
           context: {
             taskId,
             httpStatus: res.status,
           },
         });
-        message.error(data?.error || t("v4.actionFailed"));
+        message.error(data?.error ? translateV4Message(data.error, t) : t("v4.actionFailed"));
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);
@@ -378,9 +402,12 @@ export default function AppTranslateV4() {
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
-    const remainingCredits = quota?.remaining ?? null;
+    const remainingCredits = normalizedQuota?.remaining ?? null;
+    if (remainingCredits == null) {
+      message.info(t("v4.create.quotaUnavailable"));
+      return;
+    }
     const shouldGateByCredits =
-      remainingCredits != null &&
       remainingCredits <= 0 &&
       !hasPaidPlan &&
       !plan?.isInFreePlanTime;
@@ -496,7 +523,7 @@ export default function AppTranslateV4() {
     refreshQuota,
     plan,
     planType,
-    quota,
+    normalizedQuota,
     isNew,
     t,
   ]);
@@ -566,12 +593,7 @@ export default function AppTranslateV4() {
     [jobs],
   );
 
-  const translateQueue = useMemo(
-    () => jobs.filter((j) => !j.isTerminal && j.status === "TRANSLATE_QUEUED"),
-    [jobs],
-  );
-
-  const remainingCredits = quota?.remaining ?? null;
+  const remainingCredits = normalizedQuota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -606,45 +628,6 @@ export default function AppTranslateV4() {
         <div className="v4-enter">
           <PageHeaderBar credits={remainingCredits} planType={planType} />
         </div>
-
-        {translateQueue.length > 0 ? (
-          <div
-            className="v4-enter"
-            style={{
-              marginBottom: 16,
-              padding: "12px 16px",
-              borderRadius: 12,
-              background: "var(--p-color-bg-surface-info)",
-              color: "var(--p-color-text-info)",
-              border:
-                "1px solid var(--v4-accent-primary-muted, var(--app-accent-primary-muted))",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              fontSize: 13,
-              lineHeight: "20px",
-              boxShadow: "var(--app-shadow-card)",
-            }}
-          >
-            <span
-              aria-hidden
-              className="v4-livedot"
-              style={{
-                width: 8,
-                height: 8,
-                marginTop: 6,
-                borderRadius: "50%",
-                background: "currentColor",
-                flexShrink: 0,
-              }}
-            />
-            <span>
-              {translateSlotBusy
-                ? t("v4.queueBusy", { count: translateQueue.length })
-                : t("v4.queueWaiting", { count: translateQueue.length })}
-            </span>
-          </div>
-        ) : null}
 
         <div
           style={{
@@ -701,6 +684,8 @@ export default function AppTranslateV4() {
               modules={moduleKeys}
               onModulesChange={setModuleKeys}
               creating={creating}
+              createDisabled={normalizedQuota == null}
+              disabledMessage={createDisabledMessage}
               onCreate={handleCreate}
               aiModel={aiModel}
               onAiModelChange={setAiModel}

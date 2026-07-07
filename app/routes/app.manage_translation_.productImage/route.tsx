@@ -31,6 +31,7 @@ import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
+import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -149,7 +150,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
       } catch (error) {
-        console.error("Error action productStartCursor productImage:", error);
+        logManageTranslationGraphQLErrorDetail("Error action productStartCursor productImage", error);
         return json({
           menuData: [],
           imageData: [],
@@ -251,7 +252,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
       } catch (error) {
-        console.error("Error action productEndCursor productImage:", error);
+        logManageTranslationGraphQLErrorDetail("Error action productEndCursor productImage", error);
         return json({
           menuData: [],
           imageData: [],
@@ -319,7 +320,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
       } catch (error) {
-        console.error("Error action imageStartCursor productImage:", error);
+        logManageTranslationGraphQLErrorDetail("Error action imageStartCursor productImage", error);
         return json({
           imageData: [],
         });
@@ -382,7 +383,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
       } catch (error) {
-        console.error("Error action imageEndCursor productImage:", error);
+        logManageTranslationGraphQLErrorDetail("Error action imageEndCursor productImage", error);
         return json({
           imageData: [],
         });

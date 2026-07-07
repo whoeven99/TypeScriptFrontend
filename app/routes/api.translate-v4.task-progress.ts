@@ -9,10 +9,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const taskId = url.searchParams.get("taskId")?.trim() || "";
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
 
-  if (!taskId) return json({ ok: false, error: "taskId required" }, { status: 400 });
+  if (!taskId) return json({ ok: false, error: "v4.error.taskIdRequired" }, { status: 400 });
 
   const summary = await getV4JobProgressSummary(shopName, taskId);
-  if (!summary) return json({ ok: false, error: "task not found" }, { status: 404 });
+  if (!summary) return json({ ok: false, error: "v4.error.taskNotFound" }, { status: 404 });
 
   return json({ ok: true, summary });
 };

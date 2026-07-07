@@ -25,12 +25,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     key?: string;
     type?: string;
     resourceId?: string | null;
+    customPrompt?: string;
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
   const source = (body.source ?? "en").trim() || "en";
   const fieldKey = body.key?.trim() || "value";
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
+  // 上限保护：自定义提示词最多 500 字，超出截断，避免撑爆 system prompt。
+  const customPrompt = (body.customPrompt ?? "").trim().slice(0, 500);
 
   try {
     if (!target) {
@@ -54,6 +57,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       source,
       fieldKey,
       shopifyType,
+      customPrompt,
     });
     await deductQuota(shop, usedTokens);
     return json({ success: true, response: translatedText });
