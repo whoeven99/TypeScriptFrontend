@@ -6,7 +6,6 @@ import {
   Scripts,
   ScrollRestoration,
   useFetcher,
-  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
@@ -129,13 +128,6 @@ function loadAnalyticsScripts() {
   appendExternalScript(
     "ciwi-gtm-loader",
     "https://www.googletagmanager.com/gtm.js?id=GTM-NVPT5XDV",
-  );
-}
-
-function loadSupportChatScript() {
-  appendExternalScript(
-    "ciwi-tawk-loader",
-    "https://embed.tawk.to/6909a2c4f363bc1955661e51/1j96q7jtm",
   );
 }
 
@@ -302,7 +294,6 @@ export function ErrorBoundary() {
 
 export default function App() {
   const fetcher = useFetcher<any>();
-  const location = useLocation();
 
   // 从 loader 数据中获取国际化语言代码
   useEffect(() => {
@@ -328,13 +319,6 @@ export default function App() {
       shopify?.webVitals?.onReport(callback);
     }
   }, []);
-
-  useEffect(() => {
-    if (location.pathname.startsWith("/app/translate-v4")) {
-      return;
-    }
-    return runWhenIdle(loadSupportChatScript);
-  }, [location.pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

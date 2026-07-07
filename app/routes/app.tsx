@@ -30,9 +30,13 @@ import {
   bootstrapLocalesFromLoaded,
   type AppBootstrapJavaData,
 } from "~/server/appBootstrap.server";
+import { resolveBillingBinding } from "~/server/billing/index.server";
+import { BILLING_SYSTEM } from "~/server/billing/types.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { useEffect, useState } from "react";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useIdleReady } from "~/hooks/useIdleReady";
 
 import { ConfigProvider } from "antd";
 import { useDispatch } from "react-redux";
@@ -53,6 +57,12 @@ import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+
+const LazySupportChatWidget = lazy(() =>
+  import("~/components/SupportChatWidget").then((module) => ({
+    default: module.SupportChatWidget,
+  })),
+);
 
 type AppBootstrapData = {
   source: { code: string; name: string };
@@ -130,17 +140,26 @@ async function runAppInitialization({
   targets: string[];
 }) {
   try {
+    // 判定并锁定账本归属；新用户（tsf）建账户 + 赠送安装试用额度
+    const binding = await resolveBillingBinding(shop);
+    const isTsf = binding.billingSystem === BILLING_SYSTEM.TSF;
+
+    // 保留：翻译流水线仍依赖 Java Users.access_token（billing 归属与翻译解耦）
     if (accessToken) {
       await UserInitialization({ shop, accessToken });
     }
     const init = await InitializationDetection({ shop });
     if (init?.success && accessToken) {
-      if (!init?.response?.insertCharsByShopName) {
-        await InsertCharsByShopName({ shop, accessToken });
+      // 老系统计费初始化：仅 legacy 用户执行（tsf 用户走 Turso 分池）
+      if (!isTsf) {
+        if (!init?.response?.insertCharsByShopName) {
+          await InsertCharsByShopName({ shop, accessToken });
+        }
+        if (!init?.response?.addUserFreeSubscription) {
+          await AddUserFreeSubscription({ shop });
+        }
       }
-      if (!init?.response?.addUserFreeSubscription) {
-        await AddUserFreeSubscription({ shop });
-      }
+      // 翻译配置（与计费无关），所有用户保留
       if (!init?.response?.addDefaultLanguagePack) {
         await AddDefaultLanguagePack({ shop });
       }
@@ -148,6 +167,10 @@ async function runAppInitialization({
     if (accessToken && source && targets.length > 0) {
       await InsertTargets({ shop, accessToken, source, targets });
     }
+
+    // 店铺画像扫描：安装/首次进 App 触发一次性店铺扫描（内容量/画像/覆盖率/术语表）。
+    // 幂等（已有扫描则跳过），best-effort 不阻断初始化。worker 异步消费。
+    void enqueueShopScan({ shop, trigger: "install" });
   } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
   }
@@ -520,6 +543,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function App() {
   const { apiKey, shop, server, bootstrap } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
+  const supportChatReady = useIdleReady();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -586,11 +610,17 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
+              <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}
         </NavMenu>
         <Outlet />
+        {isClient && supportChatReady ? (
+          <Suspense fallback={null}>
+            <LazySupportChatWidget />
+          </Suspense>
+        ) : null}
       </ConfigProvider>
     </AppProvider>
   );

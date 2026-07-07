@@ -6,6 +6,8 @@ import {
 } from "~/api/JavaServer";
 import type { ShopLocalesType } from "~/routes/app.language/route";
 import type { LoadedShopLocales } from "~/server/translateV4/shopLocales.server";
+import { isTsfBillingShop } from "~/server/billing/binding/resolveBillingBinding.server";
+import { getTsfBootstrapData } from "~/server/billing/bootstrap/getTsfBootstrapData.server";
 
 export type AppBootstrapPlan = {
   id: number;
@@ -66,6 +68,11 @@ export async function loadAppBootstrapJavaData({
   shop: string;
   server: string;
 }): Promise<AppBootstrapJavaData> {
+  // 新系统（tsf）用户：订阅/额度来自 Turso 账本，不走 Java。
+  if (await isTsfBillingShop(shop)) {
+    return getTsfBootstrapData(shop);
+  }
+
   const [
     subscriptionResult,
     freePlanTimeResult,

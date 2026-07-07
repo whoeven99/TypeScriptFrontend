@@ -15,32 +15,32 @@ datasource db {
 }
 
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
-  refreshToken            String?
-  refreshTokenExpires     DateTime?
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
 }
 
 // 取代 Java `Translates` —— 每店一行的翻译配置 + 迁移开关
 model ShopTranslationSettings {
-  shop          String    @id              // myshopify 域名（Java shopName）
-  primaryLocale String                     // 源语言（Java source），ex "en"
-  targets       Json                       // 目标语言数组 string[]（Java 每 target 一行 → 合并）
-  autoTranslate Boolean   @default(false)  // 自动增量翻译总开关（Java autoTranslate）
-  migratedToTsf Boolean   @default(false)  // 不可逆：true 后只走 TSF
+  shop          String    @id // myshopify 域名（Java shopName）
+  primaryLocale String // 源语言（Java source），ex "en"
+  targets       Json // 目标语言数组 string[]（Java 每 target 一行 → 合并）
+  autoTranslate Boolean   @default(false) // 自动增量翻译总开关（Java autoTranslate）
+  migratedToTsf Boolean   @default(false) // 不可逆：true 后只走 TSF
   migratedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -51,10 +51,10 @@ model ShopTranslationSettings {
 // 每店每目标语言一行 —— 语言页的「按语言自动翻译开关」。worker 据此精确按语言建任务。
 model ShopTargetLocale {
   id            Int      @id @default(autoincrement())
-  shop          String                     // myshopify 域名
-  locale        String                     // 目标语言（Shopify locale，如 "fr"）
+  shop          String // myshopify 域名
+  locale        String // 目标语言（Shopify locale，如 "fr"）
   autoTranslate Boolean  @default(false)
-  status        Int      @default(1)       // 预留：1=启用
+  status        Int      @default(1) // 预留：1=启用
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -65,20 +65,38 @@ model ShopTargetLocale {
 // 取代 Java `Glossary`（字段对齐 Java GlossaryDO，便于术语表页面直接复用）
 model Glossary {
   id            Int      @id @default(autoincrement()) // 与 Java 自增 id 一致，前端按数字 id 选择/删除
-  shop          String                     // Java shopName
+  shop          String // Java shopName
   sourceText    String
   targetText    String
-  rangeCode     String?                    // 适用语言范围（Java rangeCode）
-  caseSensitive Boolean  @default(false)   // Java Integer(0/1) → Boolean
-  status        Int      @default(1)       // 1=启用 0=停用（Java status），worker 只注入启用的
+  rangeCode     String? // 适用语言范围（Java rangeCode）
+  caseSensitive Boolean  @default(false) // Java Integer(0/1) → Boolean
+  status        Int      @default(1) // 1=启用 0=停用（Java status），worker 只注入启用的
+  createdBy     String? // null=用户手动创建；"ai-shop-scan"=店铺画像扫描 AI 生成（默认 status=0 待确认）
   createdAt     DateTime @default(now())
 
   @@index([shop])
 }
 
+// 店铺画像（Shop Profile）——由「店铺画像扫描」worker 生成，每店一行（当前生效）。
+// 供翻译时注入 prompt 上下文。扫描任务与历史在 Cosmos shop_scan_jobs，大块明细在 Blob。
+model ShopProfile {
+  shop          String    @id // myshopify 域名
+  shopName      String? // 店铺展示名
+  primaryLocale String? // 默认语言
+  industry      String? // AI 推断的行业/品类
+  keywords      Json? // AI 提取的关键词 string[]
+  description   String? // AI 生成的店铺描述（翻译 prompt 上下文）
+  brandTone     String? // AI 推断的品牌语气（可选注入 prompt）
+  aiModel       String? // 生成所用模型，便于追溯
+  lastScanId    String? // 指向 Cosmos shop_scan_jobs 的最新完成扫描
+  lastScannedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 // 对应 Java WidgetConfigurations，每店一行
 model SwitcherConfiguration {
-  shop                  String   @id            // Java shop_name
+  shop                  String   @id // Java shop_name
   languageSelector      Boolean  @default(true)
   currencySelector      Boolean  @default(true)
   ipOpen                Boolean  @default(false)
@@ -98,12 +116,12 @@ model SwitcherConfiguration {
 // 对应 Java `Currencies`，用于货币页和 storefront currency switcher。
 model Currency {
   id            Int      @id @default(autoincrement())
-  shop          String                     // Java shop_name
-  currencyName  String                     // Java currency_name
-  currencyCode  String                     // ISO 4217 code
+  shop          String // Java shop_name
+  currencyName  String // Java currency_name
+  currencyCode  String // ISO 4217 code
   rounding      String?
   exchangeRate  String?
-  primaryStatus Int      @default(0)       // 1=默认币种，0=可切换币种
+  primaryStatus Int      @default(0) // 1=默认币种，0=可切换币种
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
@@ -123,7 +141,7 @@ model CurrencyRate {
 
 // 对应 Java User_IP_Redirection
 model IpRedirection {
-  id           Int      @id                    // 迁移时写入 Java id；新建时由应用层取 max+1
+  id           Int      @id // 迁移时写入 Java id；新建时由应用层取 max+1
   shop         String
   region       String   @default("")
   languageCode String   @default("")
@@ -153,13 +171,183 @@ model PageFlyTranslation {
 // 取代 Java `User_Liquid`
 model LiquidRule {
   id                String   @id @default(cuid())
-  shop              String                 // Java shopName
-  beforeTranslation String                 // liquidBeforeTranslation
-  afterTranslation  String                 // liquidAfterTranslation
+  shop              String // Java shopName
+  beforeTranslation String // liquidBeforeTranslation
+  afterTranslation  String // liquidAfterTranslation
   languageCode      String?
   replacementMethod Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@index([shop])
+}
+
+// ============================================================
+// 新用户系统（仅新用户启用；老用户仍走 Spring 账本 + /quota/deduct）
+// 额度单位统一为 Credits；分池模型对标 Spark。
+// ============================================================
+
+/// 账本路由标记：首次安装判定后写入，不可逆。存在此行即代表已判定归属。
+model ShopBillingBinding {
+  shop          String   @id // myshopify 域名
+  billingSystem String // "legacy" | "tsf"
+  boundReason   String? // "not_found_in_java" | "manual" | ...
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([billingSystem])
+}
+
+/// 新用户账户（分池 + 用量），仅 billingSystem="tsf" 的 shop 有行。
+model Account {
+  shop                String   @id
+  /// 订阅周期额度：续费时被新周期额度替换（不结转）
+  subscriptionCredits Int      @default(0)
+  /// 加量包额度：结转、永不过期
+  purchasedCredits    Int      @default(0)
+  /// 试用赠送额度：结转（安装赠送，不随续费刷新）
+  trialCredits        Int      @default(0)
+  /// 本周期累计已用（续费清零）
+  usedCredits         Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  subscription AppSubscription?
+  billingLogs  BillingLog[]
+  periodUsages AccountPeriodUsage[]
+}
+
+/// 套餐目录（订阅 / 一次性加量包 / 内置试用），取代前端硬编码。
+model PlanCatalog {
+  planKey         String   @id
+  /// SUBSCRIPTION | ONE_TIME_PACK | INTERNAL_TRIAL
+  kind            String
+  /// MONTHLY | ANNUAL；一次性包/试用为 null
+  billingInterval String?
+  displayName     String
+  credits         Int
+  priceAmount     String
+  currencyCode    String   @default("USD")
+  trialDays       Int?
+  /// 对齐 Shopify Billing 与 webhook payload 的 name（Basic/Pro/Premium 或 500K/1M...）
+  shopifyPlanName String?
+  sortOrder       Int      @default(0)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+}
+
+/// 当前生效订阅（每 shop 一条）。
+model AppSubscription {
+  shop                  String    @id
+  planKey               String
+  shopifySubscriptionId String    @unique
+  billingInterval       String
+  /// PENDING | ACTIVE | CANCELLED | EXPIRED
+  status                String
+  creditsPerPeriod      Int
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelledAt           DateTime?
+  rawPayload            Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([status])
+}
+
+/// 计费流水：激活 / 续费 / 取消 / 购包 / 试用赠送（审计 + referenceId 幂等）。
+model BillingLog {
+  id           String   @id @default(cuid())
+  shop         String
+  /// SUBSCRIPTION_ACTIVATED | SUBSCRIPTION_RENEWED | SUBSCRIPTION_CANCELLED | TOKEN_PACK_PURCHASED | TRIAL_GRANTED
+  eventType    String
+  planKey      String?
+  /// Shopify subscription / purchase GID，做幂等
+  referenceId  String?
+  creditsDelta Int?
+  usedCredits  Int?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([shop, createdAt])
+  @@index([eventType, createdAt])
+  @@index([referenceId])
+}
+
+/// 每个订阅周期结束时的用量归档（续费时写入，用于对账）。
+model AccountPeriodUsage {
+  id                           String   @id @default(cuid())
+  shop                         String
+  appSubscriptionId            String
+  planKey                      String
+  periodStart                  DateTime
+  periodEnd                    DateTime
+  usedCredits                  Int
+  subscriptionCreditsAllocated Int
+  purchasedCreditsRemaining    Int      @default(0)
+  trialCreditsRemaining        Int      @default(0)
+  archivedAt                   DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@unique([appSubscriptionId, periodStart, periodEnd])
+  @@index([shop, periodEnd])
+}
+
+// ============================================================
+// 翻译 v4 人工客服（自 Spark Test API 迁回 TSF 自有 Turso）
+// 一店一会话；商家 ↔ 运营。运营端由 Spark Admin「翻译」Tab 直连本库读写。
+// source 固定 "translate-v4"，保留字段以与 Admin 现有 SQL（按 source 过滤）兼容。
+// ============================================================
+
+/// 人工客服会话（一店一会话）。卸载后靠 shopEmail/contactEmail 兜底联系。
+model SupportConversation {
+  id            String   @id @default(cuid())
+  shop          String
+  /// 会话来源：translate-v4（tsf 翻译v4）。保留字段与 Admin 过滤兼容。
+  source        String   @default("translate-v4")
+  /// 商家在聊天框主动留下的联系邮箱（可覆盖账户邮箱）
+  contactEmail  String?
+  /// Session.email 快照（开聊即写，卸载 session 被清后仍可联系）
+  shopEmail     String?
+  /// open | closed
+  status        String   @default("open")
+  /// 最近一条消息预览
+  lastMessage   String   @default("")
+  lastMessageAt DateTime @default(now())
+  /// 商家发出、运营尚未查看的条数
+  unreadForOps  Int      @default(0)
+  /// 运营发出、商家尚未查看的条数
+  unreadForShop Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  messages      SupportMessage[]
+
+  @@unique([shop, source])
+  @@index([status, lastMessageAt])
+}
+
+/// 客服消息（追加写，不可变）。
+model SupportMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  /// "shop" | "ops"（预留 "ai"）
+  sender         String
+  /// 运营发送者标识（哪个客服回的）
+  senderName     String?
+  content        String
+  /// 预留：附件/图片等 JSON
+  payloads       String?
+  createdAt      DateTime            @default(now())
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }

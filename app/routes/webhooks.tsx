@@ -1,6 +1,11 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { isTsfBillingShop } from "~/server/billing/binding/resolveBillingBinding.server";
+import {
+  handleTsfPurchaseWebhook,
+  handleTsfSubscriptionWebhook,
+} from "~/server/billing/webhooks/handleBillingWebhook.server";
 import {
   AddCharsByShopName,
   AddCharsByShopNameAfterSubscribe,
@@ -46,6 +51,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
+        // 新系统（tsf）用户：入账 Turso 加量包池，不走 Java。
+        if (await isTsfBillingShop(shop)) {
+          await handleTsfPurchaseWebhook({ shop, payload });
+          break;
+        }
         if (payload) {
           new Response(null, { status: 200 });
           let credits = 0;
@@ -186,6 +196,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case "APP_SUBSCRIPTIONS_UPDATE":
       try {
+        // 新系统（tsf）用户：写 Turso 订阅账本（激活/续费/取消），不走 Java。
+        if (await isTsfBillingShop(shop)) {
+          await handleTsfSubscriptionWebhook({
+            shop,
+            accessToken: session?.accessToken,
+            payload,
+          });
+          break;
+        }
         new Response(null, { status: 200 });
         let plan = 0;
         switch (payload?.app_subscription.name) {

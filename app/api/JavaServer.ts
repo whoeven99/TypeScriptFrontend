@@ -437,6 +437,20 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
   }
 };
 
+// 只读判定 shop 是否为老用户系统用户（新用户系统账本路由用；无副作用）
+// 成功：{ success:true, response:{ exists, hasSubscription, legacy } }
+// 失败：{ success:false, ... }（调用方据此判为“未确定”，本次不写 binding，下次重试）
+export const CheckUserExists = async ({ shop }: { shop: string }) => {
+  return javaApiRequest<{
+    exists: boolean;
+    hasSubscription: boolean;
+    legacy: boolean;
+  } | null>(`${shop} CheckUserExists`, {
+    url: `${process.env.SERVER_URL}/user/exists?shopName=${shop}`,
+    method: "GET",
+  });
+};
+
 //用户数据初始化
 //添加用户
 export const UserInitialization = async ({

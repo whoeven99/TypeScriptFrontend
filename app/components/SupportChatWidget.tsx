@@ -6,11 +6,12 @@ import {
   type FormEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { v4Colors } from "./v4Styles";
+import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
+import { SUPPORT_CHAT_OPEN_EVENT } from "~/utils/supportChat";
 
 type SupportMessage = {
   id: string;
-  sender: string; // "shop" | "ops"
+  sender: string;
   senderName: string | null;
   content: string;
   createdAt: string;
@@ -28,45 +29,6 @@ type SupportConversation = {
 const OPEN_POLL_MS = 5000;
 const BADGE_POLL_MS = 30000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TAWK_HIDE_STYLE_ID = "hide-tawk-translate-v4";
-
-type TawkApi = {
-  hideWidget?: () => void;
-  showWidget?: () => void;
-  onLoad?: () => void;
-};
-
-/** v4 页使用自建客服，屏蔽 root.tsx 全局注入的 Tawk.to 绿色气泡。 */
-function useHideTawkWidget() {
-  useEffect(() => {
-    const win = window as Window & { Tawk_API?: TawkApi };
-    const hideTawk = () => win.Tawk_API?.hideWidget?.();
-
-    if (win.Tawk_API?.hideWidget) {
-      hideTawk();
-    } else {
-      win.Tawk_API = win.Tawk_API ?? {};
-      const prevOnLoad = win.Tawk_API.onLoad;
-      win.Tawk_API.onLoad = () => {
-        prevOnLoad?.();
-        hideTawk();
-      };
-    }
-
-    if (!document.getElementById(TAWK_HIDE_STYLE_ID)) {
-      const style = document.createElement("style");
-      style.id = TAWK_HIDE_STYLE_ID;
-      style.textContent =
-        "#tawk-bubble-container, .tawk-min-container { display: none !important; }";
-      document.head.appendChild(style);
-    }
-
-    return () => {
-      document.getElementById(TAWK_HIDE_STYLE_ID)?.remove();
-      win.Tawk_API?.showWidget?.();
-    };
-  }, []);
-}
 
 async function fetchConversation(
   markSeen: boolean,
@@ -98,7 +60,6 @@ async function postSupport(body: Record<string, unknown>): Promise<{
 
 export function SupportChatWidget() {
   const { t } = useTranslation();
-  useHideTawkWidget();
 
   const [open, setOpen] = useState(false);
   const [conversation, setConversation] = useState<SupportConversation | null>(null);
@@ -107,12 +68,25 @@ export function SupportChatWidget() {
   const [error, setError] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
 
-  // 邮箱采集
   const [emailInput, setEmailInput] = useState("");
   const [emailSaved, setEmailSaved] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const openPanel = useCallback(() => setOpen(true), []);
+
+  useEffect(() => {
+    window.ciwiSupportChat = { open: openPanel };
+    const onOpen = () => openPanel();
+    window.addEventListener(SUPPORT_CHAT_OPEN_EVENT, onOpen);
+    return () => {
+      window.removeEventListener(SUPPORT_CHAT_OPEN_EVENT, onOpen);
+      if (window.ciwiSupportChat?.open === openPanel) {
+        delete window.ciwiSupportChat;
+      }
+    };
+  }, [openPanel]);
 
   const refresh = useCallback(async (markSeen: boolean) => {
     const conv = await fetchConversation(markSeen);
@@ -122,7 +96,6 @@ export function SupportChatWidget() {
     else setUnread(conv.unreadForShop);
   }, []);
 
-  // 打开时高频轮询；关闭时低频拉徽标。
   useEffect(() => {
     let cancelled = false;
     const tick = () => {
@@ -153,7 +126,6 @@ export function SupportChatWidget() {
     };
   }, [open, refresh]);
 
-  // 新消息滚到底部
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation?.messages.length, open]);
@@ -223,9 +195,7 @@ export function SupportChatWidget() {
           </div>
 
           <div style={styles.body}>
-            <div style={styles.greeting}>
-              {t("v4.support.greeting")}
-            </div>
+            <div style={styles.greeting}>{t("v4.support.greeting")}</div>
 
             {showEmailPrompt && (
               <div style={styles.emailBox}>
@@ -374,7 +344,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
     borderBottom: `1px solid ${v4Colors.cardBorder}`,
   },
-  headerTitle: { fontWeight: 600, fontSize: 14, lineHeight: 1.4, minWidth: 0, overflowWrap: "anywhere" },
+  headerTitle: {
+    fontWeight: 600,
+    fontSize: 14,
+    lineHeight: 1.4,
+    minWidth: 0,
+    overflowWrap: "anywhere",
+  },
   closeBtn: {
     background: "transparent",
     border: "none",
