@@ -11,6 +11,11 @@ export function stagePoolKindForJob(
   return isAutoTranslationJob(job) ? "auto" : "manual";
 }
 
+function defaultMax(stage: StagePoolStage, kind: StagePoolKind): number {
+  if (stage === "init" && kind === "auto") return 3;
+  return 5;
+}
+
 function readMax(stage: StagePoolStage, kind: StagePoolKind): number {
   const stageUpper = stage.toUpperCase();
   const specific =
@@ -23,12 +28,12 @@ function readMax(stage: StagePoolStage, kind: StagePoolKind): number {
       : stage === "translate"
         ? process.env.MAX_CONCURRENT_TRANSLATE_JOBS
         : process.env.MAX_CONCURRENT_WRITEBACK_JOBS;
-  return Math.max(1, Number(specific) || Number(legacy) || 5);
+  return Math.max(1, Number(specific) || Number(legacy) || defaultMax(stage, kind));
 }
 
 /**
  * 进程内 stage 槽位：自动与手动各占独立额度，互不抢占。
- * 默认各 5（可用 MAX_CONCURRENT_AUTO_* / MAX_CONCURRENT_MANUAL_* 覆盖；
+ * 默认：自动 init=3，其余各 5（可用 MAX_CONCURRENT_AUTO_* / MAX_CONCURRENT_MANUAL_* 覆盖；
  * 未设时回退 MAX_CONCURRENT_*_JOBS）。
  */
 class StageSlotRegistry {

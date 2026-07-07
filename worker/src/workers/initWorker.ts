@@ -45,7 +45,7 @@ const MODULE_CONCURRENCY = Math.max(1, Number(process.env.INIT_MODULE_CONCURRENC
 const INIT_MAX_REQUEUE = Math.max(0, Number(process.env.INIT_MAX_REQUEUE) || 5);
 
 /**
- * 进程级 init 并发：自动与手动各占独立池（默认各 5 店）。
+ * 进程级 init 并发：自动与手动各占独立池（自动默认 3 店、手动默认 5 店）。
  * 见 stagePool.ts（MAX_CONCURRENT_AUTO_INIT_JOBS / MAX_CONCURRENT_MANUAL_INIT_JOBS）。
  * 同店 init 串行由 tryClaimInitJob 保证。
  */
