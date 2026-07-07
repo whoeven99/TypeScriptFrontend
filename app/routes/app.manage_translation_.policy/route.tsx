@@ -17,6 +17,7 @@ import { registerManageTranslations } from "~/server/shopify/translations.server
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
@@ -465,18 +466,18 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => {
         return (
-          <Button
-            onClick={() => {
-              handleTranslate({
-                resourceType: "SHOP_POLICY",
-                record,
-                handleInputChange,
-              });
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
+          <SingleTranslateAction
+                              loading={loadingItems.includes(record?.key || "")}
+                              existingTranslation={translatedValues[record?.key || ""] ?? record?.translated}
+                              onSubmit={(customPrompt) => {
+                                handleTranslate({
+                                  resourceType: "SHOP_POLICY",
+                                  record: record,
+                                  handleInputChange,
+                                  customPrompt,
+                                });
+                              }}
+                            />
         );
       },
     },
@@ -519,10 +520,12 @@ const Index = () => {
     resourceType,
     record,
     handleInputChange,
+    customPrompt,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
   }) => {
     fetcher.submit(
       {
@@ -545,6 +548,7 @@ const Index = () => {
       type: record?.type,
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -852,18 +856,18 @@ const Index = () => {
                                 justifyContent: "flex-end",
                               }}
                             >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate({
-                                    resourceType: "SHOP_POLICY",
-                                    record: item,
-                                    handleInputChange,
-                                  });
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
+                              <SingleTranslateAction
+                              loading={loadingItems.includes(item?.key || "")}
+                              existingTranslation={translatedValues[item?.key || ""] ?? item?.translated}
+                              onSubmit={(customPrompt) => {
+                                handleTranslate({
+                                  resourceType: "SHOP_POLICY",
+                                  record: item,
+                                  handleInputChange,
+                                  customPrompt,
+                                });
+                              }}
+                            />
                             </div>
                             <Divider
                               style={{

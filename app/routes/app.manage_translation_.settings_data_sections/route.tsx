@@ -18,6 +18,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
@@ -448,18 +449,18 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => {
         return (
-          <Button
-            onClick={() => {
-              handleTranslate({
-                resourceType: "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                record,
-                handleInputChange,
-              });
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
+          <SingleTranslateAction
+                              loading={loadingItems.includes(record?.key || "")}
+                              existingTranslation={translatedValues[record?.key || ""] ?? record?.translated}
+                              onSubmit={(customPrompt) => {
+                                handleTranslate({
+                                  resourceType: "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                                  record: record,
+                                  handleInputChange,
+                                  customPrompt,
+                                });
+                              }}
+                            />
         );
       },
     },
@@ -557,10 +558,12 @@ const Index = () => {
     resourceType,
     record,
     handleInputChange,
+    customPrompt,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
   }) => {
     fetcher.submit(
       {
@@ -583,6 +586,7 @@ const Index = () => {
       type: record?.type,
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -906,86 +910,18 @@ const Index = () => {
                                     justifyContent: "flex-end",
                                   }}
                                 >
-                                  <Button
-                                    onClick={() => {
-                                      handleTranslate({
-                                        resourceType:
-                                          "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                                        record: item,
-                                        handleInputChange,
-                                      });
-                                    }}
-                                    loading={loadingItems.includes(
-                                      item?.key || "",
-                                    )}
-                                  >
-                                    {t("Translate")}
-                                  </Button>
-                                </div>
-                                <Divider style={{ margin: "8px 0" }} />
-                              </Space>
-                            </List.Item>
-                          )}
-                        />
-                      ) : (
-                        resourceData.map((item: any, index: number) => (
-                          <Space
-                            key={index}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text strong style={{ fontSize: "16px" }}>
-                              {t(item.resource)}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
+                                  <SingleTranslateAction
+                              loading={loadingItems.includes(item?.key || "")}
+                              existingTranslation={translatedValues[item?.key || ""] ?? item?.translated}
+                              onSubmit={(customPrompt) => {
+                                handleTranslate({
+                                  resourceType: "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                                  record: item,
+                                  handleInputChange,
+                                  customPrompt,
+                                });
                               }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                isSuccess={successTranslatedKey?.includes(
-                                  item?.key as string,
-                                )}
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate({
-                                    resourceType:
-                                      "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                                    record: item,
-                                    handleInputChange,
-                                  });
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
+                            />
                             </div>
                             <Divider
                               style={{

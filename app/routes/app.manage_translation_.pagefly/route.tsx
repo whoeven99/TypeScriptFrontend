@@ -31,6 +31,7 @@ import { authenticate } from "~/shopify.server";
 import { getItemOptions } from "../app.manage_translation/route";
 import styles from "./styles.module.css";
 import { queryPageFlyThemeData } from "~/api/admin";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 
 const { Sider, Content } = Layout;
 
@@ -468,14 +469,16 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => {
         return (
-          <Button
-            onClick={() => {
-              handleTranslate(record);
-            }}
+          <SingleTranslateAction
             loading={loadingItems.includes(record?.key)}
-          >
-            {t("Translate")}
-          </Button>
+            existingTranslation={
+              confirmData.find((item: any) => item.key === record?.key)?.value ??
+              record?.translated
+            }
+            onSubmit={(customPrompt) => {
+              handleTranslate(record, customPrompt);
+            }}
+          />
         );
       },
     },
@@ -564,7 +567,7 @@ const Index = () => {
     });
   };
 
-  const handleTranslate = async (record: any) => {
+  const handleTranslate = async (record: any, customPrompt?: string) => {
     if (!record) {
       return;
     }
@@ -591,6 +594,7 @@ const Index = () => {
       type: record?.type,
       server: server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -976,14 +980,18 @@ const Index = () => {
                                 justifyContent: "flex-end",
                               }}
                             >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate(item);
-                                }}
+                              <SingleTranslateAction
                                 loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
+                                existingTranslation={
+                                  confirmData.find(
+                                    (confirmItem: any) =>
+                                      confirmItem.key === item?.key,
+                                  )?.value ?? item?.translated
+                                }
+                                onSubmit={(customPrompt) => {
+                                  handleTranslate(item, customPrompt);
+                                }}
+                              />
                             </div>
                             <Divider
                               style={{

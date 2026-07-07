@@ -33,6 +33,7 @@ import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslatio
 import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -721,19 +722,22 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => {
         return (
-          <Button
-            onClick={() => {
-              handleTranslate(
-                "PRODUCT_OPTION_VALUE",
+          <SingleTranslateAction
+            loading={loadingItems.includes(record?.key || "")}
+            existingTranslation={
+              confirmData.find((item: any) => item.key === record?.imageId)
+                ?.value ?? record?.targetAltText
+            }
+            onSubmit={(customPrompt) => {
+              handleTranslate({
+                resourceType: "PRODUCT_OPTION_VALUE",
                 record,
                 handleInputChange,
-              );
+                customPrompt,
+              });
               reportClick("editor_list_translate");
             }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
+          />
         );
       },
     },
@@ -766,11 +770,17 @@ const Index = () => {
     });
   };
 
-  const handleTranslate = async (
-    resourceType: string,
-    record: any,
-    handleInputChange: (record: any, value: string) => void,
-  ) => {
+  const handleTranslate = async ({
+    resourceType,
+    record,
+    handleInputChange,
+    customPrompt,
+  }: {
+    resourceType: string;
+    record: any;
+    handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
+  }) => {
     if (!record?.key || !record?.altText) {
       shopify.toast.show(
         t("The source text is empty and cannot be translated"),
@@ -799,6 +809,7 @@ const Index = () => {
       type: "SINGLE_LINE_TEXT_FIELD",
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1211,21 +1222,27 @@ const Index = () => {
                                   justifyContent: "flex-end",
                                 }}
                               >
-                                <Button
-                                  onClick={() => {
-                                    handleTranslate(
-                                      "PRODUCT_OPTION_VALUE",
-                                      productAltTextItem,
-                                      handleInputChange,
-                                    );
-                                    reportClick("editor_list_translate");
-                                  }}
+                                <SingleTranslateAction
                                   loading={loadingItems.includes(
                                     productAltTextItem?.key || "",
                                   )}
-                                >
-                                  {t("Translate")}
-                                </Button>
+                                  existingTranslation={
+                                    confirmData.find(
+                                      (confirmItem: any) =>
+                                        confirmItem.key ===
+                                        productAltTextItem?.imageId,
+                                    )?.value ?? productAltTextItem.targetAltText
+                                  }
+                                  onSubmit={(customPrompt) => {
+                                    handleTranslate({
+                                      resourceType: "PRODUCT_OPTION_VALUE",
+                                      record: productAltTextItem,
+                                      handleInputChange,
+                                      customPrompt,
+                                    });
+                                    reportClick("editor_list_translate");
+                                  }}
+                                />
                               </div>
                               <Divider
                                 style={{
