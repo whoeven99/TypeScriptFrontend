@@ -27,6 +27,7 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { normalizeShopQuota } from "~/lib/translationQuota";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
@@ -132,6 +133,7 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const { plan, isNew } = useSelector(
     (state: {
@@ -145,6 +147,8 @@ export default function AppTranslateV4() {
     }),
   );
   const planType = plan?.type?.trim() || null;
+  const createDisabledMessage =
+    normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const source = primaryLocale || "en";
@@ -309,7 +313,7 @@ export default function AppTranslateV4() {
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await readJsonResponse(res);
-      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
     }
@@ -396,9 +400,12 @@ export default function AppTranslateV4() {
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
-    const remainingCredits = quota?.remaining ?? null;
+    const remainingCredits = normalizedQuota?.remaining ?? null;
+    if (remainingCredits == null) {
+      message.info(t("v4.create.quotaUnavailable"));
+      return;
+    }
     const shouldGateByCredits =
-      remainingCredits != null &&
       remainingCredits <= 0 &&
       !hasPaidPlan &&
       !plan?.isInFreePlanTime;
@@ -514,7 +521,7 @@ export default function AppTranslateV4() {
     refreshQuota,
     plan,
     planType,
-    quota,
+    normalizedQuota,
     isNew,
     t,
   ]);
@@ -584,7 +591,7 @@ export default function AppTranslateV4() {
     [jobs],
   );
 
-  const remainingCredits = quota?.remaining ?? null;
+  const remainingCredits = normalizedQuota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -675,6 +682,8 @@ export default function AppTranslateV4() {
               modules={moduleKeys}
               onModulesChange={setModuleKeys}
               creating={creating}
+              createDisabled={normalizedQuota == null}
+              disabledMessage={createDisabledMessage}
               onCreate={handleCreate}
               aiModel={aiModel}
               onAiModelChange={setAiModel}

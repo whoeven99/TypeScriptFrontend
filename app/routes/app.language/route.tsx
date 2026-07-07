@@ -84,6 +84,7 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { normalizeShopQuota } from "~/lib/translationQuota";
 import type { ShopQuota } from "~/server/translateV4/quota.server";
 import { DEFAULT_AI_MODEL, DEFAULT_MODULE_KEYS } from "../app.translate-v4/constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
@@ -419,6 +420,9 @@ const Index = () => {
     "trial" | "pricing" | null
   >(null);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
+  const createDisabledMessage =
+    normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
   const hasSelected = useMemo(
     () => selectedRowKeys.length > 0,
     [selectedRowKeys],
@@ -457,7 +461,7 @@ const Index = () => {
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await res.json();
-      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
     } catch (error) {
       console.error("[language] refresh v4 quota failed:", error);
     }
@@ -899,9 +903,12 @@ const Index = () => {
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
-    const remainingCredits = quota?.remaining ?? null;
+    const remainingCredits = normalizedQuota?.remaining ?? null;
+    if (remainingCredits == null) {
+      message.info(t("v4.create.quotaUnavailable"));
+      return;
+    }
     const shouldGateByCredits =
-      remainingCredits != null &&
       remainingCredits <= 0 &&
       !hasPaidPlan &&
       !plan?.isInFreePlanTime;
@@ -966,7 +973,7 @@ const Index = () => {
     navigate,
     plan,
     planType,
-    quota?.remaining,
+    normalizedQuota?.remaining,
     shop,
     source?.code,
     t,
@@ -1413,6 +1420,8 @@ const Index = () => {
           modules={translateModuleKeys}
           onModulesChange={setTranslateModuleKeys}
           creating={translateCreating}
+          createDisabled={normalizedQuota == null}
+          disabledMessage={createDisabledMessage}
           onCreate={handleCreateTranslateTasks}
           aiModel={translateAiModel}
           onAiModelChange={setTranslateAiModel}
