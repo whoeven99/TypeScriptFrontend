@@ -362,11 +362,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response: data.data?.translatableResource,
         });
       } catch (error) {
@@ -457,11 +453,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response: {
             nodes: data.data?.translatableResourcesByIds?.nodes || [],
             pageInfo: null,
@@ -491,11 +483,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return {
         success: true,
         errorCode: 0,
-        errorMsg: isManageTranslationRateLimitedError(error)
-
-          ? "RATE_LIMITED"
-
-          : "",
+        errorMsg: "",
         response: data,
       };
     default:
@@ -861,9 +849,13 @@ const Index = () => {
             },
           );
         if (metafieldsData) setMetafieldsData(metafieldsData);
+      } else {
+        shopify.toast.show(
+          getManageTranslationLoadErrorMessage(t, productFetcher.data?.errorMsg),
+        );
       }
     }
-  }, [productFetcher.data]);
+  }, [productFetcher.data, t]);
 
   useEffect(() => {
     if (confirmFetcher.data?.success) {
