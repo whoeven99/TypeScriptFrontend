@@ -1,4 +1,9 @@
 import axios from "axios";
+import prisma from "../../../db.server";
+import {
+  sendTsfPurchaseSuccessEmail,
+  sendTsfSubscribeSuccessEmail,
+} from "../email/billingEmail.server";
 import { applyActiveSubscription } from "../subscription/activateSubscription.server";
 import { cancelSubscription } from "../subscription/cancelSubscription.server";
 import { applyTokenPackPurchase } from "../purchase/applyTokenPack.server";
@@ -6,7 +11,12 @@ import {
   findPackPlanByName,
   findSubscriptionPlan,
 } from "../plans/planCatalog.server";
-import { APP_SUBSCRIPTION_STATUS, BILLING_INTERVAL } from "../types.server";
+import { isSubscriptionRenewal } from "../subscription/renewal.server";
+import {
+  APP_SUBSCRIPTION_STATUS,
+  BILLING_INTERVAL,
+  BILLING_LOG_EVENT,
+} from "../types.server";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const INTERVAL_DAYS: Record<string, number> = {
@@ -157,6 +167,23 @@ export async function handleTsfSubscriptionWebhook(params: {
       ? new Date(detail.createdAt.getTime() + detail.trialDays * DAY_MS)
       : null;
 
+  const existingSub = await prisma.appSubscription.findUnique({
+    where: { shop: params.shop },
+  });
+  const isRenewal =
+    existingSub != null &&
+    existingSub.shopifySubscriptionId === gid &&
+    isSubscriptionRenewal(existingSub, currentPeriodEnd);
+  const priorActivation = isRenewal
+    ? null
+    : await prisma.billingLog.findFirst({
+        where: {
+          shop: params.shop,
+          eventType: BILLING_LOG_EVENT.SUBSCRIPTION_ACTIVATED,
+          referenceId: gid,
+        },
+      });
+
   await applyActiveSubscription({
     shop: params.shop,
     shopifySubscriptionId: gid,
@@ -172,6 +199,23 @@ export async function handleTsfSubscriptionWebhook(params: {
     },
     rawPayload: (params.payload ?? undefined) as Record<string, unknown> | undefined,
   });
+
+  if (!isRenewal && !priorActivation) {
+    void sendTsfSubscribeSuccessEmail({
+      shop: params.shop,
+      plan,
+      billingInterval,
+      trialEndsAt,
+      trialStartsAt: detail?.createdAt ?? currentPeriodStart,
+      effectiveAt: currentPeriodStart,
+      accessToken: params.accessToken,
+    }).catch((err) => {
+      console.error(
+        `[billing webhook] subscribe success email failed shop=${params.shop}:`,
+        err,
+      );
+    });
+  }
 }
 
 type PurchasePayload = {
@@ -186,6 +230,7 @@ type PurchasePayload = {
  */
 export async function handleTsfPurchaseWebhook(params: {
   shop: string;
+  accessToken?: string | null;
   payload: { app_purchase_one_time?: PurchasePayload } | null;
 }): Promise<void> {
   const purchase = params.payload?.app_purchase_one_time;
@@ -200,10 +245,31 @@ export async function handleTsfPurchaseWebhook(params: {
     return;
   }
 
+  const priorPurchase = await prisma.billingLog.findFirst({
+    where: {
+      shop: params.shop,
+      eventType: BILLING_LOG_EVENT.TOKEN_PACK_PURCHASED,
+      referenceId: gid,
+    },
+  });
+
   await applyTokenPackPurchase({
     shop: params.shop,
     plan,
     shopifyPurchaseId: gid,
     metadata: { name: purchase?.name },
   });
+
+  if (!priorPurchase) {
+    void sendTsfPurchaseSuccessEmail({
+      shop: params.shop,
+      plan,
+      accessToken: params.accessToken,
+    }).catch((err) => {
+      console.error(
+        `[billing webhook] purchase success email failed shop=${params.shop}:`,
+        err,
+      );
+    });
+  }
 }
