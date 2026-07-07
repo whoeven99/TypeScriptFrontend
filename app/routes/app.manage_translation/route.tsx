@@ -87,31 +87,6 @@ function buildDataRow(
   };
 }
 
-/**
- * 首屏先拉用户最常看的基础模块，把 Theme / Navigation 等重统计延后，
- * 降低进入管理页时对 Shopify GraphQL cost bucket 的瞬时压力。
- */
-const ITEMS_COUNT_PRIORITY_RESOURCE_TYPES = [
-  "Products",
-  "Collection",
-  "Article",
-  "Blog titles",
-  "Pages",
-  "Shop",
-  "Store metadata",
-] as const;
-
-const ITEMS_COUNT_DEFERRED_RESOURCE_TYPES = ITEMS_COUNT_RESOURCE_TYPES.filter(
-  (resourceType) =>
-    !ITEMS_COUNT_PRIORITY_RESOURCE_TYPES.includes(
-      resourceType as (typeof ITEMS_COUNT_PRIORITY_RESOURCE_TYPES)[number],
-    ),
-);
-
-/** 避免 15 路统计在首屏持续压满 Render 单实例（大店 Products 统计耗时更长）。 */
-const ITEMS_COUNT_SUBMIT_GAP_MS = 800;
-const ITEMS_COUNT_BATCH_GAP_MS = 2500;
-
 function safeParseFormJson(value: FormDataEntryValue | null): unknown {
   if (value == null || value === "") return null;
   try {
