@@ -57,23 +57,33 @@ function toDo(g: GlossaryRow): GlossaryDoShape {
   };
 }
 
-/** 把 Prisma 术语行映射为表格行，语言名与 Java 加载逻辑一致。 */
+function getGlossaryLanguageLabel(
+  rangeCode: string | null,
+  shopLocalesWithoutPrimary?: ShopLocaleLike[],
+): string {
+  if (rangeCode === "ALL") return "All Languages";
+  if (!rangeCode) return "";
+  const localeMatch = shopLocalesWithoutPrimary?.find(
+    (language) => language.locale === rangeCode,
+  );
+  return localeMatch?.name || rangeCode;
+}
+
+/** 把 Prisma 术语行映射为表格行；无语言映射时回退显示 locale code。 */
 export function toGlossaryTableRows(
   rows: GlossaryDoShape[],
-  shopLocalesWithoutPrimary: ShopLocaleLike[],
+  shopLocalesWithoutPrimary?: ShopLocaleLike[],
 ): GlossaryTableRow[] {
   const mapped = rows.map((item) => {
-    const localeMatch = shopLocalesWithoutPrimary.find(
-      (language) => language.locale === item.rangeCode,
-    );
-    const applies =
-      localeMatch != null || item.rangeCode === "ALL";
     return {
       key: item.id,
       status: item.status,
       sourceText: item.sourceText,
       targetText: item.targetText,
-      language: applies ? localeMatch?.name || "All Languages" : "",
+      language: getGlossaryLanguageLabel(
+        item.rangeCode,
+        shopLocalesWithoutPrimary,
+      ),
       rangeCode: item.rangeCode,
       type: item.caseSensitive,
       loading: false,
@@ -98,12 +108,12 @@ export async function listGlossaryDo(shop: string): Promise<GlossaryDoShape[]> {
 /** 术语表页 loader/action 用的完整 payload，对齐 Java GetGlossaryByShopNameLoading。 */
 export async function listGlossaryPagePayload(
   shop: string,
-  shopLocalesWithoutPrimary: ShopLocaleLike[],
+  shopLocalesWithoutPrimary?: ShopLocaleLike[],
 ): Promise<{ glossaryTableData: GlossaryTableRow[]; shopLocales: ShopLocaleLike[] }> {
   const rows = await listGlossaryDo(shop);
   return {
     glossaryTableData: toGlossaryTableRows(rows, shopLocalesWithoutPrimary),
-    shopLocales: shopLocalesWithoutPrimary,
+    shopLocales: shopLocalesWithoutPrimary ?? [],
   };
 }
 

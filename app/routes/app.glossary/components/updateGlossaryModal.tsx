@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Input, Space, Typography, Select, Checkbox, Alert } from "antd";
 import Button from "~/ui/components/AppButton";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import { planMapping } from "../route";
@@ -21,7 +21,6 @@ interface GlossaryModalProps {
   title: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  shopLocales: ShopLocalesType[];
   shop: string;
   server: string;
   migrated: boolean;
@@ -32,7 +31,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   title,
   isVisible,
   setIsModalOpen,
-  shopLocales,
   shop,
   server,
   migrated,
@@ -41,12 +39,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   const [targetText, setTargetText] = useState<string>("");
   const [rangeCode, setRangeCode] = useState<string>("");
   const [checked, setChecked] = useState(false);
-  const [options, setOptions] = useState([
-    {
-      value: "ALL",
-      label: "All languages",
-    },
-  ]);
+  const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
+  const [localeLoadError, setLocaleLoadError] = useState<string>("");
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
   const [sourceTextError, setSourceTextError] = useState<boolean>(false);
@@ -71,37 +65,86 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const updateFetcher = useFetcher<any>();
+  const localesFetcher = useFetcher<any>();
+  const navigate = useNavigate();
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
   const { plan } = useSelector((state: any) => state.userConfig);
+  const currentItem = useMemo(
+    () => dataSource.find((item: any) => item.key === id),
+    [dataSource, id],
+  );
+  const isCreateMode = id === -1;
+  const localeOptions = useMemo(() => {
+    const nextOptions = [
+      {
+        value: "ALL",
+        label: "All languages",
+      },
+      ...shopLocales.map((shopLocale: ShopLocalesType) => ({
+        value: shopLocale.locale,
+        label: shopLocale.name,
+      })),
+    ];
+    if (
+      rangeCode &&
+      !nextOptions.find((option) => option.value === rangeCode)
+    ) {
+      nextOptions.push({
+        value: rangeCode,
+        label: rangeCode,
+      });
+    }
+    return nextOptions;
+  }, [rangeCode, shopLocales]);
+  const localesLoading =
+    localesFetcher.state !== "idle" && localesFetcher.formData != null;
 
   useEffect(() => {
-    if (updateFetcher.data) {
+    if (!isVisible) return;
+    if (currentItem) {
+      setSourceText(currentItem.sourceText);
+      setTargetText(currentItem.targetText);
+      setRangeCode(currentItem.rangeCode || "ALL");
+      setChecked(currentItem.type);
+    } else {
+      setSourceText("");
+      setTargetText("");
+      setRangeCode("ALL");
+      setChecked(false);
     }
-  }, [updateFetcher.data]);
+    setShopLocales([]);
+    setLocaleLoadError("");
+    setModalAlert(null);
+    localesFetcher.submit(
+      { loadLocales: JSON.stringify(true) },
+      { method: "POST", action: "/app/glossary" },
+    );
+  }, [currentItem, isVisible]);
 
   useEffect(() => {
-    if (isVisible) {
-      const data = dataSource.find((item: any) => item.key === id);
-      if (data) {
-        setSourceText(data?.sourceText);
-        setTargetText(data?.targetText);
-        setRangeCode(data?.rangeCode);
-        setChecked(data?.type);
-      } else {
-        setRangeCode("ALL");
-      }
-      if (shopLocales) {
-        const localeOptions = shopLocales.map(
-          (shopLocale: ShopLocalesType) => ({
-            value: shopLocale.locale,
-            label: shopLocale.name,
-          }),
-        );
-        setOptions([...options, ...localeOptions]);
-      }
+    if (!localesFetcher.data) return;
+    if (localesFetcher.data.success) {
+      setShopLocales(localesFetcher.data.response?.shopLocales || []);
+      setLocaleLoadError("");
+      return;
     }
-  }, [isVisible]);
+    setShopLocales([]);
+    setLocaleLoadError(
+      getTranslateV4ErrorMessage(
+        t,
+        localesFetcher.data?.errorMsg,
+        TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_LIST_FAILED,
+      ),
+    );
+  }, [localesFetcher.data, t]);
+
+  const mapLanguageLabel = (locale: string) => {
+    if (locale === "ALL") return "All Languages";
+    return (
+      shopLocales.find((language: ShopLocalesType) => language.locale === locale)
+        ?.name || locale
+    );
+  };
 
   const handleConfirm = async (id: number) => {
     let isValid = true;
@@ -123,16 +166,26 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setModalAlert(null);
       isValid = false;
     }
-    if (!rangeCode || !options.find((option) => option.value === rangeCode)) {
+    if (
+      !rangeCode ||
+      !localeOptions.find((option) => option.value === rangeCode)
+    ) {
       setRangeCodeStatus("error");
       setRangeCodeError(true);
       setRangeCodeErrorMsg(t("Please select a language"));
       setModalAlert(null);
       isValid = false;
     }
+    if (isCreateMode && !localesLoading && shopLocales.length === 0) {
+      setModalAlert({
+        type: "warning",
+        message: t("Add a target language before creating a glossary rule."),
+      });
+      return;
+    }
 
     if (
-      title === "Create rule" &&
+      isCreateMode &&
       dataSource.length >= planMapping[plan?.type as keyof typeof planMapping]
     ) {
       isOversizeError = false;
@@ -141,7 +194,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     const source = sourceText + rangeCode;
     dataSource.map((item: any) => {
       const string = item.sourceText + item.rangeCode;
-      if (title === "Create rule") {
+      if (isCreateMode) {
         if (
           source == string ||
           ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
@@ -175,9 +228,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setRangeCodeErrorMsg("");
 
       try {
-        const item = dataSource.find((item: any) => item.key === id);
         let data;
-        if (item) {
+        if (currentItem) {
           data = await updateGlossaryCompat({
             migrated,
             shop: shop,
@@ -187,7 +239,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               targetText: targetText,
               rangeCode: rangeCode,
               type: checked ? 1 : 0,
-              status: item?.status,
+              status: currentItem?.status,
             },
             server: server as string,
           });
@@ -205,27 +257,17 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
         if (data.success) {
           let res = data.response;
-          if (
-            shopLocales.find((language: ShopLocalesType) => {
-              return language.locale == res.rangeCode;
-            }) ||
-            res.rangeCode === "ALL"
-          ) {
-            res = {
-              key: res?.id,
-              sourceText: res?.sourceText,
-              targetText: res?.targetText,
-              language:
-                shopLocales.find((language: ShopLocalesType) => {
-                  return language.locale === res.rangeCode;
-                })?.name || "All Languages",
-              rangeCode: res?.rangeCode,
-              type: res?.caseSensitive,
-              status: res?.status,
-              loading: false,
-              createdDate: res?.createdDate,
-            };
-          }
+          res = {
+            key: res?.id,
+            sourceText: res?.sourceText,
+            targetText: res?.targetText,
+            language: mapLanguageLabel(res?.rangeCode),
+            rangeCode: res?.rangeCode,
+            type: res?.caseSensitive,
+            status: res?.status,
+            loading: false,
+            createdDate: res?.createdDate,
+          };
           dispatch(updateGLossaryTableData(res));
           shopify.toast.show("Saved successfully");
           setConfirmButtonDisable(false);
@@ -270,12 +312,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     setSourceText("");
     setTargetText("");
     setRangeCode("");
-    setOptions([
-      {
-        value: "ALL",
-        label: "All languages",
-      },
-    ]);
+    setShopLocales([]);
+    setLocaleLoadError("");
     setChecked(false);
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
@@ -332,6 +370,15 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             message={modalAlert.message}
             closable
             onClose={() => setModalAlert(null)}
+          />
+        ) : null}
+        {localeLoadError ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={localeLoadError}
+            closable
+            onClose={() => setLocaleLoadError("")}
           />
         ) : null}
         <Text>{t("Keep translation consistent across your store")}</Text>
@@ -393,7 +440,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         <Text strong>{t("Apply for")}</Text>
         <div style={{ display: "flex", flexDirection: "column", width: 200 }}>
           <Select
-            options={options}
+            options={localeOptions}
             style={{ width: "100%" }}
             onChange={(e) => {
               setModalAlert(null);
@@ -401,6 +448,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             }}
             value={rangeCode}
             status={rangeCodeStatus}
+            loading={localesLoading}
           />
           {rangeCodeError && (
             <Text type="danger" style={{ marginTop: 2 }}>
@@ -413,6 +461,16 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               {rangeCodeErrorMsg}
             </Text>
           )}
+          {isCreateMode && !localesLoading && shopLocales.length === 0 ? (
+            <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
+              <Text type="secondary">
+                {t("Add a target language first to create a glossary rule.")}
+              </Text>
+              <Button onClick={() => navigate("/app/language")}>
+                {t("Add Language")}
+              </Button>
+            </Space>
+          ) : null}
         </div>
         <Text strong>{t("Match by")}</Text>
         <Checkbox

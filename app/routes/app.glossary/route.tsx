@@ -10,7 +10,6 @@ import {
   Modal,
   Pagination,
   Popconfirm,
-  Popover,
   Skeleton,
   Space,
   Switch,
@@ -18,6 +17,7 @@ import {
   Typography,
 } from "antd";
 import Button from "~/ui/components/AppButton";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { queryShopLanguages } from "~/api/admin";
 import {
@@ -30,10 +30,8 @@ import {
   setGLossaryStatusLoadingState,
   setGLossaryTableData,
 } from "~/store/modules/glossaryTableData";
-import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
-import { InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
-import NoLanguageSetCard from "~/components/noLanguageSetCard";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import defaultStyles from "../styles/defaultStyles.module.css";
@@ -80,36 +78,69 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+function parseJsonFormField<T>(formData: FormData, key: string): T | undefined {
+  const value = formData.get(key);
+  if (typeof value !== "string") return undefined;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return undefined;
+  }
+}
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
-    const deleteInfo: number[] = JSON.parse(
-      formData.get("deleteInfo") as string,
-    );
+    const loading = parseJsonFormField<boolean>(formData, "loading");
+    const loadLocales = parseJsonFormField<boolean>(formData, "loadLocales");
+    const deleteInfo =
+      parseJsonFormField<number[]>(formData, "deleteInfo") ?? [];
     switch (true) {
       case !!loading:
         try {
-          const shopLanguages = await queryShopLanguages({
-            shop,
-            accessToken: accessToken as string,
-          });
-          const shopLocalesWithoutPrimary = shopLanguages.filter(
-            (language: { locale: string; name: string; primary?: boolean }) =>
-              !language.primary,
-          );
-          const response = await listGlossaryPagePayload(
-            shop,
-            shopLocalesWithoutPrimary,
-          );
+          const response = await listGlossaryPagePayload(shop);
           return { success: true, errorCode: null, errorMsg: null, response };
         } catch (error) {
           console.error("Error glossary loading:", error);
           const appError = buildTranslateV4Error(
             TRANSLATE_V4_ERROR_KEYS.GLOSSARY_LIST_FAILED,
+          );
+          return {
+            success: false,
+            errorCode: appError.errorCode,
+            errorMsg: appError.errorMsg,
+            response: undefined,
+          };
+        }
+      case !!loadLocales:
+        try {
+          const shopLanguages = await queryShopLanguages({
+            shop,
+            accessToken: accessToken as string,
+          });
+          const shopLocales = Array.isArray(shopLanguages)
+            ? shopLanguages.filter(
+                (language: {
+                  locale: string;
+                  name: string;
+                  primary?: boolean;
+                  published?: boolean;
+                }) => !language.primary,
+              )
+            : [];
+          return {
+            success: true,
+            errorCode: null,
+            errorMsg: null,
+            response: { shopLocales },
+          };
+        } catch (error) {
+          console.error("Error glossary locales loading:", error);
+          const appError = buildTranslateV4Error(
+            TRANSLATE_V4_ERROR_KEYS.TARGET_LOCALE_LIST_FAILED,
           );
           return {
             success: false,
@@ -203,7 +234,6 @@ const Index = () => {
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
-  const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
     useState<boolean>(false);
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
@@ -272,7 +302,6 @@ const Index = () => {
             loadingFetcher.data?.response?.glossaryTableData || [],
           ),
         );
-        setShopLocales(loadingFetcher.data?.response?.shopLocales || []);
       }
       setLoading(false);
     }
@@ -538,19 +567,9 @@ const Index = () => {
       dataIndex: "language",
       key: "language",
       width: "20%",
-      render: (_: any, record: any) => {
-        return record.language ? (
-          <Text>{record.language}</Text>
-        ) : (
-          <Popover
-            content={t("This language has been deleted. Please edit again.")}
-          >
-            <WarningOutlined
-              style={{ color: "#F8B400", fontSize: "18px", width: "100%" }}
-            />
-          </Popover>
-        );
-      },
+      render: (_: any, record: any) => (
+        <Text>{record.language || record.rangeCode || "-"}</Text>
+      ),
     },
     {
       title: t("Case"),
@@ -583,6 +602,8 @@ const Index = () => {
     onChange: (e: any) => setSelectedRowKeys(e),
   };
 
+  const showGlossaryEmptyState = !loading && dataSource.length === 0;
+
   return (
     <Page>
       <TitleBar title={t("Glossary")} />
@@ -598,8 +619,34 @@ const Index = () => {
         <Text>
           {t("Create translation rules for certain words and phrases")}
         </Text>
-        {!shopLocales?.length && !loading ? (
-          <NoLanguageSetCard />
+        {showGlossaryEmptyState ? (
+          <AppSectionCard
+            title={t("No glossary rules yet")}
+            description={t(
+              "Create your first glossary rule to keep brand terms and key phrases translated consistently.",
+            )}
+            style={{
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
+            <Space direction="vertical" size="large">
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (
+                    planMapping[plan?.type as keyof typeof planMapping] === 0
+                  ) {
+                    modalShowForPlan();
+                    return;
+                  }
+                  handleIsModalOpen("Create rule", -1);
+                }}
+              >
+                {t("Create rule")}
+              </Button>
+            </Space>
+          </AppSectionCard>
         ) : (
           <div className={styles.languageTable_action}>
             <Flex
@@ -718,23 +765,7 @@ const Index = () => {
                         </Flex>
                         <Flex justify="space-between">
                           <Text>{t("Apply for")}</Text>
-                          {item.language ? (
-                            <Text>{item.language}</Text>
-                          ) : (
-                            <Popover
-                              content={t(
-                                "This language has been deleted. Please edit again.",
-                              )}
-                            >
-                              <WarningOutlined
-                                style={{
-                                  color: "#F8B400",
-                                  fontSize: "18px",
-                                  width: "100%",
-                                }}
-                              />
-                            </Popover>
-                          )}
+                          <Text>{item.language || item.rangeCode || "-"}</Text>
                         </Flex>
                         <Flex justify="space-between">
                           <Text>{t("Case")}</Text>
@@ -797,7 +828,6 @@ const Index = () => {
         title={title}
         isVisible={isGlossaryModalOpen}
         setIsModalOpen={setIsGlossaryModalOpen}
-        shopLocales={shopLocales}
         shop={globalStore?.shop || ""}
         server={server as string}
         migrated={migrated}
