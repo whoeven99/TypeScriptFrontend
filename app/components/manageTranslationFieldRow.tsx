@@ -34,8 +34,6 @@ const sectionLabelStyle = {
 const sectionHeaderStyle = {
   display: "flex",
   alignItems: "center" as const,
-  justifyContent: "space-between" as const,
-  gap: 12,
   minHeight: 24,
 };
 
@@ -104,14 +102,30 @@ export default function ManageTranslationFieldRow({
             flexDirection: "column",
             gap: 8,
             minWidth: 0,
+            position: "relative" as const,
           }}
         >
-          <div style={sectionHeaderStyle}>
+          <div
+            style={{
+              ...sectionHeaderStyle,
+              paddingRight: action ? 96 : 0,
+            }}
+          >
             <Text style={sectionLabelStyle}>
               {translatedLabel}
             </Text>
-            {action}
           </div>
+          {action ? (
+            <div
+              style={{
+                position: "absolute",
+                top: 1,
+                right: 0,
+              }}
+            >
+              {action}
+            </div>
+          ) : null}
           <ManageTableInput
             record={record}
             isHtml={isHtml}

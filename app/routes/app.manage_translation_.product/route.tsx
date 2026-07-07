@@ -1008,11 +1008,15 @@ const Index = () => {
           type: "default",
           size: "small",
           style: {
-            height: 24,
-            paddingInline: 8,
+            height: 22,
+            paddingInline: 6,
             fontWeight: 500,
+            fontSize: 12,
+            lineHeight: 1,
             color: "var(--app-accent-primary)",
             borderColor: "var(--app-accent-primary)",
+            borderRadius: 6,
+            backgroundColor: "var(--p-color-bg-surface)",
             whiteSpace: "nowrap",
           },
         }}
