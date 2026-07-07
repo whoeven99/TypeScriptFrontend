@@ -42,13 +42,13 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   }, [loading]);
 
   const actionLabel = hasExistingTranslation
-    ? t("Optimize translation")
+    ? t("Retranslate")
     : t("Translate");
   const promptLabel = hasExistingTranslation
-    ? t("Translation result improvement suggestions")
+    ? t("Translation quality not good enough?")
     : t("Translation prompt");
   const submitLabel = hasExistingTranslation
-    ? t("Apply optimization")
+    ? t("Retranslate")
     : t("Start translation");
 
   return (
@@ -111,7 +111,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
         >
           <Text type="secondary">
             {t(
-              "Add specific guidance for improving the current translation result.",
+              "Add suggestions and translate again.",
             )}
           </Text>
           <TextArea
