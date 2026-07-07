@@ -1,7 +1,7 @@
 import { Input, Modal, Space, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Button from "~/ui/components/AppButton";
+import Button, { type AppButtonProps } from "~/ui/components/AppButton";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -12,6 +12,7 @@ interface SingleTranslateActionProps {
   existingTranslation?: string | null;
   loading?: boolean;
   onSubmit: (customPrompt?: string) => void | Promise<void>;
+  triggerProps?: AppButtonProps;
 }
 
 const normalizeText = (value?: string | null) => value?.trim() ?? "";
@@ -20,6 +21,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   existingTranslation,
   loading = false,
   onSubmit,
+  triggerProps,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -54,7 +56,9 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   return (
     <>
       <Button
-        type="default"
+        {...triggerProps}
+        type={triggerProps?.type ?? "default"}
+        size={triggerProps?.size ?? "middle"}
         onClick={() => {
           if (!hasExistingTranslation) {
             hasSubmittedRef.current = true;
