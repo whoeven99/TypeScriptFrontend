@@ -8,6 +8,7 @@ import {
   Link,
   Outlet,
   useLoaderData,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -55,6 +56,11 @@ import { setLanguageTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
+import TranslatePromptInput from "~/components/translatePromptInput";
+
+/** 翻译管理子页面（如 /app/manage_translation/product），存在手动单条翻译按钮。 */
+const isManageTranslationSubPage = (pathname: string): boolean =>
+  /\/app\/manage_translation\/[^/]+/.test(pathname);
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -547,6 +553,9 @@ export default function App() {
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const showTranslatePrompt =
+    isClient && isManageTranslationSubPage(location.pathname);
 
   useEffect(() => {
     setIsClient(true);
@@ -614,6 +623,11 @@ export default function App() {
             </>
           )}
         </NavMenu>
+        {showTranslatePrompt ? (
+          <div style={{ padding: "0 12px" }}>
+            <TranslatePromptInput />
+          </div>
+        ) : null}
         <Outlet />
         {isClient && supportChatReady ? (
           <Suspense fallback={null}>

@@ -13,6 +13,8 @@ export type TranslateSingleTextArgs = {
   fieldKey?: string;
   shopifyType?: string;
   aiModel?: string;
+  /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
+  customPrompt?: string;
 };
 
 export async function translateSingleText(
@@ -26,6 +28,7 @@ export async function translateSingleText(
     fieldKey: args.fieldKey,
     shopifyType: args.shopifyType,
     aiModel: args.aiModel,
+    customPrompt: args.customPrompt,
   });
   return { translatedText, usedTokens };
 }

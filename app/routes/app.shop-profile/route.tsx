@@ -317,29 +317,11 @@ export default function ShopProfilePage() {
               style={{ boxShadow: "var(--app-shadow-card)" }}
             >
               <Flex vertical gap={16}>
-                {/* 基本信息行 */}
-                <Row gutter={[24, 12]}>
-                  <Col xs={24} sm={8}>
-                    <Flex vertical gap={2}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>触发来源</Text>
-                      <Text strong>{scan?.trigger ?? "-"}</Text>
-                    </Flex>
-                  </Col>
-                  <Col xs={24} sm={8}>
-                    <Flex vertical gap={2}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>更新时间</Text>
-                      <Text>{formatDate(scan?.updatedAt)}</Text>
-                    </Flex>
-                  </Col>
-                  <Col xs={24} sm={8}>
-                    <Flex vertical gap={2}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>扫描 ID</Text>
-                      <Text style={{ fontFamily: "monospace", fontSize: 12 }}>
-                        {scan?.id?.slice(0, 12) ?? "-"}…
-                      </Text>
-                    </Flex>
-                  </Col>
-                </Row>
+                {/* 更新时间 */}
+                <Flex vertical gap={2}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>更新时间</Text>
+                  <Text>{formatDate(scan?.updatedAt)}</Text>
+                </Flex>
 
                 <Divider style={{ margin: "4px 0" }} />
 
@@ -460,9 +442,6 @@ export default function ShopProfilePage() {
                   <Descriptions.Item label="AI 模型" span={2}>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {profile.aiModel || "-"}
-                      {profile.lastScannedAt
-                        ? `　·　最后扫描：${formatDate(profile.lastScannedAt)}`
-                        : ""}
                     </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="关键词" span={3}>

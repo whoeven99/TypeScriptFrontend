@@ -1,4 +1,7 @@
 {
+  "Translation prompt": "Translation prompt",
+  "Describe the direction or style for this translation. It is applied to manual single-field translation on this page.": "Describe the direction or style for this translation. It is applied to manual single-field translation on this page.",
+  "e.g. Use a formal tone; keep brand names in English": "e.g. Use a formal tone; keep brand names in English",
   "loading": "Loading",
   "Dashboard": "Dashboard",
   "Faster, higher-quality localization translation tool": "Faster, higher-quality localization translation tool",
