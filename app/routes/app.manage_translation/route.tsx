@@ -34,8 +34,10 @@ import AppSectionCard from "~/ui/components/AppSectionCard";
 import {
   type ClientLogTrace,
   finishClientLogTrace,
+  reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
 
 const { Text } = Typography;
 interface TableDataType {
@@ -85,6 +87,31 @@ function buildDataRow(
   };
 }
 
+/**
+ * 首屏先拉用户最常看的基础模块，把 Theme / Navigation 等重统计延后，
+ * 降低进入管理页时对 Shopify GraphQL cost bucket 的瞬时压力。
+ */
+const ITEMS_COUNT_PRIORITY_RESOURCE_TYPES = [
+  "Products",
+  "Collection",
+  "Article",
+  "Blog titles",
+  "Pages",
+  "Shop",
+  "Store metadata",
+] as const;
+
+const ITEMS_COUNT_DEFERRED_RESOURCE_TYPES = ITEMS_COUNT_RESOURCE_TYPES.filter(
+  (resourceType) =>
+    !ITEMS_COUNT_PRIORITY_RESOURCE_TYPES.includes(
+      resourceType as (typeof ITEMS_COUNT_PRIORITY_RESOURCE_TYPES)[number],
+    ),
+);
+
+/** 避免 15 路统计在首屏持续压满 Render 单实例（大店 Products 统计耗时更长）。 */
+const ITEMS_COUNT_SUBMIT_GAP_MS = 800;
+const ITEMS_COUNT_BATCH_GAP_MS = 2500;
+
 function safeParseFormJson(value: FormDataEntryValue | null): unknown {
   if (value == null || value === "") return null;
   try {
@@ -130,7 +157,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const response = await getManageTranslationLocaleSnapshotFromCache(shop, target);
       return { success: true, errorCode: 0, errorMsg: "", response };
     } catch (error) {
-      console.error("Error manage_translation itemsCountSummary:", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error manage_translation refreshItemsCount",
+        error,
+      );
       return {
         success: false,
         errorCode: 10001,
@@ -159,7 +189,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: appByHandle,
         };
       } catch (error) {
-        console.error("Error manage_translation appInstalls:", error);
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation appInstalls",
+          error,
+        );
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+
+    case !!itemsCount:
+      try {
+        const response = await getItemsCountByLabel({
+          admin,
+          shop,
+          target: itemsCount.target,
+          resourceTypeLabel: itemsCount.resourceType,
+          skipCache: itemsCount.forceRefresh === true,
+        });
+        return { success: true, errorCode: 0, errorMsg: "", response };
+      } catch (error) {
+        logManageTranslationGraphQLErrorDetail(
+          "Error manage_translation itemsCount",
+          error,
+        );
         return {
           success: false,
           errorCode: 10001,
@@ -275,7 +331,6 @@ const Index = () => {
     pagefly: false,
   });
 
-  const fetcher = useFetcher<any>();
   const appFetcher = useFetcher<any>();
   const summaryFetcher = useFetcher<any>();
 
@@ -478,14 +533,19 @@ const Index = () => {
 
 
   useEffect(() => {
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 目前在翻译管理页面`,
+        event: "manage_translation_page_view",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 目前在翻译管理页面`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
     appFetcher.submit(
       {
@@ -594,14 +654,20 @@ const Index = () => {
 
   const navigateToPricing = () => {
     navigate("/app/pricing");
-    fetcher.submit(
+    void reportClientLog(
       {
-        log: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        event: "manage_translation_to_pricing",
+        action: "navigate_pricing",
+        shop: globalStore?.shop,
+        level: "info",
+        kind: "event",
+        status: "success",
+        message: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
+        context: {
+          legacy: true,
+        },
       },
-      {
-        method: "POST",
-        action: "/log",
-      },
+      { beacon: true },
     );
   };
 
@@ -783,14 +849,21 @@ const Index = () => {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                fetcher.submit(
+                void reportClientLog(
                   {
-                    log: `${globalStore?.shop} 下载批量导入文件`,
+                    event: "manage_translation_download_template",
+                    action: "download_template",
+                    shop: globalStore?.shop,
+                    level: "info",
+                    kind: "event",
+                    status: "success",
+                    message: `${globalStore?.shop} 下载批量导入文件`,
+                    context: {
+                      legacy: true,
+                      fileName: "Shop_translation.csv",
+                    },
                   },
-                  {
-                    method: "POST",
-                    action: "/log",
-                  },
+                  { beacon: true },
                 );
               }}
             >

@@ -1,4 +1,5 @@
 import { getShopQuota, type ShopQuota } from "~/server/translateV4/quota.server";
+import { normalizeShopQuota } from "~/lib/translationQuota";
 import { isTsfBillingShop } from "../binding/resolveBillingBinding.server";
 import { deductCredits } from "./deductCredits.server";
 import { getAccountQuota } from "./getAccountQuota.server";
@@ -15,14 +16,14 @@ export async function getShopCreditQuota(shop: string): Promise<ShopQuota | null
   if (await isTsfBillingShop(shop)) {
     const quota = await getAccountQuota(shop);
     if (!quota) return null;
-    return {
+    return normalizeShopQuota({
       shopName: shop,
       maxToken: quota.totalCredits,
       usedToken: quota.usedCredits,
       remaining: quota.remainingCredits,
-    };
+    });
   }
-  return getShopQuota(shop);
+  return normalizeShopQuota(await getShopQuota(shop));
 }
 
 /** Java 额度扣减（老系统）。credits 为已乘系数的积分。 */

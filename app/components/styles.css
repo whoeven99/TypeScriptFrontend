@@ -1,28 +1,37 @@
 /* translateIcon */
 .icon-container {
+  --status-bg: #f6f6f7;
+  --status-border: #d2d5d8;
+  --status-text: #61666c;
+  --status-dot: #8a8f98;
   display: flex;
   align-items: center;
-  /* 垂直居中 */
-  background-color: #f0f0f0;
-  /* 背景色，灰色背景 */
-  padding: 4px 12px;
-  border-radius: 25px;
-  /* 椭圆形容器 */
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--status-border);
+  border-radius: 999px;
+  background: var(--status-bg);
   width: fit-content;
-  /* 根据内容宽度自动调整 */
+  max-width: 100%;
+  box-sizing: border-box;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .circle {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #888;
-  /* 默认灰色边框 */
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border: 2px solid var(--status-dot);
   border-radius: 50%;
-  /* 圆形 */
-  margin-right: 8px;
-  /* 圆形和文字之间的间距 */
-  transition: all 0.2s ease;
-  /* 圆形动画效果 */
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .solidCircle {
@@ -38,25 +47,28 @@
 
 .text {
   font-size: 12px;
-  color: #888;
-  /* 默认灰色文字 */
-  font-family: Arial, sans-serif;
-  display: flex;
-  /* 启用 flexbox 布局 */
-  justify-content: center;
-  /* 水平居中 */
-  align-items: center;
-  /* 垂直居中 */
-  height: 100%;
-  /* 确保有足够的高度 */
-  line-height: normal;
-  /* 可以根据需要调整行高 */
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--status-text);
+  white-space: nowrap;
+}
+
+.detail {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--status-text);
+  opacity: 0.7;
+  padding-left: 2px;
+  white-space: nowrap;
 }
 
 /* 状态为 "Untranslated" 时 */
 .untranslated {
-  background-color: #f0f0f0;
-  /* 灰色背景 */
+  --status-bg: #f6f6f7;
+  --status-border: #dfe3e8;
+  --status-text: #61666c;
+  --status-dot: #8a8f98;
 }
 
 .untranslated.solidCircle {
@@ -64,63 +76,62 @@
 }
 
 .untranslated .circle {
-  border-color: #888;
-  /* 灰色圆圈 */
+  border-color: var(--status-dot);
 }
 
 .untranslated .text {
-  color: #888;
-  /* 灰色文字 */
+  color: var(--status-text);
 }
 
 /* 状态为 "Translated" 时 */
 .translated {
-  background-color: #e0f7e0;
-  /* 浅绿色背景 */
+  --status-bg: #edf7ee;
+  --status-border: #b7dfc0;
+  --status-text: #0c5132;
+  --status-dot: #1f8a4c;
 }
 
 .translated.solidCircle {
   background-color: #4caf50;
-  /* 绿色圆圈 */
 }
 
 .translated .circle {
-  border-color: #4caf50;
-  /* 绿色圆圈 */
+  border-color: var(--status-dot);
+  background-color: var(--status-dot);
 }
 
 .translated .text {
-  color: #29845a;
-  /* 绿色文字 */
+  color: var(--status-text);
 }
 
 /* 状态为 "Translating" 时 */
 .translating {
-  background-color: #e0f7ff;
-  /* 浅蓝色背景 */
+  --status-bg: #eef6ff;
+  --status-border: #bad7ff;
+  --status-text: #1859b8;
+  --status-dot: #2c6ecb;
 }
 
 .translating.solidCircle {
   background-color: #2196f3;
-  /* 只保留顶部边框为蓝色 */
 }
 
 .translating .circle {
   border-color: transparent;
-  /* 设置边框透明 */
-  border-top-color: #2196f3;
-  /* 只保留顶部边框为蓝色 */
+  border-top-color: var(--status-dot);
+  border-right-color: var(--status-dot);
   animation: rotating 1s infinite linear;
-  /* 旋转动画 */
 }
 
 .translating .text {
-  color: #2196f3;
-  /* 蓝色文字 */
+  color: var(--status-text);
 }
 
 .partly_translated {
-  background-color: #f7f6e0;
+  --status-bg: #fff7e8;
+  --status-border: #f2d6a4;
+  --status-text: #8a6116;
+  --status-dot: #b9891d;
 }
 
 .partly_translated.solidCircle {
@@ -128,11 +139,18 @@
 }
 
 .partly_translated .circle {
-  border-top-color: #afa34c;
+  border-color: var(--status-dot);
+  background: linear-gradient(
+    135deg,
+    var(--status-dot) 0%,
+    var(--status-dot) 50%,
+    transparent 50%,
+    transparent 100%
+  );
 }
 
 .partly_translated .text {
-  color: #7f8429;
+  color: var(--status-text);
 }
 
 .translate_exception {
@@ -231,11 +249,24 @@
 }
 
 .icon-container.error .circle {
-  background-color: #ff4d4f;
+  background-color: transparent;
 }
 
 .circle.error {
-  border-color: #ff4d4f;
+  border-color: #d72c0d;
+  background-color: #d72c0d;
+}
+
+.icon-container.error {
+  --status-bg: #fff1f1;
+  --status-border: #f1b8b8;
+  --status-text: #8e1f0b;
+  --status-dot: #d72c0d;
+}
+
+.icon-container.error .text,
+.icon-container.error .detail {
+  color: var(--status-text);
 }
 
 /* manageTableInput */

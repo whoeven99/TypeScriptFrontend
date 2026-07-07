@@ -143,6 +143,56 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type GraphqlThrottleStatus = {
+  maximumAvailable?: number;
+  currentlyAvailable?: number;
+  restoreRate?: number;
+};
+
+type GraphqlCostExtension = {
+  requestedQueryCost?: number;
+  actualQueryCost?: number;
+  throttleStatus?: GraphqlThrottleStatus;
+};
+
+function getGraphqlCostExtension(data: any): GraphqlCostExtension | null {
+  const cost = data?.extensions?.cost;
+  if (!cost || typeof cost !== "object") return null;
+  return cost as GraphqlCostExtension;
+}
+
+function getThrottleDelayMs(
+  cost: GraphqlCostExtension | null,
+  minimumAvailable: number,
+): number | null {
+  const throttleStatus = cost?.throttleStatus;
+  const currentlyAvailable = throttleStatus?.currentlyAvailable;
+  const restoreRate = throttleStatus?.restoreRate;
+  if (
+    typeof currentlyAvailable !== "number" ||
+    typeof restoreRate !== "number" ||
+    restoreRate <= 0 ||
+    currentlyAvailable >= minimumAvailable
+  ) {
+    return null;
+  }
+  const deficit = minimumAvailable - Math.max(0, currentlyAvailable);
+  return Math.ceil((deficit / restoreRate) * 1000) + 250;
+}
+
+function getThrottleRetryDelayMs(
+  cost: GraphqlCostExtension | null,
+  attempt: number,
+): number {
+  const requestedCost =
+    typeof cost?.requestedQueryCost === "number" ? cost.requestedQueryCost : 50;
+  const adaptiveDelay = getThrottleDelayMs(
+    cost,
+    Math.max(50, Math.min(250, requestedCost)),
+  );
+  return adaptiveDelay ?? 1200 * (attempt + 1);
+}
+
 /** Shopify GraphQL with light retry (throttle / transient errors during active jobs). */
 async function adminGraphqlJson(
   admin: AdminGraphqlClient,
@@ -155,15 +205,28 @@ async function adminGraphqlJson(
     try {
       const response = await admin.graphql(query, { variables });
       const data = await response.json();
+      const cost = getGraphqlCostExtension(data);
       const errors = data?.errors as Array<{ message?: string }> | undefined;
       if (errors?.length) {
         const msg = errors.map((e) => e.message ?? "GraphQL error").join("; ");
-        const throttled = /throttl|rate limit|429/i.test(msg);
+        const throttled =
+          /throttl|rate limit|429/i.test(msg) ||
+          (typeof cost?.throttleStatus?.currentlyAvailable === "number" &&
+            cost.throttleStatus.currentlyAvailable <= 0);
         if (throttled && attempt < retries) {
-          await sleep(1200 * (attempt + 1));
+          await sleep(getThrottleRetryDelayMs(cost, attempt));
           continue;
         }
         throw new Error(msg);
+      }
+      const actualCost =
+        typeof cost?.actualQueryCost === "number" ? cost.actualQueryCost : 0;
+      const preemptiveDelay = getThrottleDelayMs(
+        cost,
+        Math.max(40, Math.min(180, actualCost || PAGE_SIZE / 2)),
+      );
+      if (preemptiveDelay) {
+        await sleep(preemptiveDelay);
       }
       return data;
     } catch (err) {

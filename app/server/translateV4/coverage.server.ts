@@ -10,8 +10,10 @@ import {
   sumItemsCountByLabelsFromCache,
 } from "./itemsCount.server";
 import type { AdminGraphqlClient } from "./itemsCount.server";
+import { listV4Jobs } from "./cosmos.server";
 import { sameTranslationLocale } from "./locale";
 import { listTargetLocales } from "./targetLocale.server";
+import { ACTIVE_V4_STATUSES } from "./types";
 import {
   readAutoScanLastAt,
   resolveNextAutoUpdateAt,
@@ -27,6 +29,8 @@ export type LocaleCoverageRow = {
   cacheMissing: boolean;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
+  /** 当前语言是否有活跃中的 v4 任务 */
+  isTranslating: boolean;
   /** Worker 最近一次自动扫描时刻（ISO，全店共用） */
   lastAutoUpdateAt: string | null;
   /** 下一轮 Worker 自动扫描时刻（ISO，由前端按本地时区/相对时间展示） */
@@ -48,22 +52,30 @@ function ratioPercent(translated: number, total: number): number | null {
 
 type LocaleInput = { value: string; label: string };
 
-/** 合并语言页「按语言自动翻译」开关（Prisma ShopTargetLocale）。 */
-async function enrichCoverageWithAutoTranslate(
+/** 合并语言页运行态信号：自动翻译开关 + 活跃任务标记。 */
+async function enrichCoverageWithRuntimeSignals(
   shop: string,
   summary: CoverageSummary,
 ): Promise<CoverageSummary> {
   try {
-    const targetRows = await listTargetLocales(shop);
-    const lastAutoUpdateAt = await readAutoScanLastAt();
+    const [targetRows, jobs, lastAutoUpdateAt] = await Promise.all([
+      listTargetLocales(shop),
+      listV4Jobs(shop, 100),
+      readAutoScanLastAt(),
+    ]);
+    const activeJobs = jobs.filter((job) => ACTIVE_V4_STATUSES.includes(job.status));
     const locales = await Promise.all(
       summary.locales.map(async (row) => {
         const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
         const autoTranslate = match?.autoTranslate ?? false;
+        const isTranslating = activeJobs.some((job) =>
+          sameTranslationLocale(job.target, row.locale),
+        );
         const nextAutoUpdateAt = await resolveNextAutoUpdateAt(autoTranslate);
         return {
           ...row,
           autoTranslate,
+          isTranslating,
           lastAutoUpdateAt: autoTranslate ? lastAutoUpdateAt : null,
           nextAutoUpdateAt,
         };
@@ -71,7 +83,7 @@ async function enrichCoverageWithAutoTranslate(
     );
     return { ...summary, locales };
   } catch (err) {
-    console.error("[translateV4] enrichCoverageWithAutoTranslate failed:", err);
+    console.error("[translateV4] enrichCoverageWithRuntimeSignals failed:", err);
     return summary;
   }
 }
@@ -101,6 +113,7 @@ export async function getCoverageSummaryFromCache({
       percent: ratioPercent(agg.translated, agg.total),
       cacheMissing: agg.cacheMissing,
       autoTranslate: false,
+      isTranslating: false,
       lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
@@ -108,7 +121,7 @@ export async function getCoverageSummaryFromCache({
     totalItems += agg.total;
   }
 
-  return enrichCoverageWithAutoTranslate(shop, {
+  return enrichCoverageWithRuntimeSignals(shop, {
     languageCount: targetLocales.length,
     translatedItems,
     totalItems,
@@ -211,6 +224,7 @@ export async function computeCoverageSummary({
       percent: ratioPercent(translated, total),
       cacheMissing,
       autoTranslate: false,
+      isTranslating: false,
       lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
@@ -218,7 +232,7 @@ export async function computeCoverageSummary({
     totalItems += total;
   }
 
-  return enrichCoverageWithAutoTranslate(shop, {
+  return enrichCoverageWithRuntimeSignals(shop, {
     languageCount: targetLocales.length,
     translatedItems,
     totalItems,

@@ -1,4 +1,8 @@
 import type { TFunction } from "i18next";
+import {
+  isV4CancelledMessage,
+  isV4ManualPauseMessage,
+} from "~/shared/translateV4MessageTokens";
 import { translateV4Message } from "./v4I18n";
 
 export type V4JobNoticeKind =
@@ -33,9 +37,9 @@ export function getV4JobNotice(
 
   if (isV4QuotaInsufficientMessage(normalized)) {
     kind = "quota_insufficient";
-  } else if (normalized === "已手动暂停" || normalized === "manually paused") {
+  } else if (isV4ManualPauseMessage(trimmed)) {
     kind = "manual_pause";
-  } else if (normalized === "已取消" || normalized === "cancelled") {
+  } else if (isV4CancelledMessage(trimmed)) {
     kind = "cancelled";
   }
 

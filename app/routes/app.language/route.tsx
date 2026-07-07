@@ -40,8 +40,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   setAutoTranslateLoadingState,
   setAutoTranslateState,
-  setStatusState,
   setLanguageTableData,
+  updateLanguageTableData,
 } from "~/store/modules/languageTableData";
 import { sameTranslationLocale } from "~/server/translateV4/locale";
 import {
@@ -52,7 +52,7 @@ import {
 import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
 import {
   setAutoTranslateCompat,
-  listLanguageStatusCompat,
+  listLanguageCoverageCompat,
 } from "./languageClient";
 import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
@@ -84,6 +84,7 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { normalizeShopQuota } from "~/lib/translationQuota";
 import type { ShopQuota } from "~/server/translateV4/quota.server";
 import { DEFAULT_AI_MODEL, DEFAULT_MODULE_KEYS } from "../app.translate-v4/constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
@@ -127,10 +128,34 @@ export interface LanguagesDataType {
   locale: string;
   primary: boolean;
   status?: number;
+  statusDetail?: string;
   autoTranslate?: boolean;
   published: boolean;
   publishLoading?: boolean;
   autoTranslateLoading?: boolean;
+}
+
+type LanguageCoverageRow = {
+  locale: string;
+  translated: number;
+  total: number;
+  percent: number | null;
+  cacheMissing: boolean;
+  autoTranslate: boolean;
+  isTranslating: boolean;
+};
+
+function statusFromCoverage(row?: LanguageCoverageRow): number {
+  if (!row) return 0;
+  if (row.isTranslating) return 2;
+  if (row.total > 0 && row.percent === 100) return 1;
+  if (row.translated > 0) return 3;
+  return 0;
+}
+
+function statusDetailFromCoverage(row?: LanguageCoverageRow): string | undefined {
+  if (!row || row.total <= 0 || row.percent == null) return undefined;
+  return `${row.percent}%`;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -140,7 +165,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return json({
-    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
     shop: shop,
   });
@@ -345,8 +369,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server } = useLoaderData<typeof loader>();
-  const useV4LanguageStatus = true;
+  const { shop, mobile } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -397,6 +420,9 @@ const Index = () => {
     "trial" | "pricing" | null
   >(null);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
+  const createDisabledMessage =
+    normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
   const hasSelected = useMemo(
     () => selectedRowKeys.length > 0,
     [selectedRowKeys],
@@ -415,7 +441,6 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
-  const statusFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
   const location = useLocation();
@@ -436,7 +461,7 @@ const Index = () => {
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await res.json();
-      if (data?.ok) setQuota(data.quota as ShopQuota | null);
+      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
     } catch (error) {
       console.error("[language] refresh v4 quota failed:", error);
     }
@@ -552,25 +577,26 @@ const Index = () => {
           autoTranslateLoading: false,
         }));
         const GetLanguageLocaleInfoFront = async () => {
-          const languageList = await listLanguageStatusCompat({
-            shop,
-            server: server as string,
-            source: shopPrimaryLanguageData[0]?.locale,
-          });
-
-          data = data.map((lang: any) => ({
-            ...lang,
-            status:
-              languageList.response?.find((language: any) =>
-                sameTranslationLocale(language.target, lang.locale),
-              )?.status ?? 0,
-            autoTranslate:
-              languageList.response?.find((language: any) =>
-                sameTranslationLocale(language.target, lang.locale),
-              )?.autoTranslate ?? false,
-          }));
-          dispatch(setLanguageTableData(data));
-          setLoading(false);
+          try {
+            const coverageData = await listLanguageCoverageCompat();
+            const coverageRows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
+            data = data.map((lang: any) => {
+              const coverageRow = coverageRows.find((row) =>
+                sameTranslationLocale(row.locale, lang.locale),
+              );
+              return {
+                ...lang,
+                status: statusFromCoverage(coverageRow),
+                statusDetail: statusDetailFromCoverage(coverageRow),
+                autoTranslate: coverageRow?.autoTranslate ?? false,
+              };
+            });
+          } catch (error) {
+            console.error("[language] load coverage status failed:", error);
+          } finally {
+            dispatch(setLanguageTableData(data));
+            setLoading(false);
+          }
         };
 
         GetLanguageLocaleInfoFront();
@@ -579,10 +605,7 @@ const Index = () => {
   }, [
     dispatch,
     loadingFetcher.data,
-    server,
     shop,
-    statusFetcher,
-    useV4LanguageStatus,
   ]);
 
   useEffect(() => {
@@ -662,18 +685,14 @@ const Index = () => {
       }
 
       try {
-        const languageList = await listLanguageStatusCompat({
-          shop,
-          server: server as string,
-          source: source.code,
-        });
-        const rows = languageList?.response ?? [];
+        const coverageData = await listLanguageCoverageCompat();
+        const rows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
         const nextStatusSignature = dataSource
           .map((lang) => {
-            const row = rows.find((r: { target: string }) =>
-              sameTranslationLocale(r.target, lang.locale),
+            const row = rows.find((r) =>
+              sameTranslationLocale(r.locale, lang.locale),
             );
-            return `${lang.locale}:${row?.status ?? lang.status ?? ""}`;
+            return `${lang.locale}:${statusFromCoverage(row)}`;
           })
           .join("|");
 
@@ -683,16 +702,20 @@ const Index = () => {
 
         let hasPendingStatus = false;
         for (const lang of dataSource) {
-          const row = rows.find((r: { target: string }) =>
-            sameTranslationLocale(r.target, lang.locale),
+          const row = rows.find((r) =>
+            sameTranslationLocale(r.locale, lang.locale),
           );
-          const nextStatus = row?.status ?? lang.status;
+          const nextStatus = row ? statusFromCoverage(row) : lang.status;
           if (nextStatus === 2) hasPendingStatus = true;
-          if (row) {
-            dispatch(
-              setStatusState({ target: lang.locale, status: row.status }),
-            );
-          }
+          dispatch(
+            updateLanguageTableData([
+              {
+                locale: lang.locale,
+                status: nextStatus,
+                statusDetail: statusDetailFromCoverage(row),
+              } as LanguagesDataType,
+            ]),
+          );
         }
 
         if (pollFailureLoggedRef.current) {
@@ -751,7 +774,7 @@ const Index = () => {
       disposed = true;
       if (timer) clearTimeout(timer);
     };
-  }, [dataSource, source?.code, shop, server, dispatch]);
+  }, [dataSource, source?.code, shop, dispatch]);
 
   const columns = [
     {
@@ -773,7 +796,12 @@ const Index = () => {
       key: "status",
       width: "20%",
       render: (_: any, record: any) => {
-        return <TranslatedIcon status={record.status} />;
+        return (
+          <TranslatedIcon
+            status={record.status}
+            detail={record.statusDetail}
+          />
+        );
       },
     },
     {
@@ -875,9 +903,12 @@ const Index = () => {
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
-    const remainingCredits = quota?.remaining ?? null;
+    const remainingCredits = normalizedQuota?.remaining ?? null;
+    if (remainingCredits == null) {
+      message.info(t("v4.create.quotaUnavailable"));
+      return;
+    }
     const shouldGateByCredits =
-      remainingCredits != null &&
       remainingCredits <= 0 &&
       !hasPaidPlan &&
       !plan?.isInFreePlanTime;
@@ -942,7 +973,7 @@ const Index = () => {
     navigate,
     plan,
     planType,
-    quota?.remaining,
+    normalizedQuota?.remaining,
     shop,
     source?.code,
     t,
@@ -1273,7 +1304,10 @@ const Index = () => {
                             {item.name}
                           </Checkbox>
                           <div>
-                            <TranslatedIcon status={item.status} />
+                            <TranslatedIcon
+                              status={item.status}
+                              detail={item.statusDetail}
+                            />
                           </div>
                           <Flex justify="space-between">
                             <Text>{t("Publish")}</Text>
@@ -1386,6 +1420,8 @@ const Index = () => {
           modules={translateModuleKeys}
           onModulesChange={setTranslateModuleKeys}
           creating={translateCreating}
+          createDisabled={normalizedQuota == null}
+          disabledMessage={createDisabledMessage}
           onCreate={handleCreateTranslateTasks}
           aiModel={translateAiModel}
           onAiModelChange={setTranslateAiModel}

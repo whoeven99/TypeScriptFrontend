@@ -25,6 +25,11 @@ import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
+import {
+  getManageTranslationLoadErrorMessage,
+  isManageTranslationRateLimitedError,
+  logManageTranslationGraphQLErrorDetail,
+} from "~/utils/manageTranslationErrors";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Title, Text } = Typography;
@@ -92,11 +97,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data?.data?.translatableResources || null,
         };
       } catch (error) {
-        console.error("Error manage theme loading:", error);
+        logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: null,
         };
       }
@@ -140,15 +149,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: "",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "",
           response: data?.data?.translatableResources || null,
         };
       } catch (error) {
-        console.error("Error manage theme loading:", error);
+        logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: null,
         };
       }
@@ -186,18 +203,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: "",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "",
           response: {
             nodes: data.data?.translatableResourcesByIds?.nodes || [],
             pageInfo: null,
           },
         };
       } catch (error) {
-        console.error("Error refreshing current page:", error);
+        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
         return {
           success: false,
           errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
+          errorMsg: isManageTranslationRateLimitedError(error)
+
+            ? "RATE_LIMITED"
+
+            : "SERVER_ERROR",
           response: undefined,
         };
       }
@@ -212,7 +237,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return {
         success: true,
         errorCode: 0,
-        errorMsg: "",
+        errorMsg: isManageTranslationRateLimitedError(error)
+
+          ? "RATE_LIMITED"
+
+          : "",
         response: data,
       };
 
@@ -361,6 +390,14 @@ const Index = () => {
       }
     }
   }, [dataFetcher.data]);
+  useEffect(() => {
+    if (!dataFetcher.data || dataFetcher.data.success) return;
+    setIsLoading(false);
+    shopify.toast.show(
+      getManageTranslationLoadErrorMessage(t, dataFetcher.data?.errorMsg),
+    );
+  }, [dataFetcher.data, t]);
+
 
   useEffect(() => {
     if (confirmFetcher.data?.success) {
