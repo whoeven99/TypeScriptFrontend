@@ -26,11 +26,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     const forceRefresh = url.searchParams.get("refresh") === "1";
+    const cacheOnly = url.searchParams.get("cache") === "1";
     const localesToRefresh = url.searchParams
       .get("locales")
       ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+    if (cacheOnly) {
+      const summary = await getCoverageSummaryFromCache({
+        shop: shopName,
+        primaryLocale,
+        targetLocales,
+      });
+      return json({ ok: true, summary });
+    }
     const summary = await computeCoverageSummary({
       admin,
       shop: shopName,
