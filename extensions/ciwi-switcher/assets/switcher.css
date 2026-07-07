@@ -9,6 +9,11 @@
   z-index: 9999999999;
 }
 
+.ciwi_container.sidebar-widget-container {
+  min-width: 30px;
+  width: 30px;
+}
+
 .selector_box {
   flex-direction: column;
   position: absolute;

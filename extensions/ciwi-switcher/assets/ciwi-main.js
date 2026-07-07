@@ -298,37 +298,55 @@ async function ciwiOnload() {
         case "top_left":
           switcher.style.top = configData.positionData + "%" || "10%";
           switcher.style.bottom = "auto";
+          switcher.style.left = "0";
+          switcher.style.right = "auto";
           translateFloatBtnText.style.borderRadius = "8px 8px 0 0";
           translateFloatBtn.style.justifyContent = "flex-end";
+          translateFloatBtn.style.left = "0";
+          translateFloatBtn.style.right = "auto";
           selectorBox.style.left = "0";
+          selectorBox.style.right = "auto";
           selectorBox.style.top = "100%";
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_left":
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.top = "auto";
+          switcher.style.left = "0";
+          switcher.style.right = "auto";
           translateFloatBtnText.style.borderRadius = "8px 8px 0 0";
           translateFloatBtn.style.justifyContent = "flex-end";
+          translateFloatBtn.style.left = "0";
+          translateFloatBtn.style.right = "auto";
           selectorBox.style.left = "0";
+          selectorBox.style.right = "auto";
           selectorBox.style.bottom = "100%";
           selectorBox.style.top = "auto";
           break;
         case "top_right":
           switcher.style.top = configData.positionData + "%" || "10%";
+          switcher.style.left = "auto";
           switcher.style.right = "0";
           switcher.style.bottom = "auto";
           translateFloatBtnText.style.borderRadius = "0 0 8px 8px";
           translateFloatBtn.style.justifyContent = "flex-start";
+          translateFloatBtn.style.left = "auto";
+          translateFloatBtn.style.right = "0";
+          selectorBox.style.left = "auto";
           selectorBox.style.right = "0";
           selectorBox.style.top = "100%";
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_right":
           switcher.style.bottom = configData.positionData + "%" || "10%";
+          switcher.style.left = "auto";
           switcher.style.right = "0";
           switcher.style.top = "auto";
           translateFloatBtnText.style.borderRadius = "0 0 8px 8px";
           translateFloatBtn.style.justifyContent = "flex-start";
+          translateFloatBtn.style.left = "auto";
+          translateFloatBtn.style.right = "0";
+          selectorBox.style.left = "auto";
           selectorBox.style.right = "0";
           selectorBox.style.bottom = "100%";
           selectorBox.style.top = "auto";
@@ -342,6 +360,7 @@ async function ciwiOnload() {
       selectorBox.dataset.preferredPlacement =
         configData.selectorPosition?.startsWith("bottom") ? "up" : "down";
       selectorBox.classList.toggle("direct-select-mode", isDirectSelectorMode);
+      switcher.classList.toggle("sidebar-widget-container", shouldUseSidebarWidget);
       selectorBox.classList.remove("mobile-sidebar-mode");
       switcher.classList.remove("mobile-sidebar-widget");
       if (selectorBackdrop) {
