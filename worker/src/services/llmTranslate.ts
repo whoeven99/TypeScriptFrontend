@@ -2105,6 +2105,7 @@ async function translateItemsRouted(
   shopName: string,
   order: Engine[],
   promptKind: "default" | "handle" = "default",
+  customPrompt = "",
 ): Promise<{ results: Map<string, RoutedResult>; llmTokens: number }> {
   // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
   const placeholdersByKey = new Map<string, string[]>();
@@ -2130,8 +2131,8 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, "")
-            : buildSystemPrompt(target, glossary, "");
+            ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
+            : buildSystemPrompt(target, glossary, "", customPrompt);
       }
       try {
         await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
@@ -2225,6 +2226,7 @@ async function retryPoolFallbacks(
   aiModel: string,
   shopName: string,
   shouldAbort: () => boolean | Promise<boolean>,
+  customPrompt = "",
 ): Promise<number> {
   let retried = 0;
   for (const [sig, occ] of pools) {
@@ -2252,6 +2254,7 @@ async function retryPoolFallbacks(
         shopName,
         poolOrder,
         isHandle ? "handle" : "default",
+        customPrompt,
       );
       const r = m.get("0");
       if (r?.status === "translated" && !looksLikeUntranslated(text, r.value, target) && !looksLikeWrongScriptLeak(text, r.value, target)) {
@@ -2320,11 +2323,19 @@ function sanitizeJsonSlotTranslation(original: string, translated: string): stri
  * so OpenAI automatic prompt caching applies. The variable payload goes in the
  * user message instead.
  */
-function buildSystemPrompt(target: string, glossaryLines: string[], profileBlock = ""): string {
+function buildSystemPrompt(
+  target: string,
+  glossaryLines: string[],
+  profileBlock = "",
+  userInstruction = "",
+): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
     : "";
   const shopContextBlock = profileBlock ? `\n${profileBlock}\n` : "";
+  const userInstructionBlock = userInstruction.trim()
+    ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
+    : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
   return `You are a professional e-commerce translator.${shopContextBlock}
 Detect the input language automatically and translate the content into "${target}".
@@ -2343,17 +2354,25 @@ Rules:
 - If a field key is "title", translatedValue MUST be at most 255 characters; shorten naturally while preserving the core meaning
 - You MUST return an entry for every key in the input
 ${targetLangBlock}
-${glossaryBlock}
+${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate.
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
 }
 
 /** Handle/slug prompt — aligned with SpringBackend PromptUtils.buildDynamicHandlePrompt. */
-function buildHandleSystemPrompt(target: string, glossaryLines: string[], profileBlock = ""): string {
+function buildHandleSystemPrompt(
+  target: string,
+  glossaryLines: string[],
+  profileBlock = "",
+  userInstruction = "",
+): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
     : "";
   const shopContextBlock = profileBlock ? `\n${profileBlock}\n` : "";
+  const userInstructionBlock = userInstruction.trim()
+    ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
+    : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
   return `You are a professional e-commerce translator.${shopContextBlock}
 Detect the input language automatically and translate product URL handle/slug text into "${target}".
@@ -2368,7 +2387,7 @@ Rules:
 - Do NOT add or remove leading or trailing whitespace
 - You MUST return an entry for every key in the input
 ${targetLangBlock}
-${glossaryBlock}
+${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate (hyphens may appear as spaces).
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
 }
@@ -2685,6 +2704,7 @@ function reconstructPlan(
   shopName: string,
   target: string,
   source: string,
+  bypassCache = false,
 ): void {
   if (plan.kind === "plain") {
     const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
@@ -2692,7 +2712,7 @@ function reconstructPlan(
     const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated") {
+    if (status === "translated" && !bypassCache) {
       tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
       tmWrites.push(tmSetByValue(originalValue, source, target, plan.cacheModel, value));
     }
@@ -2732,7 +2752,7 @@ function reconstructPlan(
     }
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated") tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
@@ -2790,7 +2810,7 @@ function reconstructPlan(
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated") tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   } else {
     let anyFallback = false;
     const list = JSON.parse(plan.originalValue) as Array<string | null>;
@@ -2828,7 +2848,7 @@ function reconstructPlan(
     const value = JSON.stringify(result);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated") tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   }
 }
 
@@ -2853,6 +2873,11 @@ export type TranslatedResourceOutput = {
 export type TranslateResourcesOptions = {
   /** 与 TSF `isHandle` 对齐：`false` 时 handle 原样跳过；默认 `true`（INIT 已过滤时 blob 里本就不含 handle）。 */
   translateHandle?: boolean;
+  /**
+   * 用户自定义提示词：描述本次翻译的方向/风格，注入 system prompt。
+   * 非空时本次翻译整体绕过 TM 缓存读写（避免命中旧缓存 / 污染共享缓存）。
+   */
+  customPrompt?: string;
 };
 
 export async function translateResources(
@@ -2869,6 +2894,10 @@ export async function translateResources(
   const abortRequested = async (): Promise<boolean> =>
     shouldAbort ? Boolean(await shouldAbort()) : false;
   const translateHandle = options?.translateHandle !== false;
+  const customPrompt = options?.customPrompt?.trim() ?? "";
+  // 带自定义提示词时禁用 TM 读写：既不命中不含该提示词的旧缓存，也不把
+  // 定向翻译结果写回共享缓存污染后续普通翻译。
+  const bypassCache = customPrompt.length > 0;
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
@@ -2925,10 +2954,13 @@ export async function translateResources(
 
   const tmWrites: Promise<void>[] = [];
 
-  // 1b. Fire all TM digest lookups in parallel.
-  const cacheHits = await Promise.all(
-    fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
-  );
+  // 1b. Fire all TM digest lookups in parallel (skipped entirely when a custom
+  //     prompt is active — every field is treated as a cache miss).
+  const cacheHits = bypassCache
+    ? fieldWorks.map(() => null)
+    : await Promise.all(
+        fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
+      );
 
   // 1c. Process results: hit → credit immediately; miss → value cache or add to plan.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
@@ -2951,7 +2983,7 @@ export async function translateResources(
     }
 
     // Secondary: value-based cache for short plain-text fields.
-    if (klass === "plain") {
+    if (!bypassCache && klass === "plain") {
       const valueCacheSource = isHandleFieldKey(f.key) ? prepareHandleSourceText(f.value) : f.value;
       const cachedByValue = await tmGetByValue(valueCacheSource, source, target, cacheModel);
       if (cachedByValue !== null) {
@@ -3143,7 +3175,7 @@ export async function translateResources(
         if (!resourcePlans.every((plan) => planTextsReady(plan, lookup))) continue;
         const rm = resultMaps.get(res.resourceId)!;
         for (const plan of resourcePlans) {
-          reconstructPlan(plan, rm, lookup, tmWrites, shopName, target, source);
+          reconstructPlan(plan, rm, lookup, tmWrites, shopName, target, source, bypassCache);
         }
         reconstructedResources.add(res.resourceId);
         if (onResourceDone) await onResourceDone(buildResourceOutput(res));
@@ -3176,6 +3208,7 @@ export async function translateResources(
         shopName,
         order,
         isHandle ? "handle" : "default",
+        customPrompt,
       );
       let batchUnits = 0;
       for (const [k, v] of m) {
@@ -3205,6 +3238,7 @@ export async function translateResources(
     aiModel,
     shopName,
     abortRequested,
+    customPrompt,
   );
   if (retried > 0) {
     console.log(`[llm] individually retried ${retried} fallback/untranslated text unit(s)`);

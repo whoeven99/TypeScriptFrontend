@@ -8,6 +8,7 @@ import {
   Link,
   Outlet,
   useLoaderData,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -55,6 +56,12 @@ import { setLanguageTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
+import TranslatePromptInput from "~/components/translatePromptInput";
+import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+
+/** 翻译管理子页面（如 /app/manage_translation/product），存在手动单条翻译按钮。 */
+const isManageTranslationSubPage = (pathname: string): boolean =>
+  /\/app\/manage_translation\/[^/]+/.test(pathname);
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -236,6 +243,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     server,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
+    showShopProfilePage: !isProductionNodeEnv(),
   });
 };
 
@@ -541,12 +549,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, bootstrap } = useLoaderData<typeof loader>();
+  const { apiKey, shop, server, bootstrap, showShopProfilePage } =
+    useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const showTranslatePrompt =
+    isClient && isManageTranslationSubPage(location.pathname);
 
   useEffect(() => {
     setIsClient(true);
@@ -610,11 +622,18 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
-              <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
+              {showShopProfilePage ? (
+                <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
+              ) : null}
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}
         </NavMenu>
+        {showTranslatePrompt ? (
+          <div style={{ padding: "0 12px" }}>
+            <TranslatePromptInput />
+          </div>
+        ) : null}
         <Outlet />
         {isClient && supportChatReady ? (
           <Suspense fallback={null}>

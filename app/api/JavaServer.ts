@@ -6,6 +6,7 @@ import {
   getTranslateV4ErrorDefaultMessage,
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
+import { globalStore } from "~/globalStore";
 
 const DEFAULT_API_TIMEOUT = 10_000;
 
@@ -301,15 +302,18 @@ type SingleTextTranslateArgs = {
   type: string;
   server: string;
   resourceId: string | null; // 必传，但可 null
+  /** 用户自定义提示词；缺省时回退到 globalStore.translatePrompt（页面级共享输入）。 */
+  customPrompt?: string;
 };
 
 /** 走 TSF /api/translate-v4/single（LLM 翻译 + Java 额度扣减）。 */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
   try {
+    const customPrompt = args.customPrompt ?? globalStore?.translatePrompt ?? "";
     const res = await fetch("/api/translate-v4/single", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
+      body: JSON.stringify({ ...args, customPrompt }),
     });
     const data = await res.json();
     if (!data?.success && data?.errorMsg) {
