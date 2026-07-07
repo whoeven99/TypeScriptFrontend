@@ -6,6 +6,15 @@ export const AUTO_TRANSLATE_SHOP_COOLDOWN_MS_DEFAULT = 3 * 60 * 60_000;
 export const AUTO_TRANSLATE_SCHEDULE_TZ_DEFAULT = "Asia/Shanghai";
 export const AUTO_TRANSLATE_SCHEDULE_MINUTE_DEFAULT = 0;
 
+/**
+ * 分槽打散：把每个店按稳定 hash 固定到一天中的某个槽位，扫描时只建落在当前
+ * 槽位的店（该店所有语言一起创建），从而把自动翻译负载平铺到全天，消除整点惊群。
+ * 默认 24 槽（配合每小时扫描 = 每店每天 1 批）。
+ */
+export const AUTO_TRANSLATE_SLOTS_PER_DAY_DEFAULT = 24;
+/** 分槽模式下的整店冷却：保证同一店每天在自己的槽位只建一批。 */
+export const AUTO_TRANSLATE_SHARD_COOLDOWN_MS_DEFAULT = 20 * 60 * 60_000;
+
 export function getAutoTranslateIntervalMs(): number {
   const n = Number(process.env.AUTO_TRANSLATE_INTERVAL_MS);
   return n > 0 ? n : AUTO_TRANSLATE_INTERVAL_MS_DEFAULT;
@@ -29,6 +38,66 @@ export function getAutoTranslateScheduleMinute(): number {
     return AUTO_TRANSLATE_SCHEDULE_MINUTE_DEFAULT;
   }
   return Math.floor(n);
+}
+
+/** 分槽打散是否启用（默认启用；AUTO_TRANSLATE_SHARDING=0/false/off 关闭回退旧逻辑）。 */
+export function isAutoTranslateShardingEnabled(): boolean {
+  const raw = process.env.AUTO_TRANSLATE_SHARDING?.trim().toLowerCase();
+  if (raw === "0" || raw === "false" || raw === "off" || raw === "no") {
+    return false;
+  }
+  return true;
+}
+
+/** 一天分多少个槽位（1..1440）。每小时扫描时，仅 24 或其约数有意义。 */
+export function getAutoTranslateSlotsPerDay(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_SLOTS_PER_DAY);
+  if (Number.isFinite(n) && n >= 1 && n <= 1440) return Math.floor(n);
+  return AUTO_TRANSLATE_SLOTS_PER_DAY_DEFAULT;
+}
+
+export function getAutoTranslateShardCooldownMs(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_SHARD_COOLDOWN_MS);
+  return n > 0 ? n : AUTO_TRANSLATE_SHARD_COOLDOWN_MS_DEFAULT;
+}
+
+/** 单次扫描最多新建的任务数（0 = 不限制）。分槽已把峰值降到 ~30/时，此为安全带。 */
+export function getAutoTranslateMaxNewJobsPerScan(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_MAX_NEW_JOBS_PER_SCAN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+/**
+ * 当前时刻落在一天中的哪个槽位（0..slotsPerDay-1），按调度时区计算。
+ * slotsPerDay=24 时即当前小时数。
+ */
+export function currentSlotIndex(
+  now = new Date(),
+  slotsPerDay = getAutoTranslateSlotsPerDay(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+): number {
+  const slots = Math.max(1, Math.min(1440, Math.floor(slotsPerDay)));
+  const { h, min } = tzYmdHm(now, timeZone);
+  const minutesSinceMidnight = h * 60 + min;
+  const slotWidthMin = 1440 / slots;
+  return Math.floor(minutesSinceMidnight / slotWidthMin) % slots;
+}
+
+/**
+ * 把一个店稳定映射到 [0, slotsPerDay) 的槽位（FNV-1a，无状态、确定性）。
+ * 同店所有语言共用同一槽位，故会在同一小时一起创建。
+ */
+export function shopSlotIndex(
+  shop: string,
+  slotsPerDay = getAutoTranslateSlotsPerDay(),
+): number {
+  const slots = Math.max(1, Math.min(1440, Math.floor(slotsPerDay)));
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < shop.length; i++) {
+    hash ^= shop.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0) % slots;
 }
 
 function timezoneOffsetMs(at: Date, timeZone: string): number {
