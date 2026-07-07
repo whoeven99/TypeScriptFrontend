@@ -28,6 +28,15 @@ const sectionLabelStyle = {
   fontSize: 12,
   fontWeight: 500,
   lineHeight: "18px",
+  color: "var(--p-color-text-secondary)",
+};
+
+const sectionHeaderStyle = {
+  display: "flex",
+  alignItems: "center" as const,
+  justifyContent: "space-between" as const,
+  gap: 12,
+  minHeight: 24,
 };
 
 export default function ManageTranslationFieldRow({
@@ -55,11 +64,11 @@ export default function ManageTranslationFieldRow({
       }}
     >
       <Text
-        type="secondary"
         style={{
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 600,
-          lineHeight: "18px",
+          lineHeight: "20px",
+          color: "var(--p-color-text)",
         }}
       >
         {record?.resource}
@@ -82,9 +91,11 @@ export default function ManageTranslationFieldRow({
             minWidth: 0,
           }}
         >
-          <Text type="secondary" style={sectionLabelStyle}>
-            {sourceLabel}
-          </Text>
+          <div style={sectionHeaderStyle}>
+            <Text style={sectionLabelStyle}>
+              {sourceLabel}
+            </Text>
+          </div>
           <ManageTableInput record={record} isHtml={isHtml} />
         </div>
         <div
@@ -95,15 +106,8 @@ export default function ManageTranslationFieldRow({
             minWidth: 0,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <Text type="secondary" style={sectionLabelStyle}>
+          <div style={sectionHeaderStyle}>
+            <Text style={sectionLabelStyle}>
               {translatedLabel}
             </Text>
             {action}

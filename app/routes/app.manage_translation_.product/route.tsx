@@ -1005,12 +1005,15 @@ const Index = () => {
     return (
       <SingleTranslateAction
         triggerProps={{
-          type: "text",
+          type: "default",
           size: "small",
           style: {
-            paddingInline: 0,
-            height: "auto",
+            height: 24,
+            paddingInline: 8,
             fontWeight: 500,
+            color: "var(--app-accent-primary)",
+            borderColor: "var(--app-accent-primary)",
+            whiteSpace: "nowrap",
           },
         }}
         loading={loadingItems.includes(record?.key || "")}
