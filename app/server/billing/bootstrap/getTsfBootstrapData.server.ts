@@ -19,13 +19,7 @@ function formatPlanUpdateTime(value: Date | null | undefined): string | null {
   if (!value) return null;
   const time = value instanceof Date ? value : new Date(String(value));
   if (Number.isNaN(time.getTime())) return null;
-  return time
-    .toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-    .replace(/\//g, "-");
+  return time.toISOString();
 }
 
 /**
