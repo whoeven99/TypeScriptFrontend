@@ -114,6 +114,8 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
           gap: 12,
           fontSize: 12,
           color: v4Colors.textMuted,
+          rowGap: 8,
+          lineHeight: 1.5,
         }}
       >
         {startTime ? (
@@ -275,9 +277,10 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
           >
             <span
               style={{
-                width: 44,
+              width: 56,
                 fontSize: 12,
                 flexShrink: 0,
+              lineHeight: 1.45,
                 color: complete
                   ? v4Colors.success
                   : pausedHere || stoppingHere
@@ -343,9 +346,11 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                   style={{
                     fontSize: 12,
                     color: v4Colors.textMuted,
-                    minWidth: 170,
+                    minWidth: 132,
                     textAlign: "right",
                     flexShrink: 0,
+                    lineHeight: 1.45,
+                    overflowWrap: "anywhere",
                   }}
                 >
                   {stageDetail(idx, m)}
@@ -378,9 +383,11 @@ function InitScanIndicator({
         style={{
           fontSize: 12,
           color: v4Colors.textMuted,
-          minWidth: 170,
+          minWidth: 132,
           textAlign: "right",
           flexShrink: 0,
+          lineHeight: 1.45,
+          overflowWrap: "anywhere",
         }}
       >
         {t("v4.job.itemsFound", { count: initDone })}
@@ -408,9 +415,11 @@ function TranslateWorkingIndicator({
         style={{
           fontSize: 12,
           color: v4Colors.textMuted,
-          minWidth: 170,
+          minWidth: 132,
           textAlign: "right",
           flexShrink: 0,
+          lineHeight: 1.45,
+          overflowWrap: "anywhere",
         }}
       >
         {t("v4.job.callingModel")}

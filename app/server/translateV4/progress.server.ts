@@ -13,6 +13,7 @@ import {
 } from "./metricsUtils";
 import { writebackResourceTotal } from "./resumeStatus";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
+import { isV4CancelledMessage } from "~/shared/translateV4MessageTokens";
 import {
   ACTIVE_V4_STATUSES,
   EMPTY_V4_METRICS,
@@ -23,8 +24,8 @@ import {
   type TranslationV4Status,
 } from "./types";
 
-/** 翻译进度里「字段/HTML 片段」级计数的展示名。 */
-const TRANSLATION_V4_UNIT_LABEL = "子节点";
+/** Human-readable unit label for field / HTML fragment counts. */
+const TRANSLATION_V4_UNIT_LABEL = "Items";
 
 export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   currentModule: string | null;
@@ -99,6 +100,10 @@ export function resolveV4DisplayStatus(
   return status;
 }
 
+function isCancelledUserMessage(message: string | null | undefined): boolean {
+  return isV4CancelledMessage(message);
+}
+
 export function translationV4StatusLabel(
   status: TranslationV4Status,
   errorMessage?: string | null,
@@ -112,27 +117,27 @@ export function translationV4StatusLabel(
       metrics.translateDone > 0 ||
       metrics.translateUnitDone > 0 ||
       metrics.translateTotal > 0;
-    if (started) return "排队续译";
+    if (started) return "Queued to resume translation";
   }
   if (status === "WRITEBACK_QUEUED" && metrics && metrics.writebackDone > 0) {
-    return "排队写回";
+    return "Queued to resume write-back";
   }
   const labels: Record<TranslationV4Status, string> = {
-    CREATED: "已创建",
-    INIT_QUEUED: "等待初始化",
-    INITIALIZING: "初始化中",
-    INIT_DONE: "初始化完成",
-    TRANSLATE_QUEUED: "等待翻译",
-    TRANSLATING: "翻译中",
-    TRANSLATE_DONE: "翻译完成",
-    WRITEBACK_QUEUED: "等待写回",
-    WRITING_BACK: "写回 Shopify 中",
-    VERIFY_QUEUED: "写回完成",
-    VERIFYING: "写回完成",
-    COMPLETED: "已完成",
-    FAILED: "失败",
-    PAUSED: "已暂停",
-    CANCELLED: "已取消",
+    CREATED: "Created",
+    INIT_QUEUED: "Waiting to initialize",
+    INITIALIZING: "Initializing",
+    INIT_DONE: "Initialization complete",
+    TRANSLATE_QUEUED: "Waiting to translate",
+    TRANSLATING: "Translating",
+    TRANSLATE_DONE: "Translation complete",
+    WRITEBACK_QUEUED: "Waiting to write back",
+    WRITING_BACK: "Writing back to Shopify",
+    VERIFY_QUEUED: "Write-back complete",
+    VERIFYING: "Write-back complete",
+    COMPLETED: "Completed",
+    FAILED: "Failed",
+    PAUSED: "Paused",
+    CANCELLED: "Cancelled",
   };
   return labels[status] ?? status;
 }
@@ -253,8 +258,8 @@ export function buildTranslationV4StageSummary(
       const writebackNote =
         taskTotal > 0 && metrics.writebackDone > 0
           ? metrics.writebackDone >= taskTotal
-            ? `写回 ${metrics.writebackDone}/${taskTotal} 已完成`
-            : `写回 ${metrics.writebackDone}/${taskTotal}`
+            ? `Write-back ${metrics.writebackDone}/${taskTotal} complete`
+            : `Write-back ${metrics.writebackDone}/${taskTotal}`
           : null;
       return [label, detail, writebackNote].filter(Boolean).join(" · ");
     }
@@ -274,7 +279,7 @@ export function buildTranslationV4StageSummary(
   ) {
     const detail = formatTranslateDetail(metrics);
     const modulePart = metrics.currentModule
-      ? `当前模块 ${metrics.currentModule}`
+      ? `Current module ${metrics.currentModule}`
       : null;
     return [label, detail, modulePart].filter(Boolean).join(" · ");
   }
@@ -305,7 +310,7 @@ export function buildTranslationV4StageSummary(
   }
 
   if (status === "FAILED" && metrics.translateFailed > 0) {
-    return `${label} · 翻译失败 ${metrics.translateFailed} 项`;
+    return `${label} · ${metrics.translateFailed} item(s) failed`;
   }
 
   return label;
@@ -356,9 +361,6 @@ function toProgressSummary(
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): TranslationJobProgressSummary {
-  const displayStatus = resolveV4DisplayStatus(job.status);
-  const errorStage =
-    job.errorStage ?? (displayStatus === "PAUSED" ? "TRANSLATE" : null);
   /**
    * 暂停/取消触发的「先写回已翻译」阶段（仅兼容升级前已在写回中的任务）。
    * 新任务暂停不再走写回，正常写回仍用 WRITING_BACK。
@@ -367,14 +369,14 @@ function toProgressSummary(
     (job.status === "WRITEBACK_QUEUED" || job.status === "WRITING_BACK") &&
     job.pauseAfterWriteback
       ? job.pauseAfterWriteback === "cancel"
-        ? "已取消，正在写入"
-        : "已暂停，正在写入"
+        ? "Cancelled, writing back remaining content"
+        : "Paused, writing back remaining content"
       : null;
   const writebackWhileTranslating =
     isTranslateCompleteButWritebackPending(job.status, metrics)
       ? metrics.writebackDone > 0
-        ? "写回 Shopify 中"
-        : "等待写回"
+        ? "Writing back to Shopify"
+        : "Waiting to write back"
       : null;
   // 已请求暂停/取消但 worker 仍在翻译收尾（尚未进入写回）的过渡态。
   const isStopping =
@@ -383,16 +385,22 @@ function toProgressSummary(
       metrics.controlAction === "pause" ||
       metrics.controlAction === "cancel");
   const stoppingLabel =
-    metrics.controlAction === "cancel" || metrics.pauseReason === "已取消"
-      ? "正在取消…"
-      : "正在暂停…";
+    metrics.controlAction === "cancel" || isCancelledUserMessage(metrics.pauseReason)
+      ? "Cancelling…"
+      : "Pausing…";
   // 过渡态不把 pauseReason 当作 errorMessage 暴露——否则顶部「正在暂停…」与底部
   // 「已手动暂停」同时出现，语义重复且像两个矛盾状态。
   const errorMessage = sanitizeV4UserErrorMessage(
     job.errorMessage ?? (isStopping ? null : metrics.pauseReason),
   );
+  const displayStatus =
+    job.status === "CANCELLED" || (!isStopping && isCancelledUserMessage(errorMessage))
+      ? "CANCELLED"
+      : resolveV4DisplayStatus(job.status);
+  const errorStage =
+    job.errorStage ?? (displayStatus === "PAUSED" ? "TRANSLATE" : null);
   const canResume =
-    (job.status === "PAUSED" || job.status === "FAILED") &&
+    (displayStatus === "PAUSED" || displayStatus === "FAILED") &&
     !isStopping &&
     !metrics.pausePending &&
     !metrics.controlAction;
@@ -406,10 +414,10 @@ function toProgressSummary(
     isStopping,
     canResume,
     isActive:
-      ACTIVE_V4_STATUSES.includes(job.status) &&
+      ACTIVE_V4_STATUSES.includes(displayStatus) &&
       !metrics.pausePending &&
       !metrics.controlAction,
-    isTerminal: TERMINAL_V4_STATUSES.includes(job.status),
+    isTerminal: TERMINAL_V4_STATUSES.includes(displayStatus),
     source: job.source,
     target: job.target,
     modules: job.modules,

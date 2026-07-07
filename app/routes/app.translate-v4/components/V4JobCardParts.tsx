@@ -109,7 +109,7 @@ export function MiniStageTrack({ job }: { job: TranslationJobProgressSummary }) 
               flex: 1,
               minWidth: 0,
               textAlign: "center",
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: seg.active ? 700 : 500,
               color: seg.complete
                 ? v4Colors.success

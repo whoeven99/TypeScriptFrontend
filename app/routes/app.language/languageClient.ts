@@ -1,13 +1,8 @@
 /**
- * 语言页「每语言状态/自动开关」——统一走 v4 TSF API。
- * 返回形状对齐 Java GetLanguageList：{ success, response: [{ target, status, autoTranslate }] }
+ * 语言页状态口径：覆盖率结果 + 活跃任务中的翻译态。
  */
-export async function listLanguageStatusCompat(_args: {
-  shop: string;
-  server: string;
-  source: string;
-}) {
-  const res = await fetch("/api/translate-v4/target-locale");
+export async function listLanguageCoverageCompat() {
+  const res = await fetch("/api/translate-v4/coverage?cache=1");
   return res.json();
 }
 
