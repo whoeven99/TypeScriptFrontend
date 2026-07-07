@@ -19,6 +19,10 @@ import {
   v4ProgressKey,
 } from "~/server/translateV4/redis.server";
 import {
+  V4_MESSAGE_CANCELLED,
+  V4_MESSAGE_MANUAL_PAUSE,
+} from "~/shared/translateV4MessageTokens";
+import {
   resolveResumeV4JobStatus,
   stageFromStatus,
 } from "~/server/translateV4/resumeStatus";
@@ -37,20 +41,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shopName = body.shopName?.trim() || session.shop;
   const actionType = body.action?.trim();
 
-  if (!taskId) return json({ ok: false, error: "taskId required" }, { status: 400 });
+  if (!taskId) return json({ ok: false, error: "v4.error.taskIdRequired" }, { status: 400 });
 
   const job = await getV4Job(shopName, taskId);
-  if (!job) return json({ ok: false, error: "task not found" }, { status: 404 });
+  if (!job) return json({ ok: false, error: "v4.error.taskNotFound" }, { status: 404 });
 
   if (actionType === "delete") {
     // 安全：只允许删本店的任务
     if (job.shopName !== session.shop) {
-      return json({ ok: false, error: "无权删除" }, { status: 403 });
+      return json({ ok: false, error: "v4.error.deleteForbidden" }, { status: 403 });
     }
     // 只删终态/已暂停的任务，避免删正在处理中的（worker 还在写它）
     const deletable = new Set(["COMPLETED", "FAILED", "CANCELLED", "PAUSED"]);
     if (!deletable.has(job.status)) {
-      return json({ ok: false, error: "任务进行中，请先取消再删除" }, { status: 400 });
+      return json({ ok: false, error: "v4.error.deleteWhileActive" }, { status: 400 });
     }
     // 清 Blob（内容 chunk）+ Cosmos（任务文档）+ Redis（进度/控制键）
     await deleteV4JobBlobs(job.blobPrefix);
@@ -63,7 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 翻译执行中取消：设控制信号，worker 等在飞 LLM 收尾后直接 CANCELLED（不写回）。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "cancel");
-      await setV4PausePending(taskId, "已取消");
+      await setV4PausePending(taskId, V4_MESSAGE_CANCELLED);
       return json({ ok: true, pending: true });
     }
     await updateV4Job(shopName, taskId, { status: "CANCELLED", claimedBy: null });
@@ -73,12 +77,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (actionType === "pause") {
     if (!canPauseV4Job(job.status)) {
-      return json({ ok: false, error: "仅翻译阶段可暂停" }, { status: 400 });
+      return json({ ok: false, error: "v4.error.pauseOnlyDuringTranslate" }, { status: 400 });
     }
     // 翻译执行中暂停：不乐观置 PAUSED，worker 等在飞 LLM 收尾后直接 PAUSED（不写回）。
     if (job.status === "TRANSLATING") {
       await setV4Control(taskId, "pause");
-      await setV4PausePending(taskId, "已手动暂停");
+      await setV4PausePending(taskId, V4_MESSAGE_MANUAL_PAUSE);
       return json({ ok: true, pending: true });
     }
     // 排队未运行(TRANSLATE_QUEUED)：没有在飞内容，直接置 PAUSED。
@@ -111,7 +115,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         controlRaw === "cancel"
       ) {
         return json(
-          { ok: false, error: "任务仍在收尾，请稍后再继续" },
+          { ok: false, error: "v4.error.taskStillStopping" },
           { status: 409 },
         );
       }
@@ -162,5 +166,5 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ ok: true, status: resumeStatus });
   }
 
-  return json({ ok: false, error: "unknown action" }, { status: 400 });
+  return json({ ok: false, error: "v4.error.unknownAction" }, { status: 400 });
 };

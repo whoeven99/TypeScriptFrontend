@@ -371,13 +371,15 @@ export default function AppTranslateV4() {
         finishClientLogTrace(trace, {
           level: "warn",
           status: "failure",
-          message: data?.error || t("v4.actionFailed"),
+          message: data?.error
+            ? translateV4Message(data.error, t)
+            : t("v4.actionFailed"),
           context: {
             taskId,
             httpStatus: res.status,
           },
         });
-        message.error(data?.error || t("v4.actionFailed"));
+        message.error(data?.error ? translateV4Message(data.error, t) : t("v4.actionFailed"));
         return false;
       } catch (err) {
         console.error("[translateV4] task action failed:", err);

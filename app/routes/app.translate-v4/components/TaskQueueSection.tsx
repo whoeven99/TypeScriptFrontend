@@ -44,18 +44,39 @@ export function CompactJobCard({
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
   const notice = getV4JobNotice(job.errorMessage, t);
+  const isCancelledLike = job.status === "CANCELLED" || notice.kind === "cancelled";
 
   const percent = jobDisplayPercent(job);
 
-  const canResume = job.canResume;
+  const canResume = job.canResume && !isCancelledLike;
   const canPause = canPauseV4Job(job.status) && !job.isStopping;
-  const canCancel = job.status !== "COMPLETED" && job.status !== "CANCELLED" && !job.isStopping;
+  const canCancel =
+    job.status !== "COMPLETED" &&
+    job.status !== "CANCELLED" &&
+    !job.isStopping &&
+    !isCancelledLike;
   const canDelete =
     job.isTerminal ||
     job.status === "PAUSED" ||
     job.status === "CANCELLED" ||
     job.status === "FAILED" ||
+    isCancelledLike ||
     job.status === "COMPLETED";
+
+  useEffect(() => {
+    if (!pending) return;
+    if (pending === "resume" && !canResume) {
+      setPending(null);
+      return;
+    }
+    if (pending === "pause" && !canPause) {
+      setPending(null);
+      return;
+    }
+    if (pending === "cancel" && (isCancelledLike || !canCancel)) {
+      setPending(null);
+    }
+  }, [pending, canResume, canPause, canCancel, isCancelledLike]);
 
   const runAction = (action: "pause" | "resume" | "cancel" | "delete") => {
     setPending(action);

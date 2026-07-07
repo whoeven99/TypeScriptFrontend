@@ -96,9 +96,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const source = body.source?.trim() || "zh-CN";
   const target = body.target?.trim() || "";
-  if (!target) return json({ ok: false, error: "目标语言不能为空" }, { status: 400 });
+  if (!target) return json({ ok: false, error: "v4.validation.selectTarget" }, { status: 400 });
   if (target === source)
-    return json({ ok: false, error: "目标语言不能和源语言相同" }, { status: 400 });
+    return json({ ok: false, error: "v4.validation.sameAsSource" }, { status: 400 });
 
   const allowedSet = new Set<string>(TRANSLATION_V4_MODULES);
   const modules = (body.modules ?? defaultManualV4Modules())
@@ -106,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     .filter((m) => allowedSet.has(m)) as TranslationV4Module[];
 
   if (!modules.length)
-    return json({ ok: false, error: "至少选择一个翻译模块" }, { status: 400 });
+    return json({ ok: false, error: "v4.validation.selectModule" }, { status: 400 });
 
   const shopName = session.shop;
   const quotaGuard = await validateCreateQuotaGuard(shopName);
@@ -116,7 +116,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (await existsBlockingV4Job(shopName, source, target)) {
     return json(
-      { ok: false, error: "该目标语言已有进行中的翻译任务" },
+      { ok: false, error: "v4.error.blockingTaskExists" },
       { status: 409 },
     );
   }
