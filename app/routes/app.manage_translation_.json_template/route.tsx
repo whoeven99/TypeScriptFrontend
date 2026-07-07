@@ -149,11 +149,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response: data?.data?.translatableResources || null,
         };
       } catch (error) {
@@ -203,11 +199,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response: {
             nodes: data.data?.translatableResourcesByIds?.nodes || [],
             pageInfo: null,
@@ -237,11 +229,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return {
         success: true,
         errorCode: 0,
-        errorMsg: isManageTranslationRateLimitedError(error)
-
-          ? "RATE_LIMITED"
-
-          : "",
+        errorMsg: "",
         response: data,
       };
 
