@@ -1,5 +1,5 @@
 // 远程 Turso 走 HTTP 客户端
-import { PrismaLibSQL } from "@prisma/adapter-libsql/web";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { createRequire } from "node:module";
 import path from "node:path";
 import type { PrismaClient as PrismaClientType } from "./generated/prisma";

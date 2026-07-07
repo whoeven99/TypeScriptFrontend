@@ -840,7 +840,7 @@ const Index = () => {
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
-                      {resourceData.length > 20 ? (
+                      {resourceData.length > 20 && (
                         <List
                           itemLayout="vertical"
                           style={{ listStyle: "none" }}
@@ -911,25 +911,33 @@ const Index = () => {
                                   }}
                                 >
                                   <SingleTranslateAction
-                              loading={loadingItems.includes(item?.key || "")}
-                              existingTranslation={translatedValues[item?.key || ""] ?? item?.translated}
-                              onSubmit={(customPrompt) => {
-                                handleTranslate({
-                                  resourceType: "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
-                                  record: item,
-                                  handleInputChange,
-                                  customPrompt,
-                                });
-                              }}
-                            />
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        ))
+                                    loading={loadingItems.includes(
+                                      item?.key || "",
+                                    )}
+                                    existingTranslation={
+                                      translatedValues[item?.key || ""] ??
+                                      item?.translated
+                                    }
+                                    onSubmit={(customPrompt) => {
+                                      handleTranslate({
+                                        resourceType:
+                                          "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
+                                        record: item,
+                                        handleInputChange,
+                                        customPrompt,
+                                      });
+                                    }}
+                                  />
+                                </div>
+                                <Divider
+                                  style={{
+                                    margin: "8px 0",
+                                  }}
+                                />
+                              </Space>
+                            </List.Item>
+                          )}
+                        />
                       )}
                     </Space>
                   </Card>
