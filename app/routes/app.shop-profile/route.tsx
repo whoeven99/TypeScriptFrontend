@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
+import { json, redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useRevalidator } from "@remix-run/react";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
@@ -40,6 +40,7 @@ import {
   type ShopScanStatus,
 } from "~/server/shopScan/cosmos.server";
 import { enqueueShopScan } from "~/server/shopScan/trigger.server";
+import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -66,6 +67,9 @@ type LoaderData = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  if (isProductionNodeEnv()) {
+    throw redirect("/app/translate-v4");
+  }
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
@@ -117,6 +121,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  if (isProductionNodeEnv()) {
+    throw redirect("/app/translate-v4");
+  }
   const { session } = await authenticate.admin(request);
   const result = await enqueueShopScan({ shop: session.shop, trigger: "manual" });
   return json(result);
