@@ -3,6 +3,8 @@ import prisma from "../../../db.server";
 import {
   sendTsfPurchaseSuccessEmail,
   sendTsfSubscribeSuccessEmail,
+  sendTsfSubscriptionRenewalEmail,
+  shouldSendTsfSubscriptionRenewalEmail,
 } from "../email/billingEmail.server";
 import { applyActiveSubscription } from "../subscription/activateSubscription.server";
 import { cancelSubscription } from "../subscription/cancelSubscription.server";
@@ -184,6 +186,40 @@ export async function handleTsfSubscriptionWebhook(params: {
         },
       });
 
+  const priorRenewalForPeriod =
+    isRenewal
+      ? await prisma.billingLog.findFirst({
+          where: {
+            shop: params.shop,
+            eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
+            referenceId: gid,
+            metadata: {
+              path: ["nextPeriodEnd"],
+              equals: currentPeriodEnd.toISOString(),
+            },
+          },
+        })
+      : null;
+
+  const priorRenewalCount =
+    isRenewal && existingSub
+      ? await prisma.billingLog.count({
+          where: {
+            shop: params.shop,
+            eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
+            referenceId: gid,
+          },
+        })
+      : 0;
+
+  const shouldSendRenewalEmail =
+    isRenewal &&
+    existingSub != null &&
+    shouldSendTsfSubscriptionRenewalEmail({
+      hadTrial: existingSub.trialEndsAt != null,
+      priorRenewalCount,
+    });
+
   await applyActiveSubscription({
     shop: params.shop,
     shopifySubscriptionId: gid,
@@ -212,6 +248,17 @@ export async function handleTsfSubscriptionWebhook(params: {
     }).catch((err) => {
       console.error(
         `[billing webhook] subscribe success email failed shop=${params.shop}:`,
+        err,
+      );
+    });
+  } else if (shouldSendRenewalEmail && !priorRenewalForPeriod) {
+    void sendTsfSubscriptionRenewalEmail({
+      shop: params.shop,
+      plan,
+      accessToken: params.accessToken,
+    }).catch((err) => {
+      console.error(
+        `[billing webhook] subscription renewal email failed shop=${params.shop}:`,
         err,
       );
     });

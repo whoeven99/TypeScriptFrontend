@@ -20,12 +20,16 @@ const TEMPLATE_PURCHASE_SUCCESS = 138372;
 const TEMPLATE_SUBSCRIBE_MONTHLY = 139251;
 const TEMPLATE_SUBSCRIBE_ANNUAL = 146081;
 const TEMPLATE_TRIAL_SUCCESS = 146220;
+/** 对齐 Spring TencentEmailService.sendSubscribeEmail（自动续费/周期额度发放）。 */
+const TEMPLATE_SUBSCRIPTION_RENEWAL = 143058;
 
 const SUBJECT_PURCHASE_SUCCESS =
   "Confirmation of Successful Credits Purchase｜Ciwi-translator";
 const SUBJECT_PLAN_UPGRADE = "Plan Upgrade Successful!｜Ciwi-translator";
 const SUBJECT_TRIAL_SUCCESS =
   "You're now on your 5-day free trial｜Ciwi-translator";
+const SUBJECT_SUBSCRIPTION_RENEWAL =
+  "Your Credits Have Been Added!｜Ciwi-translator";
 
 function formatCreditsLabel(credits: number): string {
   return `${formatUsNumber(credits)} Credits`;
@@ -176,6 +180,54 @@ export async function sendTsfSubscribeSuccessEmail(params: {
 
   console.info(
     `${LOG} subscribe email shop=${params.shop} plan=${planName} annual=${isAnnual} ok=${ok}`,
+  );
+  return ok;
+}
+
+/**
+ * 是否应在本次续费 webhook 发送自动付费邮件。
+ * - 无试用：第 1 次续费（第 2 个计费周期）起发送。
+ * - 有试用：试用结束首次扣款不发；从第 2 次续费（第 3 个计费周期）起发送。
+ */
+export function shouldSendTsfSubscriptionRenewalEmail(params: {
+  hadTrial: boolean;
+  priorRenewalCount: number;
+}): boolean {
+  if (params.hadTrial) {
+    return params.priorRenewalCount >= 1;
+  }
+  return true;
+}
+
+/**
+ * 订阅自动续费成功邮件（模板 143058）。
+ * 对齐 Spring TencentEmailService.sendSubscribeEmail。
+ */
+export async function sendTsfSubscriptionRenewalEmail(params: {
+  shop: string;
+  plan: PlanRecord;
+  accessToken?: string | null;
+}): Promise<boolean> {
+  const recipient = await resolveRecipient(params.shop, params.accessToken);
+  if (!recipient) return false;
+
+  const quota = await getAccountQuota(params.shop);
+  const totalCredits = quota?.remainingCredits ?? params.plan.credits;
+
+  const ok = await sendTencentTemplateEmail({
+    templateId: TEMPLATE_SUBSCRIPTION_RENEWAL,
+    subject: SUBJECT_SUBSCRIPTION_RENEWAL,
+    to: recipient.email,
+    templateData: {
+      user: recipient.userName,
+      shop_name: parseShopDisplayName(params.shop),
+      number_of_credits: formatUsNumber(params.plan.credits),
+      total_credits_count: formatUsNumber(totalCredits),
+    },
+  });
+
+  console.info(
+    `${LOG} renewal email shop=${params.shop} credits=${params.plan.credits} ok=${ok}`,
   );
   return ok;
 }
