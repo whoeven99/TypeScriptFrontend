@@ -261,7 +261,6 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
               setFormData({
                 ...formData,
                 languageCode: e,
-                languageCode: e,
               });
             }}
             value={formData.languageCode}

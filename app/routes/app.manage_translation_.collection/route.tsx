@@ -16,7 +16,8 @@ import { ActionFunctionArgs, json } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/JavaServer";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
-import ManageTableInput from "~/components/manageTableInput";
+import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -98,11 +99,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response,
         };
       } catch (error) {
@@ -519,121 +516,118 @@ const Index = () => {
     }
   }, [confirmData]);
 
+  const renderTranslateAction = (record: any, resourceType: string) => {
+    if (!record) return null;
+
+    return (
+      <SingleTranslateAction
+        triggerProps={{
+          type: "default",
+          size: "small",
+          style: {
+            height: 22,
+            paddingInline: 6,
+            fontWeight: 500,
+            fontSize: 12,
+            lineHeight: 1,
+            color: "var(--app-accent-primary)",
+            borderColor: "var(--app-accent-primary)",
+            borderRadius: 6,
+            backgroundColor: "var(--p-color-bg-surface)",
+            whiteSpace: "nowrap",
+          },
+        }}
+        loading={loadingItems.includes(record?.key || "")}
+        existingTranslation={
+          translatedValues[record?.key || ""] ?? record?.translated
+        }
+        onSubmit={(customPrompt) => {
+          handleTranslate({
+            resourceType,
+            record,
+            handleInputChange,
+            customPrompt,
+          });
+        }}
+      />
+    );
+  };
+
+  const renderManageField = (
+    record: any,
+    resourceType: string,
+    options?: {
+      isHtml?: boolean;
+      stacked?: boolean;
+    },
+  ) => {
+    if (!record) return null;
+
+    return (
+      <ManageTranslationFieldRow
+        record={record}
+        isHtml={options?.isHtml}
+        isSuccess={successTranslatedKey?.includes(record?.key as string)}
+        translatedValues={translatedValues}
+        setTranslatedValues={setTranslatedValues}
+        handleInputChange={handleInputChange}
+        isRtl={searchTerm === "ar"}
+        stacked={options?.stacked}
+        sourceLabel={t("Default Language")}
+        translatedLabel={t("Translated")}
+        action={renderTranslateAction(record, resourceType)}
+      />
+    );
+  };
+
+  const renderMobileSection = (
+    title: string,
+    data: any[],
+    resourceType: string,
+    options?: {
+      isHtml?: (record: any) => boolean;
+    },
+  ) => {
+    if (!Array.isArray(data) || data[0] === undefined) return null;
+
+    return (
+      <Card title={title}>
+        <Space direction="vertical" style={{ width: "100%" }}>
+          {data.map((item: any, index: number) => (
+            <Space
+              key={item?.key || index}
+              direction="vertical"
+              size="small"
+              style={{ width: "100%" }}
+            >
+              {renderManageField(item, resourceType, {
+                isHtml: options?.isHtml?.(item) ?? false,
+                stacked: true,
+              })}
+              <Divider style={{ margin: "8px 0" }} />
+            </Space>
+          ))}
+        </Space>
+      </Card>
+    );
+  };
+
   const resourceColumns = [
     {
       title: t("Resource"),
-      dataIndex: "resource",
       key: "resource",
-      width: "10%",
-    },
-    {
-      title: t("Default Language"),
-      dataIndex: "default_language",
-      key: "default_language",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          <ManageTableInput
-            isHtml={record?.shopifyKey == "body_html"}
-            record={record}
-          />
-        );
-      },
-    },
-    {
-      title: t("Translated"),
-      dataIndex: "translated",
-      key: "translated",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          <ManageTableInput
-            record={record}
-            isHtml={record?.shopifyKey == "body_html"}
-            isSuccess={successTranslatedKey?.includes(record?.key as string)}
-            translatedValues={translatedValues}
-            setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleInputChange}
-            isRtl={searchTerm === "ar"}
-          />
-        );
-      },
-    },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          <Button
-            onClick={() => {
-              handleTranslate({
-                resourceType: "COLLECTION",
-                record,
-                handleInputChange,
-              });
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
-        );
-      },
+      render: (_: any, record: any) =>
+        renderManageField(record, "COLLECTION", {
+          isHtml: record?.shopifyKey == "body_html",
+        }),
     },
   ];
 
   const SEOColumns = [
     {
       title: "SEO",
-      dataIndex: "resource",
       key: "resource",
-      width: "10%",
-    },
-    {
-      title: t("Default Language"),
-      dataIndex: "default_language",
-      key: "default_language",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return <ManageTableInput record={record} />;
-      },
-    },
-    {
-      title: t("Translated"),
-      dataIndex: "translated",
-      key: "translated",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          <ManageTableInput
-            record={record}
-            isSuccess={successTranslatedKey?.includes(record?.key as string)}
-            translatedValues={translatedValues}
-            setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleInputChange}
-            isRtl={searchTerm === "ar"}
-          />
-        );
-      },
-    },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          <Button
-            onClick={() => {
-              handleTranslate({
-                resourceType: "COLLECTION",
-                record,
-                handleInputChange,
-              });
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
-        );
-      },
+      render: (_: any, record: any) => renderManageField(record, "COLLECTION"),
     },
   ];
 
@@ -683,10 +677,12 @@ const Index = () => {
     resourceType,
     record,
     handleInputChange,
+    customPrompt,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
   }) => {
     fetcher.submit(
       {
@@ -709,6 +705,7 @@ const Index = () => {
       type: record?.type,
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1127,158 +1124,15 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Card title={t("Resource")}>
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      {resourceData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={index}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px",
-                              }}
-                            >
-                              {t(item.resource)}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                isSuccess={successTranslatedKey?.includes(
-                                  item?.key as string,
-                                )}
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate({
-                                    resourceType: "COLLECTION",
-                                    record: item,
-                                    handleInputChange,
-                                  });
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        );
-                      })}
-                    </Space>
-                  </Card>
-                  <Card title={t("SEO")}>
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      {SeoData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={item.key}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px",
-                              }}
-                            >
-                              {t(item.resource)}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                isSuccess={successTranslatedKey?.includes(
-                                  item?.key as string,
-                                )}
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate({
-                                    resourceType: "COLLECTION",
-                                    record: item,
-                                    handleInputChange,
-                                  });
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        );
-                      })}
-                    </Space>
-                  </Card>
+                  {renderMobileSection(
+                    t("Resource"),
+                    resourceData,
+                    "COLLECTION",
+                    {
+                      isHtml: (record) => record?.shopifyKey == "body_html",
+                    },
+                  )}
+                  {renderMobileSection(t("SEO"), SeoData, "COLLECTION")}
                   <SideMenu
                     items={menuData}
                     selectedKeys={selectCollectionKey}

@@ -2711,7 +2711,7 @@ function reconstructPlan(
   shopName: string,
   target: string,
   source: string,
-  bypassCache = false,
+  skipCacheWrite = false,
 ): void {
   if (plan.kind === "plain") {
     const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
@@ -2719,7 +2719,7 @@ function reconstructPlan(
     const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !bypassCache) {
+    if (status === "translated" && !skipCacheWrite) {
       tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
       tmWrites.push(tmSetByValue(originalValue, source, target, plan.cacheModel, value));
     }
@@ -2759,7 +2759,7 @@ function reconstructPlan(
     }
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
@@ -2817,7 +2817,7 @@ function reconstructPlan(
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   } else {
     let anyFallback = false;
     const list = JSON.parse(plan.originalValue) as Array<string | null>;
@@ -2855,7 +2855,7 @@ function reconstructPlan(
     const value = JSON.stringify(result);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !bypassCache) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   }
 }
 
@@ -2882,9 +2882,13 @@ export type TranslateResourcesOptions = {
   translateHandle?: boolean;
   /**
    * 用户自定义提示词：描述本次翻译的方向/风格，注入 system prompt。
-   * 非空时本次翻译整体绕过 TM 缓存读写（避免命中旧缓存 / 污染共享缓存）。
+   * 非空时默认跳过 TM 缓存读写（避免命中旧缓存 / 污染共享缓存）。
    */
   customPrompt?: string;
+  /** 跳过 TM 缓存读取，强制走翻译引擎。管理翻译页手动点击翻译时应为 true。 */
+  skipCacheRead?: boolean;
+  /** 跳过 TM 缓存写入。批量任务带 customPrompt 时默认为 true。 */
+  skipCacheWrite?: boolean;
 };
 
 export async function translateResources(
@@ -2902,9 +2906,10 @@ export async function translateResources(
     shouldAbort ? Boolean(await shouldAbort()) : false;
   const translateHandle = options?.translateHandle !== false;
   const customPrompt = options?.customPrompt?.trim() ?? "";
-  // 带自定义提示词时禁用 TM 读写：既不命中不含该提示词的旧缓存，也不把
-  // 定向翻译结果写回共享缓存污染后续普通翻译。
-  const bypassCache = customPrompt.length > 0;
+  const hasCustomPrompt = customPrompt.length > 0;
+  // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
+  const skipCacheRead = options?.skipCacheRead ?? hasCustomPrompt;
+  const skipCacheWrite = options?.skipCacheWrite ?? hasCustomPrompt;
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
@@ -2961,9 +2966,9 @@ export async function translateResources(
 
   const tmWrites: Promise<void>[] = [];
 
-  // 1b. Fire all TM digest lookups in parallel (skipped entirely when a custom
-  //     prompt is active — every field is treated as a cache miss).
-  const cacheHits = bypassCache
+  // 1b. Fire all TM digest lookups in parallel (skipped when skipCacheRead —
+  //     every field is treated as a cache miss).
+  const cacheHits = skipCacheRead
     ? fieldWorks.map(() => null)
     : await Promise.all(
         fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
@@ -2990,7 +2995,7 @@ export async function translateResources(
     }
 
     // Secondary: value-based cache for short plain-text fields.
-    if (!bypassCache && klass === "plain") {
+    if (!skipCacheRead && klass === "plain") {
       const valueCacheSource = isHandleFieldKey(f.key) ? prepareHandleSourceText(f.value) : f.value;
       const cachedByValue = await tmGetByValue(valueCacheSource, source, target, cacheModel);
       if (cachedByValue !== null) {
@@ -3182,7 +3187,7 @@ export async function translateResources(
         if (!resourcePlans.every((plan) => planTextsReady(plan, lookup))) continue;
         const rm = resultMaps.get(res.resourceId)!;
         for (const plan of resourcePlans) {
-          reconstructPlan(plan, rm, lookup, tmWrites, shopName, target, source, bypassCache);
+          reconstructPlan(plan, rm, lookup, tmWrites, shopName, target, source, skipCacheWrite);
         }
         reconstructedResources.add(res.resourceId);
         if (onResourceDone) await onResourceDone(buildResourceOutput(res));

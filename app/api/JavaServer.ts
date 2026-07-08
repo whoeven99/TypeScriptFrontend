@@ -302,14 +302,13 @@ type SingleTextTranslateArgs = {
   type: string;
   server: string;
   resourceId: string | null; // 必传，但可 null
-  /** 用户自定义提示词；缺省时回退到 globalStore.translatePrompt（页面级共享输入）。 */
   customPrompt?: string;
 };
 
 /** 走 TSF /api/translate-v4/single（LLM 翻译 + Java 额度扣减）。 */
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
   try {
-    const customPrompt = args.customPrompt ?? globalStore?.translatePrompt ?? "";
+    const customPrompt = args.customPrompt ?? "";
     const res = await fetch("/api/translate-v4/single", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

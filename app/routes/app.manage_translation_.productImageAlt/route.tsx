@@ -33,6 +33,7 @@ import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslatio
 import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -669,73 +670,168 @@ const Index = () => {
     }
   }, [confirmData]);
 
-  const columns = [
-    {
-      title: t("Resource"),
-      key: "productTitle",
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
+  const getTranslatedAltValue = (record: any) =>
+    confirmData.find((item: any) => item.key === record?.imageId)?.value ??
+    record?.targetAltText;
+
+  const renderTranslateAction = (record: any) => {
+    if (!record) return null;
+
+    return (
+      <SingleTranslateAction
+        triggerProps={{
+          type: "default",
+          size: "small",
+          style: {
+            height: 22,
+            paddingInline: 6,
+            fontWeight: 500,
+            fontSize: 12,
+            lineHeight: 1,
+            color: "var(--app-accent-primary)",
+            borderColor: "var(--app-accent-primary)",
+            borderRadius: 6,
+            backgroundColor: "var(--p-color-bg-surface)",
+            whiteSpace: "nowrap",
+          },
+        }}
+        loading={loadingItems.includes(record?.key || "")}
+        existingTranslation={getTranslatedAltValue(record)}
+        onSubmit={(customPrompt) => {
+          handleTranslate({
+            resourceType: "PRODUCT_OPTION_VALUE",
+            record,
+            handleInputChange,
+            customPrompt,
+          });
+          reportClick("editor_list_translate");
+        }}
+      />
+    );
+  };
+
+  const renderImageAltField = (record: any, stacked = false) => {
+    if (!record) return null;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <Image
             src={record?.imageUrl}
             preview={false}
-            width={"100%"}
-            height={"auto"}
-          />
-        );
-      },
-    },
-    {
-      title: t("Default Language"),
-      key: "altText",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return <Input disabled value={record?.altText} />;
-      },
-    },
-    {
-      title: t("Translated"),
-      key: "targetAltText",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          <Input
-            className={
-              successTranslatedKey?.includes(record?.key)
-                ? styles.success_input
-                : ""
-            }
-            value={
-              confirmData.find((item: any) => item.key === record?.imageId)
-                ? confirmData.find((item: any) => item.key === record?.imageId)
-                    ?.value
-                : record?.targetAltText
-            }
-            onChange={(e) => handleInputChange(record, e.target.value)}
-          />
-        );
-      },
-    },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          <Button
-            onClick={() => {
-              handleTranslate(
-                "PRODUCT_OPTION_VALUE",
-                record,
-                handleInputChange,
-              );
-              reportClick("editor_list_translate");
+            width={56}
+            height={56}
+            style={{
+              objectFit: "cover",
+              borderRadius: 8,
+              flexShrink: 0,
             }}
-            loading={loadingItems.includes(record?.key || "")}
+          />
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: "20px",
+              color: "var(--p-color-text)",
+            }}
           >
-            {t("Translate")}
-          </Button>
-        );
-      },
+            {record?.productTitle}
+          </Text>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: stacked
+              ? "minmax(0, 1fr)"
+              : "repeat(2, minmax(0, 1fr))",
+            gap: stacked ? "12px" : "12px 16px",
+            alignItems: "start",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              minWidth: 0,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", minHeight: 24 }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                  color: "var(--p-color-text-secondary)",
+                }}
+              >
+                {t("Default Language")}
+              </Text>
+            </div>
+            <Input disabled value={record?.altText} />
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              minWidth: 0,
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                minHeight: 24,
+                paddingRight: 96,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                  color: "var(--p-color-text-secondary)",
+                }}
+              >
+                {t("Translated")}
+              </Text>
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                top: 1,
+                right: 0,
+              }}
+            >
+              {renderTranslateAction(record)}
+            </div>
+            <Input
+              className={
+                successTranslatedKey?.includes(record?.key)
+                  ? styles.success_input
+                  : ""
+              }
+              value={getTranslatedAltValue(record)}
+              onChange={(e) => handleInputChange(record, e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const columns = [
+    {
+      title: t("Resource"),
+      render: (_: any, record: any) => renderImageAltField(record),
     },
   ];
 
@@ -766,11 +862,17 @@ const Index = () => {
     });
   };
 
-  const handleTranslate = async (
-    resourceType: string,
-    record: any,
-    handleInputChange: (record: any, value: string) => void,
-  ) => {
+  const handleTranslate = async ({
+    resourceType,
+    record,
+    handleInputChange,
+    customPrompt,
+  }: {
+    resourceType: string;
+    record: any;
+    handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
+  }) => {
     if (!record?.key || !record?.altText) {
       shopify.toast.show(
         t("The source text is empty and cannot be translated"),
@@ -799,6 +901,7 @@ const Index = () => {
       type: "SINGLE_LINE_TEXT_FIELD",
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1142,91 +1245,12 @@ const Index = () => {
                         (productAltTextItem: any, index: number) => {
                           return (
                             <Space
-                              key={index}
+                              key={productAltTextItem?.imageId || index}
                               direction="vertical"
                               size="small"
                               style={{ width: "100%" }}
                             >
-                              <Text
-                                strong
-                                style={{
-                                  fontSize: "16px",
-                                }}
-                              >
-                                {productAltTextItem.productTitle}
-                              </Text>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Default Language")}</Text>
-                                <Input
-                                  disabled
-                                  value={productAltTextItem.altText}
-                                />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Translated")}</Text>
-                                <Input
-                                  className={
-                                    successTranslatedKey?.includes(
-                                      productAltTextItem?.imageId,
-                                    )
-                                      ? styles.success_input
-                                      : ""
-                                  }
-                                  value={
-                                    confirmData.find(
-                                      (confirmItem: any) =>
-                                        confirmItem.key ===
-                                        productAltTextItem?.imageId,
-                                    )
-                                      ? confirmData.find(
-                                          (confirmItem: any) =>
-                                            confirmItem.key ===
-                                            productAltTextItem?.imageId,
-                                        )?.value
-                                      : productAltTextItem.targetAltText
-                                  }
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      productAltTextItem,
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "flex-end",
-                                }}
-                              >
-                                <Button
-                                  onClick={() => {
-                                    handleTranslate(
-                                      "PRODUCT_OPTION_VALUE",
-                                      productAltTextItem,
-                                      handleInputChange,
-                                    );
-                                    reportClick("editor_list_translate");
-                                  }}
-                                  loading={loadingItems.includes(
-                                    productAltTextItem?.key || "",
-                                  )}
-                                >
-                                  {t("Translate")}
-                                </Button>
-                              </div>
+                              {renderImageAltField(productAltTextItem, true)}
                               <Divider
                                 style={{
                                   margin: "8px 0",

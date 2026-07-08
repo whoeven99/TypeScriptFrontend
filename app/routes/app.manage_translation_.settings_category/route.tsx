@@ -11,10 +11,11 @@ import {
 import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
-import ManageTableInput from "~/components/manageTableInput";
+import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
+import SingleTranslateAction from "~/components/singleTranslateAction";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
@@ -32,7 +33,7 @@ import {
 } from "~/utils/manageTranslationErrors";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const { Sider, Content } = Layout;
 
@@ -455,64 +456,67 @@ const Index = () => {
     }
   }, [confirmData]);
 
+  const renderTranslateAction = (record: any) => {
+    if (!record) return null;
+
+    return (
+      <SingleTranslateAction
+        triggerProps={{
+          type: "default",
+          size: "small",
+          style: {
+            height: 22,
+            paddingInline: 6,
+            fontWeight: 500,
+            fontSize: 12,
+            lineHeight: 1,
+            color: "var(--app-accent-primary)",
+            borderColor: "var(--app-accent-primary)",
+            borderRadius: 6,
+            backgroundColor: "var(--p-color-bg-surface)",
+            whiteSpace: "nowrap",
+          },
+        }}
+        loading={loadingItems.includes(record?.key || "")}
+        existingTranslation={
+          translatedValues[record?.key || ""] ?? record?.translated
+        }
+        onSubmit={(customPrompt) => {
+          handleTranslate({
+            resourceType: "ONLINE_STORE_THEME_SETTINGS_CATEGORY",
+            record,
+            handleInputChange,
+            customPrompt,
+          });
+        }}
+      />
+    );
+  };
+
+  const renderManageField = (record: any, stacked = false) => {
+    if (!record) return null;
+
+    return (
+      <ManageTranslationFieldRow
+        record={record}
+        isSuccess={successTranslatedKey?.includes(record?.key as string)}
+        translatedValues={translatedValues}
+        setTranslatedValues={setTranslatedValues}
+        handleInputChange={handleInputChange}
+        isRtl={searchTerm === "ar"}
+        stacked={stacked}
+        sourceLabel={t("Default Language")}
+        translatedLabel={t("Translated")}
+        action={renderTranslateAction(record)}
+      />
+    );
+  };
+
   const resourceColumns = [
     {
       title: t("Resource"),
-      dataIndex: "resource",
       key: "resource",
-      width: "20%",
-      render: (_: any, record: any) => {
-        return <Text style={{ display: "inline" }}>{record?.resource}</Text>;
-      },
-    },
-    {
-      title: t("Default Language"),
-      dataIndex: "default_language",
-      key: "default_language",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return <ManageTableInput record={record} />;
-      },
-    },
-    {
-      title: t("Translated"),
-      dataIndex: "translated",
-      key: "translated",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return (
-          record && (
-            <ManageTableInput
-              record={record}
-              isSuccess={successTranslatedKey?.includes(record?.key as string)}
-              translatedValues={translatedValues}
-              setTranslatedValues={setTranslatedValues}
-              handleInputChange={handleInputChange}
-              isRtl={searchTerm === "ar"}
-            />
-          )
-        );
-      },
-    },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          <Button
-            onClick={() => {
-              handleTranslate({
-                resourceType: "ONLINE_STORE_THEME_SETTINGS_CATEGORY",
-                record,
-                handleInputChange,
-              });
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
-        );
-      },
+      render: (_: any, record: any) => renderManageField(record),
     },
   ];
 
@@ -603,10 +607,12 @@ const Index = () => {
     resourceType,
     record,
     handleInputChange,
+    customPrompt,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
+    customPrompt?: string;
   }) => {
     fetcher.submit(
       {
@@ -629,6 +635,7 @@ const Index = () => {
       type: record?.type,
       server: globalStore?.server || "",
       resourceId: record?.resourceId,
+      customPrompt,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -934,79 +941,17 @@ const Index = () => {
                   </div>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
-                      {resourceData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={item.key}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px",
-                              }}
-                            >
-                              {t(item.resource)}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                isSuccess={successTranslatedKey?.includes(
-                                  item?.key as string,
-                                )}
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button
-                                onClick={() => {
-                                  handleTranslate({
-                                    resourceType:
-                                      "ONLINE_STORE_THEME_SETTINGS_CATEGORY",
-                                    record: item,
-                                    handleInputChange,
-                                  });
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        );
-                      })}
+                      {resourceData.map((item: any, index: number) => (
+                        <Space
+                          key={item?.key || index}
+                          direction="vertical"
+                          size="small"
+                          style={{ width: "100%" }}
+                        >
+                          {renderManageField(item, true)}
+                          <Divider style={{ margin: "8px 0" }} />
+                        </Space>
+                      ))}
                     </Space>
                   </Card>
                   <SideMenu
