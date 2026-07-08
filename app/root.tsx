@@ -26,10 +26,14 @@ declare global {
 }
 
 function isNetworkFetchError(error: unknown): boolean {
+  const { name, message, stack } = getErrorDetails(error);
+  if (typeof message !== "string") return false;
+  if (/failed to fetch/i.test(message)) return true;
   return (
-    error instanceof TypeError &&
-    typeof error.message === "string" &&
-    /failed to fetch/i.test(error.message)
+    name === "TypeError" &&
+    /fetch/i.test(message) &&
+    typeof stack === "string" &&
+    /app-bridge|chrome-extension/i.test(stack)
   );
 }
 
@@ -70,6 +74,10 @@ function isAbortLikeError(error: unknown): boolean {
   return /signal is aborted without reason|aborted|aborterror/i.test(message);
 }
 
+function isIgnorableClientNoiseError(error: unknown): boolean {
+  return isNetworkFetchError(error) || isAbortLikeError(error);
+}
+
 function getHtmlErrorStatusCode(error: unknown): string | null {
   const { message } = getErrorDetails(error);
   if (!message || !/<!doctype html/i.test(message)) return null;
@@ -84,7 +92,8 @@ function shouldIgnoreConsoleErrorReport(args: unknown[]): boolean {
   const errorArg = args.find((item) => item instanceof Error) ?? args[1];
   return (
     ((/^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) ||
-      /^\[app\] bootstrap java fetch failed:/i.test(firstArg)) &&
+      /^\[app\] bootstrap java fetch failed:/i.test(firstArg) ||
+      /^Fetch request failed:/i.test(firstArg)) &&
       (isNetworkFetchError(errorArg) || isAbortLikeError(errorArg)))
   );
 }
@@ -355,6 +364,7 @@ export default function App() {
     if (typeof window === "undefined") return;
 
     const handleError = (event: ErrorEvent) => {
+      if (isIgnorableClientNoiseError(event.error ?? event.message)) return;
       void reportClientError("window_error", event.error ?? event.message, {
         shop: globalStore.shop,
         route: `${window.location.pathname}${window.location.search}`,
@@ -367,7 +377,7 @@ export default function App() {
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      if (isAbortLikeError(event.reason)) return;
+      if (isIgnorableClientNoiseError(event.reason)) return;
       void reportClientError("unhandled_rejection", event.reason, {
         shop: globalStore.shop,
         route: `${window.location.pathname}${window.location.search}`,

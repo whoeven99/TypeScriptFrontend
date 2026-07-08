@@ -712,9 +712,11 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleSave}
-          loading={updateLoading ? "true" : undefined}
-        ></button>
-        <button onClick={handleCancel}></button>
+          disabled={updateLoading}
+        >
+          {updateLoading ? t("Saving...") : t("Save")}
+        </button>
+        <button onClick={handleCancel}>{t("Cancel")}</button>
       </SaveBar>
       <TitleBar title={t("Switcher")} />
       <ScrollNotice
