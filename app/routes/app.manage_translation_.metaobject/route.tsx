@@ -710,7 +710,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
+          disabled={confirmFetcher.state === "submitting"}
         >
           {t("Save")}
         </button>

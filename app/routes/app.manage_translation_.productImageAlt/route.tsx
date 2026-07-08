@@ -1108,7 +1108,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={saveLoading ? "true" : undefined}
+          disabled={saveLoading}
         >
           {t("Save")}
         </button>

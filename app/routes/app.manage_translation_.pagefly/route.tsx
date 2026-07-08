@@ -774,7 +774,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={loadingStatus.isSaving ? "true" : undefined}
+          disabled={loadingStatus.isSaving}
         >
           {t("Save")}
         </button>
