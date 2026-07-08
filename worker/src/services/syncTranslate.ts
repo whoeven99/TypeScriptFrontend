@@ -36,7 +36,7 @@ export type TranslateSingleFieldArgs = {
   /** 字段 key，影响 handle 路由与 classifyField。默认 value。 */
   fieldKey?: string;
   shopifyType?: string;
-  /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt（非空时绕过 TM 缓存）。 */
+  /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
   customPrompt?: string;
 };
 
@@ -80,7 +80,12 @@ export async function translateSingleField(
     undefined,
     undefined,
     undefined,
-    { customPrompt: args.customPrompt },
+    {
+      customPrompt: args.customPrompt,
+      // 管理翻译页手动点击：不读缓存、强制 LLM，译后写回 TM。
+      skipCacheRead: true,
+      skipCacheWrite: false,
+    },
   );
 
   const result = resources[0]?.results[0];
