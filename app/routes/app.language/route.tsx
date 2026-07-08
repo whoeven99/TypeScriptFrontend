@@ -85,6 +85,7 @@ import {
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { normalizeShopQuota } from "~/lib/translationQuota";
+import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
 import type { ShopQuota } from "~/server/translateV4/quota.server";
 import { DEFAULT_AI_MODEL, DEFAULT_MODULE_KEYS } from "../app.translate-v4/constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
@@ -420,6 +421,7 @@ const Index = () => {
     "trial" | "pricing" | null
   >(null);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const createDisabledMessage =
     normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
@@ -461,7 +463,10 @@ const Index = () => {
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await res.json();
-      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
+      if (data?.ok) {
+        setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
+        setStrictQuotaGate(Boolean(data.strictQuotaGate));
+      }
     } catch (error) {
       console.error("[language] refresh v4 quota failed:", error);
     }
@@ -908,10 +913,12 @@ const Index = () => {
       message.info(t("v4.create.quotaUnavailable"));
       return;
     }
-    const shouldGateByCredits =
-      remainingCredits <= 0 &&
-      !hasPaidPlan &&
-      !plan?.isInFreePlanTime;
+    const shouldGateByCredits = shouldBlockCreateTaskByCredits({
+      remainingCredits,
+      strictQuotaGate,
+      hasPaidPlan,
+      isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
+    });
 
     if (shouldGateByCredits) {
       if (isNew === null) {
@@ -974,6 +981,7 @@ const Index = () => {
     plan,
     planType,
     normalizedQuota?.remaining,
+    strictQuotaGate,
     shop,
     source?.code,
     t,

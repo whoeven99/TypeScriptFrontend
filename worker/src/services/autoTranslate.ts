@@ -26,6 +26,10 @@ import {
   shopSlotIndex,
   resolveNextClockAlignedScanAt,
 } from "./autoScanSchedule.js";
+import {
+  getTsfRemainingWithRetry,
+  quotaEnforceEnabled,
+} from "./tsfQuota.js";
 
 /** 自动任务模块（不含 EMAIL_TEMPLATE、ONLINE_STORE_THEME_LOCALE_CONTENT）。 */
 const AUTO_MODULES = [...AUTO_TRANSLATE_V4_MODULES];
@@ -74,6 +78,7 @@ export async function runAutoTranslateScan(): Promise<void> {
   let skippedActive = 0;
   let skippedShopCooldown = 0;
   let skippedSlot = 0;
+  let skippedNoQuota = 0;
   let cappedOut = false;
 
   for (const { shop, primaryLocale, targets } of shops) {
@@ -89,6 +94,14 @@ export async function runAutoTranslateScan(): Promise<void> {
     if (sharding && shopSlotIndex(shop, slotsPerDay) !== curSlot) {
       skippedSlot++;
       continue;
+    }
+
+    if (quotaEnforceEnabled(TSF_AUTO_TASK_SOURCE)) {
+      const remaining = await getTsfRemainingWithRetry(shop, 1);
+      if (remaining <= 0) {
+        skippedNoQuota++;
+        continue;
+      }
     }
 
     // 整店冷却：分槽下≈每天一批；非分槽下≈每 3h 一批。FAILED 不计入冷却。
@@ -162,6 +175,7 @@ export async function runAutoTranslateScan(): Promise<void> {
     `[autoTranslate] 扫描完成：店=${shops.length} 槽位=${slotLabel} 新建=${created}` +
       ` 跳过(非本槽店)=${skippedSlot}` +
       ` 跳过(店冷却<${cooldownMs / 3600_000}h)=${skippedShopCooldown}` +
+      ` 跳过(额度不足)=${skippedNoQuota}` +
       ` 跳过(语言进行中)=${skippedActive}` +
       (cappedOut ? ` [达单次上限 ${maxNewJobs}，剩余顺延下轮]` : ""),
   );

@@ -69,15 +69,22 @@ class AdaptiveSemaphore {
   constructor(initial: number) { this._max = Math.max(1, initial); }
 
   setMax(n: number): void {
-    this._max = Math.max(1, n);
+    this._max = Math.max(0, n);
     this._flush();
   }
   get max() { return this._max; }
   get inflight() { return this._inflight; }
 
   async acquire(): Promise<void> {
+    if (this._max <= 0) {
+      throw new Error("QUOTA_EXHAUSTED");
+    }
     if (this._inflight < this._max) { this._inflight++; return; }
     await new Promise<void>((r) => this._waiters.push(r));
+    if (this._max <= 0) {
+      this._inflight = Math.max(0, this._inflight - 1);
+      throw new Error("QUOTA_EXHAUSTED");
+    }
     this._inflight++;
   }
 
@@ -1523,9 +1530,9 @@ function getShopQuotaGate(shop: string): AdaptiveSemaphore {
   return g;
 }
 
-/** 由额度逻辑调用：设置某 shop 的 LLM 并发上限（最小 1；硬停由调用方 abort 负责）。 */
+/** 由额度逻辑调用：设置某 shop 的 LLM 并发上限（0=禁止新调用；硬停由调用方 abort 负责）。 */
 export function setShopQuotaCap(shop: string, cap: number): void {
-  getShopQuotaGate(shop).setMax(cap);
+  getShopQuotaGate(shop).setMax(Math.max(0, cap));
 }
 
 // ─── Engine router ──────────────────────────────────────────────────────────────

@@ -27,6 +27,7 @@ import {
   stageFromStatus,
 } from "~/server/translateV4/resumeStatus";
 import { canPauseV4Job } from "~/server/translateV4/types";
+import { evaluateCreateTaskQuotaGuard } from "~/server/billing/quota/createTaskQuotaGuard.server";
 
 /** POST /api/translate-v4/task-action —— pause / resume / cancel 一个 TsFrontend 任务。 */
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -133,6 +134,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         { ok: false, error: `cannot resume from status ${job.status}` },
         { status: 400 },
       );
+    }
+
+    const quotaGuard = await evaluateCreateTaskQuotaGuard(shopName);
+    if (!quotaGuard.ok) {
+      return json({ ok: false, error: quotaGuard.error }, { status: quotaGuard.status });
     }
 
     // 续跑前刷新 offline token（worker 写回用）
