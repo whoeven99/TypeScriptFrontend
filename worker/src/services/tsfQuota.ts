@@ -78,6 +78,7 @@ export function quotaTokenMultiplier(): number {
 export function quotaConcurrencyCap(remaining: number): number {
   const perCall = Math.max(1, Number(process.env.QUOTA_PER_CALL_COST) || 15000);
   const ceiling = Math.max(1, Number(process.env.QUOTA_MAX_CONCURRENCY) || 128);
+  if (remaining <= 0) return 0;
   if (remaining >= ceiling * perCall) return ceiling;
   if (remaining >= perCall) return Math.max(1, Math.floor(remaining / perCall));
   return 1;
@@ -151,7 +152,9 @@ export async function getTsfRemainingWithRetry(
 ): Promise<number> {
   // 新系统（tsf）：直连 Turso 账本读取剩余额度。
   if (await isTsfShop(shop)) {
-    return (await getTsfAccountRemaining(shop)) ?? 1;
+    const remaining = await getTsfAccountRemaining(shop);
+    if (remaining === null) return 1;
+    return remaining;
   }
   // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为「无限」。
   if (!quotaBase()) return Number.MAX_SAFE_INTEGER;

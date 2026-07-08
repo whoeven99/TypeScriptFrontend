@@ -473,7 +473,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       queriedRemaining,
       fallbackRemaining,
     );
-    if (quotaRemaining <= 0) {
+    if (quotaRemaining <= 0 || quotaCap <= 0) {
       tripAbort("pause", "额度不足，已自动暂停");
     } else {
       setShopQuotaCap(shopName, quotaCap);
@@ -511,7 +511,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     }
     const cap = quotaConcurrencyCap(remaining);
     setShopQuotaCap(shopName, cap);
-    if (remaining < 0) tripAbort("pause", "额度不足，已自动暂停");
+    if (remaining <= 0) tripAbort("pause", "额度不足，已自动暂停");
     await setProgress(jobId, {
       quotaRemaining: String(remaining),
       quotaConcurrencyCap: String(cap),
@@ -561,6 +561,14 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         // 中断检查：外部手动暂停/取消 → 不再处理新 chunk。
         await checkControl(true);
         if (abort.tripped) return;
+
+        if (enforceQuota) {
+          const liveRemaining = await getTsfRemainingWithRetry(shopName, 1);
+          if (liveRemaining <= 0) {
+            tripAbort("pause", "额度不足，已自动暂停");
+            return;
+          }
+        }
 
         const translatePath = chunkPath.replace(`${blobPrefix}/init/`, `${blobPrefix}/translate/`);
         const chunk = await blobRead<Array<{ resourceId: string; fields: TranslateItem[] }>>(chunkPath);

@@ -28,6 +28,7 @@ import {
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
 import { normalizeShopQuota } from "~/lib/translationQuota";
+import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
 import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
@@ -133,6 +134,7 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
   const [quota, setQuota] = useState<ShopQuota | null>(null);
+  const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const { plan, isNew } = useSelector(
@@ -313,7 +315,10 @@ export default function AppTranslateV4() {
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await readJsonResponse(res);
-      if (data?.ok) setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
+      if (data?.ok) {
+        setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
+        setStrictQuotaGate(Boolean(data.strictQuotaGate));
+      }
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
     }
@@ -407,10 +412,12 @@ export default function AppTranslateV4() {
       message.info(t("v4.create.quotaUnavailable"));
       return;
     }
-    const shouldGateByCredits =
-      remainingCredits <= 0 &&
-      !hasPaidPlan &&
-      !plan?.isInFreePlanTime;
+    const shouldGateByCredits = shouldBlockCreateTaskByCredits({
+      remainingCredits,
+      strictQuotaGate,
+      hasPaidPlan,
+      isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
+    });
 
     if (shouldGateByCredits) {
       if (isNew === null) {
@@ -524,6 +531,7 @@ export default function AppTranslateV4() {
     plan,
     planType,
     normalizedQuota,
+    strictQuotaGate,
     isNew,
     t,
   ]);

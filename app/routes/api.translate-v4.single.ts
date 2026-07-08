@@ -1,5 +1,6 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
+import { evaluateCreateTaskQuotaGuard } from "~/server/billing/quota/createTaskQuotaGuard.server";
 import {
   translateSingleText,
   deductQuota,
@@ -50,6 +51,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         { status: appError.status },
       );
     }
+
+    const quotaGuard = await evaluateCreateTaskQuotaGuard(shop);
+    if (!quotaGuard.ok) {
+      return json(
+        {
+          success: false,
+          errorCode: 403,
+          errorMsg: quotaGuard.error,
+          response: "",
+        },
+        { status: quotaGuard.status },
+      );
+    }
+
     const { translatedText, usedTokens } = await translateSingleText({
       shop,
       target,
