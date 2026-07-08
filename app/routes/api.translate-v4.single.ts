@@ -50,6 +50,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         { status: appError.status },
       );
     }
+    const textPreview =
+      text.length > 300 ? `${text.slice(0, 300)}… (${text.length} chars)` : text;
+    console.log("[single] input", {
+      shop,
+      source,
+      target,
+      fieldKey,
+      shopifyType,
+      resourceType: body.resourceType,
+      resourceId: body.resourceId,
+      textLen: text.length,
+      text: textPreview,
+      customPrompt: customPrompt || undefined,
+    });
     const { translatedText, usedTokens } = await translateSingleText({
       shop,
       target,

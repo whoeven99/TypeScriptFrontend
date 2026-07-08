@@ -71,6 +71,21 @@ export async function translateSingleField(
     shopifyType: args.shopifyType,
   };
 
+  const textPreview =
+    text.length > 300 ? `${text.slice(0, 300)}… (${text.length} chars)` : text;
+  console.log("[single] translateSingleField", {
+    shop: args.shop,
+    source,
+    target,
+    fieldKey,
+    shopifyType: args.shopifyType,
+    aiModel,
+    textLen: text.length,
+    text: textPreview,
+    customPrompt: args.customPrompt?.trim() || undefined,
+    skipCacheRead: true,
+  });
+
   const { resources, usage } = await translateResources(
     [{ resourceId: "__single__", fields: [item] }],
     source,
