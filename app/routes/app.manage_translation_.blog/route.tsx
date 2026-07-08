@@ -98,11 +98,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return {
           success: true,
           errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
+          errorMsg: "",
           response,
         };
       } catch (error) {
