@@ -2106,6 +2106,7 @@ async function translateItemsRouted(
   order: Engine[],
   promptKind: "default" | "handle" = "default",
   customPrompt = "",
+  logFullPrompt = false,
 ): Promise<{ results: Map<string, RoutedResult>; llmTokens: number }> {
   // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
   const placeholdersByKey = new Map<string, string[]>();
@@ -2135,7 +2136,15 @@ async function translateItemsRouted(
             : buildSystemPrompt(target, glossary, "", customPrompt);
       }
       try {
-        await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+        await gatherTranslations(
+          missing,
+          aiModel,
+          systemPrompt,
+          collected,
+          tokenAccum,
+          shopName,
+          logFullPrompt,
+        );
       } catch (e) {
         console.warn(`[route] llm engine error`, e);
       }
@@ -2227,6 +2236,7 @@ async function retryPoolFallbacks(
   shopName: string,
   shouldAbort: () => boolean | Promise<boolean>,
   customPrompt = "",
+  logFullPrompt = false,
 ): Promise<number> {
   let retried = 0;
   for (const [sig, occ] of pools) {
@@ -2255,6 +2265,7 @@ async function retryPoolFallbacks(
         poolOrder,
         isHandle ? "handle" : "default",
         customPrompt,
+        logFullPrompt,
       );
       const r = m.get("0");
       if (r?.status === "translated" && !looksLikeUntranslated(text, r.value, target) && !looksLikeWrongScriptLeak(text, r.value, target)) {
@@ -2431,6 +2442,7 @@ async function callLLMOnce(
   aiModel: string,
   systemPrompt: string,
   shopName?: string,
+  logFullPrompt = false,
 ): Promise<{ map: Map<string, string>; tokens: number }> {
   // Opaque IDs prevent the model from confusing semantic key names with content.
   const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
@@ -2440,10 +2452,19 @@ async function callLLMOnce(
   const quotaGate = shopName ? getShopQuotaGate(shopName) : null;
   if (quotaGate) await quotaGate.acquire();
 
+  const userContent = JSON.stringify(payload);
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
-    { role: "user", content: JSON.stringify(payload) },
+    { role: "user", content: userContent },
   ];
+
+  if (logFullPrompt) {
+    console.log("[single] llm prompt", {
+      model: aiModel,
+      system: systemPrompt,
+      user: userContent,
+    });
+  }
 
   // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
   if (isGptModel(aiModel)) {
@@ -2523,6 +2544,7 @@ async function gatherTranslations(
   collected: Map<string, string>,
   tokenAccum: { value: number },
   shopName?: string,
+  logFullPrompt = false,
   firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES,
 ): Promise<void> {
   const pend = items.filter((i) => !collected.has(i.key));
@@ -2534,13 +2556,17 @@ async function gatherTranslations(
     console.log(
       `[llm] batch of ${pend.length} items exceeds cap ${MAX_ITEMS_PER_BATCH}; splitting proactively`,
     );
-    await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-    await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+    await gatherTranslations(
+      pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+    );
+    await gatherTranslations(
+      pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+    );
     return;
   }
 
   try {
-    const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+    const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logFullPrompt);
     tokenAccum.value += tokens;
     let progressed = false;
     for (const [k, v] of map) {
@@ -2553,7 +2579,9 @@ async function gatherTranslations(
     // Model parsed OK but dropped some keys → retry just those, but only while
     // making progress (avoids looping on a key the model refuses to return).
     if (missing.length > 0 && progressed && missing.length < pend.length) {
-      await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+      await gatherTranslations(
+        missing, aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+      );
     }
     return;
   } catch (e) {
@@ -2576,7 +2604,14 @@ async function gatherTranslations(
           await new Promise((res) => setTimeout(res, FIRST_TOKEN_DRAIN_MS));
         }
         await gatherTranslations(
-          pend, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft - 1,
+          pend,
+          aiModel,
+          systemPrompt,
+          collected,
+          tokenAccum,
+          shopName,
+          logFullPrompt,
+          firstTokenRetriesLeft - 1,
         );
         return;
       }
@@ -2588,7 +2623,9 @@ async function gatherTranslations(
           `[llm] batch of ${pend.length} timed out (${msg}); re-chunking to ${TIMEOUT_RESPLIT_SIZE}`,
         );
         for (const chunk of chunkArray(pend, TIMEOUT_RESPLIT_SIZE)) {
-          await gatherTranslations(chunk, aiModel, systemPrompt, collected, tokenAccum, shopName);
+          await gatherTranslations(
+            chunk, aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+          );
         }
         return;
       }
@@ -2596,8 +2633,12 @@ async function gatherTranslations(
       console.warn(
         `[llm] batch of ${pend.length} ${isTimeout ? "timed out" : "unparseable"} (${msg}); splitting`,
       );
-      await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-      await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+      await gatherTranslations(
+        pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+      );
+      await gatherTranslations(
+        pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, logFullPrompt,
+      );
       return;
     }
     // Single item: retry transient failures with backoff, then give up (→ fallback).
@@ -2606,7 +2647,7 @@ async function gatherTranslations(
         await new Promise((res) => setTimeout(res, LEAF_RETRY_BACKOFF_MS * (r + 1)));
       }
       try {
-        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logFullPrompt);
         tokenAccum.value += tokens;
         for (const [k, v] of map) if (!collected.has(k)) collected.set(k, v);
         if (collected.has(pend[0].key)) return;
@@ -2882,6 +2923,8 @@ export type TranslateResourcesOptions = {
   skipCacheRead?: boolean;
   /** 跳过 TM 缓存写入。批量任务带 customPrompt 时默认为 true。 */
   skipCacheWrite?: boolean;
+  /** 打印完整 LLM system/user 提示词（手动单条翻译调试用）。 */
+  logFullPrompt?: boolean;
 };
 
 export async function translateResources(
@@ -2903,6 +2946,7 @@ export async function translateResources(
   // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
   const skipCacheRead = options?.skipCacheRead ?? hasCustomPrompt;
   const skipCacheWrite = options?.skipCacheWrite ?? hasCustomPrompt;
+  const logFullPrompt = options?.logFullPrompt === true;
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
@@ -3214,6 +3258,7 @@ export async function translateResources(
         order,
         isHandle ? "handle" : "default",
         customPrompt,
+        logFullPrompt,
       );
       let batchUnits = 0;
       for (const [k, v] of m) {
@@ -3244,6 +3289,7 @@ export async function translateResources(
     shopName,
     abortRequested,
     customPrompt,
+    logFullPrompt,
   );
   if (retried > 0) {
     console.log(`[llm] individually retried ${retried} fallback/untranslated text unit(s)`);

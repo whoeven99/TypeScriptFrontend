@@ -100,6 +100,7 @@ export async function translateSingleField(
       // 管理翻译页手动点击：不读缓存、强制 LLM，译后写回 TM。
       skipCacheRead: true,
       skipCacheWrite: false,
+      logFullPrompt: true,
     },
   );
 
