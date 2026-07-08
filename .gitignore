@@ -29,3 +29,4 @@ shopify.app.wgw.toml
 /.vscode
 app/generated/
 /app/generated
+/scripts/tmp
