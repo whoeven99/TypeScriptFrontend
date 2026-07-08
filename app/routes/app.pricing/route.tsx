@@ -1266,7 +1266,7 @@ const Index = () => {
                       >
                         {item.buttonText}
                       </Button>
-                      {isNew && (
+                      {isNew && plan.type === "Free" ? (
                         <Button
                           id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
                           type={item.isRecommended ? "primary" : "default"}
@@ -1287,7 +1287,7 @@ const Index = () => {
                         >
                           {t("Free trial")}
                         </Button>
-                      )}
+                      ) : null}
                       <div style={{ flex: 1 }}>
                         {item.features.map((feature, idx) => (
                           <div key={idx} className="pricing-plan-card__feature">
