@@ -175,6 +175,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         shop,
         accessToken,
         primaryLocale,
+        locales,
         scanId,
         blobPrefix: job.blobPrefix,
         heartbeat,

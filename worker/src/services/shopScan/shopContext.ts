@@ -38,6 +38,15 @@ export async function fetchShopLocales(
   }));
 }
 
+/** 市场配置（本地化策略输入，无法从翻译数据推断）。 */
+export type ShopMarket = {
+  name: string;
+  handle: string;
+  status: string;
+  baseCurrency: string | null;
+  locales: string[];
+};
+
 /** 画像原始素材（写 Blob 存档 + 拼 AI prompt）。 */
 export type ShopProfileFacts = {
   shopName: string;
@@ -47,8 +56,33 @@ export type ShopProfileFacts = {
   vendors: string[];
   topProductTitles: string[];
   collectionTitles: string[];
+  collectionDescriptions: string[];
+  articleTitles: string[];
+  articleSummaries: string[];
+  menuTitles: string[];
   tags: string[];
 };
+
+const SHOP_MARKETS_QUERY = `
+query ShopScanMarkets {
+  markets(first: 50, query: "status:ACTIVE") {
+    nodes {
+      name
+      handle
+      status
+      currencySettings {
+        baseCurrency { currencyCode }
+      }
+      webPresences(first: 5) {
+        nodes {
+          defaultLocale { locale }
+          alternateLocales { locale }
+          rootUrls { locale }
+        }
+      }
+    }
+  }
+}`;
 
 const SHOP_FACTS_QUERY = `
 query ShopScanFacts {
@@ -60,10 +94,82 @@ query ShopScanFacts {
   products(first: 40, sortKey: UPDATED_AT, reverse: true) {
     nodes { title productType vendor tags }
   }
-  collections(first: 20, sortKey: UPDATED_AT, reverse: true) {
-    nodes { title }
+  collections(first: 30, sortKey: UPDATED_AT, reverse: true) {
+    nodes { title description }
+  }
+  articles(first: 20, sortKey: UPDATED_AT, reverse: true) {
+    nodes { title summary }
+  }
+  menus(first: 10) {
+    nodes {
+      title
+      items {
+        title
+        items { title }
+      }
+    }
   }
 }`;
+
+type MarketWebPresenceNode = {
+  defaultLocale?: { locale?: string | null } | null;
+  alternateLocales?: Array<{ locale?: string | null }> | null;
+  rootUrls?: Array<{ locale?: string | null }> | null;
+};
+
+type MenuItemNode = {
+  title?: string | null;
+  items?: MenuItemNode[] | null;
+};
+
+type MenuNode = {
+  title?: string | null;
+  items?: MenuItemNode[] | null;
+};
+
+/**
+ * 读取店铺已启用市场及其语言/货币配置。
+ * webPresences 为空时回退到已发布 shopLocales（主域名 + 国家选择器场景）。
+ */
+export async function fetchShopMarkets(
+  shop: string,
+  accessToken: string,
+  locales: ShopLocaleRow[],
+): Promise<ShopMarket[]> {
+  const publishedLocales = dedupeNonEmpty(
+    locales.filter((l) => l.published).map((l) => l.locale),
+  );
+
+  const data = await shopScanGraphql<{
+    markets?: {
+      nodes?: Array<{
+        name?: string | null;
+        handle?: string | null;
+        status?: string | null;
+        currencySettings?: {
+          baseCurrency?: { currencyCode?: string | null } | null;
+        } | null;
+        webPresences?: { nodes?: MarketWebPresenceNode[] | null } | null;
+      }> | null;
+    } | null;
+  }>(shop, accessToken, SHOP_MARKETS_QUERY);
+
+  return (data.markets?.nodes ?? [])
+    .map((node) => {
+      const name = (node.name ?? "").trim();
+      if (!name) return null;
+      const webPresences = node.webPresences?.nodes ?? [];
+      const marketLocales = resolveMarketLocales(webPresences, publishedLocales);
+      return {
+        name,
+        handle: (node.handle ?? "").trim(),
+        status: (node.status ?? "ACTIVE").trim(),
+        baseCurrency: node.currencySettings?.baseCurrency?.currencyCode?.trim() || null,
+        locales: marketLocales,
+      } satisfies ShopMarket;
+    })
+    .filter((m): m is ShopMarket => m !== null);
+}
 
 export async function fetchShopProfileFacts(
   shop: string,
@@ -83,7 +189,13 @@ export async function fetchShopProfileFacts(
         tags: string[] | null;
       }>;
     };
-    collections: { nodes: Array<{ title: string | null }> };
+    collections: {
+      nodes: Array<{ title: string | null; description: string | null }>;
+    };
+    articles: {
+      nodes: Array<{ title: string | null; summary: string | null }>;
+    };
+    menus: { nodes: MenuNode[] };
   }>(shop, accessToken, SHOP_FACTS_QUERY);
 
   const products = data.products?.nodes ?? [];
@@ -91,9 +203,24 @@ export async function fetchShopProfileFacts(
   const vendors = dedupeNonEmpty(products.map((p) => p.vendor ?? ""));
   const topProductTitles = dedupeNonEmpty(products.map((p) => p.title ?? "")).slice(0, 30);
   const tags = dedupeNonEmpty(products.flatMap((p) => p.tags ?? [])).slice(0, 50);
-  const collectionTitles = dedupeNonEmpty(
-    (data.collections?.nodes ?? []).map((c) => c.title ?? ""),
-  ).slice(0, 20);
+
+  const collections = data.collections?.nodes ?? [];
+  const collectionTitles = dedupeNonEmpty(collections.map((c) => c.title ?? "")).slice(0, 30);
+  const collectionDescriptions = dedupeNonEmpty(
+    collections
+      .map((c) => truncateText(c.description ?? "", 200))
+      .filter((d) => d.length >= 8),
+  ).slice(0, 15);
+
+  const articles = data.articles?.nodes ?? [];
+  const articleTitles = dedupeNonEmpty(articles.map((a) => a.title ?? "")).slice(0, 20);
+  const articleSummaries = dedupeNonEmpty(
+    articles
+      .map((a) => truncateText(stripHtml(a.summary ?? ""), 200))
+      .filter((s) => s.length >= 8),
+  ).slice(0, 15);
+
+  const menuTitles = collectMenuTitles(data.menus?.nodes ?? []);
 
   return {
     shopName: data.shop?.name ?? shop,
@@ -103,8 +230,65 @@ export async function fetchShopProfileFacts(
     vendors,
     topProductTitles,
     collectionTitles,
+    collectionDescriptions,
+    articleTitles,
+    articleSummaries,
+    menuTitles,
     tags,
   };
+}
+
+function resolveMarketLocales(
+  webPresences: MarketWebPresenceNode[],
+  publishedLocales: string[],
+): string[] {
+  const locales: string[] = [];
+  for (const wp of webPresences) {
+    const defaultLocale = wp.defaultLocale?.locale?.trim();
+    if (defaultLocale) locales.push(defaultLocale);
+    for (const alt of wp.alternateLocales ?? []) {
+      const loc = alt.locale?.trim();
+      if (loc) locales.push(loc);
+    }
+    for (const root of wp.rootUrls ?? []) {
+      const loc = root.locale?.trim();
+      if (loc) locales.push(loc);
+    }
+  }
+  const deduped = dedupeNonEmpty(locales);
+  return deduped.length > 0 ? deduped : publishedLocales;
+}
+
+function collectMenuTitles(menus: MenuNode[]): string[] {
+  const titles: string[] = [];
+  for (const menu of menus) {
+    const menuTitle = menu.title?.trim();
+    if (menuTitle) titles.push(menuTitle);
+    for (const item of menu.items ?? []) {
+      const itemTitle = item.title?.trim();
+      if (itemTitle) titles.push(itemTitle);
+      for (const child of item.items ?? []) {
+        const childTitle = child.title?.trim();
+        if (childTitle) titles.push(childTitle);
+      }
+    }
+  }
+  return dedupeNonEmpty(titles).slice(0, 30);
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function truncateText(text: string, maxLen: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen).trimEnd()}…`;
 }
 
 function dedupeNonEmpty(values: string[]): string[] {
