@@ -180,7 +180,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         blobPrefix: job.blobPrefix,
         heartbeat,
       });
-      return r.status === "done" ? "DONE" : "SKIPPED";
+      return r.status === "done"
+        ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
+        : "SKIPPED";
     });
 
     await runStage("coverage", async () => {
@@ -206,7 +208,10 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
       });
       return {
         state: r.status === "done" ? "DONE" : "SKIPPED",
-        summary: { glossaryCount: r.glossaryCount },
+        summary: {
+          glossaryCount: r.glossaryCount,
+          glossarySuggestions: r.glossarySuggestions,
+        },
       };
     });
   } catch (signal) {

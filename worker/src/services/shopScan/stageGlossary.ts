@@ -24,6 +24,7 @@ export type GlossaryStageResult = {
   status: "done" | "skipped";
   reason?: string;
   glossaryCount: number;
+  glossarySuggestions: Array<{ locale: string; source: string; target: string }>;
 };
 
 type AiGlossaryResponse = { terms?: Array<{ source?: string; target?: string }> };
@@ -49,10 +50,10 @@ export async function runGlossaryStage(args: {
   );
 
   if (publishedTargets.length === 0) {
-    return { status: "skipped", reason: "no_published_targets", glossaryCount: 0 };
+    return { status: "skipped", reason: "no_published_targets", glossaryCount: 0, glossarySuggestions: [] };
   }
   if (!shopScanAiConfigured()) {
-    return { status: "skipped", reason: "ai_not_configured", glossaryCount: 0 };
+    return { status: "skipped", reason: "ai_not_configured", glossaryCount: 0, glossarySuggestions: [] };
   }
 
   const rawLog: Array<{
@@ -62,6 +63,7 @@ export async function runGlossaryStage(args: {
     terms: GlossaryTermRow[];
   }> = [];
   let totalSuggested = 0;
+  const glossarySuggestions: Array<{ locale: string; source: string; target: string }> = [];
 
   for (const target of publishedTargets) {
     const samples = await sampleTranslationPairs(
@@ -108,6 +110,13 @@ export async function runGlossaryStage(args: {
       .slice(0, MAX_TERMS_PER_LOCALE);
 
     totalSuggested += terms.length;
+    for (const term of terms) {
+      glossarySuggestions.push({
+        locale: target.locale,
+        source: term.source,
+        target: term.target,
+      });
+    }
     rawLog.push({ locale: target.locale, samples, aiRaw: raw, terms });
     await heartbeat();
   }
@@ -122,7 +131,7 @@ export async function runGlossaryStage(args: {
   });
 
   if (totalSuggested === 0) {
-    return { status: "skipped", reason: "no_terms", glossaryCount: 0 };
+    return { status: "skipped", reason: "no_terms", glossaryCount: 0, glossarySuggestions: [] };
   }
-  return { status: "done", glossaryCount: totalSuggested };
+  return { status: "done", glossaryCount: totalSuggested, glossarySuggestions };
 }

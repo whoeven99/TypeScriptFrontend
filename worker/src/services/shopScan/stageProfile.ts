@@ -7,7 +7,7 @@ import {
   type ShopLocaleRow,
   type ShopProfileFacts,
 } from "./shopContext.js";
-import { runProfileInduction } from "./profileInduction.js";
+import { runProfileInduction, type TerminologyStrategy } from "./profileInduction.js";
 import {
   extractShopSignals,
   type ShopSignalBundle,
@@ -24,7 +24,7 @@ import { upsertShopProfile } from "./tsfWrite.js";
  */
 
 export type ProfileStageResult =
-  | { status: "done" }
+  | { status: "done"; profileStrategy: TerminologyStrategy | null }
   | { status: "skipped"; reason: string };
 
 function hasProfileMaterial(
@@ -123,5 +123,5 @@ export async function runProfileStage(args: {
     );
   }
 
-  return { status: "done" };
+  return { status: "done", profileStrategy: strategy };
 }
