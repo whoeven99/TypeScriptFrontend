@@ -172,6 +172,7 @@ async function runAppInitialization({
 
     // 店铺画像扫描：安装/首次进 App 触发一次性店铺扫描（内容量/画像/覆盖率/术语表）。
     // 幂等（已有扫描则跳过），best-effort 不阻断初始化。worker 异步消费。
+    // 生产环境由 enqueueShopScan 内部直接跳过（disabled_in_production）。
     void enqueueShopScan({ shop, trigger: "install" });
   } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
