@@ -75,7 +75,12 @@ function isAbortLikeError(error: unknown): boolean {
 }
 
 function isIgnorableClientNoiseError(error: unknown): boolean {
-  return isNetworkFetchError(error) || isAbortLikeError(error);
+  const { message } = getErrorDetails(error);
+  return (
+    isNetworkFetchError(error) ||
+    isAbortLikeError(error) ||
+    /Unexpected value for attribute "loading" on <button>/i.test(message)
+  );
 }
 
 function getHtmlErrorStatusCode(error: unknown): string | null {
@@ -90,7 +95,16 @@ function getHtmlErrorStatusCode(error: unknown): string | null {
 function shouldIgnoreConsoleErrorReport(args: unknown[]): boolean {
   const firstArg = typeof args[0] === "string" ? args[0] : "";
   const errorArg = args.find((item) => item instanceof Error) ?? args[1];
+  const normalizedArgs = args
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item instanceof Error) return item.message;
+      return "";
+    })
+    .filter(Boolean)
+    .join(" ");
   return (
+    /Unexpected value for attribute "loading" on <button>/i.test(normalizedArgs) ||
     ((/^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) ||
       /^\[app\] bootstrap java fetch failed:/i.test(firstArg) ||
       /^Fetch request failed:/i.test(firstArg)) &&

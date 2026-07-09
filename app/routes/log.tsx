@@ -81,9 +81,26 @@ async function readPayload(request: Request): Promise<StructuredLogPayload> {
   };
 }
 
+function shouldDropClientLog(payload: StructuredLogPayload): boolean {
+  const consoleArgs = Array.isArray(payload.context?.consoleArgs)
+    ? payload.context.consoleArgs
+    : [];
+  const consoleText = consoleArgs
+    .map((item) => (typeof item === "string" ? item : safeJsonStringify(item)))
+    .join(" ");
+  const errorMessage = payload.error?.message || "";
+
+  return /Unexpected value for attribute "loading" on <button>/i.test(
+    `${consoleText} ${errorMessage}`,
+  );
+}
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const payload = await readPayload(request);
+  if (shouldDropClientLog(payload)) {
+    return json({ ok: true, dropped: true });
+  }
   const record = {
     source: "frontend",
     timestamp: payload.timestamp || new Date().toISOString(),
