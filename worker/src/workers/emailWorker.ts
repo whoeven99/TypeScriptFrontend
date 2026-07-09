@@ -10,6 +10,8 @@
  *     usedTokens=0 的语言不出现在成功邮件正文；若全部为 0 则不发信，但仍 mark emailSent。
  *     部分完成/暂停邮件：translateDone=0 且进度 0% 时不发信（如扫描后额度为 0），仍 mark emailSent。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
+ *  5. 自动任务按店持 Redis 锁（withShopEmailLock），防多实例双发；
+ *     runEmailWorker 进程内防重入，避免 safeRun 重叠。
  *
  * 任务类型对应模板（对齐 Spring TencentEmailService）：
  *   manual + COMPLETED → 137353 手动翻译成功
@@ -36,8 +38,12 @@ import {
   maskEmail,
   type TranslationJobSummary,
 } from "../services/workerEmail.js";
+import { withShopEmailLock } from "../services/redisV4.js";
 
 const LOG = "[emailWorker]";
+
+/** 进程内防重入：safeRun 不等待上一次结束，长跑时避免同 pod 重叠。 */
+let emailWorkerRunning = false;
 
 function logDetail(phase: string, payload: Record<string, unknown>): void {
   console.info(`${LOG} ${phase} ${JSON.stringify(payload)}`);
@@ -218,8 +224,31 @@ async function handleManualJob(job: TranslationV4Job): Promise<void> {
   }
 }
 
-/** 处理同一店铺的自动翻译邮件：整店任务都终态后汇总发一封。 */
+/**
+ * 处理同一店铺的自动翻译邮件：整店任务都终态后汇总发一封。
+ * 入口持 Redis 店铺锁，避免多实例在 emailSent 落库前重复发 SES。
+ */
 async function handleAutoJobGroup(shopName: string): Promise<void> {
+  const lockOutcome = await withShopEmailLock(shopName, () =>
+    handleAutoJobGroupLocked(shopName),
+  );
+  if (lockOutcome.status === "ran") return;
+  if (lockOutcome.status === "busy") {
+    logDetail("handle-auto-skipped", {
+      reason: "shop_email_lock_busy",
+      shop: shopName,
+    });
+    return;
+  }
+  logDetail("handle-auto-skipped", {
+    reason: "shop_email_lock_unavailable",
+    shop: shopName,
+    errorMessage: lockOutcome.errorMessage,
+  });
+}
+
+/** 已持锁：查待发任务并汇总发信。 */
+async function handleAutoJobGroupLocked(shopName: string): Promise<void> {
   // 等所有进行中的自动任务结束后再发（对齐 Java 按店汇总逻辑）
   const hasActive = await hasActiveAutoJobsForShop(shopName);
   if (hasActive) {
@@ -331,50 +360,59 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
 }
 
 export async function runEmailWorker(): Promise<void> {
-  const startedAt = Date.now();
-  const [manualCandidates, autoShops] = await Promise.all([
-    findJobsNeedingEmail(30),
-    findShopsWithPendingAutoEmail(),
-  ]);
-  const manualJobs = manualCandidates.filter((job) => !isAutoTranslationJob(job));
-
-  if (manualJobs.length === 0 && autoShops.length === 0) {
+  if (emailWorkerRunning) {
+    logDetail("run-skipped", { reason: "already_running" });
     return;
   }
+  emailWorkerRunning = true;
+  const startedAt = Date.now();
+  try {
+    const [manualCandidates, autoShops] = await Promise.all([
+      findJobsNeedingEmail(30),
+      findShopsWithPendingAutoEmail(),
+    ]);
+    const manualJobs = manualCandidates.filter((job) => !isAutoTranslationJob(job));
 
-  logDetail("run-start", {
-    manualCount: manualJobs.length,
-    autoShopCount: autoShops.length,
-    autoShops,
-    manualJobs: manualJobs.map(describeJob),
-  });
+    if (manualJobs.length === 0 && autoShops.length === 0) {
+      return;
+    }
 
-  // 手动任务逐个处理
-  for (const job of manualJobs) {
-    await handleManualJob(job).catch((e) => {
-      logDetail("handle-manual-error", {
-        jobId: job.id,
-        shop: job.shopName,
-        errorMessage: e instanceof Error ? e.message : String(e),
-      });
-      console.error(`${LOG} handleManualJob error job=${job.id}`, e);
+    logDetail("run-start", {
+      manualCount: manualJobs.length,
+      autoShopCount: autoShops.length,
+      autoShops,
+      manualJobs: manualJobs.map(describeJob),
     });
-  }
 
-  // 自动任务：按店拉全量待发任务后汇总（见 handleAutoJobGroup）
-  for (const shopName of autoShops) {
-    await handleAutoJobGroup(shopName).catch((e) => {
-      logDetail("handle-auto-error", {
-        shop: shopName,
-        errorMessage: e instanceof Error ? e.message : String(e),
+    // 手动任务逐个处理
+    for (const job of manualJobs) {
+      await handleManualJob(job).catch((e) => {
+        logDetail("handle-manual-error", {
+          jobId: job.id,
+          shop: job.shopName,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        });
+        console.error(`${LOG} handleManualJob error job=${job.id}`, e);
       });
-      console.error(`${LOG} handleAutoJobGroup error shop=${shopName}`, e);
-    });
-  }
+    }
 
-  logDetail("run-done", {
-    manualCount: manualJobs.length,
-    autoShopCount: autoShops.length,
-    elapsedMs: Date.now() - startedAt,
-  });
+    // 自动任务：按店拉全量待发任务后汇总（见 handleAutoJobGroup）
+    for (const shopName of autoShops) {
+      await handleAutoJobGroup(shopName).catch((e) => {
+        logDetail("handle-auto-error", {
+          shop: shopName,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        });
+        console.error(`${LOG} handleAutoJobGroup error shop=${shopName}`, e);
+      });
+    }
+
+    logDetail("run-done", {
+      manualCount: manualJobs.length,
+      autoShopCount: autoShops.length,
+      elapsedMs: Date.now() - startedAt,
+    });
+  } finally {
+    emailWorkerRunning = false;
+  }
 }

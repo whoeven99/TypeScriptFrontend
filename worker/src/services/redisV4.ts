@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import IORedis from "ioredis";
 
 let _redis: IORedis | undefined;
@@ -285,5 +286,85 @@ export async function setItemsCount(
     return true;
   } catch {
     return false;
+  }
+}
+
+// ── 自动翻译完成邮件：店铺级分布式锁 ──────────────────────────────────────────
+// 防止多 worker 实例 / 重叠轮询在 emailSent 落库前对同一店重复发 SES。
+// Redis 不可用时返回 skipped（宁可本轮不发，也不无锁双发）。
+
+const EMAIL_SHOP_LOCK_PREFIX = "translate:v4:email:lock:";
+/** 覆盖 SES + 多 job 串行 markEmailSent；超时后其他实例可重试。 */
+const EMAIL_SHOP_LOCK_TTL_SEC = Math.max(
+  30,
+  Number(process.env.EMAIL_SHOP_LOCK_TTL_SEC) || 120,
+);
+
+/** 仅当 value 仍是本持有者 token 时删除，避免误删他人锁。 */
+const RELEASE_LOCK_LUA = `
+if redis.call("get", KEYS[1]) == ARGV[1] then
+  return redis.call("del", KEYS[1])
+end
+return 0
+`;
+
+export function emailShopLockKey(shopName: string): string {
+  return `${EMAIL_SHOP_LOCK_PREFIX}${shopName}`;
+}
+
+export type ShopEmailLockResult =
+  | { status: "acquired"; token: string }
+  | { status: "busy" }
+  | { status: "unavailable"; errorMessage: string };
+
+/** SET NX EX：同一店同一时刻只允许一个 email 流程。 */
+export async function tryAcquireShopEmailLock(
+  shopName: string,
+): Promise<ShopEmailLockResult> {
+  const key = emailShopLockKey(shopName);
+  const token = randomUUID();
+  try {
+    const ok = await getRedis().set(key, token, "EX", EMAIL_SHOP_LOCK_TTL_SEC, "NX");
+    if (ok === "OK") return { status: "acquired", token };
+    return { status: "busy" };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return { status: "unavailable", errorMessage };
+  }
+}
+
+/** 释放本持有者的锁；token 不匹配或已过期时静默成功。 */
+export async function releaseShopEmailLock(
+  shopName: string,
+  token: string,
+): Promise<void> {
+  try {
+    await getRedis().eval(RELEASE_LOCK_LUA, 1, emailShopLockKey(shopName), token);
+  } catch {
+    // best-effort：TTL 会兜底
+  }
+}
+
+/**
+ * 持锁执行店铺自动邮件流程。
+ * - busy / Redis 不可用：不执行 fn，返回对应 status（调用方打日志并跳过本轮）
+ * - acquired：执行 fn，finally 释放锁，返回 ran
+ */
+export async function withShopEmailLock<T>(
+  shopName: string,
+  fn: () => Promise<T>,
+): Promise<
+  | { status: "ran"; result: T }
+  | { status: "busy" }
+  | { status: "unavailable"; errorMessage: string }
+> {
+  const acquired = await tryAcquireShopEmailLock(shopName);
+  if (acquired.status === "busy") return acquired;
+  if (acquired.status === "unavailable") return acquired;
+  try {
+    const result = await fn();
+    return { status: "ran", result };
+  } finally {
+    await releaseShopEmailLock(shopName, acquired.token);
   }
 }
