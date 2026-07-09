@@ -434,7 +434,6 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
       response: {
         insertCharsByShopName: true,
         addUserSubscriptionPlan: true,
-        addDefaultLanguagePack: true,
       },
     };
   }
@@ -544,23 +543,6 @@ export const InsertCharsByShopName = async ({
     );
   } catch (error) {
     console.error("Error InsertCharsByShopName:", error);
-  }
-};
-
-//添加默认语言包
-export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
-  console.log("AddDefaultLanguagePackData: ", shop);
-  try {
-    const addDefaultLanguagePackResponse = await axios({
-      url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack?shopName=${shop}`,
-      method: "PUT",
-    });
-    console.log(
-      "addDefaultLanguagePackResponse:",
-      addDefaultLanguagePackResponse.data,
-    );
-  } catch (error) {
-    console.error("Error AddDefaultLanguagePack:", error);
   }
 };
 

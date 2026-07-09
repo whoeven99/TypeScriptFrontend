@@ -21,7 +21,6 @@ import {
   AddUserFreeSubscription,
   InitializationDetection,
   UserInitialization,
-  AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
   GoogleAnalyticClickReport,
@@ -161,10 +160,6 @@ async function runAppInitialization({
           await AddUserFreeSubscription({ shop });
         }
       }
-      // 翻译配置（与计费无关），所有用户保留
-      if (!init?.response?.addDefaultLanguagePack) {
-        await AddDefaultLanguagePack({ shop });
-      }
     }
     if (accessToken && source && targets.length > 0) {
       await InsertTargets({ shop, accessToken, source, targets });
@@ -279,9 +274,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
           if (!init?.response?.addUserFreeSubscription) {
             await AddUserFreeSubscription({ shop });
-          }
-          if (!init?.response?.addDefaultLanguagePack) {
-            await AddDefaultLanguagePack({ shop });
           }
         }
         return null;
