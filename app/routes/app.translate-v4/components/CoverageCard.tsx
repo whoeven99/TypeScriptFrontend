@@ -70,7 +70,9 @@ export function CoverageCard({
     [locales],
   );
   const lowCoverageCount = useMemo(
-    () => locales.filter((row) => (row.percent ?? 0) < 100).length,
+    () =>
+      locales.filter((row) => !isCoverageUnscanned(row) && (row.percent ?? 0) < 100)
+        .length,
     [locales],
   );
 
@@ -265,10 +267,17 @@ function HeadMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function isCoverageUnscanned(row: LocaleCoverageRow): boolean {
+  return row.cacheMissing && row.total === 0;
+}
+
 function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
+  const { t } = useTranslation();
   const percent = row.percent;
+  const unscanned = isCoverageUnscanned(row);
+  const displayPercent = percent ?? 0;
   const barColor = coverageBarColor(percent);
-  const width = percent != null ? `${percent}%` : "0%";
+  const width = `${displayPercent}%`;
   const label = localeShortName(row.locale, row.label);
 
   return (
@@ -317,14 +326,14 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
         </span>
         <span
           style={{
-            fontFamily: v4Colors.mono,
-            fontWeight: 700,
+            fontFamily: unscanned ? "inherit" : v4Colors.mono,
+            fontWeight: unscanned ? 600 : 700,
             fontSize: 11.5,
-            color: v4Colors.text,
+            color: unscanned ? v4Colors.textMuted : v4Colors.text,
             flexShrink: 0,
           }}
         >
-          {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}
+          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
         </span>
       </div>
       <div
@@ -361,8 +370,10 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   }, [row.autoTranslate, row.lastAutoUpdateAt, row.nextAutoUpdateAt]);
 
   const percent = row.percent;
+  const unscanned = isCoverageUnscanned(row);
+  const displayPercent = percent ?? 0;
   const barColor = coverageBarColor(percent);
-  const width = percent != null ? `${percent}%` : "0%";
+  const width = `${displayPercent}%`;
   const label = localeShortName(row.locale, row.label);
   const lastHint =
     row.autoTranslate && nowMs != null
@@ -394,8 +405,16 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
             <AutoTranslateBadge lastUpdateHint={lastHint} nextUpdateHint={nextHint} />
           ) : null}
         </span>
-        <span style={{ fontFamily: v4Colors.mono, fontWeight: 700, fontSize: 12.5, color: v4Colors.text, flexShrink: 0 }}>
-          {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}
+        <span
+          style={{
+            fontFamily: unscanned ? "inherit" : v4Colors.mono,
+            fontWeight: unscanned ? 600 : 700,
+            fontSize: 12.5,
+            color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            flexShrink: 0,
+          }}
+        >
+          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
         </span>
       </div>
       <div style={{ height: 6, borderRadius: 4, background: v4Colors.progressTrack, overflow: "hidden" }}>
@@ -409,7 +428,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
           }}
         />
       </div>
-      {row.cacheMissing && row.total === 0 ? (
+      {unscanned ? (
         <div style={{ fontSize: 11, color: v4Colors.textMuted, marginTop: 4 }}>
           {t("v4.coverage.cacheNotReady")}
         </div>
