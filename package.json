@@ -33,7 +33,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "migration:next-shops": "node scripts/next-migration-shops.mjs",
-    "migration:next-auto-slot": "node scripts/next-auto-slot-shops.mjs --check-cooldown --billing=legacy"
+    "migration:next-auto-slot": "node scripts/next-auto-slot-shops.mjs --check-cooldown --billing=legacy --slots=14,15,16"
   },
   "type": "module",
   "engines": {

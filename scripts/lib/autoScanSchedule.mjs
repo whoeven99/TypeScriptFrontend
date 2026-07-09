@@ -115,6 +115,31 @@ export function shopSlotIndex(shop, slotsPerDay = getAutoTranslateSlotsPerDay())
   return (hash >>> 0) % slots;
 }
 
+/** 某槽位下一次扫描时刻（今天该槽未到则今天，否则明天）。slotsPerDay=24 时 slot 即本地小时。 */
+export function resolveScanAtForSlotIndex(
+  slotIndex,
+  now = new Date(),
+  slotsPerDay = getAutoTranslateSlotsPerDay(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+  scheduleMinute = getAutoTranslateScheduleMinute(),
+) {
+  const slots = Math.max(1, Math.min(1440, Math.floor(slotsPerDay)));
+  const slot = ((Math.floor(slotIndex) % slots) + slots) % slots;
+  const slotWidthMin = 1440 / slots;
+  const startMin = slot * slotWidthMin;
+  const targetH = Math.floor(startMin / 60);
+  const targetM = slots === 24 ? scheduleMinute : Math.floor(startMin % 60);
+
+  const cur = tzYmdHm(now, timeZone);
+  let scanAt = utcFromTzLocal(cur.y, cur.m, cur.d, targetH, targetM, timeZone);
+  if (scanAt.getTime() <= now.getTime() + 1000) {
+    const nextDay = new Date(scanAt.getTime() + 24 * 60 * 60_000);
+    const p = tzYmdHm(nextDay, timeZone);
+    scanAt = utcFromTzLocal(p.y, p.m, p.d, targetH, targetM, timeZone);
+  }
+  return scanAt;
+}
+
 export function resolveNextClockAlignedScanAt(
   now = new Date(),
   intervalMs = getAutoTranslateIntervalMs(),

@@ -12,8 +12,9 @@
  *   npm run migration:next-auto-slot
  *   node scripts/next-auto-slot-shops.mjs --check-cooldown --billing=legacy
  *   node scripts/next-auto-slot-shops.mjs --scan-at=2026-07-07T08:00:00.000Z   # 指定某次扫描时刻试算
+ *   node scripts/next-auto-slot-shops.mjs --slots=14,15,16   # 下午 2/3/4 点槽位（slotsPerDay=24）
  *
- * 典型灰度：15:00 跑本脚本 → 复制输出到 shop.txt → migration:billing --apply → 重启 worker → 16:00 看自动任务与额度。
+ * 典型灰度：13:00 跑本脚本（含 14–16 槽）→ 复制输出到 shop.txt → migration:billing --apply → 重启 worker → 14:00 起看自动任务与额度。
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -23,6 +24,7 @@ import {
   currentSlotIndex,
   describeSlotHour,
   formatInTz,
+  getAutoTranslateScheduleMinute,
   getAutoTranslateScheduleTimezone,
   getAutoTranslateShardCooldownMs,
   getAutoTranslateShopCooldownMs,
@@ -30,6 +32,7 @@ import {
   isAutoTranslateShardingEnabled,
   isShopAutoCooldownElapsed,
   resolveNextClockAlignedScanAt,
+  resolveScanAtForSlotIndex,
   shopSlotIndex,
 } from "./lib/autoScanSchedule.mjs";
 
@@ -64,6 +67,30 @@ function parseArgs(argv) {
       return [k, v ?? true];
     }),
   );
+}
+
+/** 解析 --slots=14,15,16 或 --hours=14-16；无效项忽略。 */
+function parseSlotList(raw, slotsPerDay) {
+  const max = Math.max(1, Math.min(1440, Math.floor(slotsPerDay)));
+  const slots = new Set();
+  for (const part of String(raw || "")
+    .split(/[,，]/)
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    if (part.includes("-")) {
+      const [a, b] = part.split("-").map((s) => Number(s.trim()));
+      if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+      const lo = Math.min(a, b);
+      const hi = Math.max(a, b);
+      for (let i = lo; i <= hi; i++) {
+        if (i >= 0 && i < max) slots.add(i);
+      }
+      continue;
+    }
+    const n = Number(part);
+    if (Number.isFinite(n) && n >= 0 && n < max) slots.add(Math.floor(n));
+  }
+  return [...slots].sort((a, b) => a - b);
 }
 
 function normalizeShop(shop) {
@@ -208,7 +235,8 @@ async function enrichWithCooldown(candidates, cosmos, cooldownMs, scanAtMs, conc
       const iso = resources[0]?.createdAt?.trim();
       const lastAt = iso ? new Date(iso) : null;
       const validLast = lastAt && !Number.isNaN(lastAt.getTime()) ? lastAt : null;
-      const ok = isShopAutoCooldownElapsed(validLast, cooldownMs, scanAtMs);
+      const atMs = row.scanAtMs ?? scanAtMs;
+      const ok = isShopAutoCooldownElapsed(validLast, cooldownMs, atMs);
       return { ...row, lastAutoAt: validLast, cooldownOk: ok };
     } catch {
       return { ...row, lastAutoAt: null, cooldownOk: true };
@@ -263,16 +291,40 @@ async function main() {
     ? getAutoTranslateShardCooldownMs(env)
     : getAutoTranslateShopCooldownMs(env);
 
+  const scheduleMinute = getAutoTranslateScheduleMinute(env);
   const now = new Date();
-  const nextScanAt =
+  const explicitScanAt =
     typeof args["scan-at"] === "string" && args["scan-at"].trim()
       ? new Date(args["scan-at"].trim())
-      : resolveNextClockAlignedScanAt(now, undefined, tz, undefined);
-  if (Number.isNaN(nextScanAt.getTime())) {
+      : null;
+  if (explicitScanAt && Number.isNaN(explicitScanAt.getTime())) {
     throw new Error("--scan-at 无效");
   }
 
-  const targetSlot = sharding ? currentSlotIndex(nextScanAt, slotsPerDay, tz) : null;
+  const slotsArg =
+    typeof args.slots === "string"
+      ? args.slots
+      : typeof args.hours === "string"
+        ? args.hours
+        : "";
+  const targetSlots = sharding
+    ? slotsArg
+      ? parseSlotList(slotsArg, slotsPerDay)
+      : [currentSlotIndex(
+          explicitScanAt ?? resolveNextClockAlignedScanAt(now, undefined, tz, scheduleMinute),
+          slotsPerDay,
+          tz,
+        )]
+    : null;
+  if (sharding && slotsArg && !targetSlots.length) {
+    throw new Error(`--slots/--hours 无有效槽位（0..${slotsPerDay - 1}）`);
+  }
+
+  const nextScanAt =
+    explicitScanAt ??
+    (sharding && targetSlots?.length
+      ? resolveScanAtForSlotIndex(targetSlots[0], now, slotsPerDay, tz, scheduleMinute)
+      : resolveNextClockAlignedScanAt(now, undefined, tz, scheduleMinute));
 
   const turso = createClient(resolveTursoConfig(env, target));
   const excluded = excludeShopTxt ? loadExcludedShops() : new Set();
@@ -288,7 +340,9 @@ async function main() {
     let candidates = allShops.filter((row) => {
       if (excluded.has(row.shop)) return false;
       if (!row.primaryLocale?.trim() || !row.targets?.length) return false;
-      if (sharding && shopSlotIndex(row.shop, slotsPerDay) !== targetSlot) return false;
+      if (sharding && !targetSlots.includes(shopSlotIndex(row.shop, slotsPerDay))) {
+        return false;
+      }
       if (requireToken && !tokenShops.has(row.shop)) return false;
 
       const billing = bindings.get(row.shop) ?? null;
@@ -306,14 +360,23 @@ async function main() {
       if (!cosmos) {
         throw new Error("--check-cooldown 需要 COSMOS_ENDPOINT(_V4) 与 COSMOS_KEY(_V4)");
       }
+      const withScanAt = candidates.map((row) => {
+        const slot = shopSlotIndex(row.shop, slotsPerDay);
+        const scanAt = sharding
+          ? resolveScanAtForSlotIndex(slot, now, slotsPerDay, tz, scheduleMinute)
+          : nextScanAt;
+        return { ...row, scanAtMs: scanAt.getTime() };
+      });
       const enriched = await enrichWithCooldown(
-        candidates,
+        withScanAt,
         cosmos,
         cooldownMs,
-        nextScanAt.getTime(),
+        null,
         concurrency,
       );
-      candidates = enriched.filter((r) => r.cooldownOk);
+      candidates = enriched
+        .filter((r) => r.cooldownOk)
+        .map(({ scanAtMs: _scanAtMs, cooldownOk: _ok, ...row }) => row);
     }
 
     candidates.sort((a, b) => a.shop.localeCompare(b.shop));
@@ -321,14 +384,27 @@ async function main() {
     const msUntil = nextScanAt.getTime() - now.getTime();
     const minutesUntil = Math.max(0, Math.round(msUntil / 60_000));
 
-    console.log("=== 下一轮 auto 扫描 · 本槽位店铺 ===");
+    const title =
+      sharding && targetSlots.length > 1
+        ? "=== auto 扫描 · 多槽位店铺 ==="
+        : "=== 下一轮 auto 扫描 · 本槽位店铺 ===";
+    console.log(title);
     console.log(`Turso:           ${new URL(resolveTursoConfig(env, target).url).host} (${target})`);
     console.log(`调度时区:        ${tz}`);
-    console.log(`下一轮扫描:      ${formatInTz(nextScanAt, tz)} (${nextScanAt.toISOString()})`);
-    console.log(`距现在:          约 ${minutesUntil} 分钟`);
+    if (sharding && targetSlots.length > 1) {
+      const slotDesc = targetSlots
+        .map((s) => `${s}（${describeSlotHour(s, slotsPerDay)}）`)
+        .join("、");
+      console.log(`目标槽位:        ${slotDesc}`);
+    } else {
+      console.log(`下一轮扫描:      ${formatInTz(nextScanAt, tz)} (${nextScanAt.toISOString()})`);
+      console.log(`距现在:          约 ${minutesUntil} 分钟`);
+    }
     console.log(`分槽:            ${sharding ? `开 (${slotsPerDay} 槽/天)` : "关（每轮扫全部店）"}`);
-    if (sharding) {
-      console.log(`目标槽位:        ${targetSlot}（本地时段 ${describeSlotHour(targetSlot, slotsPerDay)}）`);
+    if (sharding && targetSlots.length === 1) {
+      console.log(
+        `目标槽位:        ${targetSlots[0]}（本地时段 ${describeSlotHour(targetSlots[0], slotsPerDay)}）`,
+      );
     }
     console.log(`店冷却:          ${(cooldownMs / 3_600_000).toFixed(1)}h${checkCooldown ? "（已过滤未过冷却）" : "（未查 Cosmos，可能仍被跳过）"}`);
     console.log(`billing 过滤:    ${billingFilter}`);
