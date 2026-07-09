@@ -86,6 +86,7 @@
     "react-redux": "^9.1.2",
     "remix-i18next": "^7.0.1",
     "remix-island": "^0.2.0",
+    "tencentcloud-sdk-nodejs-ses": "^4.1.263",
     "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {

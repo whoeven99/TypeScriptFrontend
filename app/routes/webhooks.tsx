@@ -51,7 +51,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         // 新系统（tsf）用户：入账 Turso 加量包池，不走 Java。
         if (await isTsfBillingShop(shop)) {
-          await handleTsfPurchaseWebhook({ shop, payload });
+          await handleTsfPurchaseWebhook({
+            shop,
+            accessToken: session?.accessToken,
+            payload,
+          });
           break;
         }
         if (payload) {
