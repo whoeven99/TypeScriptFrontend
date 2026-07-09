@@ -56,6 +56,11 @@ export function CoverageCard({
 }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const displayLocales = useMemo(
+    () => locales.filter((row) => !isCoverageUnscanned(row)),
+    [locales],
+  );
+  const unscannedCount = locales.length - displayLocales.length;
 
   const toggleExpanded = () => {
     setExpanded((prev) => {
@@ -71,14 +76,16 @@ export function CoverageCard({
   );
   const lowCoverageCount = useMemo(
     () =>
-      locales.filter((row) => !isCoverageUnscanned(row) && (row.percent ?? 0) < 100)
+      displayLocales.filter((row) => (row.percent ?? 0) < 100)
         .length,
-    [locales],
+    [displayLocales],
   );
 
   if (compact) {
-    const hasMore = locales.length > COVERAGE_PREVIEW_COUNT;
-    const visibleLocales = expanded ? locales : locales.slice(0, COVERAGE_PREVIEW_COUNT);
+    const hasMore = displayLocales.length > COVERAGE_PREVIEW_COUNT;
+    const visibleLocales = expanded
+      ? displayLocales
+      : displayLocales.slice(0, COVERAGE_PREVIEW_COUNT);
 
     return (
       <div
@@ -146,7 +153,7 @@ export function CoverageCard({
 
         <style>{AUTO_BADGE_HOVER_CSS}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {visibleLocales.length === 0 ? (
+          {locales.length === 0 ? (
             <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
               {t("v4.coverage.noTargetLanguages")}
             </div>
@@ -155,6 +162,7 @@ export function CoverageCard({
               <CompactCoverageRow key={row.locale} row={row} />
             ))
           )}
+          {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
         </div>
 
         {hasMore ? (
@@ -184,7 +192,7 @@ export function CoverageCard({
           >
             {expanded
               ? t("v4.tasks.collapse")
-              : t("v4.coverage.viewAll", { count: locales.length })}
+              : t("v4.coverage.viewAll", { count: displayLocales.length })}
             <span className={`v4-caret${expanded ? " v4-caret--open" : ""}`} aria-hidden>
               ⌄
             </span>
@@ -230,8 +238,9 @@ export function CoverageCard({
         {locales.length === 0 ? (
           <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{t("v4.coverage.noTargetLanguages")}</div>
         ) : (
-          locales.map((row) => <CoverageRow key={row.locale} row={row} />)
+          displayLocales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
+        {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
       </div>
     </div>
   );
@@ -269,6 +278,22 @@ function HeadMetric({ label, value }: { label: string; value: string }) {
 
 function isCoverageUnscanned(row: LocaleCoverageRow): boolean {
   return row.cacheMissing && row.total === 0;
+}
+
+function UnscannedCoverageSummary({ count }: { count: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      style={{
+        fontSize: 11.5,
+        color: v4Colors.textMuted,
+        lineHeight: 1.4,
+      }}
+    >
+      {t("v4.coverage.unscannedSummary", { count })}
+    </div>
+  );
 }
 
 function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
