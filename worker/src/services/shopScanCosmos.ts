@@ -41,12 +41,34 @@ export type ShopScanCoverageRow = {
   percent: number | null;
 };
 
+/** 第二步 AI 术语与模块策略（同步写入 Cosmos summary 供页面展示）。 */
+export type ShopScanProfileStrategy = {
+  brandTerms: string[];
+  doNotTranslateTerms: string[];
+  preferredTerms: Array<{ source: string; note: string | null }>;
+  seoTerms: string[];
+  moduleHints: Array<{
+    module: string;
+    tonePolicy: string | null;
+    keywordPolicy: string | null;
+    literalVsAdaptive: string | null;
+  }>;
+};
+
+export type ShopScanGlossarySuggestion = {
+  locale: string;
+  source: string;
+  target: string;
+};
+
 export type ShopScanSummary = {
   totalItems?: number;
   totalChars?: number;
   moduleStats?: Record<string, { items: number; chars: number }>;
   coverage?: ShopScanCoverageRow[];
   glossaryCount?: number;
+  profileStrategy?: ShopScanProfileStrategy | null;
+  glossarySuggestions?: ShopScanGlossarySuggestion[];
 };
 
 export type ShopScanJob = {

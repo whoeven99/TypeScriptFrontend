@@ -5,6 +5,7 @@ import {
   type ShopScanTrigger,
 } from "./cosmos.server";
 import { pushShopScanHint } from "~/server/translateV4/redis.server";
+import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 
 /**
  * 店铺画像扫描（Shop Profile Scan）通用触发入口。
@@ -13,13 +14,14 @@ import { pushShopScanHint } from "~/server/translateV4/redis.server";
  *   避免每次进 /app 重复扫。
  * - scheduled / manual：未来定期巡检 / 手动刷新复用同一套（本期仅预留）。
  *
+ * 生产环境（NODE_ENV=prod/production）一律不入队，避免线上商店进首页触发扫描。
  * 全程 best-effort：Cosmos/Redis 不可用时静默返回，绝不阻断 App 加载。
  */
 
 export type EnqueueShopScanResult = {
   enqueued: boolean;
   scanId?: string;
-  reason?: "skipped_existing" | "not_configured" | "error";
+  reason?: "skipped_existing" | "not_configured" | "disabled_in_production" | "error";
 };
 
 function shopScanCosmosConfigured(): boolean {
@@ -40,6 +42,11 @@ export async function enqueueShopScan({
   shop: string;
   trigger: ShopScanTrigger;
 }): Promise<EnqueueShopScanResult> {
+  // 线上关闭：页面/API 已门禁，触发入口再兜一层，避免进 /app 仍入队。
+  if (isProductionNodeEnv()) {
+    return { enqueued: false, reason: "disabled_in_production" };
+  }
+
   if (!shop || !shopScanCosmosConfigured()) {
     return { enqueued: false, reason: "not_configured" };
   }
