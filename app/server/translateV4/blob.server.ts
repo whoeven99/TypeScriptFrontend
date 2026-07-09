@@ -17,6 +17,22 @@ function getContainer(): ContainerClient | null {
   return _container;
 }
 
+/** 读取单个 JSON blob；未配置/不存在/解析失败时返回 null。 */
+export async function readV4Blob<T = unknown>(path: string): Promise<T | null> {
+  if (!path) return null;
+  const container = getContainer();
+  if (!container) return null;
+  try {
+    const client = container.getBlockBlobClient(path);
+    if (!(await client.exists())) return null;
+    const buf = await client.downloadToBuffer();
+    return JSON.parse(buf.toString("utf8")) as T;
+  } catch (err) {
+    console.error(`[blob] 读取失败 ${path}:`, err);
+    return null;
+  }
+}
+
 /** 删除某 blobPrefix 下的所有 blob。返回删除数量；未配置/出错时返回 0（不抛）。 */
 export async function deleteV4JobBlobs(blobPrefix: string): Promise<number> {
   if (!blobPrefix) return 0;

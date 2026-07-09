@@ -1,13 +1,13 @@
 import { blobWrite } from "../blobV4.js";
 import { shopScanAiConfigured, shopScanChatJson, SHOP_SCAN_AI_MODEL } from "./ai.js";
 import { sampleTranslationPairs, type TranslationPair } from "./translationSamples.js";
-import { insertAiGlossaryEntries, type AiGlossaryEntry } from "./tsfWrite.js";
 import type { ShopLocaleRow } from "./shopContext.js";
 
 /**
- * 阶段4：从已发布语言的既有译文采样「源文→译文」对，AI 归纳应固定翻译的术语，
- * 批量写入 Glossary（status=0 待确认，createdBy='ai-shop-scan'，rangeCode=对应语言）。
- * 无已发布语言或无译文样本则跳过。
+ * 阶段4：从已发布语言的既有译文采样「源文→译文」对，AI 归纳应固定翻译的术语。
+ *
+ * 仅写入扫描 Blob（glossary-raw.json），供 shop-profile 页面展示；
+ * 不写入 Glossary 数据库，避免污染正式术语表。
  */
 
 const GLOSSARY_SAMPLE_MODULES = ["PRODUCT", "COLLECTION"];
@@ -24,9 +24,12 @@ export type GlossaryStageResult = {
   status: "done" | "skipped";
   reason?: string;
   glossaryCount: number;
+  glossarySuggestions: Array<{ locale: string; source: string; target: string }>;
 };
 
 type AiGlossaryResponse = { terms?: Array<{ source?: string; target?: string }> };
+
+type GlossaryTermRow = { source: string; target: string };
 
 export async function runGlossaryStage(args: {
   shop: string;
@@ -47,19 +50,20 @@ export async function runGlossaryStage(args: {
   );
 
   if (publishedTargets.length === 0) {
-    return { status: "skipped", reason: "no_published_targets", glossaryCount: 0 };
+    return { status: "skipped", reason: "no_published_targets", glossaryCount: 0, glossarySuggestions: [] };
   }
   if (!shopScanAiConfigured()) {
-    return { status: "skipped", reason: "ai_not_configured", glossaryCount: 0 };
+    return { status: "skipped", reason: "ai_not_configured", glossaryCount: 0, glossarySuggestions: [] };
   }
 
   const rawLog: Array<{
     locale: string;
     samples: TranslationPair[];
     aiRaw: string;
-    inserted: number;
+    terms: GlossaryTermRow[];
   }> = [];
-  let totalInserted = 0;
+  let totalSuggested = 0;
+  const glossarySuggestions: Array<{ locale: string; source: string; target: string }> = [];
 
   for (const target of publishedTargets) {
     const samples = await sampleTranslationPairs(
@@ -72,7 +76,7 @@ export async function runGlossaryStage(args: {
     await heartbeat();
 
     if (samples.length < 3) {
-      rawLog.push({ locale: target.locale, samples, aiRaw: "", inserted: 0 });
+      rawLog.push({ locale: target.locale, samples, aiRaw: "", terms: [] });
       continue;
     }
 
@@ -97,19 +101,23 @@ export async function runGlossaryStage(args: {
     const { parsed, raw } = await shopScanChatJson<AiGlossaryResponse>(messages);
     await heartbeat();
 
-    const terms = Array.isArray(parsed?.terms) ? parsed!.terms : [];
-    const entries: AiGlossaryEntry[] = terms
+    const terms = (Array.isArray(parsed?.terms) ? parsed!.terms : [])
       .map((t) => ({
-        sourceText: String(t?.source ?? "").trim(),
-        targetText: String(t?.target ?? "").trim(),
-        rangeCode: target.locale,
+        source: String(t?.source ?? "").trim(),
+        target: String(t?.target ?? "").trim(),
       }))
-      .filter((e) => e.sourceText && e.targetText)
+      .filter((e) => e.source && e.target)
       .slice(0, MAX_TERMS_PER_LOCALE);
 
-    const inserted = await insertAiGlossaryEntries(shop, entries);
-    totalInserted += inserted;
-    rawLog.push({ locale: target.locale, samples, aiRaw: raw, inserted });
+    totalSuggested += terms.length;
+    for (const term of terms) {
+      glossarySuggestions.push({
+        locale: target.locale,
+        source: term.source,
+        target: term.target,
+      });
+    }
+    rawLog.push({ locale: target.locale, samples, aiRaw: raw, terms });
     await heartbeat();
   }
 
@@ -117,13 +125,13 @@ export async function runGlossaryStage(args: {
     stage: "glossary",
     shop,
     model: SHOP_SCAN_AI_MODEL,
-    totalInserted,
+    totalSuggested,
     perLocale: rawLog,
     scannedAt: new Date().toISOString(),
   });
 
-  if (totalInserted === 0) {
-    return { status: "skipped", reason: "no_terms", glossaryCount: 0 };
+  if (totalSuggested === 0) {
+    return { status: "skipped", reason: "no_terms", glossaryCount: 0, glossarySuggestions: [] };
   }
-  return { status: "done", glossaryCount: totalInserted };
+  return { status: "done", glossaryCount: totalSuggested, glossarySuggestions };
 }
