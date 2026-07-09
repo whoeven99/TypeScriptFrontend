@@ -1,5 +1,4 @@
 import prisma from "../../../db.server";
-import { CheckUserExists } from "~/api/JavaServer";
 import { ensureAccount } from "../account/ensureAccount.server";
 import { BILLING_SYSTEM, type BillingSystem } from "../types.server";
 
@@ -7,17 +6,15 @@ export type BindingResolution = {
   billingSystem: BillingSystem;
   /** 本次是否新建了 binding（首次判定）。 */
   bound: boolean;
-  /** 判定是否落库（Java 未确定时为 false，本次按 legacy 处理但不锁定）。 */
+  /** 判定是否落库。 */
   persisted: boolean;
 };
 
 /**
  * 判定并锁定某 shop 的账本归属（幂等）。
- * - 已有 binding：直接返回，不再问 Java。
- * - 无 binding：调 Java /user/exists。
- *   - 查无此 shop（legacy=false）→ 绑定 tsf：仅 ensureAccount（试用改由订阅 trialDays 承载，不单发 trialCredits）。
- *   - 已存在（legacy=true）→ 绑定 legacy。
- *   - Java 未确定（调用失败）→ 不写 binding，本次按 legacy 处理，下次进入重试。
+ * - 已有 binding：直接返回。
+ * - 无 binding：默认绑定 tsf，并 ensureAccount（不再问 Java /user/exists）。
+ *   存量付费用户已由 migration:billing 迁完；新装/未判定店一律走新账本。
  */
 export async function resolveBillingBinding(
   shop: string,
@@ -33,37 +30,23 @@ export async function resolveBillingBinding(
     };
   }
 
-  const check = await CheckUserExists({ shop });
-  if (!check?.success) {
-    // Java 未确定：不锁定，避免把潜在老用户永久错绑到新系统
-    return {
-      billingSystem: BILLING_SYSTEM.LEGACY,
-      bound: false,
-      persisted: false,
-    };
-  }
-
-  const isLegacy = Boolean(check.response?.legacy);
-  const billingSystem: BillingSystem = isLegacy
-    ? BILLING_SYSTEM.LEGACY
-    : BILLING_SYSTEM.TSF;
-
   await prisma.shopBillingBinding.upsert({
     where: { shop },
     create: {
       shop,
-      billingSystem,
-      boundReason: isLegacy ? "exists_in_java" : "not_found_in_java",
+      billingSystem: BILLING_SYSTEM.TSF,
+      boundReason: "default_tsf",
     },
     update: {},
   });
 
-  if (billingSystem === BILLING_SYSTEM.TSF) {
-    // 试用由订阅 trialDays 承载（不再单发 trialCredits）：仅建空账户。
-    await ensureAccount(shop);
-  }
+  await ensureAccount(shop);
 
-  return { billingSystem, bound: true, persisted: true };
+  return {
+    billingSystem: BILLING_SYSTEM.TSF,
+    bound: true,
+    persisted: true,
+  };
 }
 
 /** 读取 binding；无则返回 null（不触发判定）。 */
