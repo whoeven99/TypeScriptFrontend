@@ -835,6 +835,7 @@
   "v4.coverage.noTargetLanguages": "暂无目标语言，请先在语言页添加。",
   "v4.coverage.refreshing": "刷新中…",
   "v4.coverage.viewAll": "查看全部 {{count}} 种",
+  "v4.coverage.notScanned": "未统计",
   "v4.coverage.cacheNotReady": "统计缓存未就绪，点击「刷新统计」从 Shopify 计算",
   "v4.createTask.title": "新建翻译任务",
   "v4.createTask.creating": "创建中…",
