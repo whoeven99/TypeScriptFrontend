@@ -17,8 +17,6 @@ import {
   SendSubscribeSuccessEmail,
   Uninstall,
   UpdateUserPlan,
-  WebhookDefaultLanguage,
-  WebhookDefaultTheme,
 } from "~/api/JavaServer";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -249,30 +247,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return new Response(null, { status: 200 });
       }
       break;
-    case "THEMES_PUBLISH":
-      try {
-        const JSONData = JSON.stringify(payload);
-        await WebhookDefaultTheme({
-          shop,
-          JSONData,
-        });
-        break;
-      } catch (error) {
-        console.error("Error THEMES_PUBLISH:", error);
-        return new Response(null, { status: 200 });
-      }
-    case "SHOP_UPDATE":
-      try {
-        const JSONData = JSON.stringify(payload);
-        await WebhookDefaultLanguage({
-          shop,
-          JSONData,
-        });
-        break;
-      } catch (error) {
-        console.error("Error SHOP_UPDATE:", error);
-        return new Response(null, { status: 200 });
-      }
     case "CUSTOMERS_DATA_REQUEST":
       // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
       break;

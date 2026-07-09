@@ -278,18 +278,6 @@ export const queryShopBaseConfigData = async ({
           moneyWithCurrencyFormat
         }
       }
-      themes(roles: MAIN, first: 1) {
-        nodes {
-          id
-          name
-        }
-      }
-      shopLocales(published: true) {
-        name
-        locale
-        primary
-        published
-      }
     }`;
 
     const response = await axios({
@@ -314,8 +302,6 @@ export const queryShopBaseConfigData = async ({
       return null;
     }
     console.log(`${shop} shopData: `, res?.shop);
-    console.log(`${shop} themesData: `, res?.themes?.nodes?.[0]);
-    console.log(`${shop} shopLocalesData: `, res?.shopLocales);
     return res;
   } catch (error) {
     console.error(`${shop} Error queryShopBaseConfigData: `, error);

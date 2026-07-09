@@ -42,40 +42,6 @@ async function javaApiRequest<F = null>(
   }
 }
 
-//SHOP_UPDATE触发通知
-export const WebhookDefaultLanguage = async ({
-  shop,
-  JSONData,
-}: {
-  shop: string;
-  JSONData: string;
-}) => {
-  return javaApiRequest(`${shop} WebhookDefaultLanguage`, {
-    url: `${process.env.SERVER_URL}/user/webhookDefaultLanguage?shopName=${shop}`,
-    method: "POST",
-    data: {
-      languageData: JSONData,
-    },
-  });
-};
-
-//THEMES_PUBLISH触发通知
-export const WebhookDefaultTheme = async ({
-  shop,
-  JSONData,
-}: {
-  shop: string;
-  JSONData: string;
-}) => {
-  return javaApiRequest(`${shop} WebhookDefaultTheme`, {
-    url: `${process.env.SERVER_URL}/user/webhookDefaultTheme?shopName=${shop}`,
-    method: "POST",
-    data: {
-      themeData: JSONData,
-    },
-  });
-};
-
 export const IsInFreePlanTime = async ({
   shop,
   server,
@@ -483,22 +449,12 @@ export const UserInitialization = async ({
         : shopOwnerName;
     const lastName =
       lastSpaceIndex > 0 ? shopOwnerName.substring(lastSpaceIndex + 1) : "";
-    const themesData = shopData?.themes?.nodes?.[0];
-    const defaultThemeId = themesData?.id;
-    const defaultThemeName = themesData?.name;
-    const defaultLanguageData = shopData?.shopLocales?.find(
-      (item: any) => item?.primary,
-    )?.locale;
-
     console.log(`${shop} UserInitialization: `, {
       accessToken: accessToken,
       email: shopEmail,
       firstName: firstName || "",
       lastName: lastName || "",
       userTag: shopOwnerName,
-      defaultThemeId,
-      defaultThemeName,
-      defaultLanguageData,
     });
 
     await axios({
@@ -510,9 +466,6 @@ export const UserInitialization = async ({
         firstName: firstName || "",
         lastName: lastName || "",
         userTag: shopOwnerName,
-        defaultThemeId,
-        defaultThemeName,
-        defaultLanguageData,
       },
     });
   } catch (error) {
