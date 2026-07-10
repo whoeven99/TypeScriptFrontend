@@ -190,7 +190,11 @@ export async function reconcileTsfSubscriptionForShop(
   }
 
   const session = await prisma.session.findFirst({
-    where: { shop, isOnline: false, accessToken: { not: null } },
+    where: {
+      shop,
+      isOnline: false,
+      NOT: { accessToken: null },
+    },
     select: { accessToken: true },
   });
   const accessToken = session?.accessToken;
