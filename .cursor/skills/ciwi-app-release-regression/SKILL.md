@@ -132,7 +132,6 @@ description: >-
 |----|------|----------|
 | R8-1 | `/app/pricing` 页面与当前 plan 展示 | 与 Java `GetUserSubscriptionPlan` 一致 |
 | R8-2 | 测试店模拟 `app/uninstalled`（仅专用店） | Session 清理、Java `Uninstall` |
-| R8-3 | `themes/publish` webhook | Java `WebhookDefaultTheme` 不报错 |
 
 ### R9 — 国际化与导航
 

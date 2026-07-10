@@ -64,6 +64,51 @@ const rtlLanguages = [
 ];
 const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
+function normalizeLocaleCode(locale) {
+  return String(locale || "")
+    .trim()
+    .replace(/_/g, "-")
+    .toLowerCase();
+}
+
+function resolveAvailableLanguage(locale, availableLanguages) {
+  const normalized = normalizeLocaleCode(locale);
+  if (!normalized || !Array.isArray(availableLanguages) || !availableLanguages.length) {
+    return "";
+  }
+
+  const exactMatch = availableLanguages.find(
+    (item) => normalizeLocaleCode(item) === normalized,
+  );
+  if (exactMatch) return exactMatch;
+
+  const base = normalized.split("-")[0];
+  return (
+    availableLanguages.find((item) => {
+      const current = normalizeLocaleCode(item);
+      return current === base || current.split("-")[0] === base;
+    }) || ""
+  );
+}
+
+function detectRuntimeLanguage(ciwiBlock, availableLanguages) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  const signals = [
+    window.Shopify?.locale,
+    document.documentElement.lang,
+    languageSelect?.value,
+    languageInput?.value,
+  ];
+
+  for (const signal of signals) {
+    const resolved = resolveAvailableLanguage(signal, availableLanguages);
+    if (resolved) return resolved;
+  }
+
+  return "";
+}
+
 async function ciwiOnload() {
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
@@ -80,22 +125,25 @@ async function ciwiOnload() {
   // 按页面类型门控翻译请求，避免 cart/collection 等页面发起无关 API 调用
   const pageContext = getCiwiPageContext(ciwiBlock);
 
+  const runStorefrontTranslationTasks = () => {
+    const tasks = [];
+    if (pageContext.isProductPage) {
+      tasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
+    }
+    if (pageContext.hasPageFly) {
+      tasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
+    }
+    if (pageContext.isHomePage) {
+      tasks.push(HomeImageTranslate(blockId));
+    }
+    if (tasks.length > 0) {
+      Promise.allSettled(tasks).catch(() => {});
+    }
+  };
+
   // 主题 custom liquid 文本：全站需要
   CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
-
-  const translationTasks = [];
-  if (pageContext.isProductPage) {
-    translationTasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
-  }
-  if (pageContext.hasPageFly) {
-    translationTasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
-  }
-  if (pageContext.isHomePage) {
-    translationTasks.push(HomeImageTranslate(blockId));
-  }
-  if (translationTasks.length > 0) {
-    Promise.allSettled(translationTasks).catch(() => {});
-  }
+  runStorefrontTranslationTasks();
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
@@ -437,6 +485,48 @@ async function ciwiOnload() {
       })
       .catch(() => {});
   }
+
+  let lastRuntimeLanguage = detectRuntimeLanguage(ciwiBlock, availableLanguages);
+
+  const syncRuntimeLanguage = () => {
+    const nextLanguage = detectRuntimeLanguage(ciwiBlock, availableLanguages);
+    if (!nextLanguage) return;
+    if (
+      normalizeLocaleCode(nextLanguage) ===
+      normalizeLocaleCode(lastRuntimeLanguage)
+    ) {
+      return;
+    }
+
+    lastRuntimeLanguage = nextLanguage;
+
+    const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+    const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+    if (languageInput) {
+      languageInput.value = nextLanguage;
+      languageInput.setAttribute("value", nextLanguage);
+    }
+    if (languageSelect && languageSelect.value !== nextLanguage) {
+      languageSelect.value = nextLanguage;
+    }
+
+    updateDisplayText(
+      configData.languageSelector,
+      configData.currencySelector,
+      ciwiBlock,
+    );
+    runStorefrontTranslationTasks();
+  };
+
+  const languageAttrObserver = new MutationObserver(syncRuntimeLanguage);
+  languageAttrObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["lang"],
+  });
+
+  window.addEventListener("pageshow", syncRuntimeLanguage);
+  window.addEventListener("popstate", syncRuntimeLanguage);
+  window.setInterval(syncRuntimeLanguage, 1200);
 
 }
 

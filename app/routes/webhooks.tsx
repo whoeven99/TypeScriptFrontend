@@ -17,8 +17,6 @@ import {
   SendSubscribeSuccessEmail,
   Uninstall,
   UpdateUserPlan,
-  WebhookDefaultLanguage,
-  WebhookDefaultTheme,
 } from "~/api/JavaServer";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -53,7 +51,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         // 新系统（tsf）用户：入账 Turso 加量包池，不走 Java。
         if (await isTsfBillingShop(shop)) {
-          await handleTsfPurchaseWebhook({ shop, payload });
+          await handleTsfPurchaseWebhook({
+            shop,
+            accessToken: session?.accessToken,
+            payload,
+          });
           break;
         }
         if (payload) {
@@ -249,30 +251,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return new Response(null, { status: 200 });
       }
       break;
-    case "THEMES_PUBLISH":
-      try {
-        const JSONData = JSON.stringify(payload);
-        await WebhookDefaultTheme({
-          shop,
-          JSONData,
-        });
-        break;
-      } catch (error) {
-        console.error("Error THEMES_PUBLISH:", error);
-        return new Response(null, { status: 200 });
-      }
-    case "SHOP_UPDATE":
-      try {
-        const JSONData = JSON.stringify(payload);
-        await WebhookDefaultLanguage({
-          shop,
-          JSONData,
-        });
-        break;
-      } catch (error) {
-        console.error("Error SHOP_UPDATE:", error);
-        return new Response(null, { status: 200 });
-      }
     case "CUSTOMERS_DATA_REQUEST":
       // Shopify GDPR compliance: acknowledge receipt, no personal data stored on our side
       break;

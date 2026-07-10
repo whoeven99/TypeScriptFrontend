@@ -56,6 +56,11 @@ export function CoverageCard({
 }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const displayLocales = useMemo(
+    () => locales.filter((row) => !isCoverageUnscanned(row)),
+    [locales],
+  );
+  const unscannedCount = locales.length - displayLocales.length;
 
   const toggleExpanded = () => {
     setExpanded((prev) => {
@@ -70,13 +75,17 @@ export function CoverageCard({
     [locales],
   );
   const lowCoverageCount = useMemo(
-    () => locales.filter((row) => (row.percent ?? 0) < 100).length,
-    [locales],
+    () =>
+      displayLocales.filter((row) => (row.percent ?? 0) < 100)
+        .length,
+    [displayLocales],
   );
 
   if (compact) {
-    const hasMore = locales.length > COVERAGE_PREVIEW_COUNT;
-    const visibleLocales = expanded ? locales : locales.slice(0, COVERAGE_PREVIEW_COUNT);
+    const hasMore = displayLocales.length > COVERAGE_PREVIEW_COUNT;
+    const visibleLocales = expanded
+      ? displayLocales
+      : displayLocales.slice(0, COVERAGE_PREVIEW_COUNT);
 
     return (
       <div
@@ -144,7 +153,7 @@ export function CoverageCard({
 
         <style>{AUTO_BADGE_HOVER_CSS}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {visibleLocales.length === 0 ? (
+          {locales.length === 0 ? (
             <div style={{ fontSize: 13, color: v4Colors.textMuted }}>
               {t("v4.coverage.noTargetLanguages")}
             </div>
@@ -153,6 +162,7 @@ export function CoverageCard({
               <CompactCoverageRow key={row.locale} row={row} />
             ))
           )}
+          {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
         </div>
 
         {hasMore ? (
@@ -182,7 +192,7 @@ export function CoverageCard({
           >
             {expanded
               ? t("v4.tasks.collapse")
-              : t("v4.coverage.viewAll", { count: locales.length })}
+              : t("v4.coverage.viewAll", { count: displayLocales.length })}
             <span className={`v4-caret${expanded ? " v4-caret--open" : ""}`} aria-hidden>
               ⌄
             </span>
@@ -228,8 +238,9 @@ export function CoverageCard({
         {locales.length === 0 ? (
           <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{t("v4.coverage.noTargetLanguages")}</div>
         ) : (
-          locales.map((row) => <CoverageRow key={row.locale} row={row} />)
+          displayLocales.map((row) => <CoverageRow key={row.locale} row={row} />)
         )}
+        {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
       </div>
     </div>
   );
@@ -265,10 +276,33 @@ function HeadMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function isCoverageUnscanned(row: LocaleCoverageRow): boolean {
+  return row.cacheMissing && row.total === 0;
+}
+
+function UnscannedCoverageSummary({ count }: { count: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      style={{
+        fontSize: 11.5,
+        color: v4Colors.textMuted,
+        lineHeight: 1.4,
+      }}
+    >
+      {t("v4.coverage.unscannedSummary", { count })}
+    </div>
+  );
+}
+
 function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
+  const { t } = useTranslation();
   const percent = row.percent;
+  const unscanned = isCoverageUnscanned(row);
+  const displayPercent = percent ?? 0;
   const barColor = coverageBarColor(percent);
-  const width = percent != null ? `${percent}%` : "0%";
+  const width = `${displayPercent}%`;
   const label = localeShortName(row.locale, row.label);
 
   return (
@@ -317,14 +351,14 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
         </span>
         <span
           style={{
-            fontFamily: v4Colors.mono,
-            fontWeight: 700,
+            fontFamily: unscanned ? "inherit" : v4Colors.mono,
+            fontWeight: unscanned ? 600 : 700,
             fontSize: 11.5,
-            color: v4Colors.text,
+            color: unscanned ? v4Colors.textMuted : v4Colors.text,
             flexShrink: 0,
           }}
         >
-          {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}
+          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
         </span>
       </div>
       <div
@@ -361,8 +395,10 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
   }, [row.autoTranslate, row.lastAutoUpdateAt, row.nextAutoUpdateAt]);
 
   const percent = row.percent;
+  const unscanned = isCoverageUnscanned(row);
+  const displayPercent = percent ?? 0;
   const barColor = coverageBarColor(percent);
-  const width = percent != null ? `${percent}%` : "0%";
+  const width = `${displayPercent}%`;
   const label = localeShortName(row.locale, row.label);
   const lastHint =
     row.autoTranslate && nowMs != null
@@ -394,8 +430,16 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
             <AutoTranslateBadge lastUpdateHint={lastHint} nextUpdateHint={nextHint} />
           ) : null}
         </span>
-        <span style={{ fontFamily: v4Colors.mono, fontWeight: 700, fontSize: 12.5, color: v4Colors.text, flexShrink: 0 }}>
-          {percent != null ? `${percent}%` : row.cacheMissing ? "—" : "0%"}
+        <span
+          style={{
+            fontFamily: unscanned ? "inherit" : v4Colors.mono,
+            fontWeight: unscanned ? 600 : 700,
+            fontSize: 12.5,
+            color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            flexShrink: 0,
+          }}
+        >
+          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
         </span>
       </div>
       <div style={{ height: 6, borderRadius: 4, background: v4Colors.progressTrack, overflow: "hidden" }}>
@@ -409,7 +453,7 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
           }}
         />
       </div>
-      {row.cacheMissing && row.total === 0 ? (
+      {unscanned ? (
         <div style={{ fontSize: 11, color: v4Colors.textMuted, marginTop: 4 }}>
           {t("v4.coverage.cacheNotReady")}
         </div>

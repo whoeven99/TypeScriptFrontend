@@ -520,6 +520,11 @@ export async function countShopTranslatingJobs(shopName: string): Promise<number
   return countShopJobsInStatus(shopName, "TRANSLATING");
 }
 
+/** Count jobs currently in WRITEBACK for a shop (serial writeback per shop). */
+export async function countShopWritingBackJobs(shopName: string): Promise<number> {
+  return countShopJobsInStatus(shopName, "WRITING_BACK");
+}
+
 /** Oldest TRANSLATE_QUEUED jobs for a shop (serial translate queue). */
 export async function findTranslateQueuedJobsForShop(
   shopName: string,
@@ -534,6 +539,32 @@ export async function findTranslateQueuedJobsForShop(
           parameters: [
             { name: "@shopName", value: shopName },
             { name: "@status", value: "TRANSLATE_QUEUED" },
+            { name: "@limit", value: limit },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources;
+  } catch {
+    return [];
+  }
+}
+
+/** Oldest WRITEBACK_QUEUED jobs for a shop (serial writeback queue). */
+export async function findWritebackQueuedJobsForShop(
+  shopName: string,
+  limit = 1,
+): Promise<TranslationV4Job[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<TranslationV4Job>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shopName AND c.status = @status ORDER BY c.createdAt ASC OFFSET 0 LIMIT @limit",
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@status", value: "WRITEBACK_QUEUED" },
             { name: "@limit", value: limit },
           ],
         },

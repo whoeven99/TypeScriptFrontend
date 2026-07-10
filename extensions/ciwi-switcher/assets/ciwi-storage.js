@@ -44,12 +44,36 @@ export async function useCacheThenRefresh(
   key,
   fetcher,
   ttlMs = 1000 * 60 * 60,
+  options = {},
 ) {
+  const { refreshOnCacheHit = true, refetchWhenCachedEmpty = false } = options;
   const cached = getWithTTL(key);
   if (!cached) {
     const fresh = await fetcher();
     if (fresh !== null && fresh !== undefined) setWithTTL(key, fresh, ttlMs);
     return fresh;
   }
+
+  const cachedResponse = cached?.response;
+  const isCachedEmptyResponse =
+    Array.isArray(cachedResponse) && cachedResponse.length === 0;
+
+  if (refetchWhenCachedEmpty && isCachedEmptyResponse) {
+    const fresh = await fetcher();
+    if (fresh !== null && fresh !== undefined) setWithTTL(key, fresh, ttlMs);
+    return fresh;
+  }
+
+  if (refreshOnCacheHit) {
+    Promise.resolve()
+      .then(fetcher)
+      .then((fresh) => {
+        if (fresh !== null && fresh !== undefined) setWithTTL(key, fresh, ttlMs);
+      })
+      .catch((error) => {
+        console.warn(`useCacheThenRefresh background refresh failed for ${key}`, error);
+      });
+  }
+
   return cached;
 }

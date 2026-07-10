@@ -11,6 +11,7 @@ import {
   asCacheableTranslationResponse,
   buildTranslationCacheKey,
   CIWI_TRANSLATION_TTL_MS,
+  resolveStorefrontProductId,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
 import { persistManualLocalizationPreference } from "./ciwi-utils.js";
@@ -532,6 +533,187 @@ export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
   });
 }
 
+function unmonitorImage(img) {
+  const monitored = monitoredImages.get(img);
+  monitored?.observer.disconnect();
+  monitoredImages.delete(img);
+}
+
+function rememberOriginalPictureSources(img) {
+  if (!(img instanceof HTMLImageElement)) return;
+  const picture = img.closest("picture");
+  picture?.querySelectorAll("source").forEach((source) => {
+    if ("ciwiOriginalSrcset" in source.dataset) return;
+    source.dataset.ciwiOriginalSrcset =
+      source.getAttribute("srcset") || source.srcset || "";
+  });
+}
+
+function restoreOriginalPictureSources(img) {
+  if (!(img instanceof HTMLImageElement)) return;
+  const picture = img.closest("picture");
+  picture?.querySelectorAll("source").forEach((source) => {
+    if (!("ciwiOriginalSrcset" in source.dataset)) return;
+    const originalSrcset = source.dataset.ciwiOriginalSrcset || "";
+    if (originalSrcset) {
+      source.srcset = originalSrcset;
+      source.setAttribute("srcset", originalSrcset);
+    } else {
+      source.srcset = "";
+      source.removeAttribute("srcset");
+    }
+  });
+}
+
+function rememberOriginalImageState(img) {
+  if (!(img instanceof HTMLImageElement)) return;
+
+  if (!("ciwiOriginalSrc" in img.dataset)) {
+    img.dataset.ciwiOriginalSrc =
+      img.getAttribute("src") || img.currentSrc || img.src || "";
+  }
+  if (!("ciwiOriginalSrcset" in img.dataset)) {
+    img.dataset.ciwiOriginalSrcset =
+      img.getAttribute("srcset") || img.srcset || "";
+  }
+  if (!("ciwiOriginalAlt" in img.dataset)) {
+    img.dataset.ciwiOriginalAlt = img.getAttribute("alt") || img.alt || "";
+  }
+
+  rememberOriginalPictureSources(img);
+}
+
+function restoreOriginalImageState(img) {
+  if (!(img instanceof HTMLImageElement)) return;
+  if (
+    !("ciwiOriginalSrc" in img.dataset) &&
+    !("ciwiOriginalSrcset" in img.dataset) &&
+    !("ciwiOriginalAlt" in img.dataset)
+  ) {
+    return;
+  }
+
+  unmonitorImage(img);
+
+  if ("ciwiOriginalSrc" in img.dataset) {
+    const originalSrc = img.dataset.ciwiOriginalSrc || "";
+    if (originalSrc) {
+      img.src = originalSrc;
+      img.setAttribute("src", originalSrc);
+    } else {
+      img.removeAttribute("src");
+    }
+  }
+
+  if ("ciwiOriginalSrcset" in img.dataset) {
+    const originalSrcset = img.dataset.ciwiOriginalSrcset || "";
+    if (originalSrcset) {
+      img.srcset = originalSrcset;
+      img.setAttribute("srcset", originalSrcset);
+    } else {
+      img.srcset = "";
+      img.removeAttribute("srcset");
+    }
+  }
+
+  if ("ciwiOriginalAlt" in img.dataset) {
+    const originalAlt = img.dataset.ciwiOriginalAlt || "";
+    img.alt = originalAlt;
+    img.setAttribute("alt", originalAlt);
+  }
+
+  restoreOriginalPictureSources(img);
+}
+
+function restoreTranslatedImages() {
+  document.querySelectorAll("img").forEach((img) => {
+    restoreOriginalImageState(img);
+  });
+}
+
+function getImageMatchCandidates(img) {
+  if (!(img instanceof HTMLImageElement)) return [];
+
+  const candidates = [
+    img.currentSrc,
+    img.src,
+    img.getAttribute("src"),
+    img.srcset,
+    img.getAttribute("srcset"),
+    img.getAttribute("data-src"),
+    img.getAttribute("data-srcset"),
+  ].filter(Boolean);
+
+  return [...new Set(candidates)];
+}
+
+function findMatchedImageEntry(img, keyedEntries) {
+  if (!(img instanceof HTMLImageElement) || !Array.isArray(keyedEntries)) {
+    return null;
+  }
+
+  const candidates = getImageMatchCandidates(img);
+  if (candidates.length === 0) return null;
+
+  return (
+    keyedEntries.find(({ key }) =>
+      candidates.some((candidate) => candidate.includes(key)),
+    ) || null
+  );
+}
+
+function syncPictureSources(img, afterUrl) {
+  if (!(img instanceof HTMLImageElement) || !afterUrl) return;
+
+  const picture = img.closest("picture");
+  picture?.querySelectorAll("source").forEach((source) => {
+    source.srcset = afterUrl;
+    source.setAttribute("srcset", afterUrl);
+  });
+}
+
+function applyTranslatedImage(img, item) {
+  if (!(img instanceof HTMLImageElement) || !item) return;
+
+  rememberOriginalImageState(img);
+
+  if (item.imageAfterUrl) {
+    img.src = item.imageAfterUrl;
+    img.setAttribute("src", item.imageAfterUrl);
+    img.srcset = item.imageAfterUrl;
+    img.setAttribute("srcset", item.imageAfterUrl);
+    syncPictureSources(img, item.imageAfterUrl);
+  }
+
+  if (item.altAfterTranslation) {
+    img.alt = item.altAfterTranslation;
+    img.setAttribute("alt", item.altAfterTranslation);
+  }
+
+  monitorImage(
+    img,
+    item?.imageAfterUrl,
+    item?.imageAfterUrl,
+    item?.altAfterTranslation,
+  );
+}
+
+function processAddedImageNode(node, keyedEntries) {
+  if (!(node instanceof Element)) return;
+
+  const imageNodes = node instanceof HTMLImageElement
+    ? [node]
+    : Array.from(node.querySelectorAll("img"));
+
+  imageNodes.forEach((img) => {
+    const matched = findMatchedImageEntry(img, keyedEntries);
+    if (!matched?.item) return;
+    applyTranslatedImage(img, matched.item);
+  });
+}
+
+let _dynamicImageObserver = null;
+
 /**
  * 把图片翻译响应预处理成 [{ key, item }]：
  * key 只从 imageBeforeUrl 解析一次，避免在图片×条目的双重循环里反复 split。
@@ -562,6 +744,8 @@ export function initProductImgObserver({
   const keyedEntries = buildImageKeyEntries(translateSourceArray, languageCode);
   if (keyedEntries.length === 0) return;
 
+  _dynamicImageObserver?.disconnect();
+
   // 只监控图片相关节点的变化
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
@@ -569,38 +753,8 @@ export function initProductImgObserver({
         continue;
 
       mutation.addedNodes.forEach((node) => {
-        // 只处理图片元素
-        if (!(node instanceof HTMLImageElement)) return;
-
-        const { src = "", srcset = "" } = node;
-        if (!src && !srcset) return;
-
-        // 在预计算的 key 列表中查找匹配项
-        const matched = keyedEntries.find(
-          ({ key }) => src.includes(key) || srcset.includes(key),
-        );
-        const afterUrl = matched?.item?.imageAfterUrl;
-
-        if (afterUrl) {
-          // 延迟执行替换
-          observer.disconnect(); // 暂停观察以防止重复触发
-          // 预加载替换图，等加载完成再替换 DOM
-          const newImg = new Image();
-          newImg.src = afterUrl;
-          // 复制原节点的属性
-          newImg.className = node.className;
-          newImg.alt = node.alt || "";
-          newImg.style.cssText = node.style.cssText;
-          // 替换节点
-          node.replaceWith(newImg);
-          // 恢复监听
-          observer.observe(document.body, { childList: true, subtree: true });
-
-          newImg.onerror = () => {
-            console.warn("❌ 图片加载失败:", afterUrl);
-            observer.observe(document.body, { childList: true, subtree: true });
-          };
-        }
+        if (!(node instanceof Element)) return;
+        processAddedImageNode(node, keyedEntries);
       });
     }
   });
@@ -610,14 +764,14 @@ export function initProductImgObserver({
     childList: true,
     subtree: true,
   });
+  _dynamicImageObserver = observer;
 }
 
 /**
  * 根据数据库数据替换网页图片
  */
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
-  const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
-  const productId = productIdInput?.value?.trim();
+  const productId = resolveStorefrontProductId(ciwiBlock);
   if (!productId) return;
 
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
@@ -629,7 +783,7 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
     productId,
     language,
   ]);
-  const productImageData = await useCacheThenRefresh(
+  let productImageData = await useCacheThenRefresh(
     cacheKey,
     async () =>
       asCacheableTranslationResponse(
@@ -641,7 +795,34 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    { refetchWhenCachedEmpty: true },
   );
+
+  if (!productImageData?.response?.length) {
+    const shopCacheKey = buildTranslationCacheKey("shop_images", [
+      shop.value,
+      language,
+    ]);
+    const shopImageData = await useCacheThenRefresh(
+      shopCacheKey,
+      async () =>
+        asCacheableTranslationResponse(
+          await GetShopImageData({
+            shopName: shop.value,
+            blockId,
+            languageCode: language,
+          }),
+        ),
+      CIWI_TRANSLATION_TTL_MS,
+      { refetchWhenCachedEmpty: true },
+    );
+
+    if (shopImageData?.response?.length) {
+      productImageData = shopImageData;
+    }
+  }
+
+  restoreTranslatedImages();
 
   if (!productImageData?.response?.length) return;
 
@@ -651,28 +832,9 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 
   const imageDomList = document.querySelectorAll("img");
   imageDomList.forEach((img) => {
-    const src = img?.src || "";
-    const srcset = img?.srcset || "";
-    const matched = keyedEntries.find(
-      ({ key }) => src.includes(key) || srcset.includes(key),
-    );
-    if (!matched) return;
-
-    const { item } = matched;
-    if (item?.imageAfterUrl) {
-      img.src = item.imageAfterUrl;
-      img.srcset = item.imageAfterUrl;
-    }
-    if (item?.altAfterTranslation) {
-      img.alt = item.altAfterTranslation;
-    }
-
-    monitorImage(
-      img,
-      item?.imageAfterUrl,
-      item?.imageAfterUrl,
-      item?.altAfterTranslation,
-    );
+    const matched = findMatchedImageEntry(img, keyedEntries);
+    if (!matched?.item) return;
+    applyTranslatedImage(img, matched.item);
   });
 
   initProductImgObserver({
@@ -1363,22 +1525,28 @@ export async function HomeImageTranslate(blockId) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    { refetchWhenCachedEmpty: true },
   );
+
+  restoreTranslatedImages();
+
   if (!translatedImages?.response?.length) {
     return;
   }
-  // Step 3: 替换
-  translatedImages.response.forEach((item) => {
-    const key = item.imageBeforeUrl.split("/files/")[2];
-    document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
-      if (item.imageAfterUrl) {
-        img.src = item.imageAfterUrl;
-        img.srcset = item.imageAfterUrl;
-      }
-      if (item.altAfterTranslation) {
-        img.alt = item.altAfterTranslation;
-      }
-    });
+  const keyedEntries = buildImageKeyEntries(translatedImages.response, language);
+  if (keyedEntries.length === 0) {
+    return;
+  }
+
+  document.querySelectorAll("img").forEach((img) => {
+    const matched = findMatchedImageEntry(img, keyedEntries);
+    if (!matched?.item) return;
+    applyTranslatedImage(img, matched.item);
+  });
+
+  initProductImgObserver({
+    translateSourceArray: translatedImages.response,
+    languageCode: language,
   });
 }
 

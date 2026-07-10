@@ -5,6 +5,36 @@ export function buildTranslationCacheKey(prefix, parts) {
   return `ciwi_${prefix}:${parts.filter(Boolean).join(":")}`;
 }
 
+function normalizeProductId(value) {
+  if (value == null) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  const gidMatch = raw.match(/\/Product\/(\d+)/);
+  if (gidMatch?.[1]) return gidMatch[1];
+  const digitsMatch = raw.match(/\d+/);
+  return digitsMatch?.[0] || "";
+}
+
+export function resolveStorefrontProductId(ciwiBlock) {
+  const readInput = (name) =>
+    ciwiBlock?.querySelector(`input[name="${name}"]`)?.value?.trim() || "";
+
+  const candidates = [
+    readInput("product_id"),
+    window.ShopifyAnalytics?.meta?.product?.id,
+    window.meta?.product?.id,
+    window.Shopify?.Analytics?.meta?.product?.id,
+    window.Shopify?.analytics?.meta?.product?.id,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeProductId(candidate);
+    if (normalized) return normalized;
+  }
+
+  return "";
+}
+
 /**
  * Resolve storefront page context from Liquid hidden inputs with Shopify global fallbacks.
  */
@@ -23,7 +53,7 @@ export function getCiwiPageContext(ciwiBlock) {
     window.Shopify?.theme?.template ||
     "";
 
-  const productId = readInput("product_id");
+  const productId = resolveStorefrontProductId(ciwiBlock);
 
   const isProductPage =
     pageType === "product" ||

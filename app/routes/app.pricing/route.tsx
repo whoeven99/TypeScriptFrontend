@@ -38,6 +38,7 @@ import {
   setUpdateTime,
 } from "~/store/modules/userConfig";
 import type { AppBootstrapJavaData } from "~/server/appBootstrap.server";
+import { isTsfBillingShop } from "~/server/billing/binding/resolveBillingBinding.server";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
@@ -168,15 +169,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const confirmationUrl =
             res?.data?.appPurchaseOneTimeCreate?.confirmationUrl;
 
-          const orderData = await InsertOrUpdateOrder({
-            shop,
-            id: order?.id,
-            amount: order?.price?.amount,
-            name: order?.name,
-            createdAt: order?.createdAt,
-            status: order?.status,
-            confirmationUrl: confirmationUrl,
-          });
+          // tsf 用户入账靠 APP_PURCHASES_ONE_TIME_UPDATE → Turso，不写 Java CharsOrders
+          let orderData: {
+            success: boolean;
+            errorCode?: number;
+            errorMsg?: string;
+            response?: unknown;
+          } = { success: true, response: null };
+          if (!(await isTsfBillingShop(shop))) {
+            orderData = await InsertOrUpdateOrder({
+              shop,
+              id: order?.id,
+              amount: order?.price?.amount,
+              name: order?.name,
+              createdAt: order?.createdAt,
+              status: order?.status,
+              confirmationUrl: confirmationUrl,
+            });
+          }
 
           if (confirmationUrl) {
             throw shopifyRedirect(confirmationUrl, { target: "_top" });
@@ -235,17 +245,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const confirmationUrl =
             res?.data?.appSubscriptionCreate?.confirmationUrl;
 
-          const orderData = await InsertOrUpdateOrder({
-            shop,
-            id: order?.id,
-            amount: payForPlan.yearly
-              ? payForPlan.yearlyPrice
-              : payForPlan.monthlyPrice,
-            name: order?.name,
-            createdAt: order?.createdAt,
-            status: order?.status,
-            confirmationUrl: confirmationUrl,
-          });
+          // tsf 用户入账靠 APP_SUBSCRIPTIONS_UPDATE → Turso，不写 Java CharsOrders
+          let orderData: {
+            success: boolean;
+            errorCode?: number;
+            errorMsg?: string;
+            response?: unknown;
+          } = { success: true, response: null };
+          if (!(await isTsfBillingShop(shop))) {
+            orderData = await InsertOrUpdateOrder({
+              shop,
+              id: order?.id,
+              amount: payForPlan.yearly
+                ? payForPlan.yearlyPrice
+                : payForPlan.monthlyPrice,
+              name: order?.name,
+              createdAt: order?.createdAt,
+              status: order?.status,
+              confirmationUrl: confirmationUrl,
+            });
+          }
 
           if (confirmationUrl) {
             throw shopifyRedirect(confirmationUrl, { target: "_top" });
