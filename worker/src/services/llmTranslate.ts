@@ -2692,66 +2692,6 @@ function listPlanTexts(plan: Extract<FieldPlan, { kind: "list" }>): string[] {
   return texts;
 }
 
-type StructuredLeafOrigin = { kind: "html" | "json"; resourceId: string; key: string };
-
-function leafTextPreview(text: string, maxLen = 80): string {
-  const oneLine = text.replace(/\s+/g, " ").trim();
-  if (oneLine.length <= maxLen) return oneLine;
-  return `${oneLine.slice(0, maxLen)}…(${oneLine.length} chars)`;
-}
-
-function registerStructuredLeaf(
-  origins: Map<string, StructuredLeafOrigin[]>,
-  kind: "html" | "json",
-  resourceId: string,
-  key: string,
-  text: string,
-): void {
-  if (!isTranslatableLeafText(text)) return;
-  const list = origins.get(text) ?? [];
-  list.push({ kind, resourceId, key });
-  origins.set(text, list);
-}
-
-function logStructuredLeafCacheHits(text: string, origins: StructuredLeafOrigin[] | undefined): void {
-  if (!origins?.length) return;
-  const preview = leafTextPreview(text);
-  const seen = new Set<string>();
-  for (const o of origins) {
-    const id = `${o.kind}:${o.resourceId}:${o.key}`;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    console.log(`[llm][${o.kind}-leaf-cache] ${o.resourceId}/${o.key}: "${preview}"`);
-  }
-}
-
-function summarizeStructuredFieldTokens(
-  kind: "html" | "json",
-  plan: FieldPlan,
-  lookup: LookupFn,
-): void {
-  const texts =
-    plan.kind === "html"
-      ? plan.nodeParts.flat()
-      : plan.kind === "json"
-        ? jsonPlanTexts(plan)
-        : [];
-  if (texts.length === 0) return;
-  let tokens = 0;
-  let cacheHits = 0;
-  let llmLeaves = 0;
-  for (const t of texts) {
-    const r = lookup(plan.poolSig, t);
-    if (!r) continue;
-    tokens += r.tokens;
-    if (r.status === "translated" && r.engine === null) cacheHits++;
-    else if (r.status === "translated" && r.engine) llmLeaves++;
-  }
-  console.log(
-    `[llm][${kind}-field-tokens] ${plan.resourceId}/${plan.key}: leaves=${texts.length} cacheHits=${cacheHits} llmLeaves=${llmLeaves} tokens=${tokens}`,
-  );
-}
-
 type LookupFn = (poolSig: string, text: string) => RoutedResult | undefined;
 
 function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
@@ -2822,7 +2762,6 @@ function reconstructPlan(
       value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
     }
     const status = anyFallback ? "fallback" : "translated";
-    summarizeStructuredFieldTokens("html", plan, lookup);
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "json") {
@@ -2881,7 +2820,6 @@ function reconstructPlan(
     applyJsonSlotTranslations(plan.slotPlans, translatedSlots);
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
-    summarizeStructuredFieldTokens("json", plan, lookup);
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
   } else {
     let anyFallback = false;
@@ -2977,7 +2915,6 @@ export async function translateResources(
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
-  const structuredLeafOrigins = new Map<string, StructuredLeafOrigin[]>();
   // orderSig → (unique text → occurrence count across the chunk).
   const pools = new Map<string, Map<string, number>>();
   const addUnit = (order: Engine[], text: string, isHandle = false) => {
@@ -3099,12 +3036,7 @@ export async function translateResources(
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
-      nodeParts.forEach((parts) =>
-        parts.forEach((p) => {
-          addUnit(order, p);
-          registerStructuredLeaf(structuredLeafOrigins, "html", resourceId, f.key, p);
-        }),
-      );
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
       plans.push({
         kind: "html",
         resourceId,
@@ -3145,16 +3077,10 @@ export async function translateResources(
               slotPlans.push({ ...slot });
               continue;
             }
-            nodeParts.forEach((parts) =>
-              parts.forEach((p) => {
-                addUnit(order, p);
-                registerStructuredLeaf(structuredLeafOrigins, "json", resourceId, f.key, p);
-              }),
-            );
+            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
             slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
           } else {
             addUnit(order, slot.text);
-            registerStructuredLeaf(structuredLeafOrigins, "json", resourceId, f.key, slot.text);
             slotPlans.push({ ...slot });
           }
         }
@@ -3299,7 +3225,6 @@ export async function translateResources(
         const text = allTexts[i]!;
         tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
         leafCacheUnits += occ.get(text) ?? 1;
-        logStructuredLeafCacheHits(text, structuredLeafOrigins.get(text));
       }
       if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
       if (tmap.size > 0) {
