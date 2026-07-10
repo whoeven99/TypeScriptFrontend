@@ -184,7 +184,11 @@ export async function runInitWorker(): Promise<void> {
         status: "INIT_QUEUED",
         claimedBy: null,
       });
-      await pushHint("init", { taskId: claimed.id, shopName: claimed.shopName });
+      await pushHint(
+        "init",
+        { taskId: claimed.id, shopName: claimed.shopName },
+        poolKind,
+      );
       return;
     }
     slotHeld = true;
@@ -212,7 +216,7 @@ async function wakeNextInitForShop(shopName: string): Promise<void> {
   if ((await countShopInitializingJobs(shopName)) > 0) return;
   const [next] = await findInitQueuedJobsForShop(shopName, 1);
   if (!next) return;
-  await pushHint("init", { taskId: next.id, shopName });
+  await pushHint("init", { taskId: next.id, shopName }, stagePoolKindForJob(next));
   void runInitWorker().catch((e) =>
     console.error(`[init] wake next failed shop=${shopName}`, e),
   );
@@ -288,8 +292,11 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
         errorStage: null,
         errorMessage: null,
       });
-      await pushHint("init", { taskId: jobId, shopName });
-      console.log(`[init] job=${jobId} shutdown at entry → INIT_QUEUED`);
+      await pushHint(
+        "init",
+        { taskId: jobId, shopName },
+        stagePoolKindForJob(job),
+      );
     }
     return;
   }
@@ -432,9 +439,10 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
       translateUnitTotal: totalUnits,
     });
 
-    await pushHint("translate", { taskId: jobId, shopName });
-    void runTranslateWorker().catch((e) =>
-      console.error(`[init] wake translate failed job=${jobId}`, e),
+    await pushHint(
+      "translate",
+      { taskId: jobId, shopName },
+      stagePoolKindForJob(job),
     );
     console.log(`[init] done job=${jobId} totalItems=${totalItems}`);
   } catch (e) {
@@ -447,7 +455,11 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
         errorMessage: null,
         stageTimings: withStageTiming(job.stageTimings, "INIT", stageStartedAt, new Date().toISOString()),
       });
-      await pushHint("init", { taskId: jobId, shopName });
+      await pushHint(
+        "init",
+        { taskId: jobId, shopName },
+        stagePoolKindForJob(job),
+      );
       console.log(`[init] job=${jobId} yielding for shutdown → INIT_QUEUED`);
       return;
     }
@@ -468,7 +480,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
         `[init] recoverable (${reason}) job=${jobId} requeue in ${delayMs}ms (${next}/${INIT_MAX_REQUEUE})`,
       );
       setTimeout(() => {
-        void pushHint("init", { taskId: jobId, shopName }).then(() =>
+        void pushHint("init", { taskId: jobId, shopName }, stagePoolKindForJob(job)).then(() =>
           runInitWorker().catch((err) =>
             console.error(`[init] requeue wake failed job=${jobId}`, err),
           ),

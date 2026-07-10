@@ -159,7 +159,7 @@ export async function runAutoTranslateScan(): Promise<void> {
           blobPrefix: `tasks/v4/${shop}/${jobId}`,
           createdBy: "auto",
         });
-        await pushHint("init", { taskId: jobId, shopName: shop });
+        await pushHint("init", { taskId: jobId, shopName: shop }, "auto");
         created++;
         console.log(
           `[autoTranslate] 建任务 id=${jobId} shop=${shop} ${source}→${target}`,

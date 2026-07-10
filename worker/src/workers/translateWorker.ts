@@ -147,7 +147,11 @@ export async function runTranslateWorker(): Promise<void> {
         status: "TRANSLATE_QUEUED",
         claimedBy: null,
       });
-      await pushHint("translate", { taskId: claimed.id, shopName: claimed.shopName });
+      await pushHint(
+        "translate",
+        { taskId: claimed.id, shopName: claimed.shopName },
+        poolKind,
+      );
       return;
     }
     slotHeld = true;
@@ -175,7 +179,11 @@ async function wakeNextTranslateForShop(shopName: string): Promise<void> {
   if ((await countShopTranslatingJobs(shopName)) > 0) return;
   const [next] = await findTranslateQueuedJobsForShop(shopName, 1);
   if (!next) return;
-  await pushHint("translate", { taskId: next.id, shopName });
+  await pushHint(
+    "translate",
+    { taskId: next.id, shopName },
+    stagePoolKindForJob(next),
+  );
   void runTranslateWorker().catch((e) =>
     console.error(`[translate] wake next failed shop=${shopName}`, e),
   );
@@ -843,7 +851,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       },
     });
 
-    await pushHint("writeback", { taskId: jobId, shopName });
+    await pushHint(
+      "writeback",
+      { taskId: jobId, shopName },
+      stagePoolKindForJob(job),
+    );
     await setProgress(jobId, {
       translateUnitDone,
       translateUnitTotal,

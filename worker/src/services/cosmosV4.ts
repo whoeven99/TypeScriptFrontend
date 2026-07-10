@@ -595,22 +595,35 @@ export async function heartbeat(shopName: string, jobId: string): Promise<void> 
   }
 }
 
-/** Find pending jobs for a given stage (cross-partition query). */
+/**
+ * Find pending jobs for a given stage (cross-partition query).
+ * pool=manual|auto 时按 taskSource 过滤，保证 Cosmos 兜底扫描也不混池。
+ */
 export async function findPendingJobs(
   queuedStatus: TranslationV4Status,
   limit = 5,
   offset = 0,
+  pool?: "manual" | "auto",
 ): Promise<PendingJobRef[]> {
   try {
+    const poolFilter =
+      pool === "auto"
+        ? " AND c.taskSource = @autoSrc"
+        : pool === "manual"
+          ? " AND (NOT IS_DEFINED(c.taskSource) OR c.taskSource != @autoSrc)"
+          : "";
+    const parameters: Array<{ name: string; value: string | number }> = [
+      { name: "@status", value: queuedStatus },
+      { name: "@offset", value: offset },
+      { name: "@limit", value: limit },
+    ];
+    if (pool) {
+      parameters.push({ name: "@autoSrc", value: TSF_AUTO_TASK_SOURCE });
+    }
     const { resources } = await getContainer()
       .items.query<PendingJobRef>({
-        query:
-          "SELECT c.id, c.shopName, c.taskSource FROM c WHERE c.status = @status ORDER BY c.createdAt ASC OFFSET @offset LIMIT @limit",
-        parameters: [
-          { name: "@status", value: queuedStatus },
-          { name: "@offset", value: offset },
-          { name: "@limit", value: limit },
-        ],
+        query: `SELECT c.id, c.shopName, c.taskSource FROM c WHERE c.status = @status${poolFilter} ORDER BY c.createdAt ASC OFFSET @offset LIMIT @limit`,
+        parameters,
       })
       .fetchAll();
     return resources;
@@ -645,12 +658,13 @@ const BUSY_STATUS_FOR_QUEUE: Partial<
 };
 
 async function pushHintForQueuedJob(
-  job: Pick<TranslationV4Job, "id" | "shopName">,
+  job: Pick<TranslationV4Job, "id" | "shopName" | "taskSource">,
   queuedStatus: TranslationV4Status,
 ): Promise<void> {
   const stage = QUEUED_TO_HINT_STAGE[queuedStatus];
   if (!stage) return;
-  await pushHint(stage, { taskId: job.id, shopName: job.shopName });
+  const pool = isAutoTranslationJob(job) ? "auto" : "manual";
+  await pushHint(stage, { taskId: job.id, shopName: job.shopName }, pool);
 }
 
 export async function countShopJobsInStatus(
@@ -718,9 +732,9 @@ export async function releaseJobsClaimedBySuffix(claimSuffix: string): Promise<n
   for (const [processingStatus, resetStatus] of PROCESSING_TO_QUEUED) {
     try {
       const { resources } = await getContainer()
-        .items.query<Pick<TranslationV4Job, "id" | "shopName" | "metrics">>({
+        .items.query<Pick<TranslationV4Job, "id" | "shopName" | "metrics" | "taskSource">>({
           query:
-            "SELECT c.id, c.shopName, c.metrics FROM c WHERE c.status = @status AND IS_DEFINED(c.claimedBy) AND ENDSWITH(c.claimedBy, @suffix) OFFSET 0 LIMIT 50",
+            "SELECT c.id, c.shopName, c.metrics, c.taskSource FROM c WHERE c.status = @status AND IS_DEFINED(c.claimedBy) AND ENDSWITH(c.claimedBy, @suffix) OFFSET 0 LIMIT 50",
           parameters: [
             { name: "@status", value: processingStatus },
             { name: "@suffix", value: claimSuffix },
@@ -864,7 +878,7 @@ export async function resetStaleJobs(
     try {
       const { resources } = await getContainer()
         .items.query<PendingJobRef>({
-          query: `SELECT c.id, c.shopName FROM c WHERE c.status = @status AND (IS_NULL(c.lastHeartbeat) OR c.lastHeartbeat < @threshold) OFFSET 0 LIMIT 20`,
+          query: `SELECT c.id, c.shopName, c.taskSource FROM c WHERE c.status = @status AND (IS_NULL(c.lastHeartbeat) OR c.lastHeartbeat < @threshold) OFFSET 0 LIMIT 20`,
           parameters: [
             { name: "@status", value: processingStatus },
             { name: "@threshold", value: threshold },
@@ -899,9 +913,9 @@ export async function releaseOrphanedProcessingJobs(
   for (const [processingStatus, resetStatus] of PROCESSING_TO_QUEUED) {
     try {
       const { resources } = await getContainer()
-        .items.query<Pick<TranslationV4Job, "id" | "shopName" | "metrics" | "claimedBy">>({
+        .items.query<Pick<TranslationV4Job, "id" | "shopName" | "metrics" | "claimedBy" | "taskSource">>({
           query: `
-            SELECT c.id, c.shopName, c.metrics, c.claimedBy FROM c
+            SELECT c.id, c.shopName, c.metrics, c.claimedBy, c.taskSource FROM c
             WHERE c.status = @status
               AND (
                 NOT IS_DEFINED(c.claimedBy)
@@ -950,16 +964,23 @@ async function pushDeployWakeHints(): Promise<void> {
     const hintStage = QUEUED_TO_HINT_STAGE[queued];
     if (!hintStage) continue;
 
-    const jobs = await findPendingJobs(queued, 50);
-    const seenShops = new Set<string>();
-    for (const job of jobs) {
-      if (seenShops.has(job.shopName)) continue;
-      if ((await countShopJobsInStatus(job.shopName, busy)) > 0) continue;
-      await pushHint(hintStage, { taskId: job.id, shopName: job.shopName });
-      seenShops.add(job.shopName);
-      console.log(
-        `[deploy-wake] ${hintStage} hint job=${job.id} shop=${job.shopName}`,
-      );
+    // manual 优先唤醒，再 auto；每店每池各推一条
+    for (const pool of ["manual", "auto"] as const) {
+      const jobs = await findPendingJobs(queued, 50, 0, pool);
+      const seenShops = new Set<string>();
+      for (const job of jobs) {
+        if (seenShops.has(job.shopName)) continue;
+        if ((await countShopJobsInStatus(job.shopName, busy)) > 0) continue;
+        await pushHint(
+          hintStage,
+          { taskId: job.id, shopName: job.shopName },
+          pool,
+        );
+        seenShops.add(job.shopName);
+        console.log(
+          `[deploy-wake] ${hintStage}/${pool} hint job=${job.id} shop=${job.shopName}`,
+        );
+      }
     }
   }
 }
