@@ -97,11 +97,19 @@ export function syncCompactSwitcherLayout(ciwiBlock) {
   const currencySelect = ciwiBlock.querySelector(".currency_selector_header");
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   const maxInlineWidth = clampNumber(viewportWidth - 24, 156, 260);
+  const hasUsableFlag = (img) => {
+    if (!(img instanceof HTMLImageElement)) return false;
+    if (img.hidden) return false;
+    const src = img.currentSrc || img.src || "";
+    if (!src || src.startsWith("data:image/gif")) return false;
+    if (window.getComputedStyle(img).display === "none") return false;
+    return true;
+  };
 
   if (mainBox && displayTextElement) {
     const label = displayTextElement.textContent?.trim() || "";
     const textWidth = measureTextWidth(displayTextElement, label);
-    const hasMainFlag = Boolean(mainBoxFlag && !mainBoxFlag.hidden && mainBoxFlag.src);
+    const hasMainFlag = hasUsableFlag(mainBoxFlag);
     const triggerWidth = clampNumber(
       textWidth + (hasMainFlag ? 78 : 48),
       108,
@@ -113,11 +121,7 @@ export function syncCompactSwitcherLayout(ciwiBlock) {
     }
 
     if (selectorBox && selectorBox.dataset.mode === "overlay") {
-      selectorBox.style.width = `${clampNumber(
-        Math.max(triggerWidth, 184),
-        156,
-        maxInlineWidth,
-      )}px`;
+      selectorBox.style.width = `${triggerWidth}px`;
     }
   }
 
@@ -128,9 +132,7 @@ export function syncCompactSwitcherLayout(ciwiBlock) {
         ? languageSelect
         : currencySelect;
     const activeLabel = activeSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
-    const hasLanguageFlag = Boolean(
-      languageSelectorFlag && !languageSelectorFlag.hidden && languageSelectorFlag.src,
-    );
+    const hasLanguageFlag = hasUsableFlag(languageSelectorFlag);
     const directWidthBase = hasLanguageFlag ? 76 : 46;
     const directMinWidth = hasLanguageFlag ? 124 : 104;
     const directWidth = clampNumber(
@@ -424,6 +426,11 @@ export function updateLanguageSelectorFlag(ciwiBlock, flagUrl) {
   }
 
   if (flagUrl) {
+    selectorFlag.addEventListener(
+      "load",
+      () => syncCompactSwitcherLayout(ciwiBlock),
+      { once: true },
+    );
     selectorFlag.src = flagUrl;
     selectorFlag.hidden = false;
     languageSelect.style.paddingLeft = "40px";
@@ -454,6 +461,11 @@ export function renderLanguageFlags(data, ciwiBlock) {
     countryCode &&
     (data.languageSelector || data.currencySelector)
   ) {
+    mainLanguageFlag.addEventListener(
+      "load",
+      () => syncCompactSwitcherLayout(ciwiBlock),
+      { once: true },
+    );
     mainLanguageFlag.src = countryCode;
     mainLanguageFlag.hidden = false;
   }

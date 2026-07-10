@@ -132,7 +132,7 @@
   min-width: 0;
   max-width: min(260px, calc(100vw - 24px));
   position: relative;
-  padding: 0 30px 0 10px;
+  padding: 0 26px 0 10px;
   border-radius: 12px;
   cursor: pointer;
   user-select: none;
@@ -177,7 +177,7 @@
 
 .mainarrow_icon {
   position: absolute;
-  right: 12px;
+  right: 10px;
   transition: transform 0.3s ease;
   width: 12px !important;
   height: 12px !important;
