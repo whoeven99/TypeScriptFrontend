@@ -175,29 +175,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       }
 
-    case !!itemsCount:
-      try {
-        const response = await getItemsCountByLabel({
-          admin,
-          shop,
-          target: itemsCount.target,
-          resourceTypeLabel: itemsCount.resourceType,
-          skipCache: itemsCount.forceRefresh === true,
-        });
-        return { success: true, errorCode: 0, errorMsg: "", response };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail(
-          "Error manage_translation itemsCount",
-          error,
-        );
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-
     case !!translateImage:
       try {
         const { sourceLanguage, targetLanguage, imageUrl, imageId } =
