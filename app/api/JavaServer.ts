@@ -258,6 +258,25 @@ export const GetProductImageData = async ({
   );
 };
 
+export const GetShopImageData = async ({
+  server,
+  shopName,
+  languageCode,
+}: {
+  server: string;
+  shopName: string;
+  languageCode: string;
+}) => {
+  return javaApiRequest(
+    "GetShopImageData",
+    {
+      url: `${server}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+      method: "POST",
+    },
+    { fallback: [] as any[] },
+  );
+};
+
 type SingleTextTranslateArgs = {
   shopName: string;
   source: string;

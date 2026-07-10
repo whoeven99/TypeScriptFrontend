@@ -152,8 +152,17 @@ export async function GetProductImageData({
   languageCode,
 }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: [],
+      };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      `${baseUrl}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -171,10 +180,23 @@ export async function GetProductImageData({
 
 export async function GetShopImageData({ shopName, languageCode, blockId }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: [],
+      };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+      `${baseUrl}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
       {
         method: "POST",
+        body: JSON.stringify({
+          shopName,
+          languageCode,
+        }),
       },
     );
     return data;

@@ -783,7 +783,7 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
     productId,
     language,
   ]);
-  const productImageData = await useCacheThenRefresh(
+  let productImageData = await useCacheThenRefresh(
     cacheKey,
     async () =>
       asCacheableTranslationResponse(
@@ -795,7 +795,32 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    { refetchWhenCachedEmpty: true },
   );
+
+  if (!productImageData?.response?.length) {
+    const shopCacheKey = buildTranslationCacheKey("shop_images", [
+      shop.value,
+      language,
+    ]);
+    const shopImageData = await useCacheThenRefresh(
+      shopCacheKey,
+      async () =>
+        asCacheableTranslationResponse(
+          await GetShopImageData({
+            shopName: shop.value,
+            blockId,
+            languageCode: language,
+          }),
+        ),
+      CIWI_TRANSLATION_TTL_MS,
+      { refetchWhenCachedEmpty: true },
+    );
+
+    if (shopImageData?.response?.length) {
+      productImageData = shopImageData;
+    }
+  }
 
   restoreTranslatedImages();
 
@@ -1500,6 +1525,7 @@ export async function HomeImageTranslate(blockId) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    { refetchWhenCachedEmpty: true },
   );
 
   restoreTranslatedImages();
