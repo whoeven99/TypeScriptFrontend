@@ -77,10 +77,35 @@ export async function pingRedis(): Promise<boolean> {
   }
 }
 
-export const HINT_KEYS = {
+/** Pipeline stages that use auto/manual split hint queues. */
+export type HintPipelineStage = "init" | "translate" | "writeback";
+
+/** 与 stagePool 一致：手动与自动互不抢占；claim 时 manual 优先。 */
+export type HintPool = "manual" | "auto";
+
+/**
+ * 分池 hint key：`translate:v4:hint:{stage}:{manual|auto}`。
+ * 旧的无池后缀 key 仅作部署过渡期 drain，见 LEGACY_HINT_KEYS。
+ */
+export function hintKeyForPool(
+  stage: HintPipelineStage,
+  pool: HintPool,
+): string {
+  return `translate:v4:hint:${stage}:${pool}`;
+}
+
+/** 部署前遗留的混合队列（auto/manual 未拆分）。claim 时仍会 drain，再按 job 归入正确池。 */
+export const LEGACY_HINT_KEYS: Record<HintPipelineStage, string> = {
   init: "translate:v4:hint:init",
   translate: "translate:v4:hint:translate",
   writeback: "translate:v4:hint:writeback",
+};
+
+/** @deprecated 使用 hintKeyForPool；保留给脚本/探测兼容。 */
+export const HINT_KEYS = {
+  init: hintKeyForPool("init", "manual"),
+  translate: hintKeyForPool("translate", "manual"),
+  writeback: hintKeyForPool("writeback", "manual"),
   verify: "translate:v4:hint:verify",
   analysis: "translate:v4:hint:analysis",
 } as const;
@@ -93,11 +118,18 @@ export type AnalysisHintPayload = {
   target?: "profile" | "glossary" | "both";
 };
 
-export async function popHint(
-  stage: keyof typeof HINT_KEYS,
-): Promise<HintPayload | null> {
+/** Worker 自动任务 taskSource；与 cosmosV4.TSF_AUTO_TASK_SOURCE 保持一致。 */
+const AUTO_TASK_SOURCE = "TsFrontend-Auto";
+
+export function hintPoolFromTaskSource(
+  taskSource: string | null | undefined,
+): HintPool {
+  return taskSource === AUTO_TASK_SOURCE ? "auto" : "manual";
+}
+
+async function lpopHint(key: string): Promise<HintPayload | null> {
   try {
-    const raw = await getRedis().lpop(HINT_KEYS[stage]);
+    const raw = await getRedis().lpop(key);
     if (!raw) return null;
     return JSON.parse(raw) as HintPayload;
   } catch {
@@ -105,25 +137,51 @@ export async function popHint(
   }
 }
 
-/** 新任务入队尾（FIFO），LPOP 队头消费，跨店公平；同店串行由 worker claim 保证。 */
+/** 从指定池弹出一条 hint。 */
+export async function popHint(
+  stage: HintPipelineStage,
+  pool: HintPool,
+): Promise<HintPayload | null> {
+  return lpopHint(hintKeyForPool(stage, pool));
+}
+
+/** 弹出遗留混合队列中的一条（部署过渡期）。 */
+export async function popLegacyHint(
+  stage: HintPipelineStage,
+): Promise<HintPayload | null> {
+  return lpopHint(LEGACY_HINT_KEYS[stage]);
+}
+
+/**
+ * 新任务入队尾（FIFO），LPOP 队头消费。
+ * pool 必填：manual / auto 分队列，互不干扰。
+ */
 export async function pushHint(
-  stage: keyof typeof HINT_KEYS,
+  stage: HintPipelineStage,
   payload: HintPayload,
+  pool: HintPool,
 ): Promise<void> {
   try {
-    await getRedis().rpush(HINT_KEYS[stage], JSON.stringify(payload));
+    await getRedis().rpush(
+      hintKeyForPool(stage, pool),
+      JSON.stringify(payload),
+    );
   } catch {
     // best-effort
   }
 }
 
-/** Re-queue at tail so LPOP head can pick a different shop's hint next tick. */
+/** Re-queue at the same pool's tail so LPOP head can pick a different shop next tick. */
 export async function requeueHintTail(
-  stage: keyof typeof HINT_KEYS,
+  stage: HintPipelineStage,
   payload: HintPayload,
+  pool: HintPool,
 ): Promise<void> {
   try {
-    await getRedis().rpush(HINT_KEYS[stage], JSON.stringify(payload));
+    await getRedis().rpush(
+      hintKeyForPool(stage, pool),
+      JSON.stringify(payload),
+    );
   } catch {
     // best-effort
   }

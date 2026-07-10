@@ -65,7 +65,11 @@ export async function runWritebackWorker(): Promise<void> {
         status: "WRITEBACK_QUEUED",
         claimedBy: null,
       });
-      await pushHint("writeback", { taskId: claimed.id, shopName: claimed.shopName });
+      await pushHint(
+        "writeback",
+        { taskId: claimed.id, shopName: claimed.shopName },
+        poolKind,
+      );
       return;
     }
     slotHeld = true;
@@ -95,7 +99,11 @@ async function wakeNextWritebackForShop(shopName: string): Promise<void> {
   if ((await countShopWritingBackJobs(shopName)) > 0) return;
   const [next] = await findWritebackQueuedJobsForShop(shopName, 1);
   if (!next) return;
-  await pushHint("writeback", { taskId: next.id, shopName });
+  await pushHint(
+    "writeback",
+    { taskId: next.id, shopName },
+    stagePoolKindForJob(next),
+  );
   void runWritebackWorker().catch((e) =>
     console.error(`[writeback] wake next failed shop=${shopName}`, e),
   );

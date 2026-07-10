@@ -47,11 +47,23 @@ export function getTranslateV4RedisClient(): Redis {
   return singleton;
 }
 
-/** worker 各阶段的 hint 队列 key。 */
+/** worker 各阶段的 hint 队列 key（manual/auto 分池，与 worker redisV4 一致）。 */
+export type V4HintPool = "manual" | "auto";
+export type V4HintStage = "init" | "translate" | "writeback" | "verify";
+
+export function v4HintKey(
+  stage: V4HintStage,
+  pool: V4HintPool = "manual",
+): string {
+  if (stage === "verify") return "translate:v4:hint:verify";
+  return `translate:v4:hint:${stage}:${pool}`;
+}
+
+/** @deprecated 使用 v4HintKey(stage, pool)；默认指向 manual 池。 */
 export const V4_HINT_KEYS = {
-  init: "translate:v4:hint:init",
-  translate: "translate:v4:hint:translate",
-  writeback: "translate:v4:hint:writeback",
+  init: v4HintKey("init", "manual"),
+  translate: v4HintKey("translate", "manual"),
+  writeback: v4HintKey("writeback", "manual"),
   verify: "translate:v4:hint:verify",
 } as const;
 

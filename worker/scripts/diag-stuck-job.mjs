@@ -138,8 +138,14 @@ for (const k of keystats.slice(0, 8)) {
 }
 
 const hints = [
-  "translate:v4:hint:translate",
+  "translate:v4:hint:init:manual",
+  "translate:v4:hint:init:auto",
   "translate:v4:hint:init",
+  "translate:v4:hint:translate:manual",
+  "translate:v4:hint:translate:auto",
+  "translate:v4:hint:translate",
+  "translate:v4:hint:writeback:manual",
+  "translate:v4:hint:writeback:auto",
   "translate:v4:hint:writeback",
 ];
 for (const hintKey of hints) {

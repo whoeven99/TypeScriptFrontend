@@ -9,7 +9,7 @@ import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
 import {
   getTranslateV4RedisClient,
-  V4_HINT_KEYS,
+  v4HintKey,
 } from "~/server/translateV4/redis.server";
 import {
   TRANSLATION_V4_MODULES,
@@ -92,10 +92,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     createdBy: shopName,
   });
 
-  // 推 hint 让 worker 立即拾取（best-effort）
+  // 推 hint 让 worker 立即拾取（best-effort）；手动任务进 manual 池
   try {
     await getTranslateV4RedisClient().lpush(
-      V4_HINT_KEYS.init,
+      v4HintKey("init", "manual"),
       JSON.stringify({ taskId: jobId, shopName }),
     );
   } catch (err) {
