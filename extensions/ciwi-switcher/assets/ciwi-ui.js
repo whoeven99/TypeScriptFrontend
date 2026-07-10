@@ -15,7 +15,7 @@ import {
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
 import { persistManualLocalizationPreference } from "./ciwi-utils.js";
-import { transformPrices } from "./ciwi-utils.js";
+import { isLikelyMoneyText, transformPrices } from "./ciwi-utils.js";
 
 /**
  * Skip hidden nodes during translation without forcing style recalc on every walker step.
@@ -85,6 +85,29 @@ function measureTextWidth(referenceElement, text) {
 export function syncCompactSwitcherLayout(ciwiBlock) {
   if (!ciwiBlock) return;
 
+  if (
+    typeof document !== "undefined" &&
+    document.fonts &&
+    document.fonts.status !== "loaded" &&
+    ciwiBlock.dataset.ciwiFontsReadyHooked !== "1"
+  ) {
+    ciwiBlock.dataset.ciwiFontsReadyHooked = "1";
+    document.fonts.ready
+      .then(() => syncCompactSwitcherLayout(ciwiBlock))
+      .catch(() => {});
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    ciwiBlock.dataset.ciwiWindowLoadLayoutHooked !== "1"
+  ) {
+    ciwiBlock.dataset.ciwiWindowLoadLayoutHooked = "1";
+    window.addEventListener("load", () => syncCompactSwitcherLayout(ciwiBlock), {
+      once: true,
+      passive: true,
+    });
+  }
+
   const mainBox = ciwiBlock.querySelector("#main-box");
   const selectorBox = ciwiBlock.querySelector("#selector-box");
   const displayTextElement = ciwiBlock.querySelector("#display-text");
@@ -109,7 +132,8 @@ export function syncCompactSwitcherLayout(ciwiBlock) {
   if (mainBox && displayTextElement) {
     const label = displayTextElement.textContent?.trim() || "";
     const textWidth = measureTextWidth(displayTextElement, label);
-    const hasMainFlag = hasUsableFlag(mainBoxFlag);
+    const reserveMainFlag = languageSelectorFlag?.dataset?.enabled === "true";
+    const hasMainFlag = hasUsableFlag(mainBoxFlag) || reserveMainFlag;
     const triggerWidth = clampNumber(
       textWidth + (hasMainFlag ? 78 : 48),
       108,
@@ -203,8 +227,13 @@ export async function initializeCurrency({
     (item) => item?.currencyCode == selectedCurrencyCode,
   );
 
-  const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency?.primaryStatus;
+  const isPrimaryCurrency =
+    selectedCurrency?.primaryStatus === true ||
+    selectedCurrency?.primaryStatus === 1 ||
+    selectedCurrency?.primaryStatus === "1" ||
+    selectedCurrency?.primaryStatus === "true";
+
+  const isValueInCurrencies = Boolean(selectedCurrency && !isPrimaryCurrency);
 
   // 获取新的选择器元素
   const customSelector = ciwiBlock.querySelector(
@@ -255,6 +284,8 @@ export async function initializeCurrency({
  * 观察 DOM 变化，动态处理新价格
  */
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
+  const moneySelector =
+    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price";
   const observer = new MutationObserver((mutationsList) => {
     // 只收集本次新增的 .ciwi-money 节点做增量转换，
     // 避免每次 DOM 变化都重扫整个文档的全部价格。
@@ -263,8 +294,17 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
       if (mutation.type !== "childList") continue;
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType !== 1) return;
-        if (node.matches?.(".ciwi-money")) pending.add(node);
-        node.querySelectorAll?.(".ciwi-money").forEach((el) => pending.add(el));
+        const add = (el) => {
+          if (!(el instanceof Element)) return;
+          if (!el.classList.contains("ciwi-money")) {
+            if (!isLikelyMoneyText(el.textContent || el.innerText || "")) return;
+            el.classList.add("ciwi-money");
+          }
+          pending.add(el);
+        };
+
+        if (node.matches?.(moneySelector)) add(node);
+        node.querySelectorAll?.(moneySelector).forEach((el) => add(el));
       });
     }
     if (pending.size > 0) {
@@ -305,13 +345,41 @@ export function updateDisplayText(lang, cur, ciwiBlock) {
   const displayTextElement = ciwiBlock.querySelector("#display-text");
 
   if (displayTextElement) {
-    if (selectedLanguageText && selectedCurrencyText) {
-      displayTextElement.textContent = `${selectedLanguageText} / ${selectedCurrencyText}`;
-    } else if (selectedLanguageText) {
-      displayTextElement.textContent = selectedLanguageText;
-    } else if (selectedCurrencyText) {
-      displayTextElement.textContent = selectedCurrencyText;
+    const label =
+      selectedLanguageText && selectedCurrencyText
+        ? `${selectedLanguageText} / ${selectedCurrencyText}`
+        : selectedLanguageText || selectedCurrencyText || "";
+
+    const mainBox = ciwiBlock.querySelector("#main-box");
+    const selectorBox = ciwiBlock.querySelector("#selector-box");
+    const mainBoxFlag = ciwiBlock.querySelector("#main-language-flag");
+    const languageSelectorFlag = ciwiBlock.querySelector("#language-selector-flag");
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const maxInlineWidth = clampNumber(viewportWidth - 24, 156, 260);
+    const hasUsableFlag = (img) => {
+      if (!(img instanceof HTMLImageElement)) return false;
+      if (img.hidden) return false;
+      const src = img.currentSrc || img.src || "";
+      if (!src || src.startsWith("data:image/gif")) return false;
+      if (window.getComputedStyle(img).display === "none") return false;
+      return true;
+    };
+    const reserveMainFlag = languageSelectorFlag?.dataset?.enabled === "true";
+    const hasMainFlag = hasUsableFlag(mainBoxFlag) || reserveMainFlag;
+    const triggerWidth = clampNumber(
+      measureTextWidth(displayTextElement, label) + (hasMainFlag ? 78 : 48),
+      108,
+      maxInlineWidth,
+    );
+
+    if (mainBox?.style.display !== "none") {
+      mainBox.style.width = `${triggerWidth}px`;
     }
+    if (selectorBox && selectorBox.dataset.mode === "overlay") {
+      selectorBox.style.width = `${triggerWidth}px`;
+    }
+
+    displayTextElement.textContent = label;
   }
 
   syncCompactSwitcherLayout(ciwiBlock);
@@ -1596,6 +1664,16 @@ export class CiwiswitcherForm extends HTMLElement {
     };
     // 初始化所有事件监听
     this.initializeEventListeners();
+
+    const shouldRestoreOpen =
+      !this.isDirectSelectorMode() &&
+      !this.isSidebarWidgetMode() &&
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem("ciwi_switcher_panel_open") === "1";
+
+    if (shouldRestoreOpen) {
+      requestAnimationFrame(() => this.openSelectorPanel());
+    }
   }
   initializeEventListeners() {
     // 阻止选择器框的点击事件冒泡
@@ -1672,6 +1750,9 @@ export class CiwiswitcherForm extends HTMLElement {
       requestAnimationFrame(() => box.classList.add("is-open"));
     });
     this.rotateArrow("#mainbox-arrow-icon", 180);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("ciwi_switcher_panel_open", "1");
+    }
   }
 
   closeSelectorPanel() {
@@ -1684,6 +1765,9 @@ export class CiwiswitcherForm extends HTMLElement {
       this.elements.selectorBackdrop.style.display = "none";
     }
     this.rotateArrow("#mainbox-arrow-icon", 0);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("ciwi_switcher_panel_open", "0");
+    }
 
     // direct 模式常驻显示，不隐藏
     if (this.isDirectSelectorMode()) {

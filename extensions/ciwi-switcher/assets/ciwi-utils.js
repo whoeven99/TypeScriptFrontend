@@ -81,6 +81,36 @@ function formatWithSpaceAndPeriod(integerPart, decimalPart) {
   return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
 }
 
+const CURRENCY_SYMBOL_RE = /[$€£¥₹₩₽₺₫₴₦₱₪₡₲₵]/;
+const CURRENCY_CODE_RE = /\b[A-Z]{3}\b/;
+
+export function isLikelyMoneyText(text) {
+  const value = String(text || "").replace(/\s+/g, " ").trim();
+  if (!value) return false;
+  if (!/\d/.test(value)) return false;
+  if (value.includes("%")) return false;
+  return CURRENCY_SYMBOL_RE.test(value) || CURRENCY_CODE_RE.test(value);
+}
+
+function collectMoneyNodes(root) {
+  const scope = root || document;
+  const nodes = scope.querySelectorAll(
+    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price",
+  );
+  const list = [];
+  nodes.forEach((node) => {
+    if (!(node instanceof Element)) return;
+    if (node.classList.contains("ciwi-money")) {
+      list.push(node);
+      return;
+    }
+    if (!isLikelyMoneyText(node.textContent || node.innerText || "")) return;
+    node.classList.add("ciwi-money");
+    list.push(node);
+  });
+  return list;
+}
+
 export function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
   let number = transformedPrice.toString();
   let [integerPart, decimalPart = "00"] = number.split(".");
@@ -176,7 +206,13 @@ export function transformSinglePriceNode(
  * transformSinglePriceNode 直接改写节点 innerHTML，自身已对已转换节点幂等。
  */
 export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) {
-  const pricesDoc = nodes || document.querySelectorAll(".ciwi-money");
+  const pricesDoc = nodes
+    ? nodes
+    : (() => {
+        const tagged = document.querySelectorAll(".ciwi-money");
+        if (tagged.length) return tagged;
+        return collectMoneyNodes(document);
+      })();
 
   pricesDoc.forEach((price) => {
     transformSinglePriceNode(price, rate, moneyFormat, selectedCurrency);
