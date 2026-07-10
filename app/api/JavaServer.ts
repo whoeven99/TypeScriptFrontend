@@ -133,7 +133,6 @@ export const IsOpenFreePlan = async ({
 };
 
 export const UpdateProductImageAltData = async ({
-  server,
   shopName,
   productId,
   imageUrl,
@@ -141,7 +140,7 @@ export const UpdateProductImageAltData = async ({
   targetAltText,
   languageCode,
 }: {
-  server: string;
+  server?: string;
   shopName: string;
   productId: string;
   imageUrl: string;
@@ -150,38 +149,28 @@ export const UpdateProductImageAltData = async ({
   languageCode: string;
 }) => {
   try {
-    console.log(`${shopName} UpdateProductImageAltData: `, {
-      shopName,
-      productId,
-      imageUrl,
-      altText,
-      targetAltText,
-      languageCode,
-    });
-
-    const response = await axios({
-      url: `${server}/picture/insertPictureToDbAndCloud`,
+    const res = await fetch("/api/picture/upsert", {
       method: "POST",
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      data: {
-        file: new File([], "file.png"),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         shopName,
-        userPicturesDoJson: JSON.stringify({
-          shopName,
-          imageId: productId,
-          imageBeforeUrl: imageUrl,
-          altBeforeTranslation: altText,
-          altAfterTranslation: targetAltText,
-          languageCode: languageCode,
-        }),
-      },
+        imageId: productId,
+        imageBeforeUrl: imageUrl,
+        altBeforeTranslation: altText,
+        altAfterTranslation: targetAltText,
+        languageCode,
+      }),
     });
-
-    console.log(`${shopName} UpdateProductImageAltData: `, response.data);
-
-    return response.data;
+    if (!res.ok) {
+      console.error(`UpdateProductImageAltData status=${res.status}`);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
+    }
+    return await res.json();
   } catch (error) {
     console.error("Error UpdateProductImageAltData:", error);
     return {
@@ -194,33 +183,38 @@ export const UpdateProductImageAltData = async ({
 };
 
 export const DeleteProductImageData = async ({
-  server,
   shopName,
   productId,
   imageUrl,
   languageCode,
 }: {
-  server: string;
+  server?: string;
   shopName: string;
   productId: string;
   imageUrl: string;
   languageCode: string;
 }) => {
   try {
-    const response = await axios({
-      url: `${server}/picture/deletePictureData?shopName=${shopName}`,
+    const res = await fetch("/api/picture/delete", {
       method: "POST",
-      data: {
-        shopName: shopName,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shopName,
         imageId: productId,
         imageBeforeUrl: imageUrl,
-        languageCode: languageCode,
-      },
+        languageCode,
+      }),
     });
-
-    console.log("DeleteProductImageData: ", response.data);
-
-    return response.data;
+    if (!res.ok) {
+      console.error(`DeleteProductImageData status=${res.status}`);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
+    }
+    return await res.json();
   } catch (error) {
     console.error("Error DeleteProductImageData:", error);
     return {
@@ -233,48 +227,75 @@ export const DeleteProductImageData = async ({
 };
 
 export const GetProductImageData = async ({
-  server,
   shopName,
   productId,
   languageCode,
 }: {
-  server: string;
+  server?: string;
   shopName: string;
   productId: string;
   languageCode: string;
 }) => {
-  return javaApiRequest(
-    "GetProductImageData",
-    {
-      url: `${server}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+  try {
+    const res = await fetch("/api/picture/product", {
       method: "POST",
-      data: {
-        shopName: shopName,
-        imageId: productId,
-        languageCode: languageCode,
-      },
-    },
-    { fallback: [] as any[] },
-  );
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shopName, productId, languageCode }),
+    });
+    if (!res.ok) {
+      console.error(`GetProductImageData status=${res.status}`);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [] as any[],
+      };
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error GetProductImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [] as any[],
+    };
+  }
 };
 
 export const GetShopImageData = async ({
-  server,
   shopName,
   languageCode,
 }: {
-  server: string;
+  server?: string;
   shopName: string;
   languageCode: string;
 }) => {
-  return javaApiRequest(
-    "GetShopImageData",
-    {
-      url: `${server}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+  try {
+    const res = await fetch("/api/picture/shop", {
       method: "POST",
-    },
-    { fallback: [] as any[] },
-  );
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shopName, languageCode }),
+    });
+    if (!res.ok) {
+      console.error(`GetShopImageData status=${res.status}`);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [] as any[],
+      };
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error GetShopImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [] as any[],
+    };
+  }
 };
 
 type SingleTextTranslateArgs = {
@@ -581,56 +602,52 @@ export const InsertTargets = async ({
   }
 };
 
-// 获取图片翻译结果
+/** 图译：浏览器可走 Remix API；服务端请直接调用 translateProductImage。 */
 export const TranslateImage = async ({
   shop,
   imageUrl,
   sourceCode,
   targetCode,
-  accessToken,
-  imageId,
 }: {
   shop: string;
   imageUrl: string;
   sourceCode: string;
   targetCode: string;
-  accessToken: string;
-  imageId: string;
+  accessToken?: string;
+  imageId?: string;
 }) => {
   try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/imageTranslate?shopName=${shop}`,
-      method: "PUT",
-      data: {
+    const res = await fetch("/api/translate-v4/image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shopName: shop,
         imageUrl,
         sourceCode,
         targetCode,
-        accessToken,
-        imageId,
-      },
+      }),
     });
-    console.log("imageTranslate Response", response.data);
-    if (response.data.success) {
-      return response.data;
-    } else {
+    if (!res.ok) {
+      console.error(`TranslateImage status=${res.status}`);
       return {
         success: false,
         errorCode: 10001,
         errorMsg: "SERVER_ERROR",
-        response: [],
+        response: null,
       };
     }
+    return await res.json();
   } catch (error) {
     console.log("Error GetImageTranslate", error);
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: [],
+      response: null,
     };
   }
 };
-// 存储翻译的图片文件
+/** @deprecated 服务端请直接调用 saveTranslatedImageFromUrl；保留仅作兼容。 */
 export const storageTranslateImage = async ({
   shop,
   imageUrl,
@@ -641,19 +658,17 @@ export const storageTranslateImage = async ({
   userPicturesDoJson: any;
 }) => {
   try {
-    const formData = new FormData();
-    formData.append("pic", imageUrl); // 添加图片 URL
-    formData.append("shopName", shop); // 添加店铺名称
-    formData.append("userPicturesDoJson", JSON.stringify(userPicturesDoJson));
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/picture/saveImageToCloud`,
-      method: "post",
-      data: formData,
+    const res = await fetch("/api/picture/save-from-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shopName: shop,
+        imageUrl,
+        userPicture: userPicturesDoJson,
+      }),
     });
-    console.log("storageImage response", response.data);
-    if (response.data.success) {
-      return response.data;
-    } else {
+    if (!res.ok) {
+      console.error(`storageTranslateImage status=${res.status}`);
       return {
         success: false,
         errorCode: 10001,
@@ -661,6 +676,7 @@ export const storageTranslateImage = async ({
         response: null,
       };
     }
+    return await res.json();
   } catch (error) {
     console.log("replace image filed", error);
     return {

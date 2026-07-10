@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
+import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
@@ -783,8 +784,8 @@ const Index = () => {
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductImageData(
             data.map((item: any) => {
-              const index = targetData.response.findIndex(
-                (image: any) => item.imageUrl === image?.imageBeforeUrl,
+              const index = targetData.response.findIndex((image: any) =>
+                sameShopifyImageUrl(item.imageUrl, image?.imageBeforeUrl),
               );
               if (index !== -1) {
                 return {
@@ -891,7 +892,7 @@ const Index = () => {
               maxCount={1}
               accept="image/*"
               name="file"
-              action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
+              action="/api/picture/upload"
               beforeUpload={(file) => {
                 const isImage = file.type.startsWith("image/");
                 const isLt20M = file.size / 1024 / 1024 < 20;
@@ -969,8 +970,10 @@ const Index = () => {
                   setProductImageData(
                     productImageData.map((item: any) => {
                       if (
-                        item.imageUrl ===
-                        info.fileList[0].response.response?.imageBeforeUrl
+                        sameShopifyImageUrl(
+                          item.imageUrl,
+                          info.fileList[0].response.response?.imageBeforeUrl,
+                        )
                       ) {
                         return {
                           ...item,
@@ -1344,7 +1347,7 @@ const Index = () => {
                                   maxCount={1}
                                   accept="image/*"
                                   name="file"
-                                  action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
+                                  action="/api/picture/upload"
                                   beforeUpload={(file) => {
                                     const isImage =
                                       file.type.startsWith("image/");
@@ -1434,9 +1437,11 @@ const Index = () => {
                                       setProductImageData(
                                         productImageData.map((item: any) => {
                                           if (
-                                            item.imageUrl ===
-                                            info.fileList[0].response.response
-                                              ?.imageBeforeUrl
+                                            sameShopifyImageUrl(
+                                              item.imageUrl,
+                                              info.fileList[0].response.response
+                                                ?.imageBeforeUrl,
+                                            )
                                           ) {
                                             return {
                                               ...item,

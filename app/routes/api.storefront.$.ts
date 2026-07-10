@@ -1,9 +1,5 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  GetProductImageData as getJavaProductImageData,
-  GetShopImageData as getJavaShopImageData,
-} from "~/api/JavaServer";
 import { verifyAppProxyHmac } from "~/server/storefront/auth.server";
 import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
 import { getSwitcherConfig } from "~/server/storefront/switcherConfig.server";
@@ -13,6 +9,10 @@ import {
   getCurrencyByShopName,
   getCurrencyCacheData,
 } from "~/server/currency/currency.server";
+import {
+  getProductPictures,
+  getShopPictures,
+} from "~/server/picture/picture.server";
 
 /**
  * App Proxy storefront 路由：/api/storefront/*
@@ -196,10 +196,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
 
     try {
-      const result = await getJavaProductImageData({
-        server: process.env.SERVER_URL || "",
-        shopName,
-        productId: imageId,
+      const result = await getProductPictures({
+        shop: shopName,
+        imageId,
         languageCode,
       });
       return json(result, { headers: CORS_HEADERS });
@@ -224,9 +223,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
 
     try {
-      const result = await getJavaShopImageData({
-        server: process.env.SERVER_URL || "",
-        shopName,
+      const result = await getShopPictures({
+        shop: shopName,
         languageCode,
       });
       return json(result, { headers: CORS_HEADERS });

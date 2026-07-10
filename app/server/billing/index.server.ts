@@ -40,3 +40,9 @@ export {
   handleTsfSubscriptionWebhook,
   handleTsfPurchaseWebhook,
 } from "./webhooks/handleBillingWebhook.server";
+export {
+  reconcileTsfSubscriptionForShop,
+  runSubscriptionReconciliation,
+  type ReconcileShopResult,
+  type SubscriptionReconciliationSummary,
+} from "./subscription/reconcileSubscription.server";

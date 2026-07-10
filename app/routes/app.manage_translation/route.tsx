@@ -10,7 +10,8 @@ import { queryAppByHandle } from "~/api/admin";
 import type { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSelector } from "react-redux";
-import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
+import { saveTranslatedImageFromUrl } from "~/server/picture/picture.server";
+import { translateProductImage } from "~/server/picture/translateImage.server";
 import {
   getManageTranslationLocaleSnapshotFromCache,
   invalidateAllItemsCountForLocale,
@@ -177,17 +178,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!translateImage:
       try {
-        const { sourceLanguage, targetLanguage, imageUrl, imageId } =
-          translateImage;
-        const response = await TranslateImage({
+        const { sourceLanguage, targetLanguage, imageUrl } = translateImage;
+        return await translateProductImage({
           shop,
           imageUrl,
           sourceCode: sourceLanguage,
           targetCode: targetLanguage,
-          accessToken: accessToken as string,
-          imageId,
         });
-        return response;
       } catch (error) {
         console.log("Error getImageTranslate", error);
         return {
@@ -202,10 +199,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const { url, userPicturesDoJson } = replaceTranslateImage;
         userPicturesDoJson.shopName = shop;
-        const response = await storageTranslateImage({
+        const response = await saveTranslatedImageFromUrl({
           shop,
           imageUrl: url,
-          userPicturesDoJson,
+          userPicture: {
+            imageId: userPicturesDoJson.imageId,
+            imageBeforeUrl: userPicturesDoJson.imageBeforeUrl,
+            languageCode: userPicturesDoJson.languageCode,
+            altBeforeTranslation:
+              userPicturesDoJson.altBeforeTranslation ?? "",
+            altAfterTranslation: userPicturesDoJson.altAfterTranslation ?? "",
+          },
         });
         return response;
       } catch (error) {
