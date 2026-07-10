@@ -11,6 +11,7 @@ import {
   asCacheableTranslationResponse,
   buildTranslationCacheKey,
   CIWI_TRANSLATION_TTL_MS,
+  resolveStorefrontProductId,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
 import { persistManualLocalizationPreference } from "./ciwi-utils.js";
@@ -770,8 +771,7 @@ export function initProductImgObserver({
  * 根据数据库数据替换网页图片
  */
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
-  const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
-  const productId = productIdInput?.value?.trim();
+  const productId = resolveStorefrontProductId(ciwiBlock);
   if (!productId) return;
 
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');

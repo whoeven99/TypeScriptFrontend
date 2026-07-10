@@ -152,7 +152,7 @@
         </div>
       </div>
       <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
-      <input type="hidden" id="ciwiAppProxyBase" value="{{ shop.url }}/apps/ciwi">
+      <input type="hidden" id="ciwiAppProxyBase" value="/apps/ciwi">
       {%- comment -%}
         Java 后端：仅用于货币 / IP / 图片等（switchUrl）。Widget / Liquid / PageFly 读数据走 #ciwiAppProxyBase（v4）。
       {%- endcomment -%}
