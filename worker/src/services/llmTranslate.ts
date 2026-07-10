@@ -2234,10 +2234,12 @@ async function retryPoolFallbacks(
   shopName: string,
   shouldAbort: () => boolean | Promise<boolean>,
   customPrompt = "",
+  onLeafTranslated?: (text: string, result: RoutedResult, poolPrimaryModel: string) => void,
 ): Promise<number> {
   let retried = 0;
   for (const [sig, occ] of pools) {
     const { order } = parsePoolSignature(sig);
+    const poolPrimaryModel = engineModel(order[0]!, aiModel);
     const tmap = translated.get(sig)!;
     const needsRetry: string[] = [];
     for (const text of occ.keys()) {
@@ -2267,6 +2269,7 @@ async function retryPoolFallbacks(
       if (r?.status === "translated" && !looksLikeUntranslated(text, r.value, target) && !looksLikeWrongScriptLeak(text, r.value, target)) {
         tmap.set(text, r);
         retried++;
+        if (onLeafTranslated) onLeafTranslated(text, r, poolPrimaryModel);
       }
     }
   }
@@ -2719,9 +2722,10 @@ function reconstructPlan(
     const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    // Plain: field digest TM + value TM (digest if present, else CRC-32).
     if (status === "translated" && !skipCacheWrite) {
       tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
-      tmWrites.push(tmSetByValue(originalValue, source, target, plan.cacheModel, value));
+      tmWrites.push(tmSetByValue(originalValue, source, target, plan.cacheModel, value, plan.digest));
     }
   } else if (plan.kind === "html") {
     let anyFallback = false;
@@ -2759,7 +2763,7 @@ function reconstructPlan(
     }
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
+    // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
@@ -2817,7 +2821,6 @@ function reconstructPlan(
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   } else {
     let anyFallback = false;
     const list = JSON.parse(plan.originalValue) as Array<string | null>;
@@ -2855,7 +2858,6 @@ function reconstructPlan(
     const value = JSON.stringify(result);
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
-    if (status === "translated" && !skipCacheWrite) tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
   }
 }
 
@@ -2966,15 +2968,16 @@ export async function translateResources(
 
   const tmWrites: Promise<void>[] = [];
 
-  // 1b. Fire all TM digest lookups in parallel (skipped when skipCacheRead —
-  //     every field is treated as a cache miss).
+  // 1b. Field-digest TM only for plain fields (HTML/JSON/list skip whole-field digest).
   const cacheHits = skipCacheRead
     ? fieldWorks.map(() => null)
     : await Promise.all(
-        fieldWorks.map(({ f, cacheModel }) => tmGet(shopName, target, cacheModel, f.digest)),
+        fieldWorks.map(({ f, klass, cacheModel }) =>
+          klass === "plain" ? tmGet(shopName, target, cacheModel, f.digest) : Promise.resolve(null),
+        ),
       );
 
-  // 1c. Process results: hit → credit immediately; miss → value cache or add to plan.
+  // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
     const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
@@ -2984,20 +2987,21 @@ export async function translateResources(
     }
     const cached = cacheHits[wi];
     if (cached !== null) {
-      const cacheLeaked =
-        (klass === "html" || klass === "json" || klass === "list") &&
-        hasHtmlPlaceholderLeak(cached);
-      if (!cacheLeaked) {
-        rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
-        cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
-        continue;
-      }
+      rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
+      cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
+      continue;
     }
 
-    // Secondary: value-based cache for short plain-text fields.
+    // Plain secondary: value TM (Shopify digest if present, else CRC-32).
     if (!skipCacheRead && klass === "plain") {
       const valueCacheSource = isHandleFieldKey(f.key) ? prepareHandleSourceText(f.value) : f.value;
-      const cachedByValue = await tmGetByValue(valueCacheSource, source, target, cacheModel);
+      const cachedByValue = await tmGetByValue(
+        valueCacheSource,
+        source,
+        target,
+        cacheModel,
+        f.digest,
+      );
       if (cachedByValue !== null) {
         rm.set(f.key, { key: f.key, translatedValue: cachedByValue, digest: f.digest, status: "translated" });
         tmWrites.push(tmSet(shopName, target, cacheModel, f.digest, cachedByValue));
@@ -3199,14 +3203,43 @@ export async function translateResources(
   await finishReadyResources(() => undefined);
 
   // 2. Translate unique texts per engine order, in char-bounded batches.
-  //    All batches are launched concurrently — the pool's AdaptiveSemaphore
-  //    (driven by X-RateLimit-* headers) is the only throttle.
+  //    Before LLM: value-TM lookup per unique leaf (digest if any, else CRC-32).
+  //    Hits go into translated map; misses go to batch. AdaptiveSemaphore throttles.
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
   for (const [sig, occ] of pools) {
     const { order, isHandle } = parsePoolSignature(sig);
-    const texts = [...occ.keys()];
+    const cacheModel = engineModel(order[0]!, aiModel);
+    const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
+
+    // 2a. Value-TM prefilter for every unique leaf in this pool.
+    if (!skipCacheRead) {
+      const leafHits = await Promise.all(
+        allTexts.map((text) => tmGetByValue(text, source, target, cacheModel)),
+      );
+      let leafCacheUnits = 0;
+      for (let i = 0; i < allTexts.length; i++) {
+        const hit = leafHits[i];
+        if (hit === null) continue;
+        const text = allTexts[i]!;
+        tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
+        leafCacheUnits += occ.get(text) ?? 1;
+      }
+      if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
+      if (tmap.size > 0) {
+        translated.set(sig, tmap);
+        const lookupHit: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
+        await finishReadyResources(lookupHit);
+      }
+    }
+
+    const texts = allTexts.filter((t) => !tmap.has(t));
+    if (texts.length === 0) {
+      translated.set(sig, tmap);
+      continue;
+    }
+
     const items: TranslateItem[] = texts.map((t, i) => ({ key: String(i), value: t, digest: "" }));
     const { maxChars, maxItems } = resolveBatchLimits(order);
     const batches = batchByChars(items, maxChars, maxItems);
@@ -3225,6 +3258,7 @@ export async function translateResources(
       let batchUnits = 0;
       for (const [k, v] of m) {
         const text = texts[Number(k)];
+        if (text === undefined) continue;
         tmap.set(text, v);
         batchUnits += occ.get(text) ?? 1;
         if (v.status === "translated" && v.engine) {
@@ -3233,6 +3267,10 @@ export async function translateResources(
           acc.units += 1;
           acc.chars += text.length;
           acc.tokens += v.tokens;
+          // Value TM keyed by pool primary model so step-2a reads match writes.
+          if (!skipCacheWrite) {
+            tmWrites.push(tmSetByValue(text, source, target, cacheModel, v.value));
+          }
         }
       }
       translated.set(sig, tmap);
@@ -3240,6 +3278,7 @@ export async function translateResources(
       const lookup: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
       await finishReadyResources(lookup);
     }));
+    translated.set(sig, tmap);
   }
 
   const retried = await retryPoolFallbacks(
@@ -3251,6 +3290,11 @@ export async function translateResources(
     shopName,
     abortRequested,
     customPrompt,
+    skipCacheWrite
+      ? undefined
+      : (text, r, poolPrimaryModel) => {
+          tmWrites.push(tmSetByValue(text, source, target, poolPrimaryModel, r.value));
+        },
   );
   if (retried > 0) {
     console.log(`[llm] individually retried ${retried} fallback/untranslated text unit(s)`);

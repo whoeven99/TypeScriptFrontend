@@ -1,16 +1,19 @@
-import { createHash } from "crypto";
 import { getRedis } from "./redisV4.js";
 
 /**
  * Translation Memory (TM) — a Redis-backed cache of past translations.
  *
- * Key design: Shopify ships a content `digest` for every translatable field.
- * The digest is a hash of the source content, so it changes exactly when the
- * source text changes. That makes (shopName, target, model, digest) a perfect
- * natural cache key with self-invalidation: edit the source → new digest → miss.
+ * Two tiers:
+ * 1. Field digest TM (`tmGet` / `tmSet`): keyed by Shopify field digest, scoped
+ *    per shop. Used for plain fields only (HTML/JSON/list skip this tier and
+ *    cache leaf texts via the value TM instead).
+ * 2. Value TM (`tmGetByValue` / `tmSetByValue`): keyed by source/target/model +
+ *    (Shopify digest if present, else CRC-32 of the source text). Cross-shop
+ *    reuse for identical leaf strings.
  *
- * Scope is per-shop so that future per-shop glossary/tone never leaks across
- * shops. A generic global tier can be layered on later for theme UI strings.
+ * Key id rule (VALUE_CACHE_THRESHOLD = 200 documents the product split):
+ * - Prefer Shopify field digest when present (any length).
+ * - Otherwise CRC-32 (8 hex chars) of the source text.
  *
  * TRANSLATION_TM_DISABLED=true: bypass cache reads (refresh / rebuild TM after
  * logic fixes) but still write successful translations back to Redis.
@@ -24,6 +27,9 @@ const DEFAULT_TTL_DAYS = 30;
 // Values larger than this are almost always unique (long HTML), so caching them
 // burns Redis memory for near-zero hit rate. Skip them.
 const MAX_VALUE_BYTES = 8000;
+
+/** Product rule threshold (chars): long vs short plain; both use digest ?? CRC-32. */
+export const VALUE_CACHE_THRESHOLD = 200;
 
 function ttlSeconds(): number {
   const days = Number(process.env.TRANSLATION_TM_TTL_DAYS?.trim() || DEFAULT_TTL_DAYS);
@@ -72,28 +78,47 @@ export async function tmSet(
 
 // ─── Value-based secondary TM cache ──────────────────────────────────────────
 //
-// Shopify assigns a unique digest per (resource, field), so two resources
-// that share identical source text get different digests and both miss the
-// digest-keyed cache. A secondary key derived from the content itself lets the
-// TM hit even when digests differ — critical for repeated short values like
-// option names ("Size", "Color") and collection titles that appear across many
-// resources.
-//
-// Scope: plain-text only (HTML is too context-dependent to reuse blindly) and
-// capped at a short length so we never cache long paragraphs by content.
+// Key id: Shopify field digest when present; otherwise CRC-32 (8 hex chars) of
+// the source text. Full Redis key always includes source/target/model.
+// HTML/JSON/list never use field-digest TM — only leaf texts via this tier.
 
-const MAX_VALUE_CACHE_CHARS = 300;
 const VALUE_TM_PREFIX = "tm:v5:val";
 
-function valueHash(sourceText: string, source: string, target: string, model: string): string {
-  return createHash("sha256")
-    .update(`${model}|${source}|${target}|${sourceText}`)
-    .digest("hex")
-    .slice(0, 32);
+/** IEEE CRC-32 → 8-char lowercase hex (no deps). */
+export function crc32Hex(text: string): string {
+  let crc = 0xffffffff;
+  const buf = Buffer.from(text, "utf8");
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i]!;
+    for (let j = 0; j < 8; j++) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return ((crc ^ 0xffffffff) >>> 0).toString(16).padStart(8, "0");
 }
 
 /**
- * Look up a translation by source value text (secondary cache, plain text only).
+ * Prefer Shopify digest; otherwise CRC-32.
+ * Long (>VALUE_CACHE_THRESHOLD) and short follow the same digest ?? CRC-32 rule.
+ */
+export function valueCacheKeyId(sourceText: string, digest?: string): string {
+  const d = digest?.trim();
+  if (d) return d;
+  return crc32Hex(sourceText);
+}
+
+export function valueCacheKey(
+  sourceText: string,
+  source: string,
+  target: string,
+  model: string,
+  digest?: string,
+): string {
+  return `${VALUE_TM_PREFIX}:${source}:${target}:${model}:${valueCacheKeyId(sourceText, digest)}`;
+}
+
+/**
+ * Look up a translation by value-cache key (digest if present, else CRC-32).
  * Returns null on miss, disabled, or error.
  */
 export async function tmGetByValue(
@@ -101,19 +126,19 @@ export async function tmGetByValue(
   source: string,
   target: string,
   model: string,
+  digest?: string,
 ): Promise<string | null> {
-  if (isReadDisabled() || !sourceText || sourceText.length > MAX_VALUE_CACHE_CHARS) return null;
+  if (isReadDisabled() || !sourceText) return null;
   try {
-    const key = `${VALUE_TM_PREFIX}:${valueHash(sourceText, source, target, model)}`;
-    return await getRedis().get(key);
+    return await getRedis().get(valueCacheKey(sourceText, source, target, model, digest));
   } catch {
     return null;
   }
 }
 
 /**
- * Store a translation keyed by source value text (plain text only, short values).
- * Best-effort; never throws.
+ * Store a translation in the value TM. Best-effort; never throws.
+ * Oversized payloads are skipped to protect Redis memory.
  */
 export async function tmSetByValue(
   sourceText: string,
@@ -121,11 +146,12 @@ export async function tmSetByValue(
   target: string,
   model: string,
   translatedText: string,
+  digest?: string,
 ): Promise<void> {
-  if (!sourceText || sourceText.length > MAX_VALUE_CACHE_CHARS) return;
-  if (!translatedText) return;
+  if (!sourceText || !translatedText) return;
+  if (Buffer.byteLength(translatedText, "utf8") > MAX_VALUE_BYTES) return;
   try {
-    const key = `${VALUE_TM_PREFIX}:${valueHash(sourceText, source, target, model)}`;
+    const key = valueCacheKey(sourceText, source, target, model, digest);
     await getRedis().set(key, translatedText, "EX", ttlSeconds());
   } catch {
     // best-effort
