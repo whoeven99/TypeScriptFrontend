@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Space, Select, Typography, Popconfirm, Flex, Modal } from "antd";
+import { Space, Select, Typography, Flex } from "antd";
 import Button from "~/ui/components/AppButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -8,7 +8,7 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { queryAppByHandle } from "~/api/admin";
 import type { LanguagesDataType, ShopLocalesType } from "../app.language/route";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSelector } from "react-redux";
 import { TranslateImage, storageTranslateImage } from "~/api/JavaServer";
 import {
@@ -22,8 +22,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { InfoCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import defaultStyles from "../styles/defaultStyles.module.css";
+import { ReloadOutlined } from "@ant-design/icons";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateManageTranslation } from "~/lib/routeShouldRevalidate";
@@ -272,8 +271,6 @@ const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { plan } = useSelector((state: any) => state.userConfig);
 
   const { reportClick } = useReport();
 
@@ -297,8 +294,6 @@ const Index = () => {
   }, [languageTableData]);
 
   const [currentLocale, setCurrentLocale] = useState<string>("");
-  const [showModal, setShowModal] = useState(false);
-  const [showWarnModal, setShowWarnModal] = useState(false);
   const [localeSummary, setLocaleSummary] = useState<LocaleSummary | null>(null);
   const [appInstallList, setAppInstallList] = useState<{
     pagefly: boolean;
@@ -617,35 +612,6 @@ const Index = () => {
     }
   }, [summaryFetcher.data, summaryFetcher.state, currentLocale, t]);
 
-  const handleShowWarnModal = () => {
-    setShowWarnModal(true);
-    reportClick("manage_navi_import");
-  };
-
-  const handleShowImportModal = () => {
-    setShowModal(true);
-    reportClick("manage_navi_import");
-  };
-
-  const navigateToPricing = () => {
-    navigate("/app/pricing");
-    void reportClientLog(
-      {
-        event: "manage_translation_to_pricing",
-        action: "navigate_pricing",
-        shop: globalStore?.shop,
-        level: "info",
-        kind: "event",
-        status: "success",
-        message: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
-        context: {
-          legacy: true,
-        },
-      },
-      { beacon: true },
-    );
-  };
-
   const handleRefreshStats = () => {
     if (!currentLocale || !source?.code) return;
     refreshStatsTraceRef.current = startClientLogTrace({
@@ -710,36 +676,6 @@ const Index = () => {
                       {t("Refresh statistics")}
                     </Button>
                   </div>
-                  <div className="manage-header-right">
-                    {plan?.type == "Free" ||
-                    plan?.type == "Basic" ||
-                    typeof plan === "undefined" ? (
-                      <Flex align="center" gap="middle">
-                        <Popconfirm
-                          title=""
-                          description={t(
-                            "This feature is available only with the paid plan.",
-                          )}
-                          trigger="hover"
-                          showCancel={false}
-                          okText={t("Upgrade")}
-                          onConfirm={() => navigateToPricing()}
-                        >
-                          <InfoCircleOutlined />
-                        </Popconfirm>
-                        <Button
-                          className={defaultStyles.Button_disable}
-                          onClick={handleShowWarnModal}
-                        >
-                          {t("Import")}
-                        </Button>
-                      </Flex>
-                    ) : (
-                      <Button onClick={handleShowImportModal}>
-                        {t("Import")}
-                      </Button>
-                    )}
-                  </div>
                 </div>
               </AppSectionCard>
               <AppSectionCard bodyPadding="16px 20px">
@@ -800,80 +736,6 @@ const Index = () => {
       ) : (
         <NoLanguageSetCard />
       )}
-      <Modal
-        title={t("How to import translation data")}
-        open={showModal}
-        onCancel={() => setShowModal(false)}
-        centered
-        footer={null}
-      >
-        <Space direction="vertical" size={"small"} style={{ width: "100%" }}>
-          <Text>{t("Import steps:")}</Text>
-          <Text>
-            {t("1. Click to download the product import template")}{" "}
-            <Button
-              type="link"
-              style={{
-                padding: "0",
-              }}
-              onClick={() => {
-                // 这里可以添加下载逻辑
-                const link = document.createElement("a");
-                link.href = "/Shop_translation.csv"; // 假设文件路径
-                link.download = "Shop_translation.csv";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                void reportClientLog(
-                  {
-                    event: "manage_translation_download_template",
-                    action: "download_template",
-                    shop: globalStore?.shop,
-                    level: "info",
-                    kind: "event",
-                    status: "success",
-                    message: `${globalStore?.shop} 下载批量导入文件`,
-                    context: {
-                      legacy: true,
-                      fileName: "Shop_translation.csv",
-                    },
-                  },
-                  { beacon: true },
-                );
-              }}
-            >
-              Shop_translation.csv
-            </Button>
-          </Text>
-          <Text>{t("2. Fill in the translated data in the template")}</Text>
-          <Text>{t("3. Contact us to import the corresponding files")}</Text>
-          <Flex justify="center">
-            <Button
-              style={{
-                marginTop: "28px",
-              }}
-              type="primary"
-              onClick={() => setShowModal(false)}
-            >
-              {t("Got it")}
-            </Button>
-          </Flex>
-        </Space>
-      </Modal>
-      <Modal
-        title={t("Feature Unavailable")}
-        open={showWarnModal}
-        onCancel={() => setShowWarnModal(false)}
-        centered
-        width={700}
-        footer={
-          <Button type="primary" onClick={() => navigate("/app/pricing")}>
-            {t("Upgrade")}
-          </Button>
-        }
-      >
-        <Text>{t("This feature is available only with the paid plan.")}</Text>
-      </Modal>
     </Page>
   );
 };
