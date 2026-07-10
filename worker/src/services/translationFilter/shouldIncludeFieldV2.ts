@@ -67,7 +67,7 @@ export function shouldIncludeFieldV2(
     return false;
   }
 
-  if (!passesMetafieldModuleRules(module, type, value)) {
+  if (!passesMetafieldModuleRules(module, type, value, key)) {
     return false;
   }
 

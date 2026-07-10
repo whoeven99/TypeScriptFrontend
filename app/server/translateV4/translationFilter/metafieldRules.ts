@@ -63,6 +63,11 @@ function isBlockedMetafieldValue(value: string): boolean {
   return METAFIELD_VALUE_BLOCK_PATTERNS.some((pattern) => pattern.test(value));
 }
 
+/** Judge.me widget metafields — namespace/key/value may contain "jdgm". */
+function isJudgeMeMetafield(key: string | undefined, value: string): boolean {
+  return `${key ?? ""}${value}`.toLowerCase().includes("jdgm");
+}
+
 /**
  * METAFIELD branch (TranslateV2Service.needTranslate).
  */
@@ -70,6 +75,7 @@ export function passesMetafieldModuleRules(
   module: string,
   type: string,
   value: string,
+  key?: string,
 ): boolean {
   if (module !== MODULE_METAFIELD) {
     return true;
@@ -91,7 +97,7 @@ export function passesMetafieldModuleRules(
     return false;
   }
 
-  if (value.includes("class='jdgm-all-reviews__header'")) {
+  if (isJudgeMeMetafield(key, value)) {
     return false;
   }
 
