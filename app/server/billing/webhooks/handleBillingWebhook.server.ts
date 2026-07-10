@@ -186,20 +186,24 @@ export async function handleTsfSubscriptionWebhook(params: {
         },
       });
 
-  const priorRenewalForPeriod =
-    isRenewal
-      ? await prisma.billingLog.findFirst({
+  // Turso/SQLite 不支持 Prisma JsonFilter.path 数组写法；内存比对 metadata.nextPeriodEnd。
+  const priorRenewalForPeriod = isRenewal
+    ? (
+        await prisma.billingLog.findMany({
           where: {
             shop: params.shop,
             eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
             referenceId: gid,
-            metadata: {
-              path: ["nextPeriodEnd"],
-              equals: currentPeriodEnd.toISOString(),
-            },
           },
+          select: { id: true, metadata: true },
+          take: 50,
+          orderBy: { createdAt: "desc" },
         })
-      : null;
+      ).find((row) => {
+        const meta = row.metadata as { nextPeriodEnd?: string } | null;
+        return meta?.nextPeriodEnd === currentPeriodEnd.toISOString();
+      }) ?? null
+    : null;
 
   const priorRenewalCount =
     isRenewal && existingSub
