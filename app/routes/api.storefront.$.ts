@@ -1,5 +1,9 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  GetProductImageData as getJavaProductImageData,
+  GetShopImageData as getJavaShopImageData,
+} from "~/api/JavaServer";
 import { verifyAppProxyHmac } from "~/server/storefront/auth.server";
 import { parseLiquidTranslations } from "~/server/storefront/liquid.server";
 import { getSwitcherConfig } from "~/server/storefront/switcherConfig.server";
@@ -172,6 +176,62 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return json(result, { headers: CORS_HEADERS });
     } catch (err) {
       console.error(`[storefront] currency cache failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
+  // POST /api/storefront/picture/getPictureDataByShopNameAndResourceIdAndPictureId
+  if (path === "picture/getPictureDataByShopNameAndResourceIdAndPictureId") {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const shopName = typeof body.shopName === "string" ? body.shopName : auth.shop;
+    const imageId = typeof body.imageId === "string" ? body.imageId : "";
+    const languageCode =
+      typeof body.languageCode === "string" ? body.languageCode : "";
+
+    if (shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+    }
+
+    try {
+      const result = await getJavaProductImageData({
+        server: process.env.SERVER_URL || "",
+        shopName,
+        productId: imageId,
+        languageCode,
+      });
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] product image read failed shop=${shopName}:`, err);
+      return json(fail(10001, "internal error"), {
+        status: 500,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
+
+  // POST /api/storefront/picture/getPictureDataByShopNameAndLanguageCode
+  if (path === "picture/getPictureDataByShopNameAndLanguageCode") {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const shopName = typeof body.shopName === "string" ? body.shopName : auth.shop;
+    const languageCode =
+      typeof body.languageCode === "string" ? body.languageCode : "";
+
+    if (shopName !== auth.shop) {
+      return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
+    }
+
+    try {
+      const result = await getJavaShopImageData({
+        server: process.env.SERVER_URL || "",
+        shopName,
+        languageCode,
+      });
+      return json(result, { headers: CORS_HEADERS });
+    } catch (err) {
+      console.error(`[storefront] shop image read failed shop=${shopName}:`, err);
       return json(fail(10001, "internal error"), {
         status: 500,
         headers: CORS_HEADERS,

@@ -295,8 +295,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             (item: any) => {
               return {
                 key: item?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
+                productId: response?.data?.product?.id,
+                productTitle: response?.data?.product?.title,
                 imageId: item?.node?.id,
                 imageUrl: item?.node?.url,
                 targetImageUrl: "",
@@ -358,8 +358,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             (item: any) => {
               return {
                 key: item?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
+                productId: response?.data?.product?.id,
+                productTitle: response?.data?.product?.title,
                 imageId: item?.node?.id,
                 imageUrl: item?.node?.url,
                 targetImageUrl: "",
@@ -708,6 +708,17 @@ const Index = () => {
       }
     }
   }, [translateImageFetcher.data]);
+
+  useEffect(() => {
+    if (!replaceTranslateImageFetcher.data) return;
+    if (!replaceTranslateImageFetcher.data.success) {
+      shopify.toast.show(t("Image translation saved failed"));
+      console.error(
+        "replaceTranslateImage failed",
+        replaceTranslateImageFetcher.data,
+      );
+    }
+  }, [replaceTranslateImageFetcher.data, t]);
 
   useEffect(() => {
     productsFetcher.submit(

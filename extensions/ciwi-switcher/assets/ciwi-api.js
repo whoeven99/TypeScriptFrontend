@@ -30,16 +30,80 @@ function resolveStorefrontApiBase() {
   return appProxyBase;
 }
 
+const STOREFRONT_FETCH_RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isRetryableFetchError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("load failed") ||
+    message.includes("fetch failed")
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function parseJsonSafely(res) {
+  const text = await res.text().catch(() => "");
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    const preview = text.trim().slice(0, 120);
+    return {
+      success: false,
+      errorCode: res.status || 10001,
+      errorMsg: preview ? `NON_JSON_RESPONSE:${preview}` : "NON_JSON_RESPONSE",
+      response: null,
+    };
+  }
+}
+
 async function fetchJson(url, options = {}) {
-  const res = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  return { status: res.status, data };
+  const {
+    retryAttempts = 4,
+    retryDelayMs = 450,
+    headers = {},
+    ...fetchOptions
+  } = options;
+  const maxAttempts = Number(retryAttempts);
+  const baseDelayMs = Number(retryDelayMs);
+
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+        ...fetchOptions,
+      });
+      const data = await parseJsonSafely(res);
+
+      if (
+        STOREFRONT_FETCH_RETRYABLE_STATUS.has(res.status) &&
+        attempt < maxAttempts
+      ) {
+        await sleep(baseDelayMs * attempt);
+        continue;
+      }
+
+      return { status: res.status, data };
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableFetchError(error) || attempt >= maxAttempts) {
+        throw error;
+      }
+      await sleep(baseDelayMs * attempt);
+    }
+  }
+
+  throw lastError || new Error("fetchJson failed");
 }
 
 export async function ReadTranslatedText({ shopName, languageCode }) {
@@ -88,8 +152,17 @@ export async function GetProductImageData({
   languageCode,
 }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: [],
+      };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      `${baseUrl}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -107,10 +180,23 @@ export async function GetProductImageData({
 
 export async function GetShopImageData({ shopName, languageCode, blockId }) {
   try {
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "APP_PROXY_MISSING",
+        response: [],
+      };
+    }
     const { data } = await fetchJson(
-      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+      `${baseUrl}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
       {
         method: "POST",
+        body: JSON.stringify({
+          shopName,
+          languageCode,
+        }),
       },
     );
     return data;
