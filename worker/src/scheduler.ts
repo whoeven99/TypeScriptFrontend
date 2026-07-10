@@ -35,7 +35,7 @@ const EMAIL_WORKER_INTERVAL_MS = (() => {
   const n = Number(process.env.EMAIL_WORKER_INTERVAL_MS);
   return n > 0 ? n : 30_000;
 })();
-/** 订阅对账：默认每 12 小时触发 TSF 与 Shopify 周期同步。 */
+/** 订阅对账：默认每 12 小时在 worker 内对比 Shopify 周期并补续费。 */
 const BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS = Math.max(
   60_000,
   Number(process.env.BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS) ||
@@ -174,7 +174,7 @@ export function startScheduler(): void {
   safeRun("emailWorker", () => runEmailWorker());
   setInterval(() => safeRun("emailWorker", () => runEmailWorker()), EMAIL_WORKER_INTERVAL_MS);
 
-  // 订阅对账：Shopify 已续费但 webhook 漏投递时，走 TSF 与 webhook 相同入账逻辑。
+  // 订阅对账：仅 worker 调度；直连 Turso，不打 TSF Web。
   scheduleBillingSubscriptionReconcile();
 
   for (const stage of ALL_STAGES) {
