@@ -832,6 +832,8 @@
   "v4.coverage.noTargetLanguages": "No target languages yet. Add them on the Language page first.",
   "v4.coverage.refreshing": "Refreshing…",
   "v4.coverage.viewAll": "View all {{count}} languages",
+  "v4.coverage.notScanned": "Not scanned",
+  "v4.coverage.unscannedSummary": "{{count}} languages not scanned. Click \"Refresh statistics\" to compute them.",
   "v4.coverage.cacheNotReady": "Statistics cache not ready. Click \"Refresh statistics\" to compute from Shopify.",
   "v4.createTask.title": "Create translation task",
   "v4.createTask.creating": "Creating…",

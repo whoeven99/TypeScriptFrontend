@@ -3,7 +3,6 @@ import {
   claimJob,
   updateJob,
   heartbeat,
-  findPendingJobs,
   getJob,
   withStageTiming,
   prefersStoredToken,
@@ -12,7 +11,8 @@ import {
   TSF_AUTO_TASK_SOURCE,
   type TranslationV4Job,
 } from "../services/cosmosV4.js";
-import { popHint, pushHint, requeueHintTail, setProgress, type HintPayload } from "../services/redisV4.js";
+import { pushHint, setProgress, type HintPayload } from "../services/redisV4.js";
+import { claimNextJobWithFairScheduling } from "../services/fairStageClaim.js";
 import { runTranslateWorker } from "./translateWorker.js";
 import { blobWrite } from "../services/blobV4.js";
 import { purgeAutoJob } from "../services/autoJobCleanup.js";
@@ -46,12 +46,19 @@ const INIT_MAX_REQUEUE = Math.max(0, Number(process.env.INIT_MAX_REQUEUE) || 5);
 
 /**
  * 进程级 init 并发：自动与手动各占独立池（自动默认 3 店、手动默认 5 店）。
- * 见 stagePool.ts（MAX_CONCURRENT_AUTO_INIT_JOBS / MAX_CONCURRENT_MANUAL_INIT_JOBS）。
- * 同店 init 串行由 tryClaimInitJob 保证。
+ * 跨店公平调度见 fairStageClaim.ts；同店 init 串行由 tryClaimInitJob 保证。
  */
 
 /** Max stale/busy hints to drain per tick before falling back to Cosmos scan. */
 const INIT_HINT_DRAIN_MAX = Math.max(1, Number(process.env.INIT_HINT_DRAIN_MAX) || 32);
+const INIT_CLAIM_SCAN_BATCH = Math.max(
+  10,
+  Number(process.env.INIT_CLAIM_SCAN_BATCH) || 50,
+);
+const INIT_CLAIM_SCAN_MAX_BATCHES = Math.max(
+  1,
+  Number(process.env.INIT_CLAIM_SCAN_MAX_BATCHES) || 5,
+);
 
 function collectInitErrorStrings(error: unknown): string[] {
   const strings: string[] = [];
@@ -250,45 +257,23 @@ async function isStaleInitHint(hint: HintPayload): Promise<boolean> {
   return job.status !== "INIT_QUEUED";
 }
 
+async function isShopInitBusy(shopName: string): Promise<boolean> {
+  return (await countShopInitializingJobs(shopName)) > 0;
+}
+
 async function claimNextInitJob(): Promise<TranslationV4Job | null> {
-  for (let n = 0; n < INIT_HINT_DRAIN_MAX; n++) {
-    const hint = await popHint("init");
-    if (!hint) break;
-
-    if (await isStaleInitHint(hint)) {
-      console.log(
-        `[init] discard stale hint job=${hint.taskId} shop=${hint.shopName}`,
-      );
-      continue;
-    }
-
-    const queued = await getJob(hint.shopName, hint.taskId);
-    if (
-      queued &&
-      !stageSlots.hasCapacity("init", stagePoolKindForJob(queued))
-    ) {
-      await requeueHintTail("init", hint);
-      continue;
-    }
-
-    const job = await tryClaimInitJob(hint.shopName, hint.taskId);
-    if (job) return job;
-
-    // 仍为 INIT_QUEUED 但同店已有 INITIALIZING：塞回队尾，继续尝试其他店的 hint
-    await requeueHintTail("init", hint);
-  }
-
-  const candidates = await findPendingJobs("INIT_QUEUED", 10);
-  for (const candidate of candidates) {
-    if (
-      !stageSlots.hasCapacity("init", stagePoolKindForJob(candidate))
-    ) {
-      continue;
-    }
-    const job = await tryClaimInitJob(candidate.shopName, candidate.id);
-    if (job) return job;
-  }
-  return null;
+  return claimNextJobWithFairScheduling({
+    stage: "init",
+    hintKey: "init",
+    drainMax: INIT_HINT_DRAIN_MAX,
+    queuedStatus: "INIT_QUEUED",
+    logTag: "init",
+    scanBatch: INIT_CLAIM_SCAN_BATCH,
+    scanMaxBatches: INIT_CLAIM_SCAN_MAX_BATCHES,
+    isStaleHint: isStaleInitHint,
+    isShopBusy: isShopInitBusy,
+    tryClaimJob: tryClaimInitJob,
+  });
 }
 
 async function processInitJob(jobId: string, shopName: string): Promise<void> {

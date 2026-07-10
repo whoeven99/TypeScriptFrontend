@@ -191,7 +191,7 @@ model LiquidRule {
 model ShopBillingBinding {
   shop          String   @id // myshopify 域名
   billingSystem String // "legacy" | "tsf"
-  boundReason   String? // "not_found_in_java" | "manual" | ...
+  boundReason   String? // "default_tsf" | "migrated_from_legacy" | "manual" | ...
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

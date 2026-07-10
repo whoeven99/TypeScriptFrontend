@@ -106,12 +106,13 @@ export async function popHint(
   }
 }
 
+/** 新任务入队尾（FIFO），LPOP 队头消费，跨店公平；同店串行由 worker claim 保证。 */
 export async function pushHint(
   stage: keyof typeof HINT_KEYS,
   payload: HintPayload,
 ): Promise<void> {
   try {
-    await getRedis().lpush(HINT_KEYS[stage], JSON.stringify(payload));
+    await getRedis().rpush(HINT_KEYS[stage], JSON.stringify(payload));
   } catch {
     // best-effort
   }

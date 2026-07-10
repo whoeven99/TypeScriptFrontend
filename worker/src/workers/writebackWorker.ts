@@ -1,12 +1,23 @@
 import { hostname } from "os";
-import { claimJob, updateJob, heartbeat, findPendingJobs, getJob, withStageTiming, prefersStoredToken } from "../services/cosmosV4.js";
-import { popHint, pushHint, requeueHintTail, setProgress } from "../services/redisV4.js";
+import {
+  claimJob,
+  updateJob,
+  heartbeat,
+  getJob,
+  withStageTiming,
+  prefersStoredToken,
+  countShopWritingBackJobs,
+  findWritebackQueuedJobsForShop,
+  type TranslationV4Job,
+} from "../services/cosmosV4.js";
+import { pushHint, setProgress } from "../services/redisV4.js";
+import { claimNextJobWithFairScheduling } from "../services/fairStageClaim.js";
 import { blobRead, blobWrite } from "../services/blobV4.js";
 import { loadTranslatedItemsForJob } from "../services/translateBlobIO.js";
 import { registerTranslations, type TranslationInput } from "../services/shopifyFetch.js";
 import { filterWritebackFields } from "../services/writebackFields.js";
 import { runShopifyAdaptive, getShopifyCap } from "../services/shopifyConcurrency.js";
-import type { TranslationV4Job } from "../services/cosmosV4.js";
+import type { HintPayload } from "../services/redisV4.js";
 import { isShuttingDown } from "../shutdown.js";
 import { finalizeJobAfterWriteback } from "../services/finalizeJobAfterWriteback.js";
 import {
@@ -27,6 +38,14 @@ const HEARTBEAT_THROTTLE_MS = 30_000;
 const WRITEBACK_HINT_DRAIN_MAX = Math.max(
   1,
   Number(process.env.WRITEBACK_HINT_DRAIN_MAX) || 32,
+);
+const WRITEBACK_CLAIM_SCAN_BATCH = Math.max(
+  10,
+  Number(process.env.WRITEBACK_CLAIM_SCAN_BATCH) || 50,
+);
+const WRITEBACK_CLAIM_SCAN_MAX_BATCHES = Math.max(
+  1,
+  Number(process.env.WRITEBACK_CLAIM_SCAN_MAX_BATCHES) || 5,
 );
 
 export async function runWritebackWorker(): Promise<void> {
@@ -72,62 +91,68 @@ export async function runWritebackWorker(): Promise<void> {
   }
 }
 
-async function isStaleWritebackHint(hint: { shopName: string; taskId: string }): Promise<boolean> {
+async function wakeNextWritebackForShop(shopName: string): Promise<void> {
+  if ((await countShopWritingBackJobs(shopName)) > 0) return;
+  const [next] = await findWritebackQueuedJobsForShop(shopName, 1);
+  if (!next) return;
+  await pushHint("writeback", { taskId: next.id, shopName });
+  void runWritebackWorker().catch((e) =>
+    console.error(`[writeback] wake next failed shop=${shopName}`, e),
+  );
+  console.log(
+    `[writeback] shop=${shopName} slot free → queued next job=${next.id} ${next.source}->${next.target}`,
+  );
+}
+
+async function tryClaimWritebackJob(
+  shopName: string,
+  taskId: string,
+): Promise<TranslationV4Job | null> {
+  if ((await countShopWritingBackJobs(shopName)) > 0) {
+    return null;
+  }
+  const job = await claimJob(
+    shopName,
+    taskId,
+    "WRITEBACK_QUEUED",
+    "WRITING_BACK",
+    WORKER_ID,
+  );
+  if (!job) return null;
+  const active = await countShopWritingBackJobs(shopName);
+  if (active > 1) {
+    await updateJob(shopName, job.id, { status: "WRITEBACK_QUEUED", claimedBy: null });
+    console.log(
+      `[writeback] yield duplicate claim job=${job.id} shop=${shopName} (${active} WRITING_BACK)`,
+    );
+    return null;
+  }
+  return job;
+}
+
+async function isShopWritebackBusy(shopName: string): Promise<boolean> {
+  return (await countShopWritingBackJobs(shopName)) > 0;
+}
+
+async function isStaleWritebackHint(hint: HintPayload): Promise<boolean> {
   const job = await getJob(hint.shopName, hint.taskId);
   if (!job) return true;
   return job.status !== "WRITEBACK_QUEUED";
 }
 
 async function claimNextJob(): Promise<TranslationV4Job | null> {
-  for (let n = 0; n < WRITEBACK_HINT_DRAIN_MAX; n++) {
-    const hint = await popHint("writeback");
-    if (!hint) break;
-
-    if (await isStaleWritebackHint(hint)) {
-      console.log(
-        `[writeback] discard stale hint job=${hint.taskId} shop=${hint.shopName}`,
-      );
-      continue;
-    }
-
-    const queued = await getJob(hint.shopName, hint.taskId);
-    if (
-      queued &&
-      !stageSlots.hasCapacity("writeback", stagePoolKindForJob(queued))
-    ) {
-      await requeueHintTail("writeback", hint);
-      continue;
-    }
-
-    const job = await claimJob(
-      hint.shopName,
-      hint.taskId,
-      "WRITEBACK_QUEUED",
-      "WRITING_BACK",
-      WORKER_ID,
-    );
-    if (job) return job;
-
-    await requeueHintTail("writeback", hint);
-  }
-
-  const candidates = await findPendingJobs("WRITEBACK_QUEUED", 10);
-  for (const candidate of candidates) {
-    if (
-      !stageSlots.hasCapacity("writeback", stagePoolKindForJob(candidate))
-    ) {
-      continue;
-    }
-    const job = await claimJob(
-      candidate.shopName,
-      candidate.id,
-      "WRITEBACK_QUEUED",
-      "WRITING_BACK",
-      WORKER_ID,
-    );
-    if (job) return job;
-  }
-  return null;
+  return claimNextJobWithFairScheduling({
+    stage: "writeback",
+    hintKey: "writeback",
+    drainMax: WRITEBACK_HINT_DRAIN_MAX,
+    queuedStatus: "WRITEBACK_QUEUED",
+    logTag: "writeback",
+    scanBatch: WRITEBACK_CLAIM_SCAN_BATCH,
+    scanMaxBatches: WRITEBACK_CLAIM_SCAN_MAX_BATCHES,
+    isStaleHint: isStaleWritebackHint,
+    isShopBusy: isShopWritebackBusy,
+    tryClaimJob: tryClaimWritebackJob,
+  });
 }
 
 type TranslatedItem = {
@@ -379,5 +404,9 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
       stageTimings: withStageTiming(job.stageTimings, "WRITEBACK", stageStartedAt, new Date().toISOString()),
     });
     console.error(`[writeback] failed job=${jobId}`, e);
+  } finally {
+    await wakeNextWritebackForShop(shopName).catch((e) => {
+      console.warn(`[writeback] wakeNext failed shop=${shopName}`, e);
+    });
   }
 }

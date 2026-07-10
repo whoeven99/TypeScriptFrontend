@@ -30,3 +30,5 @@ shopify.app.wgw.toml
 app/generated/
 /app/generated
 /scripts/tmp
+/worker/scripts/tmp
+/worker/scripts/out
