@@ -1,23 +1,8 @@
 // api.js
 /**
- * 解析 Java 后端地址。
- * 单一来源为 Liquid 注入的 #ciwiJavaBackend（与模板 preconnect 同源）；
- * 读取不到时回退到原有按 blockId 的硬编码判断，保证行为不变。
- */
-export function switchUrl(blockId) {
-  const injected = document.getElementById("ciwiJavaBackend")?.value?.trim();
-  if (injected) return injected;
-
-  if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
-    return "https://springbackendprod.azurewebsites.net";
-  } else {
-    return "https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net";
-  }
-}
-
-/**
- * 店面 Widget / Liquid / PageFly 读 API：仅走 App Proxy（#ciwiAppProxyBase → TSF /api/storefront/*）。
- * 货币 / 图片等仍走 Java（switchUrl）；IP 定位走 Shopify / ipapi，不经额度接口。
+ * 店面 Widget / Liquid / PageFly / 货币 / 图片 统一走 App Proxy
+ *（#ciwiAppProxyBase → TSF /api/storefront/*）。
+ * IP 定位仍走 Shopify / ipapi，不经额度接口。
  */
 function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
@@ -146,7 +131,6 @@ export async function ParseLiquidDataByShopNameAndLanguage({
 }
 
 export async function GetProductImageData({
-  blockId,
   shopName,
   productId,
   languageCode,
@@ -178,7 +162,7 @@ export async function GetProductImageData({
   }
 }
 
-export async function GetShopImageData({ shopName, languageCode, blockId }) {
+export async function GetShopImageData({ shopName, languageCode }) {
   try {
     const baseUrl = resolveStorefrontApiBase();
     if (!baseUrl) {
@@ -276,7 +260,7 @@ export async function fetchSwitcherConfig({ shop }) {
   }
 }
 
-export async function fetchCurrencies({ blockId, shop }) {
+export async function fetchCurrencies({ shop }) {
   try {
     const baseUrl = resolveStorefrontApiBase();
     if (!baseUrl) return [];
@@ -303,7 +287,7 @@ export async function fetchCurrencies({ blockId, shop }) {
   }
 }
 
-export async function fetchAutoRate({ blockId, shop, currencyCode }) {
+export async function fetchAutoRate({ shop, currencyCode }) {
   const baseUrl = resolveStorefrontApiBase();
   if (!baseUrl) return undefined;
   const { data } = await fetchJson(
