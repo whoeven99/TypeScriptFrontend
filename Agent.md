@@ -302,6 +302,12 @@ Code:
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
 - `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling.
+- `app/server/billing/subscription/reconcileSubscription.server.ts`: Shopify
+  period reconciliation (same path as subscription webhook when period advanced).
+- `app/routes/api.cron.billing-subscription-reconcile.ts`: worker cron endpoint
+  (`POST /api/cron/billing-subscription-reconcile`).
+- `worker/src/services/billingSubscriptionReconcile.ts`: worker 12h scheduler
+  client calling the cron route above.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
 - `app/routes/app.pricing/route.tsx`: pricing UI/actions.
 - `app/server/translateV4/quota.server.ts`: translate-v4 quota facade.
@@ -325,6 +331,9 @@ Billing migration notes:
 - Use dry-run before apply when running `scripts/migrate-billing-to-turso.mjs`.
 - After flipping shops to TSF or rolling them back, restart the worker because
   worker-side billing binding may be cached.
+- Worker runs subscription reconciliation every 12h (configurable via
+  `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`) when `TSF_SERVER_URL` is set on
+  the worker.
 - Rollback flips binding back to legacy but does not backfill TSF usage into
   Spring. Keep rollback windows short and explicit.
 

@@ -23,6 +23,7 @@ import {
   SingleTextTranslate,
   UpdateProductImageAltData,
 } from "~/api/JavaServer";
+import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
@@ -617,8 +618,8 @@ const Index = () => {
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductAltTextData(
             data.map((item: any) => {
-              const index = targetData.response.findIndex(
-                (image: any) => item.imageUrl === image.imageBeforeUrl,
+              const index = targetData.response.findIndex((image: any) =>
+                sameShopifyImageUrl(item.imageUrl, image.imageBeforeUrl),
               );
               if (index !== -1) {
                 return {
