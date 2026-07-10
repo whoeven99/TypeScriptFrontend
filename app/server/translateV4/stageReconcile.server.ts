@@ -2,7 +2,7 @@ import { updateV4Job } from "./cosmos.server";
 import {
   clearV4Control,
   getTranslateV4RedisClient,
-  V4_HINT_KEYS,
+  v4HintKey,
 } from "./redis.server";
 import type { TranslationV4MergedMetrics } from "./progress.server";
 import {
@@ -11,7 +11,7 @@ import {
   writebackResourceTotal,
 } from "./resumeStatus";
 import { reconcileTranslateUnitMetrics } from "./metricsUtils";
-import type { TranslationV4Job } from "./types";
+import { isAutoV4TaskSource, type TranslationV4Job } from "./types";
 
 /**
  * 翻译资源已全部完成，但 Cosmos 仍停在 TRANSLATING/TRANSLATE_QUEUED（常见于额度暂停→
@@ -68,8 +68,9 @@ export async function escalateStuckTranslatingToWritebackIfNeeded(
   await clearV4Control(job.id);
 
   try {
+    const pool = isAutoV4TaskSource(job.taskSource) ? "auto" : "manual";
     await getTranslateV4RedisClient().lpush(
-      V4_HINT_KEYS.writeback,
+      v4HintKey("writeback", pool),
       JSON.stringify({ taskId: job.id, shopName }),
     );
   } catch {

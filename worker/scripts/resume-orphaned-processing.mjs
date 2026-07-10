@@ -30,11 +30,12 @@ const PROC_TO_QUEUED = {
   WRITING_BACK: ["WRITEBACK_QUEUED", "writeback"],
 };
 
-const HINT_KEYS = {
-  init: "translate:v4:hint:init",
-  translate: "translate:v4:hint:translate",
-  writeback: "translate:v4:hint:writeback",
-};
+const AUTO_TASK_SOURCE = "TsFrontend-Auto";
+
+function hintKeyForJob(hintStage, taskSource) {
+  const pool = taskSource === AUTO_TASK_SOURCE ? "auto" : "manual";
+  return `translate:v4:hint:${hintStage}:${pool}`;
+}
 
 const env = loadEnvProd();
 const client = new CosmosClient({
@@ -52,7 +53,7 @@ const threshold = new Date(Date.now() - graceMs).toISOString();
 const { resources } = await container.items
   .query({
     query: `
-      SELECT c.id, c.shopName, c.status, c.claimedBy, c.lastHeartbeat, c.updatedAt
+      SELECT c.id, c.shopName, c.status, c.claimedBy, c.lastHeartbeat, c.updatedAt, c.taskSource
       FROM c
       WHERE c.status IN ('INITIALIZING', 'TRANSLATING', 'WRITING_BACK')
         AND (NOT IS_DEFINED(c.lastHeartbeat) OR c.lastHeartbeat < @threshold)
@@ -84,7 +85,7 @@ for (const job of resources) {
   });
   if (hintStage) {
     await redis.rpush(
-      HINT_KEYS[hintStage],
+      hintKeyForJob(hintStage, current.taskSource ?? job.taskSource),
       JSON.stringify({ taskId: job.id, shopName: job.shopName }),
     );
   }

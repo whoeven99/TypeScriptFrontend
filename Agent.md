@@ -183,9 +183,10 @@ Data flow:
 
 1. UI calls `createTranslateV4Tasks()`.
 2. `POST /api/translate-v4/tasks` validates locales, modules, and quota guard.
-3. `createV4Job()` writes a Cosmos job and pushes a Redis init hint.
-4. `worker/src/workers/initWorker.ts` reads Shopify translatable resources and
-   writes init blobs.
+3. `createV4Job()` writes a Cosmos job and pushes a Redis init hint into the
+   **manual** or **auto** pool queue (`translate:v4:hint:init:{manual|auto}`).
+4. `worker/src/workers/initWorker.ts` claims via `fairStageClaim` (manual first),
+   reads Shopify translatable resources and writes init blobs.
 5. `worker/src/workers/translateWorker.ts` reads blobs, calls LLMs, writes
    checkpoints, updates Redis/Cosmos progress, and deducts quota.
 6. `worker/src/workers/writebackWorker.ts` writes translations back to Shopify.
@@ -254,12 +255,22 @@ Services:
 
 - `worker/src/services/cosmosV4.ts`: Cosmos translation jobs.
 - `worker/src/services/blobV4.ts`, `translateBlobIO.ts`: Blob IO and checkpoint format.
-- `worker/src/services/redisV4.ts`: progress, hints, control keys.
+- `worker/src/services/redisV4.ts`: progress, **split auto/manual hint queues**, control keys.
+- `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
+  legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
 - `worker/src/services/llmTranslate.ts`: LLM routing, concurrency, usage.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
-- `worker/src/services/stagePool.ts`: stage concurrency.
+- `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/shopScan/*`: shop profile scan stages.
+
+Hint queue keys (Redis lists):
+
+- `translate:v4:hint:{init|translate|writeback}:manual`
+- `translate:v4:hint:{init|translate|writeback}:auto`
+- Legacy (drain-only during deploy): `translate:v4:hint:{init|translate|writeback}`
+
+App push helpers: `app/server/translateV4/redis.server.ts` → `v4HintKey(stage, pool)`.
 
 Important env names only:
 
@@ -606,8 +617,13 @@ These replace old one-off debug markdown files.
 - Translation v4 state is distributed. State machine changes must consider
   resume, retry, delete, stale reset, Redis controls, Blob checkpoints, and
   Shopify writeback.
+- Manual vs auto must stay on split hint queues (`:manual` / `:auto`); do not
+  reintroduce a shared FIFO that lets auto starve manual.
 - `WORKER_STAGES` can disable init/translate/writeback. Check it when debugging
   missing writeback.
+- Manual and auto translation use **separate Redis hint queues and Cosmos scan
+  filters**. Claim always prefers manual. If manual tasks sit in INIT_QUEUED while
+  auto is busy, check whether code still pushes to legacy unsplit keys.
 - Storefront extension calls TSF through App Proxy. API request shape changes
   often require extension JS changes.
 - `app/routes/app.tsx` affects every embedded page.

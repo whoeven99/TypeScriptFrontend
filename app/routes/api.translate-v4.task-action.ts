@@ -9,7 +9,7 @@ import { deleteV4JobBlobs } from "~/server/translateV4/blob.server";
 import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
 import {
   getTranslateV4RedisClient,
-  V4_HINT_KEYS,
+  v4HintKey,
   setV4Control,
   setV4PausePending,
   clearV4Control,
@@ -26,7 +26,7 @@ import {
   resolveResumeV4JobStatus,
   stageFromStatus,
 } from "~/server/translateV4/resumeStatus";
-import { canPauseV4Job } from "~/server/translateV4/types";
+import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
 import { evaluateCreateTaskQuotaGuard } from "~/server/billing/quota/createTaskQuotaGuard.server";
 
 /** POST /api/translate-v4/task-action —— pause / resume / cancel 一个 TsFrontend 任务。 */
@@ -156,13 +156,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     await clearV4Control(taskId); // 清除暂停/取消键，避免 resume 后立即再次中断
     await clearV4PausePending(taskId); // 清掉「额度不足/暂停待落盘」标记，避免续跑后仍显示旧提示
 
-    // 推 hint 让 worker 立即拾取
+    // 推 hint 让 worker 立即拾取（按 taskSource 进 manual/auto 池）
     const hintStage = resumeStatus.replace("_QUEUED", "").toLowerCase();
-    const hintKey = (V4_HINT_KEYS as Record<string, string>)[hintStage];
-    if (hintKey) {
+    if (
+      hintStage === "init" ||
+      hintStage === "translate" ||
+      hintStage === "writeback"
+    ) {
+      const pool = isAutoV4TaskSource(job.taskSource) ? "auto" : "manual";
       try {
         await getTranslateV4RedisClient().lpush(
-          hintKey,
+          v4HintKey(hintStage, pool),
           JSON.stringify({ taskId, shopName }),
         );
       } catch {

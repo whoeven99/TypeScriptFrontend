@@ -23,9 +23,15 @@ function loadEnvProd() {
 }
 
 const HINT_KEYS = {
-  init: "translate:v4:hint:init",
-  translate: "translate:v4:hint:translate",
-  writeback: "translate:v4:hint:writeback",
+  "init/manual": "translate:v4:hint:init:manual",
+  "init/auto": "translate:v4:hint:init:auto",
+  "init/legacy": "translate:v4:hint:init",
+  "translate/manual": "translate:v4:hint:translate:manual",
+  "translate/auto": "translate:v4:hint:translate:auto",
+  "translate/legacy": "translate:v4:hint:translate",
+  "writeback/manual": "translate:v4:hint:writeback:manual",
+  "writeback/auto": "translate:v4:hint:writeback:auto",
+  "writeback/legacy": "translate:v4:hint:writeback",
   verify: "translate:v4:hint:verify",
   analysis: "translate:v4:hint:analysis",
 };
