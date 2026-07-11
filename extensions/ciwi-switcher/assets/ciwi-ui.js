@@ -299,7 +299,10 @@ export async function initializeCurrency({
   }
 
   let rate = 1;
-  if (selectedCurrency?.exchangeRate == "Auto") {
+  if (
+    selectedCurrency?.exchangeRate == "Auto" ||
+    selectedCurrency?.exchangeRate == null
+  ) {
     const localRateJSON =
       typeof localStorage !== "undefined"
         ? localStorage.getItem("ciwi_selected_currency_rate")
@@ -335,7 +338,11 @@ export async function initializeCurrency({
       }
     }
   } else {
-    rate = selectedCurrency.exchangeRate;
+    rate = Number(selectedCurrency.exchangeRate);
+    if (!Number.isFinite(rate)) {
+      transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
+      return;
+    }
   }
   // 转换现有价格并开始观察整个文档 body
   // （initPriceObserver 内部会先执行一次全量转换，避免这里重复扫描整个文档）

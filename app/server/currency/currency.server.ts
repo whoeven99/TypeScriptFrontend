@@ -369,7 +369,9 @@ export async function getCurrencyCacheData(
   if (!row) return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_NOT_FOUND, undefined);
 
   const payload = toCurrencyPayload(row);
-  if (payload.primaryStatus !== 0 || payload.exchangeRate !== "Auto") {
+  const hasManualRate =
+    payload.exchangeRate !== null && payload.exchangeRate !== "Auto";
+  if (hasManualRate) {
     return ok(payload);
   }
 
