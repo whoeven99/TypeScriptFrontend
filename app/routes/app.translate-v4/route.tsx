@@ -148,6 +148,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     primaryLocale,
     jobs,
     coverage,
+    perfDebug,
   });
 };
 
@@ -161,8 +162,15 @@ export default function AppTranslateV4() {
     primaryLocale,
     jobs: initialJobs,
     coverage: initialCoverage,
+    perfDebug,
   } = useLoaderData<typeof loader>();
-  const [perfDebugEnabled] = useState(() => isPerfDebugEnabled());
+  const [perfDebugEnabled, setPerfDebugEnabled] = useState(perfDebug);
+
+  useEffect(() => {
+    if (isPerfDebugEnabled()) {
+      setPerfDebugEnabled(true);
+    }
+  }, []);
 
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
