@@ -2,12 +2,46 @@ import IORedis from "ioredis";
 
 let _redis: IORedis | undefined;
 let _lastRedisErrorLogAt = 0;
+let _redisConnectionName: string | undefined;
+
+function normalizeEnvValue(value: string | undefined): string {
+  if (value == null) return "";
+  let v = String(value).trim();
+  if (
+    (v.startsWith('"') && v.endsWith('"')) ||
+    (v.startsWith("'") && v.endsWith("'"))
+  ) {
+    v = v.slice(1, -1).trim();
+  }
+  return v;
+}
+
+function isProductionNodeEnv(): boolean {
+  const env = normalizeEnvValue(process.env.NODE_ENV).toLowerCase();
+  return env === "prod" || env === "production";
+}
+
+/** 默认 tsf-worker-prod / tsf-worker-test；可用 REDIS_CONNECTION_NAME 覆盖。 */
+function resolveRedisConnectionName(): string {
+  const override = process.env.REDIS_CONNECTION_NAME?.trim();
+  if (override) return override;
+  return isProductionNodeEnv() ? "tsf-worker-prod" : "tsf-worker-test";
+}
 
 const REDIS_COMMON_OPTIONS = {
   maxRetriesPerRequest: 2,
   connectTimeout: 10_000,
   retryStrategy: (times: number) => Math.min(times * 500, 5_000),
 } as const;
+
+function redisClientOptions() {
+  const connectionName = resolveRedisConnectionName();
+  _redisConnectionName = connectionName;
+  return {
+    ...REDIS_COMMON_OPTIONS,
+    connectionName,
+  };
+}
 
 function attachRedisListeners(redis: IORedis): void {
   redis.on("error", (err: Error) => {
@@ -17,7 +51,8 @@ function attachRedisListeners(redis: IORedis): void {
     console.error(`[redisV4] connection error: ${err.message}`);
   });
   redis.on("connect", () => {
-    console.info("[redisV4] connected");
+    const name = _redisConnectionName ?? resolveRedisConnectionName();
+    console.info(`[redisV4] connected (${name})`);
   });
   redis.on("reconnecting", () => {
     const now = Date.now();
@@ -34,7 +69,7 @@ export function getRedis(): IORedis {
     process.env.REDIS_URL?.trim() ||
     process.env.REDIS_URL_V4?.trim();
   if (url) {
-    _redis = new IORedis(url, REDIS_COMMON_OPTIONS);
+    _redis = new IORedis(url, redisClientOptions());
     attachRedisListeners(_redis);
     return _redis;
   }
@@ -59,7 +94,7 @@ export function getRedis(): IORedis {
     port,
     password,
     tls: useTls ? {} : undefined,
-    ...REDIS_COMMON_OPTIONS,
+    ...redisClientOptions(),
   });
   attachRedisListeners(_redis);
   return _redis;

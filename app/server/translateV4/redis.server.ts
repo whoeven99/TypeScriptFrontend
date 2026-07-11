@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 
 /**
  * TsFrontend 专用 Redis 客户端，与 Spark worker 连同一个 Azure Cache 实例。
@@ -7,8 +8,23 @@ import Redis from "ioredis";
  *   REDIS_URL_V4                 （优先；形如 rediss://:password@host:port/0）
  *   REDIS_URL                    （未设 REDIS_URL_V4 时的回退；prod 须与 worker 同一实例）
  *   REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4 [+ REDIS_PORT_V4 + REDIS_TLS_V4]
+ *   REDIS_CONNECTION_NAME        （可选；默认 tsf-web-prod / tsf-web-test，Azure CLIENT LIST 可识别）
  */
 let singleton: Redis | undefined;
+
+function resolveRedisConnectionName(): string {
+  const override = process.env.REDIS_CONNECTION_NAME?.trim();
+  if (override) return override;
+  return isProductionNodeEnv() ? "tsf-web-prod" : "tsf-web-test";
+}
+
+function redisClientOptions() {
+  return {
+    maxRetriesPerRequest: 2,
+    connectTimeout: 10_000,
+    connectionName: resolveRedisConnectionName(),
+  } as const;
+}
 
 export function getTranslateV4RedisClient(): Redis {
   if (singleton) return singleton;
@@ -17,10 +33,7 @@ export function getTranslateV4RedisClient(): Redis {
     process.env.REDIS_URL_V4?.trim() ||
     process.env.REDIS_URL?.trim();
   if (url) {
-    singleton = new Redis(url, {
-      maxRetriesPerRequest: 2,
-      connectTimeout: 10_000,
-    });
+    singleton = new Redis(url, redisClientOptions());
     return singleton;
   }
 
@@ -41,8 +54,7 @@ export function getTranslateV4RedisClient(): Redis {
     port,
     password,
     tls: useTls ? {} : undefined,
-    maxRetriesPerRequest: 2,
-    connectTimeout: 10_000,
+    ...redisClientOptions(),
   });
   return singleton;
 }
