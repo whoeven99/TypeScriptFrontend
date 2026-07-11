@@ -27,6 +27,7 @@ import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIdleReady } from "~/hooks/useIdleReady";
+import { Profiler } from "react";
 
 import { ConfigProvider } from "antd";
 import { useDispatch } from "react-redux";
@@ -46,6 +47,12 @@ import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+import {
+  isPerfDebugEnabled,
+  logReactProfilerRender,
+  markPerfEnd,
+  markPerfStart,
+} from "~/utils/perf.client";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -177,16 +184,30 @@ function applyBootstrapToStore(
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const reqStart = Date.now();
+  const perfDebug = new URL(request.url).searchParams.get("perf") === "1";
   const adminAuthResult = await authenticate.admin(request);
+  const authMs = Date.now() - reqStart;
   const { shop, accessToken } = adminAuthResult.session;
+  const localeStart = Date.now();
   const bootstrap = await loadAppBootstrapLocales({
     shop,
     accessToken: accessToken as string | undefined,
   });
+  const localeMs = Date.now() - localeStart;
 
   void runAppInitialization({
     shop,
   });
+
+  if (perfDebug) {
+    console.log("[perf][loader] app", {
+      shop,
+      authMs,
+      localeMs,
+      totalMs: Date.now() - reqStart,
+    });
+  }
 
   return json({
     shop,
@@ -420,12 +441,18 @@ export default function App() {
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
+  const [perfDebugEnabled, setPerfDebugEnabled] = useState(false);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setPerfDebugEnabled(isPerfDebugEnabled());
+  }, []);
+
+  useEffect(() => {
     setIsClient(true);
+    const bootstrapPerfStart = markPerfStart("app.bootstrap.fetch");
     globalStore.shop = shop as string;
     globalStore.translateV4ExpressBeta = true;
     globalStore.source = bootstrap.source.code;
@@ -448,12 +475,19 @@ export default function App() {
           ok?: boolean;
           bootstrap?: AppBootstrapData;
         };
+        markPerfEnd("app.bootstrap.fetch", bootstrapPerfStart, {
+          ok: Boolean(data?.ok),
+          status: res.status,
+        });
         if (cancelled || !data?.ok || !data.bootstrap) return;
         applyBootstrapToStore(dispatch, data.bootstrap);
       })
       .catch((err) => {
         // Bootstrap data is non-blocking; fetch failures should not pollute exception telemetry.
         console.warn("[app] bootstrap fetch failed:", err);
+        markPerfEnd("app.bootstrap.fetch", bootstrapPerfStart, {
+          failed: true,
+        });
       })
       .finally(() => {
         if (!cancelled) {
@@ -472,27 +506,42 @@ export default function App() {
         theme={appAntdTheme}
         getPopupContainer={() => document.body}
       >
-        <NavMenu>
-          <Link to="/app/translate-v4" rel="home">
-            {t("v4.title")}
-          </Link>
-          {isClient && (
-            <>
-              <Link to="/app/language">{t("Language")}</Link>
-              <Link to="/app/manage_translation">
-                {t("Manage Translation")}
-              </Link>
-              <Link to="/app/currency">{t("Currency")}</Link>
-              <Link to="/app/switcher">{t("Switcher")}</Link>
-              <Link to="/app/glossary">{t("Glossary")}</Link>
-              {showShopProfilePage ? (
-                <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
-              ) : null}
-              <Link to="/app/pricing">{t("Pricing")}</Link>
-            </>
-          )}
-        </NavMenu>
-        <Outlet />
+        <Profiler
+          id="app-shell"
+          onRender={(id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+            if (!perfDebugEnabled) return;
+            logReactProfilerRender(
+              id,
+              phase,
+              actualDuration,
+              baseDuration,
+              startTime,
+              commitTime,
+            );
+          }}
+        >
+          <NavMenu>
+            <Link to="/app/translate-v4" rel="home">
+              {t("v4.title")}
+            </Link>
+            {isClient && (
+              <>
+                <Link to="/app/language">{t("Language")}</Link>
+                <Link to="/app/manage_translation">
+                  {t("Manage Translation")}
+                </Link>
+                <Link to="/app/currency">{t("Currency")}</Link>
+                <Link to="/app/switcher">{t("Switcher")}</Link>
+                <Link to="/app/glossary">{t("Glossary")}</Link>
+                {showShopProfilePage ? (
+                  <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
+                ) : null}
+                <Link to="/app/pricing">{t("Pricing")}</Link>
+              </>
+            )}
+          </NavMenu>
+          <Outlet />
+        </Profiler>
         {isClient && supportChatReady ? (
           <Suspense fallback={null}>
             <LazySupportChatWidget />

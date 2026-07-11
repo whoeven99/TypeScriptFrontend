@@ -12,6 +12,15 @@
 2. **THEN**: Use the relevant section of `AGENTS.md` to locate the correct route, server helper, worker, extension, script, or Prisma model that owns the behavior you need to analyze or modify.
 3. **FINALLY**: Confirm you've identified the right files before proceeding with any analysis or editing.
 
+## Trigger Phrases — Execute Immediately
+
+When the user says these phrases, run the corresponding command **immediately** (no confirmation needed):
+
+| User says | Run this command |
+|-----------|-----------------|
+| "提个pr" / "提pr" / "创建PR" / "push and create PR" | `npm run push:pr` |
+| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | `npm run merge:deploy:test` |
+
 ## Reminder
 
 - Run `git status --short` before editing. Do not overwrite user changes or unrelated untracked files.

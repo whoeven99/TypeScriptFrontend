@@ -21,6 +21,8 @@
     "turso:migrate:prod": "node scripts/turso-migrate.cjs prod",
     "sync:filter": "node scripts/sync-translation-filter.mjs",
     "check:filter": "node scripts/sync-translation-filter.mjs --check",
+    "push:pr": "node scripts/cursor-push-pr.mjs",
+    "merge:deploy:test": "node scripts/merge-deploy-test.mjs",
     "worker:build": "npm run build --prefix worker",
     "worker:dev": "npm run dev --prefix worker",
     "worker:start": "npm run start --prefix worker",

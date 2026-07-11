@@ -592,6 +592,24 @@ Check deploy configs when changing extensions:
 `extensions/web-pixel` is a standard Shopify web pixel extension. Its source is
 `extensions/web-pixel/src/index.ts`; generated output is in `dist/`.
 
+## Trigger Phrases (AI Agent Actions)
+
+When the user says these exact or similar phrases, immediately run the
+corresponding script without asking for confirmation:
+
+| User says | Action |
+|-----------|--------|
+| "提个pr" / "提pr" / "创建PR" / "push and create PR" | Run `npm run push:pr`（或 `npm run push:pr -- --message "说明"`） |
+| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | Run `npm run merge:deploy:test` |
+| "发布测试环境" / "deploy test" (单独发布，不合入PR) | 触发 `tsf-deploy.yml` workflow on master，参数 `render_service_test=true, render_worker_test=true` |
+
+For "合入PR然后发布测试环境", the script will:
+1. Auto-detect the PR for the current branch
+2. Squash-merge it to master
+3. Switch local to master and pull
+4. Trigger `tsf-deploy.yml` workflow for test environment
+5. Output the workflow run URL
+
 ## Task Locator
 
 | User asks about | First read | Then read |
@@ -642,6 +660,15 @@ Operational root scripts:
   assets.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
   scripts.
+
+Operational PowerShell scripts:
+
+- `scripts/cursor-push-pr.mjs`: `npm run push:pr` — commit（跳过敏感文件）→ push → 创建 PR；
+  成功输出 `PR_URL:`。供 Cursor Agent 在「提个pr」时直接调用。
+- `scripts/pr.ps1`: 交互式 PowerShell 版提 PR（本地手动用）。
+- `scripts/merge-deploy-test.mjs`: `npm run merge:deploy:test` — 合入当前分支 PR 并触发
+  TSF Web Test + Worker Test 部署；成功输出 `MERGED_PR_URL:` 与 `DEPLOY_RUN_URL:`。
+- `scripts/merge-deploy-test.ps1`: 交互式 PowerShell 版合入+部署（本地手动用）。
 
 Worker scripts to keep:
 
