@@ -166,13 +166,19 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const shopName = typeof body.shopName === "string" ? body.shopName : auth.shop;
     const currencyCode =
       typeof body.currencyCode === "string" ? body.currencyCode : "";
+    const fromCurrencyCode =
+      typeof body.fromCurrencyCode === "string" ? body.fromCurrencyCode : "";
 
     if (shopName !== auth.shop) {
       return json(fail(403, "forbidden"), { status: 403, headers: CORS_HEADERS });
     }
 
     try {
-      const result = await getCurrencyCacheData(shopName, currencyCode);
+      const result = await getCurrencyCacheData(
+        shopName,
+        currencyCode,
+        fromCurrencyCode,
+      );
       return json(result, { headers: CORS_HEADERS });
     } catch (err) {
       console.error(`[storefront] currency cache failed shop=${shopName}:`, err);

@@ -1,5 +1,9 @@
-// Storefront Widget / Liquid / PageFly / image translation APIs go through
-// Shopify App Proxy (`#ciwiAppProxyBase`) into TSF `/api/storefront/*`.
+// api.js
+/**
+ * 店面 Widget / Liquid / PageFly / 货币 / 图片 统一走 App Proxy
+ *（#ciwiAppProxyBase → TSF /api/storefront/*）。
+ * IP 定位仍走 Shopify / ipapi，不经额度接口。
+ */
 function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
   if (!appProxyBase) {
@@ -127,7 +131,6 @@ export async function ParseLiquidDataByShopNameAndLanguage({
 }
 
 export async function GetProductImageData({
-  blockId,
   shopName,
   productId,
   languageCode,
@@ -159,7 +162,7 @@ export async function GetProductImageData({
   }
 }
 
-export async function GetShopImageData({ shopName, languageCode, blockId }) {
+export async function GetShopImageData({ shopName, languageCode }) {
   try {
     const baseUrl = resolveStorefrontApiBase();
     if (!baseUrl) {
@@ -257,7 +260,7 @@ export async function fetchSwitcherConfig({ shop }) {
   }
 }
 
-export async function fetchCurrencies({ blockId, shop }) {
+export async function fetchCurrencies({ shop }) {
   try {
     const baseUrl = resolveStorefrontApiBase();
     if (!baseUrl) return [];
@@ -284,7 +287,7 @@ export async function fetchCurrencies({ blockId, shop }) {
   }
 }
 
-export async function fetchAutoRate({ blockId, shop, currencyCode }) {
+export async function fetchAutoRate({ shop, currencyCode, fromCurrencyCode }) {
   const baseUrl = resolveStorefrontApiBase();
   if (!baseUrl) return undefined;
   const { data } = await fetchJson(
@@ -294,10 +297,18 @@ export async function fetchAutoRate({ blockId, shop, currencyCode }) {
       body: JSON.stringify({
         shopName: shop,
         currencyCode,
+        fromCurrencyCode,
       }),
     },
   );
-  return data.response?.exchangeRate;
+  const rawRate = data.response?.exchangeRate;
+  const parsedRate =
+    typeof rawRate === "number"
+      ? rawRate
+      : typeof rawRate === "string"
+        ? Number(rawRate)
+        : Number.NaN;
+  return Number.isFinite(parsedRate) ? parsedRate : undefined;
 }
 
 export async function fetchUserCountryInfo(access_key) {

@@ -1,4 +1,4 @@
-# Agent.md
+# AGENTS.md
 
 This file is the navigation index for future AI agents working in this repo.
 Read it before changing code, then use the relevant section to jump to the
@@ -6,7 +6,7 @@ right route, server helper, worker, extension, script, or Prisma model.
 
 ## Required Workflow
 
-1. Read `Agent.md` first and identify the feature area.
+1. Read `AGENTS.md` first and identify the feature area.
 2. Run `git status --short` before editing. Do not overwrite user changes or
    unrelated untracked files.
 3. Read the route entry, server helper, worker or extension caller, and Prisma
@@ -38,7 +38,7 @@ right route, server helper, worker, extension, script, or Prisma model.
 
 ## Markdown Policy
 
-`Agent.md` is the durable AI-facing index. Historical debug notes and phase
+`AGENTS.md` is the durable AI-facing index. Historical debug notes and phase
 plans have been merged here and removed. Prefer updating this file instead of
 adding another root-level planning or debug markdown file.
 
