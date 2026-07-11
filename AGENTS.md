@@ -281,7 +281,7 @@ Important env names only:
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
   `GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey`.
-- Quota: `TSF_SERVER_URL`, `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`,
+- Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
   `TRANSLATE_QUOTA_FLUSH_CHARGE`.
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
@@ -324,11 +324,10 @@ Billing migration notes:
   legacy Spring billing.
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
-- Legacy remaining comes from Spring `/quota/query`; migration must keep TSF
-  remaining equal to the legacy result at cutover time.
+- Worker 额度读写直连 Turso Account；迁移脚本 `migrate-billing-to-turso.mjs` 仍可读 Spring DB 镜像作一次性对账。
 - Use dry-run before apply when running `scripts/migrate-billing-to-turso.mjs`.
-- After flipping shops to TSF or rolling them back, restart the worker because
-  worker-side billing binding may be cached.
+- After flipping shops to TSF or rolling them back, restart the worker if you
+  changed billing-related env (Turso credentials, quota tuning).
 - Worker runs subscription reconciliation every 12h (configurable via
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`) inside the worker process when
   Turso credentials are set. TSF Web does not schedule or execute this job.
@@ -382,7 +381,7 @@ Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
   `app.manage_translation_.productImageAlt/route.tsx`.
 - Extension reads: `extensions/ciwi-switcher/assets/ciwi-api.js` via App Proxy.
 - Migration script: `scripts/migrate-user-pictures-to-turso.mjs`.
-- Legacy 店扣费仍可能走 Spring `quota/deduct`；数据读写已在 Turso。
+- 图片翻译扣费走 TSF Turso `deductShopCredits`，不再调 Spring `/quota`。
 
 ### Manage Translation Legacy Pages
 

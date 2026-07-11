@@ -5,10 +5,9 @@
  *   - 每批 LLM 返回后按真实 token×系数 扣减（deductTsfQuota），拿到剩余额度。
  *   - 用剩余额度算出该 shop 允许的并发上限（quotaConcurrencyCap），喂给按 shop 的并发闸。
  *   - 剩余为负 → worker 暂停任务（已在飞的调用继续翻译并扣除，可接受）。
- * 这样额度越少并发越低，最大透支被锁在「在飞批次 × 每批 token」内。
  *
  * 启用规则：**TsFrontend / TsFrontend-Auto 来源默认开启**，QUOTA_ENFORCE=false 可显式关闭；其它来源始终关闭。
- * 未配置 TSF_SERVER_URL 时降级为「额度无限」（no-op），不影响现网。
+ * 额度读写均直连 Turso Account 账本（不再回退 Spring /quota）。
  */
 
 export type QuotaDeductResult = {
@@ -24,28 +23,8 @@ import {
 } from "./cosmosV4.js";
 import {
   deductTsfAccountCredits,
-  getShopBillingSystem,
   getTsfAccountRemaining,
 } from "./tsfDb.js";
-
-/** shop 归属缓存（tsf 走 Turso 账本，legacy 走 Java）；仅缓存已确定结果。 */
-const bindingCache = new Map<string, "tsf" | "legacy">();
-
-/** 判断 shop 是否走新系统（tsf）。未判定/未配置 Turso → false（回退 Java）。 */
-async function isTsfShop(shop: string): Promise<boolean> {
-  const cached = bindingCache.get(shop);
-  if (cached) return cached === "tsf";
-  try {
-    const sys = await getShopBillingSystem(shop);
-    if (sys === "tsf" || sys === "legacy") {
-      bindingCache.set(shop, sys);
-      return sys === "tsf";
-    }
-  } catch (err) {
-    console.error(`[tsfQuota] binding lookup error shop=${shop}:`, err);
-  }
-  return false;
-}
 
 /** TSF 手动 + 自动翻译任务来源（均扣 TSF 额度池）。 */
 const TSF_QUOTA_TASK_SOURCES = new Set([
@@ -84,61 +63,8 @@ export function quotaConcurrencyCap(remaining: number): number {
   return 1;
 }
 
-/** TSF 额度服务 BaseResponse<TokenQuotaVO>。 */
-type TokenQuotaVO = {
-  shopName: string;
-  maxToken: number;
-  usedToken: number;
-  remaining: number;
-};
-type QuotaBaseResponse = {
-  success: boolean;
-  errorCode: number;
-  errorMsg: string;
-  response: TokenQuotaVO | null;
-};
-
-/** 额度服务 base（去掉尾部斜杠；缺协议时补 https://）。 */
-function quotaBase(): string | null {
-  let base = process.env.TSF_SERVER_URL?.trim();
-  if (!base) return null;
-  base = base.replace(/\/+$/, "");
-  if (!/^https?:\/\//i.test(base)) {
-    base = `https://${base}`;
-  }
-  return base;
-}
-
-async function queryTsfRemaining(shop: string, attempts = 3): Promise<number | null> {
-  const base = quotaBase();
-  if (!base) return null;
-
-  const maxAttempts = Math.max(1, attempts);
-  for (let i = 0; i < maxAttempts; i++) {
-    try {
-      const url = `${base}/quota/query?shopName=${encodeURIComponent(shop)}`;
-      const resp = await fetch(url, { method: "GET" });
-      const data = (await resp.json()) as QuotaBaseResponse;
-      if (!data?.success || !data.response) {
-        console.warn(
-          `[tsfQuota] query not ok shop=${shop}: ${data?.errorMsg ?? resp.status} (attempt ${i + 1}/${maxAttempts})`,
-        );
-      } else {
-        return data.response.remaining;
-      }
-    } catch (err) {
-      console.error(`[tsfQuota] query error shop=${shop} (attempt ${i + 1}/${maxAttempts}):`, err);
-    }
-    if (i < maxAttempts - 1) {
-      await new Promise((r) => setTimeout(r, 200 * (i + 1)));
-    }
-  }
-  return null;
-}
-
 /**
  * 读取剩余额度（worker 进入 TRANSLATE 时 seed 初始并发用）。
- * GET {base}/quota/query?shopName=
  * 查询失败 → 保守返回 1（从并发 1 起步，由首次扣减纠正），不直接掐断任务。
  */
 export async function getTsfRemaining(shop: string): Promise<number> {
@@ -150,23 +76,21 @@ export async function getTsfRemainingWithRetry(
   shop: string,
   attempts = 3,
 ): Promise<number> {
-  // 新系统（tsf）：直连 Turso 账本读取剩余额度。
-  if (await isTsfShop(shop)) {
+  const maxAttempts = Math.max(1, attempts);
+  for (let i = 0; i < maxAttempts; i++) {
     const remaining = await getTsfAccountRemaining(shop);
-    if (remaining === null) return 1;
-    return remaining;
+    if (remaining !== null) return remaining;
+    if (i < maxAttempts - 1) {
+      await new Promise((r) => setTimeout(r, 200 * (i + 1)));
+    }
   }
-  // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为「无限」。
-  if (!quotaBase()) return Number.MAX_SAFE_INTEGER;
-  return (await queryTsfRemaining(shop, attempts)) ?? 1;
+  console.warn(`[tsfQuota] query failed shop=${shop}, seed remaining=1`);
+  return 1;
 }
 
 /** 邮件展示用：查询剩余额度；不可查或失败时返回 null。 */
 export async function getTsfRemainingForEmail(shop: string): Promise<number | null> {
-  if (await isTsfShop(shop)) {
-    return getTsfAccountRemaining(shop);
-  }
-  return queryTsfRemaining(shop, 3);
+  return getTsfAccountRemaining(shop);
 }
 
 /**
@@ -187,42 +111,16 @@ export function resolveQuotaSeedCap(
 
 /**
  * 扣减 `amount` 额度，返回剩余（可能为负）。
- * POST {base}/quota/deduct?shopName=&tokens=  （tokens 必须 >0，无 body）
- * Java 语义：始终扣除并返回 remaining；余额不足时 remaining 为负、success 仍为 true。
- * 接口异常/参数错误 → ok:false（worker 据此暂停，避免无账本超用）。
+ * 接口异常/无账户 → ok:false（worker 据此暂停，避免无账本超用）。
  */
 export async function deductTsfQuota(
   shop: string,
   amount: number,
 ): Promise<QuotaDeductResult> {
-  // 新系统（tsf）：直连 Turso 账本自增 usedCredits。
-  if (await isTsfShop(shop)) {
-    const remaining = await deductTsfAccountCredits(shop, amount);
-    if (remaining === null) {
-      console.warn(`[tsfQuota] tsf deduct failed (no account?) shop=${shop}`);
-      return { ok: false, remaining: 0 };
-    }
-    return { ok: true, remaining };
-  }
-
-  // 调用方（worker）已按来源决定是否启用；此处仅在未配置后端时降级为 no-op。
-  const base = quotaBase();
-  if (!base) {
-    return { ok: true, remaining: Number.MAX_SAFE_INTEGER };
-  }
-
-  const tokens = Math.max(1, Math.ceil(amount)); // 接口要求 tokens > 0
-  try {
-    const url = `${base}/quota/deduct?shopName=${encodeURIComponent(shop)}&tokens=${tokens}`;
-    const resp = await fetch(url, { method: "POST" });
-    const data = (await resp.json()) as QuotaBaseResponse;
-    if (!data?.success || !data.response) {
-      console.warn(`[tsfQuota] deduct not ok shop=${shop}: ${data?.errorMsg ?? resp.status}`);
-      return { ok: false, remaining: 0 };
-    }
-    return { ok: true, remaining: data.response.remaining };
-  } catch (err) {
-    console.error(`[tsfQuota] deduct error shop=${shop}:`, err);
+  const remaining = await deductTsfAccountCredits(shop, amount);
+  if (remaining === null) {
+    console.warn(`[tsfQuota] deduct failed (no account?) shop=${shop}`);
     return { ok: false, remaining: 0 };
   }
+  return { ok: true, remaining };
 }

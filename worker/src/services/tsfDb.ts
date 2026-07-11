@@ -110,20 +110,6 @@ export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string
   return token ? String(token) : null;
 }
 
-/**
- * 读取 shop 的账本归属（新系统 tsf / 老系统 legacy）。
- * 无 binding 表记录或未配置 Turso → 返回 null（调用方回退 Java）。
- */
-export async function getShopBillingSystem(shop: string): Promise<string | null> {
-  if (!hasTsfDbCredentials()) return null;
-  const rs = await getTsfDb().execute({
-    sql: "SELECT billingSystem FROM ShopBillingBinding WHERE shop = ? LIMIT 1",
-    args: [shop],
-  });
-  const v = rs.rows[0]?.billingSystem;
-  return v != null ? String(v) : null;
-}
-
 /** 读 tsf 账户剩余额度（三池之和 - 已用）。无账户返回 null。 */
 export async function getTsfAccountRemaining(shop: string): Promise<number | null> {
   if (!hasTsfDbCredentials()) return null;

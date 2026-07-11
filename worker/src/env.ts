@@ -79,8 +79,6 @@ function collectChecks(): ServiceCheck[] {
   const sesOk = Boolean(
     process.env.TENCENT_CLOUD_KEY_ID?.trim() && process.env.TENCENT_CLOUD_KEY?.trim(),
   );
-  const quotaOk = Boolean(process.env.TSF_SERVER_URL?.trim());
-
   return [
     {
       label: "Cosmos",
@@ -111,11 +109,6 @@ function collectChecks(): ServiceCheck[] {
       label: "SES",
       ok: sesOk,
       hint: "TENCENT_CLOUD_KEY_ID, TENCENT_CLOUD_KEY（邮件可选）",
-    },
-    {
-      label: "Quota",
-      ok: quotaOk,
-      hint: "TSF_SERVER_URL（额度 API，可选）",
     },
   ];
 }
