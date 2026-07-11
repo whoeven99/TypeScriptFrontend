@@ -351,3 +351,23 @@ model SupportMessage {
 
   @@index([conversationId, createdAt])
 }
+
+// 对应 Java `UserPictures`；图译元数据。Int 主键对齐 Java id，迁移时保留原值。
+model UserPicture {
+  id                   Int      @id
+  shop                 String // Java shop_name
+  imageId              String // Product GID（非 Media ID）
+  imageBeforeUrl       String
+  imageAfterUrl        String?
+  altBeforeTranslation String?
+  altAfterTranslation  String?
+  languageCode         String
+  isDelete             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([shop, imageId, imageBeforeUrl, languageCode])
+  @@index([shop, languageCode, isDelete])
+  @@index([shop, imageId, languageCode, isDelete])
+  @@index([shop, isDelete])
+}

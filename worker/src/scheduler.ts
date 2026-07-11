@@ -10,6 +10,7 @@ import {
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
 import { runAutoTranslateScan } from "./services/autoTranslate.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
+import { runBillingSubscriptionReconcile } from "./services/billingSubscriptionReconcile.js";
 import { isShuttingDown } from "./shutdown.js";
 import { hostname } from "os";
 import {
@@ -34,6 +35,18 @@ const EMAIL_WORKER_INTERVAL_MS = (() => {
   const n = Number(process.env.EMAIL_WORKER_INTERVAL_MS);
   return n > 0 ? n : 30_000;
 })();
+/** 订阅对账：默认每 12 小时在 worker 内对比 Shopify 周期并补续费。 */
+const BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS = Math.max(
+  60_000,
+  Number(process.env.BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS) ||
+    12 * 60 * 60_000,
+);
+/** 启动后首次对账延迟（默认 2 分钟，避免与 deploy 抢资源）。 */
+const BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS = Math.max(
+  0,
+  Number(process.env.BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS) ||
+    2 * 60_000,
+);
 
 /** 店铺画像扫描轮询间隔（默认 10 秒；hint 立即唤醒，轮询兜底）。 */
 const SHOP_SCAN_POLL_INTERVAL_MS = Math.max(
@@ -84,6 +97,19 @@ function scheduleAutoTranslateScan(): void {
   };
 
   scheduleNext();
+}
+
+function scheduleBillingSubscriptionReconcile(): void {
+  const tick = () => {
+    safeRun("billingSubscriptionReconcile", runBillingSubscriptionReconcile);
+  };
+  console.log(
+    `[scheduler] billingSubscriptionReconcile 每 ${BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS}ms，首次 ${BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS}ms 后`,
+  );
+  setTimeout(() => {
+    tick();
+    setInterval(tick, BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS);
+  }, BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS);
 }
 
 export function startScheduler(): void {
@@ -147,6 +173,9 @@ export function startScheduler(): void {
   // 邮件通知：翻译任务完成后发送通知邮件（独立于 pipeline stages，始终运行）。
   safeRun("emailWorker", () => runEmailWorker());
   setInterval(() => safeRun("emailWorker", () => runEmailWorker()), EMAIL_WORKER_INTERVAL_MS);
+
+  // 订阅对账：仅 worker 调度；直连 Turso，不打 TSF Web。
+  scheduleBillingSubscriptionReconcile();
 
   for (const stage of ALL_STAGES) {
     if (!stages.has(stage)) {
