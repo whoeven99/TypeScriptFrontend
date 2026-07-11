@@ -664,6 +664,176 @@ Temporary script policy:
   investigation. If a one-off becomes useful twice, promote it into the
   operational list above with a clear name and dry-run behavior when it writes.
 
+## Operations Debugging
+
+This section covers how to inspect live data and infrastructure state during
+debugging, incident response, or ad-hoc investigation.
+
+### Turso (SQL Database)
+
+Turso is the primary relational store (billing, settings, glossary, etc.).
+The Prisma client connects via `libsql://` HTTP.
+
+**Local / dev query:**
+
+```ps1
+# Open a Node.js REPL with Prisma client loaded
+node --experimental-vm-modules -e "
+  const { PrismaClient } = require('./app/generated/prisma');
+  const prisma = new PrismaClient();
+  // Example: list recent accounts
+  prisma.account.findMany({ take: 5, orderBy: { updatedAt: 'desc' } })
+    .then(r => console.log(JSON.stringify(r, null, 2)))
+    .finally(() => prisma.\$disconnect());
+"
+```
+
+**Key tables for debugging:**
+
+| Table | Common Query |
+|-------|-------------|
+| `Account` | `findMany({ where: { shopName } })` — quota/credit state |
+| `ShopBillingBinding` | `findUnique({ where: { shopName } })` — billing ownership |
+| `AppSubscription` | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
+| `ShopTargetLocale` | `findMany({ where: { shopName } })` — auto-translate config |
+| `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher |
+| `Glossary` | `findMany({ where: { shopName } })` — glossary entries |
+
+**Prod access:** Turso prod credentials are in `.env.prod` as
+`TSF_TURSO_DATABASE_URL` / `TSF_TURSO_AUTH_TOKEN`. You can also read them
+from Render env vars (see Render section below).
+
+### Cosmos DB (Translation V4 Jobs)
+
+Cosmos holds translation job documents. Each job is keyed by `(id, shopName)`.
+
+**Quick inspection scripts (local env):**
+
+```ps1
+# List jobs by id prefix or shop name
+node scripts/inspect-v4-tasks.mjs <prefix1> <prefix2> ...
+
+# Inspect one task (Cosmos + Redis combined)
+node scripts/check-task.mjs <jobId> [shopName]
+
+# Diagnose stuck/failed jobs
+node worker/scripts/diag-stuck-job.mjs <idPrefix>
+node worker/scripts/diag-failed-jobs.mjs
+```
+
+**Prod Cosmos access via Render API:**
+
+`worker/scripts/probe-job-redis.mjs` reads Cosmos credentials from Render
+service env vars, so you don't need `.env.prod` locally:
+
+```ps1
+$env:RENDER_API_KEY = "rnd_..."  # Render API key
+node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
+```
+
+**Key Cosmos fields for debugging:**
+
+- `status`: `INIT_QUEUED` → `INITIALIZING` → `TRANSLATING` → `WRITEBACK` →
+  `COMPLETED` / `FAILED` / `CANCELED`
+- `errorStage` / `errorMessage`: which stage failed and why
+- `metrics.translateDone` / `metrics.translateTotal`: translation progress
+- `metrics.writebackDone` / `metrics.writebackTotal`: writeback progress
+- `claimedBy`: worker instance that holds the job
+- `lastHeartbeat`: last worker heartbeat (stale if > 2 min)
+- `aiModel` / `aiModelUsed`: requested vs actual AI model
+
+### Redis (Job Progress, Hint Queues, Controls)
+
+Redis holds real-time progress counters, hint queues, control flags, and
+translation memory cache.
+
+**Hint queue inspection:**
+
+```ps1
+# Prod hint queues (reads .env.prod)
+node worker/scripts/probe-hint-queues.mjs
+```
+
+**Key Redis keys:**
+
+| Pattern | Purpose |
+|---------|---------|
+| `translate:v4:hint:{init\|translate\|writeback}:{manual\|auto}` | Stage hint queues |
+| `translate:v4:progress:<jobId>` | Hash: per-stage done/total |
+| `translate:v4:control:<jobId>` | String: `pause` / `cancel` / null |
+| `translate:v4:progress:total:<jobId>` | String: total items per stage |
+| `translate:v4:tm:<hash>` | Translation memory cache |
+| `translate:v4:auto_scan:last_at` | Last auto-scan timestamp |
+
+**Manual Redis query (if you have `REDIS_URL_V4` or `REDIS_URL`):**
+
+```ps1
+node -e "
+  const Redis = require('ioredis');
+  const r = new Redis(process.env.REDIS_URL_V4 || process.env.REDIS_URL);
+  r.hgetall('translate:v4:progress:<jobId>').then(d => {
+    console.log(JSON.stringify(d, null, 2));
+    r.quit();
+  });
+"
+```
+
+### Render (Service Logs & Deploy Status)
+
+The app and worker run on Render. Use the Render API or the built-in MCP tools
+to inspect service state.
+
+**MCP tools (available in Copilot):**
+
+- `mcp_render_list_services` — list all Render services
+- `mcp_render_list_deploys` — recent deploys for a service
+- `mcp_render_get_deploy_logs` — detailed build/deploy log for a specific deploy
+- `mcp_render_get_latest_failed_log` — auto-locate the most recent failed build
+
+**Known service IDs:**
+
+| Service | ID |
+|---------|-----|
+| TSF Web (Remix app) | `srv-csp2931u0jms738sfmc0` |
+| TSF Worker | `srv-d8sqas4vikkc73f5nbog` |
+
+**Render API direct access (PowerShell):**
+
+```ps1
+$env:RENDER_API_KEY = "rnd_..."
+
+# List deploys
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/deploys?limit=5" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+
+# Get deploy logs (use deploy ID from list above)
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/deploys/<deployId>" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+
+# Read service env vars (for debugging config issues)
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/env-vars?limit=100" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+```
+
+**Diagnostic flow:**
+
+1. Check Render deploy status — is the service even running the latest code?
+2. Check recent deploy logs — did the build succeed? Any env var missing?
+3. Check env vars on Render — compare with `.env.prod` for drift.
+4. If the service is healthy but data looks wrong, move to Turso/Cosmos/Redis.
+
+### Combined Diagnostic Cheat Sheet
+
+| Symptom | Start Here |
+|---------|-----------|
+| Translation job stuck in INIT_QUEUED | `probe-hint-queues.mjs` → check init hint queues |
+| Translation job stuck in TRANSLATING | `diag-stuck-job.mjs` → check Redis progress + Cosmos heartbeat |
+| Translation job stuck in WRITEBACK | Check Cosmos `errorStage`, Render worker logs |
+| Quota/billing mismatch | Turso: `Account` + `AppSubscription` tables |
+| Currency/switcher not working | Turso: `SwitcherConfiguration`, `Currency` tables |
+| App 500 / worker crash | Render deploy logs → check for missing env vars |
+| Auto-translate not running | `probe-hint-queues.mjs` auto queues + `auto_scan:last_at` |
+
 ## Debug Lessons
 
 These replace old one-off debug markdown files.
