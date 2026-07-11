@@ -33,8 +33,8 @@ right route, server helper, worker, extension, script, or Prisma model.
   Admin API.
 - Storefront runtime code lives in Shopify extensions under `extensions/`.
 - Legacy Spring/Java wrapper file `app/api/JavaServer.ts` has been removed.
-  Remaining `SERVER_URL` references should be treated as migration leftovers
-  unless a caller is explicitly proven to need a migration-only Spring path.
+  Spring backend has been fully decommissioned; all migration scripts have been
+  cleaned up.
 
 ## Markdown Policy
 
@@ -88,7 +88,7 @@ Validation choices:
 - App route or UI: `npm run build`.
 - Worker code: `npm run worker:build`.
 - Translation filter rules: `npm run check:filter`.
-- Billing/quota: focused grep or script validation across TSF and legacy paths.
+- Billing/quota: focused grep or script validation across TSF paths.
 
 ## UI Standards
 
@@ -125,7 +125,7 @@ execution docs that were consolidated into this file.
 - `app/routes/app.tsx`: app shell loader/action, navigation, app bootstrap.
 - `app/routes/auth.$.tsx`, `app/routes/auth.login/route.tsx`: Shopify auth.
 - `app/routes/webhooks.tsx`: Shopify webhook topic handling. Billing and uninstall
-  logic branch between legacy Java and TSF billing.
+  logic use TSF billing exclusively.
 - `app/routes/currencyInit.tsx`: currency initialization route.
 - `app/routes/web-vitals-metrics.tsx`: web vitals receiver.
 
@@ -316,23 +316,17 @@ Quota work must check:
 - Create-task guard.
 - Worker deduction and pause-on-insufficient behavior.
 - Webhook income paths for subscriptions and token packs.
-- Legacy Java path for legacy shops.
 
-Billing migration notes:
+Billing notes:
 
-- `ShopBillingBinding.billingSystem` decides whether a shop uses TSF Turso or
-  legacy Spring billing.
+- All shops use TSF Turso billing. Legacy Spring billing has been fully
+  decommissioned.
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
-- Worker 额度读写直连 Turso Account；迁移脚本 `migrate-billing-to-turso.mjs` 仍可读 Spring DB 镜像作一次性对账。
-- Use dry-run before apply when running `scripts/migrate-billing-to-turso.mjs`.
-- After flipping shops to TSF or rolling them back, restart the worker if you
-  changed billing-related env (Turso credentials, quota tuning).
+- Worker 额度读写直连 Turso Account。
 - Worker runs subscription reconciliation every 12h (configurable via
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`) inside the worker process when
   Turso credentials are set. TSF Web does not schedule or execute this job.
-- Rollback flips binding back to legacy but does not backfill TSF usage into
-  Spring. Keep rollback windows short and explicit.
 
 ### Currency
 
@@ -344,7 +338,6 @@ Billing migration notes:
 - Storefront App Proxy: `app/routes/api.storefront.$.ts` paths
   `currency/getCurrencyByShopName` and `currency/getCacheData`.
 - Extension caller: `extensions/ciwi-switcher/assets/ciwi-api.js`.
-- Migration script: `scripts/migrate-currencies-to-turso.mjs`.
 
 Currency changes often touch admin, App Proxy, and extension JS.
 
@@ -380,8 +373,7 @@ Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
   `app.manage_translation_.productImage/route.tsx`,
   `app.manage_translation_.productImageAlt/route.tsx`.
 - Extension reads: `extensions/ciwi-switcher/assets/ciwi-api.js` via App Proxy.
-- Migration script: `scripts/migrate-user-pictures-to-turso.mjs`.
-- 图片翻译扣费走 TSF Turso `deductShopCredits`，不再调 Spring `/quota`。
+- 图片翻译扣费走 TSF Turso `deductShopCredits`。
 
 ### Manage Translation Legacy Pages
 
@@ -400,10 +392,8 @@ interaction unless the user explicitly asks for a redesign or consolidation.
 
 Historical manage-translation migration guidance:
 
-- Many manage pages already read Shopify translatable resources directly.
-- Theme manage 页（`json_template`、`section_group`、`settings_category`、
-  `settings_data_sections`、`locale_content`）保存已直连 Shopify
-  `registerManageTranslations`；其余非 Theme 页多数也已迁移，shipping 仍走 Java。
+- All manage pages now read Shopify translatable resources directly.
+- All pages（包括 shipping）保存已直连 Shopify `registerManageTranslations`。
 - The TSF-side direct save helper is `app/server/shopify/translations.server.ts`.
 - When modifying save/delete behavior, preserve the existing response shape used
   by page actions and surface Shopify `userErrors` as partial failures.
@@ -495,36 +485,17 @@ When changing schema:
 4. Check whether generated files changed and whether this repo expects them committed.
 5. Check scripts and worker code for the same field/model dependency.
 
-## Legacy Java Boundary
+## Legacy Java Boundary — FULLY DECOMMISSIONED
 
-The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. Image
-translation and picture CRUD use `app/api/pictureClient.ts`; analytics uses
-`app/api/googleAnalyticsClient.ts`.
+The Spring/Java backend has been fully decommissioned. All functionality has
+been migrated to TSF infrastructure (Turso, Cosmos, Redis, Azure Blob, direct
+Shopify GraphQL).
 
-When you see `SERVER_URL`, legacy `GetUser...` / `AddChars...` naming, or
-old Spring quota terms, ask:
+The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. All
+Spring-dependent migration and audit scripts have been removed.
 
-- Is this a required legacy-shop path?
-- Should this path be migrated to TSF/Turso?
-- Does webhook routing still need both legacy and TSF branches?
-- Does the worker rely on Java semantics, such as deduction that can go negative
-  before pausing?
-- Does the frontend depend on Java response shape?
-
-Do not only change the visible page. Search route, server helper, webhook,
-worker adapter, scripts, and extension callers.
-
-Historical translation v4 cutover note:
-
-- The old v2 batch translation execution path was Spring/Java-backed.
-- V4 creation/progress/control lives in TSF routes and Cosmos/Redis, while the
-  worker performs init, translate, and writeback.
-- When cutting old entry points to v4, check language page redirects, dashboard
-  progress cards, breadcrumbs, app nav, and any `ContinueTranslating` or
-  `StopTranslatingTask` calls.
-- Keep manage-translation editing, billing, glossary, currency, language
-  settings, switcher, user initialization, and webhooks separate unless the user
-  explicitly asks for a broader migration.
+Residual `SERVER_URL` or Spring DB references in env files are historical
+artifacts and should be cleaned up. No runtime code depends on them.
 
 ## Shopify Extensions
 
@@ -554,7 +525,7 @@ Check deploy configs when changing extensions:
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
 | Pause/resume/cancel bug | `api.translate-v4.task-action.ts` | `resumeStatus.ts`, worker control logic |
 | Quota mismatch | `quotaRouter.server.ts` | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts` |
-| Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*`, Java legacy path |
+| Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*` |
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
 | App Proxy 401/404 | `api.storefront.$.ts` | `server/storefront/auth.server.ts`, extension caller |
 | Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `pictureClient.ts` |
@@ -573,21 +544,14 @@ Package-backed root scripts:
 - `scripts/turso-migrate.cjs`: `npm run turso:migrate:test|prod`.
 - `scripts/sync-translation-filter.mjs`: `npm run sync:filter` and
   `npm run check:filter`.
-- `scripts/migrate-billing-to-turso.mjs`: `npm run migration:billing`.
-- `scripts/migrate-currencies-to-turso.mjs`: `npm run migration:currencies`.
-- `scripts/next-migration-shops.mjs`: `npm run migration:next-shops`.
-- `scripts/next-auto-slot-shops.mjs`: `npm run migration:next-auto-slot`.
 
-Operational root scripts to keep:
+Operational root scripts:
 
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
-- `scripts/audit-billing-migration.mjs`: billing migration audit.
-- `scripts/audit-spring-users.mjs`: Spring user audit.
 - `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
-- `scripts/count-manual-tasks.mjs`: compare recent manual task volume across
-  legacy Spring and TSF/Spark stores.
+- `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
 - `scripts/language-locale-data.js`: locale/flag data consumed by switcher
@@ -639,8 +603,7 @@ These replace old one-off debug markdown files.
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
 - `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
-- Billing/quota has legacy and TSF tracks. Treat `ShopBillingBinding` and
-  `isTsfBillingShop` as ownership boundaries.
+- Billing/quota is fully TSF Turso. All shops use the TSF billing track.
 - Translation v4 state is distributed. State machine changes must consider
   resume, retry, delete, stale reset, Redis controls, Blob checkpoints, and
   Shopify writeback.
