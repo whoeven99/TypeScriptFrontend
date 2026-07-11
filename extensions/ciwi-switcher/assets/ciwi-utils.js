@@ -184,19 +184,6 @@ export function transformSinglePriceNode(
     return;
   }
 
-  const isPrimaryCurrency =
-    selectedCurrency?.primaryStatus === true ||
-    selectedCurrency?.primaryStatus === 1 ||
-    selectedCurrency?.primaryStatus === "1" ||
-    selectedCurrency?.primaryStatus === "true";
-
-  if (isPrimaryCurrency) {
-    node.innerHTML = node.dataset.ciwiOriginalPriceHtml;
-    delete node.dataset.ciwiCurrencyCode;
-    delete node.dataset.ciwiAppliedRate;
-    return;
-  }
-
   const priceText = node.dataset.ciwiOriginalPriceText || node.innerText;
   const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
   if (!formatted || rate === "Auto") return;

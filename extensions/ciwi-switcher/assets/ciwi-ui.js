@@ -238,7 +238,6 @@ async function refreshSelectedCurrency({ blockId, shop, ciwiBlock }) {
  * 初始化货币选择器
  */
 export async function initializeCurrency({
-  blockId,
   currencyData,
   shop,
   ciwiBlock,
@@ -246,6 +245,13 @@ export async function initializeCurrency({
   const pageCurrencyCode = ciwiBlock.querySelector(
     'input[name="currency_code"]',
   )?.value;
+  const baseCurrencyCode =
+    ciwiBlock.dataset.ciwiBaseCurrencyCode ||
+    pageCurrencyCode ||
+    "";
+  if (!ciwiBlock.dataset.ciwiBaseCurrencyCode && baseCurrencyCode) {
+    ciwiBlock.dataset.ciwiBaseCurrencyCode = baseCurrencyCode;
+  }
   const persistedCurrencyCode =
     typeof localStorage !== "undefined"
       ? localStorage.getItem("ciwi_selected_currency")
@@ -263,14 +269,6 @@ export async function initializeCurrency({
   }
   const effectiveSelectedCurrencyCode =
     selectedCurrency?.currencyCode || selectedCurrencyCode || pageCurrencyCode;
-  const isPrimaryCurrency =
-    selectedCurrency?.primaryStatus === true ||
-    selectedCurrency?.primaryStatus === 1 ||
-    selectedCurrency?.primaryStatus === "1" ||
-    selectedCurrency?.primaryStatus === "true";
-
-  const isValueInCurrencies = Boolean(selectedCurrency && !isPrimaryCurrency);
-
   // 获取新的选择器元素
   const customSelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
@@ -292,13 +290,11 @@ export async function initializeCurrency({
     activePriceObserver = null;
   }
 
-  if (!selectedCurrency) {
+  if (
+    !selectedCurrency ||
+    effectiveSelectedCurrencyCode === baseCurrencyCode
+  ) {
     transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
-    return;
-  }
-
-  if (!isValueInCurrencies) {
-    transformPrices({ rate: 1, moneyFormat, selectedCurrency });
     return;
   }
 
@@ -309,22 +305,30 @@ export async function initializeCurrency({
         ? localStorage.getItem("ciwi_selected_currency_rate")
         : null;
     const localRate = localRateJSON ? JSON.parse(localRateJSON) : null;
-    if (localRate && localRate?.currencyCode == effectiveSelectedCurrencyCode) {
+    if (
+      localRate &&
+      localRate?.currencyCode == effectiveSelectedCurrencyCode &&
+      localRate?.fromCurrencyCode == baseCurrencyCode
+    ) {
       rate = localRate?.exchangeRate;
     } else {
       const autoRate = await fetchAutoRate({
-        blockId,
         shop: shop,
         currencyCode: selectedCurrency.currencyCode,
+        fromCurrencyCode: baseCurrencyCode,
       });
       if (typeof autoRate == "number") {
         rate = autoRate;
+      } else {
+        transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
+        return;
       }
       if (typeof localStorage !== "undefined") {
         localStorage.setItem(
           "ciwi_selected_currency_rate",
           JSON.stringify({
             currencyCode: selectedCurrency.currencyCode,
+            fromCurrencyCode: baseCurrencyCode,
             exchangeRate: rate,
           }),
         );
@@ -1927,6 +1931,13 @@ export class CiwiswitcherForm extends HTMLElement {
     const value = select?.value;
     const selectorType = select?.dataset.type;
     const languageLocaleData = window.languageLocaleData || null;
+    const shouldClosePanel = !this.isDirectSelectorMode();
+    const closePanelAfterSelection = () => {
+      if (!shouldClosePanel) return;
+      select?.blur?.();
+      this.closeSelectorPanel();
+      requestAnimationFrame(() => this.closeSelectorPanel());
+    };
 
     if (selectorType === "language") {
       if (!value || this.elements.languageInput.value == value) return;
@@ -1948,10 +1959,7 @@ export class CiwiswitcherForm extends HTMLElement {
       if (!value || this.elements.currencyInput.value == value) return;
       this.elements.currencyInput.value = value;
       localStorage.setItem("ciwi_selected_currency", value);
-
-      if (!this.isDirectSelectorMode()) {
-        this.closeSelectorPanel();
-      }
+      closePanelAfterSelection();
       event.preventDefault();
 
       const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
@@ -1966,17 +1974,19 @@ export class CiwiswitcherForm extends HTMLElement {
         this.elements.ciwiBlock,
       );
 
-      await refreshSelectedCurrency({
-        blockId: this.querySelector('input[name="block_id"]')?.value,
-        shop: this.elements.ciwiBlock.querySelector("#queryCiwiId")?.value,
-        ciwiBlock: this.elements.ciwiBlock,
-      });
+      try {
+        await refreshSelectedCurrency({
+          blockId: this.querySelector('input[name="block_id"]')?.value,
+          shop: this.elements.ciwiBlock.querySelector("#queryCiwiId")?.value,
+          ciwiBlock: this.elements.ciwiBlock,
+        });
+      } finally {
+        closePanelAfterSelection();
+      }
       return;
     }
 
-    if (!this.isDirectSelectorMode()) {
-      this.closeSelectorPanel();
-    }
+    closePanelAfterSelection();
     event.preventDefault();
 
     const languageSelectorContainer = this.elements.ciwiBlock.querySelector(

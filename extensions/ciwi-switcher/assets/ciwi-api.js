@@ -287,7 +287,7 @@ export async function fetchCurrencies({ shop }) {
   }
 }
 
-export async function fetchAutoRate({ shop, currencyCode }) {
+export async function fetchAutoRate({ shop, currencyCode, fromCurrencyCode }) {
   const baseUrl = resolveStorefrontApiBase();
   if (!baseUrl) return undefined;
   const { data } = await fetchJson(
@@ -297,10 +297,18 @@ export async function fetchAutoRate({ shop, currencyCode }) {
       body: JSON.stringify({
         shopName: shop,
         currencyCode,
+        fromCurrencyCode,
       }),
     },
   );
-  return data.response?.exchangeRate;
+  const rawRate = data.response?.exchangeRate;
+  const parsedRate =
+    typeof rawRate === "number"
+      ? rawRate
+      : typeof rawRate === "string"
+        ? Number(rawRate)
+        : Number.NaN;
+  return Number.isFinite(parsedRate) ? parsedRate : undefined;
 }
 
 export async function fetchUserCountryInfo(access_key) {
