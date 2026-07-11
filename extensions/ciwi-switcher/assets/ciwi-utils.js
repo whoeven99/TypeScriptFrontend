@@ -170,14 +170,42 @@ export function transformSinglePriceNode(
   selectedCurrency,
 ) {
   if (!node || !node.innerText) return;
-  const priceText = node.innerText;
-  const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
-  if (
-    !formatted ||
-    rate === "Auto" ||
-    priceText.includes(selectedCurrency.currencyCode)
-  )
+  if (!node.dataset.ciwiOriginalPriceHtml) {
+    node.dataset.ciwiOriginalPriceHtml = node.innerHTML;
+  }
+  if (!node.dataset.ciwiOriginalPriceText) {
+    node.dataset.ciwiOriginalPriceText = node.innerText;
+  }
+
+  if (!selectedCurrency) {
+    node.innerHTML = node.dataset.ciwiOriginalPriceHtml;
+    delete node.dataset.ciwiCurrencyCode;
+    delete node.dataset.ciwiAppliedRate;
     return;
+  }
+
+  const isPrimaryCurrency =
+    selectedCurrency?.primaryStatus === true ||
+    selectedCurrency?.primaryStatus === 1 ||
+    selectedCurrency?.primaryStatus === "1" ||
+    selectedCurrency?.primaryStatus === "true";
+
+  if (isPrimaryCurrency) {
+    node.innerHTML = node.dataset.ciwiOriginalPriceHtml;
+    delete node.dataset.ciwiCurrencyCode;
+    delete node.dataset.ciwiAppliedRate;
+    return;
+  }
+
+  const priceText = node.dataset.ciwiOriginalPriceText || node.innerText;
+  const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
+  if (!formatted || rate === "Auto") return;
+  if (
+    node.dataset.ciwiCurrencyCode === selectedCurrency.currencyCode &&
+    node.dataset.ciwiAppliedRate === String(rate)
+  ) {
+    return;
+  }
   let number = convertToNumberFromMoneyFormat(moneyFormat, formatted);
   number = (number * rate).toFixed(2);
   const transformedPrice = customRounding(number, selectedCurrency.rounding);
@@ -198,6 +226,8 @@ export function transformSinglePriceNode(
   } else {
     node.innerHTML = `${symbol}${detected} <span class="currency-code">${selectedCurrency.currencyCode}</span>`;
   }
+  node.dataset.ciwiCurrencyCode = selectedCurrency.currencyCode;
+  node.dataset.ciwiAppliedRate = String(rate);
 }
 
 /**

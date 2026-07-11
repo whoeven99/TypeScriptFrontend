@@ -53,6 +53,7 @@ const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(tex
 const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
+let activePriceObserver = null;
 
 function measureTextWidth(referenceElement, text) {
   if (!referenceElement || !text) return 0;
@@ -206,6 +207,33 @@ export function renderCurrencyOptions({
   });
 }
 
+async function refreshSelectedCurrency({ blockId, shop, ciwiBlock }) {
+  if (!ciwiBlock || !shop) return;
+
+  let currencyData = [];
+  const localStorageCurrencyDataJSON =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("ciwi_currency_data")
+      : null;
+
+  if (localStorageCurrencyDataJSON) {
+    try {
+      currencyData = JSON.parse(localStorageCurrencyDataJSON);
+    } catch {
+      currencyData = [];
+    }
+  }
+
+  if (!Array.isArray(currencyData) || !currencyData.length) {
+    currencyData = await fetchCurrencies({ blockId, shop });
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("ciwi_currency_data", JSON.stringify(currencyData));
+    }
+  }
+
+  await initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
+}
+
 /**
  * 初始化货币选择器
  */
@@ -218,15 +246,23 @@ export async function initializeCurrency({
   const pageCurrencyCode = ciwiBlock.querySelector(
     'input[name="currency_code"]',
   )?.value;
-  const selectedCurrencyCode =
-    pageCurrencyCode || localStorage.getItem("ciwi_selected_currency");
-
+  const persistedCurrencyCode =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("ciwi_selected_currency")
+      : "";
+  const selectedCurrencyCode = persistedCurrencyCode || pageCurrencyCode;
   const moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
-  const selectedCurrency = currencyData?.find(
+  let selectedCurrency = currencyData?.find(
     (item) => item?.currencyCode == selectedCurrencyCode,
   );
-
+  if (!selectedCurrency && pageCurrencyCode) {
+    selectedCurrency = currencyData?.find(
+      (item) => item?.currencyCode == pageCurrencyCode,
+    );
+  }
+  const effectiveSelectedCurrencyCode =
+    selectedCurrency?.currencyCode || selectedCurrencyCode || pageCurrencyCode;
   const isPrimaryCurrency =
     selectedCurrency?.primaryStatus === true ||
     selectedCurrency?.primaryStatus === 1 ||
@@ -244,25 +280,47 @@ export async function initializeCurrency({
   renderCurrencyOptions({
     currencySelect,
     currencyData,
-    selectedCurrencyCode,
+    selectedCurrencyCode: effectiveSelectedCurrencyCode,
   });
 
-  if (isValueInCurrencies) {
-    let rate = 1;
-    if (selectedCurrency?.exchangeRate == "Auto") {
-      const localRateJSON = localStorage.getItem("ciwi_selected_currency_rate");
-      const localRate = JSON.parse(localRateJSON);
-      if (localRate && localRate?.currencyCode == selectedCurrencyCode) {
-        rate = localRate?.exchangeRate;
-      } else {
-        const autoRate = await fetchAutoRate({
-          blockId,
-          shop: shop,
-          currencyCode: selectedCurrency.currencyCode,
-        });
-        if (typeof autoRate == "number") {
-          rate = autoRate;
-        }
+  if (currencySelect && effectiveSelectedCurrencyCode) {
+    currencySelect.value = effectiveSelectedCurrencyCode;
+  }
+
+  if (activePriceObserver) {
+    activePriceObserver.disconnect();
+    activePriceObserver = null;
+  }
+
+  if (!selectedCurrency) {
+    transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
+    return;
+  }
+
+  if (!isValueInCurrencies) {
+    transformPrices({ rate: 1, moneyFormat, selectedCurrency });
+    return;
+  }
+
+  let rate = 1;
+  if (selectedCurrency?.exchangeRate == "Auto") {
+    const localRateJSON =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("ciwi_selected_currency_rate")
+        : null;
+    const localRate = localRateJSON ? JSON.parse(localRateJSON) : null;
+    if (localRate && localRate?.currencyCode == effectiveSelectedCurrencyCode) {
+      rate = localRate?.exchangeRate;
+    } else {
+      const autoRate = await fetchAutoRate({
+        blockId,
+        shop: shop,
+        currencyCode: selectedCurrency.currencyCode,
+      });
+      if (typeof autoRate == "number") {
+        rate = autoRate;
+      }
+      if (typeof localStorage !== "undefined") {
         localStorage.setItem(
           "ciwi_selected_currency_rate",
           JSON.stringify({
@@ -271,13 +329,13 @@ export async function initializeCurrency({
           }),
         );
       }
-    } else {
-      rate = selectedCurrency.exchangeRate;
     }
-    // 转换现有价格并开始观察整个文档 body
-    // （initPriceObserver 内部会先执行一次全量转换，避免这里重复扫描整个文档）
-    initPriceObserver({ rate, moneyFormat, selectedCurrency });
+  } else {
+    rate = selectedCurrency.exchangeRate;
   }
+  // 转换现有价格并开始观察整个文档 body
+  // （initPriceObserver 内部会先执行一次全量转换，避免这里重复扫描整个文档）
+  initPriceObserver({ rate, moneyFormat, selectedCurrency });
 }
 
 /**
@@ -286,6 +344,9 @@ export async function initializeCurrency({
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
   const moneySelector =
     ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price";
+  if (activePriceObserver) {
+    activePriceObserver.disconnect();
+  }
   const observer = new MutationObserver((mutationsList) => {
     // 只收集本次新增的 .ciwi-money 节点做增量转换，
     // 避免每次 DOM 变化都重扫整个文档的全部价格。
@@ -320,6 +381,7 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
     childList: true,
     subtree: true,
   });
+  activePriceObserver = observer;
 }
 
 /**
@@ -1860,7 +1922,7 @@ export class CiwiswitcherForm extends HTMLElement {
     selectorBox.style.bottom = placement === "up" ? "100%" : "auto";
   }
 
-  handleSelectChange(event) {
+  async handleSelectChange(event) {
     const select = event.currentTarget;
     const value = select?.value;
     const selectorType = select?.dataset.type;
@@ -1886,6 +1948,30 @@ export class CiwiswitcherForm extends HTMLElement {
       if (!value || this.elements.currencyInput.value == value) return;
       this.elements.currencyInput.value = value;
       localStorage.setItem("ciwi_selected_currency", value);
+
+      if (!this.isDirectSelectorMode()) {
+        this.closeSelectorPanel();
+      }
+      event.preventDefault();
+
+      const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
+        "#language-switcher-container",
+      );
+      const currencySelectorContainer = this.elements.ciwiBlock.querySelector(
+        "#currency-switcher-container",
+      );
+      updateDisplayText(
+        languageSelectorContainer?.style.display === "block",
+        currencySelectorContainer?.style.display === "block",
+        this.elements.ciwiBlock,
+      );
+
+      await refreshSelectedCurrency({
+        blockId: this.querySelector('input[name="block_id"]')?.value,
+        shop: this.elements.ciwiBlock.querySelector("#queryCiwiId")?.value,
+        ciwiBlock: this.elements.ciwiBlock,
+      });
+      return;
     }
 
     if (!this.isDirectSelectorMode()) {
