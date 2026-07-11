@@ -1,15 +1,16 @@
 ---
-description: 每次思考/分析/规划/改代码前必须先阅读 AGENTS.md
+description: 每次改代码前必须先阅读 AGENTS.md 再定位相关文件
 alwaysApply: true
 ---
 
-# 每次思考前先读 AGENTS.md
+# 改代码前先读 AGENTS.md
 
-在本仓库中，**任何思考、分析、规划、排查或改代码的任务**，都必须按以下顺序执行：
+在本仓库中，**动手改任何文件之前**（包括编辑、新增、删除），都必须按以下顺序执行：
 
-1. **先阅读** 仓库根目录的 `AGENTS.md`（导航索引），根据任务识别对应功能区、路由、server helper、worker、extension、script 或 Prisma model。这是强制第一步，适用于所有交互，不限于代码修改。
-2. **再** 按 `AGENTS.md` 中的路径与章节去打开/搜索具体源码；不要跳过索引直接全库盲搜。
-3. 若 `AGENTS.md` 已指向明确入口文件，优先从那些文件读起，再按调用链向下。
-4. 改动应落在该功能边界内；若发现索引过时或缺失，在完成任务后同步更新 `AGENTS.md` 对应章节。
+1. **先阅读** 仓库根目录的 `AGENTS.md`，根据任务识别对应功能区、路由、server helper、worker、extension、script 或 Prisma model。
+2. **再** 按 `AGENTS.md` 中的路径与章节定位具体源码；不要跳过索引直接全库盲搜。
+3. **改之前** 运行 `git status --short`，避免覆盖用户改动或无关未跟踪文件。
+4. 若 `AGENTS.md` 已指向明确入口文件，优先从那些文件读起，再按调用链向下。
+5. 改动应落在该功能边界内；若发现索引过时或缺失，在完成任务后同步更新 `AGENTS.md` 对应章节。
 
-`AGENTS.md` 是本仓库面向 AI 的持久导航索引；其「Required Workflow」与各功能章节优先于临时猜测。跳过它会导致错误假设和在错误位置修改。
+未读 `AGENTS.md` 不得开始编辑。`AGENTS.md` 的「Required Workflow」与各功能章节优先于临时猜测。
