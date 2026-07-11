@@ -201,12 +201,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   if (perfDebug) {
-    console.log("[perf][loader] app", {
-      shop,
-      authMs,
-      localeMs,
-      totalMs: Date.now() - reqStart,
-    });
+    console.log(
+      `[perf][loader] app ${JSON.stringify({
+        shop,
+        authMs,
+        localeMs,
+        totalMs: Date.now() - reqStart,
+      })}`,
+    );
   }
 
   return json({
@@ -441,14 +443,10 @@ export default function App() {
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
-  const [perfDebugEnabled, setPerfDebugEnabled] = useState(false);
+  const [perfDebugEnabled] = useState(() => isPerfDebugEnabled());
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    setPerfDebugEnabled(isPerfDebugEnabled());
-  }, []);
 
   useEffect(() => {
     setIsClient(true);

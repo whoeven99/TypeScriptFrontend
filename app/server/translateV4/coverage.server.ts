@@ -93,41 +93,51 @@ export async function getCoverageSummaryFromCache({
   shop,
   primaryLocale,
   targetLocales,
+  includeRuntimeSignals = true,
 }: {
   shop: string;
   primaryLocale: string;
   targetLocales: LocaleInput[];
+  includeRuntimeSignals?: boolean;
 }): Promise<CoverageSummary> {
-  const locales: LocaleCoverageRow[] = [];
-  let translatedItems = 0;
-  let totalItems = 0;
+  const rows = await Promise.all(
+    targetLocales.map(async (loc) => {
+      const agg = await sumItemsCountByLabelsFromCache(
+        shop,
+        loc.value,
+        COVERAGE_COUNT_LABELS,
+      );
+      return {
+        locale: loc.value,
+        label: loc.label,
+        translated: agg.translated,
+        total: agg.total,
+        percent: ratioPercent(agg.translated, agg.total),
+        cacheMissing: agg.cacheMissing,
+        autoTranslate: false,
+        isTranslating: false,
+        lastAutoUpdateAt: null,
+        nextAutoUpdateAt: null,
+      } satisfies LocaleCoverageRow;
+    }),
+  );
 
-  for (const loc of targetLocales) {
-    const agg = await sumItemsCountByLabelsFromCache(shop, loc.value, COVERAGE_COUNT_LABELS);
+  const translatedItems = rows.reduce((sum, row) => sum + row.translated, 0);
+  const totalItems = rows.reduce((sum, row) => sum + row.total, 0);
 
-    locales.push({
-      locale: loc.value,
-      label: loc.label,
-      translated: agg.translated,
-      total: agg.total,
-      percent: ratioPercent(agg.translated, agg.total),
-      cacheMissing: agg.cacheMissing,
-      autoTranslate: false,
-      isTranslating: false,
-      lastAutoUpdateAt: null,
-      nextAutoUpdateAt: null,
-    });
-    translatedItems += agg.translated;
-    totalItems += agg.total;
-  }
-
-  return enrichCoverageWithRuntimeSignals(shop, {
+  const summary: CoverageSummary = {
     languageCount: targetLocales.length,
     translatedItems,
     totalItems,
     overallPercent: ratioPercent(translatedItems, totalItems),
-    locales,
-  });
+    locales: rows,
+  };
+
+  if (!includeRuntimeSignals) {
+    return summary;
+  }
+
+  return enrichCoverageWithRuntimeSignals(shop, summary);
 }
 
 /** 现算 Shopify 并回写缓存（API 或需要完整数据时调用）。 */
