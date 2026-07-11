@@ -1,8 +1,6 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
-import { GetLatestActiveSubscribeId } from "~/api/JavaServer";
-import { isTsfBillingShop } from "~/server/billing/binding/resolveBillingBinding.server";
 import { APP_SUBSCRIPTION_STATUS } from "~/server/billing/types.server";
 
 /**
@@ -15,19 +13,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shopName")?.trim() || session.shop;
 
-  if (await isTsfBillingShop(shop)) {
-    const sub = await prisma.appSubscription.findUnique({ where: { shop } });
-    const subscriptionId =
-      sub && sub.status === APP_SUBSCRIPTION_STATUS.ACTIVE
-        ? sub.shopifySubscriptionId
-        : null;
-    return json({ ok: Boolean(subscriptionId), subscriptionId });
-  }
-
-  const data = await GetLatestActiveSubscribeId({
-    shop,
-    server: process.env.SERVER_URL as string,
-  });
-  const subscriptionId = data?.success ? (data.response as string) : null;
+  const sub = await prisma.appSubscription.findUnique({ where: { shop } });
+  const subscriptionId =
+    sub && sub.status === APP_SUBSCRIPTION_STATUS.ACTIVE
+      ? sub.shopifySubscriptionId
+      : null;
   return json({ ok: Boolean(subscriptionId), subscriptionId });
 };

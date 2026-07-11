@@ -1,24 +1,5 @@
-// api.js
-/**
- * 解析 Java 后端地址。
- * 单一来源为 Liquid 注入的 #ciwiJavaBackend（与模板 preconnect 同源）；
- * 读取不到时回退到原有按 blockId 的硬编码判断，保证行为不变。
- */
-export function switchUrl(blockId) {
-  const injected = document.getElementById("ciwiJavaBackend")?.value?.trim();
-  if (injected) return injected;
-
-  if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
-    return "https://springbackendprod.azurewebsites.net";
-  } else {
-    return "https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net";
-  }
-}
-
-/**
- * 店面 Widget / Liquid / PageFly 读 API：仅走 App Proxy（#ciwiAppProxyBase → TSF /api/storefront/*）。
- * 货币 / 图片等仍走 Java（switchUrl）；IP 定位走 Shopify / ipapi，不经额度接口。
- */
+// Storefront Widget / Liquid / PageFly / image translation APIs go through
+// Shopify App Proxy (`#ciwiAppProxyBase`) into TSF `/api/storefront/*`.
 function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
   if (!appProxyBase) {

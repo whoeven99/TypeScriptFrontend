@@ -1,13 +1,7 @@
 /**
- * manage 翻译页「保存」直连 Shopify（替代经 Java 的 updateManageTranslation）。
- *
- * 仅负责把译文写回/删除 Shopify：
- *   - value 非空 → translationsRegister
- *   - value 为空 → translationsRemove
- * 不做 LLM 翻译、不扣额度（那些仍走 Java，如 SingleTextTranslate）。
- *
- * 关键点：confirmData 里 `locale` 是「源语言」，`target` 才是要写入的「目标语言」。
- * Shopify 的 TranslationInput.locale / translationsRemove.locales 必须用 `target`。
+ * Manage translation save path writes directly to Shopify through TSF.
+ * It only registers/removes merchant-edited translations; LLM translation and quota
+ * deduction are handled by `/api/translate-v4/single`.
  */
 import {
   cachedModulesFromResourceIds,
@@ -33,7 +27,7 @@ export type ManageTranslationItem = {
   target: string; // 目标语言：真正用于注册/删除的 locale
 };
 
-/** 与原 updateManageTranslation 返回保持同形，页面 UI 无需改。 */
+/** 与原 legacy Java save path 返回保持同形，页面 UI 无需改。 */
 export type ManageSaveResult = {
   success: boolean;
   errorCode: number;
@@ -113,7 +107,7 @@ function resultFor(
 }
 
 /**
- * 保存一批译文到 Shopify。返回逐项结果（同 updateManageTranslation 形状）。
+ * 保存一批译文到 Shopify。返回逐项结果（同 legacy Java save path 形状）。
  * userErrors 如实透出：批内任一 userError → 该批所有项 success:false 并带回消息，避免「假成功」。
  */
 export async function registerManageTranslations({

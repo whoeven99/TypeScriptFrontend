@@ -20,9 +20,9 @@ import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import {
   GetProductImageData,
-  SingleTextTranslate,
   UpdateProductImageAltData,
-} from "~/api/JavaServer";
+} from "~/api/pictureClient";
+import { SingleTextTranslate } from "~/api/translateV4Client";
 import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
@@ -900,7 +900,6 @@ const Index = () => {
       context: record?.altText,
       key: record?.key,
       type: "SINGLE_LINE_TEXT_FIELD",
-      server: globalStore?.server || "",
       resourceId: record?.resourceId,
       customPrompt,
     });

@@ -14,7 +14,8 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs } from "@remix-run/node";
 import { SearchOutlined } from "@ant-design/icons";
-import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/translateV4Client";
+import { registerManageTranslations } from "~/server/shopify/translations.server";
 import { authenticate } from "~/shopify.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
@@ -154,9 +155,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!confirmData:
-      const data = await updateManageTranslation({
+      const data = await registerManageTranslations({
+        admin,
         shop,
-        accessToken: accessToken as string,
         confirmData,
       });
 
@@ -585,7 +586,6 @@ const Index = () => {
       context: record?.default_language,
       key: record?.shopifyKey,
       type: record?.type,
-      server: globalStore?.server || "",
       resourceId: record?.resourceId,
       customPrompt,
     });

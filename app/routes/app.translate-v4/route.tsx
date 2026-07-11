@@ -18,7 +18,7 @@ import { authenticate } from "~/shopify.server";
 import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
-import type { ShopQuota } from "~/server/translateV4/quota.server";
+import type { ShopQuota } from "~/lib/translationQuota";
 import {
   getCoverageSummaryFromCache,
   type CoverageSummary,

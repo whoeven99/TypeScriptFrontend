@@ -1,4 +1,9 @@
-import type { ShopQuota } from "~/server/translateV4/quota.server";
+export type ShopQuota = {
+  shopName: string;
+  maxToken: number;
+  usedToken: number;
+  remaining: number;
+};
 
 export function normalizeQuotaNumber(value: unknown): number | null {
   const parsed =

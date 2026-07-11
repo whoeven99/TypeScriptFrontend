@@ -1,6 +1,4 @@
-import { loadAppBootstrapJavaData } from "~/server/appBootstrap.server";
 import { getNormalizedQuotaRemaining } from "~/lib/translationQuota";
-import { isTsfBillingShop } from "../binding/resolveBillingBinding.server";
 import { getShopCreditQuota } from "./quotaRouter.server";
 
 export type CreateTaskQuotaGuardResult =
@@ -9,7 +7,7 @@ export type CreateTaskQuotaGuardResult =
 
 /**
  * 建任务额度校验。
- * - tsf（新账本）：remaining > 0 才允许（与 Java /quota/query 展示一致，无付费 bypass）。
+ * - TSF 账本：remaining > 0 才允许。
  * - legacy（老系统）：remaining > 0，或付费套餐 / 免费试用期内可建任务（沿用 Java 口径）。
  */
 export async function evaluateCreateTaskQuotaGuard(
@@ -28,49 +26,9 @@ export async function evaluateCreateTaskQuotaGuard(
     return { ok: true };
   }
 
-  const isTsf = await isTsfBillingShop(shopName);
-  const bootstrap = await loadAppBootstrapJavaData({
-    shop: shopName,
-    server: process.env.SERVER_URL || "",
-  });
-
-  if (isTsf) {
-    if (bootstrap.isNew === null) {
-      return {
-        ok: false,
-        status: 409,
-        error: "v4.create.quotaCheckPending",
-      };
-    }
-    return {
-      ok: false,
-      status: 403,
-      error: bootstrap.isNew
-        ? "v4.create.noCreditsTrial"
-        : "v4.create.noCreditsPricing",
-    };
-  }
-
-  const normalizedPlanType = bootstrap.plan.type?.trim().toLowerCase() || "";
-  const hasPaidPlan =
-    normalizedPlanType !== "" && normalizedPlanType !== "free";
-  if (hasPaidPlan || bootstrap.plan.isInFreePlanTime) {
-    return { ok: true };
-  }
-
-  if (bootstrap.isNew === null) {
-    return {
-      ok: false,
-      status: 409,
-      error: "v4.create.quotaCheckPending",
-    };
-  }
-
   return {
     ok: false,
     status: 403,
-    error: bootstrap.isNew
-      ? "v4.create.noCreditsTrial"
-      : "v4.create.noCreditsPricing",
+    error: "v4.create.noCreditsPricing",
   };
 }

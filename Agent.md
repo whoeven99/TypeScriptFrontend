@@ -32,8 +32,9 @@ right route, server helper, worker, extension, script, or Prisma model.
 - Translation v4 job state spans Cosmos, Redis, Azure Blob, Turso, and Shopify
   Admin API.
 - Storefront runtime code lives in Shopify extensions under `extensions/`.
-- Legacy Spring/Java calls still exist through `app/api/JavaServer.ts` and
-  `SERVER_URL`; do not remove them without auditing legacy users and webhooks.
+- Legacy Spring/Java wrapper file `app/api/JavaServer.ts` has been removed.
+  Remaining `SERVER_URL` references should be treated as migration leftovers
+  unless a caller is explicitly proven to need a migration-only Spring path.
 
 ## Markdown Policy
 
@@ -56,7 +57,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `app/routes/*` | Remix flat routes for pages and API endpoints. |
 | `app/server/*` | Server-side business logic. Prefer adding feature helpers here and keeping routes thin. |
 | `app/lib/*` | Shared small helpers used by route/UI code. |
-| `app/api/JavaServer.ts` | Legacy Spring/Java HTTP wrappers. Always inspect callers before migrations. |
+| `app/api/googleAnalyticsClient.ts` | Google Analytics Measurement Protocol helper; not related to Spring/Java. |
 | `app/store/*` | Redux store modules, mostly for older pages. |
 | `app/components/*` | Shared React components, including manage-translation editors and support chat. |
 | `app/ui/*` | Shared UI wrappers/theme/message helpers. |
@@ -362,16 +363,35 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - Constants: `app/lib/switcherConstants.ts`.
 - IP redirect: Prisma model `IpRedirection`; search `ipRedirection`,
   `api.translate-v4.ip-redirections`, and `custom_redirects`.
+- `ipOpen` 写入 Turso `SwitcherConfiguration`；确认保存时**不再**调用 Spring
+  `/userIp/addOrUpdateUserIp`。店面 IP 定位走 `ciwi-main.js` + ipapi。
 
 Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
+
+### Picture Translation (TSF)
+
+- Prisma model: `UserPicture`.
+- Server: `app/server/picture/picture.server.ts`, `translateImage.server.ts`,
+  `aidge.server.ts`, `cos.server.ts`.
+- Admin client: `app/api/pictureClient.ts`, using TSF endpoints
+  `/api/picture/*` and `/api/translate-v4/image`.
+- Routes: `api.picture.*`, `api.translate-v4.image`, storefront picture paths in
+  `api.storefront.$.ts`.
+- Admin pages: `app.manage_translation/route.tsx`,
+  `app.manage_translation_.productImage/route.tsx`,
+  `app.manage_translation_.productImageAlt/route.tsx`.
+- Extension reads: `extensions/ciwi-switcher/assets/ciwi-api.js` via App Proxy.
+- Migration script: `scripts/migrate-user-pictures-to-turso.mjs`.
+- Legacy 店扣费仍可能走 Spring `quota/deduct`；数据读写已在 Turso。
 
 ### Manage Translation Legacy Pages
 
 - Main page: `app/routes/app.manage_translation/route.tsx`.
 - Resource pages: `app/routes/app.manage_translation_.*/route.tsx`.
 - Server helper: `app/server/manageTranslation/manageTranslationRoute.server.ts`.
-- Legacy Java update path: `app/api/JavaServer.ts`, especially
-  `updateManageTranslation`.
+- Manage save paths use TSF/Shopify helpers such as
+  `app/server/shopify/translations.server.ts`.
+- Editors: `app/components/manageTableInputEditor.tsx`,
 - Editors: `app/components/manageTableInputEditor.tsx`,
   `manageTableInput.tsx`, `manageTableRichText.ts`, `richTextInput/*`.
 - Shopify translation helper: `app/server/shopify/translations.server.ts`.
@@ -382,8 +402,9 @@ interaction unless the user explicitly asks for a redesign or consolidation.
 Historical manage-translation migration guidance:
 
 - Many manage pages already read Shopify translatable resources directly.
-- The old save path went through Java `updateManageTranslation`, which proxied
-  to Shopify `translationsRegister`.
+- Theme manage 页（`json_template`、`section_group`、`settings_category`、
+  `settings_data_sections`、`locale_content`）保存已直连 Shopify
+  `registerManageTranslations`；其余非 Theme 页多数也已迁移，shipping 仍走 Java。
 - The TSF-side direct save helper is `app/server/shopify/translations.server.ts`.
 - When modifying save/delete behavior, preserve the existing response shape used
   by page actions and surface Shopify `userErrors` as partial failures.
@@ -477,11 +498,12 @@ When changing schema:
 
 ## Legacy Java Boundary
 
-`app/api/JavaServer.ts` still wraps Spring endpoints for init, subscription,
-quota, image translation, old manage translation updates, emails, and uninstall.
+The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. Image
+translation and picture CRUD use `app/api/pictureClient.ts`; analytics uses
+`app/api/googleAnalyticsClient.ts`.
 
-When you see `SERVER_URL`, `JavaServer`, `GetUser...`, `AddChars...`,
-`UpdateUserPlan`, or `quota/deduct`, ask:
+When you see `SERVER_URL`, legacy `GetUser...` / `AddChars...` naming, or
+old Spring quota terms, ask:
 
 - Is this a required legacy-shop path?
 - Should this path be migrated to TSF/Turso?
@@ -536,7 +558,7 @@ Check deploy configs when changing extensions:
 | Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*`, Java legacy path |
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
 | App Proxy 401/404 | `api.storefront.$.ts` | `server/storefront/auth.server.ts`, extension caller |
-| Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `JavaServer.ts` |
+| Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `pictureClient.ts` |
 | Glossary | `app/routes/app.glossary/route.tsx` | `glossary.server.ts`, worker glossary injection |
 | Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |

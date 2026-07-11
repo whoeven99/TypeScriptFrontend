@@ -14,7 +14,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // å¼
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
-import { SingleTextTranslate } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
@@ -545,7 +545,6 @@ const Index = () => {
       context: record?.default_language,
       key: record?.shopifyKey,
       type: record?.type,
-      server: globalStore?.server || "",
       resourceId: record?.resourceId,
       customPrompt,
     });

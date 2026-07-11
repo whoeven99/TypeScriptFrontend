@@ -636,10 +636,6 @@ const Index = () => {
       );
     }
     setUpdateLoading(false);
-    if (isGeoLocationEnabled) {
-      const { default: axios } = await import("axios");
-      await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
-    }
     fetcher.submit(
       {
         log: `${shop} 切换器配置修改数据保存成功`,

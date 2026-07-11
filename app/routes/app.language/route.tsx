@@ -86,7 +86,7 @@ import {
 } from "~/lib/createTranslateV4Tasks";
 import { normalizeShopQuota } from "~/lib/translationQuota";
 import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
-import type { ShopQuota } from "~/server/translateV4/quota.server";
+import type { ShopQuota } from "~/lib/translationQuota";
 import { DEFAULT_AI_MODEL, DEFAULT_MODULE_KEYS } from "../app.translate-v4/constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { CreateTaskCard } from "../app.translate-v4/components/CreateTaskCard";

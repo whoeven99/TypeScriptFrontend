@@ -1,17 +1,6 @@
 {% assign language_iso = localization.language.iso_code %}
 <link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
-{% comment %}
-  预连接 Java 后端：域名与 ciwi-api.js switchUrl(blockId) 保持一致。
-  仅 preconnect 当前 block 实际会请求的源，避免线上误连 Test 域名。
-{% endcomment %}
-{% assign ciwi_java_backend = 'https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net' %}
-{% if block.id == 'AZnlHVkxkZDMwNDg2Q__13411448604249213220' %}
-  {% assign ciwi_java_backend = 'https://springbackendprod.azurewebsites.net' %}
-{% endif %}
-<link rel="preconnect" href="{{ ciwi_java_backend }}" crossorigin>
-<link rel="dns-prefetch" href="{{ ciwi_java_backend }}">
-
 <div dir="{% if language_iso == 'ar' or language_iso == 'fa' or language_iso == 'ur' or language_iso == 'he' %}rtl{% else %}ltr{% endif %}">
   <ciwiswitcher-form>
     {% form 'localization' %}
@@ -153,10 +142,6 @@
       </div>
       <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
       <input type="hidden" id="ciwiAppProxyBase" value="/apps/ciwi">
-      {%- comment -%}
-        Java 后端：仅用于货币 / IP / 图片等（switchUrl）。Widget / Liquid / PageFly 读数据走 #ciwiAppProxyBase（v4）。
-      {%- endcomment -%}
-      <input type="hidden" id="ciwiJavaBackend" value="{{ ciwi_java_backend }}">
       <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
       <input type="hidden" name="currency_code" value="{{ localization.country.currency.iso_code }}">
       <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
