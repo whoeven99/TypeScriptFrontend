@@ -599,8 +599,8 @@ corresponding script without asking for confirmation:
 
 | User says | Action |
 |-----------|--------|
-| "提个pr" / "提pr" / "创建PR" / "push and create PR" | Run `powershell -File scripts/pr.ps1` |
-| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | Run `powershell -File scripts/merge-deploy-test.ps1` |
+| "提个pr" / "提pr" / "创建PR" / "push and create PR" | Run `npm run push:pr`（或 `npm run push:pr -- --message "说明"`） |
+| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | Run `npm run merge:deploy:test` |
 | "发布测试环境" / "deploy test" (单独发布，不合入PR) | 触发 `tsf-deploy.yml` workflow on master，参数 `render_service_test=true, render_worker_test=true` |
 
 For "合入PR然后发布测试环境", the script will:
@@ -663,14 +663,12 @@ Operational root scripts:
 
 Operational PowerShell scripts:
 
-- `scripts/pr.ps1`: push current branch and create a PR to master via GitHub CLI.
-  Run directly: `.\scripts\pr.ps1 -Title "标题"` or just `.\scripts\pr.ps1`.
-  Automatically detects uncommitted changes, pushes, and opens the PR URL.
-- `scripts/merge-deploy-test.ps1`: merge a PR and trigger test environment deploy
-  (TSF Web + Worker) via GitHub Actions. Run: `.\scripts\merge-deploy-test.ps1`.
-  Auto-finds the PR for the current branch, merges it, switches to master,
-  and triggers the `tsf-deploy.yml` workflow with `render_service_test=true`
-  and `render_worker_test=true`.
+- `scripts/cursor-push-pr.mjs`: `npm run push:pr` — commit（跳过敏感文件）→ push → 创建 PR；
+  成功输出 `PR_URL:`。供 Cursor Agent 在「提个pr」时直接调用。
+- `scripts/pr.ps1`: 交互式 PowerShell 版提 PR（本地手动用）。
+- `scripts/merge-deploy-test.mjs`: `npm run merge:deploy:test` — 合入当前分支 PR 并触发
+  TSF Web Test + Worker Test 部署；成功输出 `MERGED_PR_URL:` 与 `DEPLOY_RUN_URL:`。
+- `scripts/merge-deploy-test.ps1`: 交互式 PowerShell 版合入+部署（本地手动用）。
 
 Worker scripts to keep:
 

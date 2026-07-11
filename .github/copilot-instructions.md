@@ -18,8 +18,8 @@ When the user says these phrases, run the corresponding command **immediately** 
 
 | User says | Run this command |
 |-----------|-----------------|
-| "提个pr" / "提pr" / "创建PR" / "push and create PR" | `powershell -File scripts/pr.ps1` |
-| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | `powershell -File scripts/merge-deploy-test.ps1` |
+| "提个pr" / "提pr" / "创建PR" / "push and create PR" | `npm run push:pr` |
+| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | `npm run merge:deploy:test` |
 
 ## Reminder
 
