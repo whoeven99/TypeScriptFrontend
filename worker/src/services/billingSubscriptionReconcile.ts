@@ -47,6 +47,7 @@ export type BillingReconcileOptions = {
   shop?: string;
   dryRun?: boolean;
   scanOrphans?: boolean;
+  dueBefore?: Date;
 };
 
 export type BillingReconcileSummary = {
@@ -755,24 +756,33 @@ function applySummaryCount(
   }
 }
 
-async function listLocalSubscriptions(shopFilter?: string): Promise<LocalSubscription[]> {
+async function listLocalSubscriptions(params: {
+  shopFilter?: string;
+  dueBefore?: Date;
+} = {}): Promise<LocalSubscription[]> {
   const db = getTsfDb();
-  const sql = shopFilter
-    ? `SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
-              s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
-       FROM AppSubscription s
-       JOIN ShopBillingBinding b ON b.shop = s.shop
-       WHERE b.billingSystem = 'tsf' AND lower(s.shop) = lower(?)
-       ORDER BY s.shop ASC`
-    : `SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
-              s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
-       FROM AppSubscription s
-       JOIN ShopBillingBinding b ON b.shop = s.shop
-       WHERE b.billingSystem = 'tsf'
-       ORDER BY s.shop ASC`;
+  const where = ["b.billingSystem = 'tsf'"];
+  const args: string[] = [];
+
+  if (params.shopFilter) {
+    where.push("lower(s.shop) = lower(?)");
+    args.push(params.shopFilter);
+  }
+  if (params.dueBefore) {
+    where.push("s.status = 'ACTIVE'");
+    where.push("s.currentPeriodEnd IS NOT NULL");
+    where.push("s.currentPeriodEnd <= ?");
+    args.push(params.dueBefore.toISOString());
+  }
+
   const rs = await db.execute({
-    sql,
-    args: shopFilter ? [shopFilter] : [],
+    sql: `SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
+                 s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
+          FROM AppSubscription s
+          JOIN ShopBillingBinding b ON b.shop = s.shop
+          WHERE ${where.join(" AND ")}
+          ORDER BY s.shop ASC`,
+    args,
   });
   return rs.rows.map((row) => ({
     shop: String(row.shop),
@@ -823,6 +833,7 @@ export async function runBillingSubscriptionReconcileWithOptions(
   const dryRun = options.dryRun ?? false;
   const scanOrphans = options.scanOrphans ?? false;
   const shopFilter = options.shop?.trim() || undefined;
+  const dueBefore = options.dueBefore;
 
   if (!hasTsfDbCredentials()) {
     throw new Error("TSF Turso is not configured");
@@ -839,7 +850,7 @@ export async function runBillingSubscriptionReconcileWithOptions(
     details: [],
   };
 
-  const locals = await listLocalSubscriptions(shopFilter);
+  const locals = await listLocalSubscriptions({ shopFilter, dueBefore });
   const orphanShops = scanOrphans
     ? await listOrphanSessionShops(shopFilter)
     : [];
@@ -920,6 +931,56 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
     );
   } catch (err) {
     console.error("[billingReconcile] failed:", err);
+  } finally {
+    running = false;
+  }
+}
+
+export async function runBillingSubscriptionNearDueReconcile(): Promise<void> {
+  if (running) {
+    console.warn("[billingReconcile:nearDue] skip: reconcile already running");
+    return;
+  }
+  if (!hasTsfDbCredentials()) {
+    console.warn("[billingReconcile:nearDue] skip: TSF Turso not configured");
+    return;
+  }
+
+  const lookaheadMs = Math.max(
+    0,
+    Number(process.env.BILLING_SUBSCRIPTION_NEAR_DUE_LOOKAHEAD_MS) ||
+      60 * 60_000,
+  );
+  const dueBefore = new Date(Date.now() + lookaheadMs);
+
+  running = true;
+  const started = Date.now();
+  try {
+    const summary = await runBillingSubscriptionReconcileWithOptions({
+      dryRun: false,
+      scanOrphans: false,
+      dueBefore,
+    });
+
+    for (const result of summary.details) {
+      if (result.action === "renewed") {
+        console.log(`[billingReconcile:nearDue] renewed ${result.shop}`);
+      } else if (result.action === "activated") {
+        console.log(`[billingReconcile:nearDue] activated ${result.shop}`);
+      } else if (result.action === "cancelled") {
+        console.log(`[billingReconcile:nearDue] cancelled ${result.shop}`);
+      } else if (result.action === "error") {
+        console.warn(
+          `[billingReconcile:nearDue] error ${result.shop}: ${result.reason ?? ""}`,
+        );
+      }
+    }
+
+    console.log(
+      `[billingReconcile:nearDue] done dueBefore=${dueBefore.toISOString()} scanned=${summary.scanned} renewed=${summary.renewed} activated=${summary.activated} cancelled=${summary.cancelled} skipped=${summary.skipped} errors=${summary.errors} (${Date.now() - started}ms)`,
+    );
+  } catch (err) {
+    console.error("[billingReconcile:nearDue] failed:", err);
   } finally {
     running = false;
   }

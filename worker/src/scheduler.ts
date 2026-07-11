@@ -10,7 +10,10 @@ import {
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
 import { runAutoTranslateScan } from "./services/autoTranslate.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
-import { runBillingSubscriptionReconcile } from "./services/billingSubscriptionReconcile.js";
+import {
+  runBillingSubscriptionNearDueReconcile,
+  runBillingSubscriptionReconcile,
+} from "./services/billingSubscriptionReconcile.js";
 import { isShuttingDown } from "./shutdown.js";
 import { hostname } from "os";
 import {
@@ -46,6 +49,16 @@ const BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS = Math.max(
   0,
   Number(process.env.BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS) ||
     2 * 60_000,
+);
+const BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS = Math.max(
+  60_000,
+  Number(process.env.BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS) ||
+    30 * 60_000,
+);
+const BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INITIAL_DELAY_MS = Math.max(
+  0,
+  Number(process.env.BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INITIAL_DELAY_MS) ||
+    5 * 60_000,
 );
 
 /** 店铺画像扫描轮询间隔（默认 10 秒；hint 立即唤醒，轮询兜底）。 */
@@ -112,6 +125,22 @@ function scheduleBillingSubscriptionReconcile(): void {
   }, BILLING_SUBSCRIPTION_RECONCILE_INITIAL_DELAY_MS);
 }
 
+function scheduleBillingSubscriptionNearDueReconcile(): void {
+  const tick = () => {
+    safeRun(
+      "billingSubscriptionNearDueReconcile",
+      runBillingSubscriptionNearDueReconcile,
+    );
+  };
+  console.log(
+    `[scheduler] billingSubscriptionNearDueReconcile every ${BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS}ms, first after ${BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INITIAL_DELAY_MS}ms`,
+  );
+  setTimeout(() => {
+    tick();
+    setInterval(tick, BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS);
+  }, BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INITIAL_DELAY_MS);
+}
+
 export function startScheduler(): void {
   const stages = enabledStages();
   const claimSuffix = `-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
@@ -175,6 +204,7 @@ export function startScheduler(): void {
   setInterval(() => safeRun("emailWorker", () => runEmailWorker()), EMAIL_WORKER_INTERVAL_MS);
 
   // 订阅对账：仅 worker 调度；直连 Turso，不打 TSF Web。
+  scheduleBillingSubscriptionNearDueReconcile();
   scheduleBillingSubscriptionReconcile();
 
   for (const stage of ALL_STAGES) {
