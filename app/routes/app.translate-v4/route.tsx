@@ -117,26 +117,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
   const keyDataStart = Date.now();
   const [jobs, coverage] = await Promise.all([
-    listV4JobSummaries(session.shop),
+    listV4JobSummaries(session.shop, { escalateStuck: false }),
     getCoverageSummaryFromCache({
       shop: session.shop,
       primaryLocale,
       targetLocales,
+      includeRuntimeSignals: false,
     }),
   ]);
   const keyDataMs = Date.now() - keyDataStart;
 
   if (perfDebug) {
-    console.log("[perf][loader] translate-v4", {
-      shop: session.shop,
-      authMs,
-      localeMs,
-      settingsMs,
-      keyDataMs,
-      totalMs: Date.now() - reqStart,
-      jobsCount: jobs.length,
-      targetCount: targetLocales.length,
-    });
+    console.log(
+      `[perf][loader] translate-v4 ${JSON.stringify({
+        shop: session.shop,
+        authMs,
+        localeMs,
+        settingsMs,
+        keyDataMs,
+        totalMs: Date.now() - reqStart,
+        jobsCount: jobs.length,
+        targetCount: targetLocales.length,
+      })}`,
+    );
   }
 
   return json({
@@ -159,7 +162,7 @@ export default function AppTranslateV4() {
     jobs: initialJobs,
     coverage: initialCoverage,
   } = useLoaderData<typeof loader>();
-  const [perfDebugEnabled, setPerfDebugEnabled] = useState(false);
+  const [perfDebugEnabled] = useState(() => isPerfDebugEnabled());
 
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
@@ -246,7 +249,7 @@ export default function AppTranslateV4() {
       try {
         if (!forceRefresh) {
           const res = await fetch(
-            `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+            `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&cache=1`,
           );
           const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
@@ -313,7 +316,7 @@ export default function AppTranslateV4() {
   const refreshCoverageFromCache = useCallback(async () => {
     try {
       const res = await fetch(
-        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}`,
+        `/api/translate-v4/coverage?shopName=${encodeURIComponent(shop)}&cache=1`,
       );
       const data = await readJsonResponse(res);
       if (data?.ok) setCoverage(data.summary as CoverageSummary);
@@ -390,10 +393,6 @@ export default function AppTranslateV4() {
       });
     }
   }, [shop]);
-
-  useEffect(() => {
-    setPerfDebugEnabled(isPerfDebugEnabled());
-  }, []);
 
   useEffect(() => {
     const perfStart = markPerfStart("translate-v4.first-load.quota");

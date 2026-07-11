@@ -564,9 +564,10 @@ export async function getV4JobProgressSummary(
  */
 export async function listV4JobSummaries(
   shopName: string,
-  options?: { limit?: number; taskSource?: string },
+  options?: { limit?: number; taskSource?: string; escalateStuck?: boolean },
 ): Promise<TranslationJobProgressSummary[]> {
   const limit = Math.min(Math.max(options?.limit ?? 30, 1), 50);
+  const escalateStuck = options?.escalateStuck ?? true;
   const jobs = await listV4Jobs(shopName, limit);
   const filtered = options?.taskSource
     ? jobs.filter((j) => (j.taskSource ?? null) === options.taskSource)
@@ -581,10 +582,16 @@ export async function listV4JobSummaries(
         redis?.progress ?? {},
         redis?.control ?? null,
       );
-      const escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
-      const writebackEscalated =
-        escalated ??
-        (await escalateStuckTranslatingToWritebackIfNeeded(shopName, job, metrics));
+      let escalated: TranslationV4Job | null = null;
+      let writebackEscalated: TranslationV4Job | null = null;
+
+      if (escalateStuck) {
+        escalated = await escalateStuckPauseIfNeeded(shopName, job, metrics);
+        writebackEscalated =
+          escalated ??
+          (await escalateStuckTranslatingToWritebackIfNeeded(shopName, job, metrics));
+      }
+
       const finalJob = writebackEscalated ?? escalated ?? job;
       summaries.push(
         toProgressSummary(
