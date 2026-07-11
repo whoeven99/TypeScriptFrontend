@@ -167,12 +167,15 @@ async function refreshRatesIfNeeded(): Promise<void> {
   const fetchedAt = now;
   const expiresAt = new Date(now.getTime() + RATE_TTL_MS);
   await prisma.$transaction(
-    Object.entries(data.rates)
-      .map(([currencyCode, rawRate]) => ({
-        currencyCode: normalizeCurrencyCode(currencyCode),
-        rate: Number(rawRate),
-      }))
-      .filter((item) => item.currencyCode && Number.isFinite(item.rate))
+    [
+      { currencyCode: RATE_BASE, rate: 1 },
+      ...Object.entries(data.rates)
+        .map(([currencyCode, rawRate]) => ({
+          currencyCode: normalizeCurrencyCode(currencyCode),
+          rate: Number(rawRate),
+        }))
+        .filter((item) => item.currencyCode && Number.isFinite(item.rate)),
+    ]
       .map((item) =>
         prisma.currencyRate.upsert({
           where: { currencyCode: item.currencyCode },
@@ -195,6 +198,7 @@ async function refreshRatesIfNeeded(): Promise<void> {
 }
 
 async function readRate(currencyCode: string): Promise<number | null> {
+  if (normalizeCurrencyCode(currencyCode) === RATE_BASE) return 1;
   await refreshRatesIfNeeded();
   const row = await prisma.currencyRate.findUnique({
     where: { currencyCode: normalizeCurrencyCode(currencyCode) },
@@ -356,6 +360,7 @@ export async function updateDefaultCurrency(
 export async function getCurrencyCacheData(
   shop: string,
   currencyCodeInput: string,
+  fromCurrencyCodeInput?: string,
 ): Promise<BaseResponse<CurrencyPayload | undefined>> {
   const currencyCode = normalizeCurrencyCode(currencyCodeInput);
   const row = await prisma.currency.findUnique({
@@ -364,19 +369,30 @@ export async function getCurrencyCacheData(
   if (!row) return fail(TRANSLATE_V4_ERROR_KEYS.CURRENCY_NOT_FOUND, undefined);
 
   const payload = toCurrencyPayload(row);
-  if (payload.primaryStatus !== 0 || payload.exchangeRate !== "Auto") {
+  const hasManualRate =
+    payload.exchangeRate !== null && payload.exchangeRate !== "Auto";
+  if (hasManualRate) {
     return ok(payload);
   }
 
-  const primary = await prisma.currency.findFirst({
-    where: { shop, primaryStatus: 1 },
-    select: { currencyCode: true },
-  });
-  const defaultCurrencyCode = normalizeCurrencyCode(primary?.currencyCode);
-  if (!defaultCurrencyCode) return ok(payload);
+  const fromCurrencyCode = normalizeCurrencyCode(fromCurrencyCodeInput);
+  let baseCurrencyCode = fromCurrencyCode;
+
+  if (!baseCurrencyCode) {
+    const primary = await prisma.currency.findFirst({
+      where: { shop, primaryStatus: 1 },
+      select: { currencyCode: true },
+    });
+    baseCurrencyCode = normalizeCurrencyCode(primary?.currencyCode);
+  }
+  if (!baseCurrencyCode) return ok(payload);
+  if (baseCurrencyCode === currencyCode) {
+    payload.exchangeRate = 1;
+    return ok(payload);
+  }
 
   const [fromRate, toRate] = await Promise.all([
-    readRate(defaultCurrencyCode),
+    readRate(baseCurrencyCode),
     readRate(currencyCode),
   ]);
   if (fromRate && toRate) {

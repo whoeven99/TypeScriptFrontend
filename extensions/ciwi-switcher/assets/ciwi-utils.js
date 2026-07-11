@@ -81,6 +81,36 @@ function formatWithSpaceAndPeriod(integerPart, decimalPart) {
   return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
 }
 
+const CURRENCY_SYMBOL_RE = /[$€£¥₹₩₽₺₫₴₦₱₪₡₲₵]/;
+const CURRENCY_CODE_RE = /\b[A-Z]{3}\b/;
+
+export function isLikelyMoneyText(text) {
+  const value = String(text || "").replace(/\s+/g, " ").trim();
+  if (!value) return false;
+  if (!/\d/.test(value)) return false;
+  if (value.includes("%")) return false;
+  return CURRENCY_SYMBOL_RE.test(value) || CURRENCY_CODE_RE.test(value);
+}
+
+function collectMoneyNodes(root) {
+  const scope = root || document;
+  const nodes = scope.querySelectorAll(
+    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price",
+  );
+  const list = [];
+  nodes.forEach((node) => {
+    if (!(node instanceof Element)) return;
+    if (node.classList.contains("ciwi-money")) {
+      list.push(node);
+      return;
+    }
+    if (!isLikelyMoneyText(node.textContent || node.innerText || "")) return;
+    node.classList.add("ciwi-money");
+    list.push(node);
+  });
+  return list;
+}
+
 export function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
   let number = transformedPrice.toString();
   let [integerPart, decimalPart = "00"] = number.split(".");
@@ -140,14 +170,29 @@ export function transformSinglePriceNode(
   selectedCurrency,
 ) {
   if (!node || !node.innerText) return;
-  const priceText = node.innerText;
-  const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
-  if (
-    !formatted ||
-    rate === "Auto" ||
-    priceText.includes(selectedCurrency.currencyCode)
-  )
+  if (!node.dataset.ciwiOriginalPriceHtml) {
+    node.dataset.ciwiOriginalPriceHtml = node.innerHTML;
+  }
+  if (!node.dataset.ciwiOriginalPriceText) {
+    node.dataset.ciwiOriginalPriceText = node.innerText;
+  }
+
+  if (!selectedCurrency) {
+    node.innerHTML = node.dataset.ciwiOriginalPriceHtml;
+    delete node.dataset.ciwiCurrencyCode;
+    delete node.dataset.ciwiAppliedRate;
     return;
+  }
+
+  const priceText = node.dataset.ciwiOriginalPriceText || node.innerText;
+  const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
+  if (!formatted || rate === "Auto") return;
+  if (
+    node.dataset.ciwiCurrencyCode === selectedCurrency.currencyCode &&
+    node.dataset.ciwiAppliedRate === String(rate)
+  ) {
+    return;
+  }
   let number = convertToNumberFromMoneyFormat(moneyFormat, formatted);
   number = (number * rate).toFixed(2);
   const transformedPrice = customRounding(number, selectedCurrency.rounding);
@@ -168,6 +213,8 @@ export function transformSinglePriceNode(
   } else {
     node.innerHTML = `${symbol}${detected} <span class="currency-code">${selectedCurrency.currencyCode}</span>`;
   }
+  node.dataset.ciwiCurrencyCode = selectedCurrency.currencyCode;
+  node.dataset.ciwiAppliedRate = String(rate);
 }
 
 /**
@@ -176,7 +223,13 @@ export function transformSinglePriceNode(
  * transformSinglePriceNode 直接改写节点 innerHTML，自身已对已转换节点幂等。
  */
 export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) {
-  const pricesDoc = nodes || document.querySelectorAll(".ciwi-money");
+  const pricesDoc = nodes
+    ? nodes
+    : (() => {
+        const tagged = document.querySelectorAll(".ciwi-money");
+        if (tagged.length) return tagged;
+        return collectMoneyNodes(document);
+      })();
 
   pricesDoc.forEach((price) => {
     transformSinglePriceNode(price, rate, moneyFormat, selectedCurrency);
