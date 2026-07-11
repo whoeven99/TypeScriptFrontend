@@ -1,23 +1,35 @@
+function normalizeImageCandidate(
+  url: string | null | undefined,
+): string | null {
+  if (!url) return null;
+
+  const raw = String(url).trim();
+  if (!raw) return null;
+
+  const candidate = raw.split(",")[0]?.trim().split(/\s+/)[0]?.trim();
+  if (!candidate) return null;
+
+  try {
+    return new URL(candidate, "https://shopify-image.local").pathname;
+  } catch {
+    const withoutQuery = candidate.split("?")[0]?.split("#")[0]?.trim();
+    return withoutQuery || null;
+  }
+}
+
 /**
- * 对齐 ciwi-switcher：用 /files/ 后的文件名匹配 Shopify 图，
- * 忽略 host / 路径前缀 / ?v= 查询串变化，避免 Admin 精确 === 对不上库里的 imageBeforeUrl。
+ * 生成 Shopify 图片匹配 key。
+ * 优先使用完整 pathname，避免只按文件名匹配时把同名图片串位。
  */
 export function shopifyFilesImageKey(
   url: string | null | undefined,
 ): string | null {
+  const pathname = normalizeImageCandidate(url);
+  if (pathname) return pathname;
+
   if (!url) return null;
-  const afterFiles = url.split("/files/")[2];
-  if (afterFiles) {
-    return afterFiles.split("?")[0]?.trim() || null;
-  }
-  try {
-    const pathname = new URL(url).pathname;
-    const base = pathname.split("/").pop() || "";
-    return base.split("?")[0]?.trim() || null;
-  } catch {
-    const base = url.split("/").pop() || "";
-    return base.split("?")[0]?.trim() || null;
-  }
+  const base = String(url).split("/").pop() || "";
+  return base.split("?")[0]?.trim() || null;
 }
 
 export function sameShopifyImageUrl(
@@ -26,6 +38,13 @@ export function sameShopifyImageUrl(
 ): boolean {
   if (!a || !b) return false;
   if (a === b) return true;
+
+  const normalizedA = normalizeImageCandidate(a);
+  const normalizedB = normalizeImageCandidate(b);
+  if (normalizedA && normalizedB) {
+    return normalizedA === normalizedB;
+  }
+
   const ka = shopifyFilesImageKey(a);
   const kb = shopifyFilesImageKey(b);
   return !!ka && !!kb && ka === kb;

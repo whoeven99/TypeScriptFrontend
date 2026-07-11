@@ -674,8 +674,8 @@ const Index = () => {
     if (translateImageFetcher.data) {
       if (translateImageFetcher.data.success) {
         shopify.toast.show(t("Image translated successfully"));
-        setProductImageData(
-          productImageData.map((item: any) => {
+        setProductImageData((prev: any[]) =>
+          prev.map((item: any) => {
             if (item.imageUrl === currentTranslatingImage.imageUrl) {
               return {
                 ...item,
@@ -967,8 +967,8 @@ const Index = () => {
                 if (info.file.status !== "uploading") {
                 }
                 if (info.file.status === "done") {
-                  setProductImageData(
-                    productImageData.map((item: any) => {
+                  setProductImageData((prev: any[]) =>
+                    prev.map((item: any) => {
                       if (
                         sameShopifyImageUrl(
                           item.imageUrl,
@@ -1124,15 +1124,21 @@ const Index = () => {
     console.log("res", res);
 
     if (res.success) {
-      setDataResource(
-        dataResource.map((item: any) => {
-          return item.map((image: any) => {
-            if (image.imageId === productId) {
-              image.targetImageUrl = "";
-            }
-            return image;
-          });
-        }),
+      setDataResource((prev: any[]) =>
+        prev.map((item: any) =>
+          item.map((image: any) =>
+            sameShopifyImageUrl(image.imageUrl, imageUrl)
+              ? { ...image, targetImageUrl: "" }
+              : image,
+          ),
+        ),
+      );
+      setProductImageData((prev: any[]) =>
+        prev.map((item: any) =>
+          sameShopifyImageUrl(item.imageUrl, imageUrl)
+            ? { ...item, targetImageUrl: "" }
+            : item,
+        ),
       );
       shopify.toast.show(t("Delete Success"));
     } else {
@@ -1300,7 +1306,7 @@ const Index = () => {
                       {productImageData.map((item: any, index: number) => {
                         return (
                           <Space
-                            key={index}
+                            key={item.key || item.imageId || item.imageUrl || index}
                             direction="vertical"
                             size="small"
                             style={{ width: "100%" }}
@@ -1434,8 +1440,8 @@ const Index = () => {
                                     if (info.file.status !== "uploading") {
                                     }
                                     if (info.file.status === "done") {
-                                      setProductImageData(
-                                        productImageData.map((item: any) => {
+                                      setProductImageData((prev: any[]) =>
+                                        prev.map((item: any) => {
                                           if (
                                             sameShopifyImageUrl(
                                               item.imageUrl,
@@ -1546,6 +1552,7 @@ const Index = () => {
                   <Table
                     columns={columns}
                     dataSource={productImageData}
+                    rowKey="key"
                     pagination={false}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>

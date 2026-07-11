@@ -727,6 +727,32 @@ function getImageMatchCandidates(img) {
   return [...new Set(candidates)];
 }
 
+function normalizeImageCandidate(url) {
+  if (!url) return null;
+
+  const raw = String(url).trim();
+  if (!raw) return null;
+
+  const candidate = raw.split(",")[0]?.trim().split(/\s+/)[0]?.trim();
+  if (!candidate) return null;
+
+  try {
+    return new URL(candidate, window.location.origin).pathname;
+  } catch {
+    const withoutQuery = candidate.split("?")[0]?.split("#")[0]?.trim();
+    return withoutQuery || null;
+  }
+}
+
+function getShopifyImageMatchKey(url) {
+  const normalized = normalizeImageCandidate(url);
+  if (normalized) return normalized;
+
+  if (!url) return null;
+  const base = String(url).split("/").pop() || "";
+  return base.split("?")[0]?.trim() || null;
+}
+
 function findMatchedImageEntry(img, keyedEntries) {
   if (!(img instanceof HTMLImageElement) || !Array.isArray(keyedEntries)) {
     return null;
@@ -734,10 +760,13 @@ function findMatchedImageEntry(img, keyedEntries) {
 
   const candidates = getImageMatchCandidates(img);
   if (candidates.length === 0) return null;
+  const normalizedCandidates = candidates
+    .map((candidate) => getShopifyImageMatchKey(candidate))
+    .filter(Boolean);
 
   return (
     keyedEntries.find(({ key }) =>
-      candidates.some((candidate) => candidate.includes(key)),
+      normalizedCandidates.some((candidate) => candidate === key),
     ) || null
   );
 }
@@ -796,7 +825,7 @@ let _dynamicImageObserver = null;
 
 /**
  * 把图片翻译响应预处理成 [{ key, item }]：
- * key 只从 imageBeforeUrl 解析一次，避免在图片×条目的双重循环里反复 split。
+ * key 只从 imageBeforeUrl 解析一次，避免在图片×条目的双重循环里反复做 URL 规范化。
  * 传入 language 时只保留该语言的条目。
  */
 function buildImageKeyEntries(response, language) {
@@ -804,7 +833,7 @@ function buildImageKeyEntries(response, language) {
   if (!Array.isArray(response)) return entries;
   for (const item of response) {
     if (language && item?.languageCode !== language) continue;
-    const key = item?.imageBeforeUrl?.split("/files/")[2];
+    const key = getShopifyImageMatchKey(item?.imageBeforeUrl);
     if (!key) continue;
     entries.push({ key, item });
   }
