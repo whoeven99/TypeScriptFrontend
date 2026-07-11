@@ -1,4 +1,5 @@
 import {
+  Profiler,
   Suspense,
   lazy,
   useCallback,
@@ -47,6 +48,12 @@ import {
   finishClientLogTrace,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import {
+  isPerfDebugEnabled,
+  logReactProfilerRender,
+  markPerfEnd,
+  markPerfStart,
+} from "~/utils/perf.client";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
@@ -68,11 +75,15 @@ async function readJsonResponse<T = any>(res: Response): Promise<T> {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const reqStart = Date.now();
+  const perfDebug = new URL(request.url).searchParams.get("perf") === "1";
   const { session } = await authenticate.admin(request);
+  const authMs = Date.now() - reqStart;
 
   let locales: ShopLocaleOption[] = [];
   let primaryLocale = "en";
   let shopLocaleRows: Array<{ locale: string; primary: boolean }> = [];
+  const localeStart = Date.now();
   try {
     const loaded = await loadShopLocalesForTranslation({
       shop: session.shop,
@@ -84,8 +95,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (err) {
     console.error("[translateV4] load shopLocales failed:", err);
   }
+  const localeMs = Date.now() - localeStart;
 
+  const settingsStart = Date.now();
   await ensureShopV4Settings(session.shop, primaryLocale);
+  const settingsMs = Date.now() - settingsStart;
 
   // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
   // 后台执行，避免 N 个串行 upsert 阻塞首屏。
@@ -101,6 +115,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   // 关键内容（任务列表 + 覆盖率）在 loader 阻塞等待；quota / planType 由客户端拉取，
   // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
+  const keyDataStart = Date.now();
   const [jobs, coverage] = await Promise.all([
     listV4JobSummaries(session.shop),
     getCoverageSummaryFromCache({
@@ -109,6 +124,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       targetLocales,
     }),
   ]);
+  const keyDataMs = Date.now() - keyDataStart;
+
+  if (perfDebug) {
+    console.log("[perf][loader] translate-v4", {
+      shop: session.shop,
+      authMs,
+      localeMs,
+      settingsMs,
+      keyDataMs,
+      totalMs: Date.now() - reqStart,
+      jobsCount: jobs.length,
+      targetCount: targetLocales.length,
+    });
+  }
 
   return json({
     shop: session.shop,
@@ -130,6 +159,7 @@ export default function AppTranslateV4() {
     jobs: initialJobs,
     coverage: initialCoverage,
   } = useLoaderData<typeof loader>();
+  const [perfDebugEnabled, setPerfDebugEnabled] = useState(false);
 
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
@@ -196,6 +226,11 @@ export default function AppTranslateV4() {
   });
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
+      const perfStart = markPerfStart(
+        forceRefresh
+          ? "translate-v4.coverage.refresh.force"
+          : "translate-v4.coverage.refresh.cache",
+      );
       setCoverageLoading(true);
       const trace = forceRefresh
         ? startClientLogTrace({
@@ -215,6 +250,10 @@ export default function AppTranslateV4() {
           );
           const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
+          markPerfEnd("translate-v4.coverage.refresh.cache", perfStart, {
+            status: res.status,
+            ok: Boolean(data?.ok),
+          });
           if (trace) {
             finishClientLogTrace(trace, {
               status: "success",
@@ -234,6 +273,9 @@ export default function AppTranslateV4() {
           const data = await readJsonResponse(res);
           if (data?.ok) setCoverage(data.summary as CoverageSummary);
         }
+        markPerfEnd("translate-v4.coverage.refresh.force", perfStart, {
+          localeCount: targetOptions.length,
+        });
         if (trace) {
           finishClientLogTrace(trace, {
             status: "success",
@@ -244,6 +286,15 @@ export default function AppTranslateV4() {
         }
       } catch (err) {
         console.error("[translateV4] refresh coverage failed:", err);
+        markPerfEnd(
+          forceRefresh
+            ? "translate-v4.coverage.refresh.force"
+            : "translate-v4.coverage.refresh.cache",
+          perfStart,
+          {
+            failed: true,
+          },
+        );
         if (trace) {
           finishClientLogTrace(trace, {
             level: "error",
@@ -296,36 +347,59 @@ export default function AppTranslateV4() {
   );
 
   const refreshList = useCallback(async () => {
+    const perfStart = markPerfStart("translate-v4.tasks.refresh");
     try {
       const res = await fetch(
         `/api/translate-v4/tasks?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await readJsonResponse(res);
+      markPerfEnd("translate-v4.tasks.refresh", perfStart, {
+        status: res.status,
+        ok: Boolean(data?.ok),
+      });
       if (data?.ok) {
         applyJobsUpdate(data.jobs as TranslationJobProgressSummary[]);
       }
     } catch (err) {
       console.error("[translateV4] refresh list failed:", err);
+      markPerfEnd("translate-v4.tasks.refresh", perfStart, {
+        failed: true,
+      });
     }
   }, [shop, applyJobsUpdate]);
 
   const refreshQuota = useCallback(async () => {
+    const perfStart = markPerfStart("translate-v4.quota.refresh");
     try {
       const res = await fetch(
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await readJsonResponse(res);
+      markPerfEnd("translate-v4.quota.refresh", perfStart, {
+        status: res.status,
+        ok: Boolean(data?.ok),
+      });
       if (data?.ok) {
         setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
         setStrictQuotaGate(Boolean(data.strictQuotaGate));
       }
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
+      markPerfEnd("translate-v4.quota.refresh", perfStart, {
+        failed: true,
+      });
     }
   }, [shop]);
 
   useEffect(() => {
-    void refreshQuota();
+    setPerfDebugEnabled(isPerfDebugEnabled());
+  }, []);
+
+  useEffect(() => {
+    const perfStart = markPerfStart("translate-v4.first-load.quota");
+    void refreshQuota().finally(() => {
+      markPerfEnd("translate-v4.first-load.quota", perfStart);
+    });
   }, [refreshQuota]);
 
   const handleAction = useCallback(
@@ -632,97 +706,112 @@ export default function AppTranslateV4() {
   return (
     <Page>
       <TitleBar title={t("v4.title")} />
-      <div className="v4-page" style={v4ContentStyle}>
-        <div className="v4-enter">
-          <PageHeaderBar credits={remainingCredits} planType={planType} />
-        </div>
+      <Profiler
+        id="translate-v4.page"
+        onRender={(id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+          if (!perfDebugEnabled) return;
+          logReactProfilerRender(
+            id,
+            phase,
+            actualDuration,
+            baseDuration,
+            startTime,
+            commitTime,
+          );
+        }}
+      >
+        <div className="v4-page" style={v4ContentStyle}>
+          <div className="v4-enter">
+            <PageHeaderBar credits={remainingCredits} planType={planType} />
+          </div>
 
-        <div
-          style={{
-            display: "grid",
-            gap: 18,
-            alignItems: "start",
-          }}
-        >
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
               gap: 18,
-              alignItems: coverageExpanded ? "start" : "stretch",
+              alignItems: "start",
             }}
           >
             <div
               style={{
-                display: "flex",
-                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
-                ...(coverageExpanded
-                  ? {
-                      alignSelf: "flex-start",
-                      height: V4_OVERVIEW_CARD_MIN_HEIGHT,
-                    }
-                  : null),
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1.45fr) minmax(320px, 0.92fr)",
+                gap: 18,
+                alignItems: coverageExpanded ? "start" : "stretch",
               }}
             >
-              <SummaryDonutCard summary={coverage} compact />
+              <div
+                style={{
+                  display: "flex",
+                  minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                  ...(coverageExpanded
+                    ? {
+                        alignSelf: "flex-start",
+                        height: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                      }
+                    : null),
+                }}
+              >
+                <SummaryDonutCard summary={coverage} compact />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                }}
+              >
+                <CoverageCard
+                  locales={coverage.locales}
+                  loading={coverageLoading}
+                  onRefresh={refreshCoverage}
+                  compact
+                  onManageLanguages={openLanguagePage}
+                  onExpandedChange={setCoverageExpanded}
+                  fillPairHeight={!coverageExpanded}
+                />
+              </div>
             </div>
+
+            <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
+              <CreateTaskCard
+                targetOptions={targetOptions}
+                targets={targets}
+                onTargetsChange={setTargets}
+                modules={moduleKeys}
+                onModulesChange={setModuleKeys}
+                creating={creating}
+                createDisabled={normalizedQuota == null}
+                disabledMessage={createDisabledMessage}
+                onCreate={handleCreate}
+                aiModel={aiModel}
+                onAiModelChange={setAiModel}
+                isCover={isCover}
+                onIsCoverChange={setIsCover}
+                isHandle={isHandle}
+                onIsHandleChange={setIsHandle}
+              />
+            </div>
+
             <div
+              ref={taskQueueSectionRef}
+              className="v4-enter v4-enter-d3"
               style={{
-                display: "flex",
-                minHeight: V4_OVERVIEW_CARD_MIN_HEIGHT,
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr)",
+                gap: 16,
               }}
             >
-              <CoverageCard
-                locales={coverage.locales}
-                loading={coverageLoading}
-                onRefresh={refreshCoverage}
-                compact
-                onManageLanguages={openLanguagePage}
-                onExpandedChange={setCoverageExpanded}
-                fillPairHeight={!coverageExpanded}
+              <TaskQueueSection
+                jobs={jobs}
+                spotlightTaskIds={spotlightTaskIds}
+                translateSlotBusy={translateSlotBusy}
+                onBuyCredits={() => setShowPaymentModal(true)}
+                onAction={handleAction}
               />
             </div>
           </div>
-
-          <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
-            <CreateTaskCard
-              targetOptions={targetOptions}
-              targets={targets}
-              onTargetsChange={setTargets}
-              modules={moduleKeys}
-              onModulesChange={setModuleKeys}
-              creating={creating}
-              createDisabled={normalizedQuota == null}
-              disabledMessage={createDisabledMessage}
-              onCreate={handleCreate}
-              aiModel={aiModel}
-              onAiModelChange={setAiModel}
-              isCover={isCover}
-              onIsCoverChange={setIsCover}
-              isHandle={isHandle}
-              onIsHandleChange={setIsHandle}
-            />
-          </div>
-
-          <div
-            ref={taskQueueSectionRef}
-            className="v4-enter v4-enter-d3"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr)",
-              gap: 16,
-            }}
-          >
-            <TaskQueueSection
-              jobs={jobs}
-              spotlightTaskIds={spotlightTaskIds}
-              translateSlotBusy={translateSlotBusy}
-              onBuyCredits={() => setShowPaymentModal(true)}
-              onAction={handleAction}
-            />
-          </div>
         </div>
-      </div>
+      </Profiler>
 
       <CreateTaskQuotaGateModal
         open={quotaGateMode !== null}
