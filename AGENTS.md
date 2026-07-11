@@ -592,6 +592,24 @@ Check deploy configs when changing extensions:
 `extensions/web-pixel` is a standard Shopify web pixel extension. Its source is
 `extensions/web-pixel/src/index.ts`; generated output is in `dist/`.
 
+## Trigger Phrases (AI Agent Actions)
+
+When the user says these exact or similar phrases, immediately run the
+corresponding script without asking for confirmation:
+
+| User says | Action |
+|-----------|--------|
+| "提个pr" / "提pr" / "创建PR" / "push and create PR" | Run `powershell -File scripts/pr.ps1` |
+| "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | Run `powershell -File scripts/merge-deploy-test.ps1` |
+| "发布测试环境" / "deploy test" (单独发布，不合入PR) | 触发 `tsf-deploy.yml` workflow on master，参数 `render_service_test=true, render_worker_test=true` |
+
+For "合入PR然后发布测试环境", the script will:
+1. Auto-detect the PR for the current branch
+2. Squash-merge it to master
+3. Switch local to master and pull
+4. Trigger `tsf-deploy.yml` workflow for test environment
+5. Output the workflow run URL
+
 ## Task Locator
 
 | User asks about | First read | Then read |
@@ -642,6 +660,17 @@ Operational root scripts:
   assets.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
   scripts.
+
+Operational PowerShell scripts:
+
+- `scripts/pr.ps1`: push current branch and create a PR to master via GitHub CLI.
+  Run directly: `.\scripts\pr.ps1 -Title "标题"` or just `.\scripts\pr.ps1`.
+  Automatically detects uncommitted changes, pushes, and opens the PR URL.
+- `scripts/merge-deploy-test.ps1`: merge a PR and trigger test environment deploy
+  (TSF Web + Worker) via GitHub Actions. Run: `.\scripts\merge-deploy-test.ps1`.
+  Auto-finds the PR for the current branch, merges it, switches to master,
+  and triggers the `tsf-deploy.yml` workflow with `render_service_test=true`
+  and `render_worker_test=true`.
 
 Worker scripts to keep:
 
