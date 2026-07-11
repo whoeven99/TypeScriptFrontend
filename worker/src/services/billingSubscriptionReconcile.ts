@@ -1,6 +1,10 @@
 /**
- * Worker 内订阅对账：对比 Shopify currentPeriodEnd，落后则按 webhook 同语义续费入账。
- * 只在 worker 调度；不调用 TSF Web，避免拖垮线上 App。
+ * Reconcile TSF billing subscriptions against Shopify.
+ *
+ * Shopify is the source of truth for subscription status and period. This job
+ * repairs local ACTIVE subscriptions that were renewed or cancelled in Shopify,
+ * and also fills local records when a TSF shop has an offline token and an
+ * ACTIVE Shopify subscription but no local AppSubscription row.
  */
 import { randomUUID } from "node:crypto";
 import {
@@ -14,22 +18,47 @@ import {
 } from "./tsfDb.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const PERIOD_END_TOLERANCE_MS = 12 * 60 * 60 * 1000;
 const INTERVAL_DAYS: Record<string, number> = {
   MONTHLY: 30,
   ANNUAL: 365,
 };
 
-type ReconcileAction =
+export type ReconcileAction =
   | "renewed"
   | "activated"
   | "cancelled"
   | "skipped"
   | "error";
 
-type ReconcileShopResult = {
+export type ReconcileShopResult = {
   shop: string;
   action: ReconcileAction;
   reason?: string;
+  localStatus?: string | null;
+  shopifyStatus?: string | null;
+  localPeriodEnd?: string | null;
+  shopifyPeriodEnd?: string | null;
+  localPlanKey?: string | null;
+  shopifyPlanName?: string | null;
+};
+
+export type BillingReconcileOptions = {
+  shop?: string;
+  dryRun?: boolean;
+  scanOrphans?: boolean;
+  dueBefore?: Date;
+};
+
+export type BillingReconcileSummary = {
+  scanned: number;
+  renewed: number;
+  activated: number;
+  cancelled: number;
+  skipped: number;
+  errors: number;
+  dryRun: boolean;
+  details: ReconcileShopResult[];
 };
 
 type LocalSubscription = {
@@ -77,7 +106,17 @@ function isRenewal(
 ): boolean {
   if (!previous.currentPeriodEnd || !nextPeriodEnd) return false;
   if (previous.status !== "ACTIVE") return false;
-  return nextPeriodEnd.getTime() > previous.currentPeriodEnd.getTime();
+  const delta = nextPeriodEnd.getTime() - previous.currentPeriodEnd.getTime();
+  return delta > PERIOD_END_TOLERANCE_MS;
+}
+
+function isPeriodEndBehindShopify(
+  localEnd: Date | null,
+  shopifyEnd: Date,
+): boolean {
+  if (!localEnd) return true;
+  const delta = shopifyEnd.getTime() - localEnd.getTime();
+  return delta > PERIOD_END_TOLERANCE_MS;
 }
 
 async function shopifyGraphql<T>(
@@ -92,6 +131,7 @@ async function shopifyGraphql<T>(
       `https://${shop}/admin/api/${apiVersion}/graphql.json`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(20_000),
         headers: {
           "X-Shopify-Access-Token": accessToken,
           "Content-Type": "application/json",
@@ -115,7 +155,7 @@ function parseShopifySubscription(node: {
   id?: string;
   name?: string;
   status?: string;
-  currentPeriodEnd?: string;
+  currentPeriodEnd?: string | null;
   lineItems?: Array<{
     plan?: { pricingDetails?: { interval?: string } };
   }>;
@@ -133,42 +173,10 @@ function parseShopifySubscription(node: {
   };
 }
 
-async function fetchShopifySubscription(
+async function fetchShopifyActiveSubscription(
   shop: string,
   accessToken: string,
-  gid: string,
 ): Promise<ShopifySubscriptionSnapshot | null> {
-  const byId = await shopifyGraphql<{
-    node: {
-      id: string;
-      name: string;
-      status: string;
-      currentPeriodEnd: string;
-      lineItems: Array<{ plan: { pricingDetails: { interval?: string } } }>;
-    } | null;
-  }>(
-    shop,
-    accessToken,
-    `query AppSubscriptionById($id: ID!) {
-      node(id: $id) {
-        ... on AppSubscription {
-          id name status currentPeriodEnd
-          lineItems {
-            plan {
-              pricingDetails {
-                __typename
-                ... on AppRecurringPricing { interval }
-              }
-            }
-          }
-        }
-      }
-    }`,
-    { id: gid },
-  );
-  const parsed = parseShopifySubscription(byId?.node ?? null);
-  if (parsed && parsed.status === "ACTIVE") return parsed;
-
   const active = await shopifyGraphql<{
     currentAppInstallation: {
       activeSubscriptions: Array<{
@@ -203,6 +211,46 @@ async function fetchShopifySubscription(
   );
 }
 
+async function fetchShopifySubscription(
+  shop: string,
+  accessToken: string,
+  gid: string,
+): Promise<ShopifySubscriptionSnapshot | null> {
+  const byId = await shopifyGraphql<{
+    node: {
+      id: string;
+      name: string;
+      status: string;
+      currentPeriodEnd: string | null;
+      lineItems: Array<{ plan: { pricingDetails: { interval?: string } } }>;
+    } | null;
+  }>(
+    shop,
+    accessToken,
+    `query AppSubscriptionById($id: ID!) {
+      node(id: $id) {
+        ... on AppSubscription {
+          id name status currentPeriodEnd
+          lineItems {
+            plan {
+              pricingDetails {
+                __typename
+                ... on AppRecurringPricing { interval }
+              }
+            }
+          }
+        }
+      }
+    }`,
+    { id: gid },
+  );
+  const byIdSub = parseShopifySubscription(byId?.node ?? null);
+  if (byIdSub?.status === "ACTIVE") return byIdSub;
+
+  const activeSub = await fetchShopifyActiveSubscription(shop, accessToken);
+  return activeSub ?? byIdSub;
+}
+
 async function findPlanCredits(
   shopifyPlanName: string,
   billingInterval: string,
@@ -222,6 +270,18 @@ async function findPlanCredits(
     planKey: String(row.planKey),
     credits: Number(row.credits) || 0,
   };
+}
+
+async function ensureAccount(shop: string): Promise<void> {
+  const now = new Date().toISOString();
+  await getTsfDb().execute({
+    sql: `INSERT INTO Account (
+            shop, subscriptionCredits, purchasedCredits, trialCredits,
+            usedCredits, createdAt, updatedAt
+          ) VALUES (?, 0, 0, 0, 0, ?, ?)
+          ON CONFLICT(shop) DO NOTHING`,
+    args: [shop, now, now],
+  });
 }
 
 async function archivePeriodAndRenew(params: {
@@ -384,7 +444,7 @@ async function activateOrReplaceSubscription(params: {
   creditsPerPeriod: number;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
-}): Promise<"activated"> {
+}): Promise<void> {
   const {
     shop,
     shopifySub,
@@ -397,6 +457,7 @@ async function activateOrReplaceSubscription(params: {
   const db = getTsfDb();
   const now = new Date().toISOString();
 
+  await ensureAccount(shop);
   await db.execute({
     sql: `INSERT INTO AppSubscription (
             shop, planKey, shopifySubscriptionId, billingInterval, status,
@@ -455,17 +516,36 @@ async function activateOrReplaceSubscription(params: {
       ],
     });
   }
+}
 
-  return "activated";
+function resultWithSnapshot(
+  base: ReconcileShopResult,
+  local?: LocalSubscription | null,
+  shopifySub?: ShopifySubscriptionSnapshot | null,
+): ReconcileShopResult {
+  return {
+    ...base,
+    localStatus: local?.status ?? null,
+    shopifyStatus: shopifySub?.status ?? null,
+    localPeriodEnd: local?.currentPeriodEnd?.toISOString() ?? null,
+    shopifyPeriodEnd: shopifySub?.currentPeriodEnd?.toISOString() ?? null,
+    localPlanKey: local?.planKey ?? null,
+    shopifyPlanName: shopifySub?.name ?? null,
+  };
 }
 
 async function reconcileOneShop(
   shop: string,
   local: LocalSubscription,
+  dryRun = false,
 ): Promise<ReconcileShopResult> {
   const accessToken = await getOfflineAccessTokenFromTsf(shop);
   if (!accessToken) {
-    return { shop, action: "skipped", reason: "no_offline_token" };
+    return resultWithSnapshot(
+      { shop, action: "skipped", reason: "no_offline_token" },
+      local,
+      null,
+    );
   }
 
   const shopifySub = await fetchShopifySubscription(
@@ -474,20 +554,30 @@ async function reconcileOneShop(
     local.shopifySubscriptionId,
   );
   if (!shopifySub) {
-    return { shop, action: "error", reason: "shopify_fetch_failed" };
+    return resultWithSnapshot(
+      { shop, action: "error", reason: "shopify_fetch_failed" },
+      local,
+      null,
+    );
   }
 
   if (shopifySub.status === "CANCELLED" || shopifySub.status === "EXPIRED") {
-    await cancelLocalSubscription(shop, local, shopifySub.status);
-    return { shop, action: "cancelled" };
+    if (!dryRun) {
+      await cancelLocalSubscription(shop, local, shopifySub.status);
+    }
+    return resultWithSnapshot({ shop, action: "cancelled" }, local, shopifySub);
   }
 
   if (shopifySub.status !== "ACTIVE") {
-    return {
-      shop,
-      action: "skipped",
-      reason: `shopify_status_${shopifySub.status}`,
-    };
+    return resultWithSnapshot(
+      {
+        shop,
+        action: "skipped",
+        reason: `shopify_status_${shopifySub.status}`,
+      },
+      local,
+      shopifySub,
+    );
   }
 
   const billingInterval = mapInterval(shopifySub.intervalRaw) || local.billingInterval;
@@ -504,15 +594,17 @@ async function reconcileOneShop(
     currentPeriodEnd.getTime() - (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS,
   );
 
-  const localEndMs = local.currentPeriodEnd?.getTime() ?? 0;
-  const shopifyEndMs = currentPeriodEnd.getTime();
   const needsSync =
     shopifySub.id !== local.shopifySubscriptionId ||
     isRenewal(local, currentPeriodEnd) ||
-    shopifyEndMs > localEndMs;
+    isPeriodEndBehindShopify(local.currentPeriodEnd, currentPeriodEnd);
 
   if (!needsSync) {
-    return { shop, action: "skipped", reason: "already_synced" };
+    return resultWithSnapshot(
+      { shop, action: "skipped", reason: "already_synced" },
+      local,
+      shopifySub,
+    );
   }
 
   if (
@@ -526,37 +618,280 @@ async function reconcileOneShop(
     });
     const acc = accRs.rows[0];
     if (!acc) {
-      return { shop, action: "error", reason: "no_account" };
+      return resultWithSnapshot(
+        { shop, action: "error", reason: "no_account" },
+        local,
+        shopifySub,
+      );
     }
-    await archivePeriodAndRenew({
-      shop,
-      local,
-      account: {
-        subscriptionCredits: Number(acc.subscriptionCredits ?? 0),
-        purchasedCredits: Number(acc.purchasedCredits ?? 0),
-        trialCredits: Number(acc.trialCredits ?? 0),
-        usedCredits: Number(acc.usedCredits ?? 0),
-      },
-      next: {
-        planKey: plan.planKey,
-        creditsPerPeriod: plan.credits,
-        currentPeriodStart,
-        currentPeriodEnd,
-      },
-    });
-    return { shop, action: "renewed" };
+    if (!dryRun) {
+      await archivePeriodAndRenew({
+        shop,
+        local,
+        account: {
+          subscriptionCredits: Number(acc.subscriptionCredits ?? 0),
+          purchasedCredits: Number(acc.purchasedCredits ?? 0),
+          trialCredits: Number(acc.trialCredits ?? 0),
+          usedCredits: Number(acc.usedCredits ?? 0),
+        },
+        next: {
+          planKey: plan.planKey,
+          creditsPerPeriod: plan.credits,
+          currentPeriodStart,
+          currentPeriodEnd,
+        },
+      });
+    }
+    return resultWithSnapshot({ shop, action: "renewed" }, local, shopifySub);
   }
 
-  await activateOrReplaceSubscription({
-    shop,
-    shopifySub,
-    planKey: plan.planKey,
-    billingInterval,
-    creditsPerPeriod: plan.credits,
-    currentPeriodStart,
-    currentPeriodEnd,
+  if (!dryRun) {
+    await activateOrReplaceSubscription({
+      shop,
+      shopifySub,
+      planKey: plan.planKey,
+      billingInterval,
+      creditsPerPeriod: plan.credits,
+      currentPeriodStart,
+      currentPeriodEnd,
+    });
+  }
+  return resultWithSnapshot({ shop, action: "activated" }, local, shopifySub);
+}
+
+async function reconcileShopWithoutLocal(
+  shop: string,
+  dryRun = false,
+): Promise<ReconcileShopResult> {
+  const accessToken = await getOfflineAccessTokenFromTsf(shop);
+  if (!accessToken) {
+    return resultWithSnapshot(
+      { shop, action: "skipped", reason: "no_offline_token" },
+      null,
+      null,
+    );
+  }
+
+  const shopifySub = await fetchShopifyActiveSubscription(shop, accessToken);
+  if (!shopifySub) {
+    return resultWithSnapshot(
+      { shop, action: "skipped", reason: "no_active_subscription" },
+      null,
+      null,
+    );
+  }
+
+  if (shopifySub.status !== "ACTIVE") {
+    return resultWithSnapshot(
+      {
+        shop,
+        action: "skipped",
+        reason: `shopify_status_${shopifySub.status}`,
+      },
+      null,
+      shopifySub,
+    );
+  }
+
+  const billingInterval = mapInterval(shopifySub.intervalRaw);
+  const plan = await findPlanCredits(shopifySub.name, billingInterval);
+  if (!plan) {
+    return resultWithSnapshot(
+      {
+        shop,
+        action: "error",
+        reason: `unknown_plan_${shopifySub.name}_${billingInterval}`,
+      },
+      null,
+      shopifySub,
+    );
+  }
+
+  const currentPeriodEnd =
+    shopifySub.currentPeriodEnd ??
+    new Date(Date.now() + (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS);
+  const currentPeriodStart = new Date(
+    currentPeriodEnd.getTime() - (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS,
+  );
+
+  if (!dryRun) {
+    await activateOrReplaceSubscription({
+      shop,
+      shopifySub,
+      planKey: plan.planKey,
+      billingInterval,
+      creditsPerPeriod: plan.credits,
+      currentPeriodStart,
+      currentPeriodEnd,
+    });
+  }
+
+  return resultWithSnapshot({ shop, action: "activated" }, null, shopifySub);
+}
+
+function applySummaryCount(
+  summary: Omit<BillingReconcileSummary, "details" | "dryRun">,
+  result: ReconcileShopResult,
+): void {
+  switch (result.action) {
+    case "renewed":
+      summary.renewed++;
+      break;
+    case "activated":
+      summary.activated++;
+      break;
+    case "cancelled":
+      summary.cancelled++;
+      break;
+    case "skipped":
+      summary.skipped++;
+      break;
+    case "error":
+      summary.errors++;
+      break;
+    default: {
+      const _exhaustive: never = result.action;
+      void _exhaustive;
+    }
+  }
+}
+
+async function listLocalSubscriptions(params: {
+  shopFilter?: string;
+  dueBefore?: Date;
+} = {}): Promise<LocalSubscription[]> {
+  const db = getTsfDb();
+  const where = ["b.billingSystem = 'tsf'"];
+  const args: string[] = [];
+
+  if (params.shopFilter) {
+    where.push("lower(s.shop) = lower(?)");
+    args.push(params.shopFilter);
+  }
+  if (params.dueBefore) {
+    where.push("s.status = 'ACTIVE'");
+    where.push("s.currentPeriodEnd IS NOT NULL");
+    where.push("s.currentPeriodEnd <= ?");
+    args.push(params.dueBefore.toISOString());
+  }
+
+  const rs = await db.execute({
+    sql: `SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
+                 s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
+          FROM AppSubscription s
+          JOIN ShopBillingBinding b ON b.shop = s.shop
+          WHERE ${where.join(" AND ")}
+          ORDER BY s.shop ASC`,
+    args,
   });
-  return { shop, action: "activated" };
+  return rs.rows.map((row) => ({
+    shop: String(row.shop),
+    planKey: String(row.planKey),
+    shopifySubscriptionId: String(row.shopifySubscriptionId),
+    billingInterval: String(row.billingInterval),
+    status: String(row.status),
+    creditsPerPeriod: Number(row.creditsPerPeriod) || 0,
+    currentPeriodStart: parseDate(row.currentPeriodStart),
+    currentPeriodEnd: parseDate(row.currentPeriodEnd),
+  }));
+}
+
+async function listOrphanSessionShops(shopFilter?: string): Promise<string[]> {
+  const db = getTsfDb();
+  const sql = shopFilter
+    ? `SELECT DISTINCT sess.shop AS shop
+       FROM Session sess
+       JOIN ShopBillingBinding b ON b.shop = sess.shop AND b.billingSystem = 'tsf'
+       WHERE sess.isOnline = 0
+         AND sess.accessToken IS NOT NULL
+         AND lower(sess.shop) = lower(?)
+         AND NOT EXISTS (
+           SELECT 1 FROM AppSubscription s
+           WHERE s.shop = sess.shop AND s.status = 'ACTIVE'
+         )
+       ORDER BY sess.shop ASC`
+    : `SELECT DISTINCT sess.shop AS shop
+       FROM Session sess
+       JOIN ShopBillingBinding b ON b.shop = sess.shop AND b.billingSystem = 'tsf'
+       WHERE sess.isOnline = 0
+         AND sess.accessToken IS NOT NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM AppSubscription s
+           WHERE s.shop = sess.shop AND s.status = 'ACTIVE'
+         )
+       ORDER BY sess.shop ASC`;
+  const rs = await db.execute({
+    sql,
+    args: shopFilter ? [shopFilter] : [],
+  });
+  return rs.rows.map((row) => String(row.shop));
+}
+
+export async function runBillingSubscriptionReconcileWithOptions(
+  options: BillingReconcileOptions = {},
+): Promise<BillingReconcileSummary> {
+  const dryRun = options.dryRun ?? false;
+  const scanOrphans = options.scanOrphans ?? false;
+  const shopFilter = options.shop?.trim() || undefined;
+  const dueBefore = options.dueBefore;
+
+  if (!hasTsfDbCredentials()) {
+    throw new Error("TSF Turso is not configured");
+  }
+
+  const summary: BillingReconcileSummary = {
+    scanned: 0,
+    renewed: 0,
+    activated: 0,
+    cancelled: 0,
+    skipped: 0,
+    errors: 0,
+    dryRun,
+    details: [],
+  };
+
+  const locals = await listLocalSubscriptions({ shopFilter, dueBefore });
+  const orphanShops = scanOrphans
+    ? await listOrphanSessionShops(shopFilter)
+    : [];
+  const orphanSet = new Set(orphanShops);
+  summary.scanned = locals.length + orphanShops.length;
+
+  for (const local of locals) {
+    let result: ReconcileShopResult;
+    try {
+      result = await reconcileOneShop(local.shop, local, dryRun);
+    } catch (err) {
+      result = {
+        shop: local.shop,
+        action: "error",
+        reason: err instanceof Error ? err.message : String(err),
+        localStatus: local.status,
+        localPeriodEnd: local.currentPeriodEnd?.toISOString() ?? null,
+        localPlanKey: local.planKey,
+      };
+    }
+    applySummaryCount(summary, result);
+    summary.details.push(result);
+    orphanSet.delete(local.shop);
+  }
+
+  for (const shop of orphanSet) {
+    let result: ReconcileShopResult;
+    try {
+      result = await reconcileShopWithoutLocal(shop, dryRun);
+    } catch (err) {
+      result = {
+        shop,
+        action: "error",
+        reason: err instanceof Error ? err.message : String(err),
+      };
+    }
+    applySummaryCount(summary, result);
+    summary.details.push(result);
+  }
+
+  return summary;
 }
 
 export async function runBillingSubscriptionReconcile(): Promise<void> {
@@ -571,79 +906,23 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
 
   running = true;
   const started = Date.now();
-  const summary = {
-    scanned: 0,
-    renewed: 0,
-    activated: 0,
-    cancelled: 0,
-    skipped: 0,
-    errors: 0,
-  };
-
   try {
-    const db = getTsfDb();
-    const rs = await db.execute(`
-      SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
-             s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
-      FROM AppSubscription s
-      JOIN ShopBillingBinding b ON b.shop = s.shop
-      WHERE b.billingSystem = 'tsf'
-      ORDER BY s.shop ASC
-    `);
+    const summary = await runBillingSubscriptionReconcileWithOptions({
+      dryRun: false,
+      scanOrphans: true,
+    });
 
-    summary.scanned = rs.rows.length;
-
-    for (const row of rs.rows) {
-      const shop = String(row.shop);
-      const local: LocalSubscription = {
-        shop,
-        planKey: String(row.planKey),
-        shopifySubscriptionId: String(row.shopifySubscriptionId),
-        billingInterval: String(row.billingInterval),
-        status: String(row.status),
-        creditsPerPeriod: Number(row.creditsPerPeriod) || 0,
-        currentPeriodStart: parseDate(row.currentPeriodStart),
-        currentPeriodEnd: parseDate(row.currentPeriodEnd),
-      };
-
-      let result: ReconcileShopResult;
-      try {
-        result = await reconcileOneShop(shop, local);
-      } catch (err) {
-        console.error(`[billingReconcile] shop=${shop} error:`, err);
-        result = {
-          shop,
-          action: "error",
-          reason: err instanceof Error ? err.message : String(err),
-        };
-      }
-
-      switch (result.action) {
-        case "renewed":
-          summary.renewed++;
-          console.log(`[billingReconcile] renewed ${shop}`);
-          break;
-        case "activated":
-          summary.activated++;
-          console.log(`[billingReconcile] activated ${shop}`);
-          break;
-        case "cancelled":
-          summary.cancelled++;
-          console.log(`[billingReconcile] cancelled ${shop}`);
-          break;
-        case "skipped":
-          summary.skipped++;
-          break;
-        case "error":
-          summary.errors++;
-          console.warn(
-            `[billingReconcile] error ${shop}: ${result.reason ?? ""}`,
-          );
-          break;
-        default: {
-          const _exhaustive: never = result.action;
-          void _exhaustive;
-        }
+    for (const result of summary.details) {
+      if (result.action === "renewed") {
+        console.log(`[billingReconcile] renewed ${result.shop}`);
+      } else if (result.action === "activated") {
+        console.log(`[billingReconcile] activated ${result.shop}`);
+      } else if (result.action === "cancelled") {
+        console.log(`[billingReconcile] cancelled ${result.shop}`);
+      } else if (result.action === "error") {
+        console.warn(
+          `[billingReconcile] error ${result.shop}: ${result.reason ?? ""}`,
+        );
       }
     }
 
@@ -652,6 +931,56 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
     );
   } catch (err) {
     console.error("[billingReconcile] failed:", err);
+  } finally {
+    running = false;
+  }
+}
+
+export async function runBillingSubscriptionNearDueReconcile(): Promise<void> {
+  if (running) {
+    console.warn("[billingReconcile:nearDue] skip: reconcile already running");
+    return;
+  }
+  if (!hasTsfDbCredentials()) {
+    console.warn("[billingReconcile:nearDue] skip: TSF Turso not configured");
+    return;
+  }
+
+  const lookaheadMs = Math.max(
+    0,
+    Number(process.env.BILLING_SUBSCRIPTION_NEAR_DUE_LOOKAHEAD_MS) ||
+      60 * 60_000,
+  );
+  const dueBefore = new Date(Date.now() + lookaheadMs);
+
+  running = true;
+  const started = Date.now();
+  try {
+    const summary = await runBillingSubscriptionReconcileWithOptions({
+      dryRun: false,
+      scanOrphans: false,
+      dueBefore,
+    });
+
+    for (const result of summary.details) {
+      if (result.action === "renewed") {
+        console.log(`[billingReconcile:nearDue] renewed ${result.shop}`);
+      } else if (result.action === "activated") {
+        console.log(`[billingReconcile:nearDue] activated ${result.shop}`);
+      } else if (result.action === "cancelled") {
+        console.log(`[billingReconcile:nearDue] cancelled ${result.shop}`);
+      } else if (result.action === "error") {
+        console.warn(
+          `[billingReconcile:nearDue] error ${result.shop}: ${result.reason ?? ""}`,
+        );
+      }
+    }
+
+    console.log(
+      `[billingReconcile:nearDue] done dueBefore=${dueBefore.toISOString()} scanned=${summary.scanned} renewed=${summary.renewed} activated=${summary.activated} cancelled=${summary.cancelled} skipped=${summary.skipped} errors=${summary.errors} (${Date.now() - started}ms)`,
+    );
+  } catch (err) {
+    console.error("[billingReconcile:nearDue] failed:", err);
   } finally {
     running = false;
   }

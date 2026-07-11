@@ -19,10 +19,18 @@ on:
         description: 部署 PROD Shopify App
         type: boolean
         default: false
+      render_worker_test:
+        description: 部署 Test Worker
+        type: boolean
+        default: false
+      render_worker_prod:
+        description: 部署 PROD Worker
+        type: boolean
+        default: false
 
 jobs:
   shopify_deploy_test:
-    name: Shopify Deploy Test
+    name: Extension Deploy Test
     if: inputs.shopify_deploy_test
     runs-on: ubuntu-latest
     environment: ShopifyConfig
@@ -56,7 +64,7 @@ jobs:
           shopify app deploy -c shopify.app.test.toml --allow-updates --allow-deletes
 
   shopify_deploy_prod:
-    name: Shopify Deploy PROD
+    name: Extension Deploy PROD
     if: inputs.shopify_deploy_prod
     runs-on: ubuntu-latest
     environment: ShopifyConfig
@@ -135,6 +143,58 @@ jobs:
             -d "{\"commitId\": \"$COMMIT\"}")
           if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
             echo "Deploy to prod Render triggered successfully. HTTP status: $RESPONSE"
+          else
+            echo "Failed to trigger deployment. HTTP status: $RESPONSE"
+            cat response.json
+            exit 1
+          fi
+
+  render_worker_test:
+    name: Render Worker Test
+    if: inputs.render_worker_test
+    runs-on: ubuntu-latest
+    environment: ShopifyConfig
+
+    steps:
+      - name: Render Worker Test
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: "srv-d93cqrtaeets73dg6cn0"
+        run: |
+          COMMIT="${{ github.sha }}"
+          echo "Deploying Worker Test, commit: $COMMIT"
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"commitId\": \"$COMMIT\"}")
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+            echo "Deploy to Worker Test triggered successfully. HTTP status: $RESPONSE"
+          else
+            echo "Failed to trigger deployment. HTTP status: $RESPONSE"
+            cat response.json
+            exit 1
+          fi
+
+  render_worker_prod:
+    name: Render Worker PROD
+    if: inputs.render_worker_prod
+    runs-on: ubuntu-latest
+    environment: ShopifyConfig
+
+    steps:
+      - name: Render Worker PROD
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: "srv-d8sqas4vikkc73f5nbog"
+        run: |
+          COMMIT="${{ github.sha }}"
+          echo "Deploying Worker PROD, commit: $COMMIT"
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"commitId\": \"$COMMIT\"}")
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+            echo "Deploy to Worker PROD triggered successfully. HTTP status: $RESPONSE"
           else
             echo "Failed to trigger deployment. HTTP status: $RESPONSE"
             cat response.json

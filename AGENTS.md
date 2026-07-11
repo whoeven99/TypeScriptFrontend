@@ -32,9 +32,11 @@ right route, server helper, worker, extension, script, or Prisma model.
 - Translation v4 job state spans Cosmos, Redis, Azure Blob, Turso, and Shopify
   Admin API.
 - Storefront runtime code lives in Shopify extensions under `extensions/`.
-- Legacy Spring/Java wrapper file `app/api/JavaServer.ts` has been removed.
-  Spring backend has been fully decommissioned; all migration scripts have been
-  cleaned up.
+- Legacy Spring/Java wrapper file `app/api/JavaServer.ts` has been removed and
+  runtime quota, billing, picture, currency, switcher, glossary, PageFly, and
+  manage-translation paths no longer call Spring. Remaining `legacy` / `Spring`
+  text is compatibility naming, historical schema commentary, or old-data
+  handling unless a new outbound call is reintroduced.
 
 ## Markdown Policy
 
@@ -57,6 +59,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `app/routes/*` | Remix flat routes for pages and API endpoints. |
 | `app/server/*` | Server-side business logic. Prefer adding feature helpers here and keeping routes thin. |
 | `app/lib/*` | Shared small helpers used by route/UI code. |
+| `app/config/*`, `app/hooks/*`, `app/utils/*`, `app/shared/*` | Runtime configuration, shared hooks, error/log helpers, and cross-runtime message tokens. |
 | `app/api/googleAnalyticsClient.ts` | Google Analytics Measurement Protocol helper; not related to Spring/Java. |
 | `app/store/*` | Redux store modules, mostly for older pages. |
 | `app/components/*` | Shared React components, including manage-translation editors and support chat. |
@@ -68,6 +71,8 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `extensions/web-pixel/*` | Shopify web pixel extension. |
 | `scripts/*` | Migration, audit, diagnostic, cleanup, and one-off operational scripts. |
 | `public/locales/*/translation.json` | App i18n strings. Add at least `en` and `zh-CN` for new UI text. |
+| `.github/workflows/tsf-deploy.yml` | Manual Shopify extension/config and Render app/worker deployment workflow. |
+| `Dockerfile`, `DockerfileDev`, `DockerfileProd` | Render container builds for the Remix app; the worker is built from `worker/`. |
 
 ## Commands And Validation
 
@@ -78,7 +83,12 @@ Package scripts:
 - `npm run setup` or `npx prisma generate`: generate Prisma client.
 - `npx prisma validate`: validate Prisma schema.
 - `npm run worker:build`: build worker TypeScript.
-- `npm run check:filter`: verify TSF/worker translation filter sync.
+- `npm run worker:dev` / `npm run worker:start`: run the worker package in watch
+  mode or from compiled `worker/dist`.
+- `npm run check:filter`: verify the app-side translation-filter copy against
+  its Spark provenance file; it does not compare the TSF app and worker copies.
+- `npm run lint`: repository ESLint check; existing repository-wide noise may
+  make a focused build/type check more useful for small changes.
 - `npm run turso:migrate:test` / `npm run turso:migrate:prod`: run Turso migrations.
 - `npm run deployTest` / `npm run deployProd`: Shopify app deploy with matching config.
 
@@ -88,6 +98,7 @@ Validation choices:
 - App route or UI: `npm run build`.
 - Worker code: `npm run worker:build`.
 - Translation filter rules: `npm run check:filter`.
+- Worker module catalog: `npm run check:auto-translate-modules --prefix worker`.
 - Billing/quota: focused grep or script validation across TSF paths.
 
 ## UI Standards
@@ -128,6 +139,12 @@ execution docs that were consolidated into this file.
   logic use TSF billing exclusively.
 - `app/routes/currencyInit.tsx`: currency initialization route.
 - `app/routes/web-vitals-metrics.tsx`: web vitals receiver.
+- `app/routes/log.tsx`: structured client log receiver plus legacy form payload
+  compatibility; client helpers live in `app/utils/clientLog.ts`.
+- `app/routes/publishAction.tsx`: publish/unpublish Shopify locales.
+- `app/routes/_index/route.tsx` and `app/routes/app._index/route.tsx`: root entry
+  and embedded `/app` redirect/landing behavior.
+- `app/routes/invite/route.tsx`: standalone invite page.
 
 ### Main Pages
 
@@ -148,12 +165,14 @@ execution docs that were consolidated into this file.
 - `/api/shop-profile`: `app/routes/api.shop-profile.ts`.
 - `/api/support`: `app/routes/api.support.tsx`.
 - `/api/storefront/*`: `app/routes/api.storefront.$.ts`, the Shopify App Proxy API.
+- `/api/picture/*`: `app/routes/api.picture.{product,shop,upload,upsert,delete,save-from-url}.ts`.
 - `/api/translate-v4/tasks`: `app/routes/api.translate-v4.tasks.ts`.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
+- `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
 - `/api/translate-v4/currency`: `app/routes/api.translate-v4.currency.ts`.
 - `/api/translate-v4/glossary`, `liquid`, `pagefly`, `switcher`,
   `target-locale`: feature-specific translate-v4 APIs.
@@ -179,6 +198,13 @@ Core files:
 - Resume rules: `app/server/translateV4/resumeStatus.ts`.
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
   `worker/src/services/moduleCatalog.ts`.
+- Single-field translation: `app/routes/api.translate-v4.single.ts` ->
+  `app/server/translateV4/singleTranslate.server.ts` ->
+  `worker/src/services/syncTranslate.ts` / `llmTranslate.ts`.
+- Shared translation safeguards: `htmlTranslate.server.ts`,
+  `jsonExtractRules.server.ts`, `placeholderMask.server.ts`,
+  `targetLanguagePrompt.server.ts`, and `translateQuality.server.ts`, mirrored
+  by the worker service equivalents used in batch translation.
 
 Data flow:
 
@@ -196,7 +222,8 @@ Data flow:
 Common edits:
 
 - Add/remove translation module: update both module catalogs, then run
-  `npm run check:filter`.
+  `npm run check:auto-translate-modules --prefix worker`; filter validation is a
+  separate concern.
 - Change create-task UX or request body: start in `app/lib/createTranslateV4Tasks.ts`,
   then `api.translate-v4.tasks.ts`.
 - Change pause/resume/cancel: inspect `api.translate-v4.task-action.ts`,
@@ -209,11 +236,19 @@ Common edits:
 
 ### Translation Filters
 
-- TSF copy: `app/server/translateV4/translationFilter/*`.
-- Worker copy: `worker/src/services/translationFilter/*`.
-- Sync/check script: `scripts/sync-translation-filter.mjs`.
+- App-side generated copy: `app/server/translateV4/translationFilter/*` plus
+  `.synced-from-spark.json` provenance.
+- TSF worker runtime copy: `worker/src/services/translationFilter/*`.
+- Declared source of truth for the app-side copy: sibling repo
+  `../Spark/worker/src/services/translationFilter/*`.
+- Sync/check script: `scripts/sync-translation-filter.mjs`; `npm run sync:filter`
+  copies Spark into the app-side directory and rewrites provenance, while
+  `npm run check:filter` checks only that generated app copy.
 
-Filter changes usually need both TSF and worker copies. Do not patch one side only.
+Do not hand-edit the generated app-side directory. Make rule changes in the
+Spark source, sync them, and separately inspect/update the TSF worker runtime
+copy when the batch worker needs the same behavior. Do not assume
+`npm run check:filter` proves app/worker parity.
 
 Filter decision chain:
 
@@ -240,8 +275,11 @@ Entries:
 
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
-  and auto-translate.
+  and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
+  and subscription reconciliation schedules.
 - `worker/src/env.ts`: required env diagnostics.
+- `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
+  claimed by the current process on SIGTERM/SIGINT before exit.
 
 Pipeline:
 
@@ -260,9 +298,23 @@ Services:
 - `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
 - `worker/src/services/llmTranslate.ts`: LLM routing, concurrency, usage.
+- `worker/src/services/translationMemory.ts`: Redis translation memory keyed by
+  field identity and normalized source value; single-field manual translation
+  skips cache reads but can write successful output back.
+- `worker/src/services/translateQuality.ts`, `placeholderMask.ts`,
+  `translationFieldLimits.ts`: wrong-language/untranslated checks, protected
+  token restoration, and Shopify title length enforcement.
+- `worker/src/services/htmlTranslate.ts`, `jsonExtractRules.ts`:
+  structure-preserving HTML/JSON extraction and reconstruction.
+- `worker/src/services/targetLanguagePrompt.ts`, `userFacingMessages.ts`:
+  locale-specific prompt constraints and stable user-facing status messages.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
+- `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
+  job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
+- `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
+  Shopify subscription reconciliation against Turso.
 - `worker/src/services/shopScan/*`: shop profile scan stages.
 
 Hint queue keys (Redis lists):
@@ -279,6 +331,7 @@ Important env names only:
   `COSMOS_TRANSLATION_V4_JOBS_CONTAINER`, and app-side `_V4` variants.
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
+- Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
   `GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey`.
 - Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
@@ -286,6 +339,12 @@ Important env names only:
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
   `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
+- Auxiliary schedules: `SHOP_SCAN_POLL_INTERVAL_MS`, `EMAIL_WORKER_INTERVAL_MS`,
+  `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
+  `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
+  `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- Email: `TENCENT_CLOUD_KEY_ID`, `TENCENT_CLOUD_KEY`, and template/recipient
+  variables consumed by `workerEmail.ts` and TSF email helpers.
 
 ### Billing And Quota
 
@@ -308,7 +367,9 @@ Code:
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
 - `app/routes/app.pricing/route.tsx`: pricing UI/actions.
-- `app/server/translateV4/quota.server.ts`: translate-v4 quota facade.
+- `app/server/billing/quota/quotaRouter.server.ts`: shared app-side quota facade;
+  `/api/translate-v4/quota`, task creation, single translation, and picture
+  translation all use this TSF account path.
 - `worker/src/services/tsfQuota.ts`: worker quota adapter.
 
 Quota work must check:
@@ -319,14 +380,17 @@ Quota work must check:
 
 Billing notes:
 
-- All shops use TSF Turso billing. Legacy Spring billing has been fully
-  decommissioned.
+- Runtime billing, quota reads/deductions, and Shopify billing webhooks use TSF
+  Turso. `ShopBillingBinding.billingSystem` and `BILLING_SYSTEM.LEGACY` remain as
+  compatibility data/types; `resolveBillingBinding()` defaults missing rows to
+  `tsf`, but existing binding rows are still returned unchanged.
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
-- Worker runs subscription reconciliation every 12h (configurable via
-  `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`) inside the worker process when
-  Turso credentials are set. TSF Web does not schedule or execute this job.
+- Worker runs a near-due reconciliation every 30 minutes and a full subscription
+  reconciliation every 12 hours by default (both configurable) inside the
+  worker process when Turso credentials are set. TSF Web does not schedule or
+  execute these jobs.
 
 ### Currency
 
@@ -353,8 +417,11 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
   `extensions/ciwi-switcher/assets/ciwi-*.js`.
 - Constants: `app/lib/switcherConstants.ts`.
-- IP redirect: Prisma model `IpRedirection`; search `ipRedirection`,
-  `api.translate-v4.ip-redirections`, and `custom_redirects`.
+- `ipOpen` is the live geolocation switch. Prisma model `IpRedirection` still
+  exists, but the current app/extension source has no live route or service
+  caller for it. Do not assume the removed `api.translate-v4.ip-redirections` /
+  `custom_redirects` path exists; verify and design a new owner before reviving
+  region-specific redirect records.
 - `ipOpen` 写入 Turso `SwitcherConfiguration`；确认保存时**不再**调用 Spring
   `/userIp/addOrUpdateUserIp`。店面 IP 定位走 `ciwi-main.js` + ipapi。
 
@@ -382,7 +449,6 @@ Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
 - Server helper: `app/server/manageTranslation/manageTranslationRoute.server.ts`.
 - Manage save paths use TSF/Shopify helpers such as
   `app/server/shopify/translations.server.ts`.
-- Editors: `app/components/manageTableInputEditor.tsx`,
 - Editors: `app/components/manageTableInputEditor.tsx`,
   `manageTableInput.tsx`, `manageTableRichText.ts`, `richTextInput/*`.
 - Shopify translation helper: `app/server/shopify/translations.server.ts`.
@@ -425,7 +491,8 @@ Glossary:
 - Page: `app/routes/app.glossary/route.tsx`.
 - Server/API: `app/server/translateV4/glossary.server.ts`,
   `app/routes/api.translate-v4.glossary.ts`.
-- Worker injection: search `glossary` and `buildShopProfilePromptBlock`.
+- Worker injection: `worker/src/services/glossary.ts` is loaded by
+  `worker/src/services/llmTranslate.ts` for batch and single-field prompts.
 
 Shop Profile:
 
@@ -441,6 +508,11 @@ Shop profile intelligence direction:
 - Treat `ShopProfile` as translation context, not only a display card.
 - Current scan/profile code extracts shop identity, industry, keywords,
   description, brand tone, coverage, glossary suggestions, and content scale.
+- Current production boundary: `buildShopProfilePromptBlock()` is used by the
+  shop-profile page to preview a context block. `llmTranslate.ts` has a
+  `profileBlock` parameter, but current callers pass an empty string and there is
+  no worker `shopProfilePrompt.ts`; shop profile is not yet injected into live
+  single, batch, or auto translation prompts.
 - Future work should enrich this into reusable translation context: shop
   intelligence, content signals, terminology policy, market policy, and
   module-specific translation policy.
@@ -476,6 +548,8 @@ Current models:
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
 - `SupportConversation`, `SupportMessage`: support chat.
+- `UserPicture`: product/shop image translation metadata and translated image
+  URLs used by admin pages and storefront App Proxy reads.
 
 When changing schema:
 
@@ -487,12 +561,14 @@ When changing schema:
 
 ## Legacy Java Boundary — FULLY DECOMMISSIONED
 
-The Spring/Java backend has been fully decommissioned. All functionality has
-been migrated to TSF infrastructure (Turso, Cosmos, Redis, Azure Blob, direct
-Shopify GraphQL).
+The Spring/Java runtime boundary is decommissioned. Live code uses TSF
+infrastructure (Turso, Cosmos, Redis, Azure Blob, direct Shopify GraphQL, COS,
+and external AI/email providers).
 
-The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. All
-Spring-dependent migration and audit scripts have been removed.
+The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. Historical
+`Spring`, `Java`, and `legacy` wording remains in compatibility comments, enum
+values, old blob/token handling, and response-shape notes; it is not proof of a
+live network dependency.
 
 Residual `SERVER_URL` or Spring DB references in env files are historical
 artifacts and should be cleaned up. No runtime code depends on them.
@@ -522,6 +598,7 @@ Check deploy configs when changing extensions:
 | --- | --- | --- |
 | Translation v4 UI | `app/routes/app.translate-v4/route.tsx` | `components/*`, `v4I18n.ts`, locales |
 | Create task failure | `app/lib/createTranslateV4Tasks.ts` | `api.translate-v4.tasks.ts`, quota guard, Cosmos/Redis |
+| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, worker `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
 | Pause/resume/cancel bug | `api.translate-v4.task-action.ts` | `resumeStatus.ts`, worker control logic |
 | Quota mismatch | `quotaRouter.server.ts` | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts` |
@@ -529,9 +606,12 @@ Check deploy configs when changing extensions:
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
 | App Proxy 401/404 | `api.storefront.$.ts` | `server/storefront/auth.server.ts`, extension caller |
 | Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `pictureClient.ts` |
+| Picture translation/storage | `app/server/picture/picture.server.ts` | `api.picture.*`, `api.translate-v4.image`, `UserPicture`, App Proxy picture branches |
 | Glossary | `app/routes/app.glossary/route.tsx` | `glossary.server.ts`, worker glossary injection |
 | Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
+| Support chat / notifications | `app/components/SupportChatWidget.tsx` | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
+| Translation filter rule | sibling Spark filter source | `scripts/sync-translation-filter.mjs`, app generated copy, TSF worker runtime copy |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
 | Shopify auth/API version | `app/shopify.server.ts` | `app/routes/app.tsx`, auth and webhook routes |
 | Deploy config | `shopify.app*.toml` | `Dockerfile*`, Render/GitHub Actions config |
@@ -552,6 +632,10 @@ Operational root scripts:
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
 - `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
+- `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
+- `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
+  UserPicture read/URL checks.
+- `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
 - `scripts/language-locale-data.js`: locale/flag data consumed by switcher
@@ -580,6 +664,176 @@ Temporary script policy:
   investigation. If a one-off becomes useful twice, promote it into the
   operational list above with a clear name and dry-run behavior when it writes.
 
+## Operations Debugging
+
+This section covers how to inspect live data and infrastructure state during
+debugging, incident response, or ad-hoc investigation.
+
+### Turso (SQL Database)
+
+Turso is the primary relational store (billing, settings, glossary, etc.).
+The Prisma client connects via `libsql://` HTTP.
+
+**Local / dev query:**
+
+```ps1
+# Open a Node.js REPL with Prisma client loaded
+node --experimental-vm-modules -e "
+  const { PrismaClient } = require('./app/generated/prisma');
+  const prisma = new PrismaClient();
+  // Example: list recent accounts
+  prisma.account.findMany({ take: 5, orderBy: { updatedAt: 'desc' } })
+    .then(r => console.log(JSON.stringify(r, null, 2)))
+    .finally(() => prisma.\$disconnect());
+"
+```
+
+**Key tables for debugging:**
+
+| Table | Common Query |
+|-------|-------------|
+| `Account` | `findMany({ where: { shopName } })` — quota/credit state |
+| `ShopBillingBinding` | `findUnique({ where: { shopName } })` — billing ownership |
+| `AppSubscription` | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
+| `ShopTargetLocale` | `findMany({ where: { shopName } })` — auto-translate config |
+| `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher |
+| `Glossary` | `findMany({ where: { shopName } })` — glossary entries |
+
+**Prod access:** Turso prod credentials are in `.env.prod` as
+`TSF_TURSO_DATABASE_URL` / `TSF_TURSO_AUTH_TOKEN`. You can also read them
+from Render env vars (see Render section below).
+
+### Cosmos DB (Translation V4 Jobs)
+
+Cosmos holds translation job documents. Each job is keyed by `(id, shopName)`.
+
+**Quick inspection scripts (local env):**
+
+```ps1
+# List jobs by id prefix or shop name
+node scripts/inspect-v4-tasks.mjs <prefix1> <prefix2> ...
+
+# Inspect one task (Cosmos + Redis combined)
+node scripts/check-task.mjs <jobId> [shopName]
+
+# Diagnose stuck/failed jobs
+node worker/scripts/diag-stuck-job.mjs <idPrefix>
+node worker/scripts/diag-failed-jobs.mjs
+```
+
+**Prod Cosmos access via Render API:**
+
+`worker/scripts/probe-job-redis.mjs` reads Cosmos credentials from Render
+service env vars, so you don't need `.env.prod` locally:
+
+```ps1
+$env:RENDER_API_KEY = "rnd_..."  # Render API key
+node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
+```
+
+**Key Cosmos fields for debugging:**
+
+- `status`: `INIT_QUEUED` → `INITIALIZING` → `TRANSLATING` → `WRITEBACK` →
+  `COMPLETED` / `FAILED` / `CANCELED`
+- `errorStage` / `errorMessage`: which stage failed and why
+- `metrics.translateDone` / `metrics.translateTotal`: translation progress
+- `metrics.writebackDone` / `metrics.writebackTotal`: writeback progress
+- `claimedBy`: worker instance that holds the job
+- `lastHeartbeat`: last worker heartbeat (stale if > 2 min)
+- `aiModel` / `aiModelUsed`: requested vs actual AI model
+
+### Redis (Job Progress, Hint Queues, Controls)
+
+Redis holds real-time progress counters, hint queues, control flags, and
+translation memory cache.
+
+**Hint queue inspection:**
+
+```ps1
+# Prod hint queues (reads .env.prod)
+node worker/scripts/probe-hint-queues.mjs
+```
+
+**Key Redis keys:**
+
+| Pattern | Purpose |
+|---------|---------|
+| `translate:v4:hint:{init\|translate\|writeback}:{manual\|auto}` | Stage hint queues |
+| `translate:v4:progress:<jobId>` | Hash: per-stage done/total |
+| `translate:v4:control:<jobId>` | String: `pause` / `cancel` / null |
+| `translate:v4:progress:total:<jobId>` | String: total items per stage |
+| `translate:v4:tm:<hash>` | Translation memory cache |
+| `translate:v4:auto_scan:last_at` | Last auto-scan timestamp |
+
+**Manual Redis query (if you have `REDIS_URL_V4` or `REDIS_URL`):**
+
+```ps1
+node -e "
+  const Redis = require('ioredis');
+  const r = new Redis(process.env.REDIS_URL_V4 || process.env.REDIS_URL);
+  r.hgetall('translate:v4:progress:<jobId>').then(d => {
+    console.log(JSON.stringify(d, null, 2));
+    r.quit();
+  });
+"
+```
+
+### Render (Service Logs & Deploy Status)
+
+The app and worker run on Render. Use the Render API or the built-in MCP tools
+to inspect service state.
+
+**MCP tools (available in Copilot):**
+
+- `mcp_render_list_services` — list all Render services
+- `mcp_render_list_deploys` — recent deploys for a service
+- `mcp_render_get_deploy_logs` — detailed build/deploy log for a specific deploy
+- `mcp_render_get_latest_failed_log` — auto-locate the most recent failed build
+
+**Known service IDs:**
+
+| Service | ID |
+|---------|-----|
+| TSF Web (Remix app) | `srv-csp2931u0jms738sfmc0` |
+| TSF Worker | `srv-d8sqas4vikkc73f5nbog` |
+
+**Render API direct access (PowerShell):**
+
+```ps1
+$env:RENDER_API_KEY = "rnd_..."
+
+# List deploys
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/deploys?limit=5" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+
+# Get deploy logs (use deploy ID from list above)
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/deploys/<deployId>" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+
+# Read service env vars (for debugging config issues)
+Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sfmc0/env-vars?limit=100" `
+  -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
+```
+
+**Diagnostic flow:**
+
+1. Check Render deploy status — is the service even running the latest code?
+2. Check recent deploy logs — did the build succeed? Any env var missing?
+3. Check env vars on Render — compare with `.env.prod` for drift.
+4. If the service is healthy but data looks wrong, move to Turso/Cosmos/Redis.
+
+### Combined Diagnostic Cheat Sheet
+
+| Symptom | Start Here |
+|---------|-----------|
+| Translation job stuck in INIT_QUEUED | `probe-hint-queues.mjs` → check init hint queues |
+| Translation job stuck in TRANSLATING | `diag-stuck-job.mjs` → check Redis progress + Cosmos heartbeat |
+| Translation job stuck in WRITEBACK | Check Cosmos `errorStage`, Render worker logs |
+| Quota/billing mismatch | Turso: `Account` + `AppSubscription` tables |
+| Currency/switcher not working | Turso: `SwitcherConfiguration`, `Currency` tables |
+| App 500 / worker crash | Render deploy logs → check for missing env vars |
+| Auto-translate not running | `probe-hint-queues.mjs` auto queues + `auto_scan:last_at` |
+
 ## Debug Lessons
 
 These replace old one-off debug markdown files.
@@ -603,7 +857,8 @@ These replace old one-off debug markdown files.
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
 - `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
-- Billing/quota is fully TSF Turso. All shops use the TSF billing track.
+- Runtime billing/quota is TSF Turso, but compatibility binding rows can still
+  contain `legacy`; inspect actual callers before deleting the enum/model.
 - Translation v4 state is distributed. State machine changes must consider
   resume, retry, delete, stale reset, Redis controls, Blob checkpoints, and
   Shopify writeback.
@@ -616,6 +871,15 @@ These replace old one-off debug markdown files.
   auto is busy, check whether code still pushes to legacy unsplit keys.
 - Storefront extension calls TSF through App Proxy. API request shape changes
   often require extension JS changes.
+- App Proxy supports explicit currency GET plus POST branches for Liquid,
+  switcher configuration, PageFly, currency cache, and picture reads. Preserve
+  HMAC verification and update `ciwi-api.js` together with route shape changes.
+- Translation-filter ownership crosses into sibling `Spark`; the root check
+  validates provenance for the app copy only and can fail when that generated
+  copy drifts. Treat the failure as an ownership/sync issue, not a worker build
+  failure.
+- Shop-profile prompt preview is not production prompt injection yet. Verify an
+  actual non-empty `profileBlock` call path before documenting it as live.
 - `app/routes/app.tsx` affects every embedded page.
 - Legacy manage-translation pages and v4 job pages are separate experiences.
 
