@@ -22,7 +22,6 @@ interface GlossaryModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   shop: string;
-  server: string;
   migrated: boolean;
 }
 
@@ -32,7 +31,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   isVisible,
   setIsModalOpen,
   shop,
-  server,
   migrated,
 }) => {
   const [sourceText, setSourceText] = useState<string>("");
@@ -241,7 +239,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               type: checked ? 1 : 0,
               status: currentItem?.status,
             },
-            server: server as string,
           });
         } else {
           data = await insertGlossaryCompat({
@@ -251,7 +248,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             targetText: targetText,
             rangeCode: rangeCode,
             type: checked ? 1 : 0,
-            server: server as string,
           });
         }
 

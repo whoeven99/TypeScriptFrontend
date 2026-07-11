@@ -18,7 +18,6 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { InsertOrUpdateOrder } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
@@ -37,10 +36,8 @@ import {
   setTotalChars,
   setUpdateTime,
 } from "~/store/modules/userConfig";
-import type { AppBootstrapJavaData } from "~/server/appBootstrap.server";
-import { isTsfBillingShop } from "~/server/billing/binding/resolveBillingBinding.server";
+import type { AppBootstrapData } from "~/server/appBootstrap.server";
 import useReport from "scripts/eventReport";
-import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
 import AppPageHeader from "~/ui/components/AppPageHeader";
@@ -67,7 +64,7 @@ async function refreshBillingBootstrap(
       const res = await fetch("/api/app-bootstrap");
       const data = (await res.json()) as {
         ok?: boolean;
-        bootstrap?: AppBootstrapJavaData;
+        bootstrap?: AppBootstrapData;
       };
       if (!data.ok || !data.bootstrap) continue;
 
@@ -128,12 +125,6 @@ const priceTable: Record<
   "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
 };
 
-export const loader = async () => {
-  return {
-    server: process.env.SERVER_URL,
-  };
-};
-
 /** Shopify Billing 测试模式：BILLING_TEST=true 显式开启，或本地/测试环境自动开启（不产生真实扣费）。 */
 const isBillingTestMode = (): boolean =>
   process.env.BILLING_TEST === "true" ||
@@ -165,7 +156,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         if (res) {
-          const order = res?.data?.appPurchaseOneTimeCreate?.appPurchaseOneTime;
           const confirmationUrl =
             res?.data?.appPurchaseOneTimeCreate?.confirmationUrl;
 
@@ -176,18 +166,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             errorMsg?: string;
             response?: unknown;
           } = { success: true, response: null };
-          if (!(await isTsfBillingShop(shop))) {
-            orderData = await InsertOrUpdateOrder({
-              shop,
-              id: order?.id,
-              amount: order?.price?.amount,
-              name: order?.name,
-              createdAt: order?.createdAt,
-              status: order?.status,
-              confirmationUrl: confirmationUrl,
-            });
-          }
-
           if (confirmationUrl) {
             throw shopifyRedirect(confirmationUrl, { target: "_top" });
           }
@@ -241,7 +219,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         if (res) {
-          const order = res?.data?.appSubscriptionCreate?.appSubscription;
           const confirmationUrl =
             res?.data?.appSubscriptionCreate?.confirmationUrl;
 
@@ -252,20 +229,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             errorMsg?: string;
             response?: unknown;
           } = { success: true, response: null };
-          if (!(await isTsfBillingShop(shop))) {
-            orderData = await InsertOrUpdateOrder({
-              shop,
-              id: order?.id,
-              amount: payForPlan.yearly
-                ? payForPlan.yearlyPrice
-                : payForPlan.monthlyPrice,
-              name: order?.name,
-              createdAt: order?.createdAt,
-              status: order?.status,
-              confirmationUrl: confirmationUrl,
-            });
-          }
-
           if (confirmationUrl) {
             throw shopifyRedirect(confirmationUrl, { target: "_top" });
           }
@@ -1376,7 +1339,6 @@ const Index = () => {
           </Space>
         </div>
       </div>
-      <HasPayForFreePlanModal />
       <Modal
         title={t("Buy Credits")}
         open={addCreditsModalOpen}

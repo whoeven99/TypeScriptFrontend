@@ -1,4 +1,4 @@
-import type { AppBootstrapJavaData } from "~/server/appBootstrap.server";
+import type { AppBootstrapData } from "~/server/appBootstrap.server";
 import prisma from "../../../db.server";
 import {
   APP_SUBSCRIPTION_STATUS,
@@ -29,7 +29,7 @@ function formatPlanUpdateTime(value: Date | null | undefined): string | null {
  */
 export async function getTsfBootstrapData(
   shop: string,
-): Promise<AppBootstrapJavaData> {
+): Promise<AppBootstrapData> {
   const [quota, sub, activatedCount] = await Promise.all([
     getAccountQuota(shop),
     prisma.appSubscription.findUnique({ where: { shop } }),
@@ -38,7 +38,7 @@ export async function getTsfBootstrapData(
     }),
   ]);
 
-  let plan: AppBootstrapJavaData["plan"] = {
+  let plan: AppBootstrapData["plan"] = {
     id: PLAN_ID_BY_NAME.Free,
     type: "Free",
     feeType: 0,

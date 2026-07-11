@@ -16,22 +16,12 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import {
-  GetUserWords,
-  AddUserFreeSubscription,
-  InitializationDetection,
-  UserInitialization,
-  InsertCharsByShopName,
-  InsertTargets,
-  GoogleAnalyticClickReport,
-  GetUnTranslatedWords,
-} from "~/api/JavaServer";
+import { GoogleAnalyticClickReport } from "~/api/googleAnalyticsClient";
 import {
   bootstrapLocalesFromLoaded,
-  type AppBootstrapJavaData,
+  type AppBootstrapData,
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
-import { BILLING_SYSTEM } from "~/server/billing/types.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { Suspense, lazy, useEffect, useState } from "react";
@@ -65,7 +55,7 @@ const LazySupportChatWidget = lazy(() =>
   })),
 );
 
-type AppBootstrapData = {
+type AppBootstrapLocales = {
   source: { code: string; name: string };
   targets: Array<{
     locale: string;
@@ -131,39 +121,12 @@ const logGraphQLErrorDetail = (context: string, error: unknown) => {
 
 async function runAppInitialization({
   shop,
-  accessToken,
-  source,
-  targets,
 }: {
   shop: string;
-  accessToken?: string;
-  source: string;
-  targets: string[];
 }) {
   try {
-    // 判定并锁定账本归属；新用户（tsf）建账户 + 赠送安装试用额度
-    const binding = await resolveBillingBinding(shop);
-    const isTsf = binding.billingSystem === BILLING_SYSTEM.TSF;
-
-    // 保留：翻译流水线仍依赖 Java Users.access_token（billing 归属与翻译解耦）
-    if (accessToken) {
-      await UserInitialization({ shop, accessToken });
-    }
-    const init = await InitializationDetection({ shop });
-    if (init?.success && accessToken) {
-      // 老系统计费初始化：仅 legacy 用户执行（tsf 用户走 Turso 分池）
-      if (!isTsf) {
-        if (!init?.response?.insertCharsByShopName) {
-          await InsertCharsByShopName({ shop, accessToken });
-        }
-        if (!init?.response?.addUserFreeSubscription) {
-          await AddUserFreeSubscription({ shop });
-        }
-      }
-    }
-    if (accessToken && source && targets.length > 0) {
-      await InsertTargets({ shop, accessToken, source, targets });
-    }
+    // 判定并锁定账本归属；新 TSF 用户只建账户，不在安装时发放试用额度。
+    await resolveBillingBinding(shop);
 
     // 店铺画像扫描：安装/首次进 App 触发一次性店铺扫描（内容量/画像/覆盖率/术语表）。
     // 幂等（已有扫描则跳过），best-effort 不阻断初始化。worker 异步消费。
@@ -180,9 +143,9 @@ async function loadAppBootstrapLocales({
 }: {
   shop: string;
   accessToken?: string;
-}): Promise<AppBootstrapData> {
+}): Promise<AppBootstrapLocales> {
   let source = { code: "", name: "" };
-  let targets: AppBootstrapData["targets"] = [];
+  let targets: AppBootstrapLocales["targets"] = [];
 
   try {
     if (accessToken) {
@@ -198,9 +161,9 @@ async function loadAppBootstrapLocales({
   return { source, targets };
 }
 
-function applyBootstrapJavaToStore(
+function applyBootstrapToStore(
   dispatch: Dispatch,
-  bootstrap: AppBootstrapJavaData,
+  bootstrap: AppBootstrapData,
 ) {
   dispatch(setPlan({ plan: bootstrap.plan }));
   if (bootstrap.updateTime) {
@@ -216,7 +179,6 @@ function applyBootstrapJavaToStore(
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const server = process.env.SERVER_URL || "";
   const bootstrap = await loadAppBootstrapLocales({
     shop,
     accessToken: accessToken as string | undefined,
@@ -224,14 +186,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   void runAppInitialization({
     shop,
-    accessToken: accessToken as string | undefined,
-    source: bootstrap.source.code,
-    targets: bootstrap.targets.map((item) => item.locale),
   });
 
   return json({
     shop,
-    server,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
     showShopProfilePage: !isProductionNodeEnv(),
@@ -243,7 +201,6 @@ export const shouldRevalidate = shouldRevalidateAppShell;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
 
   try {
     const formData = await request.formData();
@@ -257,25 +214,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("qualityEvaluation") as string,
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
-    const unTranslated = JSON.parse(formData.get("unTranslated") as string);
     if (init) {
       try {
-        await UserInitialization({
-          shop,
-          accessToken: accessToken as string,
-        });
-        const init = await InitializationDetection({ shop });
-        if (init?.success) {
-          if (!init?.response?.insertCharsByShopName) {
-            await InsertCharsByShopName({
-              shop,
-              accessToken: accessToken as string,
-            });
-          }
-          if (!init?.response?.addUserFreeSubscription) {
-            await AddUserFreeSubscription({ shop });
-          }
-        }
+        await resolveBillingBinding(shop);
         return null;
       } catch (error) {
         logGraphQLErrorDetail("Error loading app", error);
@@ -285,12 +226,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageInit) {
       try {
-        await InsertTargets({
-          shop,
-          accessToken: accessToken!,
-          source: languageInit?.source,
-          targets: languageInit?.targets,
-        });
+        await resolveBillingBinding(shop);
         return null;
       } catch (error) {
         logGraphQLErrorDetail("Error languageInit app", error);
@@ -379,7 +315,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               webPixel: {
                 settings: JSON.stringify({
                   shopName: shop,
-                  server: process.env.SERVER_URL,
                 }),
               },
             },
@@ -472,62 +407,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (unTranslated) {
-      try {
-        const mutationResponse = await admin.graphql(
-          `query MyQuery {
-            shopLocales(published: true) {
-              locale
-              name
-              primary
-              published
-            }
-          }`,
-        );
-        const data = (await mutationResponse.json()) as any;
-        let source = "en";
-        if (data.data.shopLocales.length > 0) {
-          data.data.shopLocales.forEach((item: any) => {
-            if (item.primary === true) {
-              source = item.locale;
-            }
-          });
-        }
-        const { resourceModules } = unTranslated;
-        let totalWords = 0;
-        const results = await Promise.all(
-          resourceModules.map((module: string) =>
-            GetUnTranslatedWords({
-              shop,
-              module,
-              accessToken: accessToken as string,
-              source,
-            }),
-          ),
-        );
-
-        results.forEach((res) => {
-          if (res.success && res.response) {
-            totalWords += res.response;
-          }
-        });
-        console.log(`${shop} unTranslate words is ${totalWords}`);
-        return {
-          success: true,
-          response: {
-            totalWords,
-          },
-        };
-      } catch (error) {
-        logGraphQLErrorDetail(`${shop} get unTranslated words failed`, error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
 
     return json({ success: false, message: "Invalid data" });
   } catch (error) {
@@ -537,7 +416,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, bootstrap, showShopProfilePage } =
+  const { apiKey, shop, bootstrap, showShopProfilePage } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
@@ -548,7 +427,6 @@ export default function App() {
   useEffect(() => {
     setIsClient(true);
     globalStore.shop = shop as string;
-    globalStore.server = server as string;
     globalStore.translateV4ExpressBeta = true;
     globalStore.source = bootstrap.source.code;
 
@@ -568,14 +446,14 @@ export default function App() {
       .then(async (res) => {
         const data = (await res.json()) as {
           ok?: boolean;
-          bootstrap?: AppBootstrapJavaData;
+          bootstrap?: AppBootstrapData;
         };
         if (cancelled || !data?.ok || !data.bootstrap) return;
-        applyBootstrapJavaToStore(dispatch, data.bootstrap);
+        applyBootstrapToStore(dispatch, data.bootstrap);
       })
       .catch((err) => {
-        // Bootstrap Java data is non-blocking; fetch failures should not pollute exception telemetry.
-        console.warn("[app] bootstrap java fetch failed:", err);
+        // Bootstrap data is non-blocking; fetch failures should not pollute exception telemetry.
+        console.warn("[app] bootstrap fetch failed:", err);
       })
       .finally(() => {
         if (!cancelled) {
@@ -586,7 +464,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrap, dispatch, server, shop]);
+  }, [bootstrap, dispatch, shop]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

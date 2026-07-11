@@ -24,7 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
-import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
+import { DeleteProductImageData, GetProductImageData } from "~/api/pictureClient";
 import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
@@ -776,7 +776,6 @@ const Index = () => {
         )[0] || [];
       const getTargetData = async () => {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -1114,7 +1113,6 @@ const Index = () => {
   const handleDelete = async (productId: string, imageUrl: string) => {
     setIsDeleteLoading(true);
     const res = await DeleteProductImageData({
-      server: globalStore?.server || "",
       shopName: globalStore?.shop || "",
       productId: productId,
       imageUrl: imageUrl,

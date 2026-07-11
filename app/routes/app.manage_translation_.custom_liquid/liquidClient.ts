@@ -28,7 +28,6 @@ async function postTsfLiquid(body: Record<string, unknown>) {
 export async function selectLiquidCompat(_args: {
   migrated?: boolean;
   shop?: string;
-  server?: string;
 }): Promise<{ success: boolean; response?: LiquidTableRow[]; errorMsg?: string }> {
   const res = await fetch("/api/translate-v4/liquid");
   const data = await res.json();
@@ -43,7 +42,6 @@ export async function insertLiquidCompat(args: {
   migrated?: boolean;
   id?: string;
   shop?: string;
-  server?: string;
   sourceText: string;
   targetText: string;
   replacementMethod: boolean;
@@ -71,7 +69,6 @@ export async function insertLiquidCompat(args: {
 export async function deleteLiquidCompat(args: {
   migrated?: boolean;
   shop?: string;
-  server?: string;
   ids: string[];
 }) {
   return postTsfLiquid({ intent: "delete", ids: args.ids });
@@ -80,7 +77,6 @@ export async function deleteLiquidCompat(args: {
 export async function toggleLiquidReplacementMethodCompat(args: {
   migrated?: boolean;
   shop?: string;
-  server?: string;
   id: string;
 }) {
   return postTsfLiquid({ intent: "toggleReplacementMethod", id: args.id });

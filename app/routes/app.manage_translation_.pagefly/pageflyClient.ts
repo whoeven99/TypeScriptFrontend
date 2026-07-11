@@ -8,7 +8,6 @@ export type PageFlyTranslationRow = {
 export async function readPageFlyCompat(args: {
   pageFlyGrayEligible?: boolean;
   shop?: string;
-  server?: string;
   languageCode: string;
 }): Promise<{
   success: boolean;
@@ -25,7 +24,6 @@ export async function readPageFlyCompat(args: {
 export async function editPageFlyCompat(args: {
   pageFlyGrayEligible?: boolean;
   shop?: string;
-  server?: string;
   data: {
     id?: number | null;
     sourceText: string;

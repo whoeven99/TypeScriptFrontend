@@ -20,9 +20,9 @@ import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import {
   GetProductImageData,
-  SingleTextTranslate,
   UpdateProductImageAltData,
-} from "~/api/JavaServer";
+} from "~/api/pictureClient";
+import { SingleTextTranslate } from "~/api/translateV4Client";
 import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
@@ -610,7 +610,6 @@ const Index = () => {
         )[0] || [];
       async function getTargetData() {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -900,7 +899,6 @@ const Index = () => {
       context: record?.altText,
       key: record?.key,
       type: "SINGLE_LINE_TEXT_FIELD",
-      server: globalStore?.server || "",
       resourceId: record?.resourceId,
       customPrompt,
     });
@@ -1036,7 +1034,6 @@ const Index = () => {
     setSaveLoading(true);
     const promises = confirmData.map((item: any) =>
       UpdateProductImageAltData({
-        server: globalStore?.server || "",
         shopName: globalStore?.shop || "",
         productId: item.productId,
         imageUrl: item.imageUrl,

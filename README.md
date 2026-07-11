@@ -2,7 +2,7 @@
 
 Shopify embedded app for Ciwi Translator.
 
-For AI agents and code-navigation guidance, read [`Agent.md`](./Agent.md)
+For AI agents and code-navigation guidance, read [`AGENTS.md`](./AGENTS.md)
 before changing code.
 
 ## Common Commands

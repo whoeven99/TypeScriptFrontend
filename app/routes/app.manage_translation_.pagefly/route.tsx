@@ -23,7 +23,7 @@ import {
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
 import { useSelector } from "react-redux";
-import { SingleTextTranslate } from "~/api/JavaServer";
+import { SingleTextTranslate } from "~/api/translateV4Client";
 import { editPageFlyCompat, readPageFlyCompat } from "./pageflyClient";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import { globalStore } from "~/globalStore";
@@ -45,7 +45,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   return {
     searchTerm,
-    server: process.env.SERVER_URL,
     pageFlyGrayEligible: true,
   };
 };
@@ -196,7 +195,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server, pageFlyGrayEligible } =
+  const { searchTerm, pageFlyGrayEligible } =
     useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
@@ -292,21 +291,21 @@ const Index = () => {
           const content = item?.body?.content || "";
           if (!content) return null;
 
-          // 1) 先匹配 pageTitle: "xxx"
+          // 1) 先匹�?pageTitle: "xxx"
           const pageTitleMatch = content.match(/"pageTitle"\s*:\s*"([^"]+)"/);
           if (pageTitleMatch) {
             return { label: pageTitleMatch[1], key: item?.filename };
           }
 
-          // 2) 再从 PAGEFLY_AI_SALES_PAGE 脚本里直接提取 campaign.title（兼容单/双引号）
-          //    先把脚本块抓出来（贪婪匹配到最近的 </script>）
+          // 2) 再从 PAGEFLY_AI_SALES_PAGE 脚本里直接提�?campaign.title（兼容单/双引号）
+          //    先把脚本块抓出来（贪婪匹配到最近的 </script>�?
           const scriptBlockMatch = content.match(
             /<script[^>]*>[\s\S]*?PAGEFLY_AI_SALES_PAGE[\s\S]*?<\/script>/i,
           );
           if (scriptBlockMatch) {
             const scriptBlock = scriptBlockMatch[0];
 
-            // 在脚本块里寻找 campaign: { ... title: 'xxx' ... } 的 title
+            // 在脚本块里寻�?campaign: { ... title: 'xxx' ... } �?title
             const campaignTitleMatch = scriptBlock.match(
               /campaign\s*:\s*\{[\s\S]*?title\s*:\s*['"]([^'"]+)['"]/i,
             );
@@ -315,7 +314,7 @@ const Index = () => {
               return { label: campaignTitleMatch[1], key: item?.filename };
             }
 
-            // 额外尝试直接找 window.PAGEFLY_AI_SALES_PAGE.*title = 'xxx' 或 PAGEFLY_AI_SALES_PAGE.*title:'xxx'
+            // 额外尝试直接�?window.PAGEFLY_AI_SALES_PAGE.*title = 'xxx' �?PAGEFLY_AI_SALES_PAGE.*title:'xxx'
             const genericTitleMatch = scriptBlock.match(
               /PAGEFLY_AI_SALES_PAGE[\s\S]*?title\s*[:=]\s*['"]([^'"]+)['"]/i,
             );
@@ -324,7 +323,7 @@ const Index = () => {
             }
           }
 
-          // 3) 若两者都没有，跳过该项（返回 null）
+          // 3) 若两者都没有，跳过该项（返回 null�?
           if (item?.filename)
             return {
               label: item?.filename,
@@ -333,7 +332,7 @@ const Index = () => {
 
           return null;
         })
-        // 过滤掉 null（不会出现 undefined）
+        // 过滤�?null（不会出�?undefined�?
         .filter(Boolean);
 
       if (Array.isArray(data)) {
@@ -497,12 +496,12 @@ const Index = () => {
     // 1. 删除 Liquid 变量与逻辑
     let cleaned = liquidCode.replace(/{%[\s\S]*?%}/g, "");
 
-    // 2. 删除 <style> 和 <script>
+    // 2. 删除 <style> �?<script>
     cleaned = cleaned
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<script[\s\S]*?<\/script>/gi, "");
 
-    // ⭐ 提取 data-default-text
+    // �?提取 data-default-text
     const defaultTextMatches = [
       ...cleaned.matchAll(/data-default-text="([^"]+)"/g),
     ];
@@ -510,7 +509,7 @@ const Index = () => {
       decodeHtmlEntities(m[1].trim()),
     );
 
-    // 3. 提取 HTML 标签之间的文本
+    // 3. 提取 HTML 标签之间的文�?
     const matches = cleaned.match(/>([^<]+)</g);
     const normalTexts = matches
       ? matches
@@ -523,7 +522,7 @@ const Index = () => {
           })
       : [];
 
-    // ⭐ 去重输出
+    // �?去重输出
     const finalTexts = Array.from(new Set([...defaultTexts, ...normalTexts]));
 
     return finalTexts;
@@ -535,7 +534,7 @@ const Index = () => {
         (item: any) => item.key === record?.key,
       );
 
-      // ✅ 新增逻辑：如果输入值与原翻译相同，则移除该项
+      // �?新增逻辑：如果输入值与原翻译相同，则移除该�?
       if (value === record?.translated) {
         if (existingItemIndex !== -1) {
           const updatedConfirmData = [...prevData];
@@ -545,7 +544,7 @@ const Index = () => {
         return prevData; // 没有该项就直接返回原数据
       }
 
-      // ✅ 原逻辑：更新或添加新项
+      // �?原逻辑：更新或添加新项
       if (existingItemIndex !== -1) {
         const updatedConfirmData = [...prevData];
         updatedConfirmData[existingItemIndex] = {
@@ -581,7 +580,6 @@ const Index = () => {
       context: record?.default_language,
       key: record?.key,
       type: record?.type,
-      server: server || "",
     });
 
     const data = await SingleTextTranslate({
@@ -592,7 +590,6 @@ const Index = () => {
       context: record?.default_language,
       key: record?.key,
       type: record?.type,
-      server: server || "",
       resourceId: record?.resourceId,
       customPrompt,
     });
@@ -672,7 +669,6 @@ const Index = () => {
     const data = await readPageFlyCompat({
       pageFlyGrayEligible,
       shop: globalStore?.shop || "",
-      server: server || "",
       languageCode: language || selectedLanguage,
     });
     if (data.success) {
@@ -707,7 +703,6 @@ const Index = () => {
     }));
     const editTranslatedData = await editPageFlyCompat({
       pageFlyGrayEligible,
-      server: server || "",
       shop: globalStore?.shop || "",
       data,
     });
@@ -730,7 +725,7 @@ const Index = () => {
           const match = confirmData.find(
             (confirmItem: any) => confirmItem.key === item.key,
           );
-          // 只更新存在于 confirmData 中的项
+          // 只更新存在于 confirmData 中的�?
           if (match && match.value !== item.translated) {
             return { ...item, translated: match.value };
           }
@@ -758,7 +753,7 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+      navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转�?/app/manage_translation
     }
   };
 

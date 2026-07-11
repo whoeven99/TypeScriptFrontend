@@ -17,7 +17,6 @@ type SwitcherApiResponse = {
 export async function loadSwitcherConfigCompat(_args: {
   migrated?: boolean;
   shop: string;
-  server?: string;
 }): Promise<SwitcherApiResponse> {
   const res = await fetch("/api/translate-v4/switcher");
   return res.json();
@@ -27,7 +26,6 @@ export async function loadSwitcherConfigCompat(_args: {
 export async function saveSwitcherConfigCompat(args: {
   migrated?: boolean;
   shop?: string;
-  server?: string;
   data: SwitcherEditData;
 }): Promise<SwitcherApiResponse> {
   const res = await fetch("/api/translate-v4/switcher", {

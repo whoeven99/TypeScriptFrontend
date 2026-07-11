@@ -14,7 +14,6 @@ export async function insertGlossaryCompat(args: {
   targetText: string;
   rangeCode: string;
   type: number;
-  server?: string;
 }) {
   return postTsfGlossary({
     intent: "insert",
@@ -36,7 +35,6 @@ export async function updateGlossaryCompat(args: {
     type: number;
     status: number;
   };
-  server?: string;
 }) {
   const d = args.data;
   return postTsfGlossary({
