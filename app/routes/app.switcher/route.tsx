@@ -100,7 +100,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     shop,
     migrated: true,
-    server: process.env.SERVER_URL,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
     ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
   };
@@ -170,7 +169,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, migrated, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+  const { shop, migrated, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
@@ -272,7 +271,6 @@ const Index = () => {
       const data = await loadSwitcherConfigCompat({
         migrated,
         shop,
-        server: server as string,
       });
       const initData = buildSwitcherEditDefaults(shop);
       if (data?.success && data.response) {
@@ -323,7 +321,7 @@ const Index = () => {
         action: "/log",
       },
     );
-  }, [location.search, migrated, shop, server]);
+  }, [location.search, migrated, shop]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -619,7 +617,6 @@ const Index = () => {
     const data = await saveSwitcherConfigCompat({
       migrated,
       shop,
-      server: server as string,
       data: editData,
     });
     if (data?.success && data.response != undefined) {

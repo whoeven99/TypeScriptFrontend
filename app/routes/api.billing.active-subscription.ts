@@ -4,9 +4,8 @@ import prisma from "~/db.server";
 import { APP_SUBSCRIPTION_STATUS } from "~/server/billing/types.server";
 
 /**
- * GET /api/billing/active-subscription?shopName= —— 当前生效订阅的 Shopify GID（取消套餐用，按 binding 分叉）。
- * tsf：读 Turso AppSubscription；legacy：转发 Java getLatestActiveSubscribeId。
- * 返回 { ok, subscriptionId }。
+ * GET /api/billing/active-subscription?shopName= —— 当前生效订阅的 Shopify GID（取消套餐用）。
+ * 读 Turso AppSubscription；返回 { ok, subscriptionId }。
  */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);

@@ -5,12 +5,7 @@ import {
 import { deductCredits } from "./deductCredits.server";
 import { getAccountQuota } from "./getAccountQuota.server";
 
-/**
- * 额度出入口路由（灰度分叉）：
- *   - tsf 用户（新系统）：读写 Turso Account 三池账本。
- *   - legacy 用户（老系统）：转发 Java /quota 服务。
- * 上游调用方无需感知归属，统一走这两个函数。
- */
+/** 额度出入口：读写 Turso Account 三池账本。 */
 
 /** 查询 TSF 账本额度（总/已用/剩余）。 */
 export async function getShopCreditQuota(shop: string): Promise<ShopQuota | null> {

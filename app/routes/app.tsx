@@ -179,7 +179,6 @@ function applyBootstrapToStore(
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const server = process.env.SERVER_URL || "";
   const bootstrap = await loadAppBootstrapLocales({
     shop,
     accessToken: accessToken as string | undefined,
@@ -191,7 +190,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     shop,
-    server,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
     showShopProfilePage: !isProductionNodeEnv(),
@@ -418,7 +416,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server, bootstrap, showShopProfilePage } =
+  const { apiKey, shop, bootstrap, showShopProfilePage } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
@@ -429,7 +427,6 @@ export default function App() {
   useEffect(() => {
     setIsClient(true);
     globalStore.shop = shop as string;
-    globalStore.server = server as string;
     globalStore.translateV4ExpressBeta = true;
     globalStore.source = bootstrap.source.code;
 
@@ -467,7 +464,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrap, dispatch, server, shop]);
+  }, [bootstrap, dispatch, shop]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

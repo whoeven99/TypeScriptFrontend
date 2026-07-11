@@ -610,7 +610,6 @@ const Index = () => {
         )[0] || [];
       async function getTargetData() {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -1035,7 +1034,6 @@ const Index = () => {
     setSaveLoading(true);
     const promises = confirmData.map((item: any) =>
       UpdateProductImageAltData({
-        server: globalStore?.server || "",
         shopName: globalStore?.shop || "",
         productId: item.productId,
         imageUrl: item.imageUrl,

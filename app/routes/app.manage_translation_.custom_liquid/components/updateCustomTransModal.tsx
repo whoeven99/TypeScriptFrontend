@@ -15,7 +15,6 @@ const { Text } = Typography;
 
 interface UpdateCustomTransModalProps {
   migrated: boolean;
-  server: string;
   dataSource: LiquidTableRow[];
   defaultData?: LiquidTableRow | undefined;
   handleUpdateDataSource: (row: LiquidTableRow & { key?: string }) => void;
@@ -26,7 +25,6 @@ interface UpdateCustomTransModalProps {
 
 const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
   migrated,
-  server,
   dataSource,
   defaultData,
   handleUpdateDataSource,
@@ -117,7 +115,6 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
         migrated,
         id: defaultData?.key,
         shop: globalStore?.shop || "",
-        server,
         sourceText: formData.sourceText,
         targetText: formData.targetText,
         replacementMethod: formData.replacementMethod,

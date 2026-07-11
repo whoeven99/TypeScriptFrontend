@@ -37,7 +37,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   return json({
-    server: process.env.SERVER_URL,
     searchTerm,
   });
 };
@@ -201,7 +200,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);

@@ -125,12 +125,6 @@ const priceTable: Record<
   "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
 };
 
-export const loader = async () => {
-  return {
-    server: process.env.SERVER_URL,
-  };
-};
-
 /** Shopify Billing 测试模式：BILLING_TEST=true 显式开启，或本地/测试环境自动开启（不产生真实扣费）。 */
 const isBillingTestMode = (): boolean =>
   process.env.BILLING_TEST === "true" ||

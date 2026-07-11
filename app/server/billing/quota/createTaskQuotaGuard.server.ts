@@ -5,11 +5,7 @@ export type CreateTaskQuotaGuardResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
 
-/**
- * 建任务额度校验。
- * - TSF 账本：remaining > 0 才允许。
- * - legacy（老系统）：remaining > 0，或付费套餐 / 免费试用期内可建任务（沿用 Java 口径）。
- */
+/** 建任务额度校验：Turso 账本 remaining > 0 才允许。 */
 export async function evaluateCreateTaskQuotaGuard(
   shopName: string,
 ): Promise<CreateTaskQuotaGuardResult> {

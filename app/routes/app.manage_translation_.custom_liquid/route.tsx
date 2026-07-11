@@ -35,13 +35,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
   return {
-    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   };
 };
 
 const Index = () => {
-  const { server, mobile } = useLoaderData<typeof loader>();
+  const { mobile } = useLoaderData<typeof loader>();
   const migrated = true;
 
   const { t } = useTranslation();
@@ -119,7 +118,6 @@ const Index = () => {
       const selectShopNameLiquidData = await selectLiquidCompat({
         migrated,
         shop: globalStore?.shop || "",
-        server: server || "",
       });
 
       if (selectShopNameLiquidData.success) {
@@ -146,7 +144,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [migrated, server]);
+  }, [migrated]);
 
   //表格数据删除方法
   const handleDelete = async () => {
@@ -154,7 +152,6 @@ const Index = () => {
     const data = await deleteLiquidCompat({
       migrated,
       shop: globalStore?.shop || "",
-      server: server || "",
       ids: selectedRowKeys,
     });
     if (data.success) {
@@ -259,7 +256,6 @@ const Index = () => {
       await toggleLiquidReplacementMethodCompat({
         migrated,
         shop: globalStore?.shop || "",
-        server: server || "",
         id,
       });
     if (updateLiquidReplacementMethod?.success) {
@@ -499,7 +495,6 @@ const Index = () => {
       </Space>
       <UpdateCustomTransModal
         migrated={migrated}
-        server={server || ""}
         dataSource={dataSource}
         handleUpdateDataSource={handleUpdateDataSource}
         defaultData={editData}

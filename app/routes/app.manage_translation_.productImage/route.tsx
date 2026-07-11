@@ -776,7 +776,6 @@ const Index = () => {
         )[0] || [];
       const getTargetData = async () => {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -1114,7 +1113,6 @@ const Index = () => {
   const handleDelete = async (productId: string, imageUrl: string) => {
     setIsDeleteLoading(true);
     const res = await DeleteProductImageData({
-      server: globalStore?.server || "",
       shopName: globalStore?.shop || "",
       productId: productId,
       imageUrl: imageUrl,

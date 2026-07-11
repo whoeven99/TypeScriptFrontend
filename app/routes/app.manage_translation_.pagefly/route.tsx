@@ -45,7 +45,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   return {
     searchTerm,
-    server: process.env.SERVER_URL,
     pageFlyGrayEligible: true,
   };
 };
@@ -196,7 +195,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server, pageFlyGrayEligible } =
+  const { searchTerm, pageFlyGrayEligible } =
     useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
@@ -581,7 +580,6 @@ const Index = () => {
       context: record?.default_language,
       key: record?.key,
       type: record?.type,
-      server: server || "",
     });
 
     const data = await SingleTextTranslate({
@@ -671,7 +669,6 @@ const Index = () => {
     const data = await readPageFlyCompat({
       pageFlyGrayEligible,
       shop: globalStore?.shop || "",
-      server: server || "",
       languageCode: language || selectedLanguage,
     });
     if (data.success) {
@@ -706,7 +703,6 @@ const Index = () => {
     }));
     const editTranslatedData = await editPageFlyCompat({
       pageFlyGrayEligible,
-      server: server || "",
       shop: globalStore?.shop || "",
       data,
     });
