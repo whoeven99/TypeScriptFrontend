@@ -216,6 +216,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
     showShopProfilePage: !isProductionNodeEnv(),
+    perfDebug,
   });
 };
 
@@ -439,14 +440,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, bootstrap, showShopProfilePage } =
+  const { apiKey, shop, bootstrap, showShopProfilePage, perfDebug } =
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
-  const [perfDebugEnabled] = useState(() => isPerfDebugEnabled());
+  const [perfDebugEnabled, setPerfDebugEnabled] = useState(perfDebug);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (isPerfDebugEnabled()) {
+      setPerfDebugEnabled(true);
+    }
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
