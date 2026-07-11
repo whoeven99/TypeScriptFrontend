@@ -744,8 +744,26 @@ function normalizeImageCandidate(url) {
   }
 }
 
+function normalizeShopifyFilesPath(pathname) {
+  if (!pathname) return null;
+
+  const normalized = String(pathname).trim();
+  if (!normalized) return null;
+
+  const filesMarker = "/files/";
+  const lastFilesIndex = normalized.lastIndexOf(filesMarker);
+  if (lastFilesIndex >= 0) {
+    const afterFiles = normalized.slice(lastFilesIndex + filesMarker.length).trim();
+    return afterFiles || null;
+  }
+
+  return null;
+}
+
 function getShopifyImageMatchKey(url) {
   const normalized = normalizeImageCandidate(url);
+  const filesPath = normalizeShopifyFilesPath(normalized);
+  if (filesPath) return filesPath;
   if (normalized) return normalized;
 
   if (!url) return null;

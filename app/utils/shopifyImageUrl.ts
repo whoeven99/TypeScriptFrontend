@@ -17,6 +17,21 @@ function normalizeImageCandidate(
   }
 }
 
+function normalizeShopifyFilesPath(pathname: string | null | undefined): string | null {
+  if (!pathname) return null;
+  const normalized = pathname.trim();
+  if (!normalized) return null;
+
+  const filesMarker = "/files/";
+  const lastFilesIndex = normalized.lastIndexOf(filesMarker);
+  if (lastFilesIndex >= 0) {
+    const afterFiles = normalized.slice(lastFilesIndex + filesMarker.length).trim();
+    return afterFiles || null;
+  }
+
+  return null;
+}
+
 /**
  * 生成 Shopify 图片匹配 key。
  * 优先使用完整 pathname，避免只按文件名匹配时把同名图片串位。
@@ -25,6 +40,8 @@ export function shopifyFilesImageKey(
   url: string | null | undefined,
 ): string | null {
   const pathname = normalizeImageCandidate(url);
+  const filesPath = normalizeShopifyFilesPath(pathname);
+  if (filesPath) return filesPath;
   if (pathname) return pathname;
 
   if (!url) return null;
@@ -41,6 +58,11 @@ export function sameShopifyImageUrl(
 
   const normalizedA = normalizeImageCandidate(a);
   const normalizedB = normalizeImageCandidate(b);
+  const filesKeyA = normalizeShopifyFilesPath(normalizedA);
+  const filesKeyB = normalizeShopifyFilesPath(normalizedB);
+  if (filesKeyA && filesKeyB) {
+    return filesKeyA === filesKeyB;
+  }
   if (normalizedA && normalizedB) {
     return normalizedA === normalizedB;
   }
