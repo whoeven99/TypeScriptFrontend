@@ -121,7 +121,7 @@ function toTranslatedResourceItem(
 ): TranslatedResourceItem {
   return {
     resourceId,
-    translations: results.map((r) => ({
+    translations: results.map((r: TranslatedResourceOutput["results"][number]) => ({
       key: r.key,
       originalValue: origFields.find((f) => f.key === r.key)?.value ?? "",
       translatedValue: r.translatedValue,
@@ -481,34 +481,49 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
 
   try {
     if (!skipTranslateLoop) {
-    // Flatten every chunk of every module into one work list. Previously modules
-    // ran strictly one-after-another (only chunks *within* a module overlapped),
-    // so many small single-chunk modules each ate a full ~40s LLM round-trip in
-    // series. With all chunks in one pool the LLM pool's AdaptiveSemaphore — not
-    // the module boundary — is the only thing gating throughput.
-    type ChunkWork = { module: string; chunkPath: string; chunkIdx: number; chunkTotal: number };
-    const work: ChunkWork[] = [];
-    for (const module of job.modules) {
-      await maybeHeartbeat();
-      const initPaths = await blobListPaths(`${blobPrefix}/init/${module}/`);
-      const chunkPaths = initPaths.filter((p) => p.endsWith(".json"));
-      chunkPaths.forEach((chunkPath, ci) =>
-        work.push({ module, chunkPath, chunkIdx: ci + 1, chunkTotal: chunkPaths.length }),
+      // Flatten every chunk of every module into one work list. Previously modules
+      // ran strictly one-after-another (only chunks *within* a module overlapped),
+      // so many small single-chunk modules each ate a full ~40s LLM round-trip in
+      // series. With all chunks in one pool the LLM pool's AdaptiveSemaphore — not
+      // the module boundary — is the only thing gating throughput.
+      type ChunkWork = {
+        module: string;
+        chunkPath: string;
+        chunkIdx: number;
+        chunkTotal: number;
+      };
+      const work: ChunkWork[] = [];
+      for (const module of job.modules) {
+        await maybeHeartbeat();
+        const initPaths = await blobListPaths(`${blobPrefix}/init/${module}/`);
+        const chunkPaths = initPaths.filter((p) => p.endsWith(".json"));
+        chunkPaths.forEach((chunkPath, ci) =>
+          work.push({
+            module,
+            chunkPath,
+            chunkIdx: ci + 1,
+            chunkTotal: chunkPaths.length,
+          }),
+        );
+      }
+
+      // Cap chunks processed simultaneously to bound blob reads + in-memory pools;
+      // actual LLM call concurrency is governed separately by the pool semaphore
+      // (~0.9× the account in-flight limit), so this only needs to be high enough
+      // that the slow "long-pole" chunks (those holding a 30KB+ metafield / long
+      // body_html) are all in flight at once instead of queuing behind a low cap.
+      // 64 keeps near-every chunk active for typical stores while the pool still
+      // protects the API from overload.
+      const CHUNK_CONCURRENCY = Math.max(
+        1,
+        Number(process.env.TRANSLATE_CHUNK_CONCURRENCY) || 64,
       );
-    }
 
-    // Cap chunks processed simultaneously to bound blob reads + in-memory pools;
-    // actual LLM call concurrency is governed separately by the pool semaphore
-    // (~0.9× the account in-flight limit), so this only needs to be high enough
-    // that the slow "long-pole" chunks (those holding a 30KB+ metafield / long
-    // body_html) are all in flight at once instead of queuing behind a low cap.
-    // 64 keeps near-every chunk active for typical stores while the pool still
-    // protects the API from overload.
-    const CHUNK_CONCURRENCY = Math.max(1, Number(process.env.TRANSLATE_CHUNK_CONCURRENCY) || 64);
-
-    await pAll(work, CHUNK_CONCURRENCY, async ({ module, chunkPath, chunkIdx, chunkTotal }) => {
-      {
-        const chunkStart = performance.now();
+      await pAll(
+        work,
+        CHUNK_CONCURRENCY,
+        async ({ module, chunkPath, chunkIdx, chunkTotal }: ChunkWork) => {
+          const chunkStart = performance.now();
 
         await maybeHeartbeat();
 
@@ -693,8 +708,8 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           usedTokens: liveTokens,
           currentModule: module,
         });
-      }
-    });
+        },
+      );
     }
 
     // 结清累积的额度欠账（无论正常跑完还是中断，尾款都要扣）。
