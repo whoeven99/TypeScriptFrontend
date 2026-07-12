@@ -2,7 +2,7 @@
  * 语言页状态口径：覆盖率结果 + 活跃任务中的翻译态。
  */
 export async function listLanguageCoverageCompat() {
-  const res = await fetch("/api/translate-v4/coverage?cache=1");
+  const res = await fetch("/api/translate-v4/coverage?cache=1&signals=minimal");
   return res.json();
 }
 
