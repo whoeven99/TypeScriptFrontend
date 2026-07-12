@@ -122,7 +122,7 @@ export interface AllLanguagesType {
 }
 
 export interface LanguagesDataType {
-  key: number;
+  key: string;
   name: string;
   src?: string[];
   localeName?: string;
@@ -168,6 +168,7 @@ function buildLanguageRowsFromShopLanguages(
       key: lang.locale,
       name: lang.name,
       locale: lang.locale,
+      primary: false,
       published: lang.published,
       localeName:
         languageLocaleData[lang.locale as keyof typeof languageLocaleData]
@@ -401,14 +402,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!deleteData:
       try {
-        if (deleteData.targets.length > 0) {
+        const targets = Array.isArray(deleteData?.targets) ? deleteData.targets : [];
+        if (targets.length > 0) {
           const promise = deleteData.targets.map(
             async (item: LanguagesDataType) => {
               return mutationShopLocaleDisable({
                 shop,
                 accessToken: accessToken as string,
                 language: item,
-                primaryLanguageCode: deleteData.primaryLanguageCode,
+                primaryLanguageCode:
+                  deleteData.primaryLanguageCode ?? deleteData.primaryLanguage ?? "",
               });
             },
           );
@@ -417,13 +420,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           invalidateShopLocalesCache(shop);
 
           // 迁移过的店：同步清掉 TSF 的目标语言行，避免 worker 继续给已删语言建任务
-          await deleteTargetLocales(
-            shop,
-            deleteData.targets.map((t: LanguagesDataType) => t.locale),
-          );
+          try {
+            await deleteTargetLocales(
+              shop,
+              targets.map((t: LanguagesDataType) => t.locale).filter(Boolean),
+            );
+          } catch (syncError) {
+            console.error("[language] deleteTargetLocales failed:", syncError);
+          }
 
-          return json({ data: data });
+          return json({ success: true, data });
         }
+        return json({ success: true, data: [] });
       } catch (error) {
         console.error("Error deleteData language:", error);
         return json({ error: "Error deleteData language" }, { status: 500 });
@@ -456,6 +464,7 @@ const Index = () => {
 
   const prevLocaleDataRef = useRef<string[]>();
   const deleteTraceRef = useRef<ClientLogTrace | null>(null);
+  const handledDeleteResponseRef = useRef<any>(null);
   const pollFailureLoggedRef = useRef(false);
   const skipWebPresencesResyncRef = useRef(true);
   const coverageRequestRef = useRef<Promise<void> | null>(null);
@@ -686,26 +695,41 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
-      const deleteData = deleteFetcher.data.data.reduce(
+      if (handledDeleteResponseRef.current === deleteFetcher.data) {
+        return;
+      }
+      handledDeleteResponseRef.current = deleteFetcher.data;
+
+      const settledResults = Array.isArray(deleteFetcher.data?.data)
+        ? deleteFetcher.data.data
+        : [];
+      const deletedLocales = settledResults.reduce(
         (acc: any[], item: any) => {
-          if (item.status === "fulfilled") {
+          if (item.status === "fulfilled" && item.value) {
             acc.push(item.value);
           } else {
-            shopify.toast.show(`Deletion failed for "${item.value}"`);
+            shopify.toast.show(
+              t("Delete failed"),
+            );
           }
           return acc;
         },
         [],
       );
-      const failedTargets = deleteFetcher.data.data
+      const failedTargets = settledResults
         .filter((item: any) => item.status !== "fulfilled")
         .map((item: any) => item.reason ?? "unknown");
+      if (!deleteFetcher.data?.success && settledResults.length === 0) {
+        failedTargets.push(deleteFetcher.data?.error ?? "unknown");
+      }
       // 从 data 中过滤掉成功删除的数据
       const newData = dataSource.filter(
-        (item) => !deleteData.includes(item.locale),
+        (item) => !deletedLocales.includes(item.locale),
       );
       // 更新表格数据
-      dispatch(setLanguageTableData(newData));
+      if (newData.length !== dataSource.length) {
+        dispatch(setLanguageTableData(newData));
+      }
       // 清空已选中项
       setSelectedRowKeys([]);
       // 结束加载状态
@@ -714,21 +738,23 @@ const Index = () => {
         level: failedTargets.length > 0 ? "warn" : "info",
         status: failedTargets.length > 0 ? "failure" : "success",
         context: {
-          deletedLocales: deleteData,
+          deletedLocales,
           failedTargets,
         },
       });
       deleteTraceRef.current = null;
-      shopify.toast.show(t("Delete successfully"));
-      fetcher.submit(
-        {
-          log: `${shop} 删除语言${deleteData}`,
-        },
-        {
-          method: "POST",
-          action: "/log",
-        },
-      );
+      if (deletedLocales.length > 0) {
+        shopify.toast.show(t("Delete successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 删除语言${deletedLocales.join(",")}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      }
     }
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
@@ -777,21 +803,28 @@ const Index = () => {
         lastStatusSignature = nextStatusSignature;
 
         let hasPendingStatus = false;
+        const updates: LanguagesDataType[] = [];
         for (const lang of dataSource) {
           const row = rows.find((r) =>
             sameTranslationLocale(r.locale, lang.locale),
           );
           const nextStatus = row ? statusFromCoverage(row) : lang.status;
+          const nextStatusDetail = statusDetailFromCoverage(row);
           if (nextStatus === 2) hasPendingStatus = true;
-          dispatch(
-            updateLanguageTableData([
-              {
-                locale: lang.locale,
-                status: nextStatus,
-                statusDetail: statusDetailFromCoverage(row),
-              } as LanguagesDataType,
-            ]),
-          );
+          if (
+            lang.status !== nextStatus ||
+            lang.statusDetail !== nextStatusDetail
+          ) {
+            updates.push({
+              locale: lang.locale,
+              status: nextStatus,
+              statusDetail: nextStatusDetail,
+            } as LanguagesDataType);
+          }
+        }
+
+        if (updates.length > 0) {
+          dispatch(updateLanguageTableData(updates));
         }
 
         if (pollFailureLoggedRef.current) {
@@ -1242,7 +1275,7 @@ const Index = () => {
       "deleteData",
       JSON.stringify({
         targets: targets,
-        primaryLanguage: source?.code,
+        primaryLanguageCode: source?.code,
       }),
     ); // 将选中的语言作为字符串发送
     deleteTraceRef.current = startClientLogTrace({

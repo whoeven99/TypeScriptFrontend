@@ -221,6 +221,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const initFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const handledDeleteResponseRef = useRef<any>(null);
 
   useEffect(() => {
     initFetcher.submit(
@@ -274,6 +275,11 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
+      if (handledDeleteResponseRef.current === deleteFetcher.data) {
+        return;
+      }
+      handledDeleteResponseRef.current = deleteFetcher.data;
+
       const payload = Array.isArray(deleteFetcher.data)
         ? { success: true, data: deleteFetcher.data }
         : deleteFetcher.data;
