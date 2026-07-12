@@ -167,7 +167,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       const profileMaterialJob = latestByTask.profile_material ?? null;
       const profileAiJob = latestByTask.profile_ai ?? null;
       const glossaryAiJob = latestByTask.glossary_ai ?? null;
-      const latest = jobs[0] ?? (await getLatestShopScanJob(shop));
+      const latestLegacyJob = await getLatestShopScanJob(shop);
+      const latest = jobs[0] ?? latestLegacyJob;
 
       if (latest) {
         const latestUpdated = [...jobs]
@@ -198,7 +199,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         };
       }
 
-      const profileArtifactJob = profileAiJob ?? profileMaterialJob;
+      const profileArtifactJob = profileAiJob ?? profileMaterialJob ?? latestLegacyJob;
       if (profileArtifactJob) {
         const profileArtifacts = await loadShopScanArtifacts(
           profileArtifactJob.blobPrefix,
@@ -212,12 +213,28 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         translationContextProfile = profileArtifacts.translationContextProfile;
       }
 
-      if (glossaryAiJob) {
+      const glossaryArtifactJob = glossaryAiJob ?? latestLegacyJob;
+      if (glossaryArtifactJob) {
         const glossaryArtifacts = await loadShopScanArtifacts(
-          glossaryAiJob.blobPrefix,
-          glossaryAiJob.summary,
+          glossaryArtifactJob.blobPrefix,
+          glossaryArtifactJob.summary,
         );
-        glossarySuggestions = glossaryArtifacts.glossarySuggestions;
+        if (glossarySuggestions.length === 0) {
+          glossarySuggestions = glossaryArtifacts.glossarySuggestions;
+        }
+      }
+
+      if (!scan && latestLegacyJob) {
+        scan = {
+          id: latestLegacyJob.id,
+          trigger: latestLegacyJob.trigger,
+          mode: latestLegacyJob.mode,
+          status: latestLegacyJob.status,
+          stages: latestLegacyJob.stages,
+          summary: latestLegacyJob.summary,
+          createdAt: latestLegacyJob.createdAt,
+          updatedAt: latestLegacyJob.updatedAt,
+        };
       }
 
       const debugPreview = buildShopScanDebugPreview({
@@ -416,10 +433,15 @@ export default function ShopProfilePage() {
     taskRuns,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
-  const revalidator = useRevalidator();
 
   const isActive = scan ? ACTIVE_STATUSES.includes(scan.status) : false;
   const isRescanning = fetcher.state !== "idle";
+  const taskRunByTask = useMemo(
+    () => Object.fromEntries(taskRuns.map((run) => [run.task, run])) as Partial<Record<ShopScanTask, TaskRunView>>,
+    [taskRuns],
+  );
+  const profileMaterialRun = taskRunByTask.profile_material;
+  const profileAiRun = taskRunByTask.profile_ai;
 
   // 扫描进行中时自动轮询刷新
   useEffect(() => {
@@ -1159,6 +1181,46 @@ export default function ShopProfilePage() {
               }
               style={{ boxShadow: "var(--app-shadow-card)" }}
             >
+              <Flex vertical gap={16}>
+                <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
+                  <Flex gap={6} wrap="wrap">
+                    <Tag {...SCAN_TAG_STYLE}>
+                      步骤 1: {TASK_LABEL.profile_material}
+                    </Tag>
+                    <Tag {...SCAN_TAG_STYLE}>
+                      步骤 2: {TASK_LABEL.profile_ai}
+                    </Tag>
+                    {profileMaterialRun ? (
+                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
+                        素材: {STATUS_LABEL[profileMaterialRun.status]}
+                      </Tag>
+                    ) : null}
+                    {profileAiRun ? (
+                      <Tag color={STATUS_COLOR[profileAiRun.status]}>
+                        AI: {STATUS_LABEL[profileAiRun.status]}
+                      </Tag>
+                    ) : null}
+                  </Flex>
+                  <Flex gap={8} wrap="wrap">
+                    <Button
+                      type="default"
+                      loading={isRescanning}
+                      disabled={!configured || isActive}
+                      onClick={() => handleScan("profile_material")}
+                    >
+                      扫描画像素材
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<RobotOutlined />}
+                      loading={isRescanning}
+                      disabled={!configured || isActive}
+                      onClick={() => handleScan("profile_ai")}
+                    >
+                      生成 Runtime 上下文
+                    </Button>
+                  </Flex>
+                </Flex>
               {translationContextProfile ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1227,6 +1289,7 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无 translation-context-profile.json（需完成新的扫描产物生成）" />
               )}
+              </Flex>
             </Card>
 
             <Card
@@ -1238,6 +1301,25 @@ export default function ShopProfilePage() {
               }
               style={{ boxShadow: "var(--app-shadow-card)" }}
             >
+              <Flex vertical gap={16}>
+                <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
+                  <Flex gap={6} wrap="wrap">
+                    <Tag {...SCAN_TAG_STYLE}>来源: {TASK_LABEL.profile_material}</Tag>
+                    {profileMaterialRun ? (
+                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
+                        {STATUS_LABEL[profileMaterialRun.status]}
+                      </Tag>
+                    ) : null}
+                  </Flex>
+                  <Button
+                    type="primary"
+                    loading={isRescanning}
+                    disabled={!configured || isActive}
+                    onClick={() => handleScan("profile_material")}
+                  >
+                    扫描 Theme 场景
+                  </Button>
+                </Flex>
               {themeSceneProfile ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1385,6 +1467,7 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无 theme scene profile（需完成新的扫描产物生成）" />
               )}
+              </Flex>
             </Card>
 
             <Card
@@ -1396,6 +1479,42 @@ export default function ShopProfilePage() {
               }
               style={{ boxShadow: "var(--app-shadow-card)" }}
             >
+              <Flex vertical gap={16}>
+                <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
+                  <Flex gap={6} wrap="wrap">
+                    <Tag {...SCAN_TAG_STYLE}>依赖 1: Theme Scene</Tag>
+                    <Tag {...SCAN_TAG_STYLE}>依赖 2: Runtime Context</Tag>
+                    {profileMaterialRun ? (
+                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
+                        素材: {STATUS_LABEL[profileMaterialRun.status]}
+                      </Tag>
+                    ) : null}
+                    {profileAiRun ? (
+                      <Tag color={STATUS_COLOR[profileAiRun.status]}>
+                        AI: {STATUS_LABEL[profileAiRun.status]}
+                      </Tag>
+                    ) : null}
+                  </Flex>
+                  <Flex gap={8} wrap="wrap">
+                    <Button
+                      type="default"
+                      loading={isRescanning}
+                      disabled={!configured || isActive}
+                      onClick={() => handleScan("profile_material")}
+                    >
+                      先扫描 Theme 素材
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<RobotOutlined />}
+                      loading={isRescanning}
+                      disabled={!configured || isActive}
+                      onClick={() => handleScan("profile_ai")}
+                    >
+                      再生成 Prompt 预览
+                    </Button>
+                  </Flex>
+                </Flex>
               {promptRoutingRows.length > 0 ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1541,6 +1660,7 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无 prompt routing preview（需先产出 theme scene hint）" />
               )}
+              </Flex>
             </Card>
 
             <Card
