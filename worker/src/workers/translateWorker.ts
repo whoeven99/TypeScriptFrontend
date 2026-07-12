@@ -32,6 +32,7 @@ import {
   resolveEngine,
   mergeEngineUsage,
   countFieldUnits,
+  classifyField,
   flushKeyStats,
   pAll,
   setShopQuotaCap,
@@ -39,6 +40,10 @@ import {
   type TranslateItem,
   type TranslatedResourceOutput,
 } from "../services/llmTranslate.js";
+import {
+  buildResolvedPromptContext,
+  selectPromptContextBlocks,
+} from "../../../packages/translation-core/dist/promptContextBuilder.js";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,
@@ -100,6 +105,7 @@ type TranslationContextProfileBlob = {
 type TranslationContextProfileData = NonNullable<TranslationContextProfileBlob>;
 type TerminologyProfileBlob = NonNullable<TranslationContextProfileData["terminologyProfile"]>;
 type ThemeSceneProfileBlob = NonNullable<TranslationContextProfileData["themeSceneProfile"]>;
+type PendingResource = { resourceId: string; fields: TranslateItem[] };
 
 const HEARTBEAT_THROTTLE_MS = 30_000;
 
@@ -206,6 +212,89 @@ function normalizeThemeSceneProfileContext(
     );
 
   return sceneHints.length > 0 ? { sceneHints } : null;
+}
+
+function reorderResourcesForPromptGrouping(args: {
+  resources: PendingResource[];
+  module: string;
+  target: string;
+  promptContextBase: {
+    module?: string | null;
+    shopContext?: TranslationContextProfileData["shopContext"];
+    terminology?: ReturnType<typeof normalizeTerminologyPromptContext>;
+    market?: TranslationContextProfileData["marketProfile"];
+    themeSceneProfile?: ReturnType<typeof normalizeThemeSceneProfileContext>;
+    modulePolicy?: {
+      module?: string | null;
+      tonePolicy?: string | null;
+      keywordPolicy?: string | null;
+      literalVsAdaptive?: string | null;
+    } | null;
+  };
+}): PendingResource[] {
+  const reordered = args.resources.map((resource) => {
+    const rankedFields = resource.fields.map((field, index) => {
+      const klass = classifyField(field.key, field.value, field.shopifyType);
+      if (klass === "skip") {
+        return { field, index, groupKey: `zzzz|skip|${field.key}` };
+      }
+
+      const resolved = buildResolvedPromptContext({
+        module: args.module,
+        resourceId: resource.resourceId,
+        key: field.key,
+        contentClass: klass,
+        shopifyType: field.shopifyType,
+        base: args.promptContextBase,
+      });
+      const selected = selectPromptContextBlocks(resolved, {
+        sourceText: field.value,
+        targetLocale: args.target,
+      });
+      const footprint =
+        [
+          selected.shopContext ? "shop" : null,
+          selected.terminology ? "term" : null,
+          selected.market ? "market" : null,
+          selected.modulePolicy ? "policy" : null,
+        ]
+          .filter(Boolean)
+          .join("+") || "scene_only";
+
+      return {
+        field,
+        index,
+        groupKey: [
+          resolved.promptProfileId,
+          resolved.scene,
+          resolved.role ?? "none",
+          klass,
+          footprint,
+          field.key.toLowerCase(),
+        ].join("|"),
+      };
+    });
+
+    rankedFields.sort((a, b) => {
+      if (a.groupKey !== b.groupKey) return a.groupKey.localeCompare(b.groupKey);
+      return a.index - b.index;
+    });
+
+    return {
+      resourceId: resource.resourceId,
+      fields: rankedFields.map((entry) => entry.field),
+      resourceGroupKey: rankedFields[0]?.groupKey ?? `zzzz|${resource.resourceId}`,
+    };
+  });
+
+  reordered.sort((a, b) => {
+    if (a.resourceGroupKey !== b.resourceGroupKey) {
+      return a.resourceGroupKey.localeCompare(b.resourceGroupKey);
+    }
+    return a.resourceId.localeCompare(b.resourceId);
+  });
+
+  return reordered.map(({ resourceId, fields }) => ({ resourceId, fields }));
 }
 /** Serialize shared counter + Redis updates across concurrent chunk handlers. */
 function createExclusiveRunner() {
@@ -806,8 +895,31 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             });
           };
 
+          const promptContextBase = {
+            module,
+            shopContext: translationContextProfile?.shopContext ?? null,
+            terminology: normalizeTerminologyPromptContext(
+              translationContextProfile?.terminologyProfile,
+            ),
+            market: translationContextProfile?.marketProfile ?? null,
+            themeSceneProfile: normalizeThemeSceneProfileContext(
+              translationContextProfile?.themeSceneProfile,
+            ),
+            modulePolicy: modulePolicyByModule.get(module.toUpperCase()) ?? null,
+          };
+
+          const orderedPendingResources = reorderResourcesForPromptGrouping({
+            resources: pendingResources.map((r) => ({
+              resourceId: r.resourceId,
+              fields: r.fields,
+            })),
+            module,
+            target,
+            promptContextBase,
+          });
+
           const { usage } = await translateResources(
-            pendingResources.map((r) => ({ resourceId: r.resourceId, fields: r.fields })),
+            orderedPendingResources,
             source,
             target,
             aiModel,
@@ -817,18 +929,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             shouldAbort,
             {
               translateHandle: job.isHandle,
-              promptContext: {
-                module,
-                shopContext: translationContextProfile?.shopContext ?? null,
-                terminology: normalizeTerminologyPromptContext(
-                  translationContextProfile?.terminologyProfile,
-                ),
-                market: translationContextProfile?.marketProfile ?? null,
-                themeSceneProfile: normalizeThemeSceneProfileContext(
-                  translationContextProfile?.themeSceneProfile,
-                ),
-                modulePolicy: modulePolicyByModule.get(module.toUpperCase()) ?? null,
-              },
+              promptContext: promptContextBase,
             },
           );
           mergeEngineUsage(engineUsage, usage);
