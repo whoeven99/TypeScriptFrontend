@@ -115,6 +115,34 @@ type SubscriptionPayload = {
   interval?: string;
 };
 
+async function findRenewalLogForPeriod(params: {
+  shop: string;
+  referenceId: string;
+  nextPeriodEnd: Date;
+}) {
+  const { shop, referenceId, nextPeriodEnd } = params;
+  const nextPeriodEndIso = nextPeriodEnd.toISOString();
+
+  // Turso/SQLite 不支持 Prisma JsonFilter.path 数组写法；先取候选，再内存比对 metadata.nextPeriodEnd。
+  const rows = await prisma.billingLog.findMany({
+    where: {
+      shop,
+      eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
+      referenceId,
+    },
+    select: { id: true, metadata: true },
+    take: 50,
+    orderBy: { createdAt: "desc" },
+  });
+
+  return (
+    rows.find((row) => {
+      const meta = row.metadata as { nextPeriodEnd?: string } | null;
+      return meta?.nextPeriodEnd === nextPeriodEndIso;
+    }) ?? null
+  );
+}
+
 /**
  * tsf 用户订阅 webhook（APP_SUBSCRIPTIONS_UPDATE）：ACTIVE 激活/续费，CANCELLED/EXPIRED 取消。
  * 账本函数内置幂等（referenceId=订阅 GID），webhook 重发安全。
@@ -186,23 +214,12 @@ export async function handleTsfSubscriptionWebhook(params: {
         },
       });
 
-  // Turso/SQLite 不支持 Prisma JsonFilter.path 数组写法；内存比对 metadata.nextPeriodEnd。
   const priorRenewalForPeriod = isRenewal
-    ? (
-        await prisma.billingLog.findMany({
-          where: {
-            shop: params.shop,
-            eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
-            referenceId: gid,
-          },
-          select: { id: true, metadata: true },
-          take: 50,
-          orderBy: { createdAt: "desc" },
-        })
-      ).find((row) => {
-        const meta = row.metadata as { nextPeriodEnd?: string } | null;
-        return meta?.nextPeriodEnd === currentPeriodEnd.toISOString();
-      }) ?? null
+    ? await findRenewalLogForPeriod({
+        shop: params.shop,
+        referenceId: gid,
+        nextPeriodEnd: currentPeriodEnd,
+      })
     : null;
 
   const priorRenewalCount =
