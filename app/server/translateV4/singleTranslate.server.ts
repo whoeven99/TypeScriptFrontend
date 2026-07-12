@@ -39,7 +39,25 @@ export async function translateSingleText(
     }),
     getLatestShopScanJob(args.shop).catch(() => null),
   ]);
-  const artifacts = await loadShopScanArtifacts(latestScan?.blobPrefix, latestScan?.summary);
+  const artifacts = await loadShopScanArtifacts(
+    latestScan?.blobPrefix,
+    latestScan?.summary,
+  ).catch((error) => {
+    console.warn(
+      `[single] ${args.shop} failed to load scan artifacts, fallback to base context:`,
+      error,
+    );
+    return {
+      strategy: null,
+      glossarySuggestions: [],
+      understanding: null,
+      markets: [],
+      signals: null,
+      themeSceneProfile: null,
+      translationContextProfile: null,
+      source: "none" as const,
+    };
+  });
   const scanContext = artifacts.translationContextProfile;
   const normalizedModule = args.module?.trim().toUpperCase() || null;
   const modulePolicy =
