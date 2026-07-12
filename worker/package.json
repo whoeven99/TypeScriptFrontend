@@ -15,6 +15,7 @@
     "cleanup:stale-hints:apply": "node scripts/cleanup-stale-hints.mjs --apply"
   },
   "dependencies": {
+    "@ciwi/translation-core": "file:../packages/translation-core",
     "@azure/cosmos": "^4.9.3",
     "@azure/storage-blob": "^12.31.0",
     "@libsql/client": "^0.17.3",

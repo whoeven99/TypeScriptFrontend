@@ -10,8 +10,8 @@
  * 覆盖范围（见 LOCAL_COUNT_SPEC + COVERAGE_COUNT_LABELS）：与管理翻译汇总页
  * 各卡片累加口径一致（不含 Policies）；id-based 类型亦用 translatableResources 枚举。
  */
-import { shouldIncludeFieldV2 } from "./translationFilter";
-import { isBlankValue } from "./translationFilter/v3Base";
+import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
+import { isBlankValue } from "@ciwi/translation-core/translation-filter/v3Base";
 import { getTranslateV4RedisClient } from "./redis.server";
 
 /**

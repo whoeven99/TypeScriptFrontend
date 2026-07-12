@@ -64,6 +64,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `app/store/*` | Redux store modules, mostly for older pages. |
 | `app/components/*` | Shared React components, including manage-translation editors and support chat. |
 | `app/ui/*` | Shared UI wrappers/theme/message helpers. |
+| `packages/translation-core/*` | Shared translation engine used by both the Remix app and Worker. |
 | `prisma/schema.prisma` | Turso/Prisma model source. |
 | `prisma/migrations/*` | SQL migrations. |
 | `worker/src/*` | Background workers and services for translation, shop scan, email, Cosmos/Blob/Redis/LLM. |
@@ -85,8 +86,6 @@ Package scripts:
 - `npm run worker:build`: build worker TypeScript.
 - `npm run worker:dev` / `npm run worker:start`: run the worker package in watch
   mode or from compiled `worker/dist`.
-- `npm run check:filter`: verify the app-side translation-filter copy against
-  its Spark provenance file; it does not compare the TSF app and worker copies.
 - `npm run lint`: repository ESLint check; existing repository-wide noise may
   make a focused build/type check more useful for small changes.
 - `npm run turso:migrate:test` / `npm run turso:migrate:prod`: run Turso migrations.
@@ -97,7 +96,7 @@ Validation choices:
 - Prisma schema or migration: `npx prisma generate` and `npx prisma validate`.
 - App route or UI: `npm run build`.
 - Worker code: `npm run worker:build`.
-- Translation filter rules: `npm run check:filter`.
+- Shared translation logic: `npm run core:build`.
 - Worker module catalog: `npm run check:auto-translate-modules --prefix worker`.
 - Billing/quota: focused grep or script validation across TSF paths.
 
@@ -200,11 +199,10 @@ Core files:
   `worker/src/services/moduleCatalog.ts`.
 - Single-field translation: `app/routes/api.translate-v4.single.ts` ->
   `app/server/translateV4/singleTranslate.server.ts` ->
-  `worker/src/services/syncTranslate.ts` / `llmTranslate.ts`.
-- Shared translation safeguards: `htmlTranslate.server.ts`,
-  `jsonExtractRules.server.ts`, `placeholderMask.server.ts`,
-  `targetLanguagePrompt.server.ts`, and `translateQuality.server.ts`, mirrored
-  by the worker service equivalents used in batch translation.
+  `packages/translation-core/src/syncTranslate.ts` / `llmTranslate.ts`.
+- Shared translation rules and safeguards live in
+  `packages/translation-core/src/*`. App-side `*.server.ts` compatibility files
+  and Worker `llmTranslate.ts` / `syncTranslate.ts` are thin adapters/re-exports.
 
 Data flow:
 
@@ -234,21 +232,16 @@ Common edits:
   and `api.translate-v4.coverage.ts`.
 - Change copy: update locale JSON and any helper in `v4I18n.ts`.
 
-### Translation Filters
+### Translation Core And Filters
 
-- App-side generated copy: `app/server/translateV4/translationFilter/*` plus
-  `.synced-from-spark.json` provenance.
-- TSF worker runtime copy: `worker/src/services/translationFilter/*`.
-- Declared source of truth for the app-side copy: sibling repo
-  `../Spark/worker/src/services/translationFilter/*`.
-- Sync/check script: `scripts/sync-translation-filter.mjs`; `npm run sync:filter`
-  copies Spark into the app-side directory and rewrites provenance, while
-  `npm run check:filter` checks only that generated app copy.
+- Source of truth: `packages/translation-core/src/*`.
+- Filter entry: `packages/translation-core/src/translationFilter/index.ts`.
+- Runtime ports: `packages/translation-core/src/runtime.ts`.
+- App adapter: `app/server/translateV4/translationCoreRuntime.server.ts`.
+- Worker adapter: `worker/src/services/translationCoreRuntime.ts`.
 
-Do not hand-edit the generated app-side directory. Make rule changes in the
-Spark source, sync them, and separately inspect/update the TSF worker runtime
-copy when the batch worker needs the same behavior. Do not assume
-`npm run check:filter` proves app/worker parity.
+Do not restore App/Worker/Spark copies of these rules. Change the core package,
+then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
 
 Filter decision chain:
 
@@ -297,17 +290,12 @@ Services:
 - `worker/src/services/redisV4.ts`: progress, **split auto/manual hint queues**, control keys.
 - `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
-- `worker/src/services/llmTranslate.ts`: LLM routing, concurrency, usage.
-- `worker/src/services/translationMemory.ts`: Redis translation memory keyed by
-  field identity and normalized source value; single-field manual translation
-  skips cache reads but can write successful output back.
-- `worker/src/services/translateQuality.ts`, `placeholderMask.ts`,
-  `translationFieldLimits.ts`: wrong-language/untranslated checks, protected
-  token restoration, and Shopify title length enforcement.
-- `worker/src/services/htmlTranslate.ts`, `jsonExtractRules.ts`:
-  structure-preserving HTML/JSON extraction and reconstruction.
-- `worker/src/services/targetLanguagePrompt.ts`, `userFacingMessages.ts`:
-  locale-specific prompt constraints and stable user-facing status messages.
+- `worker/src/services/llmTranslate.ts`, `syncTranslate.ts`: thin Worker entry
+  points into `@ciwi/translation-core`.
+- `packages/translation-core/src/*`: LLM routing, translation memory, glossary
+  injection, HTML/JSON handling, filters, quality rules, placeholders, prompt
+  constraints, and field limits shared by App and Worker.
+- `worker/src/services/userFacingMessages.ts`: Worker status messages.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
@@ -629,7 +617,7 @@ For "合入PR然后发布测试环境", the script will:
 | Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
 | Support chat / notifications | `app/components/SupportChatWidget.tsx` | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
-| Translation filter rule | sibling Spark filter source | `scripts/sync-translation-filter.mjs`, app generated copy, TSF worker runtime copy |
+| Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
 | Shopify auth/API version | `app/shopify.server.ts` | `app/routes/app.tsx`, auth and webhook routes |
 | Deploy config | `shopify.app*.toml` | `Dockerfile*`, Render/GitHub Actions config |
@@ -640,8 +628,6 @@ Package-backed root scripts:
 
 - `scripts/translate.js`: `npm run translate`, i18n helper.
 - `scripts/turso-migrate.cjs`: `npm run turso:migrate:test|prod`.
-- `scripts/sync-translation-filter.mjs`: `npm run sync:filter` and
-  `npm run check:filter`.
 
 Operational root scripts:
 
