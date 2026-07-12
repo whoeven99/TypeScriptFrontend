@@ -395,6 +395,7 @@ const DATA_TASKS: ShopScanTask[] = [
   "glossary_samples",
 ];
 const AI_TASKS: ShopScanTask[] = ["profile_ai", "glossary_ai"];
+const TABLE_SCROLL_X = { x: "max-content" as const };
 
 function mapJobStatusToStage(status: ShopScanStatus | null | undefined): ShopScanStageState {
   switch (status) {
@@ -682,6 +683,7 @@ export default function ShopProfilePage() {
                 {taskRuns.length > 0 ? (
                   <Table
                     size="small"
+                    scroll={TABLE_SCROLL_X}
                     pagination={false}
                     dataSource={taskRuns.map((run) => ({ key: run.id, ...run }))}
                     columns={[
@@ -984,10 +986,11 @@ export default function ShopProfilePage() {
                   </Text>
                   <Table
                     size="small"
+                    scroll={TABLE_SCROLL_X}
                     pagination={false}
                     dataSource={marketRows}
                     columns={[
-                      { title: "市场", dataIndex: "name", key: "name", ellipsis: true },
+                      { title: "市场", dataIndex: "name", key: "name", width: 220, ellipsis: true },
                       {
                         title: "Handle",
                         dataIndex: "handle",
@@ -1104,6 +1107,7 @@ export default function ShopProfilePage() {
                       </Text>
                       <Table
                         size="small"
+                        scroll={TABLE_SCROLL_X}
                         pagination={{ pageSize: 8, hideOnSinglePage: true }}
                         style={{ marginTop: 8 }}
                         dataSource={termRows}
@@ -1141,6 +1145,7 @@ export default function ShopProfilePage() {
                       </Text>
                       <Table
                         size="small"
+                        scroll={TABLE_SCROLL_X}
                         pagination={{ pageSize: 8, hideOnSinglePage: true }}
                         style={{ marginTop: 8 }}
                         dataSource={phraseRows}
@@ -1189,6 +1194,7 @@ export default function ShopProfilePage() {
                       </Text>
                       <Table
                         size="small"
+                        scroll={TABLE_SCROLL_X}
                         pagination={{ pageSize: 8, hideOnSinglePage: true }}
                         style={{ marginTop: 8 }}
                         dataSource={sampleRows}
@@ -1443,6 +1449,7 @@ export default function ShopProfilePage() {
                     </Text>
                     <Table
                       size="small"
+                      scroll={{ x: 1280 }}
                       pagination={{ pageSize: 8, hideOnSinglePage: true }}
                       style={{ marginTop: 8 }}
                       dataSource={sceneHintRows}
@@ -1451,13 +1458,14 @@ export default function ShopProfilePage() {
                           title: "模块",
                           dataIndex: "module",
                           key: "module",
-                          width: 140,
+                          width: 220,
                           ellipsis: true,
                         },
                         {
                           title: "Key Pattern",
                           dataIndex: "keyPattern",
                           key: "keyPattern",
+                          width: 320,
                           ellipsis: true,
                         },
                         {
@@ -1480,7 +1488,7 @@ export default function ShopProfilePage() {
                           title: "Scene",
                           dataIndex: "scene",
                           key: "scene",
-                          width: 160,
+                          width: 140,
                           render: (value: string) => <Tag color="blue">{value}</Tag>,
                         },
                         {
@@ -1574,12 +1582,14 @@ export default function ShopProfilePage() {
                   </Text>
                   <Table
                     size="small"
+                      scroll={{ x: 1320 }}
                     pagination={{ pageSize: 8, hideOnSinglePage: true }}
                     dataSource={promptRoutingRows}
                     columns={[
                       {
                         title: "模块 / Key",
                         key: "target",
+                        width: 480,
                         render: (_: unknown, row: PromptRoutingPreviewRow) => (
                           <Flex vertical gap={2}>
                             <Text strong style={{ fontSize: 12 }}>
@@ -1602,7 +1612,7 @@ export default function ShopProfilePage() {
                       {
                         title: "Scan -> Runtime",
                         key: "scene",
-                        width: 260,
+                        width: 240,
                         render: (_: unknown, row: PromptRoutingPreviewRow) => (
                           <Flex vertical gap={2}>
                             <Text style={{ fontSize: 12 }}>
@@ -1618,13 +1628,13 @@ export default function ShopProfilePage() {
                         title: "Profile",
                         dataIndex: "promptProfileId",
                         key: "promptProfileId",
-                        width: 150,
+                        width: 130,
                         render: (value: string) => <Tag color="purple">{value}</Tag>,
                       },
                       {
                         title: "Content",
                         key: "contentClass",
-                        width: 136,
+                        width: 140,
                         render: (_: unknown, row: PromptRoutingPreviewRow) => (
                           <Flex vertical gap={2}>
                             <Text style={{ fontSize: 12 }}>{row.contentClass}</Text>
@@ -1637,7 +1647,7 @@ export default function ShopProfilePage() {
                       {
                         title: "提示",
                         key: "hint",
-                        width: 170,
+                        width: 200,
                         render: (_: unknown, row: PromptRoutingPreviewRow) => (
                           <Flex vertical gap={2}>
                             <Text style={{ fontSize: 12 }}>
@@ -1656,7 +1666,7 @@ export default function ShopProfilePage() {
                         title: "置信度",
                         dataIndex: "confidence",
                         key: "confidence",
-                        width: 88,
+                        width: 90,
                         align: "right",
                         render: (value: number) => value.toFixed(2),
                       },
@@ -1830,6 +1840,7 @@ export default function ShopProfilePage() {
                       </Text>
                       <Table
                         size="small"
+                        scroll={TABLE_SCROLL_X}
                         pagination={false}
                         style={{ marginTop: 8 }}
                         dataSource={strategy.preferredTerms.map((t, i) => ({
@@ -1857,6 +1868,7 @@ export default function ShopProfilePage() {
                       </Text>
                       <Table
                         size="small"
+                        scroll={{ x: 920 }}
                         pagination={false}
                         style={{ marginTop: 8 }}
                         dataSource={moduleHintRows}
@@ -1923,6 +1935,7 @@ export default function ShopProfilePage() {
                   </Row>
                   <Table
                     size="small"
+                    scroll={TABLE_SCROLL_X}
                     pagination={false}
                     dataSource={moduleRows}
                     columns={[
@@ -1964,6 +1977,7 @@ export default function ShopProfilePage() {
                   {coverageRows.length > 0 ? (
                     <Table
                       size="small"
+                      scroll={{ x: 760 }}
                       pagination={false}
                       dataSource={coverageRows}
                       columns={[
@@ -2055,6 +2069,7 @@ export default function ShopProfilePage() {
                 {glossaryRows.length > 0 ? (
                   <Table
                     size="small"
+                    scroll={TABLE_SCROLL_X}
                     pagination={{ pageSize: 10, hideOnSinglePage: true }}
                     dataSource={glossaryRows}
                     columns={[
