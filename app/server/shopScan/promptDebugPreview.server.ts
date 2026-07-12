@@ -122,7 +122,9 @@ export function buildShopScanDebugPreview(args: {
           modulePolicy,
         },
       });
-      const block = buildPromptContextBlock(resolved);
+      const block = buildPromptContextBlock(resolved, {
+        sourceText: row.keyPattern,
+      });
       if (!block) return null;
       return {
         key: `block-${row.key}-${index}`,

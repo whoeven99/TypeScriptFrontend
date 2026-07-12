@@ -64,6 +64,13 @@ export type ResolvedTranslationPromptContext = {
     market: MarketPromptContext | null;
     modulePolicy: ModulePolicyContext | null;
 };
+export type PromptContextBlockSelection = {
+    shopContext: boolean;
+    terminology: boolean;
+    market: boolean;
+    modulePolicy: boolean;
+    scenePolicy: true;
+};
 export declare function buildResolvedPromptContext(args: {
     module?: string | null;
     resourceId?: string | null;
@@ -72,5 +79,12 @@ export declare function buildResolvedPromptContext(args: {
     shopifyType?: string | null;
     base?: TranslationPromptContextInput | null;
 }): ResolvedTranslationPromptContext;
-export declare function buildPromptContextBlock(context: ResolvedTranslationPromptContext): string | null;
+export declare function buildPromptContextBlock(context: ResolvedTranslationPromptContext, options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+}): string | null;
+export declare function selectPromptContextBlocks(context: ResolvedTranslationPromptContext, options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+}): PromptContextBlockSelection;
 //# sourceMappingURL=promptContextBuilder.d.ts.map

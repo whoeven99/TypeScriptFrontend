@@ -2997,7 +2997,11 @@ export async function translateResources(
         shopifyType: f.shopifyType,
         base: options?.promptContext,
       });
-      const profileBlock = buildPromptContextBlock(promptContext) ?? "";
+      const profileBlock =
+        buildPromptContextBlock(promptContext, {
+          sourceText: f.value,
+          targetLocale: target,
+        }) ?? "";
       const cacheModel = buildCacheModelKey(engineModel(order[0], aiModel), profileBlock);
       const poolKey = buildPoolKey(order, false, profileBlock);
       fieldWorks.push({

@@ -77,6 +77,14 @@ export type ResolvedTranslationPromptContext = {
   modulePolicy: ModulePolicyContext | null;
 };
 
+export type PromptContextBlockSelection = {
+  shopContext: boolean;
+  terminology: boolean;
+  market: boolean;
+  modulePolicy: boolean;
+  scenePolicy: true;
+};
+
 const MAX_KEYWORDS = 12;
 const MAX_SELLING_POINTS = 5;
 const MAX_DESCRIPTION_CHARS = 280;
@@ -128,16 +136,82 @@ export function buildResolvedPromptContext(args: {
 
 export function buildPromptContextBlock(
   context: ResolvedTranslationPromptContext,
+  options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+  },
 ): string | null {
+  const selection = selectPromptContextBlocks(context, options);
   const blocks = [
-    buildShopContextBlock(context.shopContext),
-    buildTerminologyBlock(context.terminology),
-    buildMarketContextBlock(context.market),
+    selection.shopContext ? buildShopContextBlock(context.shopContext) : null,
+    selection.terminology
+      ? buildTerminologyBlock(context.terminology, options?.sourceText)
+      : null,
+    selection.market ? buildMarketContextBlock(context.market) : null,
     buildScenePolicyBlock(context),
-    buildModulePolicyBlock(context.modulePolicy),
+    selection.modulePolicy ? buildModulePolicyBlock(context.modulePolicy) : null,
   ].filter(Boolean);
 
   return blocks.length > 0 ? blocks.join("\n\n") : null;
+}
+
+export function selectPromptContextBlocks(
+  context: ResolvedTranslationPromptContext,
+  options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+  },
+): PromptContextBlockSelection {
+  const sourceText = trim(options?.sourceText) ?? "";
+  const hasText = sourceText.length > 0;
+  const isShortUiCopy = hasText ? looksLikeShortUiCopy(sourceText, context.role) : false;
+  const isRegionalLocale = hasRegionalVariant(options?.targetLocale);
+  const terminologyTriggered = shouldInjectTerminology(context.terminology, sourceText);
+
+  const sceneAllowsBrandContext = ![
+    "navigation_ui",
+    "footer_info",
+    "theme_setting_copy",
+    "app_embedded_copy",
+    "config_like",
+    "transactional_template",
+    "strict_slug",
+  ].includes(context.scene);
+
+  const shopContext =
+    Boolean(context.shopContext) &&
+    sceneAllowsBrandContext &&
+    !isShortUiCopy &&
+    (context.scene === "marketing_hero" ||
+      context.scene === "announcement_bar" ||
+      context.scene === "editorial_copy" ||
+      context.scene === "seo_copy" ||
+      (context.scene === "product_catalog" && shouldUseCatalogBrandContext(sourceText, context.role)));
+
+  const terminology =
+    Boolean(context.terminology) &&
+    terminologyTriggered &&
+    context.scene !== "config_like";
+
+  const market =
+    Boolean(context.market) &&
+    (isRegionalLocale ||
+      ["marketing_hero", "announcement_bar", "editorial_copy", "seo_copy"].includes(
+        context.scene,
+      ));
+
+  const modulePolicy =
+    Boolean(context.modulePolicy) &&
+    !["navigation_ui", "footer_info"].includes(context.scene) &&
+    (!isShortUiCopy || ["transactional_template", "config_like"].includes(context.scene));
+
+  return {
+    shopContext,
+    terminology,
+    market,
+    modulePolicy,
+    scenePolicy: true,
+  };
 }
 
 function buildShopContextBlock(profile: ShopPromptContext | null): string | null {
@@ -196,7 +270,10 @@ function buildScenePolicyBlock(context: ResolvedTranslationPromptContext): strin
   ].join("\n");
 }
 
-function buildTerminologyBlock(terminology: TerminologyPromptContext | null): string | null {
+function buildTerminologyBlock(
+  terminology: TerminologyPromptContext | null,
+  sourceText?: string | null,
+): string | null {
   if (!terminology) return null;
 
   const brandTerms = cleanList(terminology.brandTerms, MAX_TERMS);
@@ -212,24 +289,34 @@ function buildTerminologyBlock(terminology: TerminologyPromptContext | null): st
     .filter((value): value is string => Boolean(value))
     .slice(0, MAX_PREFERRED_TERMS);
 
+  const normalizedSource = normalizeMatchBlob(sourceText);
+  const filteredBrandTerms = filterTriggeredTerms(brandTerms, normalizedSource);
+  const filteredDoNotTranslateTerms = filterTriggeredTerms(doNotTranslateTerms, normalizedSource);
+  const filteredSeoTerms = filterTriggeredTerms(seoTerms, normalizedSource);
+  const filteredPreferredTerms = preferredTerms.filter((entry) =>
+    normalizedSource ? matchesPromptTerm(normalizedSource, entry.split(" -> ")[0] ?? entry) : true,
+  );
+
   if (
-    brandTerms.length === 0 &&
-    doNotTranslateTerms.length === 0 &&
-    seoTerms.length === 0 &&
-    preferredTerms.length === 0
+    filteredBrandTerms.length === 0 &&
+    filteredDoNotTranslateTerms.length === 0 &&
+    filteredSeoTerms.length === 0 &&
+    filteredPreferredTerms.length === 0
   ) {
     return null;
   }
 
   const lines: string[] = [];
-  if (brandTerms.length > 0) lines.push(`- Brand terms: ${brandTerms.join(", ")}`);
-  if (doNotTranslateTerms.length > 0) {
-    lines.push(`- Keep unchanged: ${doNotTranslateTerms.join(", ")}`);
+  if (filteredBrandTerms.length > 0) {
+    lines.push(`- Brand terms: ${filteredBrandTerms.join(", ")}`);
   }
-  if (preferredTerms.length > 0) {
-    lines.push(`- Preferred translations: ${preferredTerms.join("; ")}`);
+  if (filteredDoNotTranslateTerms.length > 0) {
+    lines.push(`- Keep unchanged: ${filteredDoNotTranslateTerms.join(", ")}`);
   }
-  if (seoTerms.length > 0) lines.push(`- SEO terms: ${seoTerms.join(", ")}`);
+  if (filteredPreferredTerms.length > 0) {
+    lines.push(`- Preferred translations: ${filteredPreferredTerms.join("; ")}`);
+  }
+  if (filteredSeoTerms.length > 0) lines.push(`- SEO terms: ${filteredSeoTerms.join(", ")}`);
 
   return [
     "Terminology policy (apply consistently; do NOT translate or output this block):",
@@ -521,6 +608,72 @@ function normalizeShopContext(profile: ShopPromptContext | null | undefined): Sh
     return null;
   }
   return profile;
+}
+
+function shouldUseCatalogBrandContext(
+  sourceText: string,
+  role: TranslationRole | null,
+): boolean {
+  if (!sourceText) return false;
+  if (role === "title" || role === "description" || role === "body" || role === "caption") {
+    return true;
+  }
+  return sourceText.length >= 18 || countWords(sourceText) >= 4;
+}
+
+function shouldInjectTerminology(
+  terminology: TerminologyPromptContext | null,
+  sourceText: string,
+): boolean {
+  if (!terminology || !sourceText) return false;
+  const normalizedSource = normalizeMatchBlob(sourceText);
+  if (!normalizedSource) return false;
+  const terms = [
+    ...(terminology.brandTerms ?? []),
+    ...(terminology.doNotTranslateTerms ?? []),
+    ...(terminology.preferredTerms ?? []).map((entry) => entry?.source ?? ""),
+    ...(terminology.seoTerms ?? []),
+  ];
+  return terms.some((term) => matchesPromptTerm(normalizedSource, term));
+}
+
+function filterTriggeredTerms(terms: string[], normalizedSource: string): string[] {
+  if (!normalizedSource) return [];
+  return terms.filter((term) => matchesPromptTerm(normalizedSource, term));
+}
+
+function matchesPromptTerm(normalizedSource: string, term: string): boolean {
+  const normalizedTerm = normalizeMatchBlob(term);
+  if (!normalizedTerm || normalizedTerm.length < 2) return false;
+  return normalizedSource.includes(normalizedTerm);
+}
+
+function normalizeMatchBlob(value: string | null | undefined): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s_-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasRegionalVariant(locale: string | null | undefined): boolean {
+  const normalized = (locale ?? "").trim();
+  return /^[a-z]{2,3}[-_][a-z0-9]{2,}$/i.test(normalized);
+}
+
+function looksLikeShortUiCopy(sourceText: string, role: TranslationRole | null): boolean {
+  if (role === "button_label" || role === "menu_label" || role === "label" || role === "placeholder") {
+    return true;
+  }
+  const words = countWords(sourceText);
+  return sourceText.length <= 32 && words <= 4;
+}
+
+function countWords(value: string): number {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
 }
 
 function normalizeTerminology(
