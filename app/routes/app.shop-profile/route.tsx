@@ -3,8 +3,8 @@ import { useFetcher, useLoaderData, useRevalidator } from "@remix-run/react";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import {
-  Card,
   Col,
+  type DescriptionsProps,
   Descriptions,
   Divider,
   Empty,
@@ -14,6 +14,7 @@ import {
   Statistic,
   Table,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
 import {
@@ -33,8 +34,11 @@ import {
   ShopOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import Button from "~/ui/components/AppButton";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
+import AppStatusBadge from "~/ui/components/AppStatusBadge";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
 import {
@@ -48,7 +52,6 @@ import {
 } from "~/server/shopScan/cosmos.server";
 import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
-import { buildShopProfilePromptBlock } from "~/server/translateV4/shopProfilePrompt.server";
 import {
   loadShopScanArtifacts,
   type GlossarySuggestionView,
@@ -59,13 +62,8 @@ import {
   type TerminologyStrategyView,
   type TranslationContextProfileView,
 } from "~/server/shopScan/artifacts.server";
-import {
-  buildShopScanDebugPreview,
-  type PromptBlockPreview,
-  type PromptRoutingPreviewRow,
-} from "~/server/shopScan/promptDebugPreview.server";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 type ProfileView = {
   shopName: string | null;
@@ -93,7 +91,6 @@ type LoaderData = {
   blobConfigured: boolean;
   profile: ProfileView | null;
   scan: ScanView | null;
-  promptBlock: string | null;
   strategy: TerminologyStrategyView | null;
   glossarySuggestions: GlossarySuggestionView[];
   understanding: ShopUnderstandingView | null;
@@ -101,8 +98,6 @@ type LoaderData = {
   signals: ShopSignalsView | null;
   themeSceneProfile: ThemeSceneProfileView | null;
   translationContextProfile: TranslationContextProfileView | null;
-  promptRoutingRows: PromptRoutingPreviewRow[];
-  promptBlockPreviews: PromptBlockPreview[];
   taskRuns: TaskRunView[];
   artifactSource: "cosmos" | "blob" | "mixed" | "none";
 };
@@ -128,8 +123,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let signals: ShopSignalsView | null = null;
   let themeSceneProfile: ThemeSceneProfileView | null = null;
   let translationContextProfile: TranslationContextProfileView | null = null;
-  let promptRoutingRows: PromptRoutingPreviewRow[] = [];
-  let promptBlockPreviews: PromptBlockPreview[] = [];
   let taskRuns: TaskRunView[] = [];
   let artifactSource: LoaderData["artifactSource"] = "none";
 
@@ -242,26 +235,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           updatedAt: latestLegacyJob.updatedAt,
         };
       }
-
-      const debugPreview = buildShopScanDebugPreview({
-        themeSceneProfile,
-        translationContextProfile,
-      });
-      promptRoutingRows = debugPreview.promptRoutingRows;
-      promptBlockPreviews = debugPreview.promptBlocks;
     } catch (err) {
       console.error("[shop-profile page] read latest scan failed:", err);
     }
   }
-
-  const promptBlock = buildShopProfilePromptBlock(profile);
 
   return json<LoaderData>({
     configured,
     blobConfigured,
     profile,
     scan,
-    promptBlock,
     strategy,
     glossarySuggestions,
     understanding,
@@ -269,8 +252,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     signals,
     themeSceneProfile,
     translationContextProfile,
-    promptRoutingRows,
-    promptBlockPreviews,
     taskRuns,
     artifactSource,
   });
@@ -396,6 +377,119 @@ const DATA_TASKS: ShopScanTask[] = [
 ];
 const AI_TASKS: ShopScanTask[] = ["profile_ai", "glossary_ai"];
 const TABLE_SCROLL_X = { x: "max-content" as const };
+const OVERVIEW_GRID_STYLE: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+  gap: 12,
+};
+const OVERVIEW_METRIC_STYLE: CSSProperties = {
+  padding: "14px 16px",
+  borderRadius: "var(--app-radius-lg)",
+  border: "1px solid var(--app-color-border-secondary)",
+  background: "var(--app-color-bg-subtle, #f6f7f9)",
+};
+const ACTION_GROUP_STYLE: CSSProperties = {
+  padding: "12px",
+  borderRadius: "var(--app-radius-lg)",
+  border: "1px solid var(--app-color-border-secondary)",
+  background: "var(--app-color-bg-subtle, #f6f7f9)",
+};
+const DENSE_TABLE_PROPS = {
+  size: "small" as const,
+  scroll: TABLE_SCROLL_X,
+};
+
+function statusTone(status: ShopScanStatus | null | undefined): "neutral" | "info" | "success" | "caution" | "critical" {
+  switch (status) {
+    case "COMPLETED":
+      return "success";
+    case "PARTIAL":
+      return "caution";
+    case "FAILED":
+      return "critical";
+    case "QUEUED":
+    case "SCANNING":
+      return "info";
+    default:
+      return "neutral";
+  }
+}
+
+function SectionHeading({
+  icon,
+  title,
+}: {
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <Flex align="center" gap={8}>
+      <span style={{ color: "var(--app-accent-primary)", display: "inline-flex" }}>{icon}</span>
+      <span>{title}</span>
+    </Flex>
+  );
+}
+
+function OverviewMetric({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: ReactNode;
+}) {
+  return (
+    <div style={OVERVIEW_METRIC_STYLE}>
+      <Flex vertical gap={6}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {label}
+        </Text>
+        <Text strong style={{ fontSize: 22, lineHeight: "28px", color: "var(--app-color-text)" }}>
+          {value}
+        </Text>
+        {hint ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {hint}
+          </Text>
+        ) : null}
+      </Flex>
+    </div>
+  );
+}
+
+function compactDescriptionsColumns(): DescriptionsProps["column"] {
+  return { xs: 1, sm: 2, lg: 3 };
+}
+
+function HoverFullText({
+  value,
+  mono = false,
+}: {
+  value: string | null | undefined;
+  mono?: boolean;
+}) {
+  if (!value) return <Text type="secondary">-</Text>;
+  return (
+    <Tooltip title={value} placement="topLeft">
+      <span
+        style={{
+          display: "inline-block",
+          maxWidth: "100%",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          verticalAlign: "bottom",
+          fontFamily: mono
+            ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+            : undefined,
+        }}
+      >
+        {value}
+      </span>
+    </Tooltip>
+  );
+}
 
 function mapJobStatusToStage(status: ShopScanStatus | null | undefined): ShopScanStageState {
   switch (status) {
@@ -431,7 +525,6 @@ export default function ShopProfilePage() {
     blobConfigured,
     profile,
     scan,
-    promptBlock,
     strategy,
     glossarySuggestions,
     understanding,
@@ -439,8 +532,6 @@ export default function ShopProfilePage() {
     signals,
     themeSceneProfile,
     translationContextProfile,
-    promptRoutingRows,
-    promptBlockPreviews,
     taskRuns,
     artifactSource,
   } = useLoaderData<typeof loader>();
@@ -456,6 +547,7 @@ export default function ShopProfilePage() {
   );
   const profileMaterialRun = taskRunByTask.profile_material;
   const profileAiRun = taskRunByTask.profile_ai;
+  const completedTaskCount = taskRuns.filter((run) => run.status === "COMPLETED").length;
 
   // 扫描进行中时自动轮询刷新
   useEffect(() => {
@@ -481,6 +573,16 @@ export default function ShopProfilePage() {
   const coverageRows = useMemo(() => {
     return (scan?.summary?.coverage ?? []).map((c) => ({ key: c.locale, ...c }));
   }, [scan]);
+  const publishedLocaleCount =
+    translationContextProfile?.marketProfile?.publishedLocales.length ?? coverageRows.length;
+  const parameterBlockCount = [
+    Boolean(translationContextProfile?.shopContext),
+    Boolean(translationContextProfile?.terminologyProfile),
+    Boolean(translationContextProfile?.marketProfile),
+    Boolean(translationContextProfile?.themeSceneProfile),
+    Boolean((translationContextProfile?.modulePolicyProfile?.moduleHints.length ?? 0) > 0),
+  ].filter(Boolean).length;
+  const lastUpdated = scan?.updatedAt ?? profile?.lastScannedAt ?? null;
 
   const glossaryRows = useMemo(() => {
     return glossarySuggestions.map((g, i) => ({
@@ -559,45 +661,42 @@ export default function ShopProfilePage() {
     <Page>
       <TitleBar title="店铺画像 (Shop Profile)" />
       <Flex vertical gap={20}>
-        {/* Header */}
-        <Flex justify="space-between" align="center">
-          <Flex align="center" gap={12}>
-            <DashboardOutlined style={{ fontSize: 22, color: "var(--app-accent-primary)" }} />
-            <Title level={3} style={{ margin: 0 }}>
-              店铺画像扫描结果
-            </Title>
-            {scan && (
-              <Tag
-                style={{
-                  marginLeft: 4,
-                  color: STATUS_TONE[scan.status],
-                  borderColor: STATUS_TONE[scan.status],
-                  background: "transparent",
-                }}
-              >
-                {STATUS_LABEL[scan.status]}
-              </Tag>
-            )}
-            {scan?.mode ? <Tag {...SCAN_TAG_STYLE}>{MODE_LABEL[scan.mode]}</Tag> : null}
-          </Flex>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            扫描与 AI 改为手动按钮触发
-          </Text>
-        </Flex>
+        <AppPageHeader
+          title={
+            <Flex align="center" gap={10}>
+              <DashboardOutlined style={{ color: "var(--app-accent-primary)" }} />
+              <span>店铺画像</span>
+            </Flex>
+          }
+          description="这一页只聚焦扫描状态、翻译参数产物和规则产物，帮助我们确认当前有哪些可用于翻译链路的输入。"
+          extra={
+            <Flex gap={8} wrap="wrap">
+              {scan ? (
+                <AppStatusBadge tone={statusTone(scan.status)}>{STATUS_LABEL[scan.status]}</AppStatusBadge>
+              ) : null}
+              {scan?.mode ? <AppStatusBadge tone="info">{MODE_LABEL[scan.mode]}</AppStatusBadge> : null}
+              <AppStatusBadge tone={configured ? "success" : "critical"}>
+                Cosmos {configured ? "已配置" : "未配置"}
+              </AppStatusBadge>
+              <AppStatusBadge tone={blobConfigured ? "success" : "caution"}>
+                Blob {blobConfigured ? "可读" : "未配置"}
+              </AppStatusBadge>
+            </Flex>
+          }
+        />
 
         {!configured ? (
-          <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
+          <AppSectionCard>
             <Empty
               image={<ExclamationCircleOutlined style={{ fontSize: 48, color: "var(--app-accent-utility)" }} />}
               description="店铺画像扫描未配置（缺少 Cosmos 环境变量）"
             />
-          </Card>
+          </AppSectionCard>
         ) : !scan && !profile ? (
-          <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
-            <Empty
-              image={<ThunderboltOutlined style={{ fontSize: 48, color: "var(--app-accent-primary)" }} />}
-              description="尚未扫描。请先手动执行所需的数据扫描，再按需触发 AI 整理。"
-            >
+          <AppSectionCard
+            title="开始使用"
+            description="先执行基础扫描拿到素材，再按需触发 AI 整理。页面会持续展示参数与规则产物，不在这里直接生成提示词。"
+            extra={
               <Button
                 type="primary"
                 icon={<ThunderboltOutlined />}
@@ -606,155 +705,181 @@ export default function ShopProfilePage() {
               >
                 开始扫描画像素材
               </Button>
-            </Empty>
-          </Card>
+            }
+          >
+            <Empty
+              image={<ThunderboltOutlined style={{ fontSize: 48, color: "var(--app-accent-primary)" }} />}
+              description="尚未扫描。请先手动执行所需的数据扫描，再按需触发 AI 整理。"
+            />
+          </AppSectionCard>
         ) : (
           <>
-            <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
-              <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
-                <Flex gap={8} wrap="wrap">
-                  <Tag color={configured ? "success" : "error"}>
-                    Cosmos: {configured ? "已配置" : "未配置"}
-                  </Tag>
-                  <Tag color={blobConfigured ? "success" : "warning"}>
-                    Blob: {blobConfigured ? "可读" : "未配置"}
-                  </Tag>
-                  <Tag {...SCAN_TAG_STYLE}>Artifacts: {artifactSource}</Tag>
-                </Flex>
-                {!blobConfigured ? (
-                  <Text type="warning" style={{ fontSize: 12 }}>
-                    当前页面未配置 Blob 读取，Theme 场景 / Runtime 上下文 / Prompt 预览会为空。
-                  </Text>
-                ) : artifactSource === "none" ? (
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    当前未读到扫描产物，请检查是否已生成对应 blob 文件。
-                  </Text>
-                ) : null}
-              </Flex>
-            </Card>
-
-            <Card
-              title={
-                <Flex align="center" gap={8}>
-                  <ReloadOutlined style={{ color: "var(--app-accent-primary)" }} />
-                  <span>手动任务</span>
-                </Flex>
-              }
-              style={{ boxShadow: "var(--app-shadow-card)" }}
+            <AppSectionCard
+              title={<SectionHeading icon={<DashboardOutlined />} title="扫描概览" />}
+              description="顶部概览先看状态，下面再逐块看参数、规则和明细数据。"
+              extra={<AppStatusBadge tone="neutral">Artifacts {artifactSource}</AppStatusBadge>}
+              bodyPadding="18px"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(84,103,255,0.04) 0%, rgba(84,103,255,0.01) 100%)",
+              }}
             >
               <Flex vertical gap={16}>
-                <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    数据扫描
-                  </Text>
-                  <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
-                    {DATA_TASKS.map((task) => (
-                      <Button
-                        key={task}
-                        type={task === "profile_material" ? "primary" : "default"}
-                        loading={isRescanning}
-                        disabled={!configured || isActive}
-                        onClick={() => handleScan(task)}
-                      >
-                        {TASK_LABEL[task]}
-                      </Button>
-                    ))}
+                <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+                  <Flex gap={8} wrap="wrap">
+                    <AppStatusBadge tone={configured ? "success" : "critical"}>
+                      Cosmos {configured ? "已配置" : "未配置"}
+                    </AppStatusBadge>
+                    <AppStatusBadge tone={blobConfigured ? "success" : "caution"}>
+                      Blob {blobConfigured ? "可读" : "未配置"}
+                    </AppStatusBadge>
+                    <AppStatusBadge tone="neutral">Artifacts {artifactSource}</AppStatusBadge>
                   </Flex>
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    AI 整理
+                  <Text type={!blobConfigured ? "warning" : "secondary"} style={{ fontSize: 12 }}>
+                    {!blobConfigured
+                      ? "当前页面未配置 Blob 读取，参数产物与规则产物会为空。"
+                      : artifactSource === "none"
+                        ? "当前还未读到扫描产物，请先执行一次基础扫描。"
+                        : "扫描与 AI 都改为手动触发，页面只负责呈现产物。"}
                   </Text>
-                  <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
-                    {AI_TASKS.map((task) => (
-                      <Button
-                        key={task}
-                        type="default"
-                        icon={<RobotOutlined />}
-                        loading={isRescanning}
-                        disabled={!configured || isActive}
-                        onClick={() => handleScan(task)}
-                      >
-                        {TASK_LABEL[task]}
-                      </Button>
-                    ))}
-                  </Flex>
-                </div>
-                {taskRuns.length > 0 ? (
-                  <Table
-                    size="small"
-                    scroll={TABLE_SCROLL_X}
-                    pagination={false}
-                    dataSource={taskRuns.map((run) => ({ key: run.id, ...run }))}
-                    columns={[
-                      {
-                        title: "任务",
-                        dataIndex: "task",
-                        key: "task",
-                        render: (task: ShopScanTask) => TASK_LABEL[task] ?? task,
-                      },
-                      {
-                        title: "状态",
-                        dataIndex: "status",
-                        key: "status",
-                        width: 120,
-                        render: (status: ShopScanStatus) => (
-                          <Tag color={STATUS_COLOR[status]}>{STATUS_LABEL[status]}</Tag>
-                        ),
-                      },
-                      {
-                        title: "最近更新时间",
-                        dataIndex: "updatedAt",
-                        key: "updatedAt",
-                        width: 180,
-                        render: (value: string) => formatDate(value),
-                      },
-                      {
-                        title: "备注",
-                        dataIndex: "errorMessage",
-                        key: "errorMessage",
-                        ellipsis: true,
-                        render: (value: string | null | undefined) => value || "-",
-                      },
-                    ]}
+                </Flex>
+
+                <div style={OVERVIEW_GRID_STYLE}>
+                  <OverviewMetric
+                    label="最近更新时间"
+                    value={formatDate(lastUpdated)}
+                    hint={scan?.mode ? MODE_LABEL[scan.mode] : "尚未开始扫描"}
                   />
-                ) : (
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    暂无任务记录
-                  </Text>
-                )}
+                  <OverviewMetric
+                    label="任务完成度"
+                    value={`${completedTaskCount} / ${taskRuns.length || 0}`}
+                    hint={isActive ? "当前存在运行中的任务" : "当前没有运行中的任务"}
+                  />
+                  <OverviewMetric
+                    label="已发布语言"
+                    value={publishedLocaleCount}
+                    hint={publishedLocaleCount > 0 ? "来自 market / coverage 产物" : "尚未读取到语言数据"}
+                  />
+                  <OverviewMetric
+                    label="参数区块"
+                    value={`${parameterBlockCount} / 5`}
+                    hint={`术语建议 ${glossarySuggestions.length} 条`}
+                  />
+                </div>
               </Flex>
-            </Card>
+            </AppSectionCard>
 
-            {/* 扫描状态 */}
-            <Card
-              title={
-                <Flex align="center" gap={8}>
-                  {scan && (
-                    <span style={{ color: STATUS_TONE[scan.status] }}>
-                      {STATUS_ICON[scan.status]}
-                    </span>
-                  )}
-                  <span>扫描状态</span>
-                </Flex>
-              }
-              style={{ boxShadow: "var(--app-shadow-card)" }}
-            >
-              <Flex vertical gap={16}>
-                {/* 更新时间 */}
-                <Flex vertical gap={2}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>更新时间</Text>
-                  <Text>{formatDate(scan?.updatedAt)}</Text>
-                </Flex>
+            <Row gutter={[20, 20]}>
+              <Col xs={24} xl={12}>
+                <AppSectionCard
+                  title={<SectionHeading icon={<ReloadOutlined />} title="手动任务" />}
+                  description="按任务粒度执行扫描和 AI 整理，避免一次性跑完整条链路。"
+                >
+                  <Flex vertical gap={16}>
+                    <div style={ACTION_GROUP_STYLE}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        数据扫描
+                      </Text>
+                      <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
+                        {DATA_TASKS.map((task) => (
+                          <Button
+                            key={task}
+                            type={task === "profile_material" ? "primary" : "default"}
+                            loading={isRescanning}
+                            disabled={!configured || isActive}
+                            onClick={() => handleScan(task)}
+                          >
+                            {TASK_LABEL[task]}
+                          </Button>
+                        ))}
+                      </Flex>
+                    </div>
+                    <div style={ACTION_GROUP_STYLE}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        AI 整理
+                      </Text>
+                      <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
+                        {AI_TASKS.map((task) => (
+                          <Button
+                            key={task}
+                            type="default"
+                            icon={<RobotOutlined />}
+                            loading={isRescanning}
+                            disabled={!configured || isActive}
+                            onClick={() => handleScan(task)}
+                          >
+                            {TASK_LABEL[task]}
+                          </Button>
+                        ))}
+                      </Flex>
+                    </div>
+                    {taskRuns.length > 0 ? (
+                      <Table
+                        {...DENSE_TABLE_PROPS}
+                        pagination={false}
+                        dataSource={taskRuns.map((run) => ({ key: run.id, ...run }))}
+                        columns={[
+                          {
+                            title: "任务",
+                            dataIndex: "task",
+                            key: "task",
+                            render: (task: ShopScanTask) => TASK_LABEL[task] ?? task,
+                          },
+                          {
+                            title: "状态",
+                            dataIndex: "status",
+                            key: "status",
+                            width: 120,
+                            render: (status: ShopScanStatus) => (
+                              <AppStatusBadge tone={statusTone(status)}>{STATUS_LABEL[status]}</AppStatusBadge>
+                            ),
+                          },
+                          {
+                            title: "最近更新时间",
+                            dataIndex: "updatedAt",
+                            key: "updatedAt",
+                            width: 180,
+                            render: (value: string) => formatDate(value),
+                          },
+                          {
+                            title: "备注",
+                            dataIndex: "errorMessage",
+                            key: "errorMessage",
+                            ellipsis: true,
+                            render: (value: string | null | undefined) => <HoverFullText value={value} />,
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        暂无任务记录
+                      </Text>
+                    )}
+                  </Flex>
+                </AppSectionCard>
+              </Col>
 
-                <Divider style={{ margin: "4px 0" }} />
+              <Col xs={24} xl={12}>
+                <AppSectionCard
+                  title={<SectionHeading icon={scan ? STATUS_ICON[scan.status] : <SyncOutlined />} title="扫描状态" />}
+                  description="这里看当前运行状态和四个阶段的完成情况。"
+                  extra={
+                    scan ? <AppStatusBadge tone={statusTone(scan.status)}>{STATUS_LABEL[scan.status]}</AppStatusBadge> : null
+                  }
+                >
+                  <Flex vertical gap={16}>
+                    <Flex vertical gap={2}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>更新时间</Text>
+                      <Text>{formatDate(scan?.updatedAt)}</Text>
+                    </Flex>
 
-                {/* 阶段进度 */}
-                <Flex vertical gap={8}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    扫描阶段
-                  </Text>
-                  <Row gutter={[12, 12]}>
+                    <Divider style={{ margin: "4px 0" }} />
+
+                    <Flex vertical gap={8}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        扫描阶段
+                      </Text>
+                      <Row gutter={[12, 12]}>
                     {(Object.keys(STAGE_LABEL) as Array<keyof typeof STAGE_LABEL>).map(
                       (stage, idx, arr) => {
                         const st = scan
@@ -834,13 +959,15 @@ export default function ShopProfilePage() {
                         );
                       },
                     )}
-                  </Row>
-                </Flex>
-              </Flex>
-            </Card>
+                      </Row>
+                    </Flex>
+                  </Flex>
+                </AppSectionCard>
+              </Col>
+            </Row>
 
             {/* 店铺画像：独占一行 */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <DatabaseOutlined style={{ color: "var(--app-accent-primary)" }} />
@@ -891,10 +1018,10 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="画像尚未生成（可能素材不足或 AI 未配置）" />
               )}
-            </Card>
+            </AppSectionCard>
 
             {/* AI 第一步完整理解（Blob；Turso 只落了 industry/keywords/description/brandTone） */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <RobotOutlined style={{ color: "var(--app-accent-utility)" }} />
@@ -967,10 +1094,10 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无完整理解详情（需完成扫描且 Blob 可读）" />
               )}
-            </Card>
+            </AppSectionCard>
 
             {/* Markets：扫描时采集，尚未持久化到独立表 */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <ShopOutlined style={{ color: "var(--app-accent-primary)" }} />
@@ -990,14 +1117,21 @@ export default function ShopProfilePage() {
                     pagination={false}
                     dataSource={marketRows}
                     columns={[
-                      { title: "市场", dataIndex: "name", key: "name", width: 220, ellipsis: true },
+                      {
+                        title: "市场",
+                        dataIndex: "name",
+                        key: "name",
+                        width: 220,
+                        ellipsis: true,
+                        render: (value: string) => <HoverFullText value={value} />,
+                      },
                       {
                         title: "Handle",
                         dataIndex: "handle",
                         key: "handle",
                         width: 120,
                         ellipsis: true,
-                        render: (v: string) => v || "-",
+                        render: (value: string) => <HoverFullText value={value} mono />,
                       },
                       {
                         title: "货币",
@@ -1035,10 +1169,10 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无市场数据（需完成画像扫描且 Blob 可读）" />
               )}
-            </Card>
+            </AppSectionCard>
 
             {/* 信号提取层中间结果 */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <BarChartOutlined style={{ color: "var(--app-accent-utility)" }} />
@@ -1112,7 +1246,13 @@ export default function ShopProfilePage() {
                         style={{ marginTop: 8 }}
                         dataSource={termRows}
                         columns={[
-                          { title: "词", dataIndex: "term", key: "term", ellipsis: true },
+                          {
+                            title: "词",
+                            dataIndex: "term",
+                            key: "term",
+                            ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} />,
+                          },
                           {
                             title: "得分",
                             dataIndex: "score",
@@ -1133,7 +1273,9 @@ export default function ShopProfilePage() {
                             dataIndex: "sources",
                             key: "sources",
                             ellipsis: true,
-                            render: (sources: string[]) => sources.join(", ") || "-",
+                            render: (sources: string[]) => (
+                              <HoverFullText value={sources.join(", ") || "-"} />
+                            ),
                           },
                         ]}
                         locale={{ emptyText: "暂无" }}
@@ -1150,7 +1292,13 @@ export default function ShopProfilePage() {
                         style={{ marginTop: 8 }}
                         dataSource={phraseRows}
                         columns={[
-                          { title: "短语", dataIndex: "term", key: "term", ellipsis: true },
+                          {
+                            title: "短语",
+                            dataIndex: "term",
+                            key: "term",
+                            ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} />,
+                          },
                           {
                             title: "得分",
                             dataIndex: "score",
@@ -1205,8 +1353,15 @@ export default function ShopProfilePage() {
                             key: "source",
                             width: 140,
                             ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} mono />,
                           },
-                          { title: "文本", dataIndex: "text", key: "text", ellipsis: true },
+                          {
+                            title: "文本",
+                            dataIndex: "text",
+                            key: "text",
+                            ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} />,
+                          },
                         ]}
                       />
                     </div>
@@ -1215,14 +1370,14 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无信号数据（需完成画像扫描且 Blob 可读）" />
               )}
-            </Card>
+            </AppSectionCard>
 
             {/* 翻译提示词预览：真实注入翻译 API 的 shop profile 上下文 */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <AimOutlined style={{ color: "var(--app-accent-primary)" }} />
-                  <span>结构化翻译上下文（Runtime）</span>
+                  <span>翻译参数产物</span>
                 </Flex>
               }
               style={{ boxShadow: "var(--app-shadow-card)" }}
@@ -1263,32 +1418,32 @@ export default function ShopProfilePage() {
                       disabled={!configured || isActive}
                       onClick={() => handleScan("profile_ai")}
                     >
-                      生成 Runtime 上下文
+                      生成参数产物
                     </Button>
                   </Flex>
                 </Flex>
               {translationContextProfile ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    这里展示的是当前 batch / single 翻译链路实际可读取的结构化上下文，不再只依赖数据库里的简化店铺画像。
+                    这里展示的是翻译链路真正可消费的结构化参数。页面只负责确认有哪些参数和规则已产出，不在这里直接拼提示词。
                   </Text>
                   <Descriptions column={{ xs: 1, sm: 2, lg: 3 }} size="small" bordered>
                     <Descriptions.Item label="生成时间">
                       {formatDate(translationContextProfile.generatedAt)}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Shop Context">
+                    <Descriptions.Item label="店铺参数">
                       {translationContextProfile.shopContext ? "已就绪" : "缺失"}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Terminology">
+                    <Descriptions.Item label="术语参数">
                       {translationContextProfile.terminologyProfile ? "已就绪" : "缺失"}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Market Context">
+                    <Descriptions.Item label="市场参数">
                       {translationContextProfile.marketProfile ? "已就绪" : "缺失"}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Theme Scene">
+                    <Descriptions.Item label="场景规则">
                       {translationContextProfile.themeSceneProfile ? "已就绪" : "缺失"}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Module Policy">
+                    <Descriptions.Item label="模块规则">
                       {translationContextProfile.modulePolicyProfile?.moduleHints.length ?? 0} 个模块
                     </Descriptions.Item>
                     <Descriptions.Item label="关键词" span={3}>
@@ -1330,25 +1485,49 @@ export default function ShopProfilePage() {
                         "-"
                       )}
                     </Descriptions.Item>
+                    <Descriptions.Item label="市场备注" span={3}>
+                      {translationContextProfile.marketProfile?.marketNotes.length ? (
+                        <Flex vertical gap={4}>
+                          {translationContextProfile.marketProfile.marketNotes.map((item) => (
+                            <Text key={item}>· {item}</Text>
+                          ))}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="模块规则数" span={3}>
+                      {translationContextProfile.modulePolicyProfile?.moduleHints.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.modulePolicyProfile.moduleHints.map((item) => (
+                            <Tag key={item.module} color="geekblue">
+                              {item.module}
+                            </Tag>
+                          ))}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
                   </Descriptions>
                 </Flex>
               ) : (
                 <Empty
                   description={
                     blobConfigured
-                      ? "暂无 translation-context-profile.json（未读到对应 blob 文件）"
-                      : "暂无 translation-context-profile.json（当前页面未配置 Blob 读取）"
+                      ? "暂无参数产物（未读到 translation-context-profile.json）"
+                      : "暂无参数产物（当前页面未配置 Blob 读取）"
                   }
                 />
               )}
               </Flex>
-            </Card>
+            </AppSectionCard>
 
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <AimOutlined style={{ color: "var(--app-accent-utility)" }} />
-                  <span>Theme 场景识别（Scan Time）</span>
+                  <span>规则产物（Theme / Scene / Module）</span>
                 </Flex>
               }
               style={{ boxShadow: "var(--app-shadow-card)" }}
@@ -1375,7 +1554,7 @@ export default function ShopProfilePage() {
               {themeSceneProfile ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    这里展示扫描阶段从 theme key 里提炼出的 scene / role / tone 信号，主要用于后续 prompt 路由与模块策略判断。
+                    这里展示扫描阶段从 theme key 提炼出的 scene / role / tone 规则信号，用于后续运行时判定该走哪类翻译策略。
                   </Text>
 
                   {(sceneStatRows.length > 0 || roleStatRows.length > 0) && (
@@ -1460,6 +1639,7 @@ export default function ShopProfilePage() {
                           key: "module",
                           width: 220,
                           ellipsis: true,
+                          render: (value: string) => <HoverFullText value={value} mono />,
                         },
                         {
                           title: "Key Pattern",
@@ -1467,6 +1647,7 @@ export default function ShopProfilePage() {
                           key: "keyPattern",
                           width: 320,
                           ellipsis: true,
+                          render: (value: string) => <HoverFullText value={value} mono />,
                         },
                         {
                           title: "Namespace",
@@ -1474,7 +1655,7 @@ export default function ShopProfilePage() {
                           key: "namespace",
                           width: 160,
                           ellipsis: true,
-                          render: (value: string | null) => value || "-",
+                          render: (value: string | null) => <HoverFullText value={value} mono />,
                         },
                         {
                           title: "Resource Pattern",
@@ -1482,7 +1663,7 @@ export default function ShopProfilePage() {
                           key: "resourcePattern",
                           width: 220,
                           ellipsis: true,
-                          render: (value: string | null) => value || "-",
+                          render: (value: string | null) => <HoverFullText value={value} mono />,
                         },
                         {
                           title: "Scene",
@@ -1496,14 +1677,17 @@ export default function ShopProfilePage() {
                           dataIndex: "role",
                           key: "role",
                           width: 120,
-                          render: (value: string | null) => value || "-",
+                          render: (value: string | null) => <HoverFullText value={value} mono />,
                         },
                         {
                           title: "Tone / Creativity",
                           key: "tone",
                           width: 170,
-                          render: (_: unknown, row: (typeof sceneHintRows)[number]) =>
-                            `${row.tonePreference} / ${row.creativity}`,
+                          render: (_: unknown, row: (typeof sceneHintRows)[number]) => (
+                            <HoverFullText
+                              value={`${row.tonePreference} / ${row.creativity}`}
+                            />
+                          ),
                         },
                         {
                           title: "置信度",
@@ -1522,255 +1706,16 @@ export default function ShopProfilePage() {
                 <Empty
                   description={
                     blobConfigured
-                      ? "暂无 theme scene profile（未读到 theme-key-profile.json / profile-facts.json）"
-                      : "暂无 theme scene profile（当前页面未配置 Blob 读取）"
+                      ? "暂无规则产物（未读到 theme-key-profile.json / profile-facts.json）"
+                      : "暂无规则产物（当前页面未配置 Blob 读取）"
                   }
                 />
               )}
               </Flex>
-            </Card>
-
-            <Card
-              title={
-                <Flex align="center" gap={8}>
-                  <RobotOutlined style={{ color: "var(--app-accent-primary)" }} />
-                  <span>Prompt 路由与上下文预览</span>
-                </Flex>
-              }
-              style={{ boxShadow: "var(--app-shadow-card)" }}
-            >
-              <Flex vertical gap={16}>
-                <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
-                  <Flex gap={6} wrap="wrap">
-                    <Tag {...SCAN_TAG_STYLE}>依赖 1: Theme Scene</Tag>
-                    <Tag {...SCAN_TAG_STYLE}>依赖 2: Runtime Context</Tag>
-                    {profileMaterialRun ? (
-                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
-                        素材: {STATUS_LABEL[profileMaterialRun.status]}
-                      </Tag>
-                    ) : null}
-                    {profileAiRun ? (
-                      <Tag color={STATUS_COLOR[profileAiRun.status]}>
-                        AI: {STATUS_LABEL[profileAiRun.status]}
-                      </Tag>
-                    ) : null}
-                  </Flex>
-                  <Flex gap={8} wrap="wrap">
-                    <Button
-                      type="default"
-                      loading={isRescanning}
-                      disabled={!configured || isActive}
-                      onClick={() => handleScan("profile_material")}
-                    >
-                      先扫描 Theme 素材
-                    </Button>
-                    <Button
-                      type="primary"
-                      icon={<RobotOutlined />}
-                      loading={isRescanning}
-                      disabled={!configured || isActive}
-                      onClick={() => handleScan("profile_ai")}
-                    >
-                      再生成 Prompt 预览
-                    </Button>
-                  </Flex>
-                </Flex>
-              {promptRoutingRows.length > 0 ? (
-                <Flex vertical gap={16}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    基于扫描产物抽样几条 theme key，预演 runtime scene resolver 命中结果，并展示对应会注入的 context block。
-                  </Text>
-                  <Table
-                    size="small"
-                      scroll={{ x: 1320 }}
-                    pagination={{ pageSize: 8, hideOnSinglePage: true }}
-                    dataSource={promptRoutingRows}
-                    columns={[
-                      {
-                        title: "模块 / Key",
-                        key: "target",
-                        width: 480,
-                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
-                          <Flex vertical gap={2}>
-                            <Text strong style={{ fontSize: 12 }}>
-                              {row.module}
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {row.keyPattern}
-                            </Text>
-                            <Flex gap={4} wrap="wrap">
-                              {row.namespace ? (
-                                <Tag {...SCAN_TAG_STYLE}>ns: {row.namespace}</Tag>
-                              ) : null}
-                              {row.resourcePattern ? (
-                                <Tag {...SCAN_TAG_STYLE}>res: {row.resourcePattern}</Tag>
-                              ) : null}
-                            </Flex>
-                          </Flex>
-                        ),
-                      },
-                      {
-                        title: "Scan -> Runtime",
-                        key: "scene",
-                        width: 240,
-                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
-                          <Flex vertical gap={2}>
-                            <Text style={{ fontSize: 12 }}>
-                                {row.scanScene} {"->"} {row.resolvedScene}
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {row.scanRole || "-"} {"->"} {row.resolvedRole || "-"}
-                            </Text>
-                          </Flex>
-                        ),
-                      },
-                      {
-                        title: "Profile",
-                        dataIndex: "promptProfileId",
-                        key: "promptProfileId",
-                        width: 130,
-                        render: (value: string) => <Tag color="purple">{value}</Tag>,
-                      },
-                      {
-                        title: "Content",
-                        key: "contentClass",
-                        width: 140,
-                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
-                          <Flex vertical gap={2}>
-                            <Text style={{ fontSize: 12 }}>{row.contentClass}</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {row.jsonMode || "-"}
-                            </Text>
-                          </Flex>
-                        ),
-                      },
-                      {
-                        title: "提示",
-                        key: "hint",
-                        width: 200,
-                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
-                          <Flex vertical gap={2}>
-                            <Text style={{ fontSize: 12 }}>
-                              {row.tonePreference} / {row.creativity}
-                            </Text>
-                            <Text
-                              type={row.matchesScene ? "secondary" : "warning"}
-                              style={{ fontSize: 12 }}
-                            >
-                              {row.matchesScene ? "scene aligned" : "scene drift"}
-                            </Text>
-                          </Flex>
-                        ),
-                      },
-                      {
-                        title: "置信度",
-                        dataIndex: "confidence",
-                        key: "confidence",
-                        width: 90,
-                        align: "right",
-                        render: (value: number) => value.toFixed(2),
-                      },
-                    ]}
-                  />
-
-                  {promptBlockPreviews.length > 0 && (
-                    <Flex vertical gap={12}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Context Block 预览
-                      </Text>
-                      {promptBlockPreviews.map((preview) => (
-                        <Card
-                          key={preview.key}
-                          size="small"
-                          title={
-                            <Flex align="center" gap={8}>
-                              <Text strong>{preview.title}</Text>
-                              <Tag color="purple">{preview.promptProfileId}</Tag>
-                              <Tag>{preview.scene}</Tag>
-                              {preview.namespace ? (
-                                <Tag {...SCAN_TAG_STYLE}>ns: {preview.namespace}</Tag>
-                              ) : null}
-                              {preview.resourcePattern ? (
-                                <Tag {...SCAN_TAG_STYLE}>res: {preview.resourcePattern}</Tag>
-                              ) : null}
-                            </Flex>
-                          }
-                        >
-                          <Paragraph
-                            copyable={hydrated ? { text: preview.block } : false}
-                            style={{
-                              margin: 0,
-                              padding: 12,
-                              background: "var(--app-color-bg-subtle, #f6f7f9)",
-                              borderRadius: 8,
-                              border: "1px solid rgba(0,0,0,0.06)",
-                              fontFamily:
-                                "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                              fontSize: 12,
-                              lineHeight: 1.6,
-                              whiteSpace: "pre-wrap",
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {preview.block}
-                          </Paragraph>
-                        </Card>
-                      ))}
-                    </Flex>
-                  )}
-                </Flex>
-              ) : (
-                <Empty
-                  description={
-                    blobConfigured
-                      ? "暂无 prompt routing preview（缺少 theme scene 或 runtime context）"
-                      : "暂无 prompt routing preview（当前页面未配置 Blob 读取）"
-                  }
-                />
-              )}
-              </Flex>
-            </Card>
-
-            <Card
-              title={
-                <Flex align="center" gap={8}>
-                  <RobotOutlined style={{ color: "var(--app-accent-primary)" }} />
-                  <span>翻译提示词预览</span>
-                </Flex>
-              }
-              style={{ boxShadow: "var(--app-shadow-card)" }}
-            >
-              <Flex vertical gap={12}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  以下内容会作为店铺上下文注入到翻译请求的系统提示词中，用于指导译文的语气、术语与本地化。
-                </Text>
-                {promptBlock ? (
-                  <Paragraph
-                    copyable={hydrated ? { text: promptBlock } : false}
-                    style={{
-                      margin: 0,
-                      padding: 12,
-                      background: "var(--app-color-bg-subtle, #f6f7f9)",
-                      borderRadius: 8,
-                      border: "1px solid rgba(0,0,0,0.06)",
-                      fontFamily:
-                        "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                      fontSize: 12,
-                      lineHeight: 1.6,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {promptBlock}
-                  </Paragraph>
-                ) : (
-                  <Empty description="暂无可注入的画像内容（需先完成一次扫描生成画像）" />
-                )}
-              </Flex>
-            </Card>
+            </AppSectionCard>
 
             {/* 第二步 AI 归纳：术语策略与模块建议 */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <AimOutlined style={{ color: "var(--app-accent-utility)" }} />
@@ -1848,13 +1793,19 @@ export default function ShopProfilePage() {
                           ...t,
                         }))}
                         columns={[
-                          { title: "源词", dataIndex: "source", key: "source", ellipsis: true },
+                          {
+                            title: "源词",
+                            dataIndex: "source",
+                            key: "source",
+                            ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} mono />,
+                          },
                           {
                             title: "说明",
                             dataIndex: "note",
                             key: "note",
                             ellipsis: true,
-                            render: (v: string | null) => v || <Text type="secondary">-</Text>,
+                            render: (value: string | null) => <HoverFullText value={value} />,
                           },
                         ]}
                       />
@@ -1873,27 +1824,34 @@ export default function ShopProfilePage() {
                         style={{ marginTop: 8 }}
                         dataSource={moduleHintRows}
                         columns={[
-                          { title: "模块", dataIndex: "module", key: "module", width: 160, ellipsis: true },
+                          {
+                            title: "模块",
+                            dataIndex: "module",
+                            key: "module",
+                            width: 160,
+                            ellipsis: true,
+                            render: (value: string) => <HoverFullText value={value} mono />,
+                          },
                           {
                             title: "语气",
                             dataIndex: "tonePolicy",
                             key: "tonePolicy",
                             ellipsis: true,
-                            render: (v: string | null) => v || "-",
+                            render: (value: string | null) => <HoverFullText value={value} />,
                           },
                           {
                             title: "关键词",
                             dataIndex: "keywordPolicy",
                             key: "keywordPolicy",
                             ellipsis: true,
-                            render: (v: string | null) => v || "-",
+                            render: (value: string | null) => <HoverFullText value={value} />,
                           },
                           {
                             title: "直译/意译",
                             dataIndex: "literalVsAdaptive",
                             key: "literalVsAdaptive",
                             ellipsis: true,
-                            render: (v: string | null) => v || "-",
+                            render: (value: string | null) => <HoverFullText value={value} />,
                           },
                         ]}
                       />
@@ -1903,12 +1861,12 @@ export default function ShopProfilePage() {
               ) : (
                 <Empty description="暂无术语策略（需完成扫描且 AI 第二步成功生成）" />
               )}
-            </Card>
+            </AppSectionCard>
 
             {/* 内容规模 + 语言覆盖率：双栏 */}
             <Row gutter={[20, 20]}>
               <Col xs={24} lg={12}>
-                <Card
+                <AppSectionCard
                   title={
                     <Flex align="center" gap={8}>
                       <ThunderboltOutlined style={{ color: "var(--app-accent-utility)" }} />
@@ -1939,7 +1897,13 @@ export default function ShopProfilePage() {
                     pagination={false}
                     dataSource={moduleRows}
                     columns={[
-                      { title: "模块", dataIndex: "module", key: "module", ellipsis: true },
+                      {
+                        title: "模块",
+                        dataIndex: "module",
+                        key: "module",
+                        ellipsis: true,
+                        render: (value: string) => <HoverFullText value={value} mono />,
+                      },
                       {
                         title: "条目",
                         dataIndex: "items",
@@ -1961,11 +1925,11 @@ export default function ShopProfilePage() {
                     ]}
                     locale={{ emptyText: "暂无数据" }}
                   />
-                </Card>
+                </AppSectionCard>
               </Col>
 
               <Col xs={24} lg={12}>
-                <Card
+                <AppSectionCard
                   title={
                     <Flex align="center" gap={8}>
                       <GlobalOutlined style={{ color: "var(--app-accent-primary)" }} />
@@ -2035,12 +1999,12 @@ export default function ShopProfilePage() {
                   ) : (
                     <Empty description="无已发布的目标语言" />
                   )}
-                </Card>
+                </AppSectionCard>
               </Col>
             </Row>
 
             {/* AI 术语建议（仅展示，不写术语表库） */}
-            <Card
+            <AppSectionCard
               title={
                 <Flex align="center" gap={8}>
                   <BookOutlined style={{ color: "var(--app-accent-primary)" }} />
@@ -2074,15 +2038,27 @@ export default function ShopProfilePage() {
                     dataSource={glossaryRows}
                     columns={[
                       { title: "语言", dataIndex: "locale", key: "locale", width: 80 },
-                      { title: "源词", dataIndex: "source", key: "source", ellipsis: true },
-                      { title: "建议译文", dataIndex: "target", key: "target", ellipsis: true },
+                      {
+                        title: "源词",
+                        dataIndex: "source",
+                        key: "source",
+                        ellipsis: true,
+                        render: (value: string) => <HoverFullText value={value} mono />,
+                      },
+                      {
+                        title: "建议译文",
+                        dataIndex: "target",
+                        key: "target",
+                        ellipsis: true,
+                        render: (value: string) => <HoverFullText value={value} />,
+                      },
                     ]}
                   />
                 ) : (
                   <Empty description="暂无术语建议（需有已发布语言及足够译文样本）" />
                 )}
               </Flex>
-            </Card>
+            </AppSectionCard>
           </>
         )}
       </Flex>
