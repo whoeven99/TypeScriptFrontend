@@ -139,21 +139,6 @@ model CurrencyRate {
   expiresAt    DateTime
 }
 
-// 对应 Java User_IP_Redirection
-model IpRedirection {
-  id           Int      @id // 迁移时写入 Java id；新建时由应用层取 max+1
-  shop         String
-  region       String   @default("")
-  languageCode String   @default("")
-  currencyCode String   @default("")
-  isDeleted    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([shop, isDeleted])
-  @@index([shop, region])
-}
-
 // 取代 Java `User_Page_Fly`；Int 主键对齐 Java id，迁移时保留原值
 model PageFlyTranslation {
   id           Int      @id

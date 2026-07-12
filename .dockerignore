@@ -12,5 +12,13 @@ node_modules/.cache
 npm-debug.log*
 *.log
 scripts/tmp
+worker/scripts/tmp
+worker/scripts/out
 tmp
 extensions
+*.tsbuildinfo
+Dockerfile
+DockerfileDev
+DockerfileProd
+.dockerignore
+coverage

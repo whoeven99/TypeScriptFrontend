@@ -5,6 +5,7 @@ import {
   TRANSLATE_V4_ERROR_KEYS,
   type TranslateV4ErrorKey,
 } from "~/utils/translateV4Errors";
+import { type BaseResponse } from "~/server/storefront/response.server";
 
 type CurrencyLocaleInfo = {
   currencyName?: string;
@@ -41,13 +42,6 @@ export type CurrencyTableRow = {
   currencyCode: string;
   primaryStatus: number;
   symbol?: string;
-};
-
-export type BaseResponse<T = unknown> = {
-  success: boolean;
-  errorCode: number | null;
-  errorMsg: string | null;
-  response: T;
 };
 
 type CurrencyWriteInput = {

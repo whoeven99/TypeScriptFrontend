@@ -5,6 +5,7 @@ import {
   uploadImageBuffer,
   uploadImageFromUrl,
 } from "./cos.server";
+import { type BaseResponse } from "~/server/storefront/response.server";
 
 export { PICTURE_CDN_URL, PICTURE_COS_URL };
 
@@ -21,13 +22,6 @@ export type UserPicturePayload = {
   isDelete: boolean;
 };
 
-export type PictureBaseResponse<T = unknown> = {
-  success: boolean;
-  errorCode: number | null;
-  errorMsg: string | null;
-  response: T;
-};
-
 export type UserPictureWriteInput = {
   shop: string;
   imageId: string;
@@ -38,11 +32,11 @@ export type UserPictureWriteInput = {
   altAfterTranslation?: string | null;
 };
 
-function ok<T>(response: T): PictureBaseResponse<T> {
+function ok<T>(response: T): BaseResponse<T> {
   return { success: true, errorCode: 0, errorMsg: "", response };
 }
 
-function fail<T>(response: T, errorMsg = "SERVER_ERROR"): PictureBaseResponse<T> {
+function fail<T>(response: T, errorMsg = "SERVER_ERROR"): BaseResponse<T> {
   return { success: false, errorCode: 10001, errorMsg, response };
 }
 
@@ -116,7 +110,7 @@ export async function getProductPictures(args: {
   shop: string;
   imageId: string;
   languageCode: string;
-}): Promise<PictureBaseResponse<UserPicturePayload[]>> {
+}): Promise<BaseResponse<UserPicturePayload[]>> {
   try {
     return ok(await listProductPictures(args));
   } catch (err) {
@@ -128,7 +122,7 @@ export async function getProductPictures(args: {
 export async function getShopPictures(args: {
   shop: string;
   languageCode: string;
-}): Promise<PictureBaseResponse<UserPicturePayload[]>> {
+}): Promise<BaseResponse<UserPicturePayload[]>> {
   try {
     return ok(await listShopPictures(args));
   } catch (err) {
@@ -143,7 +137,7 @@ export async function getShopPictures(args: {
  */
 export async function upsertUserPicture(
   input: UserPictureWriteInput,
-): Promise<PictureBaseResponse<UserPicturePayload>> {
+): Promise<BaseResponse<UserPicturePayload>> {
   try {
     const existing = await prisma.userPicture.findUnique({
       where: {
@@ -200,7 +194,7 @@ export async function softDeleteUserPicture(args: {
   imageId: string;
   imageBeforeUrl: string;
   languageCode: string;
-}): Promise<PictureBaseResponse<UserPicturePayload | null>> {
+}): Promise<BaseResponse<UserPicturePayload | null>> {
   try {
     const existing = await prisma.userPicture.findUnique({
       where: {
@@ -239,7 +233,7 @@ export async function uploadAndUpsertUserPicture(args: {
   };
   altBeforeTranslation?: string | null;
   altAfterTranslation?: string | null;
-}): Promise<PictureBaseResponse<UserPicturePayload>> {
+}): Promise<BaseResponse<UserPicturePayload>> {
   try {
     const imageAfterUrl = await uploadImageBuffer({
       shop: args.shop,
@@ -277,7 +271,7 @@ export async function saveTranslatedImageFromUrl(args: {
     altBeforeTranslation?: string | null;
     altAfterTranslation?: string | null;
   };
-}): Promise<PictureBaseResponse<UserPicturePayload>> {
+}): Promise<BaseResponse<UserPicturePayload>> {
   try {
     const imageAfterUrl = await uploadImageFromUrl({
       shop: args.shop,

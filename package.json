@@ -46,7 +46,6 @@
     "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.16.3",
     "@reduxjs/toolkit": "^2.2.7",
-    "@remix-run/dev": "^2.7.1",
     "@remix-run/node": "^2.7.1",
     "@remix-run/react": "^2.7.1",
     "@remix-run/serve": "^2.7.1",
@@ -92,16 +91,15 @@
   "devDependencies": {
     "@google-cloud/translate": "^9.2.0",
     "@remix-run/eslint-config": "^2.7.1",
+    "@remix-run/dev": "^2.7.1",
     "@shopify/api-codegen-preset": "^1.1.1",
     "@types/eslint": "^8.40.0",
-    "@types/lodash": "^4.17.16",
     "@types/node": "^22.2.0",
     "@types/react": "^18.2.31",
     "@types/react-dom": "^18.2.14",
     "dotenv": "^17.2.0",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.1.0",
-    "mssql": "^11.0.1",
     "prettier": "^3.2.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.2.2",
@@ -112,9 +110,7 @@
     "packages/*",
     "worker"
   ],
-  "trustedDependencies": [
-    "@shopify/plugin-cloudflare"
-  ],
+  "trustedDependencies": [],
   "resolutions": {},
   "overrides": {},
   "author": "allen"
