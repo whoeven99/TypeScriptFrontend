@@ -59,337 +59,355 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     formData.get("imageEndCursor") as string,
   );
 
-  switch (true) {
-    case !!productStartCursor:
-      try {
-        const data = await admin.graphql(
-          `#graphql
-            query products($startCursor: String, $query: String) {     
-              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
-                edges {
-                node {
-                  id
-                  title
-                  images(first: 20) {
-                    edges {
-                      node {
-                        id
-                        url 
-                      }
-                    }
-                    pageInfo {
-                      hasNextPage
-                      hasPreviousPage
-                      startCursor
-                      endCursor
+  if (productStartCursor) {
+    try {
+      const data = await admin.graphql(
+        `#graphql
+          query products($startCursor: String, $query: String) {     
+            products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
+              edges {
+              node {
+                id
+                title
+                images(first: 20) {
+                  edges {
+                    node {
+                      id
+                      url 
                     }
                   }
-                }
-              }
-              pageInfo {
-                hasNextPage
-                hasPreviousPage
-                startCursor
-                endCursor
-              }
-              }
-          }`,
-          {
-            variables: {
-              startCursor: productStartCursor?.cursor
-                ? productStartCursor?.cursor
-                : undefined,
-              query: productStartCursor?.query,
-            },
-          },
-        );
-
-        const response = await data.json();
-
-        console.log("productStartCursor", response?.data?.products?.edges);
-        if (response?.data?.products?.edges.length > 0) {
-          const menuData = response?.data?.products?.edges.map((item: any) => {
-            return {
-              key: item?.node?.id,
-              label: item?.node?.title,
-            };
-          });
-          const imageData = response?.data?.products?.edges.map((item: any) => {
-            return item?.node?.images?.edges.map((image: any) => {
-              return {
-                key: image?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
-                imageId: image?.node?.id,
-                imageUrl: image?.node?.url,
-                targetImageUrl: "",
-                imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
-                imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
-                imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  item?.node?.images?.pageInfo?.hasPreviousPage,
-              };
-            });
-          });
-          return json({
-            menuData,
-            imageData,
-            productStartCursor: response?.data?.products?.pageInfo?.startCursor,
-            productEndCursor: response?.data?.products?.pageInfo?.endCursor,
-            productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
-            productHasPreviousPage:
-              response?.data?.products?.pageInfo?.hasPreviousPage,
-          });
-        } else {
-          return json({
-            menuData: [],
-            imageData: [],
-            productStartCursor: "",
-            productEndCursor: "",
-            productHasNextPage: "",
-            productHasPreviousPage: "",
-          });
-        }
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error action productStartCursor productImage", error);
-        return json({
-          menuData: [],
-          imageData: [],
-          productStartCursor: "",
-          productEndCursor: "",
-          productHasNextPage: "",
-          productHasPreviousPage: "",
-        });
-      }
-    case !!productEndCursor:
-      try {
-        const data = await admin.graphql(
-          `#graphql
-            query products($endCursor: String, $query: String) {     
-              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
-                edges {
-                node {
-                  id
-                  title
-                  images(first: 20) {
-                    edges {
-                      node {
-                        id
-                        url 
-                      }
-                    }
-                    pageInfo {
-                      hasNextPage
-                      hasPreviousPage
-                      startCursor
-                      endCursor
-                    }
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
                   }
-                }
-              }
-              pageInfo {
-                hasNextPage
-                hasPreviousPage
-                startCursor
-                endCursor
-              }
-              }
-          }`,
-          {
-            variables: {
-              endCursor: productEndCursor?.cursor
-                ? productEndCursor?.cursor
-                : undefined,
-              query: productEndCursor?.query,
-            },
-          },
-        );
-
-        const response = await data.json();
-
-        console.log("productEndCursor", response?.data?.products?.edges);
-        if (response?.data?.products?.edges.length > 0) {
-          const menuData = response?.data?.products?.edges.map((item: any) => {
-            return {
-              key: item?.node?.id,
-              label: item?.node?.title,
-            };
-          });
-          const imageData = response?.data?.products?.edges.map((item: any) => {
-            return item?.node?.images?.edges.map((image: any) => {
-              return {
-                key: image?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
-                imageId: image?.node?.id,
-                imageUrl: image?.node?.url,
-                targetImageUrl: "",
-                imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
-                imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
-                imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  item?.node?.images?.pageInfo?.hasPreviousPage,
-              };
-            });
-          });
-
-          return json({
-            menuData,
-            imageData,
-            productStartCursor: response?.data?.products?.pageInfo?.startCursor,
-            productEndCursor: response?.data?.products?.pageInfo?.endCursor,
-            productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
-            productHasPreviousPage:
-              response?.data?.products?.pageInfo?.hasPreviousPage,
-          });
-        } else {
-          return json({
-            menuData: [],
-            imageData: [],
-            productStartCursor: "",
-            productEndCursor: "",
-            productHasNextPage: "",
-            productHasPreviousPage: "",
-          });
-        }
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error action productEndCursor productImage", error);
-        return json({
-          menuData: [],
-          imageData: [],
-          productStartCursor: "",
-          productEndCursor: "",
-          productHasNextPage: "",
-          productHasPreviousPage: "",
-        });
-      }
-    case !!imageStartCursor:
-      try {
-        const loadData = await admin.graphql(
-          `query {
-            product(id: "${imageStartCursor?.productId}") {
-              id
-              title
-              images(last: 20, before: "${imageStartCursor?.imageStartCursor}") {
-                edges {
-                  node {
-                    id
-                    url
-                  }
-                }
-                pageInfo {
-                  hasNextPage
-                  hasPreviousPage
-                  startCursor
-                  endCursor
                 }
               }
             }
-          }`,
-        );
-
-        const response = await loadData.json();
-
-        console.log("imageStartCursor", response?.data?.product?.images?.edges);
-        if (response?.data?.product?.images?.edges.length > 0) {
-          const imageData = response?.data?.product?.images?.edges.map(
-            (item: any) => {
-              return {
-                key: item?.node?.id,
-                productId: response?.data?.product?.id,
-                productTitle: response?.data?.product?.title,
-                imageId: item?.node?.id,
-                imageUrl: item?.node?.url,
-                targetImageUrl: "",
-                imageStartCursor:
-                  response?.data?.product?.images?.pageInfo?.startCursor,
-                imageEndCursor:
-                  response?.data?.product?.images?.pageInfo?.endCursor,
-                imageHasNextPage:
-                  response?.data?.product?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  response?.data?.product?.images?.pageInfo?.hasPreviousPage,
-              };
-            },
-          );
-          return json({
-            imageData,
-          });
-        } else {
-          return json({
-            imageData: [],
-          });
-        }
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error action imageStartCursor productImage", error);
-        return json({
-          imageData: [],
-        });
-      }
-    case !!imageEndCursor:
-      try {
-        const loadData = await admin.graphql(
-          `query {
-            product(id: "${imageEndCursor?.productId}") {
-              id
-              title
-              images(first: 20, after: "${imageEndCursor?.imageEndCursor}") {
-                edges {
-                  node {
-                    id
-                    url
-                  }
-                }
-                pageInfo {
-                  hasNextPage
-                  hasPreviousPage
-                  startCursor
-                  endCursor
-                }
-              }
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
             }
-          }`,
-        );
+            }
+        }`,
+        {
+          variables: {
+            startCursor: productStartCursor?.cursor
+              ? productStartCursor?.cursor
+              : undefined,
+            query: productStartCursor?.query,
+          },
+        },
+      );
 
-        const response = await loadData.json();
+      const response = await data.json();
 
-        console.log("imageEndCursor", response?.data?.product?.images);
-        if (response?.data?.product?.images?.edges.length > 0) {
-          const imageData = response?.data?.product?.images?.edges.map(
-            (item: any) => {
-              return {
-                key: item?.node?.id,
-                productId: response?.data?.product?.id,
-                productTitle: response?.data?.product?.title,
-                imageId: item?.node?.id,
-                imageUrl: item?.node?.url,
-                targetImageUrl: "",
-                imageStartCursor:
-                  response?.data?.product?.images?.pageInfo?.startCursor,
-                imageEndCursor:
-                  response?.data?.product?.images?.pageInfo?.endCursor,
-                imageHasNextPage:
-                  response?.data?.product?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  response?.data?.product?.images?.pageInfo?.hasPreviousPage,
-              };
-            },
-          );
-          return json({
-            imageData,
+      console.log("productStartCursor", response?.data?.products?.edges);
+      if (response?.data?.products?.edges.length > 0) {
+        const menuData = response?.data?.products?.edges.map((item: any) => {
+          return {
+            key: item?.node?.id,
+            label: item?.node?.title,
+          };
+        });
+        const imageData = response?.data?.products?.edges.map((item: any) => {
+          return item?.node?.images?.edges.map((image: any) => {
+            return {
+              key: image?.node?.id,
+              productId: item?.node?.id,
+              productTitle: item?.node?.title,
+              imageId: image?.node?.id,
+              imageUrl: image?.node?.url,
+              targetImageUrl: "",
+              imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
+              imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
+              imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
+              imageHasPreviousPage:
+                item?.node?.images?.pageInfo?.hasPreviousPage,
+            };
           });
-        } else {
-          return json({
-            imageData: [],
-          });
-        }
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error action imageEndCursor productImage", error);
+        });
         return json({
-          imageData: [],
+          menuData,
+          imageData,
+          productStartCursor: response?.data?.products?.pageInfo?.startCursor,
+          productEndCursor: response?.data?.products?.pageInfo?.endCursor,
+          productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
+          productHasPreviousPage:
+            response?.data?.products?.pageInfo?.hasPreviousPage,
         });
       }
+
+      return json({
+        menuData: [],
+        imageData: [],
+        productStartCursor: "",
+        productEndCursor: "",
+        productHasNextPage: "",
+        productHasPreviousPage: "",
+      });
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail(
+        "Error action productStartCursor productImage",
+        error,
+      );
+      return json({
+        menuData: [],
+        imageData: [],
+        productStartCursor: "",
+        productEndCursor: "",
+        productHasNextPage: "",
+        productHasPreviousPage: "",
+      });
+    }
   }
+
+  if (productEndCursor) {
+    try {
+      const data = await admin.graphql(
+        `#graphql
+          query products($endCursor: String, $query: String) {     
+            products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
+              edges {
+              node {
+                id
+                title
+                images(first: 20) {
+                  edges {
+                    node {
+                      id
+                      url 
+                    }
+                  }
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            }
+        }`,
+        {
+          variables: {
+            endCursor: productEndCursor?.cursor
+              ? productEndCursor?.cursor
+              : undefined,
+            query: productEndCursor?.query,
+          },
+        },
+      );
+
+      const response = await data.json();
+
+      console.log("productEndCursor", response?.data?.products?.edges);
+      if (response?.data?.products?.edges.length > 0) {
+        const menuData = response?.data?.products?.edges.map((item: any) => {
+          return {
+            key: item?.node?.id,
+            label: item?.node?.title,
+          };
+        });
+        const imageData = response?.data?.products?.edges.map((item: any) => {
+          return item?.node?.images?.edges.map((image: any) => {
+            return {
+              key: image?.node?.id,
+              productId: item?.node?.id,
+              productTitle: item?.node?.title,
+              imageId: image?.node?.id,
+              imageUrl: image?.node?.url,
+              targetImageUrl: "",
+              imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
+              imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
+              imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
+              imageHasPreviousPage:
+                item?.node?.images?.pageInfo?.hasPreviousPage,
+            };
+          });
+        });
+
+        return json({
+          menuData,
+          imageData,
+          productStartCursor: response?.data?.products?.pageInfo?.startCursor,
+          productEndCursor: response?.data?.products?.pageInfo?.endCursor,
+          productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
+          productHasPreviousPage:
+            response?.data?.products?.pageInfo?.hasPreviousPage,
+        });
+      }
+
+      return json({
+        menuData: [],
+        imageData: [],
+        productStartCursor: "",
+        productEndCursor: "",
+        productHasNextPage: "",
+        productHasPreviousPage: "",
+      });
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail(
+        "Error action productEndCursor productImage",
+        error,
+      );
+      return json({
+        menuData: [],
+        imageData: [],
+        productStartCursor: "",
+        productEndCursor: "",
+        productHasNextPage: "",
+        productHasPreviousPage: "",
+      });
+    }
+  }
+
+  if (imageStartCursor) {
+    try {
+      const loadData = await admin.graphql(
+        `query {
+          product(id: "${imageStartCursor?.productId}") {
+            id
+            title
+            images(last: 20, before: "${imageStartCursor?.imageStartCursor}") {
+              edges {
+                node {
+                  id
+                  url
+                }
+              }
+              pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+              }
+            }
+          }
+        }`,
+      );
+
+      const response = await loadData.json();
+
+      console.log("imageStartCursor", response?.data?.product?.images?.edges);
+      if (response?.data?.product?.images?.edges.length > 0) {
+        const imageData = response?.data?.product?.images?.edges.map(
+          (item: any) => {
+            return {
+              key: item?.node?.id,
+              productId: response?.data?.product?.id,
+              productTitle: response?.data?.product?.title,
+              imageId: item?.node?.id,
+              imageUrl: item?.node?.url,
+              targetImageUrl: "",
+              imageStartCursor:
+                response?.data?.product?.images?.pageInfo?.startCursor,
+              imageEndCursor:
+                response?.data?.product?.images?.pageInfo?.endCursor,
+              imageHasNextPage:
+                response?.data?.product?.images?.pageInfo?.hasNextPage,
+              imageHasPreviousPage:
+                response?.data?.product?.images?.pageInfo?.hasPreviousPage,
+            };
+          },
+        );
+        return json({
+          imageData,
+        });
+      }
+
+      return json({
+        imageData: [],
+      });
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail(
+        "Error action imageStartCursor productImage",
+        error,
+      );
+      return json({
+        imageData: [],
+      });
+    }
+  }
+
+  if (imageEndCursor) {
+    try {
+      const loadData = await admin.graphql(
+        `query {
+          product(id: "${imageEndCursor?.productId}") {
+            id
+            title
+            images(first: 20, after: "${imageEndCursor?.imageEndCursor}") {
+              edges {
+                node {
+                  id
+                  url
+                }
+              }
+              pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+              }
+            }
+          }
+        }`,
+      );
+
+      const response = await loadData.json();
+
+      console.log("imageEndCursor", response?.data?.product?.images);
+      if (response?.data?.product?.images?.edges.length > 0) {
+        const imageData = response?.data?.product?.images?.edges.map(
+          (item: any) => {
+            return {
+              key: item?.node?.id,
+              productId: response?.data?.product?.id,
+              productTitle: response?.data?.product?.title,
+              imageId: item?.node?.id,
+              imageUrl: item?.node?.url,
+              targetImageUrl: "",
+              imageStartCursor:
+                response?.data?.product?.images?.pageInfo?.startCursor,
+              imageEndCursor:
+                response?.data?.product?.images?.pageInfo?.endCursor,
+              imageHasNextPage:
+                response?.data?.product?.images?.pageInfo?.hasNextPage,
+              imageHasPreviousPage:
+                response?.data?.product?.images?.pageInfo?.hasPreviousPage,
+            };
+          },
+        );
+        return json({
+          imageData,
+        });
+      }
+
+      return json({
+        imageData: [],
+      });
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail(
+        "Error action imageEndCursor productImage",
+        error,
+      );
+      return json({
+        imageData: [],
+      });
+    }
+  }
+
   return null;
 };
 

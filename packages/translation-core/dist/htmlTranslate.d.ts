@@ -1,7 +1,7 @@
 /**
  * HTML text-node extraction and reassembly for translation.
  * Parser-based (node-html-parser), aligned with Spring HtmlTranslateStrategyService + Jsoup.
- * Keep in sync with TypeScriptFrontend/app/server/translateV4/htmlTranslate.server.ts
+ * Canonical HTML translation implementation shared by App and Worker.
  */
 import { isHtmlContent } from "./htmlContent.js";
 export { isHtmlContent };

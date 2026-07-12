@@ -23,9 +23,13 @@ import SingleTranslateAction from "~/components/singleTranslateAction";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
-import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
+import {
+  buildManageActionErrorResponse,
+  logManageTranslationGraphQLErrorDetail,
+} from "~/utils/manageTranslationErrors";
 
 const { Sider, Content } = Layout;
 
@@ -55,68 +59,49 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!startCursor: {
-      try {
-        const response = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: startCursor?.resourceType,
-          startCursor: startCursor?.cursor,
-          locale: startCursor?.searchTerm || searchTerm,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
+  if (startCursor) {
+    try {
+      const response = await queryPreviousTransType({
+        shop,
+        accessToken: accessToken as string,
+        resourceType: startCursor?.resourceType,
+        startCursor: startCursor?.cursor,
+        locale: startCursor?.searchTerm || searchTerm,
+      });
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response,
+      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
     }
+  }
 
-    case !!endCursor: {
-      try {
-        const response = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: endCursor?.resourceType,
-          endCursor: endCursor?.cursor,
-          locale: endCursor?.searchTerm || searchTerm,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
+  if (endCursor) {
+    try {
+      const response = await queryNextTransType({
+        shop,
+        accessToken: accessToken as string,
+        resourceType: endCursor?.resourceType,
+        endCursor: endCursor?.cursor,
+        locale: endCursor?.searchTerm || searchTerm,
+      });
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response,
+      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
     }
+  }
 
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query refreshNavigationResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
@@ -142,55 +127,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               locale: searchTerm || "",
             },
           },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
-        shop,
-        confirmData,
-      });
+      );
+      const data = await response.json();
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -208,6 +178,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const menuData: any[] = [
     {
@@ -337,64 +309,39 @@ const Index = () => {
   }, [dataFetcher.data, t]);
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setNavigationsData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+    }
+
+    if (failedItems.length === 0) {
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-配送页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const index = navigationsData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (index !== -1) {
-            const data = navigationsData[index]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              navigationsData[index].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-配送页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
-          refreshCurrentPageData();
-        }
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
     }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {
