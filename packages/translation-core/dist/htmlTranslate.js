@@ -92,11 +92,24 @@ export function effectiveTranslation(original, translated) {
 function elementTagName(el) {
     return (el.rawTagName ?? el.tagName ?? "").toLowerCase();
 }
+function walkElementNodes(node, visitor) {
+    if (node.nodeType === NodeType.ELEMENT_NODE) {
+        const el = node;
+        visitor(el);
+        for (const child of [...node.childNodes]) {
+            walkElementNodes(child, visitor);
+        }
+        return;
+    }
+    for (const child of [...node.childNodes]) {
+        walkElementNodes(child, visitor);
+    }
+}
 /** DOM walk — same idea as Jsoup doc.getAllElements() + textNodes(), skipping script/style. */
 function extractHtmlTextNodes(html) {
     const texts = [];
     const root = parse(html, HTML_PARSE_OPTIONS);
-    for (const el of root.querySelectorAll("*")) {
+    walkElementNodes(root, (el) => {
         for (const attr of TRANSLATABLE_ATTRS) {
             const val = el.getAttribute(attr);
             if (val == null || !isTranslatableAttrValue(val))
@@ -105,7 +118,7 @@ function extractHtmlTextNodes(html) {
             texts.push(val.trim());
             el.setAttribute(attr, textPlaceholder(idx));
         }
-    }
+    });
     function walkTextNodes(node) {
         if (node.nodeType === NodeType.TEXT_NODE) {
             const raw = node.rawText ?? "";
@@ -137,7 +150,7 @@ function extractHtmlTextNodes(html) {
 }
 export function restoreHtmlTextNodes(template, translations) {
     const root = parse(template, HTML_PARSE_OPTIONS);
-    for (const el of root.querySelectorAll("*")) {
+    walkElementNodes(root, (el) => {
         for (const attr of TRANSLATABLE_ATTRS) {
             const val = el.getAttribute(attr);
             if (val == null || !HTML_PLACEHOLDER_LEAK_RE.test(val))
@@ -146,7 +159,7 @@ export function restoreHtmlTextNodes(template, translations) {
             if (restored !== val)
                 el.setAttribute(attr, restored);
         }
-    }
+    });
     function walkRestore(node) {
         if (node.nodeType === NodeType.TEXT_NODE) {
             const raw = node.rawText ?? "";
