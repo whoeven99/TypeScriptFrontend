@@ -71,21 +71,26 @@ export async function getTsfRemaining(shop: string): Promise<number> {
   return getTsfRemainingWithRetry(shop, 1);
 }
 
-/** 带重试的额度查询；续跑时避免一次抖动就把并发 seed 到 1。 */
+/** 带重试的额度查询；续跑时避免一次抖动就把并发 seed 到 1。
+ *  无 Account 记录 → 返回 0（不是付费用户，不放行）。
+ *  查询临时失败 → 保守返回 1（避免误杀正在跑的任务）。 */
 export async function getTsfRemainingWithRetry(
   shop: string,
   attempts = 3,
 ): Promise<number> {
   const maxAttempts = Math.max(1, attempts);
+  let lastRemaining: number | null = null;
   for (let i = 0; i < maxAttempts; i++) {
     const remaining = await getTsfAccountRemaining(shop);
     if (remaining !== null) return remaining;
+    lastRemaining = remaining;
     if (i < maxAttempts - 1) {
       await new Promise((r) => setTimeout(r, 200 * (i + 1)));
     }
   }
-  console.warn(`[tsfQuota] query failed shop=${shop}, seed remaining=1`);
-  return 1;
+  // 重试耗尽仍为 null → 无 Account 记录，不是查询抖动 → 返回 0 阻断
+  console.warn(`[tsfQuota] no account for shop=${shop}, blocking (remaining=0)`);
+  return 0;
 }
 
 /** 邮件展示用：查询剩余额度；不可查或失败时返回 null。 */

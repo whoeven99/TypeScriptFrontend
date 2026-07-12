@@ -32,3 +32,4 @@ app/generated/
 /scripts/tmp
 /worker/scripts/tmp
 /worker/scripts/out
+/scripts/out

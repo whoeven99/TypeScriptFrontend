@@ -14,6 +14,7 @@ import {
   listAutoTranslateShops,
   getOfflineAccessTokenFromTsf,
   syncShopPrimaryLocaleInTsf,
+  hasTsfAccount,
 } from "./tsfDb.js";
 import { fetchShopPrimaryLocale } from "./shopifyFetch.js";
 import { AUTO_TRANSLATE_V4_MODULES } from "./moduleCatalog.js";
@@ -81,6 +82,7 @@ export async function runAutoTranslateScan(): Promise<void> {
   let skippedShopCooldown = 0;
   let skippedSlot = 0;
   let skippedNoQuota = 0;
+  let skippedNoAccount = 0;
   let cappedOut = false;
 
   for (const { shop, primaryLocale, targets } of shops) {
@@ -95,6 +97,12 @@ export async function runAutoTranslateScan(): Promise<void> {
     // 分槽打散：整店按 hash 固定到某槽位，只在当前槽位处理（该店所有语言一起建）。
     if (sharding && shopSlotIndex(shop, slotsPerDay) !== curSlot) {
       skippedSlot++;
+      continue;
+    }
+
+    // 无 TSF 账户的店铺不建自动任务（未付费/试用过期/已卸载）
+    if (!(await hasTsfAccount(shop))) {
+      skippedNoAccount++;
       continue;
     }
 
@@ -187,6 +195,7 @@ export async function runAutoTranslateScan(): Promise<void> {
   console.log(
     `[autoTranslate] 扫描完成：店=${shops.length} 槽位=${slotLabel} 新建=${created}` +
       ` 跳过(非本槽店)=${skippedSlot}` +
+      ` 跳过(无账户)=${skippedNoAccount}` +
       ` 跳过(店冷却<${cooldownMs / 3600_000}h)=${skippedShopCooldown}` +
       ` 跳过(额度不足)=${skippedNoQuota}` +
       ` 跳过(语言进行中)=${skippedActive}` +
