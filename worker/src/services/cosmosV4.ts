@@ -208,6 +208,41 @@ export async function deleteJob(shopName: string, jobId: string): Promise<void> 
   }
 }
 
+/** 查找同语言对的终态自动翻译任务（建新任务前清理旧记录用）。 */
+export async function findTerminalAutoJobsForTarget(
+  shopName: string,
+  source: string,
+  target: string,
+): Promise<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">[]> {
+  const terminalStatuses: TranslationV4Status[] = ["COMPLETED", "FAILED", "PAUSED", "CANCELLED"];
+  try {
+    const { resources } = await getContainer()
+      .items.query<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">>(
+        {
+          query: `SELECT c.id, c.shopName, c.blobPrefix FROM c
+                  WHERE c.shopName = @shopName
+                    AND c.source = @source
+                    AND c.target = @target
+                    AND c.taskSource = @autoSource
+                    AND ARRAY_CONTAINS(@terminalStatuses, c.status)`,
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@source", value: source },
+            { name: "@target", value: target },
+            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+            { name: "@terminalStatuses", value: terminalStatuses },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findTerminalAutoJobsForTarget failed:", err);
+    return [];
+  }
+}
+
 type StaleEmptyAutoJob = Pick<
   TranslationV4Job,
   "id" | "shopName" | "blobPrefix" | "taskSource" | "status" | "metrics" | "updatedAt"
