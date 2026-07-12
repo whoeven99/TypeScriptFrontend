@@ -132,12 +132,27 @@ function elementTagName(el: HTMLElement): string {
   return (el.rawTagName ?? el.tagName ?? "").toLowerCase();
 }
 
+function walkElementNodes(node: Node, visitor: (el: HTMLElement) => void): void {
+  if (node.nodeType === NodeType.ELEMENT_NODE) {
+    const el = node as HTMLElement;
+    visitor(el);
+    for (const child of [...node.childNodes]) {
+      walkElementNodes(child, visitor);
+    }
+    return;
+  }
+
+  for (const child of [...node.childNodes]) {
+    walkElementNodes(child, visitor);
+  }
+}
+
 /** DOM walk — same idea as Jsoup doc.getAllElements() + textNodes(), skipping script/style. */
 function extractHtmlTextNodes(html: string): { template: string; texts: string[] } {
   const texts: string[] = [];
   const root = parse(html, HTML_PARSE_OPTIONS);
 
-  for (const el of root.querySelectorAll("*")) {
+  walkElementNodes(root, (el) => {
     for (const attr of TRANSLATABLE_ATTRS) {
       const val = el.getAttribute(attr);
       if (val == null || !isTranslatableAttrValue(val)) continue;
@@ -145,7 +160,7 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
       texts.push(val.trim());
       el.setAttribute(attr, attrPlaceholder(idx));
     }
-  }
+  });
 
   function walkTextNodes(node: Node): void {
     if (node.nodeType === NodeType.TEXT_NODE) {
@@ -178,14 +193,14 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
 export function restoreHtmlTextNodes(template: string, translations: string[]): string {
   const root = parse(template, HTML_PARSE_OPTIONS);
 
-  for (const el of root.querySelectorAll("*")) {
+  walkElementNodes(root, (el) => {
     for (const attr of TRANSLATABLE_ATTRS) {
       const val = el.getAttribute(attr);
       if (val == null || !HTML_PLACEHOLDER_LEAK_RE.test(val)) continue;
       const restored = replacePlaceholdersInString(val, translations);
       if (restored !== val) el.setAttribute(attr, restored);
     }
-  }
+  });
 
   function walkRestore(node: Node): void {
     if (node.nodeType === NodeType.TEXT_NODE) {
