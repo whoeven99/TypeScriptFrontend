@@ -1,4 +1,4 @@
-import { blobWrite } from "../blobV4.js";
+import { blobRead, blobWrite } from "../blobV4.js";
 import { shopScanAiConfigured, SHOP_SCAN_AI_MODEL } from "./ai.js";
 import {
   fetchShopMarkets,
@@ -29,6 +29,46 @@ export type ProfileStageResult =
   | { status: "done"; profileStrategy: TerminologyStrategy | null }
   | { status: "skipped"; reason: string };
 
+type StoredProfileFactsBlob = {
+  facts?: ShopProfileFacts;
+  markets?: ShopMarket[];
+  themeTexts?: Array<{
+    text?: string;
+    module?: string;
+    key?: string;
+    resourceId?: string;
+    weight?: number;
+  }>;
+  signals?: ShopSignalBundle;
+};
+
+type StoredThemeKeyProfileBlob = {
+  themeSceneProfile?: ReturnType<typeof buildThemeSceneProfile> | null;
+};
+
+const PROFILE_STAGE_HEARTBEAT_INTERVAL_MS = Math.max(
+  5_000,
+  Number(process.env.SHOP_SCAN_PROFILE_HEARTBEAT_INTERVAL_MS) || 15_000,
+);
+
+async function runWithHeartbeat<T>(
+  heartbeat: () => Promise<void>,
+  task: () => Promise<T>,
+): Promise<T> {
+  const timer = setInterval(() => {
+    void heartbeat().catch((error) => {
+      console.warn("[shopScan] profile heartbeat failed:", error);
+    });
+  }, PROFILE_STAGE_HEARTBEAT_INTERVAL_MS);
+
+  try {
+    return await task();
+  } finally {
+    clearInterval(timer);
+    await heartbeat();
+  }
+}
+
 function hasProfileMaterial(
   facts: ShopProfileFacts,
   markets: ShopMarket[],
@@ -52,15 +92,18 @@ export async function runProfileStage(args: {
   scanId: string;
   blobPrefix: string;
   heartbeat: () => Promise<void>;
+  enableAi: boolean;
 }): Promise<ProfileStageResult> {
-  const { shop, accessToken, primaryLocale, locales, scanId, blobPrefix, heartbeat } = args;
+  const { shop, accessToken, primaryLocale, locales, scanId, blobPrefix, heartbeat, enableAi } =
+    args;
 
-  const [facts, markets, themeTexts] = await Promise.all([
-    fetchShopProfileFacts(shop, accessToken),
-    fetchShopMarkets(shop, accessToken, locales),
-    sampleThemeTexts(shop, accessToken, undefined, heartbeat),
-  ]);
-  await heartbeat();
+  const [facts, markets, themeTexts] = await runWithHeartbeat(heartbeat, async () =>
+    Promise.all([
+      fetchShopProfileFacts(shop, accessToken),
+      fetchShopMarkets(shop, accessToken, locales),
+      sampleThemeTexts(shop, accessToken, undefined, heartbeat),
+    ]),
+  );
 
   const signals = extractShopSignals(facts, themeTexts);
   const themeSceneProfile = buildThemeSceneProfile(themeTexts);
@@ -70,7 +113,7 @@ export async function runProfileStage(args: {
     .map((locale) => locale.locale);
   const scannedAt = new Date().toISOString();
 
-  if (!shopScanAiConfigured() || !hasMaterial) {
+  if (!enableAi || !shopScanAiConfigured() || !hasMaterial) {
     await blobWrite(`${blobPrefix}/profile-facts.json`, {
       stage: "profile",
       shop,
@@ -98,19 +141,30 @@ export async function runProfileStage(args: {
         generatedAt: scannedAt,
       }),
     );
+    if (hasMaterial) {
+      return {
+        status: "done",
+        profileStrategy: null,
+      };
+    }
     return {
       status: "skipped",
-      reason: !shopScanAiConfigured() ? "ai_not_configured" : "no_material",
+      reason: !enableAi
+        ? "ai_manual_only"
+        : !shopScanAiConfigured()
+          ? "ai_not_configured"
+          : "no_material",
     };
   }
 
-  const induction = await runProfileInduction({
-    facts,
-    markets,
-    signals,
-    primaryLocale,
-  });
-  await heartbeat();
+  const induction = await runWithHeartbeat(heartbeat, () =>
+    runProfileInduction({
+      facts,
+      markets,
+      signals,
+      primaryLocale,
+    }),
+  );
 
   await blobWrite(`${blobPrefix}/profile-facts.json`, {
     stage: "profile",
@@ -178,4 +232,129 @@ export async function runProfileStage(args: {
   }
 
   return { status: "done", profileStrategy: strategy };
+}
+
+export async function runProfileAiStageFromBlob(args: {
+  shop: string;
+  accessToken: string;
+  primaryLocale: string;
+  locales: ShopLocaleRow[];
+  scanId: string;
+  sourceBlobPrefix: string;
+  targetBlobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileStageResult> {
+  const {
+    shop,
+    primaryLocale,
+    locales,
+    scanId,
+    sourceBlobPrefix,
+    targetBlobPrefix,
+    heartbeat,
+  } = args;
+  const prefix = sourceBlobPrefix.endsWith("/") ? sourceBlobPrefix : `${sourceBlobPrefix}/`;
+  const [storedFacts, storedThemeProfile] = await Promise.all([
+    blobRead<StoredProfileFactsBlob>(`${prefix}profile-facts.json`),
+    blobRead<StoredThemeKeyProfileBlob>(`${prefix}theme-key-profile.json`),
+  ]);
+  await heartbeat();
+
+  const facts = storedFacts?.facts ?? null;
+  const markets = Array.isArray(storedFacts?.markets) ? storedFacts!.markets : [];
+  const themeTexts = Array.isArray(storedFacts?.themeTexts)
+    ? storedFacts!.themeTexts.map((sample) => ({
+        text: String(sample?.text ?? ""),
+        module: String(sample?.module ?? ""),
+        key: String(sample?.key ?? ""),
+        resourceId: String(sample?.resourceId ?? ""),
+        weight: Number(sample?.weight ?? 0),
+      }))
+    : [];
+  const signals =
+    storedFacts?.signals ??
+    (facts ? extractShopSignals(facts, themeTexts) : null);
+  const themeSceneProfile =
+    storedThemeProfile?.themeSceneProfile ??
+    (themeTexts.length > 0 ? buildThemeSceneProfile(themeTexts) : null);
+
+  if (!facts || !signals) {
+    return { status: "skipped", reason: "missing_profile_material" };
+  }
+
+  const induction = await runWithHeartbeat(heartbeat, () =>
+    runProfileInduction({
+      facts,
+      markets,
+      signals,
+      primaryLocale,
+    }),
+  );
+  const publishedLocales = locales
+    .filter((locale) => locale.published)
+    .map((locale) => locale.locale);
+  const scannedAt = new Date().toISOString();
+
+  await blobWrite(`${targetBlobPrefix}/profile-facts.json`, {
+    stage: "profile",
+    shop,
+    facts,
+    markets,
+    themeTexts,
+    signals,
+    themeSceneProfile,
+    induction,
+    scannedAt,
+    sourceBlobPrefix,
+  });
+  await blobWrite(`${targetBlobPrefix}/theme-key-profile.json`, {
+    stage: "themeKeyIntelligence",
+    shop,
+    themeSceneProfile,
+    scannedAt,
+    sourceBlobPrefix,
+  });
+
+  if (!induction.understanding) {
+    await blobWrite(
+      `${targetBlobPrefix}/translation-context-profile.json`,
+      buildTranslationContextProfile({
+        publishedLocales,
+        markets,
+        understanding: null,
+        strategy: induction.strategy,
+        themeSceneProfile,
+        generatedAt: scannedAt,
+      }),
+    );
+    return { status: "skipped", reason: "ai_understanding_failed" };
+  }
+
+  await blobWrite(
+    `${targetBlobPrefix}/translation-context-profile.json`,
+    buildTranslationContextProfile({
+      publishedLocales,
+      markets,
+      understanding: induction.understanding,
+      strategy: induction.strategy,
+      themeSceneProfile,
+      generatedAt: scannedAt,
+    }),
+  );
+
+  await upsertShopProfile({
+    shop,
+    shopName: facts.shopName,
+    primaryLocale,
+    industry: induction.understanding.industry,
+    keywords: induction.understanding.keywords.length
+      ? induction.understanding.keywords
+      : null,
+    description: induction.understanding.description || null,
+    brandTone: induction.understanding.voiceStyle,
+    aiModel: SHOP_SCAN_AI_MODEL,
+    lastScanId: scanId,
+  });
+
+  return { status: "done", profileStrategy: induction.strategy };
 }

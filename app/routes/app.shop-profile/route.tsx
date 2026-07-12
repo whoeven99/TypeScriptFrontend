@@ -38,8 +38,11 @@ import Button from "~/ui/components/AppButton";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
 import {
+  getLatestShopScanJobsByTask,
   getLatestShopScanJob,
   type ShopScanJob,
+  type ShopScanMode,
+  type ShopScanTask,
   type ShopScanStageState,
   type ShopScanStatus,
 } from "~/server/shopScan/cosmos.server";
@@ -77,7 +80,12 @@ type ProfileView = {
 
 type ScanView = Pick<
   ShopScanJob,
-  "id" | "trigger" | "status" | "stages" | "summary" | "createdAt" | "updatedAt"
+  "id" | "trigger" | "mode" | "status" | "stages" | "summary" | "createdAt" | "updatedAt"
+>;
+
+type TaskRunView = Pick<
+  ShopScanJob,
+  "id" | "task" | "status" | "updatedAt" | "createdAt" | "errorMessage"
 >;
 
 type LoaderData = {
@@ -94,6 +102,7 @@ type LoaderData = {
   translationContextProfile: TranslationContextProfileView | null;
   promptRoutingRows: PromptRoutingPreviewRow[];
   promptBlockPreviews: PromptBlockPreview[];
+  taskRuns: TaskRunView[];
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -118,6 +127,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let translationContextProfile: TranslationContextProfileView | null = null;
   let promptRoutingRows: PromptRoutingPreviewRow[] = [];
   let promptBlockPreviews: PromptBlockPreview[] = [];
+  let taskRuns: TaskRunView[] = [];
 
   try {
     const row = await prisma.shopProfile.findUnique({ where: { shop } });
@@ -139,32 +149,83 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (configured) {
     try {
-      const latest = await getLatestShopScanJob(shop);
+      const latestByTask = await getLatestShopScanJobsByTask(shop);
+      const jobs = Object.values(latestByTask).filter(Boolean) as ShopScanJob[];
+      taskRuns = jobs
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .map((job) => ({
+          id: job.id,
+          task: job.task,
+          status: job.status,
+          updatedAt: job.updatedAt,
+          createdAt: job.createdAt,
+          errorMessage: job.errorMessage,
+        }));
+
+      const contentJob = latestByTask.content_size ?? null;
+      const coverageJob = latestByTask.coverage ?? null;
+      const profileMaterialJob = latestByTask.profile_material ?? null;
+      const profileAiJob = latestByTask.profile_ai ?? null;
+      const glossaryAiJob = latestByTask.glossary_ai ?? null;
+      const latest = jobs[0] ?? (await getLatestShopScanJob(shop));
+
       if (latest) {
+        const latestUpdated = [...jobs]
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0] ?? latest;
+        const anyActive = jobs.some((job) => ACTIVE_STATUSES.includes(job.status));
         scan = {
-          id: latest.id,
-          trigger: latest.trigger,
-          status: latest.status,
-          stages: latest.stages,
-          summary: latest.summary,
-          createdAt: latest.createdAt,
-          updatedAt: latest.updatedAt,
+          id: latestUpdated.id,
+          trigger: latestUpdated.trigger,
+          mode: latestUpdated.mode,
+          status: anyActive ? "SCANNING" : latestUpdated.status,
+          stages: {
+            contentSize: mapJobStatusToStage(contentJob?.status),
+            profile: mapJobStatusToStage(profileAiJob?.status ?? profileMaterialJob?.status),
+            coverage: mapJobStatusToStage(coverageJob?.status),
+            glossary: mapJobStatusToStage(glossaryAiJob?.status ?? latestByTask.glossary_samples?.status),
+          },
+          summary: {
+            totalItems: contentJob?.summary.totalItems,
+            totalChars: contentJob?.summary.totalChars,
+            moduleStats: contentJob?.summary.moduleStats,
+            coverage: coverageJob?.summary.coverage,
+            profileStrategy: profileAiJob?.summary.profileStrategy,
+            glossaryCount: glossaryAiJob?.summary.glossaryCount,
+            glossarySuggestions: glossaryAiJob?.summary.glossarySuggestions,
+          },
+          createdAt: latestUpdated.createdAt,
+          updatedAt: latestUpdated.updatedAt,
         };
-        const artifacts = await loadShopScanArtifacts(latest.blobPrefix, latest.summary);
-        strategy = artifacts.strategy;
-        glossarySuggestions = artifacts.glossarySuggestions;
-        understanding = artifacts.understanding;
-        markets = artifacts.markets;
-        signals = artifacts.signals;
-        themeSceneProfile = artifacts.themeSceneProfile;
-        translationContextProfile = artifacts.translationContextProfile;
-        const debugPreview = buildShopScanDebugPreview({
-          themeSceneProfile: artifacts.themeSceneProfile,
-          translationContextProfile: artifacts.translationContextProfile,
-        });
-        promptRoutingRows = debugPreview.promptRoutingRows;
-        promptBlockPreviews = debugPreview.promptBlocks;
       }
+
+      const profileArtifactJob = profileAiJob ?? profileMaterialJob;
+      if (profileArtifactJob) {
+        const profileArtifacts = await loadShopScanArtifacts(
+          profileArtifactJob.blobPrefix,
+          profileArtifactJob.summary,
+        );
+        strategy = profileArtifacts.strategy;
+        understanding = profileArtifacts.understanding;
+        markets = profileArtifacts.markets;
+        signals = profileArtifacts.signals;
+        themeSceneProfile = profileArtifacts.themeSceneProfile;
+        translationContextProfile = profileArtifacts.translationContextProfile;
+      }
+
+      if (glossaryAiJob) {
+        const glossaryArtifacts = await loadShopScanArtifacts(
+          glossaryAiJob.blobPrefix,
+          glossaryAiJob.summary,
+        );
+        glossarySuggestions = glossaryArtifacts.glossarySuggestions;
+      }
+
+      const debugPreview = buildShopScanDebugPreview({
+        themeSceneProfile,
+        translationContextProfile,
+      });
+      promptRoutingRows = debugPreview.promptRoutingRows;
+      promptBlockPreviews = debugPreview.promptBlocks;
     } catch (err) {
       console.error("[shop-profile page] read latest scan failed:", err);
     }
@@ -186,6 +247,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     translationContextProfile,
     promptRoutingRows,
     promptBlockPreviews,
+    taskRuns,
   });
 };
 
@@ -194,7 +256,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     throw redirect("/app/translate-v4");
   }
   const { session } = await authenticate.admin(request);
-  const result = await enqueueShopScan({ shop: session.shop, trigger: "manual" });
+  const formData = await request.formData();
+  const rawTask = String(formData.get("task") ?? "").trim();
+  const task: ShopScanTask =
+    rawTask === "content_size" ||
+    rawTask === "coverage" ||
+    rawTask === "profile_material" ||
+    rawTask === "profile_ai" ||
+    rawTask === "glossary_samples" ||
+    rawTask === "glossary_ai"
+      ? rawTask
+      : "profile_material";
+  const result = await enqueueShopScan({
+    shop: session.shop,
+    trigger: "manual",
+    task,
+  });
   return json(result);
 };
 
@@ -273,6 +350,42 @@ const STAGE_TONE: Record<ShopScanStageState, string> = {
 };
 
 const ACTIVE_STATUSES: ShopScanStatus[] = ["CREATED", "QUEUED", "SCANNING"];
+const MODE_LABEL: Record<ShopScanMode, string> = {
+  full: "全量扫描",
+  data_only: "基础扫描",
+  ai_only: "AI 补全",
+};
+const TASK_LABEL: Record<ShopScanTask, string> = {
+  content_size: "扫描内容规模",
+  coverage: "扫描语言覆盖率",
+  profile_material: "扫描画像素材",
+  profile_ai: "生成店铺画像",
+  glossary_samples: "扫描术语样本",
+  glossary_ai: "生成术语建议",
+};
+const DATA_TASKS: ShopScanTask[] = [
+  "content_size",
+  "coverage",
+  "profile_material",
+  "glossary_samples",
+];
+const AI_TASKS: ShopScanTask[] = ["profile_ai", "glossary_ai"];
+
+function mapJobStatusToStage(status: ShopScanStatus | null | undefined): ShopScanStageState {
+  switch (status) {
+    case "COMPLETED":
+      return "DONE";
+    case "PARTIAL":
+    case "FAILED":
+      return "FAILED";
+    case "CREATED":
+    case "QUEUED":
+    case "SCANNING":
+      return "PENDING";
+    default:
+      return "PENDING";
+  }
+}
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "-";
@@ -300,6 +413,7 @@ export default function ShopProfilePage() {
     translationContextProfile,
     promptRoutingRows,
     promptBlockPreviews,
+    taskRuns,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
   const revalidator = useRevalidator();
@@ -397,8 +511,8 @@ export default function ShopProfilePage() {
     }));
   }, [themeSceneProfile]);
 
-  const handleRescan = () => {
-    fetcher.submit({}, { method: "POST" });
+  const handleScan = (task: ShopScanTask) => {
+    fetcher.submit({ task }, { method: "POST" });
   };
 
   return (
@@ -424,16 +538,11 @@ export default function ShopProfilePage() {
                 {STATUS_LABEL[scan.status]}
               </Tag>
             )}
+            {scan?.mode ? <Tag {...SCAN_TAG_STYLE}>{MODE_LABEL[scan.mode]}</Tag> : null}
           </Flex>
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            loading={isRescanning}
-            disabled={!configured || isActive}
-            onClick={handleRescan}
-          >
-            {isActive ? "扫描进行中…" : "重新扫描"}
-          </Button>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            扫描与 AI 改为手动按钮触发
+          </Text>
         </Flex>
 
         {!configured ? (
@@ -447,20 +556,112 @@ export default function ShopProfilePage() {
           <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
             <Empty
               image={<ThunderboltOutlined style={{ fontSize: 48, color: "var(--app-accent-primary)" }} />}
-              description="尚未扫描。安装后会自动触发一次扫描，或点击下方按钮开始。"
+              description="尚未扫描。请先手动执行所需的数据扫描，再按需触发 AI 整理。"
             >
               <Button
                 type="primary"
                 icon={<ThunderboltOutlined />}
                 loading={isRescanning}
-                onClick={handleRescan}
+                onClick={() => handleScan("profile_material")}
               >
-                立即扫描
+                开始扫描画像素材
               </Button>
             </Empty>
           </Card>
         ) : (
           <>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <ReloadOutlined style={{ color: "var(--app-accent-primary)" }} />
+                  <span>手动任务</span>
+                </Flex>
+              }
+              style={{ boxShadow: "var(--app-shadow-card)" }}
+            >
+              <Flex vertical gap={16}>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    数据扫描
+                  </Text>
+                  <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
+                    {DATA_TASKS.map((task) => (
+                      <Button
+                        key={task}
+                        type={task === "profile_material" ? "primary" : "default"}
+                        loading={isRescanning}
+                        disabled={!configured || isActive}
+                        onClick={() => handleScan(task)}
+                      >
+                        {TASK_LABEL[task]}
+                      </Button>
+                    ))}
+                  </Flex>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    AI 整理
+                  </Text>
+                  <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
+                    {AI_TASKS.map((task) => (
+                      <Button
+                        key={task}
+                        type="default"
+                        icon={<RobotOutlined />}
+                        loading={isRescanning}
+                        disabled={!configured || isActive}
+                        onClick={() => handleScan(task)}
+                      >
+                        {TASK_LABEL[task]}
+                      </Button>
+                    ))}
+                  </Flex>
+                </div>
+                {taskRuns.length > 0 ? (
+                  <Table
+                    size="small"
+                    pagination={false}
+                    dataSource={taskRuns.map((run) => ({ key: run.id, ...run }))}
+                    columns={[
+                      {
+                        title: "任务",
+                        dataIndex: "task",
+                        key: "task",
+                        render: (task: ShopScanTask) => TASK_LABEL[task] ?? task,
+                      },
+                      {
+                        title: "状态",
+                        dataIndex: "status",
+                        key: "status",
+                        width: 120,
+                        render: (status: ShopScanStatus) => (
+                          <Tag color={STATUS_COLOR[status]}>{STATUS_LABEL[status]}</Tag>
+                        ),
+                      },
+                      {
+                        title: "最近更新时间",
+                        dataIndex: "updatedAt",
+                        key: "updatedAt",
+                        width: 180,
+                        render: (value: string) => formatDate(value),
+                      },
+                      {
+                        title: "备注",
+                        dataIndex: "errorMessage",
+                        key: "errorMessage",
+                        ellipsis: true,
+                        render: (value: string | null | undefined) => value || "-",
+                      },
+                    ]}
+                  />
+                ) : (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    暂无任务记录
+                  </Text>
+                )}
+              </Flex>
+            </Card>
+
             {/* 扫描状态 */}
             <Card
               title={

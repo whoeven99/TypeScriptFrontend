@@ -23,7 +23,6 @@ import {
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIdleReady } from "~/hooks/useIdleReady";
@@ -135,10 +134,7 @@ async function runAppInitialization({
     // 判定并锁定账本归属；新 TSF 用户只建账户，不在安装时发放试用额度。
     await resolveBillingBinding(shop);
 
-    // 店铺画像扫描：安装/首次进 App 触发一次性店铺扫描（内容量/画像/覆盖率/术语表）。
-    // 幂等（已有扫描则跳过），best-effort 不阻断初始化。worker 异步消费。
-    // 生产环境由 enqueueShopScan 内部直接跳过（disabled_in_production）。
-    void enqueueShopScan({ shop, trigger: "install" });
+    // 店铺画像扫描改为手动按钮触发，避免安装/首次进入时自动拉 Shopify 或自动调用 AI。
   } catch (error) {
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
   }

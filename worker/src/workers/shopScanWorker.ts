@@ -3,6 +3,7 @@ import {
   claimShopScanJob,
   findPendingShopScanJobs,
   getShopScanJob,
+  getLatestShopScanJobByTask,
   heartbeatShopScan,
   setShopScanStage,
   updateShopScanJob,
@@ -11,6 +12,7 @@ import {
   type ShopScanStageName,
   type ShopScanStageState,
   type ShopScanSummary,
+  type ShopScanTask,
 } from "../services/shopScanCosmos.js";
 import {
   popShopScanHint,
@@ -21,9 +23,12 @@ import { getOfflineAccessTokenFromTsf, hasTsfDbCredentials } from "../services/t
 import { fetchShopLocales, type ShopLocaleRow } from "../services/shopScan/shopContext.js";
 import { isRecoverableScanError } from "../services/shopScan/graphql.js";
 import { runContentSizeStage } from "../services/shopScan/stageContentSize.js";
-import { runProfileStage } from "../services/shopScan/stageProfile.js";
+import { runProfileAiStageFromBlob, runProfileStage } from "../services/shopScan/stageProfile.js";
 import { runCoverageStage } from "../services/shopScan/stageCoverage.js";
-import { runGlossaryStage } from "../services/shopScan/stageGlossary.js";
+import {
+  runGlossaryAiStageFromBlob,
+  runGlossarySamplesStage,
+} from "../services/shopScan/stageGlossary.js";
 import { touchShopProfileScan } from "../services/shopScan/tsfWrite.js";
 import { isShuttingDown } from "../shutdown.js";
 
@@ -104,8 +109,10 @@ function makeHeartbeat(shop: string, scanId: string): () => Promise<void> {
 async function runScanStages(job: ShopScanJob): Promise<void> {
   const shop = job.shopName;
   const scanId = job.id;
+  const task = job.task;
   const heartbeat = makeHeartbeat(shop, scanId);
   const attemptsExhausted = job.attempts >= SHOP_SCAN_MAX_ATTEMPTS;
+  const taskStage = stageNameForTask(task);
 
   const accessToken = await getOfflineAccessTokenFromTsf(shop);
   if (!accessToken) {
@@ -126,11 +133,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
   const summary: ShopScanSummary = { ...job.summary };
   const stages = { ...job.stages };
 
-  const runStage = async (
-    name: ShopScanStageName,
+  const runTask = async (
     fn: () => Promise<ShopScanStageState | { state: ShopScanStageState; summary?: Partial<ShopScanSummary> }>,
   ): Promise<void> => {
-    if (stages[name] === "DONE" || stages[name] === "SKIPPED") return; // 幂等：已完成阶段跳过
     try {
       const result = await fn();
       const state = typeof result === "string" ? result : result.state;
@@ -138,81 +143,111 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         Object.assign(summary, result.summary);
         await updateShopScanJob(shop, scanId, { summary: result.summary });
       }
-      stages[name] = state;
-      await setShopScanStage(shop, scanId, name, state);
+      stages[taskStage] = state;
+      await setShopScanStage(shop, scanId, taskStage, state);
       await heartbeat();
     } catch (error) {
       if (isRecoverableScanError(error) && !attemptsExhausted) {
-        throw new RequeueSignal(`${name}: ${error instanceof Error ? error.message : error}`);
+        throw new RequeueSignal(`${task}: ${error instanceof Error ? error.message : error}`);
       }
-      console.error(`[shopScan] stage=${name} failed shop=${shop} scan=${scanId}:`, error);
-      stages[name] = "FAILED";
-      await setShopScanStage(shop, scanId, name, "FAILED");
+      console.error(`[shopScan] task=${task} failed shop=${shop} scan=${scanId}:`, error);
+      stages[taskStage] = "FAILED";
+      await setShopScanStage(shop, scanId, taskStage, "FAILED");
     }
   };
 
   try {
-    await runStage("contentSize", async () => {
-      const r = await runContentSizeStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        blobPrefix: job.blobPrefix,
-        heartbeat,
-      });
-      return {
-        state: "DONE",
-        summary: {
-          totalItems: r.totalItems,
-          totalChars: r.totalChars,
-          moduleStats: r.moduleStats,
-        },
-      };
-    });
-
-    await runStage("profile", async () => {
-      const r = await runProfileStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        locales,
-        scanId,
-        blobPrefix: job.blobPrefix,
-        heartbeat,
-      });
-      return r.status === "done"
-        ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
-        : "SKIPPED";
-    });
-
-    await runStage("coverage", async () => {
-      const r = await runCoverageStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        locales,
-        blobPrefix: job.blobPrefix,
-        heartbeat,
-      });
-      return { state: r.status === "done" ? "DONE" : "SKIPPED", summary: { coverage: r.coverage } };
-    });
-
-    await runStage("glossary", async () => {
-      const r = await runGlossaryStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        locales,
-        blobPrefix: job.blobPrefix,
-        heartbeat,
-      });
-      return {
-        state: r.status === "done" ? "DONE" : "SKIPPED",
-        summary: {
-          glossaryCount: r.glossaryCount,
-          glossarySuggestions: r.glossarySuggestions,
-        },
-      };
+    await runTask(async () => {
+      switch (task) {
+        case "content_size": {
+          const r = await runContentSizeStage({
+            shop,
+            accessToken,
+            primaryLocale,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return {
+            state: "DONE",
+            summary: {
+              totalItems: r.totalItems,
+              totalChars: r.totalChars,
+              moduleStats: r.moduleStats,
+            },
+          };
+        }
+        case "coverage": {
+          const r = await runCoverageStage({
+            shop,
+            accessToken,
+            primaryLocale,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return {
+            state: r.status === "done" ? "DONE" : "SKIPPED",
+            summary: { coverage: r.coverage },
+          };
+        }
+        case "profile_material": {
+          const r = await runProfileStage({
+            shop,
+            accessToken,
+            primaryLocale,
+            locales,
+            scanId,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+            enableAi: false,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "profile_ai": {
+          const sourceJob = await getLatestShopScanJobByTask(shop, "profile_material");
+          if (!sourceJob?.blobPrefix) return "SKIPPED";
+          const r = await runProfileAiStageFromBlob({
+            shop,
+            accessToken,
+            primaryLocale,
+            locales,
+            scanId,
+            sourceBlobPrefix: sourceJob.blobPrefix,
+            targetBlobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done"
+            ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
+            : "SKIPPED";
+        }
+        case "glossary_samples": {
+          const r = await runGlossarySamplesStage({
+            shop,
+            accessToken,
+            primaryLocale,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "glossary_ai": {
+          const sourceJob = await getLatestShopScanJobByTask(shop, "glossary_samples");
+          if (!sourceJob?.blobPrefix) return "SKIPPED";
+          const r = await runGlossaryAiStageFromBlob({
+            blobPrefix: job.blobPrefix,
+            sourceBlobPrefix: sourceJob.blobPrefix,
+            heartbeat,
+          });
+          return {
+            state: r.status === "done" ? "DONE" : "SKIPPED",
+            summary: {
+              glossaryCount: r.glossaryCount,
+              glossarySuggestions: r.glossarySuggestions,
+            },
+          };
+        }
+      }
     });
   } catch (signal) {
     if (signal instanceof RequeueSignal) {
@@ -222,8 +257,8 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
     throw signal;
   }
 
-  // 扫描收尾：确保画像扫描指针写入（profile 跳过时也记录一次）
-  if (stages.profile !== "DONE") {
+  // 画像相关任务收尾：确保画像扫描指针更新。
+  if (task === "profile_material" || task === "profile_ai") {
     try {
       await touchShopProfileScan(shop, scanId);
     } catch {
@@ -241,8 +276,23 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
       : null,
   });
   console.log(
-    `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} stages=${JSON.stringify(stages)}`,
+    `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} task=${task} stages=${JSON.stringify(stages)}`,
   );
+}
+
+function stageNameForTask(task: ShopScanTask): ShopScanStageName {
+  switch (task) {
+    case "content_size":
+      return "contentSize";
+    case "coverage":
+      return "coverage";
+    case "profile_material":
+    case "profile_ai":
+      return "profile";
+    case "glossary_samples":
+    case "glossary_ai":
+      return "glossary";
+  }
 }
 
 async function requeueScan(shop: string, scanId: string, reason: string): Promise<void> {
