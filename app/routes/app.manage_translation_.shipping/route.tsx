@@ -29,8 +29,8 @@ import {
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
+  buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
-  isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
 import {
@@ -58,112 +58,89 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!endCursor:
-      try {
-        const response = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PACKING_SLIP_TEMPLATE",
-          endCursor: endCursor.cursor,
-          locale: searchTerm || "",
-        });
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
-          `#graphql
-            query refreshShippingResources($resourceIds: [ID!]!, $locale: String!) {
-              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
-                nodes {
-                  resourceId
-                  translatableContent {
-                    key
-                    digest
-                    locale
-                    type
-                    value
-                  }
-                  translations(locale: $locale) {
-                    key
-                    value
-                  }
-                }
-              }
-            }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
-          },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
+  if (endCursor) {
+    try {
+      const response = await queryNextTransType({
         shop,
-        confirmData,
+        accessToken: accessToken as string,
+        resourceType: "PACKING_SLIP_TEMPLATE",
+        endCursor: endCursor.cursor,
+        locale: searchTerm || "",
       });
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response,
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
+          query refreshShippingResources($resourceIds: [ID!]!, $locale: String!) {
+            translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+              nodes {
+                resourceId
+                translatableContent {
+                  key
+                  digest
+                  locale
+                  type
+                  value
+                }
+                translations(locale: $locale) {
+                  key
+                  value
+                }
+              }
+            }
+          }`,
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
+          },
+        },
+      );
+      const data = await response.json();
+
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
+      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
+  }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -288,7 +265,6 @@ const Index = () => {
       getManageTranslationLoadErrorMessage(t, dataFetcher.data?.errorMsg),
     );
   }, [dataFetcher.data, t]);
-
 
   useEffect(() => {
     const data = consumeConfirmResponse(confirmFetcher.data);

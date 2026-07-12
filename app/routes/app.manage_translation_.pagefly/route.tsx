@@ -59,133 +59,143 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     formData.get("getContentDataByFilename") as string,
   );
 
-  switch (true) {
-    case !!GetMenuData:
-      try {
-        const response = await queryPageFlyThemeData({
-          shop,
-          accessToken: accessToken as string,
-        });
+  if (GetMenuData) {
+    try {
+      const response = await queryPageFlyThemeData({
+        shop,
+        accessToken: accessToken as string,
+      });
 
-        const aisalesData = response?.aisales?.nodes[0]?.files?.nodes;
-        const aispData = response?.aisp?.nodes[0]?.files?.nodes;
-        const pagesData = response?.pages?.nodes[0]?.files?.nodes;
-        const sectionsData = response?.sections?.nodes[0]?.files?.nodes;
+      const aisalesData = response?.aisales?.nodes[0]?.files?.nodes;
+      const aispData = response?.aisp?.nodes[0]?.files?.nodes;
+      const pagesData = response?.pages?.nodes[0]?.files?.nodes;
+      const sectionsData = response?.sections?.nodes[0]?.files?.nodes;
 
-        let themeJsonData: any[] = [];
+      let themeJsonData: any[] = [];
 
-        if (Array.isArray(aisalesData)) {
-          const filteredAisalesData = aisalesData.filter((item) =>
-            /^sections\/pf-ai-sales-page-[a-zA-Z0-9]+\.liquid$/.test(
-              item?.filename,
-            ),
-          );
+      if (Array.isArray(aisalesData)) {
+        const filteredAisalesData = aisalesData.filter((item) =>
+          /^sections\/pf-ai-sales-page-[a-zA-Z0-9]+\.liquid$/.test(
+            item?.filename,
+          ),
+        );
 
-          themeJsonData.push(...filteredAisalesData);
-        }
+        themeJsonData.push(...filteredAisalesData);
+      }
 
-        if (Array.isArray(aispData)) {
-          themeJsonData.push(...aispData);
-        }
+      if (Array.isArray(aispData)) {
+        themeJsonData.push(...aispData);
+      }
 
-        if (Array.isArray(pagesData)) {
-          const filteredPagesData = pagesData.filter((item) =>
-            /^sections\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
-          );
+      if (Array.isArray(pagesData)) {
+        const filteredPagesData = pagesData.filter((item) =>
+          /^sections\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
+        );
 
-          themeJsonData.push(...filteredPagesData);
-        }
+        themeJsonData.push(...filteredPagesData);
+      }
 
-        if (Array.isArray(sectionsData)) {
-          const filteredSectionsData = sectionsData.filter((item) =>
-            /^snippets\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
-          );
+      if (Array.isArray(sectionsData)) {
+        const filteredSectionsData = sectionsData.filter((item) =>
+          /^snippets\/pf-[a-zA-Z0-9]+\.liquid$/.test(item?.filename),
+        );
 
-          themeJsonData.push(...filteredSectionsData);
-        }
+        themeJsonData.push(...filteredSectionsData);
+      }
 
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: themeJsonData,
+      };
+    } catch (error) {
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+      );
+      return {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        response: undefined,
+      };
+    }
+  }
+
+  if (getContentDataByFilename) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
+          query themeJsonByFilename ($filename: [String!]){     
+              themes(first: 1 ,roles: MAIN) {
+                  nodes {
+                      files(first: 1, filenames: $filename) {
+                          nodes {
+                              body {
+                                  ... on OnlineStoreThemeFileBodyText {
+                                  __typename
+                                  content
+                                  }
+                              }
+                              filename
+                          }
+                      }
+                  }
+              }
+          }`,
+        {
+          variables: {
+            filename: getContentDataByFilename.filename
+              ? getContentDataByFilename.filename
+              : undefined,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      const res = data.data?.themes?.nodes[0]?.files?.nodes;
+
+      if (Array.isArray(res)) {
         return {
           success: true,
           errorCode: 0,
           errorMsg: "",
-          response: themeJsonData,
-        };
-      } catch (error) {
-        const appError = buildTranslateV4Error(
-          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-        );
-        return {
-          success: false,
-          errorCode: appError.errorCode,
-          errorMsg: appError.errorMsg,
-          response: undefined,
+          response: res[0]?.body,
         };
       }
 
-    case !!getContentDataByFilename:
-      try {
-        const response = await admin.graphql(
-          `#graphql
-            query themeJsonByFilename ($filename: [String!]){     
-                themes(first: 1 ,roles: MAIN) {
-                    nodes {
-                        files(first: 1, filenames: $filename) {
-                            nodes {
-                                body {
-                                    ... on OnlineStoreThemeFileBodyText {
-                                    __typename
-                                    content
-                                    }
-                                }
-                                filename
-                            }
-                        }
-                    }
-                }
-            }`,
-          {
-            variables: {
-              filename: getContentDataByFilename.filename
-                ? getContentDataByFilename.filename
-                : undefined,
-            },
-          },
-        );
-
-        const data = await response.json();
-
-        const res = data.data?.themes?.nodes[0]?.files?.nodes;
-
-        if (Array.isArray(res)) {
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: res[0]?.body,
-          };
-        }
-
-        const appError = buildTranslateV4Error(
-          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-        );
-        return {
-          success: false,
-          errorCode: appError.errorCode,
-          errorMsg: appError.errorMsg,
-          response: undefined,
-        };
-      } catch (error) {
-        const appError = buildTranslateV4Error(
-          TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
-        );
-        return {
-          success: false,
-          errorCode: appError.errorCode,
-          errorMsg: appError.errorMsg,
-          response: undefined,
-        };
-      }
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+      );
+      return {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        response: undefined,
+      };
+    } catch (error) {
+      const appError = buildTranslateV4Error(
+        TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+      );
+      return {
+        success: false,
+        errorCode: appError.errorCode,
+        errorMsg: appError.errorMsg,
+        response: undefined,
+      };
+    }
   }
+
+  const appError = buildTranslateV4Error(
+    TRANSLATE_V4_ERROR_KEYS.PAGEFLY_LIST_FAILED,
+  );
+  return {
+    success: false,
+    errorCode: appError.errorCode,
+    errorMsg: appError.errorMsg,
+    response: undefined,
+  };
 };
 
 const Index = () => {

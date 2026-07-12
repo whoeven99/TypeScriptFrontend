@@ -31,8 +31,8 @@ import {
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
+  buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
-  isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
 import {
@@ -50,7 +50,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const searchTerm = getManageTranslationLanguage(request);
 
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
@@ -59,10 +59,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!loading:
-      try {
-        const response = await admin.graphql(
+  if (loading) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query {     
               translatableResources(resourceType: ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS, first: 1) {
@@ -82,32 +81,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-        );
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data?.data?.translatableResources || [],
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data?.data?.translatableResources || [],
+      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
+      return buildManageActionErrorResponse(error, { response: null });
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: null,
-        };
-      }
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query refreshSettingsDataSectionsResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
@@ -133,55 +125,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               locale: searchTerm || "",
             },
           },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
-        shop,
-        confirmData,
-      });
+      );
+      const data = await response.json();
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -335,10 +312,10 @@ const Index = () => {
       splitManageSaveResults(data.response);
 
     if (successfulItems.length) {
-      setThemesData((prev) =>
+      setThemesData((prev: any[]) =>
         applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      setFilteredThemesData((prev) =>
+      setFilteredThemesData((prev: any[]) =>
         applyManageResourceTranslationUpdates(prev, successfulItems),
       );
     }

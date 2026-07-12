@@ -26,7 +26,10 @@ import { globalStore } from "~/globalStore";
 import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
-import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
+import {
+  buildManageActionErrorResponse,
+  logManageTranslationGraphQLErrorDetail,
+} from "~/utils/manageTranslationErrors";
 
 const { Sider, Content } = Layout;
 
@@ -56,68 +59,49 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!startCursor: {
-      try {
-        const response = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: startCursor?.resourceType,
-          startCursor: startCursor?.cursor,
-          locale: startCursor?.searchTerm || searchTerm,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
+  if (startCursor) {
+    try {
+      const response = await queryPreviousTransType({
+        shop,
+        accessToken: accessToken as string,
+        resourceType: startCursor?.resourceType,
+        startCursor: startCursor?.cursor,
+        locale: startCursor?.searchTerm || searchTerm,
+      });
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response,
+      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
     }
+  }
 
-    case !!endCursor: {
-      try {
-        const response = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: endCursor?.resourceType,
-          endCursor: endCursor?.cursor,
-          locale: endCursor?.searchTerm || searchTerm,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
+  if (endCursor) {
+    try {
+      const response = await queryNextTransType({
+        shop,
+        accessToken: accessToken as string,
+        resourceType: endCursor?.resourceType,
+        endCursor: endCursor?.cursor,
+        locale: endCursor?.searchTerm || searchTerm,
+      });
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response,
+      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
     }
+  }
 
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query refreshNavigationResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
@@ -143,55 +127,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               locale: searchTerm || "",
             },
           },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
-        shop,
-        confirmData,
-      });
+      );
+      const data = await response.json();
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
