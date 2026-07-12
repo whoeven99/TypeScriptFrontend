@@ -109,7 +109,8 @@
   },
   "workspaces": [
     "extensions/*",
-    "packages/*"
+    "packages/*",
+    "worker"
   ],
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"
