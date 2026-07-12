@@ -52,7 +52,7 @@ import {
   logReactProfilerRender,
   markPerfEnd,
   markPerfStart,
-} from "~/utils/perf.client";
+} from "~/utils/perf";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 

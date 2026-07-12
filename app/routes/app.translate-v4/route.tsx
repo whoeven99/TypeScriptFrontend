@@ -53,7 +53,7 @@ import {
   logReactProfilerRender,
   markPerfEnd,
   markPerfStart,
-} from "~/utils/perf.client";
+} from "~/utils/perf";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
