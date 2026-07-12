@@ -126,6 +126,16 @@ export async function getTsfAccountRemaining(shop: string): Promise<number | nul
   return total - Number(r.usedCredits ?? 0);
 }
 
+/** 检查店铺是否在 TSF Account 表中有记录（有账户 = 有付费/试用资格）。 */
+export async function hasTsfAccount(shop: string): Promise<boolean> {
+  if (!hasTsfDbCredentials()) return false;
+  const rs = await getTsfDb().execute({
+    sql: "SELECT 1 FROM Account WHERE shop = ? LIMIT 1",
+    args: [shop],
+  });
+  return rs.rows.length > 0;
+}
+
 /**
  * tsf 账户周期内扣减：仅自增 usedCredits（分池结算在续费时做），返回扣减后剩余。
  * 无账户或未配置 Turso → 返回 null（调用方视为扣减失败）。

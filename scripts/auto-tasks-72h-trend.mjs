@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TZ = process.env.AUTO_TRANSLATE_SCHEDULE_TZ?.trim() || "Asia/Shanghai";
 const AUTO = "TsFrontend-Auto";
-const HOURS = 72; // 3 days
+const HOURS = 96; // 4 days: Jul 7 00:00 ~ Jul 11 00:00 CST
 
 function loadEnvProd() {
   const envPath = resolve(__dirname, "../.env.prod");
@@ -62,8 +62,8 @@ function buildHourBuckets(now, timeZone, hours) {
 }
 
 const env = loadEnvProd();
-const endpoint = env.COSMOS_ENDPOINT?.trim();
-const key = env.COSMOS_KEY?.trim();
+const endpoint = env.COSMOS_ENDPOINT_V4?.trim() || env.COSMOS_ENDPOINT?.trim();
+const key = env.COSMOS_KEY_V4?.trim() || env.COSMOS_KEY?.trim();
 const db = env.COSMOS_TRANSLATION_DATABASE_ID?.trim() || "translation";
 const containerId =
   env.COSMOS_TRANSLATION_V4_JOBS_CONTAINER?.trim() || "translation_v4_jobs";
@@ -73,8 +73,9 @@ if (!endpoint || !key) {
   process.exit(1);
 }
 
-const now = new Date();
-const since = new Date(now.getTime() - HOURS * 60 * 60_000).toISOString();
+// Fixed range: Jul 7 00:00 ~ Jul 11 00:00 CST (4 full days)
+const now = new Date("2026-07-11T00:00:00+08:00");
+const since = new Date("2026-07-07T00:00:00+08:00").toISOString();
 
 console.error(`Querying Cosmos from ${since} to ${now.toISOString()} ...`);
 
@@ -128,9 +129,11 @@ for (const j of jobs) {
 }
 
 const dayKeys = Object.keys(daily).sort();
-const dailySeries = dayKeys.map((day, i) => {
-  const prev = i > 0 ? dailySeriesData[i - 1] : null;
+const dailySeries = [];
+for (let i = 0; i < dayKeys.length; i++) {
+  const day = dayKeys[i];
   const cur = { day, count: daily[day].count, shops: daily[day].shops.size };
+  const prev = i > 0 ? dailySeries[i - 1] : null;
   let countChange = null;
   let countChangePct = null;
   if (prev) {
@@ -139,11 +142,8 @@ const dailySeries = dayKeys.map((day, i) => {
       ? ((countChange / prev.count) * 100).toFixed(1)
       : null;
   }
-  return { ...cur, countChange, countChangePct };
-});
-
-// Store for next iteration reference
-const dailySeriesData = dailySeries.map(d => ({ count: d.count }));
+  dailySeries.push({ ...cur, countChange, countChangePct });
+}
 
 // --- Output JSON ---
 const result = {
@@ -162,7 +162,7 @@ const result = {
 
 const outDir = resolve(__dirname, "out");
 mkdirSync(outDir, { recursive: true });
-const jsonPath = resolve(outDir, "auto-tasks-72h.json");
+const jsonPath = resolve(outDir, "auto-tasks-7-10.json");
 writeFileSync(jsonPath, JSON.stringify(result, null, 2));
 console.error(`JSON saved to ${jsonPath}`);
 
@@ -334,7 +334,7 @@ new Chart(document.getElementById('statusChart'), {
 </body>
 </html>`;
 
-const htmlPath = resolve(outDir, "auto-tasks-72h-chart.html");
+const htmlPath = resolve(outDir, "auto-tasks-7-10-chart.html");
 writeFileSync(htmlPath, html);
 console.error(`Chart saved to ${htmlPath}`);
 console.log(`file:///${htmlPath.replace(/\\/g, "/")}`);
