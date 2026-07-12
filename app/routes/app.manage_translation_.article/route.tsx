@@ -7,13 +7,21 @@ import {
   Spin,
   Table,
   Typography,
-} from "antd";
+  } from "antd";
 import Button from "~/ui/components/AppButton";
-import { useEffect, useState, useRef } from "react";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { Page, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
+import { useEffect,
+  useState,
+  useRef } from "react";
+import { useFetcher,
+  useLoaderData,
+  useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page,
+  Pagination,
+  Select } from "@shopify/polaris";
+import { ActionFunctionArgs,
+  json } from "@remix-run/node";
+import { queryNextTransType,
+  queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
@@ -23,16 +31,21 @@ import { useTranslation } from "react-i18next";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
-} from "~/server/manageTranslation/manageTranslationRoute.server";
+  } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
+  buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
-  isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
-} from "~/utils/manageTranslationErrors";
+  } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -55,144 +68,115 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!startCursor:
-      try {
-        const response = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "ARTICLE",
-          startCursor: startCursor.cursor,
-          locale: searchTerm || "",
-        });
-        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!endCursor:
-      try {
-        const response = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "ARTICLE",
-          endCursor: endCursor.cursor,
-          locale: searchTerm || "",
-        });
-        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
-          `#graphql
-            query refreshArticles($resourceIds: [ID!]!, $locale: String!) {
-              translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
-                nodes {
-                  resourceId
-                  translatableContent {
-                    key
-                    digest
-                    locale
-                    type
-                    value
-                  }
-                  translations(locale: $locale) {
-                    key
-                    value
-                  }
-                }
-              }
-            }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
-          },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current article page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
+  if (startCursor) {
+    try {
+      const response = await queryPreviousTransType({
         shop,
-        confirmData,
+        accessToken: accessToken as string,
+        resourceType: "ARTICLE",
+        startCursor: startCursor.cursor,
+        locale: searchTerm || "",
       });
+      console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response,
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (endCursor) {
+    try {
+      const response = await queryNextTransType({
+        shop,
+        accessToken: accessToken as string,
+        resourceType: "ARTICLE",
+        endCursor: endCursor.cursor,
+        locale: searchTerm || "",
+      });
+      console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
+
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response,
+      };
+    } catch (error) {
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
+  }
+
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
+          query refreshArticles($resourceIds: [ID!]!, $locale: String!) {
+            translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
+              nodes {
+                resourceId
+                translatableContent {
+                  key
+                  digest
+                  locale
+                  type
+                  value
+                }
+                translations(locale: $locale) {
+                  key
+                  value
+                }
+              }
+            }
+          }`,
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
+          },
+        },
+      );
+      const data = await response.json();
+
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
+      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail(
+        "Error refreshing current article page",
+        error,
+      );
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
+  }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -210,6 +194,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -473,43 +459,20 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
-
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setArticlesData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
-      );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const index = articlesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (index !== -1) {
-            const data = articlesData[index]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              articlesData[index].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
+    }
+
+    if (failedItems.length === 0) {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
@@ -522,18 +485,14 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
-        // 部分失败：如果命�?digest 失效（或存在成功项），刷新一遍拿最�?digest，方便用户下一次重�?
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
+        if (hasInvalidDigestError || successfulItems.length > 0) {
           refreshCurrentPageData();
         }
       }
-    }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

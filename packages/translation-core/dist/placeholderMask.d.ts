@@ -1,6 +1,6 @@
 /**
  * Mask URLs, site paths, and template placeholders before LLM translation.
- * Keep in sync with TypeScriptFrontend/app/server/translateV4/placeholderMask.server.ts
+ * Canonical placeholder masking implementation shared by App and Worker.
  */
 export declare function maskPlaceholders(text: string): {
     masked: string;

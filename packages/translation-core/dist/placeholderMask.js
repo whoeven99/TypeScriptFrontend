@@ -1,6 +1,6 @@
 /**
  * Mask URLs, site paths, and template placeholders before LLM translation.
- * Keep in sync with TypeScriptFrontend/app/server/translateV4/placeholderMask.server.ts
+ * Canonical placeholder masking implementation shared by App and Worker.
  */
 const PLACEHOLDER_RE = /\{\{[^{}]*\}\}|%\{[^}]+\}|\$\{[^}]+\}|%\d*\$?[sd]|\{\d+\}|\[[A-Za-z_][\w-]*\](?!\()/g;
 const PROTECTED_URL_RE = /https?:\/\/[^\s<>"']+/gi;

@@ -15,6 +15,7 @@ import {
   setPublishState,
 } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 
 const { Text } = Typography;
 
@@ -56,16 +57,18 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  // 2. 用一个 ref 缓存上一次的值
   const fetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
+  const { consume: consumePublishResponse, reset: resetPublishResponse } =
+    useConsumableFetcherData<any>();
   const handleCloseModal = () => {
     setModalAlert(null);
     setIsModalOpen(false);
   };
 
   useEffect(() => {
-    if (!publishFetcher.data) {
+    const data = consumePublishResponse(publishFetcher.data);
+    if (!data) {
       return;
     }
 
@@ -76,11 +79,10 @@ const PublishModal: React.FC<PublishModalProps> = ({
       }),
     );
 
-    if (publishFetcher.data?.success) {
-      const errorMsg = publishFetcher.data?.errorMsg;
-      const shopLocaleUpdate = publishFetcher.data?.response?.shopLocaleUpdate;
-      const webPresenceUpdate =
-        publishFetcher.data?.response?.webPresenceUpdate;
+    if (data?.success) {
+      const errorMsg = data?.errorMsg;
+      const shopLocaleUpdate = data?.response?.shopLocaleUpdate;
+      const webPresenceUpdate = data?.response?.webPresenceUpdate;
 
       if (webPresenceUpdate?.length) {
         const updatedMarkets = [...markets];
@@ -185,11 +187,17 @@ const PublishModal: React.FC<PublishModalProps> = ({
       type: "error",
       message: getTranslateV4ErrorMessage(
         t,
-        publishFetcher.data?.errorMsg,
+        data?.errorMsg,
         TRANSLATE_V4_ERROR_KEYS.LANGUAGE_PUBLISH_FAILED,
       ),
     });
-  }, [dispatch, publishFetcher.data, publishLangaugeCode, t]);
+  }, [
+    consumePublishResponse,
+    dispatch,
+    publishFetcher.data,
+    publishLangaugeCode,
+    t,
+  ]);
 
   useEffect(() => {
     if (!publishLangaugeCode) return;
@@ -246,6 +254,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
   ];
 
   const onSave = () => {
+    resetPublishResponse();
     setModalAlert(null);
     let publishInfo = null;
     let webPresencesData = null;

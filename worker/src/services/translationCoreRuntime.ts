@@ -10,7 +10,7 @@ import {
 
 configureTranslationCore({
   getRedis: () => getRedis() as unknown as TranslationCoreRedis,
-  loadGlossaryRows: async (shopName, target) => {
+  loadGlossaryRows: async (shopName: string, target: string) => {
     if (!hasTsfDbCredentials()) return [];
     return loadGlossaryRowsFromTsf(shopName, target);
   },
