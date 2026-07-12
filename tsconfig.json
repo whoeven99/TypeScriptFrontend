@@ -17,8 +17,7 @@
     "target": "ES2022",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"],
-      "@worker/*": ["./worker/src/*"]
+      "~/*": ["./app/*"]
     },
     "types": ["node","jquery"]
   }

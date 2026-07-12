@@ -10,6 +10,7 @@ EXPOSE 8080
 WORKDIR /app
 
 COPY package.json package-lock.json* .npmrc ./
+COPY packages/translation-core/package.json ./packages/translation-core/package.json
 COPY patches ./patches
 
 RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force

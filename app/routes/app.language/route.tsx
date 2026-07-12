@@ -50,8 +50,6 @@ import {
   syncShopTargetLocalesFromShopify,
 } from "~/server/translateV4/targetLocale.server";
 import { invalidateShopLocalesCache, loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
-import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import {
   setAutoTranslateCompat,
   listLanguageCoverageCompat,
@@ -208,8 +206,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   let shopLanguages: ShopLocalesType[] = [];
-  let coverageLocales: LanguageCoverageRow[] | null = null;
-
   try {
     const loaded = await loadShopLocalesForTranslation({
       shop,
@@ -221,9 +217,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       primary: row.primary,
       published: row.published,
     }));
-
-    // 并行：同步 TSF 目标语言 + 预计算覆盖率
-    const targets = selectShopTargetLocales(loaded.localeOptions, loaded.primaryLocale);
     void syncShopTargetLocalesFromShopify(
       shop,
       loaded.rows.map((row) => ({
@@ -234,19 +227,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     ).catch((syncErr) => {
       console.error("[language] loader syncShopTargetLocales failed:", syncErr);
     });
-
-    // 从 Redis 缓存预计算覆盖率，避免客户端二次请求
-    try {
-      const summary = await getCoverageSummaryFromCache({
-        shop,
-        primaryLocale: loaded.primaryLocale,
-        targetLocales: targets,
-        includeRuntimeSignals: "minimal",
-      });
-      coverageLocales = summary.locales;
-    } catch (coverageErr) {
-      console.error("[language] loader coverage precompute failed:", coverageErr);
-    }
   } catch (err) {
     console.error("[language] loader shopLanguages failed:", err);
   }
@@ -255,7 +235,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     mobile: isMobile as boolean,
     shop,
     shopLanguages,
-    coverageLocales,
   });
 };
 
@@ -456,7 +435,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, shopLanguages: loaderShopLanguages, coverageLocales: loaderCoverageLocales } =
+  const { shop, mobile, shopLanguages: loaderShopLanguages } =
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -591,24 +570,18 @@ const Index = () => {
   );
 
   const hydrateLanguageRows = useCallback(
-    (shopLanguages: ShopLocalesType[], preloadedCoverage?: LanguageCoverageRow[] | null) => {
+    (shopLanguages: ShopLocalesType[]) => {
       const baseRows = buildLanguageRowsFromShopLanguages(shopLanguages);
-      if (preloadedCoverage?.length) {
-        // 使用 loader 预计算的覆盖率，跳过客户端二次请求
-        dispatch(setLanguageTableData(applyCoverageToLanguageRows(baseRows, preloadedCoverage)));
-        setLoading(false);
-      } else {
-        dispatch(setLanguageTableData(baseRows));
-        setLoading(false);
-        void applyCoverageToRows(baseRows);
-      }
+      dispatch(setLanguageTableData(baseRows));
+      setLoading(false);
+      void applyCoverageToRows(baseRows);
     },
     [applyCoverageToRows, dispatch],
   );
 
   useEffect(() => {
     if (loaderShopLanguages.length > 0) {
-      hydrateLanguageRows(loaderShopLanguages, loaderCoverageLocales);
+      hydrateLanguageRows(loaderShopLanguages);
     }
 
     if (loaderShopLanguages.length === 0) {

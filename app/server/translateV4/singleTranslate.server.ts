@@ -2,7 +2,8 @@
  * 单字段手动翻译 —— 委托 worker 的 translateResources 管线。
  * 手动点击时跳过 TM 缓存读取、强制走 LLM，译后写回缓存供后续自动任务复用。
  */
-import { translateSingleField } from "@worker/services/syncTranslate";
+import "./translationCoreRuntime.server";
+import { translateSingleField } from "@ciwi/translation-core/sync-translate";
 import { deductShopCredits } from "~/server/billing/quota/quotaRouter.server";
 import { llmTokensToQuotaCredits } from "./quotaMultiplier.server";
 

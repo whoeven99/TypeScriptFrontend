@@ -89,7 +89,7 @@ export const V2_MODULE_TO_V4: Record<TranslateV2ModuleKey, TranslationV4Module[]
 
 /**
  * v4 定时自动翻译模块（不含 EMAIL_TEMPLATE — 邮件请用手动任务勾选「电子邮件」）。
- * 权威 JSON：Spark/worker/scripts/v4-auto-translate-modules.json
+ * Worker 校验清单：worker/scripts/v4-auto-translate-modules.json
  * 注：Spring v2 AUTO_TRANSLATE_MAP 仍含 EMAIL_TEMPLATE。
  */
 export const AUTO_TRANSLATE_V4_MODULES: TranslationV4Module[] = [

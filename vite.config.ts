@@ -47,11 +47,6 @@ export default defineConfig({
       allow: ["app", "node_modules", "scripts", "worker"],
     },
   },
-  resolve: {
-    alias: {
-      "@worker": path.resolve(appRoot, "worker/src"),
-    },
-  },
   plugins: [
     remix({
       ignoredRouteFiles: ["**/.*"],

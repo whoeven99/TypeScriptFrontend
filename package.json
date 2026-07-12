@@ -2,7 +2,8 @@
   "name": "transform-lancy-app",
   "private": true,
   "scripts": {
-    "build": "remix vite:build",
+    "core:build": "npm run build --prefix packages/translation-core",
+    "build": "npm run core:build && remix vite:build",
     "dev": "shopify app dev --port 8080",
     "deployTest": "npx shopify app deploy -c shopify.app.test.toml --allow-updates --allow-deletes",
     "deployProd": "npx shopify app deploy -c shopify.app.prod.toml --allow-updates --allow-deletes",
@@ -19,11 +20,9 @@
     "setup": "prisma generate",
     "turso:migrate:test": "node scripts/turso-migrate.cjs test",
     "turso:migrate:prod": "node scripts/turso-migrate.cjs prod",
-    "sync:filter": "node scripts/sync-translation-filter.mjs",
-    "check:filter": "node scripts/sync-translation-filter.mjs --check",
     "push:pr": "node scripts/cursor-push-pr.mjs",
     "merge:deploy:test": "node scripts/merge-deploy-test.mjs",
-    "worker:build": "npm run build --prefix worker",
+    "worker:build": "npm run core:build && npm run build --prefix worker",
     "worker:dev": "npm run dev --prefix worker",
     "worker:start": "npm run start --prefix worker",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
@@ -38,6 +37,7 @@
     "node": "^18.20 || ^20.10 || >=21.0.0"
   },
   "dependencies": {
+    "@ciwi/translation-core": "*",
     "@ant-design/icons": "^5.5.1",
     "@azure/cosmos": "^4.9.3",
     "@azure/storage-blob": "^12.33.0",
@@ -107,7 +107,8 @@
     "vite": "^5.1.3"
   },
   "workspaces": [
-    "extensions/*"
+    "extensions/*",
+    "packages/*"
   ],
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"

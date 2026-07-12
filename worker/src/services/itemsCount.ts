@@ -7,8 +7,8 @@
  *   - translated（分子）：上述字段里已有「当前译文」（outdated !== true）的数量。
  * 二者共用同一套 translationFilter，保证 worker 写入值 == TSF 现算值。
  */
-import { shouldIncludeFieldV2 } from "./translationFilter.js";
-import { isBlankValue } from "./translationFilter/v3Base.js";
+import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
+import { isBlankValue } from "@ciwi/translation-core/translation-filter/v3Base";
 import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
 
 const TRANSLATABLE_RESOURCES_QUERY = `

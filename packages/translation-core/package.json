@@ -1,0 +1,75 @@
+{
+  "name": "@ciwi/translation-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./llm-translate": {
+      "types": "./dist/llmTranslate.d.ts",
+      "import": "./dist/llmTranslate.js"
+    },
+    "./sync-translate": {
+      "types": "./dist/syncTranslate.d.ts",
+      "import": "./dist/syncTranslate.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./translation-memory": {
+      "types": "./dist/translationMemory.d.ts",
+      "import": "./dist/translationMemory.js"
+    },
+    "./html-translate": {
+      "types": "./dist/htmlTranslate.d.ts",
+      "import": "./dist/htmlTranslate.js"
+    },
+    "./json-extract-rules": {
+      "types": "./dist/jsonExtractRules.d.ts",
+      "import": "./dist/jsonExtractRules.js"
+    },
+    "./placeholder-mask": {
+      "types": "./dist/placeholderMask.d.ts",
+      "import": "./dist/placeholderMask.js"
+    },
+    "./target-language-prompt": {
+      "types": "./dist/targetLanguagePrompt.d.ts",
+      "import": "./dist/targetLanguagePrompt.js"
+    },
+    "./translate-quality": {
+      "types": "./dist/translateQuality.d.ts",
+      "import": "./dist/translateQuality.js"
+    },
+    "./translation-field-limits": {
+      "types": "./dist/translationFieldLimits.d.ts",
+      "import": "./dist/translationFieldLimits.js"
+    },
+    "./translation-filter": {
+      "types": "./dist/translationFilter/index.d.ts",
+      "import": "./dist/translationFilter/index.js"
+    },
+    "./translation-filter/*": {
+      "types": "./dist/translationFilter/*.d.ts",
+      "import": "./dist/translationFilter/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "node-html-parser": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.8",
+    "typescript": "^5.9.3"
+  }
+}
