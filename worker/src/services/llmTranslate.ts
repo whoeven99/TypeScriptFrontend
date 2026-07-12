@@ -1,3 +1,3 @@
 import "./translationCoreRuntime.js";
 
-export * from "@ciwi/translation-core/llm-translate";
+export * from "../../../packages/translation-core/dist/llmTranslate.js";

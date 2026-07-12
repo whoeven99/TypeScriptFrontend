@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { tmGet, tmGetByValue, tmSet, tmSetByValue } from "./translationMemory.js";
 import { loadGlossaryLines } from "./glossary.js";
 import {
@@ -34,6 +35,11 @@ import {
   protectedLiteralsPreserved,
   restoreMaskedPlaceholders,
 } from "./placeholderMask.js";
+import {
+  buildPromptContextBlock,
+  buildResolvedPromptContext,
+  type TranslationPromptContextInput,
+} from "./promptContextBuilder.js";
 import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
 
@@ -2104,6 +2110,13 @@ async function callGoogleTranslate(
  */
 type RoutedResult = { value: string; status: "translated" | "fallback"; engine: Engine | null; tokens: number };
 
+type PoolEntry = {
+  occ: Map<string, number>;
+  order: Engine[];
+  isHandle: boolean;
+  profileBlock: string;
+};
+
 async function translateItemsRouted(
   items: TranslateItem[],
   source: string,
@@ -2112,6 +2125,7 @@ async function translateItemsRouted(
   shopName: string,
   order: Engine[],
   promptKind: "default" | "handle" = "default",
+  profileBlock = "",
   customPrompt = "",
 ): Promise<{ results: Map<string, RoutedResult>; llmTokens: number }> {
   // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
@@ -2138,8 +2152,8 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
-            : buildSystemPrompt(target, glossary, "", customPrompt);
+            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt)
+            : buildSystemPrompt(target, glossary, profileBlock, customPrompt);
       }
       try {
         await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
@@ -2227,7 +2241,7 @@ async function translateItemsRouted(
 /** Re-translate pool units that fell back or echoed source, one item per request. */
 async function retryPoolFallbacks(
   translated: Map<string, Map<string, RoutedResult>>,
-  pools: Map<string, Map<string, number>>,
+  pools: Map<string, PoolEntry>,
   source: string,
   target: string,
   aiModel: string,
@@ -2237,10 +2251,11 @@ async function retryPoolFallbacks(
   onLeafTranslated?: (text: string, result: RoutedResult, poolPrimaryModel: string) => void,
 ): Promise<number> {
   let retried = 0;
-  for (const [sig, occ] of pools) {
-    const { order } = parsePoolSignature(sig);
-    const poolPrimaryModel = engineModel(order[0]!, aiModel);
-    const tmap = translated.get(sig)!;
+  for (const [, pool] of pools) {
+    const { occ, order, isHandle, profileBlock } = pool;
+          const poolPrimaryModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
+    const poolKey = buildPoolKey(order, isHandle, profileBlock);
+    const tmap = translated.get(poolKey)!;
     const needsRetry: string[] = [];
     for (const text of occ.keys()) {
       const r = tmap.get(text);
@@ -2254,15 +2269,15 @@ async function retryPoolFallbacks(
     }
     for (const text of needsRetry) {
       if (await shouldAbort()) break;
-      const { isHandle, order: poolOrder } = parsePoolSignature(sig);
       const { results: m } = await translateItemsRouted(
         [{ key: "0", value: text, digest: "" }],
         source,
         target,
         aiModel,
         shopName,
-        poolOrder,
+        order,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
       );
       const r = m.get("0");
@@ -2891,6 +2906,8 @@ export type TranslateResourcesOptions = {
   skipCacheRead?: boolean;
   /** 跳过 TM 缓存写入。批量任务带 customPrompt 时默认为 true。 */
   skipCacheWrite?: boolean;
+  /** 扫描/调用链注入的结构化翻译上下文。 */
+  promptContext?: TranslationPromptContextInput;
 };
 
 export async function translateResources(
@@ -2915,13 +2932,22 @@ export async function translateResources(
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
-  // orderSig → (unique text → occurrence count across the chunk).
-  const pools = new Map<string, Map<string, number>>();
-  const addUnit = (order: Engine[], text: string, isHandle = false) => {
+  // poolKey → grouped unique text counts for a single prompt profile/context.
+  const pools = new Map<string, PoolEntry>();
+  const addUnit = (
+    order: Engine[],
+    text: string,
+    isHandle = false,
+    profileBlock = "",
+  ) => {
     if (!isTranslatableLeafText(text)) return;
-    const sig = poolSignature(order, isHandle);
-    const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
-    occ.set(text, (occ.get(text) ?? 0) + 1);
+    const poolKey = buildPoolKey(order, isHandle, profileBlock);
+    let entry = pools.get(poolKey);
+    if (!entry) {
+      entry = { occ: new Map(), order, isHandle, profileBlock };
+      pools.set(poolKey, entry);
+    }
+    entry.occ.set(text, (entry.occ.get(text) ?? 0) + 1);
   };
 
   // Units resolved without hitting an engine (cache hits) — credited immediately.
@@ -2945,6 +2971,8 @@ export async function translateResources(
     klass: "html" | "json" | "list" | "plain";
     order: Engine[];
     cacheModel: string;
+    profileBlock: string;
+    poolKey: string;
   };
   const fieldWorks: FieldWork[] = [];
 
@@ -2961,8 +2989,26 @@ export async function translateResources(
         continue;
       }
       const order = engineOrderFor(fieldTier(f.key, f.value, klass), aiModel);
-      const cacheModel = engineModel(order[0], aiModel);
-      fieldWorks.push({ resourceId: res.resourceId, f, klass, order, cacheModel });
+      const promptContext = buildResolvedPromptContext({
+        module: options?.promptContext?.module,
+        resourceId: res.resourceId,
+        key: f.key,
+        contentClass: klass,
+        shopifyType: f.shopifyType,
+        base: options?.promptContext,
+      });
+      const profileBlock = buildPromptContextBlock(promptContext) ?? "";
+      const cacheModel = buildCacheModelKey(engineModel(order[0], aiModel), profileBlock);
+      const poolKey = buildPoolKey(order, false, profileBlock);
+      fieldWorks.push({
+        resourceId: res.resourceId,
+        f,
+        klass,
+        order,
+        cacheModel,
+        profileBlock,
+        poolKey,
+      });
     }
   }
 
@@ -2979,7 +3025,7 @@ export async function translateResources(
 
   // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
-    const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
+    const { resourceId, f, klass, order, cacheModel, profileBlock, poolKey } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
       rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
@@ -3036,14 +3082,14 @@ export async function translateResources(
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, profileBlock)));
       plans.push({
         kind: "html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolKey,
         cacheModel,
         template,
         nodeParts,
@@ -3052,14 +3098,14 @@ export async function translateResources(
       const root = tryParseJsonContainer(f.value);
       if (root === undefined) {
         const parts = splitPlainText(f.value);
-        parts.forEach((p) => addUnit(order, p));
+        parts.forEach((p) => addUnit(order, p, false, profileBlock));
         plans.push({
           kind: "plain",
           resourceId,
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolKey,
           cacheModel,
           parts,
         });
@@ -3077,10 +3123,10 @@ export async function translateResources(
               slotPlans.push({ ...slot });
               continue;
             }
-            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, profileBlock)));
             slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
           } else {
-            addUnit(order, slot.text);
+            addUnit(order, slot.text, false, profileBlock);
             slotPlans.push({ ...slot });
           }
         }
@@ -3090,7 +3136,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolKey,
           cacheModel,
           originalValue: f.value,
           root,
@@ -3106,10 +3152,10 @@ export async function translateResources(
         if (isHtml(el)) {
           const { template, nodeParts } = htmlNodePartsOf(el);
           if (nodeParts.length === 0) continue;
-          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, profileBlock)));
           elements.push({ index: i, text: el, htmlPlan: { template, nodeParts } });
         } else {
-          addUnit(order, el);
+          addUnit(order, el, false, profileBlock);
           elements.push({ index: i, text: el });
         }
       }
@@ -3123,7 +3169,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolKey,
         cacheModel,
         originalValue: f.value,
         elements,
@@ -3132,15 +3178,15 @@ export async function translateResources(
       const isHandle = isHandleFieldKey(f.key);
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const poolSig = poolSignature(order, isHandle);
-      parts.forEach((p) => addUnit(order, p, isHandle));
+      const handlePoolKey = buildPoolKey(order, isHandle, profileBlock);
+      parts.forEach((p) => addUnit(order, p, isHandle, profileBlock));
       plans.push({
         kind: "plain",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig,
+        poolSig: handlePoolKey,
         cacheModel,
         parts,
         isHandle,
@@ -3207,9 +3253,9 @@ export async function translateResources(
   //    Hits go into translated map; misses go to batch. AdaptiveSemaphore throttles.
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
-  for (const [sig, occ] of pools) {
-    const { order, isHandle } = parsePoolSignature(sig);
-    const cacheModel = engineModel(order[0]!, aiModel);
+  for (const [poolKey, pool] of pools) {
+    const { occ, order, isHandle, profileBlock } = pool;
+    const cacheModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
 
@@ -3228,7 +3274,7 @@ export async function translateResources(
       }
       if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
       if (tmap.size > 0) {
-        translated.set(sig, tmap);
+        translated.set(poolKey, tmap);
         const lookupHit: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
         await finishReadyResources(lookupHit);
       }
@@ -3236,7 +3282,7 @@ export async function translateResources(
 
     const texts = allTexts.filter((t) => !tmap.has(t));
     if (texts.length === 0) {
-      translated.set(sig, tmap);
+      translated.set(poolKey, tmap);
       continue;
     }
 
@@ -3253,6 +3299,7 @@ export async function translateResources(
         shopName,
         order,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
       );
       let batchUnits = 0;
@@ -3273,12 +3320,12 @@ export async function translateResources(
           }
         }
       }
-      translated.set(sig, tmap);
+      translated.set(poolKey, tmap);
       if (onProgress) await onProgress(batchUnits, llmTokens);
       const lookup: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
       await finishReadyResources(lookup);
     }));
-    translated.set(sig, tmap);
+    translated.set(poolKey, tmap);
   }
 
   const retried = await retryPoolFallbacks(
@@ -3323,6 +3370,21 @@ export async function translateResources(
     };
   });
   return { resources: out, usage };
+}
+
+function buildPoolKey(order: Engine[], isHandle: boolean, profileBlock: string): string {
+  const base = poolSignature(order, isHandle);
+  return `${base}|ctx:${buildPromptContextScope(profileBlock)}`;
+}
+
+function buildPromptContextScope(profileBlock: string): string {
+  if (!profileBlock) return "none";
+  return createHash("sha1").update(profileBlock).digest("hex").slice(0, 12);
+}
+
+function buildCacheModelKey(model: string, profileBlock: string): string {
+  const scope = buildPromptContextScope(profileBlock);
+  return scope === "none" ? model : `${model}|ctx:${scope}`;
 }
 
 /**

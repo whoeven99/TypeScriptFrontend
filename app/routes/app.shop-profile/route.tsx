@@ -51,9 +51,16 @@ import {
   type GlossarySuggestionView,
   type ShopMarketView,
   type ShopSignalsView,
+  type ThemeSceneProfileView,
   type ShopUnderstandingView,
   type TerminologyStrategyView,
+  type TranslationContextProfileView,
 } from "~/server/shopScan/artifacts.server";
+import {
+  buildShopScanDebugPreview,
+  type PromptBlockPreview,
+  type PromptRoutingPreviewRow,
+} from "~/server/shopScan/promptDebugPreview.server";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -83,6 +90,10 @@ type LoaderData = {
   understanding: ShopUnderstandingView | null;
   markets: ShopMarketView[];
   signals: ShopSignalsView | null;
+  themeSceneProfile: ThemeSceneProfileView | null;
+  translationContextProfile: TranslationContextProfileView | null;
+  promptRoutingRows: PromptRoutingPreviewRow[];
+  promptBlockPreviews: PromptBlockPreview[];
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -103,6 +114,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let understanding: ShopUnderstandingView | null = null;
   let markets: ShopMarketView[] = [];
   let signals: ShopSignalsView | null = null;
+  let themeSceneProfile: ThemeSceneProfileView | null = null;
+  let translationContextProfile: TranslationContextProfileView | null = null;
+  let promptRoutingRows: PromptRoutingPreviewRow[] = [];
+  let promptBlockPreviews: PromptBlockPreview[] = [];
 
   try {
     const row = await prisma.shopProfile.findUnique({ where: { shop } });
@@ -141,6 +156,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         understanding = artifacts.understanding;
         markets = artifacts.markets;
         signals = artifacts.signals;
+        themeSceneProfile = artifacts.themeSceneProfile;
+        translationContextProfile = artifacts.translationContextProfile;
+        const debugPreview = buildShopScanDebugPreview({
+          themeSceneProfile: artifacts.themeSceneProfile,
+          translationContextProfile: artifacts.translationContextProfile,
+        });
+        promptRoutingRows = debugPreview.promptRoutingRows;
+        promptBlockPreviews = debugPreview.promptBlocks;
       }
     } catch (err) {
       console.error("[shop-profile page] read latest scan failed:", err);
@@ -159,6 +182,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     understanding,
     markets,
     signals,
+    themeSceneProfile,
+    translationContextProfile,
+    promptRoutingRows,
+    promptBlockPreviews,
   });
 };
 
@@ -269,6 +296,10 @@ export default function ShopProfilePage() {
     understanding,
     markets,
     signals,
+    themeSceneProfile,
+    translationContextProfile,
+    promptRoutingRows,
+    promptBlockPreviews,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
   const revalidator = useRevalidator();
@@ -344,6 +375,27 @@ export default function ShopProfilePage() {
       .map(([source, count]) => ({ key: source, source, count }))
       .sort((a, b) => b.count - a.count);
   }, [signals]);
+
+  const sceneStatRows = useMemo(() => {
+    return (themeSceneProfile?.sceneStats ?? []).map((row, index) => ({
+      key: `scene-${row.scene}-${index}`,
+      ...row,
+    }));
+  }, [themeSceneProfile]);
+
+  const roleStatRows = useMemo(() => {
+    return (themeSceneProfile?.roleStats ?? []).map((row, index) => ({
+      key: `role-${row.role}-${index}`,
+      ...row,
+    }));
+  }, [themeSceneProfile]);
+
+  const sceneHintRows = useMemo(() => {
+    return (themeSceneProfile?.sceneHints ?? []).map((row, index) => ({
+      key: `hint-${row.module}-${row.keyPattern}-${index}`,
+      ...row,
+    }));
+  }, [themeSceneProfile]);
 
   const handleRescan = () => {
     fetcher.submit({}, { method: "POST" });
@@ -897,6 +949,399 @@ export default function ShopProfilePage() {
             </Card>
 
             {/* 翻译提示词预览：真实注入翻译 API 的 shop profile 上下文 */}
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <AimOutlined style={{ color: "var(--app-accent-primary)" }} />
+                  <span>结构化翻译上下文（Runtime）</span>
+                </Flex>
+              }
+              style={{ boxShadow: "var(--app-shadow-card)" }}
+            >
+              {translationContextProfile ? (
+                <Flex vertical gap={16}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    这里展示的是当前 batch / single 翻译链路实际可读取的结构化上下文，不再只依赖数据库里的简化店铺画像。
+                  </Text>
+                  <Descriptions column={{ xs: 1, sm: 2, lg: 3 }} size="small" bordered>
+                    <Descriptions.Item label="生成时间">
+                      {formatDate(translationContextProfile.generatedAt)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Shop Context">
+                      {translationContextProfile.shopContext ? "已就绪" : "缺失"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Terminology">
+                      {translationContextProfile.terminologyProfile ? "已就绪" : "缺失"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Market Context">
+                      {translationContextProfile.marketProfile ? "已就绪" : "缺失"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Theme Scene">
+                      {translationContextProfile.themeSceneProfile ? "已就绪" : "缺失"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Module Policy">
+                      {translationContextProfile.modulePolicyProfile?.moduleHints.length ?? 0} 个模块
+                    </Descriptions.Item>
+                    <Descriptions.Item label="关键词" span={3}>
+                      {translationContextProfile.shopContext?.keywords.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.shopContext.keywords.map((item) => (
+                            <Tag key={item} color="purple">
+                              {item}
+                            </Tag>
+                          ))}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="不翻译词" span={3}>
+                      {translationContextProfile.terminologyProfile?.doNotTranslateTerms.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.terminologyProfile.doNotTranslateTerms.map(
+                            (item) => (
+                              <Tag key={item} color="red">
+                                {item}
+                              </Tag>
+                            ),
+                          )}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="已发布语言" span={3}>
+                      {translationContextProfile.marketProfile?.publishedLocales.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.marketProfile.publishedLocales.map((item) => (
+                            <Tag key={item}>{item}</Tag>
+                          ))}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Flex>
+              ) : (
+                <Empty description="暂无 translation-context-profile.json（需完成新的扫描产物生成）" />
+              )}
+            </Card>
+
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <AimOutlined style={{ color: "var(--app-accent-utility)" }} />
+                  <span>Theme 场景识别（Scan Time）</span>
+                </Flex>
+              }
+              style={{ boxShadow: "var(--app-shadow-card)" }}
+            >
+              {themeSceneProfile ? (
+                <Flex vertical gap={16}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    这里展示扫描阶段从 theme key 里提炼出的 scene / role / tone 信号，主要用于后续 prompt 路由与模块策略判断。
+                  </Text>
+
+                  {(sceneStatRows.length > 0 || roleStatRows.length > 0) && (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} lg={12}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Scene 分布
+                        </Text>
+                        <Flex gap={6} wrap="wrap" style={{ marginTop: 8 }}>
+                          {sceneStatRows.map((row) => (
+                            <Tag key={row.key} color="blue">
+                              {row.scene}: {row.count}
+                            </Tag>
+                          ))}
+                        </Flex>
+                      </Col>
+                      <Col xs={24} lg={12}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Role 分布
+                        </Text>
+                        <Flex gap={6} wrap="wrap" style={{ marginTop: 8 }}>
+                          {roleStatRows.map((row) => (
+                            <Tag key={row.key} color="green">
+                              {row.role}: {row.count}
+                            </Tag>
+                          ))}
+                        </Flex>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {(themeSceneProfile.appNamespaces.length > 0 ||
+                    themeSceneProfile.highConfidencePatterns.length > 0) && (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} lg={10}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          App Namespace
+                        </Text>
+                        <Flex gap={6} wrap="wrap" style={{ marginTop: 8 }}>
+                          {themeSceneProfile.appNamespaces.length > 0 ? (
+                            themeSceneProfile.appNamespaces.map((item) => (
+                              <Tag key={item} color="gold">
+                                {item}
+                              </Tag>
+                            ))
+                          ) : (
+                            <Text type="secondary">-</Text>
+                          )}
+                        </Flex>
+                      </Col>
+                      <Col xs={24} lg={14}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          High Confidence Pattern
+                        </Text>
+                        <Flex gap={6} wrap="wrap" style={{ marginTop: 8 }}>
+                          {themeSceneProfile.highConfidencePatterns.length > 0 ? (
+                            themeSceneProfile.highConfidencePatterns.map((item) => (
+                              <Tag key={item}>{item}</Tag>
+                            ))
+                          ) : (
+                            <Text type="secondary">-</Text>
+                          )}
+                        </Flex>
+                      </Col>
+                    </Row>
+                  )}
+
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      Scene Hint 明细
+                    </Text>
+                    <Table
+                      size="small"
+                      pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                      style={{ marginTop: 8 }}
+                      dataSource={sceneHintRows}
+                      columns={[
+                        {
+                          title: "模块",
+                          dataIndex: "module",
+                          key: "module",
+                          width: 140,
+                          ellipsis: true,
+                        },
+                        {
+                          title: "Key Pattern",
+                          dataIndex: "keyPattern",
+                          key: "keyPattern",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "Namespace",
+                          dataIndex: "namespace",
+                          key: "namespace",
+                          width: 160,
+                          ellipsis: true,
+                          render: (value: string | null) => value || "-",
+                        },
+                        {
+                          title: "Resource Pattern",
+                          dataIndex: "resourcePattern",
+                          key: "resourcePattern",
+                          width: 220,
+                          ellipsis: true,
+                          render: (value: string | null) => value || "-",
+                        },
+                        {
+                          title: "Scene",
+                          dataIndex: "scene",
+                          key: "scene",
+                          width: 160,
+                          render: (value: string) => <Tag color="blue">{value}</Tag>,
+                        },
+                        {
+                          title: "Role",
+                          dataIndex: "role",
+                          key: "role",
+                          width: 120,
+                          render: (value: string | null) => value || "-",
+                        },
+                        {
+                          title: "Tone / Creativity",
+                          key: "tone",
+                          width: 170,
+                          render: (_: unknown, row: (typeof sceneHintRows)[number]) =>
+                            `${row.tonePreference} / ${row.creativity}`,
+                        },
+                        {
+                          title: "置信度",
+                          dataIndex: "confidence",
+                          key: "confidence",
+                          width: 88,
+                          align: "right",
+                          render: (value: number) => value.toFixed(2),
+                        },
+                      ]}
+                      locale={{ emptyText: "暂无 theme scene hint" }}
+                    />
+                  </div>
+                </Flex>
+              ) : (
+                <Empty description="暂无 theme scene profile（需完成新的扫描产物生成）" />
+              )}
+            </Card>
+
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <RobotOutlined style={{ color: "var(--app-accent-primary)" }} />
+                  <span>Prompt 路由与上下文预览</span>
+                </Flex>
+              }
+              style={{ boxShadow: "var(--app-shadow-card)" }}
+            >
+              {promptRoutingRows.length > 0 ? (
+                <Flex vertical gap={16}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    基于扫描产物抽样几条 theme key，预演 runtime scene resolver 命中结果，并展示对应会注入的 context block。
+                  </Text>
+                  <Table
+                    size="small"
+                    pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                    dataSource={promptRoutingRows}
+                    columns={[
+                      {
+                        title: "模块 / Key",
+                        key: "target",
+                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
+                          <Flex vertical gap={2}>
+                            <Text strong style={{ fontSize: 12 }}>
+                              {row.module}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {row.keyPattern}
+                            </Text>
+                            <Flex gap={4} wrap="wrap">
+                              {row.namespace ? (
+                                <Tag {...SCAN_TAG_STYLE}>ns: {row.namespace}</Tag>
+                              ) : null}
+                              {row.resourcePattern ? (
+                                <Tag {...SCAN_TAG_STYLE}>res: {row.resourcePattern}</Tag>
+                              ) : null}
+                            </Flex>
+                          </Flex>
+                        ),
+                      },
+                      {
+                        title: "Scan -> Runtime",
+                        key: "scene",
+                        width: 260,
+                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
+                          <Flex vertical gap={2}>
+                            <Text style={{ fontSize: 12 }}>
+                                {row.scanScene} {"->"} {row.resolvedScene}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {row.scanRole || "-"} {"->"} {row.resolvedRole || "-"}
+                            </Text>
+                          </Flex>
+                        ),
+                      },
+                      {
+                        title: "Profile",
+                        dataIndex: "promptProfileId",
+                        key: "promptProfileId",
+                        width: 150,
+                        render: (value: string) => <Tag color="purple">{value}</Tag>,
+                      },
+                      {
+                        title: "Content",
+                        key: "contentClass",
+                        width: 136,
+                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
+                          <Flex vertical gap={2}>
+                            <Text style={{ fontSize: 12 }}>{row.contentClass}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {row.jsonMode || "-"}
+                            </Text>
+                          </Flex>
+                        ),
+                      },
+                      {
+                        title: "提示",
+                        key: "hint",
+                        width: 170,
+                        render: (_: unknown, row: PromptRoutingPreviewRow) => (
+                          <Flex vertical gap={2}>
+                            <Text style={{ fontSize: 12 }}>
+                              {row.tonePreference} / {row.creativity}
+                            </Text>
+                            <Text
+                              type={row.matchesScene ? "secondary" : "warning"}
+                              style={{ fontSize: 12 }}
+                            >
+                              {row.matchesScene ? "scene aligned" : "scene drift"}
+                            </Text>
+                          </Flex>
+                        ),
+                      },
+                      {
+                        title: "置信度",
+                        dataIndex: "confidence",
+                        key: "confidence",
+                        width: 88,
+                        align: "right",
+                        render: (value: number) => value.toFixed(2),
+                      },
+                    ]}
+                  />
+
+                  {promptBlockPreviews.length > 0 && (
+                    <Flex vertical gap={12}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        Context Block 预览
+                      </Text>
+                      {promptBlockPreviews.map((preview) => (
+                        <Card
+                          key={preview.key}
+                          size="small"
+                          title={
+                            <Flex align="center" gap={8}>
+                              <Text strong>{preview.title}</Text>
+                              <Tag color="purple">{preview.promptProfileId}</Tag>
+                              <Tag>{preview.scene}</Tag>
+                              {preview.namespace ? (
+                                <Tag {...SCAN_TAG_STYLE}>ns: {preview.namespace}</Tag>
+                              ) : null}
+                              {preview.resourcePattern ? (
+                                <Tag {...SCAN_TAG_STYLE}>res: {preview.resourcePattern}</Tag>
+                              ) : null}
+                            </Flex>
+                          }
+                        >
+                          <Paragraph
+                            copyable={{ text: preview.block }}
+                            style={{
+                              margin: 0,
+                              padding: 12,
+                              background: "var(--app-color-bg-subtle, #f6f7f9)",
+                              borderRadius: 8,
+                              border: "1px solid rgba(0,0,0,0.06)",
+                              fontFamily:
+                                "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+                              fontSize: 12,
+                              lineHeight: 1.6,
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {preview.block}
+                          </Paragraph>
+                        </Card>
+                      ))}
+                    </Flex>
+                  )}
+                </Flex>
+              ) : (
+                <Empty description="暂无 prompt routing preview（需先产出 theme scene hint）" />
+              )}
+            </Card>
+
             <Card
               title={
                 <Flex align="center" gap={8}>

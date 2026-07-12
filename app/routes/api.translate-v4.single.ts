@@ -71,6 +71,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       text,
       source,
       fieldKey,
+      module: body.resourceType?.trim() || undefined,
+      resourceId: body.resourceId,
       shopifyType,
       customPrompt,
     });

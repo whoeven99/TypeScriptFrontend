@@ -35,9 +35,50 @@ export type TranslateSingleFieldArgs = {
   aiModel?: string;
   /** 字段 key，影响 handle 路由与 classifyField。默认 value。 */
   fieldKey?: string;
+  /** 资源模块，用于场景路由（如 PRODUCT / MENU / ONLINE_STORE_THEME_JSON_TEMPLATE）。 */
+  module?: string;
+  resourceId?: string;
   shopifyType?: string;
   /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
   customPrompt?: string;
+  shopContext?: {
+    industry?: string | null;
+    subIndustry?: string | null;
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    description?: string | null;
+    keywords?: string[] | null;
+    sellingPoints?: string[] | null;
+    priceRange?: string | null;
+  } | null;
+  terminology?: {
+    brandTerms?: string[] | null;
+    doNotTranslateTerms?: string[] | null;
+    preferredTerms?: Array<{ source: string; note?: string | null }> | null;
+    seoTerms?: string[] | null;
+  } | null;
+  market?: {
+    publishedLocales?: string[] | null;
+    marketNotes?: string[] | null;
+    currencyContext?: string[] | null;
+  } | null;
+  themeSceneProfile?: {
+    sceneHints?: Array<{
+      module: string;
+      keyPattern: string;
+      scene: string;
+      role?: string | null;
+      confidence?: number | null;
+      tonePreference?: string | null;
+      creativity?: string | null;
+    }> | null;
+  } | null;
+  modulePolicy?: {
+    module?: string | null;
+    tonePolicy?: string | null;
+    keywordPolicy?: string | null;
+    literalVsAdaptive?: string | null;
+  } | null;
 };
 
 export type TranslateSingleFieldResult = {
@@ -85,6 +126,15 @@ export async function translateSingleField(
       // 管理翻译页手动点击：不读缓存、强制 LLM，译后写回 TM。
       skipCacheRead: true,
       skipCacheWrite: false,
+      promptContext: {
+        module: args.module,
+        resourceId: args.resourceId,
+        shopContext: args.shopContext ?? null,
+        terminology: args.terminology ?? null,
+        market: args.market ?? null,
+        themeSceneProfile: args.themeSceneProfile ?? null,
+        modulePolicy: args.modulePolicy ?? null,
+      },
     },
   );
 

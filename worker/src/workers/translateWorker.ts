@@ -52,6 +52,55 @@ import {
   type StagePoolKind,
 } from "../services/stagePool.js";
 
+type TranslationContextProfileBlob = {
+  shopContext?: {
+    industry?: string | null;
+    subIndustry?: string | null;
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    description?: string | null;
+    keywords?: string[] | null;
+    sellingPoints?: string[] | null;
+    priceRange?: string | null;
+  } | null;
+  terminologyProfile?: {
+    brandTerms?: string[] | null;
+    doNotTranslateTerms?: string[] | null;
+    preferredTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+    seoTerms?: string[] | null;
+  } | null;
+  marketProfile?: {
+    publishedLocales?: string[] | null;
+    marketNotes?: string[] | null;
+    currencyContext?: string[] | null;
+  } | null;
+  themeSceneProfile?: {
+    sceneHints?: Array<{
+      module?: string | null;
+      keyPattern?: string | null;
+      namespace?: string | null;
+      resourcePattern?: string | null;
+      scene?: string | null;
+      role?: string | null;
+      confidence?: number | null;
+      tonePreference?: string | null;
+      creativity?: string | null;
+    }> | null;
+  } | null;
+  modulePolicyProfile?: {
+    moduleHints?: Array<{
+      module?: string | null;
+      tonePolicy?: string | null;
+      keywordPolicy?: string | null;
+      literalVsAdaptive?: string | null;
+    }>;
+  } | null;
+} | null;
+
+type TranslationContextProfileData = NonNullable<TranslationContextProfileBlob>;
+type TerminologyProfileBlob = NonNullable<TranslationContextProfileData["terminologyProfile"]>;
+type ThemeSceneProfileBlob = NonNullable<TranslationContextProfileData["themeSceneProfile"]>;
+
 const HEARTBEAT_THROTTLE_MS = 30_000;
 
 /** Scale-out safe: hostname + pid unique across Docker containers sharing pid=1 */
@@ -76,6 +125,88 @@ const TRANSLATE_CLAIM_SCAN_MAX_BATCHES = Math.max(
   1,
   Number(process.env.TRANSLATE_CLAIM_SCAN_MAX_BATCHES) || 5,
 );
+
+function normalizeStringList(values: string[] | null | undefined): string[] | null {
+  const normalized = (values ?? [])
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeTerminologyPromptContext(
+  profile: TerminologyProfileBlob | null | undefined,
+) {
+  if (!profile) return null;
+  const preferredTerms = (profile.preferredTerms ?? [])
+    .map((term) => {
+      const source = term?.source?.trim();
+      if (!source) return null;
+      return {
+        source,
+        note: term?.note?.trim() || null,
+      };
+    })
+    .filter((term): term is { source: string; note: string | null } => Boolean(term));
+
+  const normalized = {
+    brandTerms: normalizeStringList(profile.brandTerms),
+    doNotTranslateTerms: normalizeStringList(profile.doNotTranslateTerms),
+    preferredTerms: preferredTerms.length > 0 ? preferredTerms : null,
+    seoTerms: normalizeStringList(profile.seoTerms),
+  };
+
+  if (
+    !normalized.brandTerms &&
+    !normalized.doNotTranslateTerms &&
+    !normalized.preferredTerms &&
+    !normalized.seoTerms
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeThemeSceneProfileContext(
+  profile: ThemeSceneProfileBlob | null | undefined,
+) {
+  if (!profile) return null;
+  const sceneHints = (profile.sceneHints ?? [])
+    .map((hint) => {
+      const module = hint?.module?.trim();
+      const keyPattern = hint?.keyPattern?.trim();
+      const scene = hint?.scene?.trim();
+      if (!module || !keyPattern || !scene) return null;
+      return {
+        module,
+        keyPattern,
+        namespace: hint?.namespace?.trim() || null,
+        resourcePattern: hint?.resourcePattern?.trim() || null,
+        scene,
+        role: hint?.role?.trim() || null,
+        confidence: typeof hint?.confidence === "number" ? hint.confidence : null,
+        tonePreference: hint?.tonePreference?.trim() || null,
+        creativity: hint?.creativity?.trim() || null,
+      };
+    })
+    .filter(
+      (
+        hint,
+      ): hint is {
+        module: string;
+        keyPattern: string;
+        namespace: string | null;
+        resourcePattern: string | null;
+        scene: string;
+        role: string | null;
+        confidence: number | null;
+        tonePreference: string | null;
+        creativity: string | null;
+      } => Boolean(hint),
+    );
+
+  return sceneHints.length > 0 ? { sceneHints } : null;
+}
 /** Serialize shared counter + Redis updates across concurrent chunk handlers. */
 function createExclusiveRunner() {
   let chain: Promise<void> = Promise.resolve();
@@ -261,6 +392,38 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   const { shopName, id: jobId, source, target, aiModel } = job;
   // Engine routing (Google vs DeepSeek) is applied inside translateBatch.
   const blobPrefix = job.blobPrefix || `tasks/v4/${shopName}/${jobId}`;
+  const translationContextProfile = await blobRead<TranslationContextProfileBlob>(
+    `${blobPrefix}/translation-context-profile.json`,
+  );
+  const modulePolicyByModule = new Map(
+    (translationContextProfile?.modulePolicyProfile?.moduleHints ?? [])
+      .map((hint) => {
+        const module = String(hint?.module ?? "").trim().toUpperCase();
+        if (!module) return null;
+        return [
+          module,
+          {
+            module,
+            tonePolicy: hint?.tonePolicy?.trim() || null,
+            keywordPolicy: hint?.keywordPolicy?.trim() || null,
+            literalVsAdaptive: hint?.literalVsAdaptive?.trim() || null,
+          },
+        ] as const;
+      })
+      .filter(
+        (
+          row,
+        ): row is readonly [
+          string,
+          {
+            module: string;
+            tonePolicy: string | null;
+            keywordPolicy: string | null;
+            literalVsAdaptive: string | null;
+          },
+        ] => Boolean(row),
+      ),
+  );
 
   // Resume: restore token counter from Cosmos + Redis (412 on pause may leave Cosmos stale).
   const latestAtStart = await getJob(shopName, jobId);
@@ -652,7 +815,21 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             onProgress,
             onResourceDone,
             shouldAbort,
-            { translateHandle: job.isHandle },
+            {
+              translateHandle: job.isHandle,
+              promptContext: {
+                module,
+                shopContext: translationContextProfile?.shopContext ?? null,
+                terminology: normalizeTerminologyPromptContext(
+                  translationContextProfile?.terminologyProfile,
+                ),
+                market: translationContextProfile?.marketProfile ?? null,
+                themeSceneProfile: normalizeThemeSceneProfileContext(
+                  translationContextProfile?.themeSceneProfile,
+                ),
+                modulePolicy: modulePolicyByModule.get(module.toUpperCase()) ?? null,
+              },
+            },
           );
           mergeEngineUsage(engineUsage, usage);
         } catch (e) {

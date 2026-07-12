@@ -1,6 +1,6 @@
 /**
  * Target-language-specific prompt blocks for translation quality.
- * Keep in sync with TypeScriptFrontend/app/server/translateV4/targetLanguagePrompt.server.ts
+ * Canonical target-language prompt rules shared by App and Worker.
  */
 export declare function buildTargetLanguageBlock(target: string): string;
 //# sourceMappingURL=targetLanguagePrompt.d.ts.map

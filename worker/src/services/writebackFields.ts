@@ -1,5 +1,5 @@
 /** Fields eligible for translationsRegister (aligned across writeback + verify). */
-import { enforceFieldTranslationLimits } from "@ciwi/translation-core/translation-field-limits";
+import { enforceFieldTranslationLimits } from "../../../packages/translation-core/dist/translationFieldLimits.js";
 
 export type WritebackField = {
   key: string;

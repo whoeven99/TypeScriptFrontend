@@ -1,7 +1,7 @@
 import {
   configureTranslationCore,
   type TranslationCoreRedis,
-} from "@ciwi/translation-core/runtime";
+} from "../../../packages/translation-core/dist/runtime.js";
 import { getRedis } from "./redisV4.js";
 import {
   hasTsfDbCredentials,

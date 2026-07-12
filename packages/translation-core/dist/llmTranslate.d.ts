@@ -1,4 +1,5 @@
 import { htmlNodePartsOf, roundtripHtmlForTest } from "./htmlTranslate.js";
+import { type TranslationPromptContextInput } from "./promptContextBuilder.js";
 type PoolInitOptions = {
     model?: string;
 };
@@ -312,6 +313,8 @@ export type TranslateResourcesOptions = {
     skipCacheRead?: boolean;
     /** 跳过 TM 缓存写入。批量任务带 customPrompt 时默认为 true。 */
     skipCacheWrite?: boolean;
+    /** 扫描/调用链注入的结构化翻译上下文。 */
+    promptContext?: TranslationPromptContextInput;
 };
 export declare function translateResources(resources: ResourceInput[], source: string, target: string, aiModel: string, shopName: string, onProgress?: (doneUnitsDelta: number, tokensDelta: number) => Promise<void>, onResourceDone?: (resource: TranslatedResourceOutput) => Promise<void>, shouldAbort?: () => boolean | Promise<boolean>, options?: TranslateResourcesOptions): Promise<TranslateChunkResult>;
 /**

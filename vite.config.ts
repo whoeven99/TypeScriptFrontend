@@ -5,6 +5,50 @@ import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
+const translationCoreDist = path.resolve(appRoot, "packages/translation-core/dist");
+
+const translationCoreAliases = [
+  {
+    find: "@ciwi/translation-core/translation-filter/v3Base",
+    replacement: path.resolve(translationCoreDist, "translationFilter/v3Base.js"),
+  },
+  {
+    find: "@ciwi/translation-core/translation-filter",
+    replacement: path.resolve(translationCoreDist, "translationFilter/index.js"),
+  },
+  {
+    find: "@ciwi/translation-core/translate-quality",
+    replacement: path.resolve(translationCoreDist, "translateQuality.js"),
+  },
+  {
+    find: "@ciwi/translation-core/placeholder-mask",
+    replacement: path.resolve(translationCoreDist, "placeholderMask.js"),
+  },
+  {
+    find: "@ciwi/translation-core/target-language-prompt",
+    replacement: path.resolve(translationCoreDist, "targetLanguagePrompt.js"),
+  },
+  {
+    find: "@ciwi/translation-core/runtime",
+    replacement: path.resolve(translationCoreDist, "runtime.js"),
+  },
+  {
+    find: "@ciwi/translation-core/sync-translate",
+    replacement: path.resolve(translationCoreDist, "syncTranslate.js"),
+  },
+  {
+    find: "@ciwi/translation-core/json-extract-rules",
+    replacement: path.resolve(translationCoreDist, "jsonExtractRules.js"),
+  },
+  {
+    find: "@ciwi/translation-core/html-translate",
+    replacement: path.resolve(translationCoreDist, "htmlTranslate.js"),
+  },
+  {
+    find: "@ciwi/translation-core",
+    replacement: path.resolve(translationCoreDist, "index.js"),
+  },
+] as const;
 
 // Related: https://github.com/remix-run/remix/issues/2835#issuecomment-1144102176
 // Replace the HOST env var with SHOPIFY_APP_URL so that it doesn't break the remix server. The CLI will eventually
@@ -44,8 +88,11 @@ export default defineConfig({
     hmr: hmrConfig,
     fs: {
       // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
-      allow: ["app", "node_modules", "scripts", "worker"],
+      allow: ["app", "node_modules", "packages", "scripts", "worker"],
     },
+  },
+  resolve: {
+    alias: [...translationCoreAliases],
   },
   plugins: [
     remix({
@@ -56,7 +103,15 @@ export default defineConfig({
   build: {
     assetsInlineLimit: 0,
     rollupOptions: {
-      external: ["@prisma/adapter-libsql"],
+      external: [
+        "@prisma/adapter-libsql",
+        "@azure/cosmos",
+        "@azure/storage-blob",
+        "@libsql/client",
+        "cos-nodejs-sdk-v5",
+        "ioredis",
+        "tencentcloud-sdk-nodejs-ses",
+      ],
     },
   },
   optimizeDeps: {
