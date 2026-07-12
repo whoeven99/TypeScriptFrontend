@@ -122,3 +122,29 @@ export function getManageTranslationLoadErrorMessage(
   }
   return t("Failed to load data. Please try again.");
 }
+
+export function buildManageActionErrorResponse(
+  error?: unknown,
+  options?: {
+    fallbackErrorMsg?: string;
+    response?: unknown;
+    errorCode?: number;
+  },
+) {
+  const {
+    fallbackErrorMsg = MANAGE_TRANSLATION_ERROR_KEYS.SERVER_ERROR,
+    response = null,
+    errorCode = 10001,
+  } = options || {};
+
+  return {
+    success: false,
+    errorCode,
+    errorMsg: error
+      ? isManageTranslationRateLimitedError(error)
+        ? MANAGE_TRANSLATION_ERROR_KEYS.RATE_LIMITED
+        : fallbackErrorMsg
+      : fallbackErrorMsg,
+    response,
+  };
+}

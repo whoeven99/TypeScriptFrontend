@@ -22,16 +22,21 @@ import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
+  buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
-  isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Title } = Typography;
@@ -44,7 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const searchTerm = getManageTranslationLanguage(request);
 
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
@@ -54,10 +59,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!startCursor:
-      try {
-        const response = await admin.graphql(
+  if (startCursor) {
+    try {
+      const response = await admin.graphql(
           `#graphql
                 query JsonTemplate($startCursor: String){     
                     translatableResources(resourceType: ONLINE_STORE_THEME_SETTINGS_CATEGORY, last: 20, ,before: $startCursor) {
@@ -88,32 +92,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               startCursor: startCursor.cursor ? startCursor.cursor : undefined,
             },
           },
-        );
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data?.data?.translatableResources || null,
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data?.data?.translatableResources || null,
+      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
+      return buildManageActionErrorResponse(error, { response: null });
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: null,
-        };
-      }
-    case !!endCursor:
-      try {
-        const response = await admin.graphql(
+  if (endCursor) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query JsonTemplate($endCursor: String){     
                 translatableResources(resourceType: ONLINE_STORE_THEME_SETTINGS_CATEGORY, first: 20, ,after: $endCursor) {
@@ -144,32 +141,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               endCursor: endCursor.cursor ? endCursor.cursor : undefined,
             },
           },
-        );
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data?.data?.translatableResources || null,
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data?.data?.translatableResources || null,
+      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
+      return buildManageActionErrorResponse(error, { response: null });
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: null,
-        };
-      }
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
           `#graphql
             query refreshSettingsCategoryResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
@@ -195,55 +185,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               locale: searchTerm || "",
             },
           },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
-        shop,
-        confirmData,
-      });
+      );
+      const data = await response.json();
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
       };
-
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: null,
-      };
+    } catch (error) {
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      return buildManageActionErrorResponse(error, { response: undefined });
+    }
   }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -261,6 +236,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>([]);
@@ -390,64 +367,39 @@ const Index = () => {
 
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setThemesData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+    }
+
+    if (failedItems.length === 0) {
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const index = themesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (index !== -1) {
-            const data = themesData[index]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              themesData[index].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
-          refreshCurrentPageData();
-        }
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
     }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

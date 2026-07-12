@@ -25,6 +25,7 @@ import { SaveBar } from "@shopify/app-bridge-react";
 type MenuItem = { key: string; label: string };
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { SearchOutlined } from "@ant-design/icons";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
@@ -32,9 +33,13 @@ import {
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
+  buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
-  isManageTranslationRateLimitedError,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageFlatTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -127,11 +132,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const refreshResourceIds: string[] = JSON.parse(
     (formData.get("refreshResourceIds") as string) || "[]",
   );
-  switch (true) {
-    case !!startCursor:
-      try {
-        const response = await admin.graphql(
-          `#graphql
+
+  if (startCursor) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
             query products($startCursor: String, $query: String) {     
               products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
                 nodes {
@@ -151,47 +156,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
           }`,
-          {
-            variables: {
-              startCursor: startCursor.cursor ? startCursor.cursor : undefined,
-              query: startCursor.query ? startCursor.query : "",
-            },
+        {
+          variables: {
+            startCursor: startCursor.cursor ? startCursor.cursor : undefined,
+            query: startCursor.query ? startCursor.query : "",
           },
-        );
+        },
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        return json({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            data: data.data?.products?.nodes || [],
-            pageInfo: data.data?.products?.pageInfo || {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
+      return json({
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: {
+          data: data.data?.products?.nodes || [],
+          pageInfo: data.data?.products?.pageInfo || {
+            endCursor: "",
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: "",
           },
-        });
-      } catch (error) {
-        logGraphQLErrorDetail("Error action startCursor product", error);
-        return json({
-          success: false,
-          errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
+        },
+      });
+    } catch (error) {
+      logGraphQLErrorDetail("Error action startCursor product", error);
+      return json(
+        buildManageActionErrorResponse(error, {
+          fallbackErrorMsg: "",
+        }),
+      );
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "",
-          response: null,
-        });
-      }
-    case !!endCursor:
-      try {
-        const response = await admin.graphql(
-          `#graphql
+  if (endCursor) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
             query products($endCursor: String, $query: String) {     
               products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
                 nodes {
@@ -211,61 +213,58 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
           }`,
-          {
-            variables: {
-              endCursor: endCursor.cursor ? endCursor.cursor : undefined,
-              query: endCursor.query ? endCursor.query : "",
-            },
+        {
+          variables: {
+            endCursor: endCursor.cursor ? endCursor.cursor : undefined,
+            query: endCursor.query ? endCursor.query : "",
           },
-        );
+        },
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        return json({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            data: data.data?.products?.nodes || [],
-            pageInfo: data.data?.products?.pageInfo || {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
+      return json({
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: {
+          data: data.data?.products?.nodes || [],
+          pageInfo: data.data?.products?.pageInfo || {
+            endCursor: "",
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: "",
           },
-        });
-      } catch (error) {
-        logGraphQLErrorDetail("Error action endCursor product", error);
-        return json({
-          success: false,
-          errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
+        },
+      });
+    } catch (error) {
+      logGraphQLErrorDetail("Error action endCursor product", error);
+      return json(
+        buildManageActionErrorResponse(error, {
+          fallbackErrorMsg: "",
+        }),
+      );
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "",
-          response: null,
-        });
-      }
-    case !!productId:
-      if (!productId || productId === "undefined") {
-        logGraphQLErrorDetail(
-          "Error action productId product",
-          new Error(`Invalid productId: ${productId}`),
-        );
-        return json({
-          success: false,
-          errorCode: 400,
-          errorMsg: "Invalid Product ID provided.",
-          response: null,
-        });
-      }
+  if (productId) {
+    if (!productId || productId === "undefined") {
+      logGraphQLErrorDetail(
+        "Error action productId product",
+        new Error(`Invalid productId: ${productId}`),
+      );
+      return json({
+        success: false,
+        errorCode: 400,
+        errorMsg: "Invalid Product ID provided.",
+        response: null,
+      });
+    }
+    try {
+      let data: any;
       try {
-        let data: any;
-        try {
-          const response = await admin.graphql(
-            `#graphql
+        const response = await admin.graphql(
+          `#graphql
               query {     
                 translatableResource(resourceId: "${productId}") {
                     resourceId
@@ -314,15 +313,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     }
               }
             }`,
-          );
-          data = await response.json();
-        } catch (error) {
-          const message = (error as any)?.message || "";
-          if (message.includes("Query not supported")) {
-            // Some API versions/shops reject nestedTranslatableResources in this query shape.
-            // Fall back to base resource query so the page still works.
-            const fallbackResponse = await admin.graphql(
-              `#graphql
+        );
+        data = await response.json();
+      } catch (error) {
+        const message = (error as any)?.message || "";
+        if (message.includes("Query not supported")) {
+          // Some API versions/shops reject nestedTranslatableResources in this query shape.
+          // Fall back to base resource query so the page still works.
+          const fallbackResponse = await admin.graphql(
+            `#graphql
                 query {
                   translatableResource(resourceId: "${productId}") {
                     resourceId
@@ -339,51 +338,48 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     }
                   }
                 }`,
-            );
-            const fallbackData = await fallbackResponse.json();
-            data = {
-              ...fallbackData,
-              data: {
-                ...fallbackData?.data,
-                translatableResource: {
-                  ...fallbackData?.data?.translatableResource,
-                  options: { nodes: [] },
-                  metafields: { nodes: [] },
-                },
+          );
+          const fallbackData = await fallbackResponse.json();
+          data = {
+            ...fallbackData,
+            data: {
+              ...fallbackData?.data,
+              translatableResource: {
+                ...fallbackData?.data?.translatableResource,
+                options: { nodes: [] },
+                metafields: { nodes: [] },
               },
-            };
-            console.warn(
-              `[productId query fallback] Query not supported for nestedTranslatableResources, fallback to base query.`,
-            );
-          } else {
-            throw error;
-          }
+            },
+          };
+          console.warn(
+            `[productId query fallback] Query not supported for nestedTranslatableResources, fallback to base query.`,
+          );
+        } else {
+          throw error;
         }
-
-        return json({
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data.data?.translatableResource,
-        });
-      } catch (error) {
-        logGraphQLErrorDetail("Error action productId product", error);
-        return json({
-          success: false,
-          errorCode: 0,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "",
-          response: null,
-        });
       }
-    case !!variants:
-      try {
-        const promise = variants.data.map(async (variant: string) => {
-          const response = await admin.graphql(
-            `#graphql
+
+      return json({
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data.data?.translatableResource,
+      });
+    } catch (error) {
+      logGraphQLErrorDetail("Error action productId product", error);
+      return json(
+        buildManageActionErrorResponse(error, {
+          fallbackErrorMsg: "",
+        }),
+      );
+    }
+  }
+
+  if (variants) {
+    try {
+      const promise = variants.data.map(async (variant: string) => {
+        const response = await admin.graphql(
+          `#graphql
                 query {
                   translatableResourcesByIds(resourceIds: "${variant}", first: 1) {
                     nodes {
@@ -402,28 +398,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     }
                   }
                 }`,
-          );
-          return await response.json();
-        });
-        const variantsData = await Promise.allSettled(promise);
-        return json({ variantsData: variantsData });
-      } catch (error) {
-        logGraphQLErrorDetail("Error action variants product", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
+        );
+        return await response.json();
+      });
+      const variantsData = await Promise.allSettled(promise);
+      return json({ variantsData: variantsData });
+    } catch (error) {
+      logGraphQLErrorDetail("Error action variants product", error);
+      return buildManageActionErrorResponse(error);
+    }
+  }
 
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: null,
-        };
-      }
-    case refreshResourceIds.length > 0:
-      try {
-        const response = await admin.graphql(
-          `#graphql
+  if (refreshResourceIds.length > 0) {
+    try {
+      const response = await admin.graphql(
+        `#graphql
             query refreshProductResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
@@ -442,64 +431,49 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
           },
-        );
-        const data = await response.json();
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            nodes: data.data?.translatableResourcesByIds?.nodes || [],
-            pageInfo: null,
-          },
-        };
-      } catch (error) {
-        logGraphQLErrorDetail("Error refreshing current page", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: isManageTranslationRateLimitedError(error)
-
-            ? "RATE_LIMITED"
-
-            : "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-
-    case !!confirmData:
-      const data = await registerManageTranslations({
-        admin,
-        shop,
-        confirmData,
-      });
+        },
+      );
+      const data = await response.json();
 
       return {
         success: true,
         errorCode: 0,
         errorMsg: "",
-        response: data,
+        response: {
+          nodes: data.data?.translatableResourcesByIds?.nodes || [],
+          pageInfo: null,
+        },
       };
-    default:
-      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+    } catch (error) {
+      logGraphQLErrorDetail("Error refreshing current page", error);
       return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: isManageTranslationRateLimitedError(error)
-
-          ? "RATE_LIMITED"
-
-          : "SERVER_ERROR",
-        response: null,
+        ...buildManageActionErrorResponse(error),
+        response: undefined,
       };
+    }
   }
+
+  if (confirmData) {
+    const data = await registerManageTranslations({
+      admin,
+      shop,
+      confirmData,
+    });
+
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: data,
+    };
+  }
+
+  return buildManageActionErrorResponse();
 };
 
 const Index = () => {
@@ -520,6 +494,8 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -859,76 +835,31 @@ const Index = () => {
   }, [productFetcher.data, t]);
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setProductBaseData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+      setProductSeoData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const key = item?.response?.id || "";
-          const targetValue = item?.response?.value || "";
-          switch (true) {
-            case !!productBaseData.find((item: any) => item?.key == key):
-              setProductBaseData(
-                productBaseData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!productSeoData.find((item: any) => item?.key == key):
-              setProductSeoData(
-                productSeoData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!optionsData.find((item: any) => item?.key == key):
-              setOptionsData(
-                optionsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!metafieldsData.find((item: any) => item?.key == key):
-              setMetafieldsData(
-                metafieldsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!variantsData.find((item: any) => item?.key == key):
-              setVariantsData(
-                variantsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            default:
-              break;
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
+      setOptionsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+      setMetafieldsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+      setVariantsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+    }
+
+    if (failedItems.length === 0) {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
@@ -941,17 +872,14 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
+        if (hasInvalidDigestError || successfulItems.length > 0) {
           refreshCurrentPageData();
         }
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
-    }
-  }, [confirmFetcher.data]);
+
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {

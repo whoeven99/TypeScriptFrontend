@@ -92,7 +92,7 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [...translationCoreAliases],
+    alias: translationCoreAliases,
   },
   plugins: [
     remix({

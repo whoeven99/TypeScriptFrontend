@@ -3,7 +3,7 @@
  * 手动点击时跳过 TM 缓存读取、强制走 LLM，译后写回缓存供后续自动任务复用。
  */
 import "./translationCoreRuntime.server";
-import { translateSingleField } from "@ciwi/translation-core/sync-translate";
+import { translateSingleField } from "@ciwi/translation-core";
 import prisma from "~/db.server";
 import { loadShopScanArtifacts } from "~/server/shopScan/artifacts.server";
 import { getLatestShopScanJob } from "~/server/shopScan/cosmos.server";

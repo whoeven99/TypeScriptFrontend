@@ -12,6 +12,7 @@ import {
   getTranslateV4ErrorMessage,
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 
 const { Title, Text } = Typography;
 
@@ -68,11 +69,14 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.currencyTableData.rows);
   const title = `${t("Edit")} ${selectedRow?.currency}`;
+  const { consume: consumeUpdateResponse, reset: resetUpdateResponse } =
+    useConsumableFetcherData<any>();
 
   useEffect(() => {
-    if (updateFetcher.data) {
-      if (updateFetcher.data?.success) {
-        const newData = updateFetcher.data.response;
+    const data = consumeUpdateResponse(updateFetcher.data);
+    if (data) {
+      if (data?.success) {
+        const newData = data.response;
         const oldData: CurrencyDataType = dataSource.find(
           (row: CurrencyDataType) => row.key === newData.id,
         );
@@ -96,7 +100,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       } else {
         const errorMsg = getTranslateV4ErrorMessage(
           t,
-          updateFetcher.data?.errorMsg,
+          data?.errorMsg,
           TRANSLATE_V4_ERROR_KEYS.CURRENCY_UPDATE_FAILED,
         );
         setExRateError(true);
@@ -106,7 +110,14 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         setModalError(errorMsg);
       }
     }
-  }, [dataSource, dispatch, setIsModalOpen, t, updateFetcher.data]);
+  }, [
+    consumeUpdateResponse,
+    dataSource,
+    dispatch,
+    setIsModalOpen,
+    t,
+    updateFetcher.data,
+  ]);
 
   useEffect(() => {
     if (selectedRow?.exchangeRate === "Auto") {
@@ -144,6 +155,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   }, [exRateSelectValue, exRateValue, isVisible]);
 
   const handleConfirm = () => {
+    resetUpdateResponse();
     setUpdateFetcherLoading(true);
     setModalError("");
     if (exRateSelectValue === "Auto") {
