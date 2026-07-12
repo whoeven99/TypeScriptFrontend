@@ -100,6 +100,9 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  ssr: {
+    noExternal: ["node-html-parser"],
+  },
   build: {
     assetsInlineLimit: 0,
     rollupOptions: {
