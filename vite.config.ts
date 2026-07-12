@@ -21,6 +21,66 @@ if (
 const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost")
   .hostname;
 
+const translationCoreAliases = [
+  {
+    find: "@ciwi/translation-core/runtime",
+    replacement: path.resolve(appRoot, "packages/translation-core/src/runtime.ts"),
+  },
+  {
+    find: "@ciwi/translation-core/html-translate",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/htmlTranslate.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/json-extract-rules",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/jsonExtractRules.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/placeholder-mask",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/placeholderMask.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/target-language-prompt",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/targetLanguagePrompt.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/translate-quality",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/translateQuality.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/translation-filter/v3Base",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/translationFilter/v3Base.ts",
+    ),
+  },
+  {
+    find: "@ciwi/translation-core/translation-filter",
+    replacement: path.resolve(
+      appRoot,
+      "packages/translation-core/src/translationFilter/index.ts",
+    ),
+  },
+  {
+    find: /^@ciwi\/translation-core$/,
+    replacement: path.resolve(appRoot, "packages/translation-core/src/index.ts"),
+  },
+];
+
 let hmrConfig;
 if (host === "localhost") {
   hmrConfig = {
@@ -44,8 +104,11 @@ export default defineConfig({
     hmr: hmrConfig,
     fs: {
       // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
-      allow: ["app", "node_modules", "scripts", "worker"],
+      allow: ["app", "node_modules", "packages", "scripts", "worker"],
     },
+  },
+  resolve: {
+    alias: translationCoreAliases,
   },
   plugins: [
     remix({
@@ -56,7 +119,11 @@ export default defineConfig({
   build: {
     assetsInlineLimit: 0,
     rollupOptions: {
-      external: ["@prisma/adapter-libsql"],
+      external: [
+        "@prisma/adapter-libsql",
+        "cos-nodejs-sdk-v5",
+        "tencentcloud-sdk-nodejs-ses",
+      ],
     },
   },
   optimizeDeps: {
