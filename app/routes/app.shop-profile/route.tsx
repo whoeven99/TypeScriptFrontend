@@ -33,7 +33,7 @@ import {
   ShopOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "~/ui/components/AppButton";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
@@ -90,6 +90,7 @@ type TaskRunView = Pick<
 
 type LoaderData = {
   configured: boolean;
+  blobConfigured: boolean;
   profile: ProfileView | null;
   scan: ScanView | null;
   promptBlock: string | null;
@@ -103,6 +104,7 @@ type LoaderData = {
   promptRoutingRows: PromptRoutingPreviewRow[];
   promptBlockPreviews: PromptBlockPreview[];
   taskRuns: TaskRunView[];
+  artifactSource: "cosmos" | "blob" | "mixed" | "none";
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -115,6 +117,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const configured = Boolean(
     process.env.COSMOS_ENDPOINT_V4?.trim() && process.env.COSMOS_KEY_V4?.trim(),
   );
+  const blobConfigured = Boolean(process.env.AZURE_BLOB_CONNECTION_STRING?.trim());
 
   let profile: ProfileView | null = null;
   let scan: ScanView | null = null;
@@ -128,6 +131,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let promptRoutingRows: PromptRoutingPreviewRow[] = [];
   let promptBlockPreviews: PromptBlockPreview[] = [];
   let taskRuns: TaskRunView[] = [];
+  let artifactSource: LoaderData["artifactSource"] = "none";
 
   try {
     const row = await prisma.shopProfile.findUnique({ where: { shop } });
@@ -211,6 +215,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         signals = profileArtifacts.signals;
         themeSceneProfile = profileArtifacts.themeSceneProfile;
         translationContextProfile = profileArtifacts.translationContextProfile;
+        artifactSource = profileArtifacts.source;
       }
 
       const glossaryArtifactJob = glossaryAiJob ?? latestLegacyJob;
@@ -222,6 +227,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         if (glossarySuggestions.length === 0) {
           glossarySuggestions = glossaryArtifacts.glossarySuggestions;
         }
+        if (artifactSource === "none") artifactSource = glossaryArtifacts.source;
       }
 
       if (!scan && latestLegacyJob) {
@@ -252,6 +258,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json<LoaderData>({
     configured,
+    blobConfigured,
     profile,
     scan,
     promptBlock,
@@ -265,6 +272,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     promptRoutingRows,
     promptBlockPreviews,
     taskRuns,
+    artifactSource,
   });
 };
 
@@ -407,17 +415,19 @@ function mapJobStatusToStage(status: ShopScanStatus | null | undefined): ShopSca
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "-";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleString();
+  if (Number.isNaN(d.getTime())) return "-";
+  return `${d.toISOString().slice(0, 19).replace("T", " ")} UTC`;
 }
 
 function formatNumber(n: number | undefined | null): string {
   if (typeof n !== "number") return "-";
-  return n.toLocaleString();
+  return String(n);
 }
 
 export default function ShopProfilePage() {
   const {
     configured,
+    blobConfigured,
     profile,
     scan,
     promptBlock,
@@ -431,9 +441,11 @@ export default function ShopProfilePage() {
     promptRoutingRows,
     promptBlockPreviews,
     taskRuns,
+    artifactSource,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
   const revalidator = useRevalidator();
+  const [hydrated, setHydrated] = useState(false);
 
   const isActive = scan ? ACTIVE_STATUSES.includes(scan.status) : false;
   const isRescanning = fetcher.state !== "idle";
@@ -452,6 +464,10 @@ export default function ShopProfilePage() {
     }, 5000);
     return () => clearInterval(timer);
   }, [isActive, revalidator]);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const moduleRows = useMemo(() => {
     const stats = scan?.summary?.moduleStats ?? {};
@@ -593,6 +609,29 @@ export default function ShopProfilePage() {
           </Card>
         ) : (
           <>
+            <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
+              <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+                <Flex gap={8} wrap="wrap">
+                  <Tag color={configured ? "success" : "error"}>
+                    Cosmos: {configured ? "已配置" : "未配置"}
+                  </Tag>
+                  <Tag color={blobConfigured ? "success" : "warning"}>
+                    Blob: {blobConfigured ? "可读" : "未配置"}
+                  </Tag>
+                  <Tag {...SCAN_TAG_STYLE}>Artifacts: {artifactSource}</Tag>
+                </Flex>
+                {!blobConfigured ? (
+                  <Text type="warning" style={{ fontSize: 12 }}>
+                    当前页面未配置 Blob 读取，Theme 场景 / Runtime 上下文 / Prompt 预览会为空。
+                  </Text>
+                ) : artifactSource === "none" ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    当前未读到扫描产物，请检查是否已生成对应 blob 文件。
+                  </Text>
+                ) : null}
+              </Flex>
+            </Card>
+
             <Card
               title={
                 <Flex align="center" gap={8}>
@@ -841,7 +880,7 @@ export default function ShopProfilePage() {
                   <Descriptions.Item label="店铺描述" span={3}>
                     <Paragraph
                       style={{ margin: 0 }}
-                      ellipsis={{ rows: 2, expandable: true }}
+                      ellipsis={hydrated ? { rows: 2, expandable: true } : false}
                     >
                       {profile.description || "-"}
                     </Paragraph>
@@ -1288,7 +1327,13 @@ export default function ShopProfilePage() {
                   </Descriptions>
                 </Flex>
               ) : (
-                <Empty description="暂无 translation-context-profile.json（需完成新的扫描产物生成）" />
+                <Empty
+                  description={
+                    blobConfigured
+                      ? "暂无 translation-context-profile.json（未读到对应 blob 文件）"
+                      : "暂无 translation-context-profile.json（当前页面未配置 Blob 读取）"
+                  }
+                />
               )}
               </Flex>
             </Card>
@@ -1466,7 +1511,13 @@ export default function ShopProfilePage() {
                   </div>
                 </Flex>
               ) : (
-                <Empty description="暂无 theme scene profile（需完成新的扫描产物生成）" />
+                <Empty
+                  description={
+                    blobConfigured
+                      ? "暂无 theme scene profile（未读到 theme-key-profile.json / profile-facts.json）"
+                      : "暂无 theme scene profile（当前页面未配置 Blob 读取）"
+                  }
+                />
               )}
               </Flex>
             </Card>
@@ -1636,7 +1687,7 @@ export default function ShopProfilePage() {
                           }
                         >
                           <Paragraph
-                            copyable={{ text: preview.block }}
+                            copyable={hydrated ? { text: preview.block } : false}
                             style={{
                               margin: 0,
                               padding: 12,
@@ -1659,7 +1710,13 @@ export default function ShopProfilePage() {
                   )}
                 </Flex>
               ) : (
-                <Empty description="暂无 prompt routing preview（需先产出 theme scene hint）" />
+                <Empty
+                  description={
+                    blobConfigured
+                      ? "暂无 prompt routing preview（缺少 theme scene 或 runtime context）"
+                      : "暂无 prompt routing preview（当前页面未配置 Blob 读取）"
+                  }
+                />
               )}
               </Flex>
             </Card>
@@ -1679,7 +1736,7 @@ export default function ShopProfilePage() {
                 </Text>
                 {promptBlock ? (
                   <Paragraph
-                    copyable={{ text: promptBlock }}
+                    copyable={hydrated ? { text: promptBlock } : false}
                     style={{
                       margin: 0,
                       padding: 12,
