@@ -433,6 +433,7 @@ export default function ShopProfilePage() {
     taskRuns,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
+  const revalidator = useRevalidator();
 
   const isActive = scan ? ACTIVE_STATUSES.includes(scan.status) : false;
   const isRescanning = fetcher.state !== "idle";
