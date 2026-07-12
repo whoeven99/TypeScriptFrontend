@@ -17,6 +17,6 @@ RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 COPY . .
 
-RUN npm run build
+RUN npm run build:docker
 
 CMD ["npm", "run", "docker-start"]
