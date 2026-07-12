@@ -267,6 +267,7 @@ const Index = () => {
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const deleteTraceRef = useRef<ClientLogTrace | null>(null);
+  const handledDeleteResponseRef = useRef<any>(null);
   const { t } = useTranslation();
   const { reportClick, report } = useReport();
   useEffect(() => {
@@ -308,6 +309,11 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
+      if (handledDeleteResponseRef.current === deleteFetcher.data) {
+        return;
+      }
+      handledDeleteResponseRef.current = deleteFetcher.data;
+
       const results = Array.isArray(deleteFetcher.data?.data)
         ? deleteFetcher.data.data
         : [];
