@@ -22,6 +22,7 @@ import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
@@ -32,6 +33,10 @@ import {
   isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -233,6 +238,8 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const policyFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -360,61 +367,43 @@ const Index = () => {
   }, [policyFetcher.data]);
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
-      );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
-      );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          console.log("policyData: ", policyData);
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
 
-          const data = policyData?.translations?.find(
-            (option: any) => option?.key === item?.response?.key,
-          );
-          if (data) {
-            data.value = item?.response?.value;
-          } else {
-            policyData.translations.push({
-              key: item.response.key,
-              value: item.response.value,
-            });
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-政策页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setPolicyData((prev) => {
+        const [nextPolicy] = applyManageResourceTranslationUpdates(
+          prev ? [prev] : [],
+          successfulItems,
         );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
-          refreshCurrentPageData();
-        }
+        return nextPolicy ?? prev;
+      });
+    }
+
+    if (failedItems.length === 0) {
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-政策页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
     }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

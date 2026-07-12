@@ -7,13 +7,21 @@ import {
   Spin,
   Table,
   Typography,
-} from "antd";
+  } from "antd";
 import Button from "~/ui/components/AppButton";
-import { useEffect, useRef, useState } from "react";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { Page, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
+import { useEffect,
+  useRef,
+  useState } from "react";
+import { useFetcher,
+  useLoaderData,
+  useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page,
+  Pagination,
+  Select } from "@shopify/polaris";
+import { ActionFunctionArgs,
+  json } from "@remix-run/node";
+import { queryNextTransType,
+  queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
@@ -23,16 +31,21 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
-} from "~/server/manageTranslation/manageTranslationRoute.server";
+  } from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
   getManageTranslationLoadErrorMessage,
   isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
-} from "~/utils/manageTranslationErrors";
+  } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 
 const { Content } = Layout;
 
@@ -208,6 +221,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -330,41 +345,19 @@ const Index = () => {
 
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setShopsData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
-      );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const index = shopsData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (index !== -1) {
-            const data = shopsData[index]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              shopsData[index].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
+    }
+
+    if (failedItems.length === 0) {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
@@ -377,17 +370,14 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
+        if (hasInvalidDigestError || successfulItems.length > 0) {
           refreshCurrentPageData();
         }
       }
-    }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

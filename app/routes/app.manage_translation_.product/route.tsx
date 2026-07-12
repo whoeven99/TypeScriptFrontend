@@ -25,6 +25,7 @@ import { SaveBar } from "@shopify/app-bridge-react";
 type MenuItem = { key: string; label: string };
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { SearchOutlined } from "@ant-design/icons";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
@@ -35,6 +36,10 @@ import {
   getManageTranslationLoadErrorMessage,
   isManageTranslationRateLimitedError,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageFlatTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
@@ -520,6 +525,8 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -859,76 +866,31 @@ const Index = () => {
   }, [productFetcher.data, t]);
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setProductBaseData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+      setProductSeoData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const key = item?.response?.id || "";
-          const targetValue = item?.response?.value || "";
-          switch (true) {
-            case !!productBaseData.find((item: any) => item?.key == key):
-              setProductBaseData(
-                productBaseData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!productSeoData.find((item: any) => item?.key == key):
-              setProductSeoData(
-                productSeoData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!optionsData.find((item: any) => item?.key == key):
-              setOptionsData(
-                optionsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!metafieldsData.find((item: any) => item?.key == key):
-              setMetafieldsData(
-                metafieldsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            case !!variantsData.find((item: any) => item?.key == key):
-              setVariantsData(
-                variantsData.map((item) =>
-                  item.key === key
-                    ? { ...item, translated: targetValue }
-                    : item,
-                ),
-              );
-              break;
-            default:
-              break;
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
+      setOptionsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+      setMetafieldsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+      setVariantsData((prev) =>
+        applyManageFlatTranslationUpdates(prev, successfulItems),
+      );
+    }
+
+    if (failedItems.length === 0) {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
@@ -941,17 +903,14 @@ const Index = () => {
         );
       } else {
         shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
+        if (hasInvalidDigestError || successfulItems.length > 0) {
           refreshCurrentPageData();
         }
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
-    }
-  }, [confirmFetcher.data]);
+
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {

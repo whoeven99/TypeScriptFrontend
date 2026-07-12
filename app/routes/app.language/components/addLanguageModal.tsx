@@ -27,6 +27,7 @@ import {
   finishClientLogTrace,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 
 const { Panel } = Collapse;
 
@@ -298,6 +299,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   const dispatch = useDispatch();
   const searchRef = useRef<InputRef>(null);
   const addLanguageTraceRef = useRef<ClientLogTrace | null>(null);
+  const { consume: consumeAddResponse, reset: resetAddResponse } =
+    useConsumableFetcherData<any>();
 
   const fetcher = useFetcher<any>();
   const addFetcher = useFetcher<any>();
@@ -318,20 +321,20 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   }, [selectedLanguagesIscode]);
 
   useEffect(() => {
-    if (addFetcher.data) {
-      if (addFetcher.data?.success) {
-        const data = addFetcher.data.response?.map((lang: any, i: any) => ({
+    const data = consumeAddResponse(addFetcher.data);
+    if (data) {
+      if (data?.success) {
+        const rows = data.response?.map((lang: any, i: any) => ({
           key: lang.locale,
           name: lang.name,
-          localeName:
-            languageLocaleData[addFetcher.data.response[i].locale].Local,
+          localeName: languageLocaleData[data.response[i].locale].Local,
           locale: lang.locale,
           status: 0,
           auto_update_translation: false,
           published: lang.published,
           loading: false,
         }));
-        dispatch(updateLanguageTableData(data));
+        dispatch(updateLanguageTableData(rows));
         shopify.toast.show(t("Add success"));
         setAllSelectedKeys([]);
         setFilteredLanguages(updatedLocales);
@@ -340,20 +343,20 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         finishClientLogTrace(addLanguageTraceRef.current, {
           status: "success",
           context: {
-            locales: data?.map((item: any) => item?.locale) || [],
+            locales: rows?.map((item: any) => item?.locale) || [],
           },
         });
         addLanguageTraceRef.current = null;
         fetcher.submit(
           {
-            log: `${shop} 添加语言${data?.map((item: any) => item?.locale)}`,
+            log: `${shop} 添加语言${rows?.map((item: any) => item?.locale)}`,
           },
           {
             method: "POST",
             action: "/log",
           },
         );
-      } else if (addFetcher.data && !addFetcher.data?.success) {
+      } else {
         shopify.toast.show(t("Add failed"));
         setConfirmButtonDisable(false);
         finishClientLogTrace(addLanguageTraceRef.current, {
@@ -369,6 +372,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     }
   }, [
     addFetcher.data,
+    consumeAddResponse,
     allSelectedKeys,
     dispatch,
     fetcher,
@@ -478,6 +482,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
+    resetAddResponse();
     addLanguageTraceRef.current = startClientLogTrace({
       event: "language_add",
       action: "add_languages",

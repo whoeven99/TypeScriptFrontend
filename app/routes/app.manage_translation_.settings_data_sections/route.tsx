@@ -24,6 +24,7 @@ import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
@@ -34,6 +35,10 @@ import {
   isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
 
 
@@ -194,6 +199,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>(null);
@@ -321,80 +328,42 @@ const Index = () => {
   }, [selectedThemeKey]);
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setThemesData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+      setFilteredThemesData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const themesIndex = themesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (themesIndex !== -1) {
-            const data = themesData[themesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              themesData[themesIndex].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-          const filteredThemesIndex = themesData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (filteredThemesIndex !== -1) {
-            const data = themesData[filteredThemesIndex]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              themesData[filteredThemesIndex].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
-          refreshCurrentPageData();
-        }
+    }
+
+    if (failedItems.length === 0) {
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
     }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

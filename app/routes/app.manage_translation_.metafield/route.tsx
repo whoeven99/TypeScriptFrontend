@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { globalStore } from "~/globalStore";
+import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
@@ -33,6 +34,10 @@ import {
   isManageTranslationRateLimitedError,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 
 const { Content } = Layout;
 
@@ -208,6 +213,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [metafieldsData, setMetafieldsData] = useState<any[]>([]);
@@ -329,64 +336,39 @@ const Index = () => {
 
 
   useEffect(() => {
-    if (confirmFetcher.data?.success) {
-      const errorItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === false,
+    const data = consumeConfirmResponse(confirmFetcher.data);
+    if (!data?.success) return;
+
+    const { failedItems, successfulItems, hasInvalidDigestError } =
+      splitManageSaveResults(data.response);
+
+    if (successfulItems.length) {
+      setMetafieldsData((prev) =>
+        applyManageResourceTranslationUpdates(prev, successfulItems),
       );
-      const successfulItem = confirmFetcher.data?.response?.filter(
-        (item: any) => item?.success === true,
+    }
+
+    if (failedItems.length === 0) {
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-元字段页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
       );
-      const hasInvalidDigestError =
-        Array.isArray(errorItem) &&
-        errorItem.some((item: any) =>
-          String(item?.errorMsg || "")
-            .toLowerCase()
-            .includes("translatable content hash is invalid"),
-        );
-      if (Array.isArray(successfulItem) && successfulItem.length) {
-        successfulItem.forEach((item: any) => {
-          const index = metafieldsData.findIndex(
-            (option: any) => option.resourceId === item?.response?.resourceId,
-          );
-          if (index !== -1) {
-            const data = metafieldsData[index]?.translations?.find(
-              (option: any) => option?.key === item?.response?.key,
-            );
-            if (data) {
-              data.value = item?.response?.value;
-            } else {
-              metafieldsData[index].translations.push({
-                key: item.response.key,
-                value: item.response.value,
-              });
-            }
-          }
-        });
-      }
-      if (Array.isArray(errorItem) && errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-元字段页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (
-          hasInvalidDigestError ||
-          (Array.isArray(successfulItem) && successfulItem.length > 0)
-        ) {
-          refreshCurrentPageData();
-        }
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
     }
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
-  }, [confirmFetcher.data]);
+  }, [confirmFetcher.data, consumeConfirmResponse, fetcher, t]);
 
   useEffect(() => {
     if (confirmData.length > 0) {
