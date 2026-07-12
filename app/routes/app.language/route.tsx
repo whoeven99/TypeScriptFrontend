@@ -410,6 +410,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 shop,
                 accessToken: accessToken as string,
                 language: item,
+                primaryLanguageCode:
+                  deleteData.primaryLanguageCode ?? deleteData.primaryLanguage ?? "",
               });
             },
           );
