@@ -88,6 +88,36 @@ async function enrichCoverageWithRuntimeSignals(
   }
 }
 
+/** 语言页等轻量场景：只补 autoTranslate / isTranslating，跳过 auto-scan 时刻计算。 */
+async function enrichCoverageWithMinimalRuntimeSignals(
+  shop: string,
+  summary: CoverageSummary,
+): Promise<CoverageSummary> {
+  try {
+    const [targetRows, jobs] = await Promise.all([
+      listTargetLocales(shop),
+      listV4Jobs(shop, 30),
+    ]);
+    const activeJobs = jobs.filter((job) => ACTIVE_V4_STATUSES.includes(job.status));
+    const locales = summary.locales.map((row) => {
+      const match = targetRows.find((t) => sameTranslationLocale(t.locale, row.locale));
+      return {
+        ...row,
+        autoTranslate: match?.autoTranslate ?? false,
+        isTranslating: activeJobs.some((job) =>
+          sameTranslationLocale(job.target, row.locale),
+        ),
+        lastAutoUpdateAt: null,
+        nextAutoUpdateAt: null,
+      };
+    });
+    return { ...summary, locales };
+  } catch (err) {
+    console.error("[translateV4] enrichCoverageWithMinimalRuntimeSignals failed:", err);
+    return summary;
+  }
+}
+
 /** 仅从 Redis 读缓存，适合 loader 快速路径。 */
 export async function getCoverageSummaryFromCache({
   shop,
@@ -98,7 +128,8 @@ export async function getCoverageSummaryFromCache({
   shop: string;
   primaryLocale: string;
   targetLocales: LocaleInput[];
-  includeRuntimeSignals?: boolean;
+  /** true=完整信号；false=跳过；'minimal'=仅 autoTranslate/isTranslating */
+  includeRuntimeSignals?: boolean | "minimal";
 }): Promise<CoverageSummary> {
   const rows = await Promise.all(
     targetLocales.map(async (loc) => {
@@ -133,8 +164,12 @@ export async function getCoverageSummaryFromCache({
     locales: rows,
   };
 
-  if (!includeRuntimeSignals) {
+  if (includeRuntimeSignals === false) {
     return summary;
+  }
+
+  if (includeRuntimeSignals === "minimal") {
+    return enrichCoverageWithMinimalRuntimeSignals(shop, summary);
   }
 
   return enrichCoverageWithRuntimeSignals(shop, summary);

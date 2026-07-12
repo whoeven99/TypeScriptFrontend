@@ -49,7 +49,9 @@ import {
   deleteTargetLocales,
   syncShopTargetLocalesFromShopify,
 } from "~/server/translateV4/targetLocale.server";
-import { invalidateShopLocalesCache } from "~/server/translateV4/shopLocales.server";
+import { invalidateShopLocalesCache, loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { getCoverageSummaryFromCache } from "~/server/translateV4/coverage.server";
+import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import {
   setAutoTranslateCompat,
   listLanguageCoverageCompat,
@@ -159,15 +161,101 @@ function statusDetailFromCoverage(row?: LanguageCoverageRow): string | undefined
   return `${row.percent}%`;
 }
 
+function buildLanguageRowsFromShopLanguages(
+  shopLanguages: ShopLocalesType[],
+): LanguagesDataType[] {
+  return shopLanguages
+    .filter((language) => !language.primary)
+    .map((lang) => ({
+      key: lang.locale,
+      name: lang.name,
+      locale: lang.locale,
+      published: lang.published,
+      localeName:
+        languageLocaleData[lang.locale as keyof typeof languageLocaleData]
+          ?.Local || "",
+      status: 0,
+      countries:
+        languageLocaleData[lang.locale as keyof typeof languageLocaleData]
+          ?.countries || [],
+      autoTranslate: false,
+      publishLoading: false,
+      autoTranslateLoading: false,
+    }));
+}
+
+function applyCoverageToLanguageRows(
+  rows: LanguagesDataType[],
+  coverageRows: LanguageCoverageRow[],
+): LanguagesDataType[] {
+  return rows.map((lang) => {
+    const coverageRow = coverageRows.find((row) =>
+      sameTranslationLocale(row.locale, lang.locale),
+    );
+    return {
+      ...lang,
+      status: statusFromCoverage(coverageRow),
+      statusDetail: statusDetailFromCoverage(coverageRow),
+      autoTranslate: coverageRow?.autoTranslate ?? false,
+    };
+  });
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+  const { shop, accessToken } = adminAuthResult.session;
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
+  let shopLanguages: ShopLocalesType[] = [];
+  let coverageLocales: LanguageCoverageRow[] | null = null;
+
+  try {
+    const loaded = await loadShopLocalesForTranslation({
+      shop,
+      accessToken: accessToken as string,
+    });
+    shopLanguages = loaded.rows.map((row) => ({
+      locale: row.locale,
+      name: row.name,
+      primary: row.primary,
+      published: row.published,
+    }));
+
+    // 并行：同步 TSF 目标语言 + 预计算覆盖率
+    const targets = selectShopTargetLocales(loaded.localeOptions, loaded.primaryLocale);
+    void syncShopTargetLocalesFromShopify(
+      shop,
+      loaded.rows.map((row) => ({
+        locale: row.locale,
+        primary: row.primary,
+      })),
+      loaded.primaryLocale,
+    ).catch((syncErr) => {
+      console.error("[language] loader syncShopTargetLocales failed:", syncErr);
+    });
+
+    // 从 Redis 缓存预计算覆盖率，避免客户端二次请求
+    try {
+      const summary = await getCoverageSummaryFromCache({
+        shop,
+        primaryLocale: loaded.primaryLocale,
+        targetLocales: targets,
+        includeRuntimeSignals: "minimal",
+      });
+      coverageLocales = summary.locales;
+    } catch (coverageErr) {
+      console.error("[language] loader coverage precompute failed:", coverageErr);
+    }
+  } catch (err) {
+    console.error("[language] loader shopLanguages failed:", err);
+  }
+
   return json({
     mobile: isMobile as boolean,
-    shop: shop,
+    shop,
+    shopLanguages,
+    coverageLocales,
   });
 };
 
@@ -191,18 +279,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const primaryLocale = data.find((lang) => lang.primary)?.locale;
         if (primaryLocale) {
-          try {
-            await syncShopTargetLocalesFromShopify(
-              shop,
-              data.map((lang) => ({
-                locale: lang.locale,
-                primary: lang.primary,
-              })),
-              primaryLocale,
-            );
-          } catch (syncErr) {
+          void syncShopTargetLocalesFromShopify(
+            shop,
+            data.map((lang) => ({
+              locale: lang.locale,
+              primary: lang.primary,
+            })),
+            primaryLocale,
+          ).catch((syncErr) => {
             console.error("[language] syncShopTargetLocales failed:", syncErr);
-          }
+          });
         }
         return {
           success: true,
@@ -370,7 +456,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile } = useLoaderData<typeof loader>();
+  const { shop, mobile, shopLanguages: loaderShopLanguages, coverageLocales: loaderCoverageLocales } =
+    useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -391,11 +478,15 @@ const Index = () => {
   const prevLocaleDataRef = useRef<string[]>();
   const deleteTraceRef = useRef<ClientLogTrace | null>(null);
   const pollFailureLoggedRef = useRef(false);
+  const skipWebPresencesResyncRef = useRef(true);
+  const coverageRequestRef = useRef<Promise<void> | null>(null);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(
+    () => loaderShopLanguages.length === 0,
+  );
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] =
@@ -472,13 +563,63 @@ const Index = () => {
     }
   }, [shop]);
 
+  const applyCoverageToRows = useCallback(
+    async (baseRows: LanguagesDataType[]) => {
+      if (coverageRequestRef.current) {
+        await coverageRequestRef.current;
+        return;
+      }
+      coverageRequestRef.current = (async () => {
+        try {
+          const coverageData = await listLanguageCoverageCompat();
+          const coverageRows = (coverageData?.summary?.locales ??
+            []) as LanguageCoverageRow[];
+          dispatch(
+            setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
+          );
+        } catch (error) {
+          console.error("[language] load coverage status failed:", error);
+          dispatch(setLanguageTableData(baseRows));
+        } finally {
+          setLoading(false);
+          coverageRequestRef.current = null;
+        }
+      })();
+      await coverageRequestRef.current;
+    },
+    [dispatch],
+  );
+
+  const hydrateLanguageRows = useCallback(
+    (shopLanguages: ShopLocalesType[], preloadedCoverage?: LanguageCoverageRow[] | null) => {
+      const baseRows = buildLanguageRowsFromShopLanguages(shopLanguages);
+      if (preloadedCoverage?.length) {
+        // 使用 loader 预计算的覆盖率，跳过客户端二次请求
+        dispatch(setLanguageTableData(applyCoverageToLanguageRows(baseRows, preloadedCoverage)));
+        setLoading(false);
+      } else {
+        dispatch(setLanguageTableData(baseRows));
+        setLoading(false);
+        void applyCoverageToRows(baseRows);
+      }
+    },
+    [applyCoverageToRows, dispatch],
+  );
+
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
-      method: "post",
-      action: withEmbeddedSearch("/app/language", location.search),
-    });
+    if (loaderShopLanguages.length > 0) {
+      hydrateLanguageRows(loaderShopLanguages, loaderCoverageLocales);
+    }
+
+    if (loaderShopLanguages.length === 0) {
+      const formData = new FormData();
+      formData.append("loading", JSON.stringify(true));
+      loadingFetcher.submit(formData, {
+        method: "post",
+        action: withEmbeddedSearch("/app/language", location.search),
+      });
+    }
+
     webPresencesFetcher.submit(
       {
         webPresences: JSON.stringify(true),
@@ -505,16 +646,22 @@ const Index = () => {
     };
     handleResize();
     window.addEventListener("resize", handleResize);
+
+    const quotaTimer = window.setTimeout(() => {
+      void refreshQuota();
+    }, 0);
+
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.clearTimeout(quotaTimer);
     };
   }, []);
 
   useEffect(() => {
-    void refreshQuota();
-  }, [refreshQuota]);
-
-  useEffect(() => {
+    if (skipWebPresencesResyncRef.current) {
+      skipWebPresencesResyncRef.current = false;
+      return;
+    }
     // 如果数据和上一次完全一样，就不触发
     if (
       isEqual(prevLocaleDataRef.current, languageTableDataLocale) ||
@@ -558,60 +705,11 @@ const Index = () => {
   useEffect(() => {
     if (loadingFetcher.data) {
       if (loadingFetcher.data.success) {
-        const shopLanguages = loadingFetcher.data.response;
-        const shopPrimaryLanguageData = shopLanguages?.filter(
-          (language: any) => language?.primary,
-        );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
-          (language: any) => !language?.primary,
-        );
-        let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
-          key: lang?.locale,
-          name: lang?.name,
-          locale: lang?.locale,
-          published: lang.published,
-          localeName:
-            languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
-              ?.Local || "",
-          status: 0,
-          countries:
-            languageLocaleData[lang?.locale as keyof typeof languageLocaleData]
-              ?.countries || [],
-          autoTranslate: false,
-          publishLoading: false,
-          autoTranslateLoading: false,
-        }));
-        const GetLanguageLocaleInfoFront = async () => {
-          try {
-            const coverageData = await listLanguageCoverageCompat();
-            const coverageRows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
-            data = data.map((lang: any) => {
-              const coverageRow = coverageRows.find((row) =>
-                sameTranslationLocale(row.locale, lang.locale),
-              );
-              return {
-                ...lang,
-                status: statusFromCoverage(coverageRow),
-                statusDetail: statusDetailFromCoverage(coverageRow),
-                autoTranslate: coverageRow?.autoTranslate ?? false,
-              };
-            });
-          } catch (error) {
-            console.error("[language] load coverage status failed:", error);
-          } finally {
-            dispatch(setLanguageTableData(data));
-            setLoading(false);
-          }
-        };
-
-        GetLanguageLocaleInfoFront();
+        const shopLanguages = loadingFetcher.data.response as ShopLocalesType[];
+        hydrateLanguageRows(shopLanguages);
       }
     }
-  }, [
-    dispatch,
-    loadingFetcher.data,
-    shop,
-  ]);
+  }, [hydrateLanguageRows, loadingFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data) {

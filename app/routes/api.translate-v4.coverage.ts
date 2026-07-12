@@ -27,6 +27,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const forceRefresh = url.searchParams.get("refresh") === "1";
     const cacheOnly = url.searchParams.get("cache") === "1";
+    const signalsParam = url.searchParams.get("signals");
+    const includeRuntimeSignals =
+      signalsParam === "minimal"
+        ? ("minimal" as const)
+        : signalsParam === "0" || signalsParam === "false"
+          ? false
+          : true;
     const localesToRefresh = url.searchParams
       .get("locales")
       ?.split(",")
@@ -37,6 +44,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         shop: shopName,
         primaryLocale,
         targetLocales,
+        includeRuntimeSignals,
       });
       return json({ ok: true, summary });
     }
