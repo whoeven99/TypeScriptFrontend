@@ -4,6 +4,7 @@
   "scripts": {
     "core:build": "npm run build --prefix packages/translation-core",
     "build": "npm run core:build && remix vite:build",
+    "build:docker": "remix vite:build",
     "dev": "shopify app dev --port 8080",
     "deployTest": "npx shopify app deploy -c shopify.app.test.toml --allow-updates --allow-deletes",
     "deployProd": "npx shopify app deploy -c shopify.app.prod.toml --allow-updates --allow-deletes",
@@ -108,7 +109,8 @@
   },
   "workspaces": [
     "extensions/*",
-    "packages/*"
+    "packages/*",
+    "worker"
   ],
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"
