@@ -838,6 +838,40 @@ Invoke-RestMethod -Uri "https://api.render.com/v1/services/srv-csp2931u0jms738sf
   -Headers @{ Authorization = "Bearer $env:RENDER_API_KEY" }
 ```
 
+**⚠️ 运行时日志查询（正确端点）：**
+
+Render 的运行时日志不在 `/services/{id}/logs`（该端点 404），正确端点：
+
+```
+GET https://api.render.com/v1/logs?ownerId=<ownerId>&resource=<svcId>&level=error&type=app&startTime=<ISO>&endTime=<ISO>&direction=backward&limit=50
+```
+
+- `ownerId`: `tea-csovfmhu0jms738qrra0`（whoeven's Workspace，可用 `RENDER_OWNER_ID` 覆盖）
+- `resource`: 可传多个，逗号分隔
+- `level`: `error`（只看错误）或 `all`
+- `type`: `app`
+- `direction`: `backward`（最近的在前）
+- `startTime` / `endTime`: ISO 8601 UTC
+
+**PowerShell 一键拉日志：**
+
+```ps1
+$k = "rnd_..."; $owner = "tea-csovfmhu0jms738qrra0"
+$end = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+$start = [DateTime]::UtcNow.AddHours(-2).ToString("yyyy-MM-ddTHH:mm:ssZ")
+$url = "https://api.render.com/v1/logs?ownerId=$owner&resource=srv-d8sqas4vikkc73f5nbog&resource=srv-csp2931u0jms738sfmc0&level=error&type=app&startTime=$start&endTime=$end&direction=backward&limit=50"
+$logs = Invoke-RestMethod -Uri $url -Headers @{Authorization="Bearer $k"}
+$logs.logs | ForEach-Object { Write-Output "$($_.timestamp) $($_.message)" }
+```
+
+**Node.js 拉日志（与 `renderErrorDigest.ts` 一致）：**
+
+```js
+const url = `https://api.render.com/v1/logs?ownerId=${ownerId}&resource=${svcId}&startTime=${start}&endTime=${end}&level=error&type=app&direction=backward&limit=100`;
+const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+const { logs } = await res.json();
+```
+
 **Diagnostic flow:**
 
 1. Check Render deploy status — is the service even running the latest code?
