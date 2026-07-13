@@ -331,6 +331,13 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- Render prod error digest → Feishu:
+  `RENDER_API_KEY`, `FEISHU_WEBHOOK_URL_RENDER_DIGEST`,
+  `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 30m),
+  `RENDER_ERROR_DIGEST_LOOKBACK_MS` (default 30m),
+  `RENDER_ERROR_DIGEST_ENABLED` (set `false` on test worker),
+  optional `RENDER_OWNER_ID`.
+  Code: `worker/src/services/renderErrorDigest.ts`, scheduled in `scheduler.ts`.
 - Email: `TENCENT_CLOUD_KEY_ID`, `TENCENT_CLOUD_KEY`, and template/recipient
   variables consumed by `workerEmail.ts` and TSF email helpers.
 

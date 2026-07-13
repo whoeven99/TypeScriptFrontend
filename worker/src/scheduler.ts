@@ -14,6 +14,12 @@ import {
   runBillingSubscriptionNearDueReconcile,
   runBillingSubscriptionReconcile,
 } from "./services/billingSubscriptionReconcile.js";
+import {
+  getRenderErrorDigestInitialDelayMs,
+  getRenderErrorDigestIntervalMs,
+  isRenderErrorDigestEnabled,
+  runRenderErrorDigest,
+} from "./services/renderErrorDigest.js";
 import { isShuttingDown } from "./shutdown.js";
 import { hostname } from "os";
 import {
@@ -147,6 +153,27 @@ function scheduleBillingSubscriptionNearDueReconcile(): void {
   }, BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INITIAL_DELAY_MS);
 }
 
+function scheduleRenderErrorDigest(): void {
+  if (!isRenderErrorDigestEnabled()) {
+    console.log(
+      "[scheduler] renderErrorDigest 未启用（需 RENDER_API_KEY + FEISHU_WEBHOOK_URL_RENDER_DIGEST）",
+    );
+    return;
+  }
+
+  const intervalMs = getRenderErrorDigestIntervalMs();
+  const initialDelayMs = getRenderErrorDigestInitialDelayMs();
+  const tick = () => safeRun("renderErrorDigest", runRenderErrorDigest);
+
+  console.log(
+    `[scheduler] renderErrorDigest 每 ${intervalMs}ms 汇总 prod Render error → 飞书，首次 ${initialDelayMs}ms 后`,
+  );
+  setTimeout(() => {
+    tick();
+    setInterval(tick, intervalMs);
+  }, initialDelayMs);
+}
+
 export function startScheduler(): void {
   const stages = enabledStages();
   const claimSuffix = `-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
@@ -212,6 +239,9 @@ export function startScheduler(): void {
   // 订阅对账：仅 worker 调度；直连 Turso，不打 TSF Web。
   scheduleBillingSubscriptionNearDueReconcile();
   scheduleBillingSubscriptionReconcile();
+
+  // Render prod error 汇总 → 飞书（独立于 pipeline stages）。
+  scheduleRenderErrorDigest();
 
   for (const stage of ALL_STAGES) {
     if (!stages.has(stage)) {
