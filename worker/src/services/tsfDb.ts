@@ -193,7 +193,7 @@ export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string
 export async function getTsfAccountRemaining(shop: string): Promise<number | null> {
   if (!hasTsfDbCredentials()) return null;
   const rs = await tsfExecute({
-    sql: "SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits FROM Account WHERE shop = ? LIMIT 1",
+    sql: "SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits FROM Account WHERE shop = ? AND deletedAt IS NULL LIMIT 1",
     args: [shop],
   });
   const r = rs.rows[0];
@@ -205,11 +205,11 @@ export async function getTsfAccountRemaining(shop: string): Promise<number | nul
   return total - Number(r.usedCredits ?? 0);
 }
 
-/** 检查店铺是否在 TSF Account 表中有记录（有账户 = 有付费/试用资格）。 */
+/** 检查店铺是否在 TSF Account 表中有记录且未被软删除（有账户 = 有付费/试用资格）。 */
 export async function hasTsfAccount(shop: string): Promise<boolean> {
   if (!hasTsfDbCredentials()) return false;
   const rs = await tsfExecute({
-    sql: "SELECT 1 FROM Account WHERE shop = ? LIMIT 1",
+    sql: "SELECT 1 FROM Account WHERE shop = ? AND deletedAt IS NULL LIMIT 1",
     args: [shop],
   });
   return rs.rows.length > 0;
@@ -227,7 +227,7 @@ export async function deductTsfAccountCredits(
   const amt = Math.max(0, Math.ceil(amount));
   if (amt > 0) {
     const res = await tsfExecute({
-      sql: "UPDATE Account SET usedCredits = usedCredits + ?, updatedAt = datetime('now') WHERE shop = ?",
+      sql: "UPDATE Account SET usedCredits = usedCredits + ?, updatedAt = datetime('now') WHERE shop = ? AND deletedAt IS NULL",
       args: [amt, shop],
     });
     if (!res.rowsAffected) return null;
