@@ -1,4 +1,11 @@
-import { createClient, type Client } from "@libsql/client/web";
+import { createClient, type Client, type InStatement, type ResultSet } from "@libsql/client/web";
+
+/** Turso 网关瞬时错误（502/503/504）短退避重试次数，与 shopifyFetch 默认一致。 */
+const TSF_DB_5XX_MAX_RETRIES = Math.max(
+  0,
+  Number(process.env.TSF_DB_5XX_MAX_RETRIES?.trim()) || 2,
+);
+const TSF_DB_5XX_RETRY_STATUSES = new Set([502, 503, 504]);
 
 /**
  * 连接 TSF Turso 库，读取自动翻译配置、Session token、Glossary 等。
@@ -36,6 +43,78 @@ export function getTsfDb(): Client {
   return client;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function collectTsfDbErrorStrings(error: unknown): string[] {
+  const strings: string[] = [];
+  let current: unknown = error;
+  while (current) {
+    if (current instanceof Error) {
+      strings.push(current.message);
+      const code = (current as NodeJS.ErrnoException).code;
+      if (typeof code === "string") strings.push(code);
+      current = current.cause;
+    } else if (typeof current === "string") {
+      strings.push(current);
+      break;
+    } else {
+      strings.push(String(current));
+      break;
+    }
+  }
+  return strings;
+}
+
+function hasTransientTsfDbHttpStatus(error: unknown): boolean {
+  let current: unknown = error;
+  while (current) {
+    if (typeof current === "object" && current !== null && "status" in current) {
+      const status = Number((current as { status?: unknown }).status);
+      if (TSF_DB_5XX_RETRY_STATUSES.has(status)) return true;
+    }
+    current =
+      current instanceof Error
+        ? current.cause
+        : typeof current === "object" && current !== null && "cause" in current
+          ? (current as { cause?: unknown }).cause
+          : undefined;
+  }
+  return false;
+}
+
+function isTransientTsfDbError(error: unknown): boolean {
+  const text = collectTsfDbErrorStrings(error).join("\n");
+  if (hasTransientTsfDbHttpStatus(error)) return true;
+  if (/HTTP status 50[234]|HTTP 50[234]/i.test(text)) return true;
+  if (/SERVER_ERROR/i.test(text) && /50[234]/.test(text)) return true;
+  return /ETIMEDOUT|ECONNRESET|EAI_AGAIN|fetch failed/i.test(text);
+}
+
+function sqlHint(statement: string | InStatement): string {
+  const sql = typeof statement === "string" ? statement : statement.sql;
+  return sql.replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+/** 带 502/503/504 短退避重试的 Turso execute（默认重试 2 次）。 */
+export async function tsfExecute(
+  statement: string | InStatement,
+  retries5xx = TSF_DB_5XX_MAX_RETRIES,
+): Promise<ResultSet> {
+  try {
+    return await getTsfDb().execute(statement);
+  } catch (error) {
+    if (!isTransientTsfDbError(error) || retries5xx <= 0) throw error;
+    const waitMs = Math.min(8_000, 2_000 * (TSF_DB_5XX_MAX_RETRIES - retries5xx + 1));
+    console.warn(
+      `[tsfDb] transient Turso error — waiting ${waitMs}ms (retries left: ${retries5xx - 1}) sql=${sqlHint(statement)}`,
+    );
+    await sleep(waitMs);
+    return tsfExecute(statement, retries5xx - 1);
+  }
+}
+
 export type AutoTranslateShop = {
   shop: string;
   primaryLocale: string;
@@ -45,7 +124,7 @@ export type AutoTranslateShop = {
 /** 自动扫描用：已迁移到 TSF 且开了自动翻译的店。 */
 export async function listAutoTranslateShops(): Promise<AutoTranslateShop[]> {
   // 按语言精确取：已迁移店 + 该语言开了自动翻译（ShopTargetLocale）
-  const rs = await getTsfDb().execute(
+  const rs = await tsfExecute(
     `SELECT s.shop AS shop, s.primaryLocale AS primaryLocale, t.locale AS target
      FROM ShopTranslationSettings s
      JOIN ShopTargetLocale t ON t.shop = s.shop
@@ -78,7 +157,7 @@ export async function syncShopPrimaryLocaleInTsf(
   const primary = primaryLocale.trim();
   if (!primary) return false;
 
-  const rs = await getTsfDb().execute({
+  const rs = await tsfExecute({
     sql:
       "SELECT primaryLocale FROM ShopTranslationSettings WHERE shop = ? AND migratedToTsf = 1 LIMIT 1",
     args: [shop],
@@ -89,7 +168,7 @@ export async function syncShopPrimaryLocaleInTsf(
   const stored = String(row.primaryLocale ?? "");
   if (normalizeLocaleKey(stored) === normalizeLocaleKey(primary)) return false;
 
-  await getTsfDb().execute({
+  await tsfExecute({
     sql: "UPDATE ShopTranslationSettings SET primaryLocale = ?, updatedAt = datetime('now') WHERE shop = ?",
     args: [primary, shop],
   });
@@ -102,7 +181,7 @@ export async function syncShopPrimaryLocaleInTsf(
  * TSF 用 @shopify/shopify-app Prisma session 存储，offline session 的 isOnline=0。
  */
 export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string | null> {
-  const rs = await getTsfDb().execute({
+  const rs = await tsfExecute({
     sql: "SELECT accessToken FROM Session WHERE shop = ? AND isOnline = 0 AND accessToken IS NOT NULL LIMIT 1",
     args: [shop],
   });
@@ -113,7 +192,7 @@ export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string
 /** 读 tsf 账户剩余额度（三池之和 - 已用）。无账户返回 null。 */
 export async function getTsfAccountRemaining(shop: string): Promise<number | null> {
   if (!hasTsfDbCredentials()) return null;
-  const rs = await getTsfDb().execute({
+  const rs = await tsfExecute({
     sql: "SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits FROM Account WHERE shop = ? LIMIT 1",
     args: [shop],
   });
@@ -129,7 +208,7 @@ export async function getTsfAccountRemaining(shop: string): Promise<number | nul
 /** 检查店铺是否在 TSF Account 表中有记录（有账户 = 有付费/试用资格）。 */
 export async function hasTsfAccount(shop: string): Promise<boolean> {
   if (!hasTsfDbCredentials()) return false;
-  const rs = await getTsfDb().execute({
+  const rs = await tsfExecute({
     sql: "SELECT 1 FROM Account WHERE shop = ? LIMIT 1",
     args: [shop],
   });
@@ -147,7 +226,7 @@ export async function deductTsfAccountCredits(
   if (!hasTsfDbCredentials()) return null;
   const amt = Math.max(0, Math.ceil(amount));
   if (amt > 0) {
-    const res = await getTsfDb().execute({
+    const res = await tsfExecute({
       sql: "UPDATE Account SET usedCredits = usedCredits + ?, updatedAt = datetime('now') WHERE shop = ?",
       args: [amt, shop],
     });
@@ -171,7 +250,7 @@ export async function loadGlossaryRowsFromTsf(
   shop: string,
   target: string,
 ): Promise<TsfGlossaryRow[]> {
-  const rs = await getTsfDb().execute({
+  const rs = await tsfExecute({
     sql: "SELECT sourceText, targetText, rangeCode, caseSensitive FROM Glossary WHERE shop = ? AND status = 1 AND (rangeCode = ? OR rangeCode = 'ALL' OR rangeCode IS NULL)",
     args: [shop, target],
   });

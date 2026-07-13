@@ -22,6 +22,7 @@ import {
   type AppBootstrapData,
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
+import { scheduleTsfWelcomeEmail } from "~/server/billing/email/welcomeEmail.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -130,12 +131,20 @@ async function runAppInitialization({
 }: {
   shop: string;
 }) {
+  const initLog = "[app:init]";
   try {
+    console.info(`${initLog} start shop=${shop}`);
     // 判定并锁定账本归属；新 TSF 用户只建账户，不在安装时发放试用额度。
-    await resolveBillingBinding(shop);
+    const binding = await resolveBillingBinding(shop);
+    console.info(
+      `${initLog} billing-resolved shop=${shop} bound=${binding.bound} system=${binding.billingSystem} persisted=${binding.persisted}`,
+    );
+    scheduleTsfWelcomeEmail(binding, shop, "app-loader-init");
 
     // 店铺画像扫描改为手动按钮触发，避免安装/首次进入时自动拉 Shopify 或自动调用 AI。
+    console.info(`${initLog} done shop=${shop}`);
   } catch (error) {
+    console.error(`${initLog} failed shop=${shop}`, error);
     logGraphQLErrorDetail("Error app bootstrap initialization", error);
   }
 }
