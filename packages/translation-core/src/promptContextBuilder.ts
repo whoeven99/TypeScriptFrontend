@@ -1,11 +1,21 @@
 import {
+  finalizeTranslationSceneResolution,
   resolveTranslationScene,
   type FieldContentClass,
   type JsonMode,
+  type TranslationAudience,
+  type TranslationFieldKind,
   type TranslationPromptProfileId,
+  type TranslationRewriteFreedom,
   type TranslationRole,
   type TranslationScene,
 } from "./translationSceneResolver.js";
+import {
+  getTranslationFieldRule,
+  getTranslationFieldConstraintHints,
+  type TranslationFieldRule,
+  type TranslationConstraintOrigin,
+} from "./translationFieldLimits.js";
 
 export type ShopPromptContext = {
   industry?: string | null;
@@ -71,10 +81,14 @@ export type ResolvedTranslationPromptContext = {
   module: string | null;
   contentClass: Exclude<FieldContentClass, "skip">;
   jsonMode: JsonMode | null;
+  fieldKind: TranslationFieldKind;
+  audience: TranslationAudience;
+  rewriteFreedom: TranslationRewriteFreedom;
   shopContext: ShopPromptContext | null;
   terminology: TerminologyPromptContext | null;
   market: MarketPromptContext | null;
   modulePolicy: ModulePolicyContext | null;
+  constraints: TranslationConstraintSet;
 };
 
 export type PromptContextBlockSelection = {
@@ -85,14 +99,45 @@ export type PromptContextBlockSelection = {
   scenePolicy: true;
 };
 
-const MAX_KEYWORDS = 12;
-const MAX_SELLING_POINTS = 5;
-const MAX_DESCRIPTION_CHARS = 280;
+export type TranslationConstraintSet = {
+  preserveHtmlStructure: boolean;
+  preserveJsonStructure: boolean;
+  preserveSentinels: boolean;
+  preservePlaceholders: boolean;
+  noHtmlTagsInLeaf: boolean;
+  keepLeadingTrailingWhitespace: boolean;
+  maxChars?: number;
+  recommendedMaxChars?: number;
+  mustBeSlugLike?: boolean;
+  shortUiLabelPreferred?: boolean;
+  fieldHints: Array<{
+    code: string;
+    origin: TranslationConstraintOrigin;
+    promptText: string;
+    maxChars?: number;
+  }>;
+};
+
+export type TranslationPromptPlan = {
+  task: {
+    scene: TranslationScene;
+    role: TranslationRole | null;
+    fieldKind: TranslationFieldKind;
+    fieldRule: TranslationFieldRule;
+    audience: TranslationAudience;
+    rewriteFreedom: TranslationRewriteFreedom;
+    contentClass: Exclude<FieldContentClass, "skip">;
+    module: string | null;
+    jsonMode: JsonMode | null;
+  };
+  constraints: TranslationConstraintSet;
+  selection: PromptContextBlockSelection;
+  debugReasons: string[];
+};
+
 const MAX_TERMS = 12;
 const MAX_PREFERRED_TERMS = 10;
 const MAX_MARKET_NOTES = 6;
-const MAX_PUBLISHED_LOCALES = 12;
-const MAX_CURRENCIES = 8;
 
 export function buildResolvedPromptContext(args: {
   module?: string | null;
@@ -114,9 +159,12 @@ export function buildResolvedPromptContext(args: {
     args.key,
     args.resourceId ?? args.base?.resourceId ?? null,
   );
-  const resolution =
+  const resolution: ReturnType<typeof resolveTranslationScene> =
     sceneHint && (sceneHint.confidence ?? 0) >= 0.78
-      ? applyThemeSceneHint(baseResolution, sceneHint)
+      ? finalizeTranslationSceneResolution({
+          ...baseResolution,
+          ...applyThemeSceneHint(baseResolution, sceneHint),
+        })
       : baseResolution;
 
   const modulePolicy = normalizeModulePolicy(
@@ -131,6 +179,7 @@ export function buildResolvedPromptContext(args: {
     terminology: normalizeTerminology(args.base?.terminology),
     market: normalizeMarket(args.base?.market),
     modulePolicy,
+    constraints: resolvePromptConstraints(resolution),
   };
 }
 
@@ -141,18 +190,62 @@ export function buildPromptContextBlock(
     targetLocale?: string | null;
   },
 ): string | null {
-  const selection = selectPromptContextBlocks(context, options);
+  const plan = buildPromptPlan(context, options);
   const blocks = [
-    selection.shopContext ? buildShopContextBlock(context.shopContext) : null,
-    selection.terminology
+    buildTaskPolicyBlock(plan),
+    buildConstraintBlock(plan),
+    plan.selection.shopContext ? buildShopContextBlock(context.shopContext) : null,
+    plan.selection.terminology
       ? buildTerminologyBlock(context.terminology, options?.sourceText)
       : null,
-    selection.market ? buildMarketContextBlock(context.market) : null,
-    buildScenePolicyBlock(context),
-    selection.modulePolicy ? buildModulePolicyBlock(context.modulePolicy) : null,
+    plan.selection.market ? buildMarketContextBlock(context.market) : null,
+    plan.selection.modulePolicy ? buildModulePolicyBlock(context.modulePolicy) : null,
   ].filter(Boolean);
 
   return blocks.length > 0 ? blocks.join("\n\n") : null;
+}
+
+export function buildPromptPlan(
+  context: ResolvedTranslationPromptContext,
+  options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+  },
+): TranslationPromptPlan {
+  const selection = selectPromptContextBlocks(context, options);
+  const debugReasons: string[] = [];
+  if (selection.terminology) debugReasons.push("terminology_hit");
+  if (selection.shopContext) debugReasons.push("style_context");
+  if (selection.market) debugReasons.push("regional_market_context");
+  if (selection.modulePolicy) debugReasons.push("module_exception");
+  if (context.constraints.maxChars != null) debugReasons.push(`max_chars:${context.constraints.maxChars}`);
+  if (context.constraints.recommendedMaxChars != null) {
+    debugReasons.push(`recommended_max_chars:${context.constraints.recommendedMaxChars}`);
+  }
+  if (context.constraints.mustBeSlugLike) debugReasons.push("slug_constraint");
+  if (context.constraints.shortUiLabelPreferred) debugReasons.push("short_ui_label");
+  for (const hint of context.constraints.fieldHints) {
+    debugReasons.push(`constraint:${hint.code}:${hint.origin}`);
+  }
+  if (context.constraints.preserveHtmlStructure) debugReasons.push("preserve_html");
+  if (context.constraints.preserveJsonStructure) debugReasons.push("preserve_json");
+
+  return {
+    task: {
+      scene: context.scene,
+      role: context.role,
+      fieldKind: context.fieldKind,
+      fieldRule: getTranslationFieldRule(context.fieldKind),
+      audience: context.audience,
+      rewriteFreedom: context.rewriteFreedom,
+      contentClass: context.contentClass,
+      module: context.module,
+      jsonMode: context.jsonMode,
+    },
+    constraints: context.constraints,
+    selection,
+    debugReasons,
+  };
 }
 
 export function selectPromptContextBlocks(
@@ -163,47 +256,17 @@ export function selectPromptContextBlocks(
   },
 ): PromptContextBlockSelection {
   const sourceText = trim(options?.sourceText) ?? "";
-  const hasText = sourceText.length > 0;
-  const isShortUiCopy = hasText ? looksLikeShortUiCopy(sourceText, context.role) : false;
-  const isRegionalLocale = hasRegionalVariant(options?.targetLocale);
+  const isShortUiCopy = sourceText.length > 0 ? looksLikeShortUiCopy(sourceText, context.role) : false;
   const terminologyTriggered = shouldInjectTerminology(context.terminology, sourceText);
+  const styleScore = computeStyleContextScore(context, sourceText, isShortUiCopy);
+  const marketScore = computeMarketContextScore(context, sourceText, options?.targetLocale);
 
-  const sceneAllowsBrandContext = ![
-    "navigation_ui",
-    "footer_info",
-    "theme_setting_copy",
-    "app_embedded_copy",
-    "config_like",
-    "transactional_template",
-    "strict_slug",
-  ].includes(context.scene);
-
-  const shopContext =
-    Boolean(context.shopContext) &&
-    sceneAllowsBrandContext &&
-    !isShortUiCopy &&
-    (context.scene === "marketing_hero" ||
-      context.scene === "announcement_bar" ||
-      context.scene === "editorial_copy" ||
-      context.scene === "seo_copy" ||
-      (context.scene === "product_catalog" && shouldUseCatalogBrandContext(sourceText, context.role)));
-
-  const terminology =
-    Boolean(context.terminology) &&
-    terminologyTriggered &&
-    context.scene !== "config_like";
-
-  const market =
-    Boolean(context.market) &&
-    (isRegionalLocale ||
-      ["marketing_hero", "announcement_bar", "editorial_copy", "seo_copy"].includes(
-        context.scene,
-      ));
-
+  const shopContext = Boolean(context.shopContext) && styleScore >= 2;
+  const terminology = Boolean(context.terminology) && terminologyTriggered && context.scene !== "config_like";
+  const market = Boolean(context.market) && marketScore >= 2;
   const modulePolicy =
     Boolean(context.modulePolicy) &&
-    !["navigation_ui", "footer_info"].includes(context.scene) &&
-    (!isShortUiCopy || ["transactional_template", "config_like"].includes(context.scene));
+    shouldInjectModulePolicy(context, isShortUiCopy, sourceText);
 
   return {
     shopContext,
@@ -221,51 +284,63 @@ function buildShopContextBlock(profile: ShopPromptContext | null): string | null
   const subIndustry = trim(profile.subIndustry);
   const brandTone = trim(profile.brandTone);
   const brandPositioning = trim(profile.brandPositioning);
-  const description = truncate(trim(profile.description) ?? "", MAX_DESCRIPTION_CHARS);
-  const priceRange = trim(profile.priceRange);
-  const keywords = (profile.keywords ?? [])
-    .map((value) => trim(value))
-    .filter(Boolean)
-    .slice(0, MAX_KEYWORDS);
-  const sellingPoints = (profile.sellingPoints ?? [])
-    .map((value) => trim(value))
-    .filter(Boolean)
-    .slice(0, MAX_SELLING_POINTS);
 
   const lines: string[] = [];
   if (industry) lines.push(`- Industry / category: ${industry}`);
   if (subIndustry) lines.push(`- Sub-category: ${subIndustry}`);
   if (brandTone) lines.push(`- Brand voice / tone: ${brandTone}`);
   if (brandPositioning) lines.push(`- Brand positioning: ${brandPositioning}`);
-  if (priceRange) lines.push(`- Price positioning: ${priceRange}`);
-  if (keywords.length > 0) lines.push(`- Key terms: ${keywords.join(", ")}`);
-  if (sellingPoints.length > 0) lines.push(`- Selling points: ${sellingPoints.join("; ")}`);
-  if (description) lines.push(`- About the shop: ${description}`);
 
   if (lines.length === 0) return null;
 
   return [
-    "Shop context (background guidance for tone, terminology, and localization; do NOT translate or output this block):",
+    "Style context (use only when it helps tone and wording; do NOT translate or output this block):",
     ...lines,
   ].join("\n");
 }
 
-function buildScenePolicyBlock(context: ResolvedTranslationPromptContext): string {
+function buildTaskPolicyBlock(plan: TranslationPromptPlan): string {
   const lines = [
-    `- Prompt profile: ${context.promptProfileId}`,
-    `- Scene: ${context.scene}`,
+    `- Scene: ${plan.task.scene}`,
+    `- Audience: ${describeAudience(plan.task.audience)}`,
+    `- Adaptation level: ${describeRewriteFreedom(plan.task.rewriteFreedom)}`,
+    `- Field kind: ${plan.task.fieldRule.displayName}`,
   ];
-  if (context.role) lines.push(`- Role: ${context.role}`);
-  if (context.module) lines.push(`- Module: ${context.module}`);
-  lines.push(`- Content class: ${context.contentClass}`);
-  if (context.jsonMode) lines.push(`- JSON mode: ${context.jsonMode}`);
+  if (plan.task.role) lines.push(`- Role: ${plan.task.role}`);
+  if (plan.task.module) lines.push(`- Module: ${plan.task.module}`);
+  lines.push(`- Content class: ${plan.task.contentClass}`);
+  if (plan.task.jsonMode) lines.push(`- JSON mode: ${plan.task.jsonMode}`);
+  if (plan.task.fieldRule.promptAudienceHint) {
+    lines.push(`- Field usage: ${plan.task.fieldRule.promptAudienceHint}`);
+  }
+  if (plan.task.fieldRule.promptAdaptationHint) {
+    lines.push(`- Field guidance: ${plan.task.fieldRule.promptAdaptationHint}`);
+  }
 
-  for (const line of scenePolicyLines(context)) {
+  for (const line of scenePolicyLines(plan.task)) {
     lines.push(`- ${line}`);
   }
 
   return [
-    "Scene policy (apply to tone, wording, and adaptation level; do NOT translate or output this block):",
+    "Task policy (apply to tone, wording, and adaptation level; do NOT translate or output this block):",
+    ...lines,
+  ].join("\n");
+}
+
+function buildConstraintBlock(plan: TranslationPromptPlan): string | null {
+  const lines: string[] = [];
+  for (const hint of plan.constraints.fieldHints) {
+    lines.push(`- ${hint.promptText} (${describeConstraintOrigin(hint.origin)})`);
+  }
+  if (plan.constraints.preserveHtmlStructure) {
+    lines.push("- Preserve HTML structure and attribute-to-text relationships exactly");
+  }
+  if (plan.constraints.preserveJsonStructure) {
+    lines.push("- Preserve JSON structure and configuration semantics strictly");
+  }
+  if (lines.length === 0) return null;
+  return [
+    "Field constraints (must follow these field-specific requirements; do NOT translate or output this block):",
     ...lines,
   ].join("\n");
 }
@@ -316,7 +391,9 @@ function buildTerminologyBlock(
   if (filteredPreferredTerms.length > 0) {
     lines.push(`- Preferred translations: ${filteredPreferredTerms.join("; ")}`);
   }
-  if (filteredSeoTerms.length > 0) lines.push(`- SEO terms: ${filteredSeoTerms.join(", ")}`);
+  if (filteredSeoTerms.length > 0) {
+    lines.push(`- Search snippet terms (for meta title/meta description): ${filteredSeoTerms.join(", ")}`);
+  }
 
   return [
     "Terminology policy (apply consistently; do NOT translate or output this block):",
@@ -327,25 +404,10 @@ function buildTerminologyBlock(
 function buildMarketContextBlock(market: MarketPromptContext | null): string | null {
   if (!market) return null;
 
-  const publishedLocales = cleanList(market.publishedLocales, MAX_PUBLISHED_LOCALES);
   const marketNotes = cleanList(market.marketNotes, MAX_MARKET_NOTES);
-  const currencyContext = cleanList(market.currencyContext, MAX_CURRENCIES);
-
-  if (
-    publishedLocales.length === 0 &&
-    marketNotes.length === 0 &&
-    currencyContext.length === 0
-  ) {
-    return null;
-  }
+  if (marketNotes.length === 0) return null;
 
   const lines: string[] = [];
-  if (publishedLocales.length > 0) {
-    lines.push(`- Published locales: ${publishedLocales.join(", ")}`);
-  }
-  if (currencyContext.length > 0) {
-    lines.push(`- Currency context: ${currencyContext.join(", ")}`);
-  }
   if (marketNotes.length > 0) {
     lines.push(`- Market notes: ${marketNotes.join("; ")}`);
   }
@@ -526,7 +588,9 @@ function extractAppNamespace(resourceId: string | null | undefined): string | nu
   return normalizeNamespace(match[0].replace(/\.+/g, "."));
 }
 
-function scenePolicyLines(context: ResolvedTranslationPromptContext): string[] {
+function scenePolicyLines(
+  context: Pick<ResolvedTranslationPromptContext, "scene">,
+): string[] {
   switch (context.scene) {
     case "marketing_hero":
       return [
@@ -581,7 +645,7 @@ function scenePolicyLines(context: ResolvedTranslationPromptContext): string[] {
       ];
     case "seo_copy":
       return [
-        "Write naturally for search-facing copy.",
+        "Write naturally for meta title or meta description content shown in search-facing snippets.",
         "Preserve keyword intent while avoiding awkward keyword stuffing.",
       ];
     case "product_catalog":
@@ -599,11 +663,7 @@ function normalizeShopContext(profile: ShopPromptContext | null | undefined): Sh
     !trim(profile.industry) &&
     !trim(profile.subIndustry) &&
     !trim(profile.brandTone) &&
-    !trim(profile.brandPositioning) &&
-    !trim(profile.description) &&
-    (profile.keywords ?? []).length === 0 &&
-    (profile.sellingPoints ?? []).length === 0 &&
-    !trim(profile.priceRange)
+    !trim(profile.brandPositioning)
   ) {
     return null;
   }
@@ -693,11 +753,7 @@ function normalizeTerminology(
 
 function normalizeMarket(market: MarketPromptContext | null | undefined): MarketPromptContext | null {
   if (!market) return null;
-  if (
-    cleanList(market.publishedLocales, MAX_PUBLISHED_LOCALES).length === 0 &&
-    cleanList(market.marketNotes, MAX_MARKET_NOTES).length === 0 &&
-    cleanList(market.currencyContext, MAX_CURRENCIES).length === 0
-  ) {
+  if (cleanList(market.marketNotes, MAX_MARKET_NOTES).length === 0) {
     return null;
   }
   return market;
@@ -737,7 +793,145 @@ function cleanList(
     .slice(0, max);
 }
 
-function truncate(text: string, maxLen: number): string {
-  if (text.length <= maxLen) return text;
-  return `${text.slice(0, maxLen).trimEnd()}…`;
+function resolvePromptConstraints(
+  resolution: Pick<
+    ResolvedTranslationPromptContext,
+    "contentClass" | "fieldKind" | "scene" | "role"
+  >,
+): TranslationConstraintSet {
+  const fieldHints = getTranslationFieldConstraintHints(resolution.fieldKind);
+  const preserveHtmlStructure = resolution.contentClass === "html";
+  const preserveJsonStructure = resolution.contentClass === "json";
+  const noHtmlTagsInLeaf =
+    resolution.contentClass === "html" ||
+    resolution.contentClass === "json" ||
+    resolution.contentClass === "list";
+  const maxChars = fieldHints.find((hint) => hint.code === "max_chars")?.maxChars;
+  const recommendedMaxChars = fieldHints.find(
+    (hint) => hint.code === "recommended_max_chars",
+  )?.maxChars;
+  return {
+    preserveHtmlStructure,
+    preserveJsonStructure,
+    preserveSentinels: true,
+    preservePlaceholders: true,
+    noHtmlTagsInLeaf,
+    keepLeadingTrailingWhitespace: true,
+    maxChars,
+    recommendedMaxChars,
+    mustBeSlugLike:
+      fieldHints.some((hint) => hint.code === "slug_like") ||
+      resolution.scene === "strict_slug",
+    shortUiLabelPreferred:
+      fieldHints.some((hint) => hint.code === "short_ui_label") ||
+      resolution.role === "button_label" ||
+      resolution.role === "menu_label" ||
+      resolution.role === "label" ||
+      resolution.role === "placeholder",
+    fieldHints,
+  };
+}
+
+function describeAudience(audience: TranslationAudience): string {
+  switch (audience) {
+    case "merchant":
+      return "merchant-facing admin or configuration copy";
+    case "system":
+      return "system-facing identifier or structured value";
+    case "shopper":
+    default:
+      return "shopper-facing storefront copy";
+  }
+}
+
+function describeRewriteFreedom(rewriteFreedom: TranslationRewriteFreedom): string {
+  switch (rewriteFreedom) {
+    case "strict":
+      return "stay very close to the source wording";
+    case "adaptive":
+      return "allow moderate adaptation while preserving intent";
+    case "balanced":
+    default:
+      return "balance accuracy with natural phrasing";
+  }
+}
+
+function describeConstraintOrigin(origin: TranslationConstraintOrigin): string {
+  return origin === "documented" ? "documented platform constraint" : "heuristic guidance";
+}
+
+function computeStyleContextScore(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "audience" | "rewriteFreedom" | "scene" | "fieldKind" | "role"
+  >,
+  sourceText: string,
+  isShortUiCopy: boolean,
+): number {
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict" || isShortUiCopy) {
+    return 0;
+  }
+  let score = 0;
+  if (
+    context.scene === "marketing_hero" ||
+    context.scene === "announcement_bar" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "seo_copy"
+  ) {
+    score += 2;
+  }
+  if (
+    context.fieldKind === "title" ||
+    context.fieldKind === "description" ||
+    context.fieldKind === "body"
+  ) {
+    score += 1;
+  }
+  if (
+    context.scene === "product_catalog" &&
+    shouldUseCatalogBrandContext(sourceText, context.role)
+  ) {
+    score += 1;
+  }
+  if (sourceText.length >= 40 || countWords(sourceText) >= 8) score += 1;
+  return score;
+}
+
+function computeMarketContextScore(
+  context: Pick<ResolvedTranslationPromptContext, "scene" | "rewriteFreedom">,
+  sourceText: string,
+  targetLocale?: string | null,
+): number {
+  let score = 0;
+  if (hasRegionalVariant(targetLocale)) score += 1;
+  if (
+    context.scene === "marketing_hero" ||
+    context.scene === "announcement_bar" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "seo_copy"
+  ) {
+    score += 1;
+  }
+  if (context.rewriteFreedom === "adaptive") score += 1;
+  if (looksMarketSensitive(sourceText)) score += 1;
+  return score;
+}
+
+function shouldInjectModulePolicy(
+  context: Pick<ResolvedTranslationPromptContext, "scene" | "rewriteFreedom" | "modulePolicy">,
+  isShortUiCopy: boolean,
+  sourceText: string,
+): boolean {
+  if (!context.modulePolicy) return false;
+  if (context.rewriteFreedom === "strict") return true;
+  if (isShortUiCopy) return false;
+  if (context.scene === "navigation_ui" || context.scene === "footer_info") return false;
+  return sourceText.length >= 24 || countWords(sourceText) >= 5;
+}
+
+function looksMarketSensitive(sourceText: string): boolean {
+  if (!sourceText) return false;
+  return /shipping|delivery|tax|vat|currency|returns|warranty|size|region|market/i.test(
+    sourceText,
+  );
 }

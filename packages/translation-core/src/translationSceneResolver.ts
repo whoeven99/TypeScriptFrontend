@@ -38,6 +38,17 @@ export type TranslationRole =
 
 export type JsonMode = "structured_content_json" | "config_json";
 export type FieldContentClass = "skip" | "html" | "json" | "list" | "plain";
+export type TranslationFieldKind =
+  | "title"
+  | "description"
+  | "body"
+  | "seo_title"
+  | "seo_description"
+  | "handle"
+  | "ui_label"
+  | "unknown";
+export type TranslationAudience = "shopper" | "merchant" | "system";
+export type TranslationRewriteFreedom = "strict" | "balanced" | "adaptive";
 
 export type TranslationSceneResolution = {
   promptProfileId: TranslationPromptProfileId;
@@ -46,6 +57,9 @@ export type TranslationSceneResolution = {
   module: string | null;
   contentClass: Exclude<FieldContentClass, "skip">;
   jsonMode: JsonMode | null;
+  fieldKind: TranslationFieldKind;
+  audience: TranslationAudience;
+  rewriteFreedom: TranslationRewriteFreedom;
 };
 
 const THEME_MODULE_RE = /^ONLINE_STORE_THEME_/i;
@@ -93,30 +107,30 @@ export function resolveTranslationScene(args: {
   const role = resolveRole(keyBlob);
 
   if (key.trim().toLowerCase() === "handle") {
-    return {
+    return finalizeTranslationSceneResolution({
       promptProfileId: "slug_v1",
       scene: "strict_slug",
       role,
       module,
       contentClass: args.contentClass,
       jsonMode: null,
-    };
+    });
   }
 
-  if (isSeoKey(key)) {
-    return {
+  if (isSeoMetaKey(key)) {
+    return finalizeTranslationSceneResolution({
       promptProfileId: "seo_v1",
       scene: "seo_copy",
       role: role ?? (key.toLowerCase() === "meta_description" ? "description" : "title"),
       module,
       contentClass: args.contentClass,
       jsonMode: null,
-    };
+    });
   }
 
   if (args.contentClass === "json") {
     const jsonMode = resolveJsonMode(module, keyBlob);
-    return {
+    return finalizeTranslationSceneResolution({
       promptProfileId:
         jsonMode === "structured_content_json"
           ? "structured_content_json_v1"
@@ -129,7 +143,7 @@ export function resolveTranslationScene(args: {
       module,
       contentClass: args.contentClass,
       jsonMode,
-    };
+    });
   }
 
   if (isThemeModule(module)) {
@@ -198,7 +212,26 @@ function withResolved(
   role: TranslationRole | null,
   jsonMode: JsonMode | null,
 ): TranslationSceneResolution {
-  return { promptProfileId, scene, role, module, contentClass, jsonMode };
+  return finalizeTranslationSceneResolution({
+    promptProfileId,
+    scene,
+    role,
+    module,
+    contentClass,
+    jsonMode,
+  });
+}
+
+export function finalizeTranslationSceneResolution(base: Omit<
+  TranslationSceneResolution,
+  "fieldKind" | "audience" | "rewriteFreedom"
+>): TranslationSceneResolution {
+  return {
+    ...base,
+    fieldKind: resolveFieldKind(base),
+    audience: resolveAudience(base.scene),
+    rewriteFreedom: resolveRewriteFreedom(base.scene, base.role, base.contentClass),
+  };
 }
 
 function normalizeModule(module: string | null | undefined): string | null {
@@ -213,9 +246,9 @@ function resolveRole(keyBlob: string): TranslationRole | null {
   return null;
 }
 
-function isSeoKey(key: string): boolean {
+function isSeoMetaKey(key: string): boolean {
   const value = key.trim().toLowerCase();
-  return value === "meta_title" || value === "meta_description" || value === "seo_title";
+  return value === "meta_title" || value === "meta_description";
 }
 
 function resolveJsonMode(module: string | null, keyBlob: string): JsonMode {
@@ -259,4 +292,67 @@ function isEditorialModule(module: string | null): boolean {
 
 function isTransactionalModule(module: string | null): boolean {
   return Boolean(module && TRANSACTIONAL_MODULE_RE.test(module));
+}
+
+function resolveFieldKind(
+  base: Pick<TranslationSceneResolution, "scene" | "role">,
+): TranslationFieldKind {
+  if (base.scene === "strict_slug") return "handle";
+  if (base.scene === "seo_copy") {
+    return base.role === "description" ? "seo_description" : "seo_title";
+  }
+  if (base.role === "title" || base.role === "heading" || base.role === "subheading") {
+    return "title";
+  }
+  if (base.role === "description") return "description";
+  if (base.role === "body" || base.role === "caption") return "body";
+  if (
+    base.role === "button_label" ||
+    base.role === "menu_label" ||
+    base.role === "label" ||
+    base.role === "placeholder"
+  ) {
+    return "ui_label";
+  }
+  return "unknown";
+}
+
+function resolveAudience(scene: TranslationScene): TranslationAudience {
+  switch (scene) {
+    case "theme_setting_copy":
+    case "config_like":
+      return "merchant";
+    case "strict_slug":
+      return "system";
+    default:
+      return "shopper";
+  }
+}
+
+function resolveRewriteFreedom(
+  scene: TranslationScene,
+  role: TranslationRole | null,
+  contentClass: Exclude<FieldContentClass, "skip">,
+): TranslationRewriteFreedom {
+  if (scene === "strict_slug" || scene === "config_like" || scene === "transactional_template") {
+    return "strict";
+  }
+  if (
+    scene === "marketing_hero" ||
+    scene === "announcement_bar" ||
+    scene === "editorial_copy" ||
+    scene === "seo_copy"
+  ) {
+    return "adaptive";
+  }
+  if (
+    role === "button_label" ||
+    role === "menu_label" ||
+    role === "label" ||
+    role === "placeholder"
+  ) {
+    return "strict";
+  }
+  if (contentClass === "html" || contentClass === "list") return "balanced";
+  return "balanced";
 }
