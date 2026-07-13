@@ -4,27 +4,21 @@ import {
   getShopCreditQuota,
 } from "~/server/billing/quota/quotaRouter.server";
 import { aidgeStandPictureTranslate } from "./aidge.server";
+import { type BaseResponse } from "~/server/storefront/response.server";
 
 /** 对齐 Spring TranslateConstants.PIC_FEE */
 export const IMAGE_TRANSLATE_CREDITS = 1000;
 
 const AIDGE_IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "bmp", "webp"]);
 
-export type PictureBaseResponse<T = unknown> = {
-  success: boolean;
-  errorCode: number | null;
-  errorMsg: string | null;
-  response: T;
-};
-
-function ok(response: string): PictureBaseResponse<string> {
+function ok(response: string): BaseResponse<string> {
   return { success: true, errorCode: 0, errorMsg: "", response };
 }
 
 function fail(
   errorMsg: string,
   errorCode = 10001,
-): PictureBaseResponse<null> {
+): BaseResponse<null> {
   return { success: false, errorCode, errorMsg, response: null };
 }
 
@@ -49,7 +43,7 @@ export async function translateProductImage(args: {
   imageUrl: string;
   sourceCode: string;
   targetCode: string;
-}): Promise<PictureBaseResponse<string | null>> {
+}): Promise<BaseResponse<string | null>> {
   const sourceCode = args.sourceCode.trim();
   const targetCode = args.targetCode.trim();
   const imageUrl = args.imageUrl.trim();
