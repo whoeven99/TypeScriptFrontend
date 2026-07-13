@@ -1667,7 +1667,8 @@ export function prepareHandleSourceText(value: string): string {
  *    contains no source-script characters, it is almost certainly already in
  *    English → skip.  (A zh-CN store's product titled "Standard" is English.)
  *  - For other targets with a distinctive script (zh, ja, ko, ar, ru, pl, de …):
- *    skip only when the text already contains target-script characters.
+ *    skip only when the text has ≥2 target-script chars after stripping
+ *    punctuation/whitespace and their share of meaningful content exceeds 70%.
  *  - Conservative fall-through: return false (always translate) for unknown
  *    combinations to avoid accidentally suppressing content.
  *
@@ -1681,17 +1682,89 @@ const LATIN_WORD_RE = /[a-zA-Z]{2,}/;
 const HIRAGANA_KATAKANA_RE = /[ぁ-ゖァ-ヶ]/u;
 const HANGUL_RE = /[가-힣ᄀ-ᇿ]/u;
 const CJK_HAN_RE = /[一-鿿㐀-䶿]/u;
+/** 去掉无效字符后：目标文字符 ≥2 且占比 >70% 才算已在目标语。 */
+const TARGET_SCRIPT_MIN_CHARS = 2;
+const TARGET_SCRIPT_MIN_RATIO = 0.7;
+
+const CYRILLIC_RE = /[Ѐ-ӿ]/u;
+const ARABIC_RE = /[؀-ۿ]/u;
+const THAI_RE = /[฀-๿]/u;
+const DEVANAGARI_RE = /[ऀ-ॿ]/u;
+const POLISH_DIACRITIC_RE = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u;
+const GERMAN_DIACRITIC_RE = /[äöüÄÖÜß]/u;
+const FRENCH_DIACRITIC_RE = /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u;
+const IBERIAN_DIACRITIC_RE = /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u;
+const CZECH_SLOVAK_DIACRITIC_RE = /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u;
+const HUNGARIAN_DIACRITIC_RE = /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u;
+const TURKISH_DIACRITIC_RE = /[çğışöüÇĞİŞÖÜ]/u;
+const VIETNAMESE_DIACRITIC_RE = /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u;
 
 function langPrefix(locale: string): string {
   return locale.toLowerCase().split(/[-_]/)[0] || "";
 }
 
-/** zh / ja / ko 互译时，共享汉字不能单独当作「已在目标语」。 */
-function isCrossCjkPair(source: string, target: string): boolean {
-  const cjk = new Set(["zh", "ja", "ko"]);
+function countRegexMatches(text: string, re: RegExp): number {
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  return [...text.matchAll(new RegExp(re.source, flags))].length;
+}
+
+function countMeaningfulChars(text: string): number {
+  return text.match(/\p{L}|\p{N}/gu)?.length ?? 0;
+}
+
+/** 去掉标点/空白后，目标文字符 ≥2 且占有效字符比例 >70%。 */
+function meetsScriptThreshold(text: string, ...patterns: RegExp[]): boolean {
+  let count = 0;
+  for (const re of patterns) {
+    count += countRegexMatches(text, re);
+  }
+  if (count < TARGET_SCRIPT_MIN_CHARS) return false;
+
+  const meaningful = countMeaningfulChars(text);
+  if (meaningful === 0) return false;
+  return count / meaningful > TARGET_SCRIPT_MIN_RATIO;
+}
+
+function hasAnyScriptMatch(text: string, ...patterns: RegExp[]): boolean {
+  return patterns.some((re) => re.test(text));
+}
+
+function scriptPatternsForLang(lang: string): RegExp[] | undefined {
+  switch (lang) {
+    case "zh": return [CJK_HAN_RE];
+    case "ja": return [HIRAGANA_KATAKANA_RE, CJK_HAN_RE];
+    case "ko": return [HANGUL_RE];
+    case "ar": return [ARABIC_RE];
+    case "ru": case "uk": case "bg": return [CYRILLIC_RE];
+    case "th": return [THAI_RE];
+    case "hi": case "mr": case "ne": return [DEVANAGARI_RE];
+    case "pl": return [POLISH_DIACRITIC_RE];
+    case "de": return [GERMAN_DIACRITIC_RE];
+    case "fr": return [FRENCH_DIACRITIC_RE];
+    case "es": case "pt": return [IBERIAN_DIACRITIC_RE];
+    case "cs": case "sk": return [CZECH_SLOVAK_DIACRITIC_RE];
+    case "hu": return [HUNGARIAN_DIACRITIC_RE];
+    case "tr": return [TURKISH_DIACRITIC_RE];
+    case "vi": return [VIETNAMESE_DIACRITIC_RE];
+    default: return undefined;
+  }
+}
+
+/** 同源书写体系、不同语言互译时不能仅靠共享字符判定已完成。 */
+function isCrossScriptFamilyPair(
+  source: string,
+  target: string,
+  langs: readonly string[],
+): boolean {
   const sl = langPrefix(source);
   const tl = langPrefix(target);
-  return cjk.has(sl) && cjk.has(tl) && sl !== tl;
+  const set = new Set(langs);
+  return set.has(sl) && set.has(tl) && sl !== tl;
+}
+
+/** zh / ja / ko 互译时，共享汉字不能单独当作「已在目标语」。 */
+function isCrossCjkPair(source: string, target: string): boolean {
+  return isCrossScriptFamilyPair(source, target, ["zh", "ja", "ko"]);
 }
 
 function hasLatinWords(text: string): boolean {
@@ -1699,24 +1772,9 @@ function hasLatinWords(text: string): boolean {
 }
 
 function hasTargetScriptChars(text: string, targetLang: string): boolean {
-  switch (targetLang) {
-    case "zh": return CJK_HAN_RE.test(text);
-    case "ja": return HIRAGANA_KATAKANA_RE.test(text) || CJK_HAN_RE.test(text);
-    case "ko": return HANGUL_RE.test(text);
-    case "ar": return /[؀-ۿ]/u.test(text);
-    case "ru": case "uk": case "bg": return /[Ѐ-ӿ]/u.test(text);
-    case "th": return /[฀-๿]/u.test(text);
-    case "hi": case "mr": case "ne": return /[ऀ-ॿ]/u.test(text);
-    case "pl": return /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u.test(text);
-    case "de": return /[äöüÄÖÜß]/u.test(text);
-    case "fr": return /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u.test(text);
-    case "es": case "pt": return /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u.test(text);
-    case "cs": case "sk": return /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u.test(text);
-    case "hu": return /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u.test(text);
-    case "tr": return /[çğışöüÇĞİŞÖÜ]/u.test(text);
-    case "vi": return /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u.test(text);
-    default: return false;
-  }
+  const patterns = scriptPatternsForLang(targetLang);
+  if (!patterns) return false;
+  return meetsScriptThreshold(text, ...patterns);
 }
 
 export function alreadyInTarget(text: string, source: string, target: string): boolean {
@@ -1740,41 +1798,27 @@ export function alreadyInTarget(text: string, source: string, target: string): b
   if (isCrossCjkPair(source, target)) {
     switch (tl) {
       case "ja":
-        return HIRAGANA_KATAKANA_RE.test(text);
+        return meetsScriptThreshold(text, HIRAGANA_KATAKANA_RE);
       case "ko":
-        return HANGUL_RE.test(text);
+        return meetsScriptThreshold(text, HANGUL_RE);
       case "zh":
         return (
           sl === "zh" &&
-          CJK_HAN_RE.test(text) &&
-          !HIRAGANA_KATAKANA_RE.test(text) &&
-          !HANGUL_RE.test(text)
+          meetsScriptThreshold(text, CJK_HAN_RE) &&
+          !hasAnyScriptMatch(text, HIRAGANA_KATAKANA_RE, HANGUL_RE)
         );
       default:
         return false;
     }
   }
 
-  // ── Non-Latin script targets (same language family or non-CJK) ─────────────
-  switch (tl) {
-    case "zh": return CJK_HAN_RE.test(text);
-    case "ja": return HIRAGANA_KATAKANA_RE.test(text) || CJK_HAN_RE.test(text);
-    case "ko": return HANGUL_RE.test(text);
-    case "ar": return /[؀-ۿ]/u.test(text);
-    case "ru": case "uk": case "bg": return /[Ѐ-ӿ]/u.test(text);
-    case "th": return /[฀-๿]/u.test(text);
-    case "hi": case "mr": case "ne": return /[ऀ-ॿ]/u.test(text);
-    // Latin-script targets with strongly distinctive diacritics
-    case "pl": return /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u.test(text);
-    case "de": return /[äöüÄÖÜß]/u.test(text);
-    case "fr": return /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u.test(text);
-    case "es": case "pt": return /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u.test(text);
-    case "cs": case "sk": return /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u.test(text);
-    case "hu": return /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u.test(text);
-    case "tr": return /[çğışöüÇĞİŞÖÜ]/u.test(text);
-    case "vi": return /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u.test(text);
-    default: return false; // unknown target → conservative, always translate
-  }
+  // 西里尔 / 天城文 / 相近拉丁变音语系：共享字符不能跨语言 skip。
+  if (isCrossScriptFamilyPair(source, target, ["ru", "uk", "bg"])) return false;
+  if (isCrossScriptFamilyPair(source, target, ["hi", "mr", "ne"])) return false;
+  if (isCrossScriptFamilyPair(source, target, ["cs", "sk"])) return false;
+  if (isCrossScriptFamilyPair(source, target, ["es", "pt"])) return false;
+
+  return hasTargetScriptChars(text, tl);
 }
 
 /**
@@ -1782,25 +1826,9 @@ export function alreadyInTarget(text: string, source: string, target: string): b
  * language's script. Used internally by alreadyInTarget.
  */
 export function containsSourceScript(text: string, source: string): boolean {
-  const lang = source.toLowerCase().split(/[-_]/)[0];
-  switch (lang) {
-    case "zh":
-      return /[一-鿿㐀-䶿]/u.test(text);
-    case "ja":
-      return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-    case "ko":
-      return /[가-힣ᄀ-ᇿ]/u.test(text);
-    case "ar":
-      return /[؀-ۿ]/u.test(text);
-    case "ru": case "uk": case "bg":
-      return /[Ѐ-ӿ]/u.test(text);
-    case "th":
-      return /[฀-๿]/u.test(text);
-    case "hi": case "mr": case "ne":
-      return /[ऀ-ॿ]/u.test(text);
-    default:
-      return true; // unknown source locale → conservative, always translate
-  }
+  const patterns = scriptPatternsForLang(langPrefix(source));
+  if (!patterns) return true; // unknown source locale → conservative, always translate
+  return hasAnyScriptMatch(text, ...patterns);
 }
 
 function isHtml(value: string): boolean {
