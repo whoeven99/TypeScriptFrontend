@@ -135,7 +135,7 @@ export async function runAutoTranslateScan(
     }
 
     if (quotaEnforceEnabled(TSF_AUTO_TASK_SOURCE)) {
-      const remaining = await getTsfRemainingWithRetry(shop, 1);
+      const remaining = await getTsfRemainingWithRetry(shop);
       if (remaining <= 0) {
         skippedNoQuota++;
         continue;

@@ -532,7 +532,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         if (abort.tripped) return;
 
         if (enforceQuota) {
-          const liveRemaining = await getTsfRemainingWithRetry(shopName, 1);
+          const liveRemaining = await getTsfRemainingWithRetry(shopName);
           if (liveRemaining <= 0) {
             tripAbort("pause", "额度不足，已自动暂停");
             return;
