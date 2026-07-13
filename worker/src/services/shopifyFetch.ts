@@ -222,7 +222,8 @@ query GetTranslatableResourceById($resourceId: ID!, $locale: String!) {
 
 /**
  * Shopify GraphQL input arrays are capped (community/docs: 250 items).
- * Per-resource field counts can also hit TOO_MANY_KEYS_FOR_RESOURCE — batch conservatively.
+ * Per-resource field counts can also hit TOO_MANY_KEYS_FOR_RESOURCE — batch conservatively;
+ * registerTranslations() will auto-split on "Too many translation keys" down to 1 key.
  */
 export const WRITEBACK_TRANSLATIONS_BATCH = Math.min(
   250,
@@ -808,6 +809,78 @@ async function registerTranslationsBatch(
   };
 }
 
+const LOG_BATCH = "[writeback-batch]";
+
+function isTooManyTranslationKeysError(
+  userErrors: Array<{ field: string; message: string }>,
+): boolean {
+  return userErrors.some((err) =>
+    /too many translation keys|too_many_keys/i.test(err.message ?? ""),
+  );
+}
+
+function mergeTranslationRegisterResults(
+  left: TranslationRegisterResult,
+  right: TranslationRegisterResult,
+): TranslationRegisterResult {
+  return {
+    success: left.success && right.success,
+    userErrors: [...left.userErrors, ...right.userErrors],
+    registeredKeys: [...left.registeredKeys, ...right.registeredKeys],
+  };
+}
+
+/**
+ * Register one chunk; on Shopify "Too many translation keys", bisect and retry
+ * until batch size reaches 1.
+ */
+async function registerTranslationsChunkWithSplit(
+  shopDomain: string,
+  accessToken: string,
+  resourceId: string,
+  translations: TranslationInput[],
+  preferLegacyToken: boolean,
+): Promise<TranslationRegisterResult> {
+  if (translations.length === 0) {
+    return { success: true, userErrors: [], registeredKeys: [] };
+  }
+
+  const result = await registerTranslationsBatch(
+    shopDomain,
+    accessToken,
+    resourceId,
+    translations,
+    preferLegacyToken,
+  );
+
+  if (result.success) return result;
+
+  const canSplit =
+    translations.length > 1 && isTooManyTranslationKeysError(result.userErrors);
+  if (!canSplit) return result;
+
+  const mid = Math.ceil(translations.length / 2);
+  console.warn(
+    `${LOG_BATCH} too many keys resource=${resourceId} split ${translations.length} → ${mid}+${translations.length - mid}`,
+  );
+
+  const left = await registerTranslationsChunkWithSplit(
+    shopDomain,
+    accessToken,
+    resourceId,
+    translations.slice(0, mid),
+    preferLegacyToken,
+  );
+  const right = await registerTranslationsChunkWithSplit(
+    shopDomain,
+    accessToken,
+    resourceId,
+    translations.slice(mid),
+    preferLegacyToken,
+  );
+  return mergeTranslationRegisterResults(left, right);
+}
+
 /**
  * Write translations back to a single Shopify resource.
  * Same resourceId accepts multiple fields in one mutation; large field lists are chunked.
@@ -829,7 +902,13 @@ export async function registerTranslations(
   try {
     for (let i = 0; i < translations.length; i += WRITEBACK_TRANSLATIONS_BATCH) {
       const batch = translations.slice(i, i + WRITEBACK_TRANSLATIONS_BATCH);
-      const result = await registerTranslationsBatch(shopDomain, accessToken, resourceId, batch, preferLegacyToken);
+      const result = await registerTranslationsChunkWithSplit(
+        shopDomain,
+        accessToken,
+        resourceId,
+        batch,
+        preferLegacyToken,
+      );
       allErrors.push(...result.userErrors);
       allRegisteredKeys.push(...result.registeredKeys);
       if (!result.success) break;
