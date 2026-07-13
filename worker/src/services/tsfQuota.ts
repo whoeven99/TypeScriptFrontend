@@ -68,7 +68,7 @@ export function quotaConcurrencyCap(remaining: number): number {
  * 查询失败 → 保守返回 1（从并发 1 起步，由首次扣减纠正），不直接掐断任务。
  */
 export async function getTsfRemaining(shop: string): Promise<number> {
-  return getTsfRemainingWithRetry(shop, 1);
+  return getTsfRemainingWithRetry(shop);
 }
 
 /** 带重试的额度查询；续跑时避免一次抖动就把并发 seed 到 1。

@@ -1,3 +1,8 @@
+import {
+  countTranslationJobsCreatedBetween,
+  type TranslationJobWindowStats,
+} from "./cosmosV4.js";
+
 const LOG = "[renderErrorDigest]";
 
 /** Render workspace owner（whoeven's Workspace）。可用 RENDER_OWNER_ID 覆盖。 */
@@ -203,12 +208,21 @@ function buildFeishuReport(
   end: Date,
   buckets: Map<string, ErrorBucket>,
   rawTotal: number,
+  jobStats: TranslationJobWindowStats | null,
 ): string {
   const total = [...buckets.values()].reduce((sum, b) => sum + b.count, 0);
   const lines = [
     "【Render PROD 错误汇总】",
     `窗口：${formatDigestTimeRange(start, end)}`,
     `error 日志 ${rawTotal} 条，去重后 ${total} 条`,
+    "",
+    "翻译任务（按创建时间）：",
+    ...(jobStats
+      ? [
+          `- 自动翻译：成功 ${jobStats.auto.completed} / 总数 ${jobStats.auto.total}`,
+          `- 手动翻译：成功 ${jobStats.manual.completed} / 总数 ${jobStats.manual.total}`,
+        ]
+      : ["- Cosmos 统计暂不可用"]),
     "",
   ];
 
@@ -277,7 +291,7 @@ async function sendFeishuDigest(message: string): Promise<void> {
   }
 }
 
-/** 拉取 prod Render app error 日志，汇总后发送飞书（无 error 则跳过）。 */
+/** 拉取 prod Render app error 日志和翻译任务统计，汇总后发送飞书。 */
 export async function runRenderErrorDigest(): Promise<void> {
   if (!isRenderErrorDigestEnabled()) {
     return;
@@ -299,23 +313,31 @@ export async function runRenderErrorDigest(): Promise<void> {
     `${LOG} start owner=${ownerId} window=${start.toISOString()}..${end.toISOString()}`,
   );
 
-  const logs = await fetchRenderErrorLogs(
-    apiKey,
-    ownerId,
-    [...resourceIds],
-    start.toISOString(),
-    end.toISOString(),
-  );
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  const [logs, jobStats] = await Promise.all([
+    fetchRenderErrorLogs(
+      apiKey,
+      ownerId,
+      [...resourceIds],
+      startIso,
+      endIso,
+    ),
+    countTranslationJobsCreatedBetween(startIso, endIso).catch((err) => {
+      console.warn(`${LOG} translation job stats unavailable`, err);
+      return null;
+    }),
+  ]);
 
   const buckets = aggregateErrors(logs);
   const errorCount = [...buckets.values()].reduce((sum, b) => sum + b.count, 0);
 
-  if (errorCount === 0) {
-    console.info(`${LOG} no errors in window, skip feishu`);
-    return;
-  }
-
-  const report = buildFeishuReport(start, end, buckets, logs.length);
+  const report = buildFeishuReport(start, end, buckets, logs.length, jobStats);
   await sendFeishuDigest(report);
-  console.info(`${LOG} sent feishu errors=${errorCount} raw=${logs.length}`);
+  console.info(
+    `${LOG} sent feishu errors=${errorCount} raw=${logs.length}` +
+      (jobStats
+        ? ` auto=${jobStats.auto.completed}/${jobStats.auto.total} manual=${jobStats.manual.completed}/${jobStats.manual.total}`
+        : " jobStats=unavailable"),
+  );
 }
