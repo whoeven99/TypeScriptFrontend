@@ -127,6 +127,46 @@ export function isAutoTranslationJob(
   return job.taskSource === TSF_AUTO_TASK_SOURCE;
 }
 
+export type TranslationJobWindowStats = {
+  auto: { completed: number; total: number };
+  manual: { completed: number; total: number };
+};
+
+/**
+ * 统计创建时间落在指定窗口内的翻译任务。
+ * 自动任务仅认 TsFrontend-Auto；旧任务或其它来源均归入手动任务。
+ */
+export async function countTranslationJobsCreatedBetween(
+  startIso: string,
+  endIso: string,
+): Promise<TranslationJobWindowStats> {
+  const { resources } = await getContainer()
+    .items.query<Pick<TranslationV4Job, "taskSource" | "status">>({
+      query: `
+        SELECT c.taskSource, c.status FROM c
+        WHERE c.createdAt >= @start AND c.createdAt < @end
+      `,
+      parameters: [
+        { name: "@start", value: startIso },
+        { name: "@end", value: endIso },
+      ],
+    })
+    .fetchAll();
+
+  const stats: TranslationJobWindowStats = {
+    auto: { completed: 0, total: 0 },
+    manual: { completed: 0, total: 0 },
+  };
+
+  for (const job of resources) {
+    const bucket = isAutoTranslationJob(job) ? stats.auto : stats.manual;
+    bucket.total++;
+    if (job.status === "COMPLETED") bucket.completed++;
+  }
+
+  return stats;
+}
+
 /** 全零指标，新建任务用。 */
 export const EMPTY_V4_METRICS: TranslationV4Metrics = {
   initTotal: 0,

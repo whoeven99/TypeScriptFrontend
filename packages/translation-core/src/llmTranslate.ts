@@ -341,6 +341,21 @@ class LlmTimeoutError extends Error {
   }
 }
 
+/** Azure 拒绝了提示词内容；同样输入继续拆批或重试仍会被拒绝。 */
+class AzureContentPolicyError extends Error {
+  constructor() {
+    super("Azure OpenAI content policy rejected request");
+    this.name = "AzureContentPolicyError";
+  }
+}
+
+function isAzureContentPolicyResponse(status: number, body: string): boolean {
+  if (status !== 400) return false;
+  return /content management policy|content[_ -]?filter|ResponsibleAIPolicyViolation/i.test(
+    body,
+  );
+}
+
 /** Coarse classification of a non-throttle LLM call failure (telemetry + backoff). */
 export type LlmErrorKind = "timeout" | "parse" | "http" | "api" | "other";
 
@@ -681,7 +696,13 @@ async function callAzureOpenAIChat(
           }
           throw new LlmRateLimitError(resp);
         }
-        if (!resp.ok) throw new Error(`LLM HTTP ${resp.status}: ${await resp.text()}`);
+        if (!resp.ok) {
+          const body = await resp.text();
+          if (isAzureContentPolicyResponse(resp.status, body)) {
+            throw new AzureContentPolicyError();
+          }
+          throw new Error(`LLM HTTP ${resp.status}: ${body}`);
+        }
         const j = (await resp.json()) as {
           choices?: Array<{ message?: { content?: string | null } }>;
           usage?: { total_tokens?: number };
@@ -1512,7 +1533,8 @@ function isDeepSeekModelId(s?: string): boolean {
 function resolveModel(preferred?: string): string {
   const p = (preferred ?? "").trim();
   if (isDeepSeekModelId(p)) return p;
-  return process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+  const configured = process.env.DEEPSEEK_MODEL?.trim();
+  return isDeepSeekModelId(configured) ? configured! : "deepseek-chat";
 }
 
 // ─── Per-shop quota concurrency gate ─────────────────────────────────────────
@@ -2570,6 +2592,29 @@ async function gatherTranslations(
     const msg = e instanceof Error ? e.message : String(e);
     const timeoutKind = e instanceof LlmTimeoutError ? e.kind : null;
     const isTimeout = timeoutKind !== null;
+    if (e instanceof AzureContentPolicyError) {
+      if (llmConfigured()) {
+        const fallbackModel = resolveModel();
+        console.warn(
+          `[llm] Azure content policy rejected batch of ${pend.length}; ` +
+            `falling back to DeepSeek (${fallbackModel})`,
+        );
+        await gatherTranslations(
+          pend,
+          fallbackModel,
+          systemPrompt,
+          collected,
+          tokenAccum,
+          shopName,
+        );
+      } else {
+        console.warn(
+          `[llm] Azure content policy rejected batch of ${pend.length}; ` +
+            "DeepSeek unavailable, continuing to Google fallback",
+        );
+      }
+      return;
+    }
     if (pend.length > 1) {
       // First-token timeout = the request sat queued server-side before emitting
       // anything. Re-chunking into MORE requests makes the queue worse and re-sends
