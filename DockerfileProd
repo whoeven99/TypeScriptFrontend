@@ -9,8 +9,6 @@ EXPOSE 8080
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
 COPY package.json package-lock.json* .npmrc ./
 COPY packages/translation-core/package.json ./packages/translation-core/package.json
 COPY patches ./patches
@@ -20,5 +18,7 @@ RUN npm ci --legacy-peer-deps && npm cache clean --force
 COPY . .
 
 RUN npm run build:docker
+
+ENV NODE_ENV=production
 
 CMD ["npm", "run", "docker-start"]
