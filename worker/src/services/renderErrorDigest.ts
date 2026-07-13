@@ -267,24 +267,35 @@ async function sendFeishuDigest(message: string): Promise<void> {
     return;
   }
 
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      msg_type: "text",
-      content: { text: message },
-    }),
-  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      const waitMs = 3000 * attempt;
+      console.warn(`${LOG} feishu retry ${attempt}/2 waiting ${waitMs}ms`);
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
 
-  const text = await res.text();
-  let body: { code?: number; msg?: string };
-  try {
-    body = JSON.parse(text) as { code?: number; msg?: string };
-  } catch {
-    body = { msg: text.slice(0, 200) };
-  }
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        msg_type: "text",
+        content: { text: message },
+      }),
+    });
 
-  if (!res.ok || (body.code !== undefined && body.code !== 0)) {
+    const text = await res.text();
+    let body: { code?: number; msg?: string };
+    try {
+      body = JSON.parse(text) as { code?: number; msg?: string };
+    } catch {
+      body = { msg: text.slice(0, 200) };
+    }
+
+    if (res.ok && (body.code === undefined || body.code === 0)) return;
+
+    // 11232 = frequency limited，等几秒重试通常能过
+    if (body.code === 11232 && attempt < 2) continue;
+
     throw new Error(
       `Feishu webhook failed http=${res.status} body=${JSON.stringify(body).slice(0, 200)}`,
     );

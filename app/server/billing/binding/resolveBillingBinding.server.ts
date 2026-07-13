@@ -23,6 +23,8 @@ export async function resolveBillingBinding(
     where: { shop },
   });
   if (existing) {
+    // 重装/已有 binding 时仍需恢复可能被软删的账户
+    await ensureAccount(shop);
     return {
       billingSystem: existing.billingSystem as BillingSystem,
       bound: false,
