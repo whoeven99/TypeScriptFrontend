@@ -22,8 +22,8 @@ const PROD_RENDER_SERVICES = [
   },
 ] as const;
 
-const DEFAULT_INTERVAL_MS = 30 * 60_000;
-const DEFAULT_LOOKBACK_MS = 30 * 60_000;
+const DEFAULT_INTERVAL_MS = 60 * 60_000;
+const DEFAULT_LOOKBACK_MS = 60 * 60_000;
 const DEFAULT_INITIAL_DELAY_MS = 3 * 60_000;
 const MAX_PAGES = 10;
 const PAGE_LIMIT = 100;
@@ -219,8 +219,8 @@ function buildFeishuReport(
     "翻译任务（按创建时间）：",
     ...(jobStats
       ? [
-          `- 自动翻译：成功 ${jobStats.auto.completed} / 总数 ${jobStats.auto.total}`,
-          `- 手动翻译：成功 ${jobStats.manual.completed} / 总数 ${jobStats.manual.total}`,
+          `- 自动翻译：成功 ${jobStats.auto.completed} / 进行中 ${jobStats.auto.active} / 失败 ${jobStats.auto.failed} / 总数 ${jobStats.auto.total}`,
+          `- 手动翻译：成功 ${jobStats.manual.completed} / 进行中 ${jobStats.manual.active} / 失败 ${jobStats.manual.failed} / 总数 ${jobStats.manual.total}`,
         ]
       : ["- Cosmos 统计暂不可用"]),
     "",
@@ -337,7 +337,7 @@ export async function runRenderErrorDigest(): Promise<void> {
   console.info(
     `${LOG} sent feishu errors=${errorCount} raw=${logs.length}` +
       (jobStats
-        ? ` auto=${jobStats.auto.completed}/${jobStats.auto.total} manual=${jobStats.manual.completed}/${jobStats.manual.total}`
+        ? ` auto=✅${jobStats.auto.completed}🔄${jobStats.auto.active}❌${jobStats.auto.failed}/${jobStats.auto.total} manual=✅${jobStats.manual.completed}🔄${jobStats.manual.active}❌${jobStats.manual.failed}/${jobStats.manual.total}`
         : " jobStats=unavailable"),
   );
 }
