@@ -3,6 +3,10 @@
  */
 
 import { sendFeishuTextMessage } from "../../feishu/sendFeishuTextMessage.server";
+import {
+  isFeishuEnabled,
+  isSupportFeishuReady,
+} from "../../feishu/feishuConfig.server";
 import { sendTencentTemplateEmail } from "../../email/tencentSes.server";
 import { fetchShopContact } from "../../shop/fetchShopContact.server";
 import type { BindingResolution } from "../binding/resolveBillingBinding.server";
@@ -14,11 +18,33 @@ const TEMPLATE_WELCOME = 137916;
 const SUBJECT_WELCOME =
   "Welcome to Ciwi-Translator! Unlock a New Language Translation Experience";
 
+function maskEmail(email: string): string {
+  const trimmed = email.trim();
+  const at = trimmed.indexOf("@");
+  if (at <= 0) return "(invalid)";
+  const local = trimmed.slice(0, at);
+  const domain = trimmed.slice(at + 1);
+  const visible = local.slice(0, Math.min(2, local.length));
+  return `${visible}***@${domain}`;
+}
+
+function logDetail(phase: string, payload: Record<string, unknown>): void {
+  console.info(`${LOG} ${phase} ${JSON.stringify(payload)}`);
+}
+
 async function notifyWelcomeEmailFailure(params: {
   shop: string;
   reason: string;
   detail?: string;
 }): Promise<void> {
+  logDetail("failure-notify-start", {
+    shop: params.shop,
+    reason: params.reason,
+    detail: params.detail ?? null,
+    feishuEnabled: isFeishuEnabled(),
+    feishuReady: isSupportFeishuReady(),
+  });
+
   const message = [
     "[TSF] 新用户欢迎邮件发送失败",
     `shop: ${params.shop}`,
@@ -29,6 +55,12 @@ async function notifyWelcomeEmailFailure(params: {
     .join("\n");
 
   const result = await sendFeishuTextMessage(message);
+  logDetail("failure-notify-result", {
+    shop: params.shop,
+    ok: result.ok,
+    skipped: "skipped" in result ? result.skipped : false,
+    reason: "reason" in result ? result.reason : null,
+  });
   if (!result.ok && !("skipped" in result && result.skipped)) {
     console.warn(`${LOG} feishu notify failed`, result);
   }
@@ -39,16 +71,36 @@ async function notifyWelcomeEmailFailure(params: {
  */
 export async function sendTsfWelcomeEmail(params: {
   shop: string;
+  trigger?: string;
 }): Promise<boolean> {
   const shop = params.shop.trim();
+  const trigger = params.trigger?.trim() || "unknown";
+
+  logDetail("send-start", {
+    shop,
+    trigger,
+    templateId: TEMPLATE_WELCOME,
+    subject: SUBJECT_WELCOME,
+  });
+
   if (!shop) {
-    console.warn(`${LOG} skip: empty shop`);
+    console.warn(`${LOG} skip reason=empty_shop trigger=${trigger}`);
     return false;
   }
 
   const contact = await fetchShopContact(shop);
+  logDetail("contact-resolved", {
+    shop,
+    trigger,
+    hasEmail: Boolean(contact.email),
+    to: contact.email ? maskEmail(contact.email) : null,
+    ownerName: contact.ownerName?.trim() || null,
+    userName:
+      contact.ownerName?.trim() || (contact.email ? "there" : null),
+  });
+
   if (!contact.email) {
-    console.warn(`${LOG} no shop email shop=${shop}`);
+    console.warn(`${LOG} skip reason=no_recipient shop=${shop} trigger=${trigger}`);
     await notifyWelcomeEmailFailure({
       shop,
       reason: "no_recipient",
@@ -58,6 +110,14 @@ export async function sendTsfWelcomeEmail(params: {
   }
 
   const userName = contact.ownerName?.trim() || "there";
+  logDetail("ses-send-start", {
+    shop,
+    trigger,
+    templateId: TEMPLATE_WELCOME,
+    to: maskEmail(contact.email),
+    userName,
+  });
+
   const ok = await sendTencentTemplateEmail({
     templateId: TEMPLATE_WELCOME,
     subject: SUBJECT_WELCOME,
@@ -66,15 +126,20 @@ export async function sendTsfWelcomeEmail(params: {
   });
 
   if (ok) {
-    console.info(`${LOG} sent shop=${shop}`);
+    logDetail("send-success", {
+      shop,
+      trigger,
+      to: maskEmail(contact.email),
+      templateId: TEMPLATE_WELCOME,
+    });
     return true;
   }
 
-  console.error(`${LOG} send failed shop=${shop}`);
+  console.error(`${LOG} send-failed shop=${shop} trigger=${trigger} to=${maskEmail(contact.email)}`);
   await notifyWelcomeEmailFailure({
     shop,
     reason: "ses_send_failed",
-    detail: `to=${contact.email}`,
+    detail: `to=${maskEmail(contact.email)}`,
   });
   return false;
 }
@@ -83,7 +148,28 @@ export async function sendTsfWelcomeEmail(params: {
 export function scheduleTsfWelcomeEmail(
   binding: BindingResolution,
   shop: string,
+  trigger = "app-init",
 ): void {
-  if (!binding.bound) return;
-  void sendTsfWelcomeEmail({ shop });
+  if (!binding.bound) {
+    logDetail("schedule-skipped", {
+      shop,
+      trigger,
+      reason: "binding_not_new",
+      billingSystem: binding.billingSystem,
+      persisted: binding.persisted,
+      hint: "仅 bound:true（首次写入 ShopBillingBinding）会发欢迎邮件",
+    });
+    return;
+  }
+
+  logDetail("schedule-start", {
+    shop,
+    trigger,
+    billingSystem: binding.billingSystem,
+    persisted: binding.persisted,
+  });
+
+  void sendTsfWelcomeEmail({ shop, trigger }).catch((error) => {
+    console.error(`${LOG} unhandled shop=${shop} trigger=${trigger}`, error);
+  });
 }
