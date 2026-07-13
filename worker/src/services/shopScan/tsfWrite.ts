@@ -1,4 +1,4 @@
-import { getTsfDb } from "../tsfDb.js";
+import { tsfExecute } from "../tsfDb.js";
 
 /**
  * 店铺画像扫描的 TSF Turso 写入（worker 侧走 libsql 原生 SQL，非 Prisma）。
@@ -22,7 +22,7 @@ export type ShopProfileWrite = {
 /** upsert 当前生效画像（每店一行，新扫描覆盖）。 */
 export async function upsertShopProfile(input: ShopProfileWrite): Promise<void> {
   const keywordsJson = input.keywords ? JSON.stringify(input.keywords) : null;
-  await getTsfDb().execute({
+  await tsfExecute({
     sql: `
       INSERT INTO ShopProfile
         (shop, shopName, primaryLocale, industry, keywords, description, brandTone, aiModel, lastScanId, lastScannedAt, createdAt, updatedAt)
@@ -58,7 +58,7 @@ export async function touchShopProfileScan(
   shop: string,
   lastScanId: string,
 ): Promise<void> {
-  await getTsfDb().execute({
+  await tsfExecute({
     sql: "UPDATE ShopProfile SET lastScanId = ?, lastScannedAt = datetime('now'), updatedAt = datetime('now') WHERE shop = ?",
     args: [lastScanId, shop],
   });
@@ -76,7 +76,7 @@ export async function upsertTargetLocales(
   for (const locale of locales) {
     const loc = locale.trim();
     if (!loc) continue;
-    const res = await getTsfDb().execute({
+    const res = await tsfExecute({
       sql: `
         INSERT INTO ShopTargetLocale (shop, locale, autoTranslate, status, createdAt, updatedAt)
         VALUES (?, ?, 0, 1, datetime('now'), datetime('now'))
@@ -113,7 +113,7 @@ export async function insertAiGlossaryEntries(
     if (!source || !target) continue;
     const range = entry.rangeCode?.trim() || null;
 
-    const existing = await getTsfDb().execute({
+    const existing = await tsfExecute({
       sql:
         range === null
           ? "SELECT id FROM Glossary WHERE shop = ? AND sourceText = ? AND rangeCode IS NULL LIMIT 1"
@@ -122,7 +122,7 @@ export async function insertAiGlossaryEntries(
     });
     if (existing.rows.length > 0) continue;
 
-    await getTsfDb().execute({
+    await tsfExecute({
       sql: `
         INSERT INTO Glossary (shop, sourceText, targetText, rangeCode, caseSensitive, status, createdBy, createdAt)
         VALUES (?, ?, ?, ?, ?, 0, 'ai-shop-scan', datetime('now'))
