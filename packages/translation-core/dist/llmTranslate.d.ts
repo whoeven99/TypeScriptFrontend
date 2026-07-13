@@ -312,6 +312,11 @@ export type TranslateResourcesOptions = {
     skipCacheRead?: boolean;
     /** 跳过 TM 缓存写入。批量任务带 customPrompt 时默认为 true。 */
     skipCacheWrite?: boolean;
+    /**
+     * 管理页单条翻译专用：把每次 LLM 调用的原文 / prompt / raw 完整打到日志。
+     * 批量 worker 路径不要开启。
+     */
+    logSingleTranslate?: boolean;
 };
 export declare function translateResources(resources: ResourceInput[], source: string, target: string, aiModel: string, shopName: string, onProgress?: (doneUnitsDelta: number, tokensDelta: number) => Promise<void>, onResourceDone?: (resource: TranslatedResourceOutput) => Promise<void>, shouldAbort?: () => boolean | Promise<boolean>, options?: TranslateResourcesOptions): Promise<TranslateChunkResult>;
 /**

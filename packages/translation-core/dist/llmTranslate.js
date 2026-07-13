@@ -1392,7 +1392,8 @@ export function prepareHandleSourceText(value) {
  *    contains no source-script characters, it is almost certainly already in
  *    English → skip.  (A zh-CN store's product titled "Standard" is English.)
  *  - For other targets with a distinctive script (zh, ja, ko, ar, ru, pl, de …):
- *    skip only when the text already contains target-script characters.
+ *    skip only when the text has ≥2 target-script chars after stripping
+ *    punctuation/whitespace and their share of meaningful content exceeds 70%.
  *  - Conservative fall-through: return false (always translate) for unknown
  *    combinations to avoid accidentally suppressing content.
  *
@@ -1403,37 +1404,99 @@ export function prepareHandleSourceText(value) {
  */
 /** Latin letter runs (2+) — signals English/other Latin content still needing translation. */
 const LATIN_WORD_RE = /[a-zA-Z]{2,}/;
+const HIRAGANA_KATAKANA_RE = /[ぁ-ゖァ-ヶ]/u;
+const HANGUL_RE = /[가-힣ᄀ-ᇿ]/u;
+const CJK_HAN_RE = /[一-鿿㐀-䶿]/u;
+/** 去掉无效字符后：目标文字符 ≥2 且占比 >70% 才算已在目标语。 */
+const TARGET_SCRIPT_MIN_CHARS = 2;
+const TARGET_SCRIPT_MIN_RATIO = 0.7;
+const CYRILLIC_RE = /[Ѐ-ӿ]/u;
+const ARABIC_RE = /[؀-ۿ]/u;
+const THAI_RE = /[฀-๿]/u;
+const DEVANAGARI_RE = /[ऀ-ॿ]/u;
+const POLISH_DIACRITIC_RE = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u;
+const GERMAN_DIACRITIC_RE = /[äöüÄÖÜß]/u;
+const FRENCH_DIACRITIC_RE = /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u;
+const IBERIAN_DIACRITIC_RE = /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u;
+const CZECH_SLOVAK_DIACRITIC_RE = /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u;
+const HUNGARIAN_DIACRITIC_RE = /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u;
+const TURKISH_DIACRITIC_RE = /[çğışöüÇĞİŞÖÜ]/u;
+const VIETNAMESE_DIACRITIC_RE = /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u;
+function langPrefix(locale) {
+    return locale.toLowerCase().split(/[-_]/)[0] || "";
+}
+function countRegexMatches(text, re) {
+    const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+    return [...text.matchAll(new RegExp(re.source, flags))].length;
+}
+function countMeaningfulChars(text) {
+    return text.match(/\p{L}|\p{N}/gu)?.length ?? 0;
+}
+/** 去掉标点/空白后，目标文字符 ≥2 且占有效字符比例 >70%。 */
+function meetsScriptThreshold(text, ...patterns) {
+    let count = 0;
+    for (const re of patterns) {
+        count += countRegexMatches(text, re);
+    }
+    if (count < TARGET_SCRIPT_MIN_CHARS)
+        return false;
+    const meaningful = countMeaningfulChars(text);
+    if (meaningful === 0)
+        return false;
+    return count / meaningful > TARGET_SCRIPT_MIN_RATIO;
+}
+function hasAnyScriptMatch(text, ...patterns) {
+    return patterns.some((re) => re.test(text));
+}
+function scriptPatternsForLang(lang) {
+    switch (lang) {
+        case "zh": return [CJK_HAN_RE];
+        case "ja": return [HIRAGANA_KATAKANA_RE, CJK_HAN_RE];
+        case "ko": return [HANGUL_RE];
+        case "ar": return [ARABIC_RE];
+        case "ru":
+        case "uk":
+        case "bg": return [CYRILLIC_RE];
+        case "th": return [THAI_RE];
+        case "hi":
+        case "mr":
+        case "ne": return [DEVANAGARI_RE];
+        case "pl": return [POLISH_DIACRITIC_RE];
+        case "de": return [GERMAN_DIACRITIC_RE];
+        case "fr": return [FRENCH_DIACRITIC_RE];
+        case "es":
+        case "pt": return [IBERIAN_DIACRITIC_RE];
+        case "cs":
+        case "sk": return [CZECH_SLOVAK_DIACRITIC_RE];
+        case "hu": return [HUNGARIAN_DIACRITIC_RE];
+        case "tr": return [TURKISH_DIACRITIC_RE];
+        case "vi": return [VIETNAMESE_DIACRITIC_RE];
+        default: return undefined;
+    }
+}
+/** 同源书写体系、不同语言互译时不能仅靠共享字符判定已完成。 */
+function isCrossScriptFamilyPair(source, target, langs) {
+    const sl = langPrefix(source);
+    const tl = langPrefix(target);
+    const set = new Set(langs);
+    return set.has(sl) && set.has(tl) && sl !== tl;
+}
+/** zh / ja / ko 互译时，共享汉字不能单独当作「已在目标语」。 */
+function isCrossCjkPair(source, target) {
+    return isCrossScriptFamilyPair(source, target, ["zh", "ja", "ko"]);
+}
 function hasLatinWords(text) {
     return LATIN_WORD_RE.test(text);
 }
 function hasTargetScriptChars(text, targetLang) {
-    switch (targetLang) {
-        case "zh": return /[一-鿿㐀-䶿]/u.test(text);
-        case "ja": return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-        case "ko": return /[가-힣ᄀ-ᇿ]/u.test(text);
-        case "ar": return /[؀-ۿ]/u.test(text);
-        case "ru":
-        case "uk":
-        case "bg": return /[Ѐ-ӿ]/u.test(text);
-        case "th": return /[฀-๿]/u.test(text);
-        case "hi":
-        case "mr":
-        case "ne": return /[ऀ-ॿ]/u.test(text);
-        case "pl": return /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u.test(text);
-        case "de": return /[äöüÄÖÜß]/u.test(text);
-        case "fr": return /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u.test(text);
-        case "es":
-        case "pt": return /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u.test(text);
-        case "cs":
-        case "sk": return /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u.test(text);
-        case "hu": return /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u.test(text);
-        case "tr": return /[çğışöüÇĞİŞÖÜ]/u.test(text);
-        case "vi": return /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u.test(text);
-        default: return false;
-    }
+    const patterns = scriptPatternsForLang(targetLang);
+    if (!patterns)
+        return false;
+    return meetsScriptThreshold(text, ...patterns);
 }
 export function alreadyInTarget(text, source, target) {
-    const tl = target.toLowerCase().split(/[-_]/)[0];
+    const tl = langPrefix(target);
+    const sl = langPrefix(source);
     // ── English target ──────────────────────────────────────────────────────────
     // If source is a CJK / non-Latin language and text has no source-script chars,
     // the content is already in a Latin-script language (overwhelmingly English).
@@ -1444,62 +1507,42 @@ export function alreadyInTarget(text, source, target) {
     if (hasLatinWords(text) && hasTargetScriptChars(text, tl)) {
         return false;
     }
-    // ── Non-Latin script targets ────────────────────────────────────────────────
-    // Only skip when the field appears fully in the target script (no Latin runs).
-    switch (tl) {
-        case "zh": return /[一-鿿㐀-䶿]/u.test(text);
-        case "ja": return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-        case "ko": return /[가-힣ᄀ-ᇿ]/u.test(text);
-        case "ar": return /[؀-ۿ]/u.test(text);
-        case "ru":
-        case "uk":
-        case "bg": return /[Ѐ-ӿ]/u.test(text);
-        case "th": return /[฀-๿]/u.test(text);
-        case "hi":
-        case "mr":
-        case "ne": return /[ऀ-ॿ]/u.test(text);
-        // Latin-script targets with strongly distinctive diacritics
-        case "pl": return /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u.test(text);
-        case "de": return /[äöüÄÖÜß]/u.test(text);
-        case "fr": return /[àâçèéêëîïôùûüœÀÂÇÈÉÊËÎÏÔÙÛÜŒ]/u.test(text);
-        case "es":
-        case "pt": return /[áéíóúüñÁÉÍÓÚÜÑãõÃÕ]/u.test(text);
-        case "cs":
-        case "sk": return /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u.test(text);
-        case "hu": return /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/u.test(text);
-        case "tr": return /[çğışöüÇĞİŞÖÜ]/u.test(text);
-        case "vi": return /[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/u.test(text);
-        default: return false; // unknown target → conservative, always translate
+    // ── Cross-CJK (e.g. zh→ja) ─────────────────────────────────────────────────
+    // 汉字/假名/谚文不能混用同一套 regex；否则中文原文会被 ja 的「一-鿿」误判为已翻译。
+    if (isCrossCjkPair(source, target)) {
+        switch (tl) {
+            case "ja":
+                return meetsScriptThreshold(text, HIRAGANA_KATAKANA_RE);
+            case "ko":
+                return meetsScriptThreshold(text, HANGUL_RE);
+            case "zh":
+                return (sl === "zh" &&
+                    meetsScriptThreshold(text, CJK_HAN_RE) &&
+                    !hasAnyScriptMatch(text, HIRAGANA_KATAKANA_RE, HANGUL_RE));
+            default:
+                return false;
+        }
     }
+    // 西里尔 / 天城文 / 相近拉丁变音语系：共享字符不能跨语言 skip。
+    if (isCrossScriptFamilyPair(source, target, ["ru", "uk", "bg"]))
+        return false;
+    if (isCrossScriptFamilyPair(source, target, ["hi", "mr", "ne"]))
+        return false;
+    if (isCrossScriptFamilyPair(source, target, ["cs", "sk"]))
+        return false;
+    if (isCrossScriptFamilyPair(source, target, ["es", "pt"]))
+        return false;
+    return hasTargetScriptChars(text, tl);
 }
 /**
  * Returns true if `text` contains at least one character from the source
  * language's script. Used internally by alreadyInTarget.
  */
 export function containsSourceScript(text, source) {
-    const lang = source.toLowerCase().split(/[-_]/)[0];
-    switch (lang) {
-        case "zh":
-            return /[一-鿿㐀-䶿]/u.test(text);
-        case "ja":
-            return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-        case "ko":
-            return /[가-힣ᄀ-ᇿ]/u.test(text);
-        case "ar":
-            return /[؀-ۿ]/u.test(text);
-        case "ru":
-        case "uk":
-        case "bg":
-            return /[Ѐ-ӿ]/u.test(text);
-        case "th":
-            return /[฀-๿]/u.test(text);
-        case "hi":
-        case "mr":
-        case "ne":
-            return /[ऀ-ॿ]/u.test(text);
-        default:
-            return true; // unknown source locale → conservative, always translate
-    }
+    const patterns = scriptPatternsForLang(langPrefix(source));
+    if (!patterns)
+        return true; // unknown source locale → conservative, always translate
+    return hasAnyScriptMatch(text, ...patterns);
 }
 function isHtml(value) {
     return isHtmlContent(value);
@@ -1734,7 +1777,9 @@ async function callGoogleTranslate(texts, target, format) {
     const data = (await resp.json());
     return data.data.translations.map((t) => t.translatedText);
 }
-async function translateItemsRouted(items, source, target, aiModel, shopName, order, promptKind = "default", customPrompt = "") {
+async function translateItemsRouted(items, source, target, aiModel, shopName, order, promptKind = "default", customPrompt = "", 
+/** 仅管理页单条翻译：把 LLM 原始返回打到日志。 */
+logSingleTranslate = false) {
     // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
     const placeholdersByKey = new Map();
     const masked = items.map((it) => {
@@ -1760,9 +1805,19 @@ async function translateItemsRouted(items, source, target, aiModel, shopName, or
                     promptKind === "handle"
                         ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
                         : buildSystemPrompt(target, glossary, "", customPrompt);
+                if (logSingleTranslate) {
+                    console.log("[single] prompt", {
+                        shopName,
+                        source,
+                        target,
+                        promptKind,
+                        customPrompt,
+                        prompt: systemPrompt,
+                    });
+                }
             }
             try {
-                await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+                await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
             }
             catch (e) {
                 console.warn(`[route] llm engine error`, e);
@@ -1846,7 +1901,7 @@ async function translateItemsRouted(items, source, target, aiModel, shopName, or
     return { results: result, llmTokens: tokenAccum.value };
 }
 /** Re-translate pool units that fell back or echoed source, one item per request. */
-async function retryPoolFallbacks(translated, pools, source, target, aiModel, shopName, shouldAbort, customPrompt = "", onLeafTranslated) {
+async function retryPoolFallbacks(translated, pools, source, target, aiModel, shopName, shouldAbort, customPrompt = "", onLeafTranslated, logSingleTranslate = false) {
     let retried = 0;
     for (const [sig, occ] of pools) {
         const { order } = parsePoolSignature(sig);
@@ -1869,7 +1924,7 @@ async function retryPoolFallbacks(translated, pools, source, target, aiModel, sh
             if (await shouldAbort())
                 break;
             const { isHandle, order: poolOrder } = parsePoolSignature(sig);
-            const { results: m } = await translateItemsRouted([{ key: "0", value: text, digest: "" }], source, target, aiModel, shopName, poolOrder, isHandle ? "handle" : "default", customPrompt);
+            const { results: m } = await translateItemsRouted([{ key: "0", value: text, digest: "" }], source, target, aiModel, shopName, poolOrder, isHandle ? "handle" : "default", customPrompt, logSingleTranslate);
             const r = m.get("0");
             if (r?.status === "translated" && !looksLikeUntranslated(text, r.value, target) && !looksLikeWrongScriptLeak(text, r.value, target)) {
                 tmap.set(text, r);
@@ -2016,7 +2071,7 @@ function parseTranslationResult(raw, tokens, idToKey) {
     }
     return { map, tokens };
 }
-async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
+async function callLLMOnce(items, aiModel, systemPrompt, shopName, logSingleTranslate = false) {
     // Opaque IDs prevent the model from confusing semantic key names with content.
     const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
     const payload = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
@@ -2028,10 +2083,25 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(payload) },
     ];
+    const logLlmReturn = (model, raw, tokens) => {
+        if (!logSingleTranslate)
+            return;
+        // 管理页单条：完整打印原文、prompt、LLM raw（不截断）。
+        console.log("[single-llm] return", {
+            shopName,
+            model,
+            source: payload,
+            prompt: messages,
+            raw,
+            tokens,
+        });
+    };
     // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
     if (isGptModel(aiModel)) {
         try {
-            const { raw, tokens } = await callAzureOpenAIChat(resolveGptModel(aiModel), messages, items.length);
+            const model = resolveGptModel(aiModel);
+            const { raw, tokens } = await callAzureOpenAIChat(model, messages, items.length);
+            logLlmReturn(model, raw, tokens);
             return parseTranslationResult(raw, tokens, idToKey);
         }
         finally {
@@ -2050,6 +2120,7 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
         const { content: raw, tokens, response, limitHints } = await invokeChatCompletion(acq.transport, model, messages, llmTimeoutMsForBatch(items.length), getPool().firstTokenBudgetMs(), deepseekUserId);
         const rawHeaders = responseHeadersToRecord(response);
         acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
+        logLlmReturn(model, raw, tokens);
         // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
         const obj = JSON.parse(extractJsonObject(raw));
         const parsed = Array.isArray(obj.translations)
@@ -2088,7 +2159,7 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
  * single item that makes the model emit invalid JSON cannot poison the whole
  * batch. A lone failing item is retried a few times, then left for fallback.
  */
-async function gatherTranslations(items, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES) {
+async function gatherTranslations(items, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate = false) {
     const pend = items.filter((i) => !collected.has(i.key));
     if (pend.length === 0)
         return;
@@ -2096,12 +2167,12 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
     if (pend.length > MAX_ITEMS_PER_BATCH) {
         const mid = Math.ceil(pend.length / 2);
         console.log(`[llm] batch of ${pend.length} items exceeds cap ${MAX_ITEMS_PER_BATCH}; splitting proactively`);
-        await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-        await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+        await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
+        await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
         return;
     }
     try {
-        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logSingleTranslate);
         tokenAccum.value += tokens;
         let progressed = false;
         for (const [k, v] of map) {
@@ -2114,7 +2185,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
         // Model parsed OK but dropped some keys → retry just those, but only while
         // making progress (avoids looping on a key the model refuses to return).
         if (missing.length > 0 && progressed && missing.length < pend.length) {
-            await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+            await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
         }
         return;
     }
@@ -2148,7 +2219,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
                 if (FIRST_TOKEN_DRAIN_MS > 0) {
                     await new Promise((res) => setTimeout(res, FIRST_TOKEN_DRAIN_MS));
                 }
-                await gatherTranslations(pend, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft - 1);
+                await gatherTranslations(pend, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft - 1, logSingleTranslate);
                 return;
             }
             // Timeout ≠ poison data. Halving a timed-out batch re-pays the base timeout
@@ -2157,14 +2228,14 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
             if (isTimeout && pend.length > TIMEOUT_RESPLIT_SIZE) {
                 console.warn(`[llm] batch of ${pend.length} timed out (${msg}); re-chunking to ${TIMEOUT_RESPLIT_SIZE}`);
                 for (const chunk of chunkArray(pend, TIMEOUT_RESPLIT_SIZE)) {
-                    await gatherTranslations(chunk, aiModel, systemPrompt, collected, tokenAccum, shopName);
+                    await gatherTranslations(chunk, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
                 }
                 return;
             }
             const mid = Math.ceil(pend.length / 2);
             console.warn(`[llm] batch of ${pend.length} ${isTimeout ? "timed out" : "unparseable"} (${msg}); splitting`);
-            await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-            await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+            await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
+            await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
             return;
         }
         // Single item: retry transient failures with backoff, then give up (→ fallback).
@@ -2173,7 +2244,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
                 await new Promise((res) => setTimeout(res, LEAF_RETRY_BACKOFF_MS * (r + 1)));
             }
             try {
-                const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+                const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logSingleTranslate);
                 tokenAccum.value += tokens;
                 for (const [k, v] of map)
                     if (!collected.has(k))
@@ -2377,6 +2448,11 @@ function reconstructPlan(plan, rm, lookup, tmWrites, shopName, target, source, s
         rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
     }
 }
+function logSingleTranslatePath(enabled, kind, details) {
+    if (!enabled)
+        return;
+    console.log(`[single] ${kind}`, details);
+}
 export async function translateResources(resources, source, target, aiModel, shopName, onProgress, onResourceDone, shouldAbort, options) {
     const abortRequested = async () => shouldAbort ? Boolean(await shouldAbort()) : false;
     const translateHandle = options?.translateHandle !== false;
@@ -2385,6 +2461,19 @@ export async function translateResources(resources, source, target, aiModel, sho
     // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
     const skipCacheRead = options?.skipCacheRead ?? hasCustomPrompt;
     const skipCacheWrite = options?.skipCacheWrite ?? hasCustomPrompt;
+    const logSingleTranslate = options?.logSingleTranslate === true;
+    if (logSingleTranslate) {
+        logSingleTranslatePath(true, "pipeline", {
+            shopName,
+            source,
+            target,
+            skipCacheRead,
+            skipCacheWrite,
+            customPrompt,
+            resourceCount: resources.length,
+            fieldCount: resources.reduce((n, r) => n + r.fields.length, 0),
+        });
+    }
     const resultMaps = new Map();
     const plans = [];
     // orderSig → (unique text → occurrence count across the chunk).
@@ -2410,11 +2499,21 @@ export async function translateResources(resources, source, target, aiModel, sho
         const rm = resultMaps.get(res.resourceId);
         for (const f of res.fields) {
             if (isHandleFieldKey(f.key) && !translateHandle) {
+                logSingleTranslatePath(logSingleTranslate, "skip", {
+                    reason: "handle_disabled",
+                    fieldKey: f.key,
+                    original: f.value,
+                });
                 rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
                 continue;
             }
             const klass = classifyField(f.key, f.value, f.shopifyType);
             if (klass === "skip") {
+                logSingleTranslatePath(logSingleTranslate, "skip", {
+                    reason: "classify_skip",
+                    fieldKey: f.key,
+                    original: f.value,
+                });
                 rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
                 continue;
             }
@@ -2433,11 +2532,22 @@ export async function translateResources(resources, source, target, aiModel, sho
         const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
         const rm = resultMaps.get(resourceId);
         if (!f.value.trim()) {
+            logSingleTranslatePath(logSingleTranslate, "skip", {
+                reason: "empty_value",
+                fieldKey: f.key,
+            });
             rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
             continue;
         }
         const cached = cacheHits[wi];
         if (cached !== null) {
+            logSingleTranslatePath(logSingleTranslate, "cache", {
+                kind: "field_digest",
+                fieldKey: f.key,
+                original: f.value,
+                translated: cached,
+                cacheModel,
+            });
             rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
             cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
             continue;
@@ -2447,28 +2557,44 @@ export async function translateResources(resources, source, target, aiModel, sho
             const valueCacheSource = isHandleFieldKey(f.key) ? prepareHandleSourceText(f.value) : f.value;
             const cachedByValue = await tmGetByValue(valueCacheSource, source, target, cacheModel, f.digest);
             if (cachedByValue !== null) {
+                logSingleTranslatePath(logSingleTranslate, "cache", {
+                    kind: "field_value",
+                    fieldKey: f.key,
+                    original: f.value,
+                    translated: cachedByValue,
+                    cacheModel,
+                });
                 rm.set(f.key, { key: f.key, translatedValue: cachedByValue, digest: f.digest, status: "translated" });
                 tmWrites.push(tmSet(shopName, target, cacheModel, f.digest, cachedByValue));
                 cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
                 continue;
             }
         }
-        // Already-in-target check: if the value appears to already be in the target
-        // language, skip it — the LLM would just echo it back unchanged.
-        // For zh-CN→en: English content (no CJK) is skipped (it's already the target).
-        // For zh-CN→pl: English content is NOT skipped (it still needs translation to Polish).
-        //
-        // Opt-in TRANSLATE_SKIP_NON_SOURCE_SCRIPT extends this: when the operator
-        // knows the store's real source language, any field that contains none of
-        // the source script is treated as already-done and skipped (saves the tokens
-        // otherwise spent re-translating non-source content). Off by default because
-        // for a mixed-language store with a non-English target, skipping non-source
-        // content would leave it untranslated.
-        if (alreadyInTarget(f.value, source, target) ||
-            (skipNonSourceScript && !containsSourceScript(f.value, source))) {
-            rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
-            cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
-            continue;
+        else if (logSingleTranslate && skipCacheRead) {
+            logSingleTranslatePath(true, "cache", {
+                action: "read_disabled",
+                fieldKey: f.key,
+                klass,
+            });
+        }
+        const alreadyInTargetSkip = alreadyInTarget(f.value, source, target);
+        const nonSourceScriptSkip = skipNonSourceScript && !containsSourceScript(f.value, source);
+        if (alreadyInTargetSkip || nonSourceScriptSkip) {
+            if (logSingleTranslate) {
+                // 管理页手动点击：用户显式要求重译，不因「已在目标语」短路。
+                logSingleTranslatePath(true, "bypass", {
+                    reason: alreadyInTargetSkip ? "already_in_target" : "non_source_script",
+                    fieldKey: f.key,
+                    original: f.value,
+                    source,
+                    target,
+                });
+            }
+            else {
+                rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+                cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
+                continue;
+            }
         }
         if (klass === "html") {
             const { template, nodeParts } = htmlNodePartsOf(f.value);
@@ -2665,6 +2791,13 @@ export async function translateResources(resources, source, target, aiModel, sho
                 if (hit === null)
                     continue;
                 const text = allTexts[i];
+                logSingleTranslatePath(logSingleTranslate, "cache", {
+                    kind: "leaf_value",
+                    original: text,
+                    translated: hit,
+                    cacheModel,
+                    poolSig: sig,
+                });
                 tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
                 leafCacheUnits += occ.get(text) ?? 1;
             }
@@ -2687,7 +2820,7 @@ export async function translateResources(resources, source, target, aiModel, sho
         await Promise.all(batches.map(async (batch) => {
             if (await abortRequested())
                 return;
-            const { results: m, llmTokens } = await translateItemsRouted(batch, source, target, aiModel, shopName, order, isHandle ? "handle" : "default", customPrompt);
+            const { results: m, llmTokens } = await translateItemsRouted(batch, source, target, aiModel, shopName, order, isHandle ? "handle" : "default", customPrompt, logSingleTranslate);
             let batchUnits = 0;
             for (const [k, v] of m) {
                 const text = texts[Number(k)];
@@ -2719,7 +2852,7 @@ export async function translateResources(resources, source, target, aiModel, sho
         ? undefined
         : (text, r, poolPrimaryModel) => {
             tmWrites.push(tmSetByValue(text, source, target, poolPrimaryModel, r.value));
-        });
+        }, logSingleTranslate);
     if (retried > 0) {
         console.log(`[llm] individually retried ${retried} fallback/untranslated text unit(s)`);
         reconstructedResources.clear();

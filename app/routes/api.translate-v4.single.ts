@@ -65,6 +65,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
+    console.log("[single] api", {
+      shop,
+      source,
+      target,
+      fieldKey,
+      shopifyType,
+      original: text,
+      customPrompt,
+    });
+
     const { translatedText, usedTokens } = await translateSingleText({
       shop,
       target,
