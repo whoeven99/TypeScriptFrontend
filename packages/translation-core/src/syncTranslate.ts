@@ -85,13 +85,33 @@ export async function translateSingleField(
       // 管理翻译页手动点击：不读缓存、强制 LLM，译后写回 TM。
       skipCacheRead: true,
       skipCacheWrite: false,
+      logSingleTranslate: true,
     },
   );
 
   const result = resources[0]?.results[0];
+  const translatedText = result?.translatedValue ?? text;
+  const status = result?.status ?? "fallback";
+  const usedTokens = sumUsageTokens(usage);
+
+  // 管理页单条：质量校验/拼装后的最终译文（完整不截断）。
+  console.log("[single] result", {
+    shop: args.shop,
+    source,
+    target,
+    fieldKey,
+    shopifyType: args.shopifyType,
+    aiModel,
+    original: text,
+    translated: translatedText,
+    status,
+    prompt: args.customPrompt ?? "",
+    usedTokens,
+  });
+
   return {
-    translatedText: result?.translatedValue ?? text,
-    usedTokens: sumUsageTokens(usage),
-    status: result?.status ?? "fallback",
+    translatedText,
+    usedTokens,
+    status,
   };
 }

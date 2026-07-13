@@ -1716,7 +1716,9 @@ async function callGoogleTranslate(texts, target, format) {
     const data = (await resp.json());
     return data.data.translations.map((t) => t.translatedText);
 }
-async function translateItemsRouted(items, source, target, aiModel, shopName, order, promptKind = "default", customPrompt = "") {
+async function translateItemsRouted(items, source, target, aiModel, shopName, order, promptKind = "default", customPrompt = "", 
+/** 仅管理页单条翻译：把 LLM 原始返回打到日志。 */
+logSingleTranslate = false) {
     // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
     const placeholdersByKey = new Map();
     const masked = items.map((it) => {
@@ -1742,9 +1744,19 @@ async function translateItemsRouted(items, source, target, aiModel, shopName, or
                     promptKind === "handle"
                         ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
                         : buildSystemPrompt(target, glossary, "", customPrompt);
+                if (logSingleTranslate) {
+                    console.log("[single] prompt", {
+                        shopName,
+                        source,
+                        target,
+                        promptKind,
+                        customPrompt,
+                        prompt: systemPrompt,
+                    });
+                }
             }
             try {
-                await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+                await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
             }
             catch (e) {
                 console.warn(`[route] llm engine error`, e);
@@ -1828,7 +1840,7 @@ async function translateItemsRouted(items, source, target, aiModel, shopName, or
     return { results: result, llmTokens: tokenAccum.value };
 }
 /** Re-translate pool units that fell back or echoed source, one item per request. */
-async function retryPoolFallbacks(translated, pools, source, target, aiModel, shopName, shouldAbort, customPrompt = "", onLeafTranslated) {
+async function retryPoolFallbacks(translated, pools, source, target, aiModel, shopName, shouldAbort, customPrompt = "", onLeafTranslated, logSingleTranslate = false) {
     let retried = 0;
     for (const [sig, occ] of pools) {
         const { order } = parsePoolSignature(sig);
@@ -1851,7 +1863,7 @@ async function retryPoolFallbacks(translated, pools, source, target, aiModel, sh
             if (await shouldAbort())
                 break;
             const { isHandle, order: poolOrder } = parsePoolSignature(sig);
-            const { results: m } = await translateItemsRouted([{ key: "0", value: text, digest: "" }], source, target, aiModel, shopName, poolOrder, isHandle ? "handle" : "default", customPrompt);
+            const { results: m } = await translateItemsRouted([{ key: "0", value: text, digest: "" }], source, target, aiModel, shopName, poolOrder, isHandle ? "handle" : "default", customPrompt, logSingleTranslate);
             const r = m.get("0");
             if (r?.status === "translated" && !looksLikeUntranslated(text, r.value, target) && !looksLikeWrongScriptLeak(text, r.value, target)) {
                 tmap.set(text, r);
@@ -1998,7 +2010,7 @@ function parseTranslationResult(raw, tokens, idToKey) {
     }
     return { map, tokens };
 }
-async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
+async function callLLMOnce(items, aiModel, systemPrompt, shopName, logSingleTranslate = false) {
     // Opaque IDs prevent the model from confusing semantic key names with content.
     const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
     const payload = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
@@ -2010,10 +2022,25 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(payload) },
     ];
+    const logLlmReturn = (model, raw, tokens) => {
+        if (!logSingleTranslate)
+            return;
+        // 管理页单条：完整打印原文、prompt、LLM raw（不截断）。
+        console.log("[single-llm] return", {
+            shopName,
+            model,
+            source: payload,
+            prompt: messages,
+            raw,
+            tokens,
+        });
+    };
     // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
     if (isGptModel(aiModel)) {
         try {
-            const { raw, tokens } = await callAzureOpenAIChat(resolveGptModel(aiModel), messages, items.length);
+            const model = resolveGptModel(aiModel);
+            const { raw, tokens } = await callAzureOpenAIChat(model, messages, items.length);
+            logLlmReturn(model, raw, tokens);
             return parseTranslationResult(raw, tokens, idToKey);
         }
         finally {
@@ -2032,6 +2059,7 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
         const { content: raw, tokens, response, limitHints } = await invokeChatCompletion(acq.transport, model, messages, llmTimeoutMsForBatch(items.length), getPool().firstTokenBudgetMs(), deepseekUserId);
         const rawHeaders = responseHeadersToRecord(response);
         acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
+        logLlmReturn(model, raw, tokens);
         // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
         const obj = JSON.parse(extractJsonObject(raw));
         const parsed = Array.isArray(obj.translations)
@@ -2070,7 +2098,7 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName) {
  * single item that makes the model emit invalid JSON cannot poison the whole
  * batch. A lone failing item is retried a few times, then left for fallback.
  */
-async function gatherTranslations(items, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES) {
+async function gatherTranslations(items, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate = false) {
     const pend = items.filter((i) => !collected.has(i.key));
     if (pend.length === 0)
         return;
@@ -2078,12 +2106,12 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
     if (pend.length > MAX_ITEMS_PER_BATCH) {
         const mid = Math.ceil(pend.length / 2);
         console.log(`[llm] batch of ${pend.length} items exceeds cap ${MAX_ITEMS_PER_BATCH}; splitting proactively`);
-        await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-        await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+        await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
+        await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
         return;
     }
     try {
-        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+        const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logSingleTranslate);
         tokenAccum.value += tokens;
         let progressed = false;
         for (const [k, v] of map) {
@@ -2096,7 +2124,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
         // Model parsed OK but dropped some keys → retry just those, but only while
         // making progress (avoids looping on a key the model refuses to return).
         if (missing.length > 0 && progressed && missing.length < pend.length) {
-            await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName);
+            await gatherTranslations(missing, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
         }
         return;
     }
@@ -2117,7 +2145,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
                 if (FIRST_TOKEN_DRAIN_MS > 0) {
                     await new Promise((res) => setTimeout(res, FIRST_TOKEN_DRAIN_MS));
                 }
-                await gatherTranslations(pend, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft - 1);
+                await gatherTranslations(pend, aiModel, systemPrompt, collected, tokenAccum, shopName, firstTokenRetriesLeft - 1, logSingleTranslate);
                 return;
             }
             // Timeout ≠ poison data. Halving a timed-out batch re-pays the base timeout
@@ -2126,14 +2154,14 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
             if (isTimeout && pend.length > TIMEOUT_RESPLIT_SIZE) {
                 console.warn(`[llm] batch of ${pend.length} timed out (${msg}); re-chunking to ${TIMEOUT_RESPLIT_SIZE}`);
                 for (const chunk of chunkArray(pend, TIMEOUT_RESPLIT_SIZE)) {
-                    await gatherTranslations(chunk, aiModel, systemPrompt, collected, tokenAccum, shopName);
+                    await gatherTranslations(chunk, aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
                 }
                 return;
             }
             const mid = Math.ceil(pend.length / 2);
             console.warn(`[llm] batch of ${pend.length} ${isTimeout ? "timed out" : "unparseable"} (${msg}); splitting`);
-            await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
-            await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName);
+            await gatherTranslations(pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
+            await gatherTranslations(pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName, FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate);
             return;
         }
         // Single item: retry transient failures with backoff, then give up (→ fallback).
@@ -2142,7 +2170,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
                 await new Promise((res) => setTimeout(res, LEAF_RETRY_BACKOFF_MS * (r + 1)));
             }
             try {
-                const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName);
+                const { map, tokens } = await callLLMOnce(pend, aiModel, systemPrompt, shopName, logSingleTranslate);
                 tokenAccum.value += tokens;
                 for (const [k, v] of map)
                     if (!collected.has(k))
@@ -2354,6 +2382,7 @@ export async function translateResources(resources, source, target, aiModel, sho
     // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
     const skipCacheRead = options?.skipCacheRead ?? hasCustomPrompt;
     const skipCacheWrite = options?.skipCacheWrite ?? hasCustomPrompt;
+    const logSingleTranslate = options?.logSingleTranslate === true;
     const resultMaps = new Map();
     const plans = [];
     // orderSig → (unique text → occurrence count across the chunk).
@@ -2656,7 +2685,7 @@ export async function translateResources(resources, source, target, aiModel, sho
         await Promise.all(batches.map(async (batch) => {
             if (await abortRequested())
                 return;
-            const { results: m, llmTokens } = await translateItemsRouted(batch, source, target, aiModel, shopName, order, isHandle ? "handle" : "default", customPrompt);
+            const { results: m, llmTokens } = await translateItemsRouted(batch, source, target, aiModel, shopName, order, isHandle ? "handle" : "default", customPrompt, logSingleTranslate);
             let batchUnits = 0;
             for (const [k, v] of m) {
                 const text = texts[Number(k)];
@@ -2688,7 +2717,7 @@ export async function translateResources(resources, source, target, aiModel, sho
         ? undefined
         : (text, r, poolPrimaryModel) => {
             tmWrites.push(tmSetByValue(text, source, target, poolPrimaryModel, r.value));
-        });
+        }, logSingleTranslate);
     if (retried > 0) {
         console.log(`[llm] individually retried ${retried} fallback/untranslated text unit(s)`);
         reconstructedResources.clear();
