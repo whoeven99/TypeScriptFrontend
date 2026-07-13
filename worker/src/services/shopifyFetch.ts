@@ -423,6 +423,26 @@ async function shopifyGraphql(
         });
       }
     }
+
+    // SERVER_ERROR: Shopify 上游服务瞬时故障，短退避重试（复用 5xx 配额）
+    const serverError = json.errors.some(
+      (e) =>
+        typeof e === "object" &&
+        e !== null &&
+        (e as { extensions?: { code?: string } }).extensions?.code === "SERVER_ERROR",
+    );
+    if (serverError && retries5xx > 0) {
+      const waitMs = Math.min(8_000, 2_000 * (SHOPIFY_5XX_MAX_RETRIES - retries5xx + 1));
+      console.warn(
+        `[shopifyFetch] SERVER_ERROR on ${shopDomain} — waiting ${waitMs}ms (5xx retries left: ${retries5xx - 1})`,
+      );
+      await new Promise((r) => setTimeout(r, waitMs));
+      return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+        ...opts,
+        retries5xx: retries5xx - 1,
+      });
+    }
+
     throw new Error(`Shopify GraphQL errors: ${JSON.stringify(json.errors)}`);
   }
 
