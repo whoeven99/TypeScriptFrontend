@@ -188,3 +188,91 @@ export function msUntilNextClockAlignedScan(
   );
   return Math.max(1000, next.getTime() - now.getTime());
 }
+
+/** 当前时刻之前、最近一轮应对齐的扫描时刻（默认上一整点）。 */
+export function resolvePreviousClockAlignedScanAt(
+  now = new Date(),
+  intervalMs = getAutoTranslateIntervalMs(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+  scheduleMinute = getAutoTranslateScheduleMinute(),
+): Date {
+  const interval = Math.max(60_000, intervalMs);
+  const cur = tzYmdHm(now, timeZone);
+  let candidate = utcFromTzLocal(
+    cur.y,
+    cur.m,
+    cur.d,
+    cur.h,
+    scheduleMinute,
+    timeZone,
+  );
+  if (candidate.getTime() > now.getTime()) {
+    candidate = new Date(candidate.getTime() - interval);
+    const p = tzYmdHm(candidate, timeZone);
+    candidate = utcFromTzLocal(
+      p.y,
+      p.m,
+      p.d,
+      p.h,
+      scheduleMinute,
+      timeZone,
+    );
+  }
+  if (candidate.getTime() > now.getTime() - 1000) {
+    const prev = new Date(candidate.getTime() - interval);
+    const p = tzYmdHm(prev, timeZone);
+    return utcFromTzLocal(p.y, p.m, p.d, p.h, scheduleMinute, timeZone);
+  }
+  return candidate;
+}
+
+/** 单次 tick 最多补跑几轮漏掉的整点扫描（默认 1 = 上一小时）。 */
+export function getAutoTranslateMaxCatchupScans(): number {
+  const n = Number(process.env.AUTO_TRANSLATE_MAX_CATCHUP_SCANS);
+  if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+  return 1;
+}
+
+const MISSED_SCAN_GRACE_MS = 60_000;
+
+/**
+ * 自上次成功扫描以来漏掉的整点对齐时刻（由旧到新），用于补偿扫描。
+ * maxMissed 默认 1，可通过 AUTO_TRANSLATE_MAX_CATCHUP_SCANS 提高。
+ */
+export function listMissedClockAlignedScanAt(
+  lastSuccessAt: Date | null,
+  now = new Date(),
+  maxMissed = getAutoTranslateMaxCatchupScans(),
+  intervalMs = getAutoTranslateIntervalMs(),
+  timeZone = getAutoTranslateScheduleTimezone(),
+  scheduleMinute = getAutoTranslateScheduleMinute(),
+): Date[] {
+  if (maxMissed <= 0) return [];
+
+  const floor = lastSuccessAt?.getTime() ?? 0;
+  const missed: Date[] = [];
+  let cursor = resolvePreviousClockAlignedScanAt(
+    now,
+    intervalMs,
+    timeZone,
+    scheduleMinute,
+  );
+
+  while (
+    missed.length < maxMissed &&
+    cursor.getTime() > floor + MISSED_SCAN_GRACE_MS
+  ) {
+    missed.unshift(cursor);
+    const prevAnchor = new Date(cursor.getTime() - 1000);
+    const older = resolvePreviousClockAlignedScanAt(
+      prevAnchor,
+      intervalMs,
+      timeZone,
+      scheduleMinute,
+    );
+    if (older.getTime() >= cursor.getTime()) break;
+    cursor = older;
+  }
+
+  return missed;
+}

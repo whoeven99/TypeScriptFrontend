@@ -265,10 +265,29 @@ export function progressKey(taskId: string): string {
 }
 
 export const AUTO_SCAN_LAST_AT_KEY = "translate:v4:auto_scan:last_at";
+export const AUTO_SCAN_LAST_SUCCESS_AT_KEY =
+  "translate:v4:auto_scan:last_success_at";
 
 export async function setAutoScanLastAt(at: string): Promise<void> {
   try {
     await getRedis().set(AUTO_SCAN_LAST_AT_KEY, at);
+  } catch {
+    // best-effort
+  }
+}
+
+export async function getAutoScanLastSuccessAt(): Promise<string | null> {
+  try {
+    const v = await getRedis().get(AUTO_SCAN_LAST_SUCCESS_AT_KEY);
+    return v?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setAutoScanLastSuccessAt(at: string): Promise<void> {
+  try {
+    await getRedis().set(AUTO_SCAN_LAST_SUCCESS_AT_KEY, at);
   } catch {
     // best-effort
   }

@@ -18,14 +18,20 @@ import {
 } from "./tsfDb.js";
 import { fetchShopPrimaryLocale } from "./shopifyFetch.js";
 import { AUTO_TRANSLATE_V4_MODULES } from "./moduleCatalog.js";
-import { setAutoScanLastAt } from "./redisV4.js";
+import {
+  getAutoScanLastSuccessAt,
+  setAutoScanLastAt,
+  setAutoScanLastSuccessAt,
+} from "./redisV4.js";
 import {
   currentSlotIndex,
+  getAutoTranslateMaxCatchupScans,
   getAutoTranslateMaxNewJobsPerScan,
   getAutoTranslateShardCooldownMs,
   getAutoTranslateShopCooldownMs,
   getAutoTranslateSlotsPerDay,
   isAutoTranslateShardingEnabled,
+  listMissedClockAlignedScanAt,
   shopSlotIndex,
   resolveNextClockAlignedScanAt,
 } from "./autoScanSchedule.js";
@@ -37,9 +43,23 @@ import {
 /** 自动任务模块（不含 EMAIL_TEMPLATE、ONLINE_STORE_THEME_LOCALE_CONTENT）。 */
 const AUTO_MODULES = [...AUTO_TRANSLATE_V4_MODULES];
 
+export type AutoTranslateScanMode = "scheduled" | "catchup";
+
+export type AutoTranslateScanOptions = {
+  /** 分槽扫描时强制处理该槽位（补偿漏跑时使用）。 */
+  slotIndex?: number;
+  mode?: AutoTranslateScanMode;
+  /** 日志/诊断用：本轮应对齐的扫描时刻。 */
+  scanAt?: Date;
+};
+
 /** v4 自动翻译任务固定使用 GPT-4.1 nano（与 TSF 手动任务默认模型一致）。 */
 function autoAiModel(): string {
   return "gpt-4.1-nano";
+}
+
+function logPrefix(mode: AutoTranslateScanMode): string {
+  return mode === "catchup" ? "[autoTranslate:catchup]" : "[autoTranslate]";
 }
 
 /**
@@ -55,15 +75,22 @@ function autoAiModel(): string {
  * - 各 shop+target 若已有进行中任务则单独跳过。
  * - AUTO_TRANSLATE_MAX_NEW_JOBS_PER_SCAN（默认 0=不限）：单次扫描新建上限，安全带。
  */
-export async function runAutoTranslateScan(): Promise<void> {
+export async function runAutoTranslateScan(
+  options: AutoTranslateScanOptions = {},
+): Promise<void> {
   if (!hasTsfDbCredentials()) {
     console.log("[autoTranslate] TSF Turso 未配置（TSF_TURSO_*），跳过自动扫描");
     return;
   }
 
+  const mode = options.mode ?? "scheduled";
+  const prefix = logPrefix(mode);
   const sharding = isAutoTranslateShardingEnabled();
   const slotsPerDay = getAutoTranslateSlotsPerDay();
-  const curSlot = currentSlotIndex();
+  const scanAt = options.scanAt ?? new Date();
+  const curSlot =
+    options.slotIndex ??
+    (sharding ? currentSlotIndex(scanAt) : currentSlotIndex());
   const shopCooldownMs = getAutoTranslateShopCooldownMs();
   const shardCooldownMs = getAutoTranslateShardCooldownMs();
   // 分槽开启时用整店每日冷却（≈20h）；关闭时用旧的短冷却（≈3h）。
@@ -72,8 +99,9 @@ export async function runAutoTranslateScan(): Promise<void> {
 
   const shops = await listAutoTranslateShops();
   if (shops.length === 0) {
-    console.log("[autoTranslate] 无开启自动翻译的店");
+    console.log(`${prefix} 无开启自动翻译的店`);
     await setAutoScanLastAt(new Date().toISOString());
+    await setAutoScanLastSuccessAt(new Date().toISOString());
     return;
   }
 
@@ -123,7 +151,7 @@ export async function runAutoTranslateScan(): Promise<void> {
 
     const token = (await getOfflineAccessTokenFromTsf(shop)) ?? "";
     if (!token) {
-      console.warn(`[autoTranslate] ${shop} 在 TSF 无 offline token，跳过该店`);
+      console.warn(`${prefix} ${shop} 在 TSF 无 offline token，跳过该店`);
       continue;
     }
 
@@ -134,7 +162,10 @@ export async function runAutoTranslateScan(): Promise<void> {
         source = livePrimary;
       }
     } catch (err) {
-      console.warn(`[autoTranslate] ${shop} 读取 Shopify 默认语言失败，沿用 TSF 缓存`, err);
+      console.warn(
+        `${prefix} ${shop} 读取 Shopify 默认语言失败，沿用 TSF 缓存`,
+        err,
+      );
     }
 
     for (const rawTarget of targets) {
@@ -156,9 +187,14 @@ export async function runAutoTranslateScan(): Promise<void> {
       for (const j of staleJobs) {
         try {
           await purgeAutoJob(j);
-          console.log(`[autoTranslate] 清理旧自动任务 id=${j.id} shop=${shop} ${source}→${target}`);
+          console.log(
+            `${prefix} 清理旧自动任务 id=${j.id} shop=${shop} ${source}→${target}`,
+          );
         } catch (err) {
-          console.error(`[autoTranslate] 清理旧任务失败 id=${j.id} shop=${shop} ${source}→${target}`, err);
+          console.error(
+            `${prefix} 清理旧任务失败 id=${j.id} shop=${shop} ${source}→${target}`,
+            err,
+          );
         }
       }
 
@@ -183,17 +219,24 @@ export async function runAutoTranslateScan(): Promise<void> {
         await pushHint("init", { taskId: jobId, shopName: shop }, "auto");
         created++;
         console.log(
-          `[autoTranslate] 建任务 id=${jobId} shop=${shop} ${source}→${target}`,
+          `${prefix} 建任务 id=${jobId} shop=${shop} ${source}→${target}`,
         );
       } catch (err) {
-        console.error(`[autoTranslate] 建任务失败 shop=${shop} ${source}→${target}`, err);
+        console.error(
+          `${prefix} 建任务失败 shop=${shop} ${source}→${target}`,
+          err,
+        );
       }
     }
   }
 
   const slotLabel = sharding ? `${curSlot}/${slotsPerDay}` : "off";
+  const scanAtLabel =
+    mode === "catchup" && options.scanAt
+      ? ` 原定=${options.scanAt.toISOString()}`
+      : "";
   console.log(
-    `[autoTranslate] 扫描完成：店=${shops.length} 槽位=${slotLabel} 新建=${created}` +
+    `${prefix} 扫描完成：店=${shops.length} 槽位=${slotLabel} 新建=${created}${scanAtLabel}` +
       ` 跳过(非本槽店)=${skippedSlot}` +
       ` 跳过(无账户)=${skippedNoAccount}` +
       ` 跳过(店冷却<${cooldownMs / 3600_000}h)=${skippedShopCooldown}` +
@@ -201,5 +244,43 @@ export async function runAutoTranslateScan(): Promise<void> {
       ` 跳过(语言进行中)=${skippedActive}` +
       (cappedOut ? ` [达单次上限 ${maxNewJobs}，剩余顺延下轮]` : ""),
   );
-  await setAutoScanLastAt(resolveNextClockAlignedScanAt().toISOString());
+
+  const completedAt = new Date().toISOString();
+  await setAutoScanLastSuccessAt(completedAt);
+  if (mode === "scheduled") {
+    await setAutoScanLastAt(resolveNextClockAlignedScanAt().toISOString());
+  }
+}
+
+/**
+ * 整点 tick：先补偿漏掉的上一轮（默认上一小时槽位），再跑本轮定时扫描。
+ */
+export async function runAutoTranslateScanTick(): Promise<void> {
+  const lastSuccessRaw = await getAutoScanLastSuccessAt();
+  const lastSuccess = lastSuccessRaw ? new Date(lastSuccessRaw) : null;
+  const maxCatchup = getAutoTranslateMaxCatchupScans();
+  const missed = listMissedClockAlignedScanAt(lastSuccess, new Date(), maxCatchup);
+
+  for (const at of missed) {
+    const sharding = isAutoTranslateShardingEnabled();
+    const slotIndex = sharding ? currentSlotIndex(at) : undefined;
+    console.log(
+      `[autoTranslate] 补偿漏跑扫描 原定=${at.toISOString()}` +
+        (sharding ? ` 槽位=${slotIndex}` : ""),
+    );
+    try {
+      await runAutoTranslateScan({
+        slotIndex,
+        mode: "catchup",
+        scanAt: at,
+      });
+    } catch (err) {
+      console.error(
+        `[autoTranslate] 补偿扫描失败 原定=${at.toISOString()}，继续本轮定时扫描`,
+        err,
+      );
+    }
+  }
+
+  await runAutoTranslateScan({ mode: "scheduled" });
 }

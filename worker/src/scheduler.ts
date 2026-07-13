@@ -8,7 +8,7 @@ import {
   wakeQueuedShopScanJobsAfterDeploy,
 } from "./services/shopScanCosmos.js";
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
-import { runAutoTranslateScan } from "./services/autoTranslate.js";
+import { runAutoTranslateScanTick } from "./services/autoTranslate.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
 import {
   runBillingSubscriptionNearDueReconcile,
@@ -102,10 +102,16 @@ function scheduleAutoTranslateScan(): void {
       `[scheduler] autoTranslate 下次扫描 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms)`,
     );
     setTimeout(() => {
-      safeRun("autoTranslate", async () => {
-        await runAutoTranslateScan();
-        scheduleNext();
-      });
+      if (isShuttingDown()) return;
+      void (async () => {
+        try {
+          await runAutoTranslateScanTick();
+        } catch (err) {
+          console.error("[scheduler] autoTranslate error", err);
+        } finally {
+          if (!isShuttingDown()) scheduleNext();
+        }
+      })();
     }, waitMs);
   };
 
