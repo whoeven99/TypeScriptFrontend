@@ -64,6 +64,17 @@ export async function translateSingleField(
   const fieldKey = args.fieldKey?.trim() || "value";
   const aiModel = args.aiModel?.trim() || resolveDefaultAiModel();
 
+  console.log("[single] request", {
+    shop: args.shop,
+    source,
+    target,
+    fieldKey,
+    shopifyType: args.shopifyType,
+    aiModel,
+    original: text,
+    customPrompt: args.customPrompt ?? "",
+  });
+
   const item: TranslateItem = {
     key: fieldKey,
     value: text,

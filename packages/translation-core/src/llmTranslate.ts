@@ -1678,6 +1678,21 @@ export function prepareHandleSourceText(value: string): string {
  */
 /** Latin letter runs (2+) — signals English/other Latin content still needing translation. */
 const LATIN_WORD_RE = /[a-zA-Z]{2,}/;
+const HIRAGANA_KATAKANA_RE = /[ぁ-ゖァ-ヶ]/u;
+const HANGUL_RE = /[가-힣ᄀ-ᇿ]/u;
+const CJK_HAN_RE = /[一-鿿㐀-䶿]/u;
+
+function langPrefix(locale: string): string {
+  return locale.toLowerCase().split(/[-_]/)[0] || "";
+}
+
+/** zh / ja / ko 互译时，共享汉字不能单独当作「已在目标语」。 */
+function isCrossCjkPair(source: string, target: string): boolean {
+  const cjk = new Set(["zh", "ja", "ko"]);
+  const sl = langPrefix(source);
+  const tl = langPrefix(target);
+  return cjk.has(sl) && cjk.has(tl) && sl !== tl;
+}
 
 function hasLatinWords(text: string): boolean {
   return LATIN_WORD_RE.test(text);
@@ -1685,9 +1700,9 @@ function hasLatinWords(text: string): boolean {
 
 function hasTargetScriptChars(text: string, targetLang: string): boolean {
   switch (targetLang) {
-    case "zh": return /[一-鿿㐀-䶿]/u.test(text);
-    case "ja": return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-    case "ko": return /[가-힣ᄀ-ᇿ]/u.test(text);
+    case "zh": return CJK_HAN_RE.test(text);
+    case "ja": return HIRAGANA_KATAKANA_RE.test(text) || CJK_HAN_RE.test(text);
+    case "ko": return HANGUL_RE.test(text);
     case "ar": return /[؀-ۿ]/u.test(text);
     case "ru": case "uk": case "bg": return /[Ѐ-ӿ]/u.test(text);
     case "th": return /[฀-๿]/u.test(text);
@@ -1705,7 +1720,8 @@ function hasTargetScriptChars(text: string, targetLang: string): boolean {
 }
 
 export function alreadyInTarget(text: string, source: string, target: string): boolean {
-  const tl = target.toLowerCase().split(/[-_]/)[0];
+  const tl = langPrefix(target);
+  const sl = langPrefix(source);
 
   // ── English target ──────────────────────────────────────────────────────────
   // If source is a CJK / non-Latin language and text has no source-script chars,
@@ -1719,12 +1735,31 @@ export function alreadyInTarget(text: string, source: string, target: string): b
     return false;
   }
 
-  // ── Non-Latin script targets ────────────────────────────────────────────────
-  // Only skip when the field appears fully in the target script (no Latin runs).
+  // ── Cross-CJK (e.g. zh→ja) ─────────────────────────────────────────────────
+  // 汉字/假名/谚文不能混用同一套 regex；否则中文原文会被 ja 的「一-鿿」误判为已翻译。
+  if (isCrossCjkPair(source, target)) {
+    switch (tl) {
+      case "ja":
+        return HIRAGANA_KATAKANA_RE.test(text);
+      case "ko":
+        return HANGUL_RE.test(text);
+      case "zh":
+        return (
+          sl === "zh" &&
+          CJK_HAN_RE.test(text) &&
+          !HIRAGANA_KATAKANA_RE.test(text) &&
+          !HANGUL_RE.test(text)
+        );
+      default:
+        return false;
+    }
+  }
+
+  // ── Non-Latin script targets (same language family or non-CJK) ─────────────
   switch (tl) {
-    case "zh": return /[一-鿿㐀-䶿]/u.test(text);
-    case "ja": return /[ぁ-ゖァ-ヶ一-鿿]/u.test(text);
-    case "ko": return /[가-힣ᄀ-ᇿ]/u.test(text);
+    case "zh": return CJK_HAN_RE.test(text);
+    case "ja": return HIRAGANA_KATAKANA_RE.test(text) || CJK_HAN_RE.test(text);
+    case "ko": return HANGUL_RE.test(text);
     case "ar": return /[؀-ۿ]/u.test(text);
     case "ru": case "uk": case "bg": return /[Ѐ-ӿ]/u.test(text);
     case "th": return /[฀-๿]/u.test(text);
@@ -2962,6 +2997,15 @@ export type TranslateResourcesOptions = {
   logSingleTranslate?: boolean;
 };
 
+function logSingleTranslatePath(
+  enabled: boolean,
+  kind: "pipeline" | "skip" | "cache" | "bypass",
+  details: Record<string, unknown>,
+): void {
+  if (!enabled) return;
+  console.log(`[single] ${kind}`, details);
+}
+
 export async function translateResources(
   resources: ResourceInput[],
   source: string,
@@ -2982,6 +3026,19 @@ export async function translateResources(
   const skipCacheRead = options?.skipCacheRead ?? hasCustomPrompt;
   const skipCacheWrite = options?.skipCacheWrite ?? hasCustomPrompt;
   const logSingleTranslate = options?.logSingleTranslate === true;
+
+  if (logSingleTranslate) {
+    logSingleTranslatePath(true, "pipeline", {
+      shopName,
+      source,
+      target,
+      skipCacheRead,
+      skipCacheWrite,
+      customPrompt,
+      resourceCount: resources.length,
+      fieldCount: resources.reduce((n, r) => n + r.fields.length, 0),
+    });
+  }
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
@@ -3022,11 +3079,21 @@ export async function translateResources(
     const rm = resultMaps.get(res.resourceId)!;
     for (const f of res.fields) {
       if (isHandleFieldKey(f.key) && !translateHandle) {
+        logSingleTranslatePath(logSingleTranslate, "skip", {
+          reason: "handle_disabled",
+          fieldKey: f.key,
+          original: f.value,
+        });
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
       const klass = classifyField(f.key, f.value, f.shopifyType);
       if (klass === "skip") {
+        logSingleTranslatePath(logSingleTranslate, "skip", {
+          reason: "classify_skip",
+          fieldKey: f.key,
+          original: f.value,
+        });
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
@@ -3052,11 +3119,22 @@ export async function translateResources(
     const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
+      logSingleTranslatePath(logSingleTranslate, "skip", {
+        reason: "empty_value",
+        fieldKey: f.key,
+      });
       rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
       continue;
     }
     const cached = cacheHits[wi];
     if (cached !== null) {
+      logSingleTranslatePath(logSingleTranslate, "cache", {
+        kind: "field_digest",
+        fieldKey: f.key,
+        original: f.value,
+        translated: cached,
+        cacheModel,
+      });
       rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
       cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
       continue;
@@ -3073,31 +3151,44 @@ export async function translateResources(
         f.digest,
       );
       if (cachedByValue !== null) {
+        logSingleTranslatePath(logSingleTranslate, "cache", {
+          kind: "field_value",
+          fieldKey: f.key,
+          original: f.value,
+          translated: cachedByValue,
+          cacheModel,
+        });
         rm.set(f.key, { key: f.key, translatedValue: cachedByValue, digest: f.digest, status: "translated" });
         tmWrites.push(tmSet(shopName, target, cacheModel, f.digest, cachedByValue));
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
       }
+    } else if (logSingleTranslate && skipCacheRead) {
+      logSingleTranslatePath(true, "cache", {
+        action: "read_disabled",
+        fieldKey: f.key,
+        klass,
+      });
     }
 
-    // Already-in-target check: if the value appears to already be in the target
-    // language, skip it — the LLM would just echo it back unchanged.
-    // For zh-CN→en: English content (no CJK) is skipped (it's already the target).
-    // For zh-CN→pl: English content is NOT skipped (it still needs translation to Polish).
-    //
-    // Opt-in TRANSLATE_SKIP_NON_SOURCE_SCRIPT extends this: when the operator
-    // knows the store's real source language, any field that contains none of
-    // the source script is treated as already-done and skipped (saves the tokens
-    // otherwise spent re-translating non-source content). Off by default because
-    // for a mixed-language store with a non-English target, skipping non-source
-    // content would leave it untranslated.
-    if (
-      alreadyInTarget(f.value, source, target) ||
-      (skipNonSourceScript && !containsSourceScript(f.value, source))
-    ) {
-      rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
-      cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
-      continue;
+    const alreadyInTargetSkip = alreadyInTarget(f.value, source, target);
+    const nonSourceScriptSkip =
+      skipNonSourceScript && !containsSourceScript(f.value, source);
+    if (alreadyInTargetSkip || nonSourceScriptSkip) {
+      if (logSingleTranslate) {
+        // 管理页手动点击：用户显式要求重译，不因「已在目标语」短路。
+        logSingleTranslatePath(true, "bypass", {
+          reason: alreadyInTargetSkip ? "already_in_target" : "non_source_script",
+          fieldKey: f.key,
+          original: f.value,
+          source,
+          target,
+        });
+      } else {
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
+        continue;
+      }
     }
 
     if (klass === "html") {
@@ -3293,6 +3384,13 @@ export async function translateResources(
         const hit = leafHits[i];
         if (hit === null) continue;
         const text = allTexts[i]!;
+        logSingleTranslatePath(logSingleTranslate, "cache", {
+          kind: "leaf_value",
+          original: text,
+          translated: hit,
+          cacheModel,
+          poolSig: sig,
+        });
         tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
         leafCacheUnits += occ.get(text) ?? 1;
       }
