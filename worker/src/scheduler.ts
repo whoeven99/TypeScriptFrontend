@@ -156,17 +156,17 @@ function scheduleBillingSubscriptionNearDueReconcile(): void {
 function scheduleRenderErrorDigest(): void {
   if (!isRenderErrorDigestEnabled()) {
     console.log(
-      "[scheduler] renderErrorDigest 未启用（需 RENDER_API_KEY + FEISHU_WEBHOOK_URL_RENDER_DIGEST）",
+      "[scheduler] renderErrDigest 未启用（需 RENDER_API_KEY + FEISHU_WEBHOOK_URL_RENDER_DIGEST）",
     );
     return;
   }
 
   const intervalMs = getRenderErrorDigestIntervalMs();
   const initialDelayMs = getRenderErrorDigestInitialDelayMs();
-  const tick = () => safeRun("renderErrorDigest", runRenderErrorDigest);
+  const tick = () => safeRun("renderErrDigest", runRenderErrorDigest);
 
   console.log(
-    `[scheduler] renderErrorDigest 每 ${intervalMs}ms 汇总 prod Render error → 飞书，首次 ${initialDelayMs}ms 后`,
+    `[scheduler] renderErrDigest 每 ${intervalMs}ms 汇总 prod Render 异常 → 飞书，首次 ${initialDelayMs}ms 后`,
   );
   setTimeout(() => {
     tick();

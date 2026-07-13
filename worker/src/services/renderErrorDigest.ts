@@ -3,7 +3,7 @@ import {
   type TranslationJobWindowStats,
 } from "./cosmosV4.js";
 
-const LOG = "[renderErrorDigest]";
+const LOG = "[renderErrDigest]";
 
 /** Render workspace owner（whoeven's Workspace）。可用 RENDER_OWNER_ID 覆盖。 */
 const DEFAULT_RENDER_OWNER_ID = "tea-csovfmhu0jms738qrra0";
