@@ -230,6 +230,14 @@ function coalesceBlockTextNodesInner(
 
   const newTemplate = template.replace(blockRe, (full, tag: string, inner: string) => {
     if (HTML_NESTED_BLOCK_RE.test(inner)) return full;
+    // Only coalesce when the block body is effectively just placeholder-backed
+    // text. If markup like <img ... alt="__HXLAT_0__"> is still present,
+    // collapsing would erase the element and leak its attribute text.
+    const innerWithoutPlaceholders = replacePlaceholdersInString(
+      inner,
+      Array.from({ length: texts.length }, () => ""),
+    );
+    if (/<[a-z!/]/i.test(innerWithoutPlaceholders)) return full;
 
     const indices = collectPlaceholderIndices(inner);
     if (indices.length <= 1) return full;
