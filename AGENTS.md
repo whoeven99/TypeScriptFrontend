@@ -350,6 +350,9 @@ Code:
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
 - `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling.
+- `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
+- `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
+  (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
 - `worker/src/services/billingSubscriptionReconcile.ts`: worker-only 12h Shopify
   subscription period reconciliation (writes Turso directly; does not call TSF Web).
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
