@@ -5,6 +5,7 @@ import {
   handleTsfPurchaseWebhook,
   handleTsfSubscriptionWebhook,
 } from "~/server/billing/webhooks/handleBillingWebhook.server";
+import { sendFeishuTextMessage } from "~/server/feishu/sendFeishuTextMessage.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
@@ -17,16 +18,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   console.log(`${shop} ${topic} webhooks: ${payload}`);
 
   switch (topic) {
-    case "APP_UNINSTALLED":
+    case "APP_UNINSTALLED": {
+      // 无论如何必须返回 200，删除失败只记日志不阻断响应
       try {
         if (session) {
           await db.session.deleteMany({ where: { shop } });
         }
-        break;
-      } catch (error) {
-        console.error("Error APP_UNINSTALLED:", error);
-        return new Response(null, { status: 200 });
+      } catch (e) {
+        console.error("APP_UNINSTALLED: session delete failed", e);
       }
+      try {
+        await db.account.updateMany({
+          where: { shop },
+          data: { deletedAt: new Date() },
+        });
+      } catch (e) {
+        console.error("APP_UNINSTALLED: account soft-delete failed", e);
+      }
+      // 飞书通知（非阻断）
+      void sendFeishuTextMessage(`🛑 店铺卸载：${shop}`);
+      return new Response(null, { status: 200 });
+    }
 
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
@@ -58,16 +70,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "CUSTOMERS_REDACT":
       break;
 
-    case "SHOP_REDACT":
+    case "SHOP_REDACT": {
+      // 无论如何必须返回 200，删除失败只记日志不阻断响应
       try {
         if (session) {
           await db.session.deleteMany({ where: { shop } });
         }
-        break;
-      } catch (error) {
-        console.error("Error SHOP_REDACT:", error);
-        return new Response(null, { status: 200 });
+      } catch (e) {
+        console.error("SHOP_REDACT: session delete failed", e);
       }
+      try {
+        await db.account.updateMany({
+          where: { shop },
+          data: { deletedAt: new Date() },
+        });
+      } catch (e) {
+        console.error("SHOP_REDACT: account soft-delete failed", e);
+      }
+      return new Response(null, { status: 200 });
+    }
 
     default:
       throw new Response("Unhandled webhook topic", { status: 404 });

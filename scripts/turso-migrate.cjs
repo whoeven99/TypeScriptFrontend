@@ -232,7 +232,7 @@ async function main() {
     ran += 1;
   }
 
-  for (const table of ["SwitcherConfiguration", "IpRedirection"]) {
+  for (const table of ["SwitcherConfiguration"]) {
     const ok = await tableExists(client, table);
     console.log(`[turso:migrate:${target}] 校验 ${table}: ${ok ? "OK" : "缺失"}`);
     if (!ok) {
