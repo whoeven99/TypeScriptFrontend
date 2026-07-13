@@ -14,6 +14,14 @@ import { pushShopScanHint } from "./redisV4.js";
  */
 
 export type ShopScanTrigger = "install" | "scheduled" | "manual";
+export type ShopScanMode = "full" | "data_only" | "ai_only";
+export type ShopScanTask =
+  | "content_size"
+  | "coverage"
+  | "profile_material"
+  | "profile_ai"
+  | "glossary_samples"
+  | "glossary_ai";
 
 export type ShopScanStatus =
   | "CREATED"
@@ -75,6 +83,8 @@ export type ShopScanJob = {
   id: string; // scanId，唯一（partition 内主键）
   shopName: string; // 分区键
   trigger: ShopScanTrigger;
+  mode: ShopScanMode;
+  task: ShopScanTask;
   status: ShopScanStatus;
   stages: ShopScanStages;
   blobPrefix: string; // "shop-scan/{shop}/{scanId}"
@@ -337,17 +347,23 @@ export async function createShopScanJob(input: {
   scanId: string;
   shopName: string;
   trigger: ShopScanTrigger;
+  mode: ShopScanMode;
+  task: ShopScanTask;
   blobPrefix: string;
+  summary?: ShopScanSummary;
+  stages?: Partial<ShopScanStages>;
 }): Promise<ShopScanJob> {
   const now = new Date().toISOString();
   const doc: ShopScanJob = {
     id: input.scanId,
     shopName: input.shopName,
     trigger: input.trigger,
+    mode: input.mode,
+    task: input.task,
     status: "CREATED",
-    stages: { ...EMPTY_SHOP_SCAN_STAGES },
+    stages: { ...EMPTY_SHOP_SCAN_STAGES, ...(input.stages ?? {}) },
     blobPrefix: input.blobPrefix,
-    summary: {},
+    summary: input.summary ?? {},
     claimedBy: null,
     claimedAt: null,
     lastHeartbeat: null,
@@ -405,4 +421,28 @@ export async function wakeQueuedShopScanJobsAfterDeploy(): Promise<number> {
   }
   if (woken > 0) console.log(`[shopScanCosmos] re-hinted ${woken} pending scan(s) after deploy`);
   return woken;
+}
+
+export async function getLatestShopScanJobByTask(
+  shopName: string,
+  task: ShopScanTask,
+): Promise<ShopScanJob | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanJob>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shopName AND c.task = @task ORDER BY c.createdAt DESC OFFSET 0 LIMIT 1",
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@task", value: task },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources[0] ?? null;
+  } catch {
+    return null;
+  }
 }

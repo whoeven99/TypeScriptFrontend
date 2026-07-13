@@ -1,5 +1,5 @@
-import { BLACKLIST_WORDS } from "@ciwi/translation-core/translation-filter/constants";
-import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
+import { BLACKLIST_WORDS } from "../../../../packages/translation-core/dist/translationFilter/constants.js";
+import { shouldIncludeFieldV2 } from "../../../../packages/translation-core/dist/translationFilter/index.js";
 import { shopScanGraphql } from "./graphql.js";
 
 /**
@@ -16,6 +16,7 @@ export type ThemeTextSample = {
   text: string;
   module: string;
   key: string;
+  resourceId: string;
   weight: number;
 };
 
@@ -212,6 +213,7 @@ export async function sampleThemeTexts(
             text,
             module,
             key,
+            resourceId,
             weight: scoreThemeSample({
               module,
               key,

@@ -56,18 +56,74 @@ export type ShopSignalsView = {
   sourceStats: Record<string, number>;
 };
 
+export type ThemeSceneProfileView = {
+  sceneStats: Array<{ scene: string; count: number }>;
+  roleStats: Array<{ role: string; count: number }>;
+  sceneHints: Array<{
+    module: string;
+    keyPattern: string;
+    namespace: string | null;
+    resourcePattern: string | null;
+    scene: string;
+    role: string | null;
+    tonePreference: string;
+    creativity: string;
+    confidence: number;
+  }>;
+  appNamespaces: string[];
+  highConfidencePatterns: string[];
+};
+
+export type TranslationContextProfileView = {
+  generatedAt: string | null;
+  shopContext: {
+    industry: string | null;
+    subIndustry: string | null;
+    brandTone: string | null;
+    brandPositioning: string | null;
+    description: string | null;
+    keywords: string[];
+    sellingPoints: string[];
+    priceRange: string | null;
+  } | null;
+  terminologyProfile: {
+    brandTerms: string[];
+    doNotTranslateTerms: string[];
+    preferredTerms: Array<{ source: string; note: string | null }>;
+    seoTerms: string[];
+  } | null;
+  marketProfile: {
+    markets: ShopMarketView[];
+    publishedLocales: string[];
+    marketNotes: string[];
+    currencyContext: string[];
+  } | null;
+  themeSceneProfile: ThemeSceneProfileView | null;
+  modulePolicyProfile: {
+    moduleHints: Array<{
+      module: string;
+      tonePolicy: string | null;
+      keywordPolicy: string | null;
+      literalVsAdaptive: string | null;
+    }>;
+  } | null;
+};
+
 export type ShopScanArtifacts = {
   strategy: TerminologyStrategyView | null;
   glossarySuggestions: GlossarySuggestionView[];
   understanding: ShopUnderstandingView | null;
   markets: ShopMarketView[];
   signals: ShopSignalsView | null;
+  themeSceneProfile: ThemeSceneProfileView | null;
+  translationContextProfile: TranslationContextProfileView | null;
   source: "cosmos" | "blob" | "mixed" | "none";
 };
 
 type ProfileFactsBlob = {
   markets?: unknown;
   signals?: unknown;
+  themeSceneProfile?: unknown;
   induction?: {
     understanding?: unknown;
     strategy?: TerminologyStrategyView | null;
@@ -79,6 +135,19 @@ type GlossaryRawBlob = {
     locale?: string;
     terms?: Array<{ source?: string; target?: string }>;
   }>;
+};
+
+type ThemeKeyProfileBlob = {
+  themeSceneProfile?: unknown;
+};
+
+type TranslationContextProfileBlob = {
+  generatedAt?: unknown;
+  shopContext?: unknown;
+  terminologyProfile?: unknown;
+  marketProfile?: unknown;
+  themeSceneProfile?: unknown;
+  modulePolicyProfile?: unknown;
 };
 
 /**
@@ -94,23 +163,31 @@ export async function loadShopScanArtifacts(
   let understanding: ShopUnderstandingView | null = null;
   let markets: ShopMarketView[] = [];
   let signals: ShopSignalsView | null = null;
+  let themeSceneProfile: ThemeSceneProfileView | null = null;
+  let translationContextProfile: TranslationContextProfileView | null = null;
   let strategyFromBlob: TerminologyStrategyView | null = null;
   let glossaryFromBlob: GlossarySuggestionView[] = [];
   let readBlob = false;
 
   if (blobPrefix) {
     const prefix = blobPrefix.endsWith("/") ? blobPrefix : `${blobPrefix}/`;
-    const [profileFacts, glossaryRaw] = await Promise.all([
+    const [profileFacts, glossaryRaw, themeKeyProfile, contextProfile] = await Promise.all([
       readV4Blob<ProfileFactsBlob>(`${prefix}profile-facts.json`),
       fromCosmos.glossarySuggestions.length > 0
         ? Promise.resolve(null)
         : readV4Blob<GlossaryRawBlob>(`${prefix}glossary-raw.json`),
+      readV4Blob<ThemeKeyProfileBlob>(`${prefix}theme-key-profile.json`),
+      readV4Blob<TranslationContextProfileBlob>(`${prefix}translation-context-profile.json`),
     ]);
-    readBlob = Boolean(profileFacts || glossaryRaw);
+    readBlob = Boolean(profileFacts || glossaryRaw || themeKeyProfile || contextProfile);
 
     understanding = normalizeUnderstanding(profileFacts?.induction?.understanding);
     markets = normalizeMarkets(profileFacts?.markets);
     signals = normalizeSignals(profileFacts?.signals);
+    themeSceneProfile =
+      normalizeThemeSceneProfile(themeKeyProfile?.themeSceneProfile) ??
+      normalizeThemeSceneProfile(profileFacts?.themeSceneProfile);
+    translationContextProfile = normalizeTranslationContextProfile(contextProfile);
     strategyFromBlob = normalizeStrategy(profileFacts?.induction?.strategy);
     glossaryFromBlob = normalizeGlossarySuggestions(glossaryRaw);
   }
@@ -123,7 +200,13 @@ export async function loadShopScanArtifacts(
 
   const hasCosmos = Boolean(fromCosmos.strategy || fromCosmos.glossarySuggestions.length > 0);
   const hasBlobDetail = Boolean(
-    understanding || markets.length > 0 || signals || strategyFromBlob || glossaryFromBlob.length > 0,
+    understanding ||
+      markets.length > 0 ||
+      signals ||
+      themeSceneProfile ||
+      translationContextProfile ||
+      strategyFromBlob ||
+      glossaryFromBlob.length > 0,
   );
 
   let source: ShopScanArtifacts["source"] = "none";
@@ -137,6 +220,8 @@ export async function loadShopScanArtifacts(
     understanding,
     markets,
     signals,
+    themeSceneProfile,
+    translationContextProfile,
     source,
   };
 }
@@ -308,6 +393,269 @@ function normalizeSignals(raw: unknown): ShopSignalsView | null {
     representativeSamples,
     sourceStats,
   };
+}
+
+function normalizeThemeSceneProfile(raw: unknown): ThemeSceneProfileView | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+
+  const sceneStats = Array.isArray(value.sceneStats)
+    ? value.sceneStats
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const scene = str(item.scene);
+          const count = typeof item.count === "number" ? item.count : Number(item.count);
+          if (!scene || !Number.isFinite(count) || count <= 0) return null;
+          return { scene, count };
+        })
+        .filter((row): row is { scene: string; count: number } => Boolean(row))
+        .slice(0, 20)
+    : [];
+
+  const roleStats = Array.isArray(value.roleStats)
+    ? value.roleStats
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const role = str(item.role);
+          const count = typeof item.count === "number" ? item.count : Number(item.count);
+          if (!role || !Number.isFinite(count) || count <= 0) return null;
+          return { role, count };
+        })
+        .filter((row): row is { role: string; count: number } => Boolean(row))
+        .slice(0, 20)
+    : [];
+
+  const sceneHints = Array.isArray(value.sceneHints)
+    ? value.sceneHints
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const module = str(item.module);
+          const keyPattern = str(item.keyPattern);
+          const scene = str(item.scene);
+          if (!module || !keyPattern || !scene) return null;
+          const confidence =
+            typeof item.confidence === "number" ? item.confidence : Number(item.confidence);
+          return {
+            module,
+            keyPattern,
+            namespace: str(item.namespace),
+            resourcePattern: str(item.resourcePattern),
+            scene,
+            role: str(item.role),
+            tonePreference: str(item.tonePreference) ?? "balanced",
+            creativity: str(item.creativity) ?? "low",
+            confidence: Number.isFinite(confidence) ? confidence : 0,
+          };
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            module: string;
+            keyPattern: string;
+            namespace: string | null;
+            resourcePattern: string | null;
+            scene: string;
+            role: string | null;
+            tonePreference: string;
+            creativity: string;
+            confidence: number;
+          } => Boolean(row),
+        )
+        .slice(0, 80)
+    : [];
+
+  const appNamespaces = stringList(value.appNamespaces, 20);
+  const highConfidencePatterns = stringList(value.highConfidencePatterns, 40);
+
+  if (
+    sceneStats.length === 0 &&
+    roleStats.length === 0 &&
+    sceneHints.length === 0 &&
+    appNamespaces.length === 0 &&
+    highConfidencePatterns.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    sceneStats,
+    roleStats,
+    sceneHints,
+    appNamespaces,
+    highConfidencePatterns,
+  };
+}
+
+function normalizeTranslationContextProfile(raw: unknown): TranslationContextProfileView | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+
+  const shopContext = normalizeShopContext(value.shopContext);
+  const terminologyProfile = normalizeTerminologyProfile(value.terminologyProfile);
+  const marketProfile = normalizeMarketProfile(value.marketProfile);
+  const themeSceneProfile = normalizeThemeSceneProfile(value.themeSceneProfile);
+  const modulePolicyProfile = normalizeModulePolicyProfile(value.modulePolicyProfile);
+  const generatedAt = str(value.generatedAt);
+
+  if (
+    !generatedAt &&
+    !shopContext &&
+    !terminologyProfile &&
+    !marketProfile &&
+    !themeSceneProfile &&
+    !modulePolicyProfile
+  ) {
+    return null;
+  }
+
+  return {
+    generatedAt,
+    shopContext,
+    terminologyProfile,
+    marketProfile,
+    themeSceneProfile,
+    modulePolicyProfile,
+  };
+}
+
+function normalizeShopContext(raw: unknown): TranslationContextProfileView["shopContext"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const industry = str(value.industry);
+  const subIndustry = str(value.subIndustry);
+  const brandTone = str(value.brandTone);
+  const brandPositioning = str(value.brandPositioning);
+  const description = str(value.description);
+  const keywords = stringList(value.keywords, 20);
+  const sellingPoints = stringList(value.sellingPoints, 10);
+  const priceRange = str(value.priceRange);
+
+  if (
+    !industry &&
+    !subIndustry &&
+    !brandTone &&
+    !brandPositioning &&
+    !description &&
+    keywords.length === 0 &&
+    sellingPoints.length === 0 &&
+    !priceRange
+  ) {
+    return null;
+  }
+
+  return {
+    industry,
+    subIndustry,
+    brandTone,
+    brandPositioning,
+    description,
+    keywords,
+    sellingPoints,
+    priceRange,
+  };
+}
+
+function normalizeTerminologyProfile(
+  raw: unknown,
+): TranslationContextProfileView["terminologyProfile"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const brandTerms = stringList(value.brandTerms, 20);
+  const doNotTranslateTerms = stringList(value.doNotTranslateTerms, 20);
+  const seoTerms = stringList(value.seoTerms, 15);
+  const preferredTerms = Array.isArray(value.preferredTerms)
+    ? value.preferredTerms
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const source = str(item.source);
+          if (!source) return null;
+          return { source, note: str(item.note) };
+        })
+        .filter((row): row is { source: string; note: string | null } => Boolean(row))
+        .slice(0, 20)
+    : [];
+
+  if (
+    brandTerms.length === 0 &&
+    doNotTranslateTerms.length === 0 &&
+    seoTerms.length === 0 &&
+    preferredTerms.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    brandTerms,
+    doNotTranslateTerms,
+    preferredTerms,
+    seoTerms,
+  };
+}
+
+function normalizeMarketProfile(raw: unknown): TranslationContextProfileView["marketProfile"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const markets = normalizeMarkets(value.markets);
+  const publishedLocales = stringList(value.publishedLocales, 20);
+  const marketNotes = stringList(value.marketNotes, 10);
+  const currencyContext = stringList(value.currencyContext, 10);
+
+  if (
+    markets.length === 0 &&
+    publishedLocales.length === 0 &&
+    marketNotes.length === 0 &&
+    currencyContext.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    markets,
+    publishedLocales,
+    marketNotes,
+    currencyContext,
+  };
+}
+
+function normalizeModulePolicyProfile(
+  raw: unknown,
+): TranslationContextProfileView["modulePolicyProfile"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const moduleHints = Array.isArray(value.moduleHints)
+    ? value.moduleHints
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const module = str(item.module);
+          if (!module) return null;
+          return {
+            module,
+            tonePolicy: str(item.tonePolicy),
+            keywordPolicy: str(item.keywordPolicy),
+            literalVsAdaptive: str(item.literalVsAdaptive),
+          };
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            module: string;
+            tonePolicy: string | null;
+            keywordPolicy: string | null;
+            literalVsAdaptive: string | null;
+          } => Boolean(row),
+        )
+        .slice(0, 20)
+    : [];
+
+  if (moduleHints.length === 0) return null;
+  return { moduleHints };
 }
 
 function normalizeWeightedTerms(

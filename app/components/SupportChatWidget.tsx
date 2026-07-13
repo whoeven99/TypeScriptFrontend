@@ -30,11 +30,26 @@ const OPEN_POLL_MS = 5000;
 const BADGE_POLL_MS = 30000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+  return "";
+}
+
+function isIgnorableSupportAuthError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  return /idtoken unavailable|failed to fetch an idtoken/i.test(message);
+}
+
 async function fetchConversation(
   markSeen: boolean,
 ): Promise<SupportConversation | null> {
   const res = await fetch(`/api/support?markSeen=${markSeen ? "true" : "false"}`, {
     headers: { Accept: "application/json" },
+    credentials: "same-origin",
   });
   if (!res.ok) return null;
   const data = (await res.json()) as { ok: boolean; conversation?: SupportConversation };
@@ -50,6 +65,7 @@ async function postSupport(body: Record<string, unknown>): Promise<{
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "same-origin",
   });
   return (await res.json().catch(() => ({ ok: false }))) as {
     ok: boolean;
@@ -89,12 +105,18 @@ export function SupportChatWidget() {
   }, [openPanel]);
 
   const refresh = useCallback(async (markSeen: boolean) => {
-    const conv = await fetchConversation(markSeen);
-    if (!conv) return;
-    setConversation(conv);
-    if (markSeen) setUnread(0);
-    else setUnread(conv.unreadForShop);
-  }, []);
+    try {
+      const conv = await fetchConversation(markSeen);
+      if (!conv) return;
+      setError(null);
+      setConversation(conv);
+      if (markSeen) setUnread(0);
+      else setUnread(conv.unreadForShop);
+    } catch (error) {
+      if (isIgnorableSupportAuthError(error)) return;
+      setError(t("v4.support.sendFailed"));
+    }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,14 +159,19 @@ export function SupportChatWidget() {
       if (!content || sending) return;
       setSending(true);
       setError(null);
-      const result = await postSupport({ intent: "send", content });
-      setSending(false);
-      if (!result.ok) {
+      try {
+        const result = await postSupport({ intent: "send", content });
+        if (!result.ok) {
+          setError(t("v4.support.sendFailed"));
+          return;
+        }
+        setDraft("");
+        await refresh(true);
+      } catch (_error) {
         setError(t("v4.support.sendFailed"));
-        return;
+      } finally {
+        setSending(false);
       }
-      setDraft("");
-      await refresh(true);
     },
     [draft, sending, refresh, t],
   );
@@ -156,10 +183,16 @@ export function SupportChatWidget() {
       return;
     }
     setEmailError(null);
-    const result = await postSupport({ intent: "setEmail", email });
-    if (result.ok) {
-      setEmailSaved(true);
-      setConversation((prev) => (prev ? { ...prev, contactEmail: email } : prev));
+    try {
+      const result = await postSupport({ intent: "setEmail", email });
+      if (result.ok) {
+        setEmailSaved(true);
+        setConversation((prev) => (prev ? { ...prev, contactEmail: email } : prev));
+        return;
+      }
+      setEmailError(t("v4.support.sendFailed"));
+    } catch (_error) {
+      setEmailError(t("v4.support.sendFailed"));
     }
   }, [emailInput, t]);
 

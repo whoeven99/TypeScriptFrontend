@@ -5,6 +5,50 @@ import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
+const translationCoreDist = path.resolve(appRoot, "packages/translation-core/dist");
+
+const translationCoreAliases = [
+  {
+    find: "@ciwi/translation-core/translation-filter/v3Base",
+    replacement: path.resolve(translationCoreDist, "translationFilter/v3Base.js"),
+  },
+  {
+    find: "@ciwi/translation-core/translation-filter",
+    replacement: path.resolve(translationCoreDist, "translationFilter/index.js"),
+  },
+  {
+    find: "@ciwi/translation-core/translate-quality",
+    replacement: path.resolve(translationCoreDist, "translateQuality.js"),
+  },
+  {
+    find: "@ciwi/translation-core/placeholder-mask",
+    replacement: path.resolve(translationCoreDist, "placeholderMask.js"),
+  },
+  {
+    find: "@ciwi/translation-core/target-language-prompt",
+    replacement: path.resolve(translationCoreDist, "targetLanguagePrompt.js"),
+  },
+  {
+    find: "@ciwi/translation-core/runtime",
+    replacement: path.resolve(translationCoreDist, "runtime.js"),
+  },
+  {
+    find: "@ciwi/translation-core/sync-translate",
+    replacement: path.resolve(translationCoreDist, "syncTranslate.js"),
+  },
+  {
+    find: "@ciwi/translation-core/json-extract-rules",
+    replacement: path.resolve(translationCoreDist, "jsonExtractRules.js"),
+  },
+  {
+    find: "@ciwi/translation-core/html-translate",
+    replacement: path.resolve(translationCoreDist, "htmlTranslate.js"),
+  },
+  {
+    find: "@ciwi/translation-core",
+    replacement: path.resolve(translationCoreDist, "index.js"),
+  },
+] as const;
 
 // Related: https://github.com/remix-run/remix/issues/2835#issuecomment-1144102176
 // Replace the HOST env var with SHOPIFY_APP_URL so that it doesn't break the remix server. The CLI will eventually
@@ -20,66 +64,6 @@ if (
 
 const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost")
   .hostname;
-
-const translationCoreAliases = [
-  {
-    find: "@ciwi/translation-core/runtime",
-    replacement: path.resolve(appRoot, "packages/translation-core/src/runtime.ts"),
-  },
-  {
-    find: "@ciwi/translation-core/html-translate",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/htmlTranslate.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/json-extract-rules",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/jsonExtractRules.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/placeholder-mask",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/placeholderMask.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/target-language-prompt",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/targetLanguagePrompt.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/translate-quality",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/translateQuality.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/translation-filter/v3Base",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/translationFilter/v3Base.ts",
-    ),
-  },
-  {
-    find: "@ciwi/translation-core/translation-filter",
-    replacement: path.resolve(
-      appRoot,
-      "packages/translation-core/src/translationFilter/index.ts",
-    ),
-  },
-  {
-    find: /^@ciwi\/translation-core$/,
-    replacement: path.resolve(appRoot, "packages/translation-core/src/index.ts"),
-  },
-];
 
 let hmrConfig;
 if (host === "localhost") {
@@ -116,12 +100,19 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  ssr: {
+    noExternal: ["node-html-parser"],
+  },
   build: {
     assetsInlineLimit: 0,
     rollupOptions: {
       external: [
         "@prisma/adapter-libsql",
+        "@azure/cosmos",
+        "@azure/storage-blob",
+        "@libsql/client",
         "cos-nodejs-sdk-v5",
+        "ioredis",
         "tencentcloud-sdk-nodejs-ses",
       ],
     },

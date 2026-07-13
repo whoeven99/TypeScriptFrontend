@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   createShopScanJob,
-  hasActiveOrCompletedShopScan,
+  type ShopScanTask,
   type ShopScanTrigger,
 } from "./cosmos.server";
 import { pushShopScanHint } from "~/server/translateV4/redis.server";
@@ -38,9 +38,11 @@ function buildScanId(shop: string): string {
 export async function enqueueShopScan({
   shop,
   trigger,
+  task,
 }: {
   shop: string;
   trigger: ShopScanTrigger;
+  task: ShopScanTask;
 }): Promise<EnqueueShopScanResult> {
   // 线上关闭：页面/API 已门禁，触发入口再兜一层，避免进 /app 仍入队。
   if (isProductionNodeEnv()) {
@@ -52,15 +54,16 @@ export async function enqueueShopScan({
   }
 
   try {
-    // install 幂等：已有进行中或已完成扫描则跳过（未来 scheduled/manual 允许重扫）
-    if (trigger === "install") {
-      const exists = await hasActiveOrCompletedShopScan(shop);
-      if (exists) return { enqueued: false, reason: "skipped_existing" };
-    }
-
     const scanId = buildScanId(shop);
     const blobPrefix = `shop-scan/${shop}/${scanId}`;
-    await createShopScanJob({ scanId, shop, trigger, blobPrefix });
+    await createShopScanJob({
+      scanId,
+      shop,
+      trigger,
+      mode: task.endsWith("_ai") ? "ai_only" : "data_only",
+      task,
+      blobPrefix,
+    });
     await pushShopScanHint({ scanId, shopName: shop });
     return { enqueued: true, scanId };
   } catch (error) {
