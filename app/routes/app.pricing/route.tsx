@@ -17,7 +17,7 @@ import Button from "~/ui/components/AppButton";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
@@ -130,6 +130,11 @@ const isBillingTestMode = (): boolean =>
   process.env.BILLING_TEST === "true" ||
   process.env.NODE_ENV === "development" ||
   process.env.NODE_ENV === "test";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  await authenticate.admin(request);
+  return null;
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
