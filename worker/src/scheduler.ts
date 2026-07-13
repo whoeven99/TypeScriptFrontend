@@ -161,17 +161,27 @@ function scheduleRenderErrorDigest(): void {
     return;
   }
 
-  const intervalMs = getRenderErrorDigestIntervalMs();
-  const initialDelayMs = getRenderErrorDigestInitialDelayMs();
-  const tick = () => safeRun("renderErrDigest", runRenderErrorDigest);
+  const intervalMs = 60 * 60_000; // 每小时一次
+  const targetMinute = 30; // 固定在第30分钟
 
-  console.log(
-    `[scheduler] renderErrDigest 每 ${intervalMs}ms 汇总 prod Render 异常 → 飞书，首次 ${initialDelayMs}ms 后`,
-  );
-  setTimeout(() => {
-    tick();
-    setInterval(tick, intervalMs);
-  }, initialDelayMs);
+  const scheduleNext = () => {
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(targetMinute, 0, 0);
+    if (next <= now) next.setHours(next.getHours() + 1);
+    const waitMs = next.getTime() - now.getTime();
+
+    console.log(
+      `[scheduler] renderErrDigest 下次汇总 ${next.toISOString()}（每小时第${targetMinute}分钟）`,
+    );
+    setTimeout(() => {
+      if (isShuttingDown()) return;
+      safeRun("renderErrDigest", runRenderErrorDigest);
+      if (!isShuttingDown()) scheduleNext();
+    }, waitMs);
+  };
+
+  scheduleNext();
 }
 
 export function startScheduler(): void {

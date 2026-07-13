@@ -128,8 +128,8 @@ export function isAutoTranslationJob(
 }
 
 export type TranslationJobWindowStats = {
-  auto: { completed: number; total: number };
-  manual: { completed: number; total: number };
+  auto: { completed: number; active: number; failed: number; total: number };
+  manual: { completed: number; active: number; failed: number; total: number };
 };
 
 /**
@@ -154,14 +154,16 @@ export async function countTranslationJobsCreatedBetween(
     .fetchAll();
 
   const stats: TranslationJobWindowStats = {
-    auto: { completed: 0, total: 0 },
-    manual: { completed: 0, total: 0 },
+    auto: { completed: 0, active: 0, failed: 0, total: 0 },
+    manual: { completed: 0, active: 0, failed: 0, total: 0 },
   };
 
   for (const job of resources) {
     const bucket = isAutoTranslationJob(job) ? stats.auto : stats.manual;
     bucket.total++;
     if (job.status === "COMPLETED") bucket.completed++;
+    else if (job.status === "FAILED") bucket.failed++;
+    else if (ACTIVE_V4_STATUSES.includes(job.status)) bucket.active++;
   }
 
   return stats;
