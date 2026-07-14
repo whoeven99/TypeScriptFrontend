@@ -14,8 +14,11 @@ import {
 import {
   getOfflineAccessTokenFromTsf,
   getTsfDb,
+  getTsfAccountRemaining,
   hasTsfDbCredentials,
 } from "./tsfDb.js";
+import { fetchShopContact } from "./shopEmail.js";
+import { sendSubscriptionRenewalEmail } from "./workerEmail.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERIOD_END_TOLERANCE_MS = 12 * 60 * 60 * 1000;
@@ -894,6 +897,32 @@ export async function runBillingSubscriptionReconcileWithOptions(
   return summary;
 }
 
+async function sendRenewalEmailForShop(shop: string): Promise<void> {
+  const db = getTsfDb();
+  const [subRow, contact, remaining] = await Promise.all([
+    db.execute({
+      sql: "SELECT creditsPerPeriod FROM AppSubscription WHERE shop = ? AND status = 'ACTIVE' LIMIT 1",
+      args: [shop],
+    }),
+    fetchShopContact(shop, { preferLegacyToken: true }).catch(() => null),
+    getTsfAccountRemaining(shop),
+  ]);
+
+  const addedCredits = Number(subRow.rows[0]?.creditsPerPeriod ?? 0);
+  if (addedCredits <= 0) return;
+  if (!contact?.email) return;
+
+  await sendSubscriptionRenewalEmail({
+    to: contact.email,
+    userName: contact.firstName || contact.email.split("@")[0] || shop,
+    shopName: shop.split(".")[0],
+    addedCredits,
+    totalCredits: remaining ?? addedCredits,
+  });
+
+  console.log(`[billingReconcile] renewal email sent shop=${shop} credits=${addedCredits}`);
+}
+
 export async function runBillingSubscriptionReconcile(): Promise<void> {
   if (running) {
     console.warn("[billingReconcile] skip: already running");
@@ -915,6 +944,10 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
     for (const result of summary.details) {
       if (result.action === "renewed") {
         console.log(`[billingReconcile] renewed ${result.shop}`);
+        // 续费成功 → 异步发邮件（非阻断）
+        void sendRenewalEmailForShop(result.shop).catch((err) =>
+          console.warn(`[billingReconcile] renewal email failed shop=${result.shop}`, err),
+        );
       } else if (result.action === "activated") {
         console.log(`[billingReconcile] activated ${result.shop}`);
       } else if (result.action === "cancelled") {

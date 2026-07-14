@@ -373,3 +373,27 @@ export async function sendTranslationPartialEmail(
 export function resetWorkerEmailClientForTests(): void {
   _client = null;
 }
+
+// ─── 续费邮件 ──────────────────────────────────────────────────────────────────
+const TEMPLATE_SUBSCRIPTION_RENEWAL = 143058;
+const SUBJECT_SUBSCRIPTION_RENEWAL = "Your Credits Have Been Added!｜Ciwi-translator";
+
+export async function sendSubscriptionRenewalEmail(params: {
+  to: string;
+  userName: string;
+  shopName: string;
+  addedCredits: number;
+  totalCredits: number;
+}): Promise<boolean> {
+  return doSend(
+    TEMPLATE_SUBSCRIPTION_RENEWAL,
+    SUBJECT_SUBSCRIPTION_RENEWAL,
+    {
+      user: params.userName,
+      shop_name: params.shopName,
+      number_of_credits: formatNumber(params.addedCredits),
+      total_credits_count: formatNumber(params.totalCredits),
+    },
+    params.to,
+  );
+}
