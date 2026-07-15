@@ -64,7 +64,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `app/store/*` | Redux store modules, mostly for older pages. |
 | `app/components/*` | Shared React components, including manage-translation editors and support chat. |
 | `app/ui/*` | Shared UI wrappers/theme/message helpers. |
-| `packages/translation-core/*` | Shared translation engine used by both the Remix app and Worker. |
+| `packages/translation-core/*` | Shared translation engine used by both the Remix app and Worker. `dist/` is gitignored — build via `npm run core:build` (also part of `build` / `build:docker` / `worker:build`). |
 | `prisma/schema.prisma` | Turso/Prisma model source. |
 | `prisma/migrations/*` | SQL migrations. |
 | `worker/src/*` | Background workers and services for translation, shop scan, email, Cosmos/Blob/Redis/LLM. |
@@ -80,7 +80,9 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 Package scripts:
 
 - `npm run dev`: Shopify app dev on port 8080.
-- `npm run build`: Remix/Vite build. Useful for route mapping and bundle checks.
+- `npm run build`: `core:build` then Remix/Vite build. Useful for route mapping and bundle checks.
+- `npm run build:docker`: same as app image build (`core:build` then Remix/Vite); used by `Dockerfile*`.
+- `npm run core:build`: compile `packages/translation-core` into local `dist/` (not committed).
 - `npm run setup` or `npx prisma generate`: generate Prisma client.
 - `npx prisma validate`: validate Prisma schema.
 - `npm run worker:build`: build worker TypeScript.
@@ -239,9 +241,14 @@ Common edits:
 - Runtime ports: `packages/translation-core/src/runtime.ts`.
 - App adapter: `app/server/translateV4/translationCoreRuntime.server.ts`.
 - Worker adapter: `worker/src/services/translationCoreRuntime.ts`.
+- `packages/translation-core/dist` is generated and gitignored. Never commit
+  `dist` js/d.ts/map. After clone or core edits, run `npm run core:build` before
+  `worker:dev` or other paths that import `@ciwi/translation-core`. Docker Web
+  builds generate dist via `build:docker`; Worker `build` also compiles core.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
+Do not add `packages/translation-core/dist` to the PR.
 
 Filter decision chain:
 
@@ -922,7 +929,8 @@ These replace old one-off debug markdown files.
 
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
-- `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
+- `node_modules/`, `build/`, extension `dist/`, and
+  `packages/translation-core/dist` are not places for manual edits or commits.
 - Runtime billing/quota is TSF Turso, but compatibility binding rows can still
   contain `legacy`; inspect actual callers before deleting the enum/model.
 - Translation v4 state is distributed. State machine changes must consider
