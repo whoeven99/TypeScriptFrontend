@@ -569,6 +569,225 @@ async function callAzureOpenAIChat(model, messages, itemCount) {
         gptRelease();
     }
 }
+// ── Kimi (Moonshot) ───────────────────────────────────────────────────────────
+// OpenAI 兼容 chat/completions；thinking disabled；temperature 0.6（对齐 Spring）。
+// Env: KIMI_API_KEY, 可选 KIMI_BASE_URL（默认 https://api.moonshot.cn/v1）。
+const KIMI_BASE_URL = (process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1").replace(/\/+$/, "");
+const KIMI_DEFAULT_MODEL = "kimi-k2.6";
+const KIMI_CONCURRENCY = Math.max(1, Number(process.env.KIMI_CONCURRENCY) || 8);
+function kimiApiKey() {
+    return process.env.KIMI_API_KEY?.trim() || null;
+}
+export function kimiConfigured() {
+    return Boolean(kimiApiKey());
+}
+/** 该 aiModel 是否走 Kimi（kimi* 前缀）且已配置 key。 */
+export function isKimiModel(aiModel) {
+    return kimiConfigured() && /^kimi/i.test((aiModel ?? "").trim());
+}
+function resolveKimiModel(aiModel) {
+    const m = (aiModel ?? "").trim();
+    return /^kimi/i.test(m) ? m : KIMI_DEFAULT_MODEL;
+}
+let _kimiInFlight = 0;
+const _kimiWaiters = [];
+async function kimiAcquire() {
+    if (_kimiInFlight < KIMI_CONCURRENCY) {
+        _kimiInFlight++;
+        return;
+    }
+    await new Promise((resolve) => _kimiWaiters.push(resolve));
+    _kimiInFlight++;
+}
+function kimiRelease() {
+    _kimiInFlight--;
+    const next = _kimiWaiters.shift();
+    if (next)
+        next();
+}
+/** Moonshot chat/completions：JSON 译文格式与 DeepSeek/GPT 一致。 */
+async function callKimiChat(model, messages, itemCount) {
+    const key = kimiApiKey();
+    if (!key)
+        throw new Error("KIMI_API_KEY 未配置");
+    const url = `${KIMI_BASE_URL}/chat/completions`;
+    await kimiAcquire();
+    try {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(new LlmTimeoutError("hard")), llmTimeoutMsForBatch(itemCount));
+            try {
+                const resp = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${key}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages,
+                        temperature: 0.6,
+                        thinking: { type: "disabled" },
+                        response_format: { type: "json_object" },
+                    }),
+                    signal: controller.signal,
+                });
+                if (resp.status === 429) {
+                    if (attempt < 2) {
+                        await new Promise((r) => setTimeout(r, retryAfterMsFromResponse(resp, 5)));
+                        continue;
+                    }
+                    throw new LlmRateLimitError(resp);
+                }
+                if (!resp.ok) {
+                    const body = await resp.text();
+                    throw new Error(`Kimi HTTP ${resp.status}: ${body}`);
+                }
+                const j = (await resp.json());
+                return {
+                    raw: j.choices?.[0]?.message?.content || "{}",
+                    tokens: j.usage?.total_tokens ?? 0,
+                };
+            }
+            catch (e) {
+                if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
+                    throw controller.signal.reason;
+                }
+                if (attempt < 2 && !(e instanceof LlmRateLimitError)) {
+                    // 短暂网络抖动由上层拆分重试。
+                }
+                throw e;
+            }
+            finally {
+                clearTimeout(timer);
+            }
+        }
+        throw new Error("Kimi retries exhausted");
+    }
+    finally {
+        kimiRelease();
+    }
+}
+// ── Gemini (Google AI Studio generateContent) ────────────────────────────────
+// Env: GEMINI_API_KEY。thinkingBudget=0 关闭推理；responseMimeType=application/json。
+const GEMINI_API_BASE = (process.env.GEMINI_API_BASE?.trim() ||
+    "https://generativelanguage.googleapis.com/v1beta").replace(/\/+$/, "");
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+const GEMINI_CONCURRENCY = Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 8);
+function geminiApiKey() {
+    return process.env.GEMINI_API_KEY?.trim() || null;
+}
+export function geminiConfigured() {
+    return Boolean(geminiApiKey());
+}
+/** 该 aiModel 是否走 Gemini（gemini* 前缀）且已配置 key。 */
+export function isGeminiModel(aiModel) {
+    return geminiConfigured() && /^gemini/i.test((aiModel ?? "").trim());
+}
+function resolveGeminiModel(aiModel) {
+    const m = (aiModel ?? "").trim();
+    return /^gemini/i.test(m) ? m : GEMINI_DEFAULT_MODEL;
+}
+let _geminiInFlight = 0;
+const _geminiWaiters = [];
+async function geminiAcquire() {
+    if (_geminiInFlight < GEMINI_CONCURRENCY) {
+        _geminiInFlight++;
+        return;
+    }
+    await new Promise((resolve) => _geminiWaiters.push(resolve));
+    _geminiInFlight++;
+}
+function geminiRelease() {
+    _geminiInFlight--;
+    const next = _geminiWaiters.shift();
+    if (next)
+        next();
+}
+function geminiMessagesToParts(messages) {
+    const systemParts = [];
+    const userParts = [];
+    for (const m of messages) {
+        if (m.role === "system")
+            systemParts.push(m.content);
+        else
+            userParts.push(m.content);
+    }
+    return {
+        systemText: systemParts.join("\n\n"),
+        userText: userParts.join("\n\n"),
+    };
+}
+/** Gemini generateContent 文本：关闭 thinking，强制 JSON 译文。 */
+async function callGeminiChat(model, messages, itemCount) {
+    const key = geminiApiKey();
+    if (!key)
+        throw new Error("GEMINI_API_KEY 未配置");
+    const url = `${GEMINI_API_BASE}/models/${encodeURIComponent(model)}:generateContent` +
+        `?key=${encodeURIComponent(key)}`;
+    const { systemText, userText } = geminiMessagesToParts(messages);
+    await geminiAcquire();
+    try {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(new LlmTimeoutError("hard")), llmTimeoutMsForBatch(itemCount));
+            try {
+                const body = {
+                    contents: [{ role: "user", parts: [{ text: userText }] }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        responseMimeType: "application/json",
+                        thinkingConfig: { thinkingBudget: 0 },
+                    },
+                };
+                if (systemText) {
+                    body.systemInstruction = { parts: [{ text: systemText }] };
+                }
+                const resp = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                });
+                if (resp.status === 429) {
+                    if (attempt < 2) {
+                        await new Promise((r) => setTimeout(r, retryAfterMsFromResponse(resp, 5)));
+                        continue;
+                    }
+                    throw new LlmRateLimitError(resp);
+                }
+                if (!resp.ok) {
+                    const errBody = await resp.text();
+                    throw new Error(`Gemini HTTP ${resp.status}: ${errBody}`);
+                }
+                const j = (await resp.json());
+                const raw = j.candidates?.[0]?.content?.parts
+                    ?.map((p) => p.text || "")
+                    .join("") || "{}";
+                return {
+                    raw,
+                    tokens: j.usageMetadata?.totalTokenCount ?? 0,
+                };
+            }
+            catch (e) {
+                if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
+                    throw controller.signal.reason;
+                }
+                if (attempt < 2 && !(e instanceof LlmRateLimitError)) {
+                    // 短暂网络抖动由上层拆分重试。
+                }
+                throw e;
+            }
+            finally {
+                clearTimeout(timer);
+            }
+        }
+        throw new Error("Gemini retries exhausted");
+    }
+    finally {
+        geminiRelease();
+    }
+}
 function retryAfterMsFromResponse(response, fallbackSec = 10) {
     const retryAfterSec = Number(response.headers.get("retry-after") ?? String(fallbackSec));
     return Math.max(retryAfterSec * 1_000, 10_000);
@@ -1292,9 +1511,27 @@ export function setShopQuotaCap(shop, cap) {
 function googleConfigured() {
     return Boolean(process.env.GOOGLE_TRANSLATE_API_KEY?.trim());
 }
-function llmConfigured() {
+function deepseekConfigured() {
     return Boolean(process.env.DEEPSEEK_API_KEY?.trim() ||
         process.env.DEEPSEEK_API_KEYS?.trim());
+}
+/** 任一 LLM 提供方已配置（DeepSeek / Azure GPT / Kimi / Gemini）。 */
+function llmConfigured() {
+    return (deepseekConfigured() ||
+        gptConfigured() ||
+        kimiConfigured() ||
+        geminiConfigured());
+}
+/** 当前 aiModel 对应提供方是否可用；未知模型回退 DeepSeek。 */
+function llmAvailableFor(aiModel) {
+    const m = (aiModel ?? "").trim();
+    if (/^gpt[-.]/i.test(m))
+        return gptConfigured();
+    if (/^kimi/i.test(m))
+        return kimiConfigured();
+    if (/^gemini/i.test(m))
+        return geminiConfigured();
+    return deepseekConfigured();
 }
 /** A single forced engine family, or null when auto-routing should apply. */
 function forcedEngine(aiModel) {
@@ -1332,7 +1569,7 @@ function engineOrderFor(tier, aiModel) {
     if (forced)
         return [forced];
     const g = googleConfigured();
-    const l = llmConfigured();
+    const l = llmAvailableFor(aiModel);
     const order = [];
     if (tier === "trivial") {
         if (g)
@@ -1353,7 +1590,15 @@ function engineOrderFor(tier, aiModel) {
 }
 /** The model/label recorded for a chosen engine (used for TM cache + Cosmos). */
 function engineModel(engine, aiModel) {
-    return engine === "google" ? "google-translate" : resolveModel(aiModel);
+    if (engine === "google")
+        return "google-translate";
+    if (isGptModel(aiModel))
+        return resolveGptModel(aiModel);
+    if (isKimiModel(aiModel))
+        return resolveKimiModel(aiModel);
+    if (isGeminiModel(aiModel))
+        return resolveGeminiModel(aiModel);
+    return resolveModel(aiModel);
 }
 /**
  * The engine actually used for a job — real data for Cosmos. With routing on, it
@@ -1365,11 +1610,15 @@ export function resolveEngine(aiModel) {
         return { provider: "google", model: "google-translate" };
     if (isGptModel(aiModel))
         return { provider: "azure-openai", model: resolveGptModel(aiModel) };
+    if (isKimiModel(aiModel))
+        return { provider: "kimi", model: resolveKimiModel(aiModel) };
+    if (isGeminiModel(aiModel))
+        return { provider: "gemini", model: resolveGeminiModel(aiModel) };
     const model = resolveModel(aiModel);
     const parts = [];
     if (googleConfigured())
         parts.push("google");
-    if (llmConfigured())
+    if (deepseekConfigured())
         parts.push(model);
     return { provider: "auto", model: parts.length ? `auto(${parts.join("+")})` : "none" };
 }
@@ -1797,7 +2046,7 @@ logSingleTranslate = false) {
         if (missing.length === 0)
             break;
         if (engine === "llm") {
-            if (!llmConfigured())
+            if (!llmAvailableFor(aiModel))
                 continue;
             if (systemPrompt === null) {
                 const glossary = await loadGlossaryLines(shopName, target);
@@ -1836,12 +2085,17 @@ logSingleTranslate = false) {
             for (const batch of batchByChars(missing, MAX_CHARS_PER_BATCH)) {
                 try {
                     const out = await callGoogleTranslate(batch.map((b) => b.value), target, "text");
+                    const googleMap = new Map();
                     batch.forEach((b, i) => {
                         if (out[i] != null && !collected.has(b.key)) {
                             collected.set(b.key, out[i]);
                             engineByKey.set(b.key, "google");
+                            googleMap.set(b.key, out[i]);
                         }
                     });
+                    if (googleMap.size > 0) {
+                        logLlmTranslateOutcome("google-translate", shopName, batch.filter((b) => googleMap.has(b.key)), googleMap, 0);
+                    }
                 }
                 catch (e) {
                     console.warn(`[route] google engine error`, e);
@@ -2071,6 +2325,30 @@ function parseTranslationResult(raw, tokens, idToKey) {
     }
     return { map, tokens };
 }
+/** 日志里截断过长字段，避免批量任务刷爆 Render 日志。 */
+const LLM_TRANSLATE_LOG_VALUE_MAX = 200;
+function truncateForTranslateLog(value, max = LLM_TRANSLATE_LOG_VALUE_MAX) {
+    if (value.length <= max)
+        return value;
+    return `${value.slice(0, max)}…(${value.length})`;
+}
+/**
+ * 每次 LLM 调用成功后打一条结构化日志：模型、原文、译文。
+ * 单条与批量 worker 共用；长文本截断，完整 dump 仍走 [single-llm]。
+ */
+function logLlmTranslateOutcome(model, shopName, items, map, tokens) {
+    console.log("[llm-translate]", {
+        shopName: shopName ?? "",
+        model,
+        tokens,
+        count: items.length,
+        items: items.map((it) => ({
+            key: it.key,
+            source: truncateForTranslateLog(it.value),
+            translated: map.has(it.key) ? truncateForTranslateLog(map.get(it.key)) : null,
+        })),
+    });
+}
 async function callLLMOnce(items, aiModel, systemPrompt, shopName, logSingleTranslate = false) {
     // Opaque IDs prevent the model from confusing semantic key names with content.
     const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
@@ -2096,13 +2374,40 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName, logSingleTran
             tokens,
         });
     };
-    // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
+    const finishOk = (model, raw, tokens) => {
+        logLlmReturn(model, raw, tokens);
+        const parsed = parseTranslationResult(raw, tokens, idToKey);
+        logLlmTranslateOutcome(model, shopName, items, parsed.map, parsed.tokens);
+        return parsed;
+    };
+    // GPT / Kimi / Gemini：自成一路，不进 DeepSeek 池。
     if (isGptModel(aiModel)) {
         try {
             const model = resolveGptModel(aiModel);
             const { raw, tokens } = await callAzureOpenAIChat(model, messages, items.length);
-            logLlmReturn(model, raw, tokens);
-            return parseTranslationResult(raw, tokens, idToKey);
+            return finishOk(model, raw, tokens);
+        }
+        finally {
+            if (quotaGate)
+                quotaGate.release();
+        }
+    }
+    if (isKimiModel(aiModel)) {
+        try {
+            const model = resolveKimiModel(aiModel);
+            const { raw, tokens } = await callKimiChat(model, messages, items.length);
+            return finishOk(model, raw, tokens);
+        }
+        finally {
+            if (quotaGate)
+                quotaGate.release();
+        }
+    }
+    if (isGeminiModel(aiModel)) {
+        try {
+            const model = resolveGeminiModel(aiModel);
+            const { raw, tokens } = await callGeminiChat(model, messages, items.length);
+            return finishOk(model, raw, tokens);
         }
         finally {
             if (quotaGate)
@@ -2120,21 +2425,7 @@ async function callLLMOnce(items, aiModel, systemPrompt, shopName, logSingleTran
         const { content: raw, tokens, response, limitHints } = await invokeChatCompletion(acq.transport, model, messages, llmTimeoutMsForBatch(items.length), getPool().firstTokenBudgetMs(), deepseekUserId);
         const rawHeaders = responseHeadersToRecord(response);
         acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
-        logLlmReturn(model, raw, tokens);
-        // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
-        const obj = JSON.parse(extractJsonObject(raw));
-        const parsed = Array.isArray(obj.translations)
-            ? obj.translations
-            : [];
-        const map = new Map();
-        for (const r of parsed) {
-            if (typeof r?.key === "string" && typeof r?.translatedValue === "string") {
-                const origKey = idToKey.get(r.key);
-                if (origKey !== undefined)
-                    map.set(origKey, r.translatedValue);
-            }
-        }
-        return { map, tokens };
+        return finishOk(model, raw, tokens);
     }
     catch (e) {
         if (e instanceof LlmRateLimitError) {
@@ -2194,7 +2485,7 @@ async function gatherTranslations(items, aiModel, systemPrompt, collected, token
         const timeoutKind = e instanceof LlmTimeoutError ? e.kind : null;
         const isTimeout = timeoutKind !== null;
         if (e instanceof AzureContentPolicyError) {
-            if (llmConfigured()) {
+            if (deepseekConfigured()) {
                 const fallbackModel = resolveModel();
                 console.warn(`[llm] Azure content policy rejected batch of ${pend.length}; ` +
                     `falling back to DeepSeek (${fallbackModel})`);

@@ -53,6 +53,12 @@ export type LlmErrorTally = {
 export declare function gptConfigured(): boolean;
 /** 该 aiModel 是否走 GPT（gpt-* 前缀）且已配置 key。 */
 export declare function isGptModel(aiModel: string | undefined | null): boolean;
+export declare function kimiConfigured(): boolean;
+/** 该 aiModel 是否走 Kimi（kimi* 前缀）且已配置 key。 */
+export declare function isKimiModel(aiModel: string | undefined | null): boolean;
+export declare function geminiConfigured(): boolean;
+/** 该 aiModel 是否走 Gemini（gemini* 前缀）且已配置 key。 */
+export declare function isGeminiModel(aiModel: string | undefined | null): boolean;
 declare class LLMKeyPool {
     private readonly slots;
     private cursor;
