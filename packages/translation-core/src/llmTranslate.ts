@@ -1853,7 +1853,7 @@ function forcedEngine(aiModel?: string): Engine | null {
 }
 
 // Plain fields at or above this length are treated as "rich" content.
-const SHORT_PLAIN_THRESHOLD = 80;
+const SHORT_PLAIN_THRESHOLD = 10;
 
 function fieldTier(
   key: string,
@@ -2556,6 +2556,7 @@ async function translateItemsRouted(
               batch.filter((b) => googleMap.has(b.key)),
               googleMap,
               0,
+              aiModel,
             );
           }
         } catch (e) {
@@ -2843,6 +2844,7 @@ function truncateForTranslateLog(value: string, max = LLM_TRANSLATE_LOG_VALUE_MA
 /**
  * 每次 LLM 调用成功后打一条结构化日志：模型、原文、译文。
  * 单条与批量 worker 共用；长文本截断，完整 dump 仍走 [single-llm]。
+ * 使用单行 JSON，避免 Render 把 object dump 拆成多行导致难搜。
  */
 function logLlmTranslateOutcome(
   model: string,
@@ -2850,18 +2852,22 @@ function logLlmTranslateOutcome(
   items: TranslateItem[],
   map: Map<string, string>,
   tokens: number,
+  requestedAiModel?: string,
 ): void {
-  console.log("[llm-translate]", {
-    shopName: shopName ?? "",
-    model,
-    tokens,
-    count: items.length,
-    items: items.map((it) => ({
-      key: it.key,
-      source: truncateForTranslateLog(it.value),
-      translated: map.has(it.key) ? truncateForTranslateLog(map.get(it.key)!) : null,
-    })),
-  });
+  console.log(
+    `[llm-translate] ${JSON.stringify({
+      shopName: shopName ?? "",
+      requestedAiModel: requestedAiModel ?? "",
+      model,
+      tokens,
+      count: items.length,
+      items: items.map((it) => ({
+        key: it.key,
+        source: truncateForTranslateLog(it.value),
+        translated: map.has(it.key) ? truncateForTranslateLog(map.get(it.key)!) : null,
+      })),
+    })}`,
+  );
 }
 
 async function callLLMOnce(
@@ -2904,7 +2910,7 @@ async function callLLMOnce(
   ): { map: Map<string, string>; tokens: number } => {
     logLlmReturn(model, raw, tokens);
     const parsed = parseTranslationResult(raw, tokens, idToKey);
-    logLlmTranslateOutcome(model, shopName, items, parsed.map, parsed.tokens);
+    logLlmTranslateOutcome(model, shopName, items, parsed.map, parsed.tokens, aiModel);
     return parsed;
   };
 
