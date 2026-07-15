@@ -1697,9 +1697,11 @@ export function prepareHandleSourceText(value: string): string {
  * meaning it does not need translation.
  *
  * Strategy:
- *  - For English target: if source is a non-Latin script language AND the text
- *    contains no source-script characters, it is almost certainly already in
- *    English → skip.  (A zh-CN store's product titled "Standard" is English.)
+ *  - For English target: only when source is a distinctive non-Latin script
+ *    language AND the text contains English-looking Latin words while
+ *    containing no source-script characters do we skip. This avoids treating
+ *    Latin-family content such as German/French/Spanish as "already English".
+ *    (A zh-CN store's product titled "Standard" is English and can be skipped.)
  *  - For other targets with a distinctive script (zh, ja, ko, ar, ru, pl, de …):
  *    skip only when the text has ≥2 target-script chars after stripping
  *    punctuation/whitespace and their share of meaningful content exceeds 70%.
@@ -1811,15 +1813,38 @@ function hasTargetScriptChars(text: string, targetLang: string): boolean {
   return meetsScriptThreshold(text, ...patterns);
 }
 
+function canInferEnglishFromMissingSourceScript(source: string): boolean {
+  switch (langPrefix(source)) {
+    case "zh":
+    case "ja":
+    case "ko":
+    case "ar":
+    case "ru":
+    case "uk":
+    case "bg":
+    case "th":
+    case "hi":
+    case "mr":
+    case "ne":
+      return true;
+    default:
+      return false;
+  }
+}
+
 export function alreadyInTarget(text: string, source: string, target: string): boolean {
   const tl = langPrefix(target);
   const sl = langPrefix(source);
 
   // ── English target ──────────────────────────────────────────────────────────
-  // If source is a CJK / non-Latin language and text has no source-script chars,
-  // the content is already in a Latin-script language (overwhelmingly English).
+  // Only infer "already English" from missing source script for distinctive
+  // non-Latin source locales; Latin-family languages can still be untranslated.
   if (tl === "en") {
-    return !containsSourceScript(text, source);
+    return (
+      canInferEnglishFromMissingSourceScript(source) &&
+      hasLatinWords(text) &&
+      !containsSourceScript(text, source)
+    );
   }
 
   // Mixed target-script + Latin (e.g. "测试：Home Work: A Memoir…") is NOT done.
