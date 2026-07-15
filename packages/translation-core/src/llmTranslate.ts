@@ -772,14 +772,33 @@ function kimiRelease(): void {
   if (next) next();
 }
 
+function logProviderCallError(
+  provider: "kimi" | "gemini",
+  model: string,
+  itemCount: number,
+  attempt: number,
+  err: unknown,
+  shopName?: string,
+): void {
+  const detail = err instanceof Error ? err.message : String(err);
+  const shop = shopName?.trim() ? ` shop=${shopName.trim()}` : "";
+  console.warn(
+    `[${provider}] call failed${shop} model=${model} items=${itemCount} attempt=${attempt}/3: ${detail}`,
+  );
+}
+
 /** Moonshot chat/completions：JSON 译文格式与 DeepSeek/GPT 一致。 */
 async function callKimiChat(
   model: string,
   messages: ChatMessage[],
   itemCount: number,
+  shopName?: string,
 ): Promise<{ raw: string; tokens: number }> {
   const key = kimiApiKey();
-  if (!key) throw new Error("KIMI_API_KEY 未配置");
+  if (!key) {
+    logProviderCallError("kimi", model, itemCount, 0, new Error("KIMI_API_KEY 未配置"), shopName);
+    throw new Error("KIMI_API_KEY 未配置");
+  }
   const url = `${KIMI_BASE_URL}/chat/completions`;
 
   await kimiAcquire();
@@ -827,17 +846,21 @@ async function callKimiChat(
         };
       } catch (e) {
         if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
+          logProviderCallError("kimi", model, itemCount, attempt + 1, e, shopName);
           throw controller.signal.reason;
         }
-        if (attempt < 2 && !(e instanceof LlmRateLimitError)) {
-          // 短暂网络抖动由上层拆分重试。
+        const retry429 = attempt < 2 && e instanceof LlmRateLimitError;
+        if (!retry429) {
+          logProviderCallError("kimi", model, itemCount, attempt + 1, e, shopName);
         }
         throw e;
       } finally {
         clearTimeout(timer);
       }
     }
-    throw new Error("Kimi retries exhausted");
+    const exhausted = new Error("Kimi retries exhausted");
+    logProviderCallError("kimi", model, itemCount, 3, exhausted, shopName);
+    throw exhausted;
   } finally {
     kimiRelease();
   }
@@ -849,7 +872,7 @@ const GEMINI_API_BASE = (
   process.env.GEMINI_API_BASE?.trim() ||
   "https://generativelanguage.googleapis.com/v1beta"
 ).replace(/\/+$/, "");
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash-preview";
 const GEMINI_CONCURRENCY = Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 8);
 
 function geminiApiKey(): string | null {
@@ -904,9 +927,13 @@ async function callGeminiChat(
   model: string,
   messages: ChatMessage[],
   itemCount: number,
+  shopName?: string,
 ): Promise<{ raw: string; tokens: number }> {
   const key = geminiApiKey();
-  if (!key) throw new Error("GEMINI_API_KEY 未配置");
+  if (!key) {
+    logProviderCallError("gemini", model, itemCount, 0, new Error("GEMINI_API_KEY 未配置"), shopName);
+    throw new Error("GEMINI_API_KEY 未配置");
+  }
   const url =
     `${GEMINI_API_BASE}/models/${encodeURIComponent(model)}:generateContent` +
     `?key=${encodeURIComponent(key)}`;
@@ -965,17 +992,21 @@ async function callGeminiChat(
         };
       } catch (e) {
         if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
+          logProviderCallError("gemini", model, itemCount, attempt + 1, e, shopName);
           throw controller.signal.reason;
         }
-        if (attempt < 2 && !(e instanceof LlmRateLimitError)) {
-          // 短暂网络抖动由上层拆分重试。
+        const retry429 = attempt < 2 && e instanceof LlmRateLimitError;
+        if (!retry429) {
+          logProviderCallError("gemini", model, itemCount, attempt + 1, e, shopName);
         }
         throw e;
       } finally {
         clearTimeout(timer);
       }
     }
-    throw new Error("Gemini retries exhausted");
+    const exhausted = new Error("Gemini retries exhausted");
+    logProviderCallError("gemini", model, itemCount, 3, exhausted, shopName);
+    throw exhausted;
   } finally {
     geminiRelease();
   }
@@ -2497,7 +2528,15 @@ async function translateItemsRouted(
     if (missing.length === 0) break;
 
     if (engine === "llm") {
-      if (!llmAvailableFor(aiModel)) continue;
+      if (!llmAvailableFor(aiModel)) {
+        const m = (aiModel ?? "").trim();
+        if (/^gemini/i.test(m) || /^kimi/i.test(m)) {
+          console.warn(
+            `[route] llm skipped shop=${shopName} aiModel=${m}: provider API key not configured`,
+          );
+        }
+        continue;
+      }
       if (systemPrompt === null) {
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
@@ -2931,7 +2970,7 @@ async function callLLMOnce(
   if (isKimiModel(aiModel)) {
     try {
       const model = resolveKimiModel(aiModel);
-      const { raw, tokens } = await callKimiChat(model, messages, items.length);
+      const { raw, tokens } = await callKimiChat(model, messages, items.length, shopName);
       return finishOk(model, raw, tokens);
     } finally {
       if (quotaGate) quotaGate.release();
@@ -2940,7 +2979,7 @@ async function callLLMOnce(
   if (isGeminiModel(aiModel)) {
     try {
       const model = resolveGeminiModel(aiModel);
-      const { raw, tokens } = await callGeminiChat(model, messages, items.length);
+      const { raw, tokens } = await callGeminiChat(model, messages, items.length, shopName);
       return finishOk(model, raw, tokens);
     } finally {
       if (quotaGate) quotaGate.release();

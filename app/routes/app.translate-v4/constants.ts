@@ -25,7 +25,7 @@ export const AI_MODEL_OPTIONS = [
   { value: "deepseek-v4-flash", label: "deepseek-v4-flash" },
   { value: "deepseek-v4-pro", label: "deepseek-v4-pro" },
   { value: "kimi-k2.6", label: "kimi-k2.6" },
-  { value: "gemini-2.5-flash", label: "gemini-2.5-flash" },
+  { value: "gemini-2.5-flash-preview", label: "gemini-2.5-flash-preview" },
 ];
 
 /** 默认选中的翻译模型。 */
