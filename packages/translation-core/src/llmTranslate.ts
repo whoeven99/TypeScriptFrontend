@@ -2541,12 +2541,23 @@ async function translateItemsRouted(
       for (const batch of batchByChars(missing, MAX_CHARS_PER_BATCH)) {
         try {
           const out = await callGoogleTranslate(batch.map((b) => b.value), target, "text");
+          const googleMap = new Map<string, string>();
           batch.forEach((b, i) => {
             if (out[i] != null && !collected.has(b.key)) {
               collected.set(b.key, out[i]);
               engineByKey.set(b.key, "google");
+              googleMap.set(b.key, out[i]);
             }
           });
+          if (googleMap.size > 0) {
+            logLlmTranslateOutcome(
+              "google-translate",
+              shopName,
+              batch.filter((b) => googleMap.has(b.key)),
+              googleMap,
+              0,
+            );
+          }
         } catch (e) {
           console.warn(`[route] google engine error`, e);
           break; // stop this engine; remaining items cascade to the next
@@ -2821,6 +2832,38 @@ function parseTranslationResult(
   return { map, tokens };
 }
 
+/** 日志里截断过长字段，避免批量任务刷爆 Render 日志。 */
+const LLM_TRANSLATE_LOG_VALUE_MAX = 200;
+
+function truncateForTranslateLog(value: string, max = LLM_TRANSLATE_LOG_VALUE_MAX): string {
+  if (value.length <= max) return value;
+  return `${value.slice(0, max)}…(${value.length})`;
+}
+
+/**
+ * 每次 LLM 调用成功后打一条结构化日志：模型、原文、译文。
+ * 单条与批量 worker 共用；长文本截断，完整 dump 仍走 [single-llm]。
+ */
+function logLlmTranslateOutcome(
+  model: string,
+  shopName: string | undefined,
+  items: TranslateItem[],
+  map: Map<string, string>,
+  tokens: number,
+): void {
+  console.log("[llm-translate]", {
+    shopName: shopName ?? "",
+    model,
+    tokens,
+    count: items.length,
+    items: items.map((it) => ({
+      key: it.key,
+      source: truncateForTranslateLog(it.value),
+      translated: map.has(it.key) ? truncateForTranslateLog(map.get(it.key)!) : null,
+    })),
+  });
+}
+
 async function callLLMOnce(
   items: TranslateItem[],
   aiModel: string,
@@ -2854,6 +2897,17 @@ async function callLLMOnce(
     });
   };
 
+  const finishOk = (
+    model: string,
+    raw: string,
+    tokens: number,
+  ): { map: Map<string, string>; tokens: number } => {
+    logLlmReturn(model, raw, tokens);
+    const parsed = parseTranslationResult(raw, tokens, idToKey);
+    logLlmTranslateOutcome(model, shopName, items, parsed.map, parsed.tokens);
+    return parsed;
+  };
+
   // GPT / Kimi / Gemini：自成一路，不进 DeepSeek 池。
   if (isGptModel(aiModel)) {
     try {
@@ -2863,8 +2917,7 @@ async function callLLMOnce(
         messages,
         items.length,
       );
-      logLlmReturn(model, raw, tokens);
-      return parseTranslationResult(raw, tokens, idToKey);
+      return finishOk(model, raw, tokens);
     } finally {
       if (quotaGate) quotaGate.release();
     }
@@ -2873,8 +2926,7 @@ async function callLLMOnce(
     try {
       const model = resolveKimiModel(aiModel);
       const { raw, tokens } = await callKimiChat(model, messages, items.length);
-      logLlmReturn(model, raw, tokens);
-      return parseTranslationResult(raw, tokens, idToKey);
+      return finishOk(model, raw, tokens);
     } finally {
       if (quotaGate) quotaGate.release();
     }
@@ -2883,8 +2935,7 @@ async function callLLMOnce(
     try {
       const model = resolveGeminiModel(aiModel);
       const { raw, tokens } = await callGeminiChat(model, messages, items.length);
-      logLlmReturn(model, raw, tokens);
-      return parseTranslationResult(raw, tokens, idToKey);
+      return finishOk(model, raw, tokens);
     } finally {
       if (quotaGate) quotaGate.release();
     }
@@ -2911,22 +2962,7 @@ async function callLLMOnce(
 
     const rawHeaders = responseHeadersToRecord(response);
     acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
-    logLlmReturn(model, raw, tokens);
-
-    // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
-    const obj    = JSON.parse(extractJsonObject(raw)) as { translations?: unknown };
-    const parsed = Array.isArray(obj.translations)
-      ? (obj.translations as Array<{ key?: unknown; translatedValue?: unknown }>)
-      : [];
-
-    const map = new Map<string, string>();
-    for (const r of parsed) {
-      if (typeof r?.key === "string" && typeof r?.translatedValue === "string") {
-        const origKey = idToKey.get(r.key);
-        if (origKey !== undefined) map.set(origKey, r.translatedValue);
-      }
-    }
-    return { map, tokens };
+    return finishOk(model, raw, tokens);
   } catch (e: unknown) {
     if (e instanceof LlmRateLimitError) {
       acq.onThrottle(retryAfterMsFromResponse(e.response));
