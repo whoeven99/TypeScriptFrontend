@@ -7,21 +7,13 @@ import {
   Spin,
   Table,
   Typography,
-  } from "antd";
+} from "antd";
 import Button from "~/ui/components/AppButton";
-import { useEffect,
-  useRef,
-  useState } from "react";
-import { useFetcher,
-  useLoaderData,
-  useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { Page,
-  Pagination,
-  Select } from "@shopify/polaris";
-import { ActionFunctionArgs,
-  json } from "@remix-run/node";
-import { queryNextTransType,
-  queryPreviousTransType } from "~/api/admin";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page, Pagination, Select } from "@shopify/polaris";
+import { ActionFunctionArgs, json } from "@remix-run/node";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
@@ -36,12 +28,12 @@ import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
-  } from "~/server/manageTranslation/manageTranslationRoute.server";
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
   buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
   logManageTranslationGraphQLErrorDetail,
-  } from "~/utils/manageTranslationErrors";
+} from "~/utils/manageTranslationErrors";
 import {
   applyManageResourceTranslationUpdates,
   splitManageSaveResults,
@@ -114,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (refreshResourceIds.length > 0) {
     try {
       const response = await admin.graphql(
-          `#graphql
+        `#graphql
             query refreshShopResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
@@ -133,12 +125,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
           },
+        },
       );
       const data = await response.json();
 
@@ -152,7 +144,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error refreshing current page",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -190,8 +185,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -312,7 +306,6 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
-
   useEffect(() => {
     const data = consumeConfirmResponse(confirmFetcher.data);
     if (!data?.success) return;
@@ -327,22 +320,22 @@ const Index = () => {
     }
 
     if (failedItems.length === 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-商店页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (hasInvalidDigestError || successfulItems.length > 0) {
-          refreshCurrentPageData();
-        }
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-商店页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
+    }
 
     setConfirmData([]);
     setSuccessTranslatedKey([]);
@@ -381,12 +374,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType: "SHOP",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -478,11 +472,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -505,6 +501,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

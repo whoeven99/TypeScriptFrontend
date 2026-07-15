@@ -62,7 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (startCursor) {
     try {
       const response = await admin.graphql(
-          `#graphql
+        `#graphql
                 query JsonTemplate($startCursor: String){     
                     translatableResources(resourceType: ONLINE_STORE_THEME_JSON_TEMPLATE, last: 20, ,before: $startCursor) {
                       nodes {
@@ -87,11 +87,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       }
                     }
                   }`,
-          {
-            variables: {
-              startCursor: startCursor.cursor ? startCursor.cursor : undefined,
-            },
+        {
+          variables: {
+            startCursor: startCursor.cursor ? startCursor.cursor : undefined,
           },
+        },
       );
 
       const data = await response.json();
@@ -103,7 +103,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         response: data?.data?.translatableResources || null,
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error manage theme loading",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: null });
     }
   }
@@ -111,7 +114,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (endCursor) {
     try {
       const response = await admin.graphql(
-          `#graphql
+        `#graphql
             query JsonTemplate($endCursor: String){     
                 translatableResources(resourceType: ONLINE_STORE_THEME_JSON_TEMPLATE, first: 20, ,after: $endCursor) {
                   nodes {
@@ -136,11 +139,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   }
                 }
               }`,
-          {
-            variables: {
-              endCursor: endCursor.cursor ? endCursor.cursor : undefined,
-            },
+        {
+          variables: {
+            endCursor: endCursor.cursor ? endCursor.cursor : undefined,
           },
+        },
       );
 
       const data = await response.json();
@@ -152,7 +155,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         response: data?.data?.translatableResources || null,
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error manage theme loading", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error manage theme loading",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: null });
     }
   }
@@ -160,7 +166,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (refreshResourceIds.length > 0) {
     try {
       const response = await admin.graphql(
-          `#graphql
+        `#graphql
             query refreshJsonTemplateResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
@@ -179,12 +185,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
           },
+        },
       );
       const data = await response.json();
 
@@ -198,7 +204,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error refreshing current page",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -236,8 +245,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>([]);
@@ -365,7 +373,6 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
-
   useEffect(() => {
     const data = consumeConfirmResponse(confirmFetcher.data);
     if (!data?.success) return;
@@ -434,12 +441,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType: "ONLINE_STORE_THEME_JSON_TEMPLATE",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -561,11 +569,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -588,6 +598,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

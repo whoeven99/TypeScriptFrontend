@@ -494,8 +494,7 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -671,7 +670,6 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
-
   // 更新 loadingItemsRef 的�?
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -828,7 +826,10 @@ const Index = () => {
         if (metafieldsData) setMetafieldsData(metafieldsData);
       } else {
         shopify.toast.show(
-          getManageTranslationLoadErrorMessage(t, productFetcher.data?.errorMsg),
+          getManageTranslationLoadErrorMessage(
+            t,
+            productFetcher.data?.errorMsg,
+          ),
         );
       }
     }
@@ -860,22 +861,22 @@ const Index = () => {
     }
 
     if (failedItems.length === 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (hasInvalidDigestError || successfulItems.length > 0) {
-          refreshCurrentPageData();
-        }
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
+    }
 
     setConfirmData([]);
     setSuccessTranslatedKey([]);
@@ -952,12 +953,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType,
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
           if (trackClick) {
             reportClick("editor_list_translate");
@@ -1127,11 +1129,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -1154,6 +1158,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

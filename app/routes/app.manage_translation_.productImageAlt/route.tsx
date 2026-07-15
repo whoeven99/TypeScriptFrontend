@@ -718,12 +718,13 @@ const Index = () => {
         }}
         loading={loadingItems.includes(record?.key || "")}
         existingTranslation={getTranslatedAltValue(record)}
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType: "PRODUCT_OPTION_VALUE",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
           reportClick("editor_list_translate");
         }}
@@ -783,7 +784,9 @@ const Index = () => {
               minWidth: 0,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", minHeight: 24 }}>
+            <div
+              style={{ display: "flex", alignItems: "center", minHeight: 24 }}
+            >
               <Text
                 style={{
                   fontSize: 12,
@@ -888,11 +891,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     if (!record?.key || !record?.altText) {
       shopify.toast.show(
@@ -922,6 +927,7 @@ const Index = () => {
       type: "SINGLE_LINE_TEXT_FIELD",
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
