@@ -192,14 +192,27 @@ export function buildPromptContextBlock(
 ): string | null {
   const plan = buildPromptPlan(context, options);
   const blocks = [
-    buildTaskPolicyBlock(plan),
     buildConstraintBlock(plan),
-    plan.selection.shopContext ? buildShopContextBlock(context.shopContext) : null,
     plan.selection.terminology
       ? buildTerminologyBlock(context.terminology, options?.sourceText)
       : null,
-    plan.selection.market ? buildMarketContextBlock(context.market) : null,
-    plan.selection.modulePolicy ? buildModulePolicyBlock(context.modulePolicy) : null,
+    buildTaskPolicyBlock(plan),
+    plan.selection.modulePolicy
+      ? buildModulePolicyBlockWithSelection(context.modulePolicy, context, {
+          sourceText: options?.sourceText,
+        })
+      : null,
+    plan.selection.shopContext
+      ? buildShopContextBlockWithSelection(context.shopContext, context, {
+          sourceText: options?.sourceText,
+        })
+      : null,
+    plan.selection.market
+      ? buildMarketContextBlockWithSelection(context.market, context, {
+          sourceText: options?.sourceText,
+          targetLocale: options?.targetLocale,
+        })
+      : null,
   ].filter(Boolean);
 
   return blocks.length > 0 ? blocks.join("\n\n") : null;
@@ -278,18 +291,37 @@ export function selectPromptContextBlocks(
 }
 
 function buildShopContextBlock(profile: ShopPromptContext | null): string | null {
+  return buildShopContextBlockWithSelection(profile, null, undefined);
+}
+
+function buildShopContextBlockWithSelection(
+  profile: ShopPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  options?: {
+    sourceText?: string | null;
+  },
+): string | null {
   if (!profile) return null;
 
+  const sourceText = trim(options?.sourceText) ?? "";
   const industry = trim(profile.industry);
   const subIndustry = trim(profile.subIndustry);
   const brandTone = trim(profile.brandTone);
   const brandPositioning = trim(profile.brandPositioning);
 
   const lines: string[] = [];
-  if (industry) lines.push(`- Industry / category: ${industry}`);
-  if (subIndustry) lines.push(`- Sub-category: ${subIndustry}`);
-  if (brandTone) lines.push(`- Brand voice / tone: ${brandTone}`);
-  if (brandPositioning) lines.push(`- Brand positioning: ${brandPositioning}`);
+  if (brandTone && shouldInjectBrandToneContext(context, sourceText)) {
+    lines.push(`- Brand tone: ${brandTone}`);
+  }
+  if (brandPositioning && shouldInjectBrandPositioningContext(context, sourceText)) {
+    lines.push(`- Brand positioning: ${brandPositioning}`);
+  }
+  if ((industry || subIndustry) && shouldInjectCategoryContext(context, sourceText, industry, subIndustry)) {
+    lines.push(`- Category context: ${industry ?? ""}${industry && subIndustry ? " / " : ""}${subIndustry ?? ""}`);
+  }
 
   if (lines.length === 0) return null;
 
@@ -299,44 +331,35 @@ function buildShopContextBlock(profile: ShopPromptContext | null): string | null
   ].join("\n");
 }
 
-function buildTaskPolicyBlock(plan: TranslationPromptPlan): string {
-  const lines = [
-    `- Scene: ${plan.task.scene}`,
-    `- Audience: ${describeAudience(plan.task.audience)}`,
-    `- Adaptation level: ${describeRewriteFreedom(plan.task.rewriteFreedom)}`,
-    `- Field kind: ${plan.task.fieldRule.displayName}`,
-  ];
-  if (plan.task.role) lines.push(`- Role: ${plan.task.role}`);
-  if (plan.task.module) lines.push(`- Module: ${plan.task.module}`);
-  lines.push(`- Content class: ${plan.task.contentClass}`);
-  if (plan.task.jsonMode) lines.push(`- JSON mode: ${plan.task.jsonMode}`);
-  if (plan.task.fieldRule.promptAudienceHint) {
-    lines.push(`- Field usage: ${plan.task.fieldRule.promptAudienceHint}`);
-  }
-  if (plan.task.fieldRule.promptAdaptationHint) {
-    lines.push(`- Field guidance: ${plan.task.fieldRule.promptAdaptationHint}`);
-  }
-
-  for (const line of scenePolicyLines(plan.task)) {
-    lines.push(`- ${line}`);
-  }
+function buildTaskPolicyBlock(plan: TranslationPromptPlan): string | null {
+  const lines = [...scenePolicyLines(plan.task)];
+  const fieldLine = buildFieldPolicyLine(plan.task);
+  if (fieldLine) lines.unshift(fieldLine);
+  if (lines.length === 0) return null;
 
   return [
     "Task policy (apply to tone, wording, and adaptation level; do NOT translate or output this block):",
-    ...lines,
+    ...lines.map((line) => `- ${line}`),
   ].join("\n");
 }
 
 function buildConstraintBlock(plan: TranslationPromptPlan): string | null {
   const lines: string[] = [];
-  for (const hint of plan.constraints.fieldHints) {
-    lines.push(`- ${hint.promptText} (${describeConstraintOrigin(hint.origin)})`);
-  }
   if (plan.constraints.preserveHtmlStructure) {
     lines.push("- Preserve HTML structure and attribute-to-text relationships exactly");
   }
   if (plan.constraints.preserveJsonStructure) {
     lines.push("- Preserve JSON structure and configuration semantics strictly");
+  }
+  const fieldHints = plan.constraints.fieldHints
+    .filter((hint) => !isTaskLevelConstraintHint(hint.code))
+    .sort((left, right) => {
+      const originWeight = (origin: "documented" | "heuristic") =>
+        origin === "documented" ? 0 : 1;
+      return originWeight(left.origin) - originWeight(right.origin);
+    });
+  for (const hint of fieldHints) {
+    lines.push(`- ${hint.promptText}`);
   }
   if (lines.length === 0) return null;
   return [
@@ -401,10 +424,23 @@ function buildTerminologyBlock(
   ].join("\n");
 }
 
-function buildMarketContextBlock(market: MarketPromptContext | null): string | null {
+function buildMarketContextBlockWithSelection(
+  market: MarketPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  options?: {
+    sourceText?: string | null;
+    targetLocale?: string | null;
+  },
+): string | null {
   if (!market) return null;
 
-  const marketNotes = cleanList(market.marketNotes, MAX_MARKET_NOTES);
+  const sourceText = trim(options?.sourceText) ?? "";
+  const marketNotes = cleanList(market.marketNotes, MAX_MARKET_NOTES).filter((note) =>
+    shouldInjectMarketNote(note, context, sourceText, options?.targetLocale),
+  );
   if (marketNotes.length === 0) return null;
 
   const lines: string[] = [];
@@ -418,18 +454,34 @@ function buildMarketContextBlock(market: MarketPromptContext | null): string | n
   ].join("\n");
 }
 
-function buildModulePolicyBlock(policy: ModulePolicyContext | null): string | null {
+function buildModulePolicyBlockWithSelection(
+  policy: ModulePolicyContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  options?: {
+    sourceText?: string | null;
+  },
+): string | null {
   if (!policy) return null;
+  const sourceText = trim(options?.sourceText) ?? "";
   const tonePolicy = trim(policy.tonePolicy);
   const keywordPolicy = trim(policy.keywordPolicy);
   const literalVsAdaptive = trim(policy.literalVsAdaptive);
   if (!tonePolicy && !keywordPolicy && !literalVsAdaptive) return null;
 
   const lines: string[] = [];
-  if (policy.module) lines.push(`- Module: ${policy.module}`);
-  if (tonePolicy) lines.push(`- Tone policy: ${tonePolicy}`);
-  if (keywordPolicy) lines.push(`- Keyword policy: ${keywordPolicy}`);
-  if (literalVsAdaptive) lines.push(`- Literal vs adaptive: ${literalVsAdaptive}`);
+  if (tonePolicy && shouldInjectModuleTonePolicy(context, sourceText)) {
+    lines.push(`- Tone policy: ${tonePolicy}`);
+  }
+  if (keywordPolicy && shouldInjectModuleKeywordPolicy(context, sourceText)) {
+    lines.push(`- Keyword policy: ${keywordPolicy}`);
+  }
+  if (literalVsAdaptive && shouldInjectLiteralAdaptivePolicy(context, sourceText)) {
+    lines.push(`- Literal vs adaptive: ${literalVsAdaptive}`);
+  }
+  if (lines.length === 0) return null;
 
   return [
     "Module policy (high-level module guidance; do NOT translate or output this block):",
@@ -589,71 +641,39 @@ function extractAppNamespace(resourceId: string | null | undefined): string | nu
 }
 
 function scenePolicyLines(
-  context: Pick<ResolvedTranslationPromptContext, "scene">,
+  context: Pick<ResolvedTranslationPromptContext, "scene" | "role" | "fieldKind">,
 ): string[] {
   switch (context.scene) {
     case "marketing_hero":
-      return [
-        "Write like storefront marketing copy for shoppers.",
-        "Prefer natural, concise, and native wording over literal translation when needed.",
-        "Keep CTA-style text short, clear, and action-oriented.",
-      ];
+      if (context.role === "button_label" || context.fieldKind === "ui_label") {
+        return [];
+      }
+      return ["Write concise storefront marketing copy for shoppers."];
     case "announcement_bar":
-      return [
-        "Keep the message brief and storefront-friendly.",
-        "Prefer concise promotional wording over verbose explanation.",
-      ];
+      return ["Keep the message brief and storefront-friendly."];
     case "navigation_ui":
-      return [
-        "Keep labels short, scannable, and familiar to shoppers.",
-        "Prefer common e-commerce navigation wording over literal translation.",
-      ];
+      if (context.fieldKind === "ui_label") return [];
+      return ["Keep labels short, scannable, and familiar to shoppers."];
     case "footer_info":
-      return [
-        "Keep wording concise and easy to scan in storefront footer/navigation areas.",
-        "Do not over-market or over-explain.",
-      ];
+      return ["Keep wording concise and easy to scan in storefront footer/navigation areas."];
     case "theme_setting_copy":
-      return [
-        "Treat this as theme or UI-facing copy.",
-        "Be conservative, clear, and consistent; avoid decorative rewriting.",
-      ];
+      if (context.fieldKind === "ui_label") return [];
+      return ["Treat this as theme or UI-facing copy; be conservative and consistent."];
     case "editorial_copy":
-      return [
-        "Write naturally for longer-form editorial or explanatory content.",
-        "Preserve structure and meaning while allowing natural sentence flow.",
-      ];
+      return ["Write naturally for longer-form editorial content while preserving structure and meaning."];
     case "app_embedded_copy":
-      return [
-        "Treat this as embedded app/widget copy shown to storefront users.",
-        "Be clear and natural, but avoid excessive marketing language.",
-      ];
+      return ["Treat this as embedded app/widget copy; be clear and natural without extra marketing language."];
     case "config_like":
-      return [
-        "Translate only user-facing wording and preserve configuration semantics strictly.",
-        "Do not expand, reinterpret, or rewrite technical/config meaning.",
-      ];
+      return ["Translate only user-facing wording and preserve configuration semantics strictly."];
     case "transactional_template":
-      return [
-        "Prioritize clarity, trustworthiness, and precision over creativity.",
-        "Keep wording stable and suitable for notifications, policy, or operations copy.",
-      ];
+      return ["Prioritize clarity, trustworthiness, and precision over creativity."];
     case "strict_slug":
-      return [
-        "Keep the result suitable for a URL slug/handle.",
-        "Prefer short, readable wording and avoid extra embellishment.",
-      ];
+      return ["Keep the result suitable for a URL slug/handle."];
     case "seo_copy":
-      return [
-        "Write naturally for meta title or meta description content shown in search-facing snippets.",
-        "Preserve keyword intent while avoiding awkward keyword stuffing.",
-      ];
+      return ["Preserve keyword intent while avoiding awkward keyword stuffing."];
     case "product_catalog":
     default:
-      return [
-        "Prioritize accuracy and product clarity for e-commerce catalog content.",
-        "Keep brand and product-identifying wording stable; do not over-market.",
-      ];
+      return [];
   }
 }
 
@@ -679,6 +699,164 @@ function shouldUseCatalogBrandContext(
     return true;
   }
   return sourceText.length >= 18 || countWords(sourceText) >= 4;
+}
+
+function shouldInjectBrandToneContext(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+): boolean {
+  if (!context || !sourceText) return false;
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+
+  if (
+    context.scene === "marketing_hero" ||
+    context.scene === "announcement_bar" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "seo_copy"
+  ) {
+    return true;
+  }
+
+  return sourceText.length >= 40 || countWords(sourceText) >= 8;
+}
+
+function shouldInjectBrandPositioningContext(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+): boolean {
+  if (!context || !sourceText) return false;
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+
+  if (
+    context.fieldKind === "title" ||
+    context.fieldKind === "description" ||
+    context.fieldKind === "body"
+  ) {
+    return sourceText.length >= 24 || countWords(sourceText) >= 5;
+  }
+
+  return (
+    context.scene === "marketing_hero" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "seo_copy"
+  ) && (sourceText.length >= 24 || countWords(sourceText) >= 5);
+}
+
+function shouldInjectCategoryContext(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+  industry: string | null,
+  subIndustry: string | null,
+): boolean {
+  if (!context) return false;
+  const categoryBlob = normalizeMatchBlob([industry, subIndustry].filter(Boolean).join(" "));
+  const normalizedSource = normalizeMatchBlob(sourceText);
+  if (categoryBlob && normalizedSource && matchesPromptTerm(normalizedSource, categoryBlob)) {
+    return true;
+  }
+  if (!sourceText) return false;
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+
+  return (
+    context.scene === "product_catalog" ||
+    context.scene === "seo_copy" ||
+    context.scene === "editorial_copy"
+  ) && (sourceText.length >= 32 || countWords(sourceText) >= 6);
+}
+
+function shouldInjectMarketNote(
+  note: string,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+  targetLocale?: string | null,
+): boolean {
+  if (!context || !note) return false;
+  if (context.audience !== "shopper") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) {
+    return noteTargetsLocale(note, targetLocale);
+  }
+
+  const normalizedSource = normalizeMatchBlob(sourceText);
+  const normalizedNote = normalizeMatchBlob(note);
+  if (normalizedSource && normalizedNote && hasKeywordOverlap(normalizedSource, normalizedNote)) {
+    return true;
+  }
+  if (noteTargetsLocale(note, targetLocale)) return true;
+  if (looksMarketSensitive(sourceText) && noteLooksMarketSpecific(note)) return true;
+  return false;
+}
+
+function shouldInjectModuleTonePolicy(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+): boolean {
+  if (!context || !sourceText) return false;
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+
+  return (
+    context.scene === "marketing_hero" ||
+    context.scene === "announcement_bar" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "seo_copy" ||
+    context.scene === "app_embedded_copy"
+  ) && (sourceText.length >= 24 || countWords(sourceText) >= 5);
+}
+
+function shouldInjectModuleKeywordPolicy(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+): boolean {
+  if (!context || !sourceText) return false;
+  if (context.audience !== "shopper") return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+
+  return (
+    context.scene === "product_catalog" ||
+    context.scene === "seo_copy" ||
+    context.scene === "editorial_copy"
+  ) && (sourceText.length >= 20 || countWords(sourceText) >= 4);
+}
+
+function shouldInjectLiteralAdaptivePolicy(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+): boolean {
+  if (!context || !sourceText) return false;
+  if (looksLikeShortUiCopy(sourceText, context.role)) return false;
+  if (context.rewriteFreedom === "strict") return true;
+
+  return (
+    context.scene === "product_catalog" ||
+    context.scene === "seo_copy" ||
+    context.scene === "editorial_copy" ||
+    context.scene === "marketing_hero" ||
+    context.scene === "announcement_bar"
+  ) && (sourceText.length >= 20 || countWords(sourceText) >= 4);
 }
 
 function shouldInjectTerminology(
@@ -708,6 +886,18 @@ function matchesPromptTerm(normalizedSource: string, term: string): boolean {
   return normalizedSource.includes(normalizedTerm);
 }
 
+function hasKeywordOverlap(left: string, right: string): boolean {
+  const leftTokens = tokenizePromptText(left);
+  const rightTokens = tokenizePromptText(right);
+  if (leftTokens.length === 0 || rightTokens.length === 0) return false;
+  const rightSet = new Set(rightTokens);
+  return leftTokens.some((token) => token.length >= 4 && rightSet.has(token));
+}
+
+function tokenizePromptText(value: string): string[] {
+  return value.split(/\s+/).filter(Boolean);
+}
+
 function normalizeMatchBlob(value: string | null | undefined): string {
   return (value ?? "")
     .toLowerCase()
@@ -719,6 +909,36 @@ function normalizeMatchBlob(value: string | null | undefined): string {
 function hasRegionalVariant(locale: string | null | undefined): boolean {
   const normalized = (locale ?? "").trim();
   return /^[a-z]{2,3}[-_][a-z0-9]{2,}$/i.test(normalized);
+}
+
+function noteLooksMarketSpecific(note: string): boolean {
+  return /shipping|delivery|tax|vat|currency|returns|warranty|size|region|market|eu|europe|us|uk/i.test(
+    note,
+  );
+}
+
+function noteTargetsLocale(note: string, targetLocale?: string | null): boolean {
+  const normalizedNote = (note ?? "").toLowerCase();
+  const normalizedLocale = (targetLocale ?? "").toLowerCase().replace("_", "-");
+  if (!normalizedNote || !normalizedLocale) return false;
+  const language = normalizedLocale.split("-")[0] ?? normalizedLocale;
+
+  if (language === "fr" && /french|france|francophone/.test(normalizedNote)) return true;
+  if (language === "de" && /german|germany/.test(normalizedNote)) return true;
+  if (language === "es" && /spanish|spain/.test(normalizedNote)) return true;
+  if (language === "it" && /italian|italy/.test(normalizedNote)) return true;
+  if (language === "pt" && /portuguese|portugal|brazil/.test(normalizedNote)) return true;
+  if (language === "nl" && /dutch|netherlands/.test(normalizedNote)) return true;
+  if (language === "ja" && /japanese|japan/.test(normalizedNote)) return true;
+  if (language === "zh" && /chinese|china|taiwan|hong kong/.test(normalizedNote)) return true;
+  if (language === "ko" && /korean|korea/.test(normalizedNote)) return true;
+  if (language === "ar" && /arabic|middle east|gcc/.test(normalizedNote)) return true;
+
+  if (/eu|europe|vat/.test(normalizedNote) && /^(fr|de|es|it|nl|pt|pl|sv|da|fi|cs|sk|sl|hu|ro|bg|el|hr|lt|lv|et)(-|$)/.test(normalizedLocale)) {
+    return true;
+  }
+
+  return false;
 }
 
 function looksLikeShortUiCopy(sourceText: string, role: TranslationRole | null): boolean {
@@ -832,32 +1052,38 @@ function resolvePromptConstraints(
   };
 }
 
-function describeAudience(audience: TranslationAudience): string {
-  switch (audience) {
-    case "merchant":
-      return "merchant-facing admin or configuration copy";
-    case "system":
-      return "system-facing identifier or structured value";
-    case "shopper":
-    default:
-      return "shopper-facing storefront copy";
+function buildFieldPolicyLine(
+  task: Pick<TranslationPromptPlan["task"], "role" | "fieldRule" | "fieldKind" | "contentClass">,
+): string | null {
+  if (task.fieldKind === "title") {
+    return "Treat this as a shopper-facing title and keep it concise and stable.";
   }
+  if (task.fieldKind === "seo_title") {
+    return "Treat this as a search-facing meta title.";
+  }
+  if (task.fieldKind === "seo_description") {
+    return "Treat this as a search-facing meta description.";
+  }
+  if (task.role === "button_label") {
+    return "Treat this as CTA-style button copy.";
+  }
+  if (task.fieldKind === "ui_label") {
+    return "Treat this as short UI copy.";
+  }
+  if (task.contentClass === "json") {
+    return "Translate only user-facing wording inside the structured value.";
+  }
+  return null;
 }
 
-function describeRewriteFreedom(rewriteFreedom: TranslationRewriteFreedom): string {
-  switch (rewriteFreedom) {
-    case "strict":
-      return "stay very close to the source wording";
-    case "adaptive":
-      return "allow moderate adaptation while preserving intent";
-    case "balanced":
-    default:
-      return "balance accuracy with natural phrasing";
-  }
-}
-
-function describeConstraintOrigin(origin: TranslationConstraintOrigin): string {
-  return origin === "documented" ? "documented platform constraint" : "heuristic guidance";
+function isTaskLevelConstraintHint(
+  code: TranslationConstraintSet["fieldHints"][number]["code"],
+): boolean {
+  return (
+    code === "short_ui_label" ||
+    code === "search_snippet_title" ||
+    code === "search_snippet_description"
+  );
 }
 
 function computeStyleContextScore(
@@ -881,19 +1107,14 @@ function computeStyleContextScore(
     score += 2;
   }
   if (
-    context.fieldKind === "title" ||
-    context.fieldKind === "description" ||
-    context.fieldKind === "body"
-  ) {
-    score += 1;
-  }
-  if (
     context.scene === "product_catalog" &&
     shouldUseCatalogBrandContext(sourceText, context.role)
   ) {
     score += 1;
   }
-  if (sourceText.length >= 40 || countWords(sourceText) >= 8) score += 1;
+  if (context.scene !== "product_catalog" && (sourceText.length >= 40 || countWords(sourceText) >= 8)) {
+    score += 1;
+  }
   return score;
 }
 

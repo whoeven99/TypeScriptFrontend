@@ -85,7 +85,7 @@ export type TranslateSingleFieldResult = {
   translatedText: string;
   /** LLM API 原始 token 合计（未乘 QUOTA_TOKEN_MULTIPLIER）。 */
   usedTokens: number;
-  status: "translated" | "fallback";
+  status: "translated" | "fallback" | "skipped";
 };
 
 /**
@@ -97,7 +97,7 @@ export async function translateSingleField(
 ): Promise<TranslateSingleFieldResult> {
   const text = args.text ?? "";
   if (!text.trim()) {
-    return { translatedText: text, usedTokens: 0, status: "translated" };
+    return { translatedText: text, usedTokens: 0, status: "skipped" };
   }
 
   const source = (args.source ?? "en").trim() || "en";

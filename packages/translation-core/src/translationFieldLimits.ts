@@ -175,7 +175,7 @@ export type LimitedTranslateResult = {
   key: string;
   translatedValue: string;
   digest: string;
-  status: "translated" | "fallback";
+  status: "translated" | "fallback" | "skipped";
 };
 
 export function enforceTranslateResultLimits<T extends LimitedTranslateResult>(result: T): T {
