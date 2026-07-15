@@ -321,7 +321,13 @@ Important env names only:
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
-  `GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey`.
+  `GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey`, `KIMI_API_KEY`,
+  `KIMI_BASE_URL`（可选，默认 `https://api.moonshot.cn/v1`）,
+  `GEMINI_API_KEY`, `GEMINI_API_BASE`（可选）。
+  模型路由在 `packages/translation-core/src/llmTranslate.ts`：
+  `gpt-*` → Azure OpenAI；`kimi*` → Moonshot；`gemini*` → Google
+  generateContent；其余 → DeepSeek 池。UI 选项见
+  `app/routes/app.translate-v4/constants.ts` 的 `AI_MODEL_OPTIONS`。
 - Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
   `TRANSLATE_QUOTA_FLUSH_CHARGE`.
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
@@ -647,6 +653,8 @@ Operational root scripts:
 - `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
+- `scripts/check-subscription-renewals.mjs`: audit recent subscription renewals
+  (BillingLog credits/period archive + optional Render renewal-email logs).
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
   UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -887,6 +895,7 @@ const { logs } = await res.json();
 | Translation job stuck in TRANSLATING | `diag-stuck-job.mjs` → check Redis progress + Cosmos heartbeat |
 | Translation job stuck in WRITEBACK | Check Cosmos `errorStage`, Render worker logs |
 | Quota/billing mismatch | Turso: `Account` + `AppSubscription` tables |
+| Subscription renewal audit | `node scripts/check-subscription-renewals.mjs --hours=72 [--check-logs]` |
 | Currency/switcher not working | Turso: `SwitcherConfiguration`, `Currency` tables |
 | App 500 / worker crash | Render deploy logs → check for missing env vars |
 | Auto-translate not running | `probe-hint-queues.mjs` auto queues + `auto_scan:last_at` |

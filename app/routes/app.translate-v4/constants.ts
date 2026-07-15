@@ -21,8 +21,11 @@ export const QUOTA_TOKEN_MULTIPLIER = 1;
 export const AI_MODEL_OPTIONS = [
   { value: "gpt-4.1-nano", label: "GPT-4.1 nano（推荐）" },
   { value: "gpt-4.1-mini", label: "GPT-4.1 mini" },
+  { value: "gpt-5.5", label: "gpt-5.5" },
   { value: "deepseek-v4-flash", label: "deepseek-v4-flash" },
   { value: "deepseek-v4-pro", label: "deepseek-v4-pro" },
+  { value: "kimi-k2.6", label: "kimi-k2.6" },
+  { value: "gemini-2.5-flash", label: "gemini-2.5-flash" },
 ];
 
 /** 默认选中的翻译模型。 */

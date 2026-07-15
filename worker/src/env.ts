@@ -63,7 +63,9 @@ function llmConfigured(): boolean {
   return Boolean(
     process.env.DEEPSEEK_API_KEY?.trim() ||
       process.env.DEEPSEEK_API_KEYS?.trim() ||
-      process.env.Gpt_ApiKey?.trim(),
+      process.env.Gpt_ApiKey?.trim() ||
+      process.env.KIMI_API_KEY?.trim() ||
+      process.env.GEMINI_API_KEY?.trim(),
   );
 }
 
@@ -103,7 +105,7 @@ function collectChecks(): ServiceCheck[] {
     {
       label: "LLM",
       ok: llmConfigured(),
-      hint: "DEEPSEEK_API_KEY 或 Gpt_ApiKey",
+      hint: "DEEPSEEK_API_KEY / Gpt_ApiKey / KIMI_API_KEY / GEMINI_API_KEY",
     },
     {
       label: "SES",
