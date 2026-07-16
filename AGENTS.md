@@ -389,6 +389,9 @@ Billing notes:
   reconciliation every 12 hours by default (both configurable) inside the
   worker process when Turso credentials are set. TSF Web does not schedule or
   execute these jobs.
+- Subscription renewal emails (template 143058) are sent from webhook, near-due,
+  and full reconcile on `renewed`. Idempotency uses
+  `BillingLog.metadata.renewalEmailSent` so the three paths do not double-send.
 
 ### Currency
 

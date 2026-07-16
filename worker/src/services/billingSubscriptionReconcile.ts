@@ -897,8 +897,92 @@ export async function runBillingSubscriptionReconcileWithOptions(
   return summary;
 }
 
-async function sendRenewalEmailForShop(shop: string): Promise<void> {
+function parseBillingLogMetadata(raw: unknown): Record<string, unknown> {
+  if (raw == null) return {};
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  try {
+    const parsed = JSON.parse(String(raw));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * 对最新 SUBSCRIPTION_RENEWED 日志做发信占位（幂等）。
+ * 成功 claim 后才发信，避免 nearDue / 全量 / webhook 并发重复发。
+ */
+async function claimRenewalEmailSlot(
+  logId: string,
+  meta: Record<string, unknown>,
+  source: string,
+): Promise<boolean> {
+  if (meta.renewalEmailSent === true) return false;
+  const nextMeta = {
+    ...meta,
+    renewalEmailSent: true,
+    renewalEmailClaimedAt: new Date().toISOString(),
+    renewalEmailSource: source,
+  };
+  const upd = await getTsfDb().execute({
+    sql: `UPDATE BillingLog
+          SET metadata = ?
+          WHERE id = ?
+            AND (
+              json_extract(metadata, '$.renewalEmailSent') IS NULL
+              OR json_extract(metadata, '$.renewalEmailSent') = 0
+            )`,
+    args: [JSON.stringify(nextMeta), logId],
+  });
+  return Number(upd.rowsAffected ?? 0) > 0;
+}
+
+async function releaseRenewalEmailClaim(logId: string): Promise<void> {
   const db = getTsfDb();
+  const rs = await db.execute({
+    sql: `SELECT metadata FROM BillingLog WHERE id = ? LIMIT 1`,
+    args: [logId],
+  });
+  const meta = parseBillingLogMetadata(rs.rows[0]?.metadata);
+  if (meta.renewalEmailSent !== true) return;
+  const rest = { ...meta };
+  delete rest.renewalEmailSent;
+  delete rest.renewalEmailClaimedAt;
+  delete rest.renewalEmailSource;
+  await db.execute({
+    sql: `UPDATE BillingLog SET metadata = ? WHERE id = ?`,
+    args: [JSON.stringify(rest), logId],
+  });
+}
+
+async function sendRenewalEmailForShop(
+  shop: string,
+  logTag = "[billingReconcile]",
+): Promise<void> {
+  const db = getTsfDb();
+  const logRs = await db.execute({
+    sql: `SELECT id, metadata FROM BillingLog
+          WHERE shop = ? AND eventType = 'SUBSCRIPTION_RENEWED'
+          ORDER BY createdAt DESC
+          LIMIT 1`,
+    args: [shop],
+  });
+  const logRow = logRs.rows[0];
+  if (!logRow?.id) {
+    console.log(`${logTag} renewal email skip shop=${shop} reason=no_renewal_log`);
+    return;
+  }
+  const logId = String(logRow.id);
+  const meta = parseBillingLogMetadata(logRow.metadata);
+  if (meta.renewalEmailSent === true) {
+    console.log(`${logTag} renewal email skip shop=${shop} reason=already_sent`);
+    return;
+  }
+
   const [subRow, contact, remaining] = await Promise.all([
     db.execute({
       sql: "SELECT creditsPerPeriod FROM AppSubscription WHERE shop = ? AND status = 'ACTIVE' LIMIT 1",
@@ -909,10 +993,23 @@ async function sendRenewalEmailForShop(shop: string): Promise<void> {
   ]);
 
   const addedCredits = Number(subRow.rows[0]?.creditsPerPeriod ?? 0);
-  if (addedCredits <= 0) return;
-  if (!contact?.email) return;
+  if (addedCredits <= 0) {
+    console.log(`${logTag} renewal email skip shop=${shop} reason=no_credits`);
+    return;
+  }
+  if (!contact?.email) {
+    console.log(`${logTag} renewal email skip shop=${shop} reason=no_contact_email`);
+    return;
+  }
 
-  await sendSubscriptionRenewalEmail({
+  const source = logTag.includes("nearDue") ? "worker_near_due" : "worker_reconcile";
+  const claimed = await claimRenewalEmailSlot(logId, meta, source);
+  if (!claimed) {
+    console.log(`${logTag} renewal email skip shop=${shop} reason=already_claimed`);
+    return;
+  }
+
+  const ok = await sendSubscriptionRenewalEmail({
     to: contact.email,
     userName: contact.firstName || contact.email.split("@")[0] || shop,
     shopName: shop.split(".")[0],
@@ -920,7 +1017,15 @@ async function sendRenewalEmailForShop(shop: string): Promise<void> {
     totalCredits: remaining ?? addedCredits,
   });
 
-  console.log(`[billingReconcile] renewal email sent shop=${shop} credits=${addedCredits}`);
+  if (!ok) {
+    await releaseRenewalEmailClaim(logId).catch((err) =>
+      console.warn(`${logTag} renewal email claim release failed shop=${shop}`, err),
+    );
+    console.warn(`${logTag} renewal email send returned false shop=${shop}`);
+    return;
+  }
+
+  console.log(`${logTag} renewal email sent shop=${shop} credits=${addedCredits}`);
 }
 
 export async function runBillingSubscriptionReconcile(): Promise<void> {
@@ -944,7 +1049,7 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
     for (const result of summary.details) {
       if (result.action === "renewed") {
         console.log(`[billingReconcile] renewed ${result.shop}`);
-        // 续费成功 → 异步发邮件（非阻断）
+        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
         void sendRenewalEmailForShop(result.shop).catch((err) =>
           console.warn(`[billingReconcile] renewal email failed shop=${result.shop}`, err),
         );
@@ -998,6 +1103,14 @@ export async function runBillingSubscriptionNearDueReconcile(): Promise<void> {
     for (const result of summary.details) {
       if (result.action === "renewed") {
         console.log(`[billingReconcile:nearDue] renewed ${result.shop}`);
+        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
+        void sendRenewalEmailForShop(result.shop, "[billingReconcile:nearDue]").catch(
+          (err) =>
+            console.warn(
+              `[billingReconcile:nearDue] renewal email failed shop=${result.shop}`,
+              err,
+            ),
+        );
       } else if (result.action === "activated") {
         console.log(`[billingReconcile:nearDue] activated ${result.shop}`);
       } else if (result.action === "cancelled") {
