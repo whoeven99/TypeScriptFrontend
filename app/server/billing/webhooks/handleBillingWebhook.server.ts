@@ -143,6 +143,26 @@ async function findRenewalLogForPeriod(params: {
   );
 }
 
+/** 标记续费邮件已发送，供 worker nearDue/全量 reconcile 幂等跳过。 */
+async function markRenewalEmailSent(logId: string, metadata: unknown): Promise<void> {
+  const meta =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? (metadata as Record<string, unknown>)
+      : {};
+  if (meta.renewalEmailSent === true) return;
+  await prisma.billingLog.update({
+    where: { id: logId },
+    data: {
+      metadata: {
+        ...meta,
+        renewalEmailSent: true,
+        renewalEmailClaimedAt: new Date().toISOString(),
+        renewalEmailSource: "webhook",
+      },
+    },
+  });
+}
+
 /**
  * tsf 用户订阅 webhook（APP_SUBSCRIPTIONS_UPDATE）：ACTIVE 激活/续费，CANCELLED/EXPIRED 取消。
  * 账本函数内置幂等（referenceId=订阅 GID），webhook 重发安全。
@@ -273,11 +293,23 @@ export async function handleTsfSubscriptionWebhook(params: {
       );
     });
   } else if (shouldSendRenewalEmail && !priorRenewalForPeriod) {
-    void sendTsfSubscriptionRenewalEmail({
-      shop: params.shop,
-      plan,
-      accessToken: params.accessToken,
-    }).catch((err) => {
+    // 仅当本 webhook 首次落续费账时发信；worker 已续费则由 worker 发信（BillingLog.renewalEmailSent 幂等）。
+    void (async () => {
+      const ok = await sendTsfSubscriptionRenewalEmail({
+        shop: params.shop,
+        plan,
+        accessToken: params.accessToken,
+      });
+      if (!ok) return;
+      const log = await findRenewalLogForPeriod({
+        shop: params.shop,
+        referenceId: gid,
+        nextPeriodEnd: currentPeriodEnd,
+      });
+      if (log) {
+        await markRenewalEmailSent(log.id, log.metadata);
+      }
+    })().catch((err) => {
       console.error(
         `[billing webhook] subscription renewal email failed shop=${params.shop}:`,
         err,
