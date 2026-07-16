@@ -1,6 +1,8 @@
+import type { ShopSignalBundle } from "./signalExtraction.js";
 import type { TerminologyStrategy, ShopUnderstanding } from "./profileInduction.js";
-import type { ShopMarket } from "./shopContext.js";
+import type { ShopMarket, ShopProfileFacts } from "./shopContext.js";
 import type { ThemeSceneProfile } from "./themeKeyIntelligence.js";
+import { buildCategoryTerminologyPreload } from "./categoryTerminologyPreload.js";
 
 export type TranslationContextProfile = {
   generatedAt: string;
@@ -46,6 +48,8 @@ export type TranslationContextProfile = {
 export function buildTranslationContextProfile(args: {
   publishedLocales: string[];
   markets: ShopMarket[];
+  facts?: ShopProfileFacts | null;
+  signals?: ShopSignalBundle | null;
   understanding: ShopUnderstanding | null;
   strategy: TerminologyStrategy | null;
   themeSceneProfile: ThemeSceneProfile | null;
@@ -54,6 +58,8 @@ export function buildTranslationContextProfile(args: {
   const {
     publishedLocales,
     markets,
+    facts,
+    signals,
     understanding,
     strategy,
     themeSceneProfile,
@@ -74,14 +80,33 @@ export function buildTranslationContextProfile(args: {
       }
     : null;
 
-  const terminologyProfile = strategy
-    ? {
-        brandTerms: strategy.brandTerms.slice(0, 20),
-        doNotTranslateTerms: strategy.doNotTranslateTerms.slice(0, 20),
-        preferredTerms: strategy.preferredTerms.slice(0, 20),
-        seoTerms: strategy.seoTerms.slice(0, 15),
-      }
-    : null;
+  const preloadedTerminology = buildCategoryTerminologyPreload({
+    facts,
+    signals,
+    understanding,
+  });
+  const mergedPreferredTerms = mergePreferredTerms(
+    preloadedTerminology?.preferredTerms ?? [],
+    strategy?.preferredTerms ?? [],
+  );
+  const terminologyProfile =
+    strategy || preloadedTerminology
+      ? {
+          brandTerms: uniqueNonEmpty([
+            ...(preloadedTerminology?.brandTerms ?? []),
+            ...(strategy?.brandTerms ?? []),
+          ]).slice(0, 20),
+          doNotTranslateTerms: uniqueNonEmpty([
+            ...(preloadedTerminology?.doNotTranslateTerms ?? []),
+            ...(strategy?.doNotTranslateTerms ?? []),
+          ]).slice(0, 20),
+          preferredTerms: mergedPreferredTerms.slice(0, 20),
+          seoTerms: uniqueNonEmpty([
+            ...(preloadedTerminology?.seoTerms ?? []),
+            ...(strategy?.seoTerms ?? []),
+          ]).slice(0, 15),
+        }
+      : null;
 
   const marketProfile =
     markets.length > 0 || publishedLocales.length > 0 || (understanding?.marketNotes.length ?? 0) > 0
@@ -131,4 +156,31 @@ function uniqueNonEmpty(values: string[]): string[] {
     out.push(trimmed);
   }
   return out;
+}
+
+function mergePreferredTerms(
+  primary: Array<{ source: string; note: string | null }>,
+  fallback: Array<{ source: string; note: string | null }>,
+): Array<{ source: string; note: string | null }> {
+  const seen = new Map<string, { source: string; note: string | null }>();
+
+  for (const entry of [...primary, ...fallback]) {
+    const source = entry.source.trim();
+    if (!source) continue;
+    const key = source.toLowerCase();
+    if (!seen.has(key)) {
+      seen.set(key, {
+        source,
+        note: entry.note?.trim() || null,
+      });
+      continue;
+    }
+
+    const existing = seen.get(key);
+    if (existing && !existing.note && entry.note?.trim()) {
+      existing.note = entry.note.trim();
+    }
+  }
+
+  return [...seen.values()];
 }

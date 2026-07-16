@@ -135,6 +135,8 @@ export async function runProfileStage(args: {
       buildTranslationContextProfile({
         publishedLocales,
         markets,
+        facts,
+        signals,
         understanding: null,
         strategy: null,
         themeSceneProfile,
@@ -190,6 +192,8 @@ export async function runProfileStage(args: {
       buildTranslationContextProfile({
         publishedLocales,
         markets,
+        facts,
+        signals,
         understanding: null,
         strategy: induction.strategy,
         themeSceneProfile,
@@ -206,6 +210,8 @@ export async function runProfileStage(args: {
     buildTranslationContextProfile({
       publishedLocales,
       markets,
+      facts,
+      signals,
       understanding,
       strategy,
       themeSceneProfile,
@@ -321,6 +327,8 @@ export async function runProfileAiStageFromBlob(args: {
       buildTranslationContextProfile({
         publishedLocales,
         markets,
+        facts,
+        signals,
         understanding: null,
         strategy: induction.strategy,
         themeSceneProfile,
@@ -335,6 +343,8 @@ export async function runProfileAiStageFromBlob(args: {
     buildTranslationContextProfile({
       publishedLocales,
       markets,
+      facts,
+      signals,
       understanding: induction.understanding,
       strategy: induction.strategy,
       themeSceneProfile,

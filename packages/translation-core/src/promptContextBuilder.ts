@@ -191,11 +191,12 @@ export function buildPromptContextBlock(
   },
 ): string | null {
   const plan = buildPromptPlan(context, options);
+  const terminologyBlocks = plan.selection.terminology
+    ? buildTerminologyBlocks(context.terminology, options?.sourceText)
+    : [];
   const blocks = [
     buildConstraintBlock(plan),
-    plan.selection.terminology
-      ? buildTerminologyBlock(context.terminology, options?.sourceText)
-      : null,
+    ...terminologyBlocks,
     buildTaskPolicyBlock(plan),
     plan.selection.modulePolicy
       ? buildModulePolicyBlockWithSelection(context.modulePolicy, context, {
@@ -368,11 +369,11 @@ function buildConstraintBlock(plan: TranslationPromptPlan): string | null {
   ].join("\n");
 }
 
-function buildTerminologyBlock(
+function buildTerminologyBlocks(
   terminology: TerminologyPromptContext | null,
   sourceText?: string | null,
-): string | null {
-  if (!terminology) return null;
+): string[] {
+  if (!terminology) return [];
 
   const brandTerms = cleanList(terminology.brandTerms, MAX_TERMS);
   const doNotTranslateTerms = cleanList(terminology.doNotTranslateTerms, MAX_TERMS);
@@ -401,27 +402,46 @@ function buildTerminologyBlock(
     filteredSeoTerms.length === 0 &&
     filteredPreferredTerms.length === 0
   ) {
-    return null;
+    return [];
   }
 
-  const lines: string[] = [];
+  const siteSpecificLines: string[] = [];
   if (filteredBrandTerms.length > 0) {
-    lines.push(`- Brand terms: ${filteredBrandTerms.join(", ")}`);
+    siteSpecificLines.push(`- Brand terms: ${filteredBrandTerms.join(", ")}`);
   }
   if (filteredDoNotTranslateTerms.length > 0) {
-    lines.push(`- Keep unchanged: ${filteredDoNotTranslateTerms.join(", ")}`);
-  }
-  if (filteredPreferredTerms.length > 0) {
-    lines.push(`- Preferred translations: ${filteredPreferredTerms.join("; ")}`);
-  }
-  if (filteredSeoTerms.length > 0) {
-    lines.push(`- Search snippet terms (for meta title/meta description): ${filteredSeoTerms.join(", ")}`);
+    siteSpecificLines.push(`- Keep unchanged: ${filteredDoNotTranslateTerms.join(", ")}`);
   }
 
-  return [
-    "Terminology policy (apply consistently; do NOT translate or output this block):",
-    ...lines,
-  ].join("\n");
+  const professionalLines: string[] = [];
+  if (filteredPreferredTerms.length > 0) {
+    professionalLines.push(`- Preferred translations: ${filteredPreferredTerms.join("; ")}`);
+  }
+  if (filteredSeoTerms.length > 0) {
+    professionalLines.push(
+      `- Search snippet terms (for meta title/meta description): ${filteredSeoTerms.join(", ")}`,
+    );
+  }
+
+  const blocks: string[] = [];
+  if (siteSpecificLines.length > 0) {
+    blocks.push(
+      [
+        "Brand / site-specific term policy (preserve site identity consistently; do NOT translate or output this block):",
+        ...siteSpecificLines,
+      ].join("\n"),
+    );
+  }
+  if (professionalLines.length > 0) {
+    blocks.push(
+      [
+        "Professional terminology policy (use domain-appropriate wording consistently; do NOT translate or output this block):",
+        ...professionalLines,
+      ].join("\n"),
+    );
+  }
+
+  return blocks;
 }
 
 function buildMarketContextBlockWithSelection(
