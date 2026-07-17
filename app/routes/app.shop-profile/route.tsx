@@ -102,6 +102,31 @@ type LoaderData = {
   artifactSource: "cosmos" | "blob" | "mixed" | "none";
 };
 
+function artifactPriority(status: ShopScanStatus): number {
+  switch (status) {
+    case "COMPLETED":
+    case "PARTIAL":
+      return 4;
+    case "SCANNING":
+      return 3;
+    case "QUEUED":
+    case "CREATED":
+      return 2;
+    case "FAILED":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function sortArtifactJobs(jobs: ShopScanJob[]): ShopScanJob[] {
+  return [...jobs].sort((a, b) => {
+    const priorityDiff = artifactPriority(b.status) - artifactPriority(a.status);
+    if (priorityDiff !== 0) return priorityDiff;
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (isProductionNodeEnv()) {
     throw redirect("/app/translate-v4");
@@ -208,12 +233,30 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         };
       }
 
-      const profileArtifactJob = profileAiJob ?? latestProfileSourceJob ?? profileMaterialJob ?? latestLegacyJob;
-      if (profileArtifactJob) {
-        const profileArtifacts = await loadShopScanArtifacts(
-          profileArtifactJob.blobPrefix,
-          profileArtifactJob.summary,
-        );
+      const profileArtifactCandidates = sortArtifactJobs(
+        Array.from(
+          new Map(
+            [
+              profileAiJob,
+              ...profileSourceJobs,
+              profileMaterialJob,
+              latestLegacyJob,
+            ]
+              .filter(Boolean)
+              .map((job) => [job!.id, job!]),
+          ).values(),
+        ),
+      );
+      for (const candidate of profileArtifactCandidates) {
+        const profileArtifacts = await loadShopScanArtifacts(candidate.blobPrefix, candidate.summary);
+        const hasProfileArtifacts =
+          profileArtifacts.translationContextProfile ||
+          profileArtifacts.themeSceneProfile ||
+          profileArtifacts.understanding ||
+          profileArtifacts.signals ||
+          profileArtifacts.markets.length > 0 ||
+          profileArtifacts.strategy;
+        if (!hasProfileArtifacts) continue;
         strategy = profileArtifacts.strategy;
         understanding = profileArtifacts.understanding;
         markets = profileArtifacts.markets;
@@ -221,18 +264,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         themeSceneProfile = profileArtifacts.themeSceneProfile;
         translationContextProfile = profileArtifacts.translationContextProfile;
         artifactSource = profileArtifacts.source;
+        break;
       }
 
-      const glossaryArtifactJob = glossaryAiJob ?? glossarySamplesJob ?? latestLegacyJob;
-      if (glossaryArtifactJob) {
-        const glossaryArtifacts = await loadShopScanArtifacts(
-          glossaryArtifactJob.blobPrefix,
-          glossaryArtifactJob.summary,
-        );
+      const glossaryArtifactCandidates = sortArtifactJobs(
+        Array.from(
+          new Map(
+            [glossaryAiJob, glossarySamplesJob, latestLegacyJob]
+              .filter(Boolean)
+              .map((job) => [job!.id, job!]),
+          ).values(),
+        ),
+      );
+      for (const candidate of glossaryArtifactCandidates) {
+        const glossaryArtifacts = await loadShopScanArtifacts(candidate.blobPrefix, candidate.summary);
+        if (glossaryArtifacts.glossarySuggestions.length === 0) continue;
         if (glossarySuggestions.length === 0) {
           glossarySuggestions = glossaryArtifacts.glossarySuggestions;
         }
         if (artifactSource === "none") artifactSource = glossaryArtifacts.source;
+        break;
       }
 
       if (!scan && latestLegacyJob) {
