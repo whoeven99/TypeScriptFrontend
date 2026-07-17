@@ -10,7 +10,6 @@ import {
   ColorPicker,
   Slider,
   Popconfirm,
-  Flex,
   Modal,
 } from "antd";
 import Button from "~/ui/components/AppButton";
@@ -729,11 +728,7 @@ const Index = () => {
         />
         <div className={styles.switcher_container}>
           <div className={styles.switcher_editor}>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
+            <div className={styles.switcher_form_stack}>
               {saveAlert ? (
                 <Alert
                   type="error"
@@ -744,6 +739,7 @@ const Index = () => {
                 />
               ) : null}
               <Card
+                className={styles.switcher_card}
                 loading={isLoading}
                 style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
               >
@@ -752,13 +748,15 @@ const Index = () => {
                   size="middle"
                   style={{ display: "flex" }}
                 >
-                  <Flex justify="space-between">
-                    <Title
-                      level={5}
-                      style={{ fontSize: 14, color: "var(--app-color-text)" }}
-                    >
-                      {t("Selector Auto IP position configuration:")}
-                    </Title>
+                  <div className={styles.switcher_row}>
+                    <div className={styles.switcher_row_label}>
+                      <Title
+                        level={5}
+                        style={{ fontSize: 14, color: "var(--app-color-text)" }}
+                      >
+                        {t("Selector Auto IP position configuration:")}
+                      </Title>
+                    </div>
                     {(plan?.type == "Free" ||
                       typeof plan?.type === "undefined") && (
                       <Popconfirm
@@ -771,29 +769,31 @@ const Index = () => {
                         okText={t("Upgrade")}
                         onConfirm={() => navigate("/app/pricing")}
                       >
-                        <InfoCircleOutlined
-                          style={{ paddingBottom: "0.5rem" }}
-                        />
+                        <InfoCircleOutlined />
                       </Popconfirm>
                     )}
-                  </Flex>
+                  </div>
 
-                  <Flex justify="space-between">
-                    <Text>{t("Geolocation: ")}</Text>
+                  <div className={styles.switcher_row}>
+                    <div className={styles.switcher_row_label}>
+                      <Text>{t("Geolocation: ")}</Text>
+                    </div>
                     <Switch
-                      className={
-                        plan?.type == "Free" ||
-                        typeof plan?.type === "undefined"
+                      className={`${styles.switcher_toggle} ${
+                        plan?.type == "Free" || typeof plan?.type === "undefined"
                           ? defaultStyles.Switch_disable
                           : ""
-                      }
+                      }`}
                       checked={isGeoLocationEnabled}
                       onChange={handleIpOpenChange}
                     />
-                  </Flex>
-                  <Flex justify="space-between">
-                    <Text>{t("No Visible Switcher: ")}</Text>
+                  </div>
+                  <div className={styles.switcher_row}>
+                    <div className={styles.switcher_row_label}>
+                      <Text>{t("No Visible Switcher: ")}</Text>
+                    </div>
                     <Switch
+                      className={styles.switcher_toggle}
                       checked={isTransparent}
                       onChange={() => {
                         handleEditData({ isTransparent: !isTransparent });
@@ -810,10 +810,11 @@ const Index = () => {
                         );
                       }}
                     />
-                  </Flex>
+                  </div>
                 </Space>
               </Card>
               <Card
+                className={styles.switcher_card}
                 loading={isLoading}
                 style={{
                   display: isTransparent ? "none" : "block",
@@ -843,6 +844,7 @@ const Index = () => {
                 />
               </Card>
               <Card
+                className={styles.switcher_card}
                 loading={isLoading}
                 style={{
                   display: isTransparent ? "none" : "block",
@@ -861,15 +863,12 @@ const Index = () => {
                   >
                     {t("Selector style configuration:")}
                   </Title>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text>{t("Included flag:")}</Text>
+                  <div className={styles.switcher_row}>
+                    <div className={styles.switcher_row_label}>
+                      <Text>{t("Included flag:")}</Text>
+                    </div>
                     <Switch
+                      className={styles.switcher_toggle}
                       disabled={!languageSelector && currencySelector}
                       checked={isIncludedFlag}
                       onChange={(checked) => {
@@ -888,21 +887,8 @@ const Index = () => {
                       }}
                     />
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 20,
-                    }}
-                  >
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                  <div className={styles.switcher_style_fields}>
+                    <div className={styles.switcher_color_field}>
                       <Text>{t("Font Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -913,14 +899,7 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                    <div className={styles.switcher_color_field}>
                       <Text>{t("Background Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -931,14 +910,7 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                    <div className={styles.switcher_color_field}>
                       <Text>{t("Option Border Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -976,10 +948,11 @@ const Index = () => {
                   </div>
                 </Space>
               </Card>
-            </Space>
+            </div>
           </div>
           <div className={styles.switcher_preview}>
             <Card
+              className={styles.switcher_card}
               loading={isLoading}
               style={{
                 height: "100%",

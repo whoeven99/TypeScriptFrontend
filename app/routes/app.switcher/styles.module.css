@@ -1,15 +1,65 @@
 .switcher_container {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
   gap: 20px;
 }
 
 .switcher_editor {
-  flex: 1;
+  min-width: 0;
 }
 
 .switcher_preview {
-  flex: 2;
+  width: 100%;
+  min-width: 0;
+}
+
+.switcher_form_stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.switcher_card {
+  width: 100%;
+  min-width: 0;
+}
+
+.switcher_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.switcher_row_label {
+  flex: 1;
+  min-width: 0;
+}
+
+.switcher_row_label :global(.ant-typography) {
+  margin-bottom: 0;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.switcher_toggle {
+  flex: none;
+}
+
+.switcher_style_fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.switcher_color_field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -27,18 +77,13 @@
   }
 
   .switcher_container {
-    flex-direction: column;
-    /* 改为上下布局 */
+    grid-template-columns: 1fr;
     gap: 10px;
-    /* 调整间距 */
   }
 
   .switcher_editor,
   .switcher_preview {
-    flex: none;
-    /* 取消 flex 比例 */
     width: 100%;
-    /* 占满宽度 */
   }
 
   .main_box {
@@ -167,27 +212,36 @@ a[href="https://translate.google.com"] {
   display: flex;
   align-items: center;
   /* 垂直居中 */
+  justify-content: space-between;
+  gap: 8px;
   height: 40px;
   /* 明确设置高度 */
+  min-width: 160px;
 }
 
 .main_box_text {
   display: inline-block;
+  flex: 1;
+  min-width: 0;
   line-height: 20px;
   /* 与图片高度一致 */
   vertical-align: middle;
-  margin: 0 20px;
+  margin: 0;
   padding: 0;
   font-size: 14px;
   /* 明确设置字体大小 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mainarrow_icon {
-  position: absolute;
-  right: 0;
-  /* 改用右侧固定距离 */
+  position: static;
   transition: transform 0.3s ease;
   /* 平滑过渡 */
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .button_wrapper {
@@ -243,17 +297,16 @@ a[href="https://translate.google.com"] {
 }
 
 .arrow_icon {
-  width: 25% !important;
-  height: 25% !important;
+  width: 16px !important;
+  height: 16px !important;
   border: 0 !important;
   display: flex;
-  position: absolute;
-  right: 5%;
-  /* 箭头图标右对齐 */
+  position: static;
   pointer-events: none;
   /* 防止图标影响选择框的点击 */
   transition: transform 0.3s ease;
   /* 平滑过渡 */
+  flex: none;
 }
 
 .mobile_trans_img {
@@ -305,17 +358,25 @@ a[href="https://translate.google.com"] {
   border-radius: 4px;
   cursor: pointer;
   height: 40px;
+  gap: 8px;
+  padding: 0 10px;
 }
 
 .selected_option {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
   gap: 8px;
-  margin: 0 10px;
 }
 
 .selected_text {
-  margin-right: 25px;
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .country_flag {
@@ -368,10 +429,12 @@ a[href="https://translate.google.com"] {
 .option_item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   padding: 8px 12px;
   cursor: pointer;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
 .option_item:hover {
@@ -384,6 +447,14 @@ a[href="https://translate.google.com"] {
 
 .currency_code {
   font-size: 0.9em;
+  flex: none;
+  white-space: nowrap;
+}
+
+.option_text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 滚动条样式 */
