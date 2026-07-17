@@ -1,17 +1,15 @@
 .switcher_container {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  align-items: start;
+  display: flex;
+  flex-direction: row;
   gap: 20px;
 }
 
 .switcher_editor {
-  min-width: 0;
+  flex: 1;
 }
 
 .switcher_preview {
-  width: 100%;
-  min-width: 0;
+  flex: 2;
 }
 
 .switcher_form_stack {
@@ -77,12 +75,13 @@
   }
 
   .switcher_container {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 10px;
   }
 
   .switcher_editor,
   .switcher_preview {
+    flex: none;
     width: 100%;
   }
 
