@@ -6,7 +6,11 @@ import "./translationCoreRuntime.server";
 import { translateSingleField } from "@ciwi/translation-core";
 import prisma from "~/db.server";
 import { loadShopScanArtifacts } from "~/server/shopScan/artifacts.server";
-import { getLatestShopScanJob } from "~/server/shopScan/cosmos.server";
+import {
+  getLatestShopScanJob,
+  getLatestShopScanJobsByTask,
+  type ShopScanJob,
+} from "~/server/shopScan/cosmos.server";
 import { deductShopCredits } from "~/server/billing/quota/quotaRouter.server";
 import { llmTokensToQuotaCredits } from "./quotaMultiplier.server";
 
@@ -27,7 +31,7 @@ export type TranslateSingleTextArgs = {
 export async function translateSingleText(
   args: TranslateSingleTextArgs,
 ): Promise<{ translatedText: string; usedTokens: number }> {
-  const [profile, latestScan] = await Promise.all([
+  const [profile, latestByTask, latestScan] = await Promise.all([
     prisma.shopProfile.findUnique({
       where: { shop: args.shop },
       select: {
@@ -37,11 +41,24 @@ export async function translateSingleText(
         keywords: true,
       },
     }),
+    getLatestShopScanJobsByTask(args.shop).catch(() => ({})),
     getLatestShopScanJob(args.shop).catch(() => null),
   ]);
+  const latestProfileSourceJob = (
+    [
+      latestByTask.profile_material,
+      latestByTask.profile_identity,
+      latestByTask.market_locale,
+      latestByTask.catalog_material,
+      latestByTask.editorial_material,
+      latestByTask.style_material,
+    ].filter(Boolean) as ShopScanJob[]
+  ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0] ?? null;
+  const selectedScan =
+    latestByTask.profile_ai ?? latestProfileSourceJob ?? latestScan;
   const artifacts = await loadShopScanArtifacts(
-    latestScan?.blobPrefix,
-    latestScan?.summary,
+    selectedScan?.blobPrefix,
+    selectedScan?.summary,
   ).catch((error) => {
     console.warn(
       `[single] ${args.shop} failed to load scan artifacts, fallback to base context:`,

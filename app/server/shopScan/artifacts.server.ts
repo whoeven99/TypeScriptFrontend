@@ -173,6 +173,31 @@ type TranslationContextProfileBlob = {
   modulePolicyProfile?: unknown;
 };
 
+type MarketLocaleContextBlob = {
+  markets?: unknown;
+  marketProfile?: unknown;
+};
+
+type SignalBundleBlob = {
+  signals?: unknown;
+};
+
+type ShopIdentityContextBlob = {
+  understanding?: unknown;
+};
+
+type StyleContextBlob = {
+  understanding?: unknown;
+  strategy?: TerminologyStrategyView | null;
+  themeSceneProfile?: unknown;
+};
+
+const MODULE_DIR = "scan-modules";
+
+function moduleBlobPath(prefix: string, fileName: string): string {
+  return `${prefix}${MODULE_DIR}/${fileName}`;
+}
+
 /**
  * 读取扫描产出的术语策略、术语建议，以及 Blob 中的理解/市场/信号明细。
  * strategy / glossary 优先 Cosmos summary；understanding / markets / signals 仅在 Blob。
@@ -194,24 +219,60 @@ export async function loadShopScanArtifacts(
 
   if (blobPrefix) {
     const prefix = blobPrefix.endsWith("/") ? blobPrefix : `${blobPrefix}/`;
-    const [profileFacts, glossaryRaw, themeKeyProfile, contextProfile] = await Promise.all([
+    const [
+      profileFacts,
+      glossaryRaw,
+      themeKeyProfile,
+      contextProfile,
+      marketLocaleContext,
+      signalBundle,
+      shopIdentityContext,
+      styleContext,
+    ] = await Promise.all([
       readV4Blob<ProfileFactsBlob>(`${prefix}profile-facts.json`),
       fromCosmos.glossarySuggestions.length > 0
         ? Promise.resolve(null)
         : readV4Blob<GlossaryRawBlob>(`${prefix}glossary-raw.json`),
       readV4Blob<ThemeKeyProfileBlob>(`${prefix}theme-key-profile.json`),
       readV4Blob<TranslationContextProfileBlob>(`${prefix}translation-context-profile.json`),
+      readV4Blob<MarketLocaleContextBlob>(
+        moduleBlobPath(prefix, "market-locale-context.json"),
+      ),
+      readV4Blob<SignalBundleBlob>(moduleBlobPath(prefix, "signal-bundle.json")),
+      readV4Blob<ShopIdentityContextBlob>(
+        moduleBlobPath(prefix, "shop-identity-context.json"),
+      ),
+      readV4Blob<StyleContextBlob>(moduleBlobPath(prefix, "style-context.json")),
     ]);
-    readBlob = Boolean(profileFacts || glossaryRaw || themeKeyProfile || contextProfile);
+    readBlob = Boolean(
+      profileFacts ||
+        glossaryRaw ||
+        themeKeyProfile ||
+        contextProfile ||
+        marketLocaleContext ||
+        signalBundle ||
+        shopIdentityContext ||
+        styleContext,
+    );
 
-    understanding = normalizeUnderstanding(profileFacts?.induction?.understanding);
-    markets = normalizeMarkets(profileFacts?.markets);
-    signals = normalizeSignals(profileFacts?.signals);
+    const moduleMarkets = normalizeMarkets(marketLocaleContext?.markets);
+
+    understanding =
+      normalizeUnderstanding(styleContext?.understanding) ??
+      normalizeUnderstanding(shopIdentityContext?.understanding) ??
+      normalizeUnderstanding(profileFacts?.induction?.understanding);
+    markets = moduleMarkets.length > 0 ? moduleMarkets : normalizeMarkets(profileFacts?.markets);
+    signals =
+      normalizeSignals(signalBundle?.signals) ??
+      normalizeSignals(profileFacts?.signals);
     themeSceneProfile =
+      normalizeThemeSceneProfile(styleContext?.themeSceneProfile) ??
       normalizeThemeSceneProfile(themeKeyProfile?.themeSceneProfile) ??
       normalizeThemeSceneProfile(profileFacts?.themeSceneProfile);
     translationContextProfile = normalizeTranslationContextProfile(contextProfile);
-    strategyFromBlob = normalizeStrategy(profileFacts?.induction?.strategy);
+    strategyFromBlob =
+      normalizeStrategy(styleContext?.strategy) ??
+      normalizeStrategy(profileFacts?.induction?.strategy);
     glossaryFromBlob = normalizeGlossarySuggestions(glossaryRaw);
   }
 

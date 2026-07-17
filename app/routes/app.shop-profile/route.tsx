@@ -161,8 +161,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
       const contentJob = latestByTask.content_size ?? null;
       const coverageJob = latestByTask.coverage ?? null;
+      const profileSourceJobs = (
+        [
+          latestByTask.profile_material,
+          latestByTask.profile_identity,
+          latestByTask.market_locale,
+          latestByTask.catalog_material,
+          latestByTask.editorial_material,
+          latestByTask.style_material,
+        ].filter(Boolean) as ShopScanJob[]
+      ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      const latestProfileSourceJob = profileSourceJobs[0] ?? null;
       const profileMaterialJob = latestByTask.profile_material ?? null;
       const profileAiJob = latestByTask.profile_ai ?? null;
+      const glossarySamplesJob = latestByTask.glossary_samples ?? null;
       const glossaryAiJob = latestByTask.glossary_ai ?? null;
       const latestLegacyJob = await getLatestShopScanJob(shop);
       const latest = jobs[0] ?? latestLegacyJob;
@@ -178,9 +190,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           status: anyActive ? "SCANNING" : latestUpdated.status,
           stages: {
             contentSize: mapJobStatusToStage(contentJob?.status),
-            profile: mapJobStatusToStage(profileAiJob?.status ?? profileMaterialJob?.status),
+            profile: mapJobStatusToStage(profileAiJob?.status ?? latestProfileSourceJob?.status),
             coverage: mapJobStatusToStage(coverageJob?.status),
-            glossary: mapJobStatusToStage(glossaryAiJob?.status ?? latestByTask.glossary_samples?.status),
+            glossary: mapJobStatusToStage(glossaryAiJob?.status ?? glossarySamplesJob?.status),
           },
           summary: {
             totalItems: contentJob?.summary.totalItems,
@@ -196,7 +208,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         };
       }
 
-      const profileArtifactJob = profileAiJob ?? profileMaterialJob ?? latestLegacyJob;
+      const profileArtifactJob = profileAiJob ?? latestProfileSourceJob ?? profileMaterialJob ?? latestLegacyJob;
       if (profileArtifactJob) {
         const profileArtifacts = await loadShopScanArtifacts(
           profileArtifactJob.blobPrefix,
@@ -211,7 +223,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         artifactSource = profileArtifacts.source;
       }
 
-      const glossaryArtifactJob = glossaryAiJob ?? latestLegacyJob;
+      const glossaryArtifactJob = glossaryAiJob ?? glossarySamplesJob ?? latestLegacyJob;
       if (glossaryArtifactJob) {
         const glossaryArtifacts = await loadShopScanArtifacts(
           glossaryArtifactJob.blobPrefix,
@@ -268,6 +280,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     rawTask === "content_size" ||
     rawTask === "coverage" ||
     rawTask === "profile_material" ||
+    rawTask === "profile_identity" ||
+    rawTask === "market_locale" ||
+    rawTask === "catalog_material" ||
+    rawTask === "editorial_material" ||
+    rawTask === "style_material" ||
     rawTask === "profile_ai" ||
     rawTask === "glossary_samples" ||
     rawTask === "glossary_ai"
@@ -364,7 +381,12 @@ const MODE_LABEL: Record<ShopScanMode, string> = {
 const TASK_LABEL: Record<ShopScanTask, string> = {
   content_size: "扫描内容规模",
   coverage: "扫描语言覆盖率",
-  profile_material: "扫描画像素材",
+  profile_material: "扫描全部画像源",
+  profile_identity: "扫描店铺身份",
+  market_locale: "扫描语言与市场",
+  catalog_material: "扫描商品与类目",
+  editorial_material: "扫描文章与系列",
+  style_material: "扫描 Theme 场景",
   profile_ai: "生成店铺画像",
   glossary_samples: "扫描术语样本",
   glossary_ai: "生成术语建议",
@@ -372,8 +394,21 @@ const TASK_LABEL: Record<ShopScanTask, string> = {
 const DATA_TASKS: ShopScanTask[] = [
   "content_size",
   "coverage",
+  "profile_identity",
+  "market_locale",
+  "catalog_material",
+  "editorial_material",
+  "style_material",
   "profile_material",
   "glossary_samples",
+];
+const PROFILE_SOURCE_TASKS: ShopScanTask[] = [
+  "profile_identity",
+  "market_locale",
+  "catalog_material",
+  "editorial_material",
+  "style_material",
+  "profile_material",
 ];
 const AI_TASKS: ShopScanTask[] = ["profile_ai", "glossary_ai"];
 const TABLE_SCROLL_X = { x: "max-content" as const };
@@ -546,7 +581,17 @@ export default function ShopProfilePage() {
     [taskRuns],
   );
   const profileMaterialRun = taskRunByTask.profile_material;
+  const profileIdentityRun = taskRunByTask.profile_identity;
+  const marketLocaleRun = taskRunByTask.market_locale;
+  const catalogMaterialRun = taskRunByTask.catalog_material;
+  const editorialMaterialRun = taskRunByTask.editorial_material;
+  const styleMaterialRun = taskRunByTask.style_material;
   const profileAiRun = taskRunByTask.profile_ai;
+  const latestProfileSourceRun = useMemo(() => {
+    return PROFILE_SOURCE_TASKS.map((task) => taskRunByTask[task])
+      .filter((run): run is TaskRunView => Boolean(run))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0] ?? null;
+  }, [taskRunByTask]);
   const completedTaskCount = taskRuns.filter((run) => run.status === "COMPLETED").length;
 
   // 扫描进行中时自动轮询刷新
@@ -1386,15 +1431,30 @@ export default function ShopProfilePage() {
                 <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
                   <Flex gap={6} wrap="wrap">
                     <Tag {...SCAN_TAG_STYLE}>
-                      步骤 1: {TASK_LABEL.profile_material}
+                      Source: 店铺 / 市场 / 商品 / 文章 / Theme
                     </Tag>
                     <Tag {...SCAN_TAG_STYLE}>
-                      步骤 2: {TASK_LABEL.profile_ai}
+                      Assembler: {TASK_LABEL.profile_ai}
                     </Tag>
-                    {profileMaterialRun ? (
-                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
-                        素材: {STATUS_LABEL[profileMaterialRun.status]}
+                    {latestProfileSourceRun ? (
+                      <Tag color={STATUS_COLOR[latestProfileSourceRun.status]}>
+                        Source: {STATUS_LABEL[latestProfileSourceRun.status]}
                       </Tag>
+                    ) : null}
+                    {profileIdentityRun ? (
+                      <Tag {...SCAN_TAG_STYLE}>店铺: {STATUS_LABEL[profileIdentityRun.status]}</Tag>
+                    ) : null}
+                    {marketLocaleRun ? (
+                      <Tag {...SCAN_TAG_STYLE}>市场: {STATUS_LABEL[marketLocaleRun.status]}</Tag>
+                    ) : null}
+                    {catalogMaterialRun ? (
+                      <Tag {...SCAN_TAG_STYLE}>商品: {STATUS_LABEL[catalogMaterialRun.status]}</Tag>
+                    ) : null}
+                    {editorialMaterialRun ? (
+                      <Tag {...SCAN_TAG_STYLE}>文章: {STATUS_LABEL[editorialMaterialRun.status]}</Tag>
+                    ) : null}
+                    {styleMaterialRun ? (
+                      <Tag {...SCAN_TAG_STYLE}>Theme: {STATUS_LABEL[styleMaterialRun.status]}</Tag>
                     ) : null}
                     {profileAiRun ? (
                       <Tag color={STATUS_COLOR[profileAiRun.status]}>
@@ -1409,7 +1469,7 @@ export default function ShopProfilePage() {
                       disabled={!configured || isActive}
                       onClick={() => handleScan("profile_material")}
                     >
-                      扫描画像素材
+                      扫描全部画像源
                     </Button>
                     <Button
                       type="primary"
@@ -1535,10 +1595,10 @@ export default function ShopProfilePage() {
               <Flex vertical gap={16}>
                 <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
                   <Flex gap={6} wrap="wrap">
-                    <Tag {...SCAN_TAG_STYLE}>来源: {TASK_LABEL.profile_material}</Tag>
-                    {profileMaterialRun ? (
-                      <Tag color={STATUS_COLOR[profileMaterialRun.status]}>
-                        {STATUS_LABEL[profileMaterialRun.status]}
+                    <Tag {...SCAN_TAG_STYLE}>来源: {TASK_LABEL.style_material}</Tag>
+                    {styleMaterialRun ? (
+                      <Tag color={STATUS_COLOR[styleMaterialRun.status]}>
+                        {STATUS_LABEL[styleMaterialRun.status]}
                       </Tag>
                     ) : null}
                   </Flex>
@@ -1546,7 +1606,7 @@ export default function ShopProfilePage() {
                     type="primary"
                     loading={isRescanning}
                     disabled={!configured || isActive}
-                    onClick={() => handleScan("profile_material")}
+                    onClick={() => handleScan("style_material")}
                   >
                     扫描 Theme 场景
                   </Button>
@@ -1706,7 +1766,7 @@ export default function ShopProfilePage() {
                 <Empty
                   description={
                     blobConfigured
-                      ? "暂无规则产物（未读到 theme-key-profile.json / profile-facts.json）"
+                      ? "暂无规则产物（未读到 style-context.json / theme-key-profile.json / profile-facts.json）"
                       : "暂无规则产物（当前页面未配置 Blob 读取）"
                   }
                 />

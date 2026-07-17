@@ -3,7 +3,6 @@ import {
   claimShopScanJob,
   findPendingShopScanJobs,
   getShopScanJob,
-  getLatestShopScanJobByTask,
   heartbeatShopScan,
   setShopScanStage,
   updateShopScanJob,
@@ -23,7 +22,15 @@ import { getOfflineAccessTokenFromTsf, hasTsfDbCredentials } from "../services/t
 import { fetchShopLocales, type ShopLocaleRow } from "../services/shopScan/shopContext.js";
 import { isRecoverableScanError } from "../services/shopScan/graphql.js";
 import { runContentSizeStage } from "../services/shopScan/stageContentSize.js";
-import { runProfileAiStageFromBlob, runProfileStage } from "../services/shopScan/stageProfile.js";
+import {
+  runCatalogSourceStage,
+  runEditorialSourceStage,
+  runMarketLocaleStage,
+  runProfileAiStageFromBlob,
+  runProfileIdentityStage,
+  runProfileStage,
+  runStyleSourceStage,
+} from "../services/shopScan/stageProfile.js";
 import { runCoverageStage } from "../services/shopScan/stageCoverage.js";
 import {
   runGlossaryAiStageFromBlob,
@@ -37,6 +44,14 @@ const WORKER_ID = `shopscan-${process.env.HOSTNAME ?? hostname()}-${process.pid}
 /** 每 tick 最多处理的扫描数（扫描较重，保守串行）。 */
 const DRAIN_MAX = Math.max(1, Number(process.env.SHOP_SCAN_DRAIN_MAX) || 3);
 const HEARTBEAT_THROTTLE_MS = 20_000;
+
+function buildProfileWorkspacePrefix(shop: string): string {
+  return `shop-scan/${shop}/profile-workspace`;
+}
+
+function buildGlossaryWorkspacePrefix(shop: string): string {
+  return `shop-scan/${shop}/glossary-workspace`;
+}
 
 /** shop_scan Cosmos 是否配置（未配置则整个 worker 空跑）。 */
 function cosmosConfigured(): boolean {
@@ -203,16 +218,64 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
           });
           return r.status === "done" ? "DONE" : "SKIPPED";
         }
+        case "profile_identity": {
+          const r = await runProfileIdentityStage({
+            shop,
+            accessToken,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "market_locale": {
+          const r = await runMarketLocaleStage({
+            shop,
+            accessToken,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "catalog_material": {
+          const r = await runCatalogSourceStage({
+            shop,
+            accessToken,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "editorial_material": {
+          const r = await runEditorialSourceStage({
+            shop,
+            accessToken,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
+        case "style_material": {
+          const r = await runStyleSourceStage({
+            shop,
+            accessToken,
+            locales,
+            blobPrefix: job.blobPrefix,
+            heartbeat,
+          });
+          return r.status === "done" ? "DONE" : "SKIPPED";
+        }
         case "profile_ai": {
-          const sourceJob = await getLatestShopScanJobByTask(shop, "profile_material");
-          if (!sourceJob?.blobPrefix) return "SKIPPED";
           const r = await runProfileAiStageFromBlob({
             shop,
             accessToken,
             primaryLocale,
             locales,
             scanId,
-            sourceBlobPrefix: sourceJob.blobPrefix,
+            sourceBlobPrefix: buildProfileWorkspacePrefix(shop),
             targetBlobPrefix: job.blobPrefix,
             heartbeat,
           });
@@ -232,11 +295,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
           return r.status === "done" ? "DONE" : "SKIPPED";
         }
         case "glossary_ai": {
-          const sourceJob = await getLatestShopScanJobByTask(shop, "glossary_samples");
-          if (!sourceJob?.blobPrefix) return "SKIPPED";
           const r = await runGlossaryAiStageFromBlob({
             blobPrefix: job.blobPrefix,
-            sourceBlobPrefix: sourceJob.blobPrefix,
+            sourceBlobPrefix: buildGlossaryWorkspacePrefix(shop),
             heartbeat,
           });
           return {
@@ -258,7 +319,15 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
   }
 
   // 画像相关任务收尾：确保画像扫描指针更新。
-  if (task === "profile_material" || task === "profile_ai") {
+  if (
+    task === "profile_material" ||
+    task === "profile_identity" ||
+    task === "market_locale" ||
+    task === "catalog_material" ||
+    task === "editorial_material" ||
+    task === "style_material" ||
+    task === "profile_ai"
+  ) {
     try {
       await touchShopProfileScan(shop, scanId);
     } catch {
@@ -287,6 +356,11 @@ function stageNameForTask(task: ShopScanTask): ShopScanStageName {
     case "coverage":
       return "coverage";
     case "profile_material":
+    case "profile_identity":
+    case "market_locale":
+    case "catalog_material":
+    case "editorial_material":
+    case "style_material":
     case "profile_ai":
       return "profile";
     case "glossary_samples":

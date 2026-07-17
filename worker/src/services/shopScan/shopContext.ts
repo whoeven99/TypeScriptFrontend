@@ -63,6 +63,24 @@ export type ShopProfileFacts = {
   tags: string[];
 };
 
+export type ShopIdentityFacts = Pick<
+  ShopProfileFacts,
+  "shopName" | "primaryDomain" | "currencyCode" | "vendors"
+>;
+
+export type ShopCatalogFacts = Pick<
+  ShopProfileFacts,
+  | "productTypes"
+  | "vendors"
+  | "topProductTitles"
+  | "collectionTitles"
+  | "collectionDescriptions"
+  | "menuTitles"
+  | "tags"
+>;
+
+export type ShopEditorialFacts = Pick<ShopProfileFacts, "articleTitles" | "articleSummaries">;
+
 const SHOP_MARKETS_QUERY = `
 query ShopScanMarkets {
   markets(first: 50, query: "status:ACTIVE") {
@@ -108,6 +126,44 @@ query ShopScanFacts {
         items { title }
       }
     }
+  }
+}`;
+
+const SHOP_IDENTITY_QUERY = `
+query ShopScanIdentity {
+  shop {
+    name
+    currencyCode
+    primaryDomain { url }
+  }
+  products(first: 20, sortKey: UPDATED_AT, reverse: true) {
+    nodes { vendor }
+  }
+}`;
+
+const SHOP_CATALOG_QUERY = `
+query ShopScanCatalog {
+  products(first: 40, sortKey: UPDATED_AT, reverse: true) {
+    nodes { title productType vendor tags }
+  }
+  collections(first: 30, sortKey: UPDATED_AT, reverse: true) {
+    nodes { title description }
+  }
+  menus(first: 10) {
+    nodes {
+      title
+      items {
+        title
+        items { title }
+      }
+    }
+  }
+}`;
+
+const SHOP_EDITORIAL_QUERY = `
+query ShopScanEditorial {
+  articles(first: 20, sortKey: UPDATED_AT, reverse: true) {
+    nodes { title summary }
   }
 }`;
 
@@ -235,6 +291,108 @@ export async function fetchShopProfileFacts(
     articleSummaries,
     menuTitles,
     tags,
+  };
+}
+
+export async function fetchShopIdentityFacts(
+  shop: string,
+  accessToken: string,
+): Promise<ShopIdentityFacts> {
+  const data = await shopScanGraphql<{
+    shop: {
+      name: string;
+      currencyCode: string | null;
+      primaryDomain: { url: string | null } | null;
+    };
+    products: {
+      nodes: Array<{ vendor: string | null }>;
+    };
+  }>(shop, accessToken, SHOP_IDENTITY_QUERY);
+
+  return {
+    shopName: data.shop?.name ?? shop,
+    primaryDomain: data.shop?.primaryDomain?.url ?? null,
+    currencyCode: data.shop?.currencyCode ?? null,
+    vendors: dedupeNonEmpty((data.products?.nodes ?? []).map((p) => p.vendor ?? "")),
+  };
+}
+
+export async function fetchShopCatalogFacts(
+  shop: string,
+  accessToken: string,
+): Promise<ShopCatalogFacts> {
+  const data = await shopScanGraphql<{
+    products: {
+      nodes: Array<{
+        title: string | null;
+        productType: string | null;
+        vendor: string | null;
+        tags: string[] | null;
+      }>;
+    };
+    collections: {
+      nodes: Array<{ title: string | null; description: string | null }>;
+    };
+    menus: { nodes: MenuNode[] };
+  }>(shop, accessToken, SHOP_CATALOG_QUERY);
+
+  const products = data.products?.nodes ?? [];
+  const collections = data.collections?.nodes ?? [];
+
+  return {
+    productTypes: dedupeNonEmpty(products.map((p) => p.productType ?? "")),
+    vendors: dedupeNonEmpty(products.map((p) => p.vendor ?? "")),
+    topProductTitles: dedupeNonEmpty(products.map((p) => p.title ?? "")).slice(0, 30),
+    collectionTitles: dedupeNonEmpty(collections.map((c) => c.title ?? "")).slice(0, 30),
+    collectionDescriptions: dedupeNonEmpty(
+      collections
+        .map((c) => truncateText(c.description ?? "", 200))
+        .filter((d) => d.length >= 8),
+    ).slice(0, 15),
+    menuTitles: collectMenuTitles(data.menus?.nodes ?? []),
+    tags: dedupeNonEmpty(products.flatMap((p) => p.tags ?? [])).slice(0, 50),
+  };
+}
+
+export async function fetchShopEditorialFacts(
+  shop: string,
+  accessToken: string,
+): Promise<ShopEditorialFacts> {
+  const data = await shopScanGraphql<{
+    articles: {
+      nodes: Array<{ title: string | null; summary: string | null }>;
+    };
+  }>(shop, accessToken, SHOP_EDITORIAL_QUERY);
+
+  const articles = data.articles?.nodes ?? [];
+  return {
+    articleTitles: dedupeNonEmpty(articles.map((a) => a.title ?? "")).slice(0, 20),
+    articleSummaries: dedupeNonEmpty(
+      articles
+        .map((a) => truncateText(stripHtml(a.summary ?? ""), 200))
+        .filter((s) => s.length >= 8),
+    ).slice(0, 15),
+  };
+}
+
+export function mergeShopProfileFacts(args: {
+  identity?: Partial<ShopIdentityFacts> | null;
+  catalog?: Partial<ShopCatalogFacts> | null;
+  editorial?: Partial<ShopEditorialFacts> | null;
+}): ShopProfileFacts {
+  return {
+    shopName: args.identity?.shopName ?? "",
+    primaryDomain: args.identity?.primaryDomain ?? null,
+    currencyCode: args.identity?.currencyCode ?? null,
+    productTypes: args.catalog?.productTypes ?? [],
+    vendors: dedupeNonEmpty([...(args.identity?.vendors ?? []), ...(args.catalog?.vendors ?? [])]),
+    topProductTitles: args.catalog?.topProductTitles ?? [],
+    collectionTitles: args.catalog?.collectionTitles ?? [],
+    collectionDescriptions: args.catalog?.collectionDescriptions ?? [],
+    articleTitles: args.editorial?.articleTitles ?? [],
+    articleSummaries: args.editorial?.articleSummaries ?? [],
+    menuTitles: args.catalog?.menuTitles ?? [],
+    tags: args.catalog?.tags ?? [],
   };
 }
 

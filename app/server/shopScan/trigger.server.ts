@@ -35,6 +35,30 @@ function buildScanId(shop: string): string {
   return `${shop}-${stamp}-${randomUUID().slice(0, 8)}`;
 }
 
+function buildProfileWorkspacePrefix(shop: string): string {
+  return `shop-scan/${shop}/profile-workspace`;
+}
+
+function buildGlossaryWorkspacePrefix(shop: string): string {
+  return `shop-scan/${shop}/glossary-workspace`;
+}
+
+function resolveBlobPrefix(shop: string, scanId: string, task: ShopScanTask): string {
+  switch (task) {
+    case "profile_material":
+    case "profile_identity":
+    case "market_locale":
+    case "catalog_material":
+    case "editorial_material":
+    case "style_material":
+      return buildProfileWorkspacePrefix(shop);
+    case "glossary_samples":
+      return buildGlossaryWorkspacePrefix(shop);
+    default:
+      return `shop-scan/${shop}/${scanId}`;
+  }
+}
+
 export async function enqueueShopScan({
   shop,
   trigger,
@@ -55,7 +79,7 @@ export async function enqueueShopScan({
 
   try {
     const scanId = buildScanId(shop);
-    const blobPrefix = `shop-scan/${shop}/${scanId}`;
+    const blobPrefix = resolveBlobPrefix(shop, scanId, task);
     await createShopScanJob({
       scanId,
       shop,

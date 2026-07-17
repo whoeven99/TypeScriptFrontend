@@ -74,6 +74,7 @@ const blobContainer = BlobServiceClient.fromConnectionString(blobConn).getContai
 const prefix = latest.blobPrefix.endsWith("/")
   ? latest.blobPrefix
   : `${latest.blobPrefix}/`;
+const modulePrefix = `${prefix}scan-modules/`;
 
 async function readJson(name) {
   const client = blobContainer.getBlockBlobClient(`${prefix}${name}`);
@@ -82,9 +83,20 @@ async function readJson(name) {
   return { exists: true, data: JSON.parse(buf.toString("utf8")) };
 }
 
+async function readModuleJson(name) {
+  const client = blobContainer.getBlockBlobClient(`${modulePrefix}${name}`);
+  if (!(await client.exists())) return { exists: false, data: null };
+  const buf = await client.downloadToBuffer();
+  return { exists: true, data: JSON.parse(buf.toString("utf8")) };
+}
+
 const profileFacts = await readJson("profile-facts.json");
 const glossaryRaw = await readJson("glossary-raw.json");
 const translationContextProfile = await readJson("translation-context-profile.json");
+const marketLocaleContext = await readModuleJson("market-locale-context.json");
+const signalBundle = await readModuleJson("signal-bundle.json");
+const styleContext = await readModuleJson("style-context.json");
+const shopIdentityContext = await readModuleJson("shop-identity-context.json");
 
 console.log("\n=== profile-facts.json ===");
 if (!profileFacts.exists) {
@@ -145,6 +157,40 @@ if (!translationContextProfile.exists) {
     },
   );
 }
+
+console.log("\n=== scan-modules/* ===");
+console.log(
+  JSON.stringify(
+    {
+      "shop-identity-context.json": {
+        exists: shopIdentityContext.exists,
+        hasUnderstanding: Boolean(shopIdentityContext.data?.understanding),
+        hasShopBaseline: Boolean(shopIdentityContext.data?.shopBaseline),
+      },
+      "market-locale-context.json": {
+        exists: marketLocaleContext.exists,
+        markets: marketLocaleContext.data?.markets?.length ?? 0,
+        publishedLocales: marketLocaleContext.data?.publishedLocales?.length ?? 0,
+      },
+      "signal-bundle.json": {
+        exists: signalBundle.exists,
+        weightedTopTerms: signalBundle.data?.signals?.weightedTopTerms?.length ?? 0,
+        representativeSamples:
+          signalBundle.data?.signals?.representativeSamples?.length ?? 0,
+      },
+      "style-context.json": {
+        exists: styleContext.exists,
+        hasThemeSceneProfile: Boolean(styleContext.data?.themeSceneProfile),
+        hasStrategy: Boolean(styleContext.data?.strategy),
+        regionalStyleGuidance:
+          styleContext.data?.regionalStyleProfile?.guidanceNotes?.length ?? 0,
+        moduleHints: styleContext.data?.modulePolicyProfile?.moduleHints?.length ?? 0,
+      },
+    },
+    null,
+    2,
+  ),
+);
 
 console.log("\n=== glossary-raw.json ===");
 if (!glossaryRaw.exists) {

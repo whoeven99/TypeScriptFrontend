@@ -1,8 +1,12 @@
 import { blobRead, blobWrite } from "../blobV4.js";
 import { shopScanAiConfigured, SHOP_SCAN_AI_MODEL } from "./ai.js";
 import {
+  fetchShopCatalogFacts,
+  fetchShopEditorialFacts,
+  fetchShopIdentityFacts,
   fetchShopMarkets,
   fetchShopProfileFacts,
+  mergeShopProfileFacts,
   type ShopMarket,
   type ShopLocaleRow,
   type ShopProfileFacts,
@@ -14,7 +18,16 @@ import {
 } from "./signalExtraction.js";
 import { sampleThemeTexts } from "./translationSamples.js";
 import { buildThemeSceneProfile } from "./themeKeyIntelligence.js";
-import { buildTranslationContextProfile } from "./translationContextProfile.js";
+import {
+  readProfileModuleSources,
+  writeCatalogSourceModule,
+  writeEditorialSourceModule,
+  writeMarketLocaleSourceModule,
+  writeProfileDerivedArtifacts,
+  writeProfileModuleArtifacts,
+  writeShopIdentitySourceModule,
+  writeStyleSourceModule,
+} from "./profileModules.js";
 import { upsertShopProfile } from "./tsfWrite.js";
 
 /**
@@ -27,6 +40,10 @@ import { upsertShopProfile } from "./tsfWrite.js";
 
 export type ProfileStageResult =
   | { status: "done"; profileStrategy: TerminologyStrategy | null }
+  | { status: "skipped"; reason: string };
+
+export type ProfileSourceStageResult =
+  | { status: "done" }
   | { status: "skipped"; reason: string };
 
 type StoredProfileFactsBlob = {
@@ -84,6 +101,173 @@ function hasProfileMaterial(
   );
 }
 
+async function rebuildProfileWorkspaceArtifacts(args: {
+  shop: string;
+  blobPrefix: string;
+  locales: ShopLocaleRow[];
+  scannedAt: string;
+  induction?: {
+    understanding: Awaited<ReturnType<typeof runProfileInduction>>["understanding"] | null;
+    strategy: TerminologyStrategy | null;
+  } | null;
+  sourceBlobPrefix?: string;
+}): Promise<ShopProfileFacts | null> {
+  const moduleSources = await readProfileModuleSources(args.blobPrefix);
+  const facts = moduleSources?.facts ?? null;
+  if (!facts) return null;
+  const themeTexts = moduleSources?.themeTexts ?? [];
+  const signals = extractShopSignals(facts, themeTexts);
+  const themeSceneProfile = buildThemeSceneProfile(themeTexts);
+  const translationContextProfile = await writeProfileDerivedArtifacts({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    locales: args.locales,
+    facts,
+    markets: moduleSources?.markets ?? [],
+    themeTexts,
+    signals,
+    themeSceneProfile,
+    induction: args.induction ?? null,
+    scannedAt: args.scannedAt,
+    sourceBlobPrefix: args.sourceBlobPrefix,
+  });
+  await blobWrite(`${args.blobPrefix}/theme-key-profile.json`, {
+    stage: "themeKeyIntelligence",
+    shop: args.shop,
+    themeSceneProfile,
+    scannedAt: args.scannedAt,
+    sourceBlobPrefix: args.sourceBlobPrefix,
+  });
+  await blobWrite(`${args.blobPrefix}/translation-context-profile.json`, translationContextProfile);
+  return facts;
+}
+
+export async function runProfileIdentityStage(args: {
+  shop: string;
+  accessToken: string;
+  locales: ShopLocaleRow[];
+  blobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileSourceStageResult> {
+  const scannedAt = new Date().toISOString();
+  const facts = await fetchShopIdentityFacts(args.shop, args.accessToken);
+  await writeShopIdentitySourceModule({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    facts,
+    scannedAt,
+  });
+  await rebuildProfileWorkspaceArtifacts({
+    shop: args.shop,
+    blobPrefix: args.blobPrefix,
+    locales: args.locales,
+    scannedAt,
+  });
+  await args.heartbeat();
+  return { status: "done" };
+}
+
+export async function runMarketLocaleStage(args: {
+  shop: string;
+  accessToken: string;
+  locales: ShopLocaleRow[];
+  blobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileSourceStageResult> {
+  const scannedAt = new Date().toISOString();
+  const markets = await fetchShopMarkets(args.shop, args.accessToken, args.locales);
+  await writeMarketLocaleSourceModule({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    locales: args.locales,
+    markets,
+    scannedAt,
+  });
+  await rebuildProfileWorkspaceArtifacts({
+    shop: args.shop,
+    blobPrefix: args.blobPrefix,
+    locales: args.locales,
+    scannedAt,
+  });
+  await args.heartbeat();
+  return { status: "done" };
+}
+
+export async function runCatalogSourceStage(args: {
+  shop: string;
+  accessToken: string;
+  locales: ShopLocaleRow[];
+  blobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileSourceStageResult> {
+  const scannedAt = new Date().toISOString();
+  const facts = await fetchShopCatalogFacts(args.shop, args.accessToken);
+  await writeCatalogSourceModule({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    facts,
+    scannedAt,
+  });
+  await rebuildProfileWorkspaceArtifacts({
+    shop: args.shop,
+    blobPrefix: args.blobPrefix,
+    locales: args.locales,
+    scannedAt,
+  });
+  await args.heartbeat();
+  return { status: "done" };
+}
+
+export async function runEditorialSourceStage(args: {
+  shop: string;
+  accessToken: string;
+  locales: ShopLocaleRow[];
+  blobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileSourceStageResult> {
+  const scannedAt = new Date().toISOString();
+  const facts = await fetchShopEditorialFacts(args.shop, args.accessToken);
+  await writeEditorialSourceModule({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    facts,
+    scannedAt,
+  });
+  await rebuildProfileWorkspaceArtifacts({
+    shop: args.shop,
+    blobPrefix: args.blobPrefix,
+    locales: args.locales,
+    scannedAt,
+  });
+  await args.heartbeat();
+  return { status: "done" };
+}
+
+export async function runStyleSourceStage(args: {
+  shop: string;
+  accessToken: string;
+  locales: ShopLocaleRow[];
+  blobPrefix: string;
+  heartbeat: () => Promise<void>;
+}): Promise<ProfileSourceStageResult> {
+  const scannedAt = new Date().toISOString();
+  const themeTexts = await sampleThemeTexts(args.shop, args.accessToken, undefined, args.heartbeat);
+  await writeStyleSourceModule({
+    blobPrefix: args.blobPrefix,
+    shop: args.shop,
+    themeTexts,
+    scannedAt,
+  });
+  await rebuildProfileWorkspaceArtifacts({
+    shop: args.shop,
+    blobPrefix: args.blobPrefix,
+    locales: args.locales,
+    scannedAt,
+  });
+  await args.heartbeat();
+  return { status: "done" };
+}
+
 export async function runProfileStage(args: {
   shop: string;
   accessToken: string;
@@ -108,12 +292,21 @@ export async function runProfileStage(args: {
   const signals = extractShopSignals(facts, themeTexts);
   const themeSceneProfile = buildThemeSceneProfile(themeTexts);
   const hasMaterial = hasProfileMaterial(facts, markets, signals);
-  const publishedLocales = locales
-    .filter((locale) => locale.published)
-    .map((locale) => locale.locale);
   const scannedAt = new Date().toISOString();
 
   if (!enableAi || !shopScanAiConfigured() || !hasMaterial) {
+    const translationContextProfile = await writeProfileModuleArtifacts({
+      blobPrefix,
+      shop,
+      locales,
+      facts,
+      markets,
+      themeTexts,
+      signals,
+      themeSceneProfile,
+      induction: null,
+      scannedAt,
+    });
     await blobWrite(`${blobPrefix}/profile-facts.json`, {
       stage: "profile",
       shop,
@@ -130,19 +323,7 @@ export async function runProfileStage(args: {
       themeSceneProfile,
       scannedAt,
     });
-    await blobWrite(
-      `${blobPrefix}/translation-context-profile.json`,
-      buildTranslationContextProfile({
-        publishedLocales,
-        markets,
-        facts,
-        signals,
-        understanding: null,
-        strategy: null,
-        themeSceneProfile,
-        generatedAt: scannedAt,
-      }),
-    );
+    await blobWrite(`${blobPrefix}/translation-context-profile.json`, translationContextProfile);
     if (hasMaterial) {
       return {
         status: "done",
@@ -168,6 +349,19 @@ export async function runProfileStage(args: {
     }),
   );
 
+  const translationContextProfile = await writeProfileModuleArtifacts({
+    blobPrefix,
+    shop,
+    locales,
+    facts,
+    markets,
+    themeTexts,
+    signals,
+    themeSceneProfile,
+    induction,
+    scannedAt,
+  });
+
   await blobWrite(`${blobPrefix}/profile-facts.json`, {
     stage: "profile",
     shop,
@@ -187,37 +381,13 @@ export async function runProfileStage(args: {
   });
 
   if (!induction.understanding) {
-    await blobWrite(
-      `${blobPrefix}/translation-context-profile.json`,
-      buildTranslationContextProfile({
-        publishedLocales,
-        markets,
-        facts,
-        signals,
-        understanding: null,
-        strategy: induction.strategy,
-        themeSceneProfile,
-        generatedAt: scannedAt,
-      }),
-    );
+    await blobWrite(`${blobPrefix}/translation-context-profile.json`, translationContextProfile);
     return { status: "skipped", reason: "ai_understanding_failed" };
   }
 
   const { understanding, strategy } = induction;
 
-  await blobWrite(
-    `${blobPrefix}/translation-context-profile.json`,
-    buildTranslationContextProfile({
-      publishedLocales,
-      markets,
-      facts,
-      signals,
-      understanding,
-      strategy,
-      themeSceneProfile,
-      generatedAt: scannedAt,
-    }),
-  );
+  await blobWrite(`${blobPrefix}/translation-context-profile.json`, translationContextProfile);
 
   await upsertShopProfile({
     shop,
@@ -260,24 +430,30 @@ export async function runProfileAiStageFromBlob(args: {
     heartbeat,
   } = args;
   const prefix = sourceBlobPrefix.endsWith("/") ? sourceBlobPrefix : `${sourceBlobPrefix}/`;
-  const [storedFacts, storedThemeProfile] = await Promise.all([
+  const [moduleSources, storedFacts, storedThemeProfile] = await Promise.all([
+    readProfileModuleSources(sourceBlobPrefix),
     blobRead<StoredProfileFactsBlob>(`${prefix}profile-facts.json`),
     blobRead<StoredThemeKeyProfileBlob>(`${prefix}theme-key-profile.json`),
   ]);
   await heartbeat();
 
-  const facts = storedFacts?.facts ?? null;
-  const markets = Array.isArray(storedFacts?.markets) ? storedFacts!.markets : [];
-  const themeTexts = Array.isArray(storedFacts?.themeTexts)
-    ? storedFacts!.themeTexts.map((sample) => ({
-        text: String(sample?.text ?? ""),
-        module: String(sample?.module ?? ""),
-        key: String(sample?.key ?? ""),
-        resourceId: String(sample?.resourceId ?? ""),
-        weight: Number(sample?.weight ?? 0),
-      }))
-    : [];
+  const facts = moduleSources?.facts ?? storedFacts?.facts ?? null;
+  const markets =
+    moduleSources?.markets ??
+    (Array.isArray(storedFacts?.markets) ? storedFacts!.markets : []);
+  const themeTexts =
+    moduleSources?.themeTexts ??
+    (Array.isArray(storedFacts?.themeTexts)
+      ? storedFacts!.themeTexts.map((sample) => ({
+          text: String(sample?.text ?? ""),
+          module: String(sample?.module ?? ""),
+          key: String(sample?.key ?? ""),
+          resourceId: String(sample?.resourceId ?? ""),
+          weight: Number(sample?.weight ?? 0),
+        }))
+      : []);
   const signals =
+    moduleSources?.signals ??
     storedFacts?.signals ??
     (facts ? extractShopSignals(facts, themeTexts) : null);
   const themeSceneProfile =
@@ -296,10 +472,50 @@ export async function runProfileAiStageFromBlob(args: {
       primaryLocale,
     }),
   );
-  const publishedLocales = locales
-    .filter((locale) => locale.published)
-    .map((locale) => locale.locale);
   const scannedAt = new Date().toISOString();
+  const mergedFacts = moduleSources?.facts
+    ? moduleSources.facts
+    : mergeShopProfileFacts({
+        identity: facts
+          ? {
+              shopName: facts.shopName,
+              primaryDomain: facts.primaryDomain,
+              currencyCode: facts.currencyCode,
+              vendors: facts.vendors,
+            }
+          : null,
+        catalog: facts
+          ? {
+              productTypes: facts.productTypes,
+              vendors: facts.vendors,
+              topProductTitles: facts.topProductTitles,
+              collectionTitles: facts.collectionTitles,
+              collectionDescriptions: facts.collectionDescriptions,
+              menuTitles: facts.menuTitles,
+              tags: facts.tags,
+            }
+          : null,
+        editorial: facts
+          ? {
+              articleTitles: facts.articleTitles,
+              articleSummaries: facts.articleSummaries,
+            }
+          : null,
+      });
+
+  const translationContextProfile = await writeProfileDerivedArtifacts({
+    blobPrefix: targetBlobPrefix,
+    shop,
+    locales,
+    facts: mergedFacts,
+    markets,
+    themeTexts,
+    signals,
+    themeSceneProfile,
+    induction,
+    scannedAt,
+    sourceBlobPrefix,
+  });
 
   await blobWrite(`${targetBlobPrefix}/profile-facts.json`, {
     stage: "profile",
@@ -322,35 +538,11 @@ export async function runProfileAiStageFromBlob(args: {
   });
 
   if (!induction.understanding) {
-    await blobWrite(
-      `${targetBlobPrefix}/translation-context-profile.json`,
-      buildTranslationContextProfile({
-        publishedLocales,
-        markets,
-        facts,
-        signals,
-        understanding: null,
-        strategy: induction.strategy,
-        themeSceneProfile,
-        generatedAt: scannedAt,
-      }),
-    );
+    await blobWrite(`${targetBlobPrefix}/translation-context-profile.json`, translationContextProfile);
     return { status: "skipped", reason: "ai_understanding_failed" };
   }
 
-  await blobWrite(
-    `${targetBlobPrefix}/translation-context-profile.json`,
-    buildTranslationContextProfile({
-      publishedLocales,
-      markets,
-      facts,
-      signals,
-      understanding: induction.understanding,
-      strategy: induction.strategy,
-      themeSceneProfile,
-      generatedAt: scannedAt,
-    }),
-  );
+  await blobWrite(`${targetBlobPrefix}/translation-context-profile.json`, translationContextProfile);
 
   await upsertShopProfile({
     shop,

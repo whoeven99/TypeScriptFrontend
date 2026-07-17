@@ -19,6 +19,11 @@ export type ShopScanTask =
   | "content_size"
   | "coverage"
   | "profile_material"
+  | "profile_identity"
+  | "market_locale"
+  | "catalog_material"
+  | "editorial_material"
+  | "style_material"
   | "profile_ai"
   | "glossary_samples"
   | "glossary_ai";
