@@ -777,10 +777,16 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
+        hasSider={!isMobile}
         style={{
-          overflow: "auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
+          overflow: isMobile ? "auto" : "hidden",
           backgroundColor: "var(--p-color-bg)",
-          minHeight: "70vh",
+          minHeight: isMobile ? "70vh" : undefined,
+          height: isMobile ? "auto" : "calc(100vh - 154px)",
+          width: "100%",
         }}
       >
         {isLoading ? (
@@ -798,12 +804,16 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
+                width={200}
                 style={{
+                  flex: "0 0 200px",
+                  width: 200,
+                  minWidth: 200,
+                  maxWidth: 200,
                   height: "100%",
-                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
+                  overflow: "hidden",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -812,8 +822,9 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
-minHeight: 0,
-justifyContent: "space-between",
+                    minHeight: 0,
+                    height: "100%",
+                    justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -837,11 +848,15 @@ justifyContent: "space-between",
             <Content
               key={selectedThemeKey}
               style={{
-                paddingLeft: isMobile ? "16px" : "24px",
-                minHeight: "70vh",
+                paddingLeft: isMobile ? "0" : "24px",
+                flex: 1,
+                minWidth: 0,
+                minHeight: isMobile ? "70vh" : 0,
+                height: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "auto",
+                overflowY: isMobile ? "visible" : "auto",
+                overflowX: "hidden",
               }}
             >
               {isMobile ? (
