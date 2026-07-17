@@ -131,6 +131,24 @@ function sortArtifactJobs(jobs: ShopScanJob[]): ShopScanJob[] {
   });
 }
 
+function profileArtifactCompleteness(artifacts: {
+  translationContextProfile: TranslationContextProfileView | null;
+  themeSceneProfile: ThemeSceneProfileView | null;
+  understanding: ShopUnderstandingView | null;
+  signals: ShopSignalsView | null;
+  markets: ShopMarketView[];
+  strategy: TerminologyStrategyView | null;
+}): number {
+  return [
+    artifacts.translationContextProfile ? 4 : 0,
+    artifacts.themeSceneProfile ? 2 : 0,
+    artifacts.understanding ? 1 : 0,
+    artifacts.signals ? 1 : 0,
+    artifacts.markets.length > 0 ? 1 : 0,
+    artifacts.strategy ? 1 : 0,
+  ].reduce((sum, value) => sum + value, 0);
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
@@ -251,24 +269,38 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           ).values(),
         ),
       );
+      let bestProfileArtifacts:
+        | (Awaited<ReturnType<typeof loadShopScanArtifacts>> & {
+            score: number;
+            updatedAtMs: number;
+          })
+        | null = null;
       for (const candidate of profileArtifactCandidates) {
         const profileArtifacts = await loadShopScanArtifacts(candidate.blobPrefix, candidate.summary);
-        const hasProfileArtifacts =
-          profileArtifacts.translationContextProfile ||
-          profileArtifacts.themeSceneProfile ||
-          profileArtifacts.understanding ||
-          profileArtifacts.signals ||
-          profileArtifacts.markets.length > 0 ||
-          profileArtifacts.strategy;
-        if (!hasProfileArtifacts) continue;
-        strategy = profileArtifacts.strategy;
-        understanding = profileArtifacts.understanding;
-        markets = profileArtifacts.markets;
-        signals = profileArtifacts.signals;
-        themeSceneProfile = profileArtifacts.themeSceneProfile;
-        translationContextProfile = profileArtifacts.translationContextProfile;
-        artifactSource = profileArtifacts.source;
-        break;
+        const score = profileArtifactCompleteness(profileArtifacts);
+        if (score === 0) continue;
+        const updatedAtMs = new Date(candidate.updatedAt).getTime();
+        if (
+          !bestProfileArtifacts ||
+          score > bestProfileArtifacts.score ||
+          (score === bestProfileArtifacts.score &&
+            updatedAtMs > bestProfileArtifacts.updatedAtMs)
+        ) {
+          bestProfileArtifacts = {
+            ...profileArtifacts,
+            score,
+            updatedAtMs,
+          };
+        }
+      }
+      if (bestProfileArtifacts) {
+        strategy = bestProfileArtifacts.strategy;
+        understanding = bestProfileArtifacts.understanding;
+        markets = bestProfileArtifacts.markets;
+        signals = bestProfileArtifacts.signals;
+        themeSceneProfile = bestProfileArtifacts.themeSceneProfile;
+        translationContextProfile = bestProfileArtifacts.translationContextProfile;
+        artifactSource = bestProfileArtifacts.source;
       }
 
       const glossaryArtifactCandidates = sortArtifactJobs(
