@@ -137,16 +137,30 @@ function profileArtifactCompleteness(artifacts: {
   understanding: ShopUnderstandingView | null;
   signals: ShopSignalsView | null;
   markets: ShopMarketView[];
-  strategy: TerminologyStrategyView | null;
 }): number {
+  // strategy / understanding 在 loader 里跨 job 单独合并，这里只比较素材类产物完整度，
+  // 避免 profile-workspace 素材分更高时盖掉 profile_ai 的术语策略。
   return [
     artifacts.translationContextProfile ? 4 : 0,
     artifacts.themeSceneProfile ? 2 : 0,
     artifacts.understanding ? 1 : 0,
     artifacts.signals ? 1 : 0,
     artifacts.markets.length > 0 ? 1 : 0,
-    artifacts.strategy ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
+}
+
+function isRicherStrategy(
+  next: TerminologyStrategyView,
+  current: TerminologyStrategyView | null,
+): boolean {
+  if (!current) return true;
+  const score = (s: TerminologyStrategyView) =>
+    s.brandTerms.length +
+    s.doNotTranslateTerms.length +
+    s.preferredTerms.length +
+    s.regionalStyleGuidance.length +
+    s.moduleHints.length;
+  return score(next) > score(current);
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -273,34 +287,84 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         | (Awaited<ReturnType<typeof loadShopScanArtifacts>> & {
             score: number;
             updatedAtMs: number;
+            preferAi: boolean;
           })
+        | null = null;
+      let bestStrategy:
+        | { strategy: TerminologyStrategyView; updatedAtMs: number; preferAi: boolean }
+        | null = null;
+      let bestUnderstanding:
+        | { understanding: ShopUnderstandingView; updatedAtMs: number; preferAi: boolean }
         | null = null;
       for (const candidate of profileArtifactCandidates) {
         const profileArtifacts = await loadShopScanArtifacts(candidate.blobPrefix, candidate.summary);
         const score = profileArtifactCompleteness(profileArtifacts);
-        if (score === 0) continue;
         const updatedAtMs = new Date(candidate.updatedAt).getTime();
+        const preferAi = candidate.task === "profile_ai";
+
+        if (profileArtifacts.strategy) {
+          const richer = isRicherStrategy(
+            profileArtifacts.strategy,
+            bestStrategy?.strategy ?? null,
+          );
+          if (
+            !bestStrategy ||
+            (preferAi && !bestStrategy.preferAi) ||
+            (preferAi === bestStrategy.preferAi &&
+              (richer ||
+                (!richer &&
+                  !isRicherStrategy(bestStrategy.strategy, profileArtifacts.strategy) &&
+                  updatedAtMs > bestStrategy.updatedAtMs)))
+          ) {
+            bestStrategy = {
+              strategy: profileArtifacts.strategy,
+              updatedAtMs,
+              preferAi,
+            };
+          }
+        }
+
+        if (profileArtifacts.understanding) {
+          if (
+            !bestUnderstanding ||
+            (preferAi && !bestUnderstanding.preferAi) ||
+            (preferAi === bestUnderstanding.preferAi &&
+              updatedAtMs > bestUnderstanding.updatedAtMs)
+          ) {
+            bestUnderstanding = {
+              understanding: profileArtifacts.understanding,
+              updatedAtMs,
+              preferAi,
+            };
+          }
+        }
+
+        if (score === 0) continue;
         if (
           !bestProfileArtifacts ||
           score > bestProfileArtifacts.score ||
+          (score === bestProfileArtifacts.score && preferAi && !bestProfileArtifacts.preferAi) ||
           (score === bestProfileArtifacts.score &&
+            preferAi === bestProfileArtifacts.preferAi &&
             updatedAtMs > bestProfileArtifacts.updatedAtMs)
         ) {
           bestProfileArtifacts = {
             ...profileArtifacts,
             score,
             updatedAtMs,
+            preferAi,
           };
         }
       }
-      if (bestProfileArtifacts) {
-        strategy = bestProfileArtifacts.strategy;
-        understanding = bestProfileArtifacts.understanding;
-        markets = bestProfileArtifacts.markets;
-        signals = bestProfileArtifacts.signals;
-        themeSceneProfile = bestProfileArtifacts.themeSceneProfile;
-        translationContextProfile = bestProfileArtifacts.translationContextProfile;
-        artifactSource = bestProfileArtifacts.source;
+      if (bestProfileArtifacts || bestStrategy || bestUnderstanding) {
+        strategy = bestStrategy?.strategy ?? bestProfileArtifacts?.strategy ?? null;
+        understanding =
+          bestUnderstanding?.understanding ?? bestProfileArtifacts?.understanding ?? null;
+        markets = bestProfileArtifacts?.markets ?? [];
+        signals = bestProfileArtifacts?.signals ?? null;
+        themeSceneProfile = bestProfileArtifacts?.themeSceneProfile ?? null;
+        translationContextProfile = bestProfileArtifacts?.translationContextProfile ?? null;
+        artifactSource = bestProfileArtifacts?.source ?? (bestStrategy || bestUnderstanding ? "cosmos" : "none");
       }
 
       const glossaryArtifactCandidates = sortArtifactJobs(
@@ -1606,6 +1670,19 @@ export default function ShopProfilePage() {
                         "-"
                       )}
                     </Descriptions.Item>
+                    <Descriptions.Item label="品牌词" span={3}>
+                      {translationContextProfile.terminologyProfile?.brandTerms.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.terminologyProfile.brandTerms.map((item) => (
+                            <Tag key={item} color="blue">
+                              {item}
+                            </Tag>
+                          ))}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
                     <Descriptions.Item label="不翻译词" span={3}>
                       {translationContextProfile.terminologyProfile?.doNotTranslateTerms.length ? (
                         <Flex gap={4} wrap="wrap">
@@ -1613,6 +1690,21 @@ export default function ShopProfilePage() {
                             (item) => (
                               <Tag key={item} color="red">
                                 {item}
+                              </Tag>
+                            ),
+                          )}
+                        </Flex>
+                      ) : (
+                        "-"
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="专业词/建议译法" span={3}>
+                      {translationContextProfile.terminologyProfile?.preferredTerms.length ? (
+                        <Flex gap={4} wrap="wrap">
+                          {translationContextProfile.terminologyProfile.preferredTerms.map(
+                            (item) => (
+                              <Tag key={`${item.source}-${item.note ?? ""}`} color="geekblue">
+                                {item.note ? `${item.source} → ${item.note}` : item.source}
                               </Tag>
                             ),
                           )}
