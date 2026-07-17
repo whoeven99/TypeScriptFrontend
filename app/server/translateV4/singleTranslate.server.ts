@@ -82,13 +82,30 @@ export async function translateSingleText(
       scanContext?.shopContext ??
       (profile
         ? {
-            industry: profile.industry,
             description: profile.description,
             brandTone: profile.brandTone,
             keywords: Array.isArray(profile.keywords) ? (profile.keywords as string[]) : [],
           }
         : null),
     terminology: scanContext?.terminologyProfile ?? null,
+    localizationContext: scanContext
+      ? {
+          shopBaseline: scanContext.shopBaseline,
+          categoryTerminologyPack: scanContext.categoryTerminologyPack,
+          seriesArticleTerminologyPack: scanContext.seriesArticleTerminologyPack,
+          productFamilyProtectedTerms: scanContext.productFamilyProtectedTerms,
+          regionalStyleProfile: scanContext.regionalStyleProfile,
+        }
+      : profile
+        ? {
+            shopBaseline: {
+              brandTone: profile.brandTone,
+              brandPositioning: null,
+              globalProtectedTerms: [],
+              globalDoNotTranslateTerms: [],
+            },
+          }
+        : null,
     market: scanContext?.marketProfile
       ? {
           publishedLocales: scanContext.marketProfile.publishedLocales,

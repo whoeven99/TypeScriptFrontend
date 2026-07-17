@@ -55,7 +55,28 @@ export type TranslateSingleFieldArgs = {
     brandTerms?: string[] | null;
     doNotTranslateTerms?: string[] | null;
     preferredTerms?: Array<{ source: string; note?: string | null }> | null;
-    seoTerms?: string[] | null;
+  } | null;
+  localizationContext?: {
+    shopBaseline?: {
+      brandTone?: string | null;
+      brandPositioning?: string | null;
+      globalProtectedTerms?: string[] | null;
+      globalDoNotTranslateTerms?: string[] | null;
+    } | null;
+    categoryTerminologyPack?: {
+      key?: string | null;
+      professionalTerms?: Array<{ source: string; note?: string | null }> | null;
+    } | null;
+    seriesArticleTerminologyPack?: {
+      key?: string | null;
+      professionalTerms?: Array<{ source: string; note?: string | null }> | null;
+    } | null;
+    productFamilyProtectedTerms?: {
+      terms?: string[] | null;
+    } | null;
+    regionalStyleProfile?: {
+      guidanceNotes?: string[] | null;
+    } | null;
   } | null;
   market?: {
     publishedLocales?: string[] | null;
@@ -76,7 +97,6 @@ export type TranslateSingleFieldArgs = {
   modulePolicy?: {
     module?: string | null;
     tonePolicy?: string | null;
-    keywordPolicy?: string | null;
     literalVsAdaptive?: string | null;
   } | null;
 };
@@ -143,6 +163,7 @@ export async function translateSingleField(
         resourceId: args.resourceId,
         shopContext: args.shopContext ?? null,
         terminology: args.terminology ?? null,
+        localizationContext: args.localizationContext ?? null,
         market: args.market ?? null,
         themeSceneProfile: args.themeSceneProfile ?? null,
         modulePolicy: args.modulePolicy ?? null,

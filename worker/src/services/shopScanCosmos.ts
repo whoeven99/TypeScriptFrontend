@@ -54,11 +54,10 @@ export type ShopScanProfileStrategy = {
   brandTerms: string[];
   doNotTranslateTerms: string[];
   preferredTerms: Array<{ source: string; note: string | null }>;
-  seoTerms: string[];
+  regionalStyleGuidance: string[];
   moduleHints: Array<{
     module: string;
     tonePolicy: string | null;
-    keywordPolicy: string | null;
     literalVsAdaptive: string | null;
   }>;
 };

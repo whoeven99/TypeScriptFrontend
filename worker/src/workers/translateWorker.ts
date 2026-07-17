@@ -58,6 +58,26 @@ import {
 } from "../services/stagePool.js";
 
 type TranslationContextProfileBlob = {
+  shopBaseline?: {
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    globalProtectedTerms?: string[] | null;
+    globalDoNotTranslateTerms?: string[] | null;
+  } | null;
+  categoryTerminologyPack?: {
+    key?: string | null;
+    professionalTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+  } | null;
+  seriesArticleTerminologyPack?: {
+    key?: string | null;
+    professionalTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+  } | null;
+  productFamilyProtectedTerms?: {
+    terms?: string[] | null;
+  } | null;
+  regionalStyleProfile?: {
+    guidanceNotes?: string[] | null;
+  } | null;
   shopContext?: {
     industry?: string | null;
     subIndustry?: string | null;
@@ -72,7 +92,6 @@ type TranslationContextProfileBlob = {
     brandTerms?: string[] | null;
     doNotTranslateTerms?: string[] | null;
     preferredTerms?: Array<{ source?: string | null; note?: string | null }> | null;
-    seoTerms?: string[] | null;
   } | null;
   marketProfile?: {
     publishedLocales?: string[] | null;
@@ -96,7 +115,6 @@ type TranslationContextProfileBlob = {
     moduleHints?: Array<{
       module?: string | null;
       tonePolicy?: string | null;
-      keywordPolicy?: string | null;
       literalVsAdaptive?: string | null;
     }>;
   } | null;
@@ -158,19 +176,97 @@ function normalizeTerminologyPromptContext(
     brandTerms: normalizeStringList(profile.brandTerms),
     doNotTranslateTerms: normalizeStringList(profile.doNotTranslateTerms),
     preferredTerms: preferredTerms.length > 0 ? preferredTerms : null,
-    seoTerms: normalizeStringList(profile.seoTerms),
   };
 
   if (
     !normalized.brandTerms &&
     !normalized.doNotTranslateTerms &&
-    !normalized.preferredTerms &&
-    !normalized.seoTerms
+    !normalized.preferredTerms
   ) {
     return null;
   }
 
   return normalized;
+}
+
+function normalizeLocalizationPromptContext(profile: TranslationContextProfileBlob | null | undefined) {
+  if (!profile) return null;
+  const shopBaseline =
+    profile.shopBaseline &&
+    (profile.shopBaseline.brandTone?.trim() ||
+      profile.shopBaseline.brandPositioning?.trim() ||
+      normalizeStringList(profile.shopBaseline.globalProtectedTerms) ||
+      normalizeStringList(profile.shopBaseline.globalDoNotTranslateTerms))
+      ? {
+          brandTone: profile.shopBaseline.brandTone?.trim() || null,
+          brandPositioning: profile.shopBaseline.brandPositioning?.trim() || null,
+          globalProtectedTerms: normalizeStringList(profile.shopBaseline.globalProtectedTerms),
+          globalDoNotTranslateTerms: normalizeStringList(
+            profile.shopBaseline.globalDoNotTranslateTerms,
+          ),
+        }
+      : null;
+  const categoryTerminologyPack = normalizeProfessionalPack(profile.categoryTerminologyPack);
+  const seriesArticleTerminologyPack = normalizeProfessionalPack(
+    profile.seriesArticleTerminologyPack,
+  );
+  const productFamilyProtectedTerms =
+    profile.productFamilyProtectedTerms &&
+    normalizeStringList(profile.productFamilyProtectedTerms.terms)
+      ? {
+          terms: normalizeStringList(profile.productFamilyProtectedTerms.terms),
+        }
+      : null;
+  const regionalStyleProfile =
+    profile.regionalStyleProfile &&
+    normalizeStringList(profile.regionalStyleProfile.guidanceNotes)
+      ? {
+          guidanceNotes: normalizeStringList(profile.regionalStyleProfile.guidanceNotes),
+        }
+      : null;
+
+  if (
+    !shopBaseline &&
+    !categoryTerminologyPack &&
+    !seriesArticleTerminologyPack &&
+    !productFamilyProtectedTerms &&
+    !regionalStyleProfile
+  ) {
+    return null;
+  }
+
+  return {
+    shopBaseline,
+    categoryTerminologyPack,
+    seriesArticleTerminologyPack,
+    productFamilyProtectedTerms,
+    regionalStyleProfile,
+  };
+}
+
+function normalizeProfessionalPack(
+  profile:
+    | TranslationContextProfileData["categoryTerminologyPack"]
+    | TranslationContextProfileData["seriesArticleTerminologyPack"]
+    | null
+    | undefined,
+) {
+  if (!profile) return null;
+  const professionalTerms = (profile.professionalTerms ?? [])
+    .map((term) => {
+      const source = term?.source?.trim();
+      if (!source) return null;
+      return {
+        source,
+        note: term?.note?.trim() || null,
+      };
+    })
+    .filter((term): term is { source: string; note: string | null } => Boolean(term));
+  if (!professionalTerms.length && !profile.key?.trim()) return null;
+  return {
+    key: profile.key?.trim() || null,
+    professionalTerms: professionalTerms.length > 0 ? professionalTerms : null,
+  };
 }
 
 function normalizeThemeSceneProfileContext(
@@ -222,12 +318,12 @@ function reorderResourcesForPromptGrouping(args: {
     module?: string | null;
     shopContext?: TranslationContextProfileData["shopContext"];
     terminology?: ReturnType<typeof normalizeTerminologyPromptContext>;
+    localizationContext?: ReturnType<typeof normalizeLocalizationPromptContext>;
     market?: TranslationContextProfileData["marketProfile"];
     themeSceneProfile?: ReturnType<typeof normalizeThemeSceneProfileContext>;
     modulePolicy?: {
       module?: string | null;
       tonePolicy?: string | null;
-      keywordPolicy?: string | null;
       literalVsAdaptive?: string | null;
     } | null;
   };
@@ -255,7 +351,7 @@ function reorderResourcesForPromptGrouping(args: {
         [
           selected.shopContext ? "shop" : null,
           selected.terminology ? "term" : null,
-          selected.market ? "market" : null,
+          selected.regionalStyle ? "regional_style" : null,
           selected.modulePolicy ? "policy" : null,
         ]
           .filter(Boolean)
@@ -494,7 +590,6 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           {
             module,
             tonePolicy: hint?.tonePolicy?.trim() || null,
-            keywordPolicy: hint?.keywordPolicy?.trim() || null,
             literalVsAdaptive: hint?.literalVsAdaptive?.trim() || null,
           },
         ] as const;
@@ -507,7 +602,6 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           {
             module: string;
             tonePolicy: string | null;
-            keywordPolicy: string | null;
             literalVsAdaptive: string | null;
           },
         ] => Boolean(row),
@@ -915,6 +1009,9 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             shopContext: translationContextProfile?.shopContext ?? null,
             terminology: normalizeTerminologyPromptContext(
               translationContextProfile?.terminologyProfile,
+            ),
+            localizationContext: normalizeLocalizationPromptContext(
+              translationContextProfile,
             ),
             market: translationContextProfile?.marketProfile ?? null,
             themeSceneProfile: normalizeThemeSceneProfileContext(

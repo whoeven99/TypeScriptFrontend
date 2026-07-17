@@ -84,6 +84,7 @@ async function readJson(name) {
 
 const profileFacts = await readJson("profile-facts.json");
 const glossaryRaw = await readJson("glossary-raw.json");
+const translationContextProfile = await readJson("translation-context-profile.json");
 
 console.log("\n=== profile-facts.json ===");
 if (!profileFacts.exists) {
@@ -100,13 +101,49 @@ if (!profileFacts.exists) {
         brandTerms: s.brandTerms?.length ?? 0,
         doNotTranslateTerms: s.doNotTranslateTerms?.length ?? 0,
         preferredTerms: s.preferredTerms?.length ?? 0,
-        seoTerms: s.seoTerms?.length ?? 0,
+        regionalStyleGuidance: s.regionalStyleGuidance?.length ?? 0,
         moduleHints: s.moduleHints?.length ?? 0,
       }
     : null);
   if (d?.induction?.ai?.step2) {
     console.log("step2 raw preview:", String(d.induction.ai.step2.raw).slice(0, 500));
   }
+}
+
+console.log("\n=== translation-context-profile.json ===");
+if (!translationContextProfile.exists) {
+  console.log("NOT FOUND");
+} else {
+  const d = translationContextProfile.data;
+  console.log("generatedAt:", d?.generatedAt ?? null);
+  console.log(
+    "layers:",
+    {
+      shopBaseline: Boolean(d?.shopBaseline),
+      categoryTerminologyPack: {
+        key: d?.categoryTerminologyPack?.key ?? null,
+        professionalTerms: d?.categoryTerminologyPack?.professionalTerms?.length ?? 0,
+      },
+      seriesArticleTerminologyPack: {
+        key: d?.seriesArticleTerminologyPack?.key ?? null,
+        professionalTerms: d?.seriesArticleTerminologyPack?.professionalTerms?.length ?? 0,
+      },
+      productFamilyProtectedTerms: d?.productFamilyProtectedTerms?.terms?.length ?? 0,
+      regionalStyleProfile: d?.regionalStyleProfile?.guidanceNotes?.length ?? 0,
+    },
+  );
+  console.log(
+    "legacyCompatibility:",
+    {
+      shopContext: Boolean(d?.shopContext),
+      terminologyProfile: {
+        brandTerms: d?.terminologyProfile?.brandTerms?.length ?? 0,
+        doNotTranslateTerms: d?.terminologyProfile?.doNotTranslateTerms?.length ?? 0,
+        preferredTerms: d?.terminologyProfile?.preferredTerms?.length ?? 0,
+      },
+      modulePolicyProfile: d?.modulePolicyProfile?.moduleHints?.length ?? 0,
+    },
+  );
 }
 
 console.log("\n=== glossary-raw.json ===");

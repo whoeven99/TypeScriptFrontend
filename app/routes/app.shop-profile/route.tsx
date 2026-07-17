@@ -1763,13 +1763,13 @@ export default function ShopProfilePage() {
                     </Row>
                   )}
 
-                  {strategy.seoTerms.length > 0 && (
+                  {strategy.regionalStyleGuidance.length > 0 && (
                     <div>
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        SEO 关键词
+                        地区化行业风格
                       </Text>
                       <Flex gap={4} wrap="wrap" style={{ marginTop: 6 }}>
-                        {strategy.seoTerms.map((t) => (
+                        {strategy.regionalStyleGuidance.map((t) => (
                           <Tag key={t} color="purple">
                             {t}
                           </Tag>
@@ -1836,13 +1836,6 @@ export default function ShopProfilePage() {
                             title: "语气",
                             dataIndex: "tonePolicy",
                             key: "tonePolicy",
-                            ellipsis: true,
-                            render: (value: string | null) => <HoverFullText value={value} />,
-                          },
-                          {
-                            title: "关键词",
-                            dataIndex: "keywordPolicy",
-                            key: "keywordPolicy",
                             ellipsis: true,
                             render: (value: string | null) => <HoverFullText value={value} />,
                           },

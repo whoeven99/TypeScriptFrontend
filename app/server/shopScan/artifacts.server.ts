@@ -76,6 +76,26 @@ export type ThemeSceneProfileView = {
 
 export type TranslationContextProfileView = {
   generatedAt: string | null;
+  shopBaseline: {
+    brandTone: string | null;
+    brandPositioning: string | null;
+    globalProtectedTerms: string[];
+    globalDoNotTranslateTerms: string[];
+  } | null;
+  categoryTerminologyPack: {
+    key: string | null;
+    professionalTerms: Array<{ source: string; note: string | null }>;
+  } | null;
+  seriesArticleTerminologyPack: {
+    key: string | null;
+    professionalTerms: Array<{ source: string; note: string | null }>;
+  } | null;
+  productFamilyProtectedTerms: {
+    terms: string[];
+  } | null;
+  regionalStyleProfile: {
+    guidanceNotes: string[];
+  } | null;
   shopContext: {
     industry: string | null;
     subIndustry: string | null;
@@ -90,7 +110,6 @@ export type TranslationContextProfileView = {
     brandTerms: string[];
     doNotTranslateTerms: string[];
     preferredTerms: Array<{ source: string; note: string | null }>;
-    seoTerms: string[];
   } | null;
   marketProfile: {
     markets: ShopMarketView[];
@@ -103,7 +122,6 @@ export type TranslationContextProfileView = {
     moduleHints: Array<{
       module: string;
       tonePolicy: string | null;
-      keywordPolicy: string | null;
       literalVsAdaptive: string | null;
     }>;
   } | null;
@@ -143,6 +161,11 @@ type ThemeKeyProfileBlob = {
 
 type TranslationContextProfileBlob = {
   generatedAt?: unknown;
+  shopBaseline?: unknown;
+  categoryTerminologyPack?: unknown;
+  seriesArticleTerminologyPack?: unknown;
+  productFamilyProtectedTerms?: unknown;
+  regionalStyleProfile?: unknown;
   shopContext?: unknown;
   terminologyProfile?: unknown;
   marketProfile?: unknown;
@@ -243,7 +266,7 @@ function normalizeStrategy(
 
   const brandTerms = stringList(raw.brandTerms, 20);
   const doNotTranslateTerms = stringList(raw.doNotTranslateTerms, 20);
-  const seoTerms = stringList(raw.seoTerms, 15);
+  const regionalStyleGuidance = stringList(raw.regionalStyleGuidance, 8);
   const preferredTerms = (raw.preferredTerms ?? [])
     .map((t) => ({
       source: (t?.source ?? "").trim(),
@@ -255,7 +278,6 @@ function normalizeStrategy(
     .map((h) => ({
       module: (h?.module ?? "").trim(),
       tonePolicy: h?.tonePolicy?.trim() || null,
-      keywordPolicy: h?.keywordPolicy?.trim() || null,
       literalVsAdaptive: h?.literalVsAdaptive?.trim() || null,
     }))
     .filter((h) => h.module)
@@ -265,13 +287,13 @@ function normalizeStrategy(
     brandTerms.length === 0 &&
     doNotTranslateTerms.length === 0 &&
     preferredTerms.length === 0 &&
-    seoTerms.length === 0 &&
+    regionalStyleGuidance.length === 0 &&
     moduleHints.length === 0
   ) {
     return null;
   }
 
-  return { brandTerms, doNotTranslateTerms, preferredTerms, seoTerms, moduleHints };
+  return { brandTerms, doNotTranslateTerms, preferredTerms, regionalStyleGuidance, moduleHints };
 }
 
 function normalizeUnderstanding(raw: unknown): ShopUnderstandingView | null {
@@ -495,6 +517,13 @@ function normalizeTranslationContextProfile(raw: unknown): TranslationContextPro
   const value = raw as Record<string, unknown>;
 
   const shopContext = normalizeShopContext(value.shopContext);
+  const shopBaseline = normalizeShopBaseline(value.shopBaseline);
+  const categoryTerminologyPack = normalizeProfessionalPack(value.categoryTerminologyPack);
+  const seriesArticleTerminologyPack = normalizeProfessionalPack(value.seriesArticleTerminologyPack);
+  const productFamilyProtectedTerms = normalizeProductFamilyProtectedTerms(
+    value.productFamilyProtectedTerms,
+  );
+  const regionalStyleProfile = normalizeRegionalStyleProfile(value.regionalStyleProfile);
   const terminologyProfile = normalizeTerminologyProfile(value.terminologyProfile);
   const marketProfile = normalizeMarketProfile(value.marketProfile);
   const themeSceneProfile = normalizeThemeSceneProfile(value.themeSceneProfile);
@@ -503,6 +532,11 @@ function normalizeTranslationContextProfile(raw: unknown): TranslationContextPro
 
   if (
     !generatedAt &&
+    !shopBaseline &&
+    !categoryTerminologyPack &&
+    !seriesArticleTerminologyPack &&
+    !productFamilyProtectedTerms &&
+    !regionalStyleProfile &&
     !shopContext &&
     !terminologyProfile &&
     !marketProfile &&
@@ -514,6 +548,11 @@ function normalizeTranslationContextProfile(raw: unknown): TranslationContextPro
 
   return {
     generatedAt,
+    shopBaseline,
+    categoryTerminologyPack,
+    seriesArticleTerminologyPack,
+    productFamilyProtectedTerms,
+    regionalStyleProfile,
     shopContext,
     terminologyProfile,
     marketProfile,
@@ -559,6 +598,71 @@ function normalizeShopContext(raw: unknown): TranslationContextProfileView["shop
   };
 }
 
+function normalizeShopBaseline(raw: unknown): TranslationContextProfileView["shopBaseline"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const brandTone = str(value.brandTone);
+  const brandPositioning = str(value.brandPositioning);
+  const globalProtectedTerms = stringList(value.globalProtectedTerms, 20);
+  const globalDoNotTranslateTerms = stringList(value.globalDoNotTranslateTerms, 20);
+  if (
+    !brandTone &&
+    !brandPositioning &&
+    globalProtectedTerms.length === 0 &&
+    globalDoNotTranslateTerms.length === 0
+  ) {
+    return null;
+  }
+  return {
+    brandTone,
+    brandPositioning,
+    globalProtectedTerms,
+    globalDoNotTranslateTerms,
+  };
+}
+
+function normalizeProfessionalPack(
+  raw: unknown,
+):
+  | TranslationContextProfileView["categoryTerminologyPack"]
+  | TranslationContextProfileView["seriesArticleTerminologyPack"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const key = str(value.key);
+  const professionalTerms = Array.isArray(value.professionalTerms)
+    ? value.professionalTerms
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const item = row as Record<string, unknown>;
+          const source = str(item.source);
+          if (!source) return null;
+          return { source, note: str(item.note) };
+        })
+        .filter((row): row is { source: string; note: string | null } => Boolean(row))
+        .slice(0, 20)
+    : [];
+  if (!key && professionalTerms.length === 0) return null;
+  return { key, professionalTerms };
+}
+
+function normalizeProductFamilyProtectedTerms(
+  raw: unknown,
+): TranslationContextProfileView["productFamilyProtectedTerms"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const terms = stringList(value.terms, 20);
+  return terms.length > 0 ? { terms } : null;
+}
+
+function normalizeRegionalStyleProfile(
+  raw: unknown,
+): TranslationContextProfileView["regionalStyleProfile"] {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const guidanceNotes = stringList(value.guidanceNotes, 10);
+  return guidanceNotes.length > 0 ? { guidanceNotes } : null;
+}
+
 function normalizeTerminologyProfile(
   raw: unknown,
 ): TranslationContextProfileView["terminologyProfile"] {
@@ -566,7 +670,6 @@ function normalizeTerminologyProfile(
   const value = raw as Record<string, unknown>;
   const brandTerms = stringList(value.brandTerms, 20);
   const doNotTranslateTerms = stringList(value.doNotTranslateTerms, 20);
-  const seoTerms = stringList(value.seoTerms, 15);
   const preferredTerms = Array.isArray(value.preferredTerms)
     ? value.preferredTerms
         .map((row) => {
@@ -583,7 +686,6 @@ function normalizeTerminologyProfile(
   if (
     brandTerms.length === 0 &&
     doNotTranslateTerms.length === 0 &&
-    seoTerms.length === 0 &&
     preferredTerms.length === 0
   ) {
     return null;
@@ -593,7 +695,6 @@ function normalizeTerminologyProfile(
     brandTerms,
     doNotTranslateTerms,
     preferredTerms,
-    seoTerms,
   };
 }
 
@@ -637,7 +738,6 @@ function normalizeModulePolicyProfile(
           return {
             module,
             tonePolicy: str(item.tonePolicy),
-            keywordPolicy: str(item.keywordPolicy),
             literalVsAdaptive: str(item.literalVsAdaptive),
           };
         })
@@ -647,7 +747,6 @@ function normalizeModulePolicyProfile(
           ): row is {
             module: string;
             tonePolicy: string | null;
-            keywordPolicy: string | null;
             literalVsAdaptive: string | null;
           } => Boolean(row),
         )

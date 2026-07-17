@@ -2,17 +2,49 @@ import type { ShopSignalBundle } from "./signalExtraction.js";
 import type { ShopUnderstanding } from "./profileInduction.js";
 import type { ShopProfileFacts } from "./shopContext.js";
 
+export type LocalizationTerm = {
+  source: string;
+  note: string | null;
+};
+
+export type ShopBaselineLayer = {
+  brandTone: string | null;
+  brandPositioning: string | null;
+  globalProtectedTerms: string[];
+  globalDoNotTranslateTerms: string[];
+};
+
+export type CategoryTerminologyPack = {
+  key: string | null;
+  professionalTerms: LocalizationTerm[];
+};
+
+export type SeriesArticleTerminologyPack = {
+  key: string | null;
+  professionalTerms: LocalizationTerm[];
+};
+
+export type ProductFamilyProtectedTerms = {
+  terms: string[];
+};
+
+export type LocalizationContextLayers = {
+  shopBaseline: ShopBaselineLayer | null;
+  categoryTerminologyPack: CategoryTerminologyPack | null;
+  seriesArticleTerminologyPack: SeriesArticleTerminologyPack | null;
+  productFamilyProtectedTerms: ProductFamilyProtectedTerms | null;
+};
+
 export type PreloadedTerminology = {
   brandTerms: string[];
   doNotTranslateTerms: string[];
   preferredTerms: Array<{ source: string; note: string | null }>;
-  seoTerms: string[];
 } | null;
 
 const MAX_PRELOADED_BRAND_TERMS = 12;
 const MAX_PRELOADED_LOCKED_TERMS = 16;
 const MAX_PRELOADED_PREFERRED_TERMS = 16;
-const MAX_PRELOADED_SEO_TERMS = 12;
+const MAX_PRELOADED_SERIES_TERMS = 12;
 
 const STOPWORDS = new Set([
   "a",
@@ -63,8 +95,10 @@ const VARIANT_STOPWORDS = new Set([
   "sizes",
 ]);
 
-const PREFERRED_TERM_NOTE =
-  "Product/category term. Use one canonical localized term consistently across related content; do not switch between synonyms.";
+const CATEGORY_TERM_NOTE =
+  "Category term. Use one canonical localized term consistently across related product content; do not switch between synonyms.";
+const SERIES_TERM_NOTE =
+  "Series/article term. Prefer locally natural editorial wording that stays consistent across related guides and articles.";
 
 type DisplayToken = {
   original: string;
@@ -76,60 +110,25 @@ export function buildCategoryTerminologyPreload(args: {
   signals?: ShopSignalBundle | null;
   understanding?: ShopUnderstanding | null;
 }): PreloadedTerminology {
-  const { facts, signals, understanding } = args;
-  if (!facts) return null;
-
-  const vendors = uniqueNonEmpty(facts.vendors).filter(looksStableBrandTerm);
-  const vendorKeys = new Set(vendors.map(normalizeKey));
-
-  const collectionTerms = uniqueNonEmpty(facts.collectionTitles).filter(looksCategoryCollectionTitle);
-  const baseCategoryTerms = uniqueNonEmpty([
-    ...facts.productTypes,
-    ...collectionTerms,
-    ...(signals?.categoryTerms ?? []),
-    ...(understanding?.coreProductTypes ?? []),
-  ]).filter(looksUsefulCategoryTerm);
-
-  const titleHeadTerms = extractProductTitleHeadTerms(
-    facts.topProductTitles,
-    vendors,
-    new Set(baseCategoryTerms.map(normalizeKey)),
-  );
-
-  const lockedBrandPhrases = extractLockedBrandPhrases(facts.topProductTitles, vendors);
+  const layers = buildLocalizationContextLayers(args);
+  if (!layers) return null;
 
   const brandTerms = uniqueNonEmpty([
-    ...vendors,
-    ...lockedBrandPhrases,
+    ...(layers.shopBaseline?.globalProtectedTerms ?? []),
+    ...(layers.productFamilyProtectedTerms?.terms ?? []),
   ]).slice(0, MAX_PRELOADED_BRAND_TERMS);
 
   const doNotTranslateTerms = uniqueNonEmpty([
-    ...brandTerms,
-    ...lockedBrandPhrases,
+    ...(layers.shopBaseline?.globalDoNotTranslateTerms ?? []),
+    ...(layers.productFamilyProtectedTerms?.terms ?? []),
   ]).slice(0, MAX_PRELOADED_LOCKED_TERMS);
 
-  const preferredTerms = uniquePreferredTerms([
-    ...baseCategoryTerms,
-    ...titleHeadTerms,
-  ])
-    .filter((term) => !vendorKeys.has(normalizeKey(term.source)))
-    .slice(0, MAX_PRELOADED_PREFERRED_TERMS);
+  const preferredTerms = uniqueLocalizationTerms([
+    ...(layers.categoryTerminologyPack?.professionalTerms ?? []),
+    ...(layers.seriesArticleTerminologyPack?.professionalTerms ?? []),
+  ]).slice(0, MAX_PRELOADED_PREFERRED_TERMS);
 
-  const seoTerms = uniqueNonEmpty([
-    ...facts.productTypes,
-    ...collectionTerms,
-    ...titleHeadTerms,
-    ...(signals?.weightedTopPhrases ?? []).map((term) => term.term),
-  ])
-    .filter(looksUsefulSeoTerm)
-    .slice(0, MAX_PRELOADED_SEO_TERMS);
-
-  if (
-    brandTerms.length === 0 &&
-    doNotTranslateTerms.length === 0 &&
-    preferredTerms.length === 0 &&
-    seoTerms.length === 0
-  ) {
+  if (brandTerms.length === 0 && doNotTranslateTerms.length === 0 && preferredTerms.length === 0) {
     return null;
   }
 
@@ -137,7 +136,98 @@ export function buildCategoryTerminologyPreload(args: {
     brandTerms,
     doNotTranslateTerms,
     preferredTerms,
-    seoTerms,
+  };
+}
+
+export function buildLocalizationContextLayers(args: {
+  facts: ShopProfileFacts | null | undefined;
+  signals?: ShopSignalBundle | null;
+  understanding?: ShopUnderstanding | null;
+}): LocalizationContextLayers | null {
+  const { facts, signals, understanding } = args;
+  if (!facts) return null;
+
+  const vendors = uniqueNonEmpty(facts.vendors).filter(looksStableBrandTerm);
+  const collectionTerms = uniqueNonEmpty(facts.collectionTitles).filter(looksCategoryCollectionTitle);
+  const baseCategoryTerms = uniqueNonEmpty([
+    ...facts.productTypes,
+    ...collectionTerms,
+    ...(signals?.categoryTerms ?? []),
+    ...(understanding?.coreProductTypes ?? []),
+  ]).filter(looksUsefulCategoryTerm);
+  const categoryTermKeys = new Set(baseCategoryTerms.map(normalizeKey));
+  const titleHeadTerms = extractProductTitleHeadTerms(
+    facts.topProductTitles,
+    vendors,
+    categoryTermKeys,
+  );
+  const lockedBrandPhrases = extractLockedBrandPhrases(facts.topProductTitles, vendors);
+  const articleSeriesKey = extractArticleSeriesKey(facts.articleTitles);
+  const articleSeriesTerms = extractArticleSeriesTerms(facts, signals);
+
+  const shopBaseline: ShopBaselineLayer | null =
+    vendors.length > 0 || understanding?.voiceStyle || understanding?.brandPositioning
+      ? {
+          brandTone: understanding?.voiceStyle?.trim() || null,
+          brandPositioning: understanding?.brandPositioning?.trim() || null,
+          globalProtectedTerms: vendors.slice(0, MAX_PRELOADED_BRAND_TERMS),
+          globalDoNotTranslateTerms: vendors.slice(0, MAX_PRELOADED_LOCKED_TERMS),
+        }
+      : null;
+
+  const categoryProfessionalTerms = uniqueLocalizationTerms([
+    ...toLocalizationTerms(baseCategoryTerms, CATEGORY_TERM_NOTE),
+    ...toLocalizationTerms(titleHeadTerms, CATEGORY_TERM_NOTE),
+  ]).slice(0, MAX_PRELOADED_PREFERRED_TERMS);
+  const categoryTerminologyPack: CategoryTerminologyPack | null =
+    categoryProfessionalTerms.length > 0
+      ? {
+          key:
+            firstNonEmpty([
+              understanding?.subIndustry ?? null,
+              understanding?.industry ?? null,
+              facts.productTypes[0] ?? null,
+              collectionTerms[0] ?? null,
+            ]) ?? null,
+          professionalTerms: categoryProfessionalTerms,
+        }
+      : null;
+
+  const seriesProfessionalTerms = uniqueLocalizationTerms([
+    ...toLocalizationTerms(articleSeriesTerms, SERIES_TERM_NOTE),
+  ]).slice(0, MAX_PRELOADED_SERIES_TERMS);
+  const seriesArticleTerminologyPack: SeriesArticleTerminologyPack | null =
+    seriesProfessionalTerms.length > 0
+      ? {
+          key: articleSeriesKey,
+          professionalTerms: seriesProfessionalTerms,
+        }
+      : null;
+
+  const productFamilyTerms = uniqueNonEmpty([
+    ...lockedBrandPhrases,
+  ]).slice(0, MAX_PRELOADED_LOCKED_TERMS);
+  const productFamilyProtectedTerms: ProductFamilyProtectedTerms | null =
+    productFamilyTerms.length > 0
+      ? {
+          terms: productFamilyTerms,
+        }
+      : null;
+
+  if (
+    !shopBaseline &&
+    !categoryTerminologyPack &&
+    !seriesArticleTerminologyPack &&
+    !productFamilyProtectedTerms
+  ) {
+    return null;
+  }
+
+  return {
+    shopBaseline,
+    categoryTerminologyPack,
+    seriesArticleTerminologyPack,
+    productFamilyProtectedTerms,
   };
 }
 
@@ -212,6 +302,46 @@ function extractLockedBrandPhrases(titles: string[], vendors: string[]): string[
   return uniqueNonEmpty(out);
 }
 
+function extractArticleSeriesKey(articleTitles: string[]): string | null {
+  const phrases = extractArticleTitleHeadTerms(articleTitles);
+  return phrases[0] ?? null;
+}
+
+function extractArticleSeriesTerms(
+  facts: ShopProfileFacts,
+  signals?: ShopSignalBundle | null,
+): string[] {
+  const titleTerms = extractArticleTitleHeadTerms(facts.articleTitles);
+  const phraseTerms =
+    signals?.weightedTopPhrases
+      ?.filter((term) =>
+        term.sources.some((source) => source === "article_title" || source === "article_summary"),
+      )
+      .map((term) => term.term) ?? [];
+  return uniqueNonEmpty([...titleTerms, ...phraseTerms]).filter(looksUsefulSeriesTerm);
+}
+
+function extractArticleTitleHeadTerms(titles: string[]): string[] {
+  const counts = new Map<string, { phrase: string; count: number }>();
+  for (const title of titles) {
+    const tokens = tokenizeDisplay(title);
+    const headPhrase = buildHeadPhrase(tokens);
+    if (!headPhrase) continue;
+    const key = normalizeKey(headPhrase);
+    if (!key) continue;
+    const next = counts.get(key);
+    if (next) next.count += 1;
+    else counts.set(key, { phrase: headPhrase, count: 1 });
+  }
+
+  return [...counts.values()]
+    .filter(({ phrase, count }) => count >= 2 || phrase.split(/\s+/).length >= 3)
+    .sort((left, right) => right.count - left.count || right.phrase.length - left.phrase.length)
+    .map((entry) => entry.phrase)
+    .filter(looksUsefulSeriesTerm)
+    .slice(0, MAX_PRELOADED_SERIES_TERMS);
+}
+
 function buildHeadPhrase(tokens: DisplayToken[]): string | null {
   const phraseTokens: DisplayToken[] = [];
   for (const token of tokens) {
@@ -258,16 +388,7 @@ function tokenizeDisplay(input: string): DisplayToken[] {
 }
 
 function uniquePreferredTerms(values: string[]): Array<{ source: string; note: string | null }> {
-  const seen = new Set<string>();
-  const out: Array<{ source: string; note: string | null }> = [];
-  for (const value of values) {
-    const source = normalizeSpaces(value);
-    const key = normalizeKey(source);
-    if (!source || !key || seen.has(key)) continue;
-    seen.add(key);
-    out.push({ source, note: PREFERRED_TERM_NOTE });
-  }
-  return out;
+  return uniqueLocalizationTerms(toLocalizationTerms(values, CATEGORY_TERM_NOTE));
 }
 
 function uniqueNonEmpty(values: string[]): string[] {
@@ -310,6 +431,15 @@ function looksUsefulSeoTerm(value: string): boolean {
   return !tokens.every((token) => VARIANT_STOPWORDS.has(token));
 }
 
+function looksUsefulSeriesTerm(value: string): boolean {
+  const normalized = normalizeSpaces(value);
+  if (!normalized) return false;
+  if (normalized.length < 4 || normalized.length > 120) return false;
+  const tokens = tokenizeDisplay(normalized);
+  if (tokens.length === 0 || tokens.length > 8) return false;
+  return !tokens.every((token) => STOPWORDS.has(token.normalized));
+}
+
 function looksStableBrandTerm(value: string): boolean {
   const normalized = normalizeSpaces(value);
   if (!normalized) return false;
@@ -334,4 +464,37 @@ function normalizeKey(value: string): string {
     .toLowerCase()
     .replace(/['’"]/g, "")
     .trim();
+}
+
+function toLocalizationTerms(values: string[], note: string): LocalizationTerm[] {
+  return values.map((source) => ({ source, note }));
+}
+
+function uniqueLocalizationTerms(values: LocalizationTerm[]): LocalizationTerm[] {
+  const seen = new Map<string, LocalizationTerm>();
+  for (const value of values) {
+    const source = normalizeSpaces(value.source);
+    const key = normalizeKey(source);
+    if (!source || !key) continue;
+    if (!seen.has(key)) {
+      seen.set(key, {
+        source,
+        note: value.note?.trim() || null,
+      });
+      continue;
+    }
+    const existing = seen.get(key);
+    if (existing && !existing.note && value.note?.trim()) {
+      existing.note = value.note.trim();
+    }
+  }
+  return [...seen.values()];
+}
+
+function firstNonEmpty(values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
 }
