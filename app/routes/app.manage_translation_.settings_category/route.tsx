@@ -835,6 +835,7 @@ justifyContent: "space-between",
               </Sider>
             )}
             <Content
+              key={selectedThemeKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",

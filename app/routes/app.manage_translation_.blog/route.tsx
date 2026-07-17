@@ -827,6 +827,7 @@ justifyContent: "space-between",
               </Sider>
             )}
             <Content
+              key={selectBlogKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",

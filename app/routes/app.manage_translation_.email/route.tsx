@@ -832,6 +832,7 @@ justifyContent: "space-between",
               </Sider>
             )}
             <Content
+              key={selectEmailKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",

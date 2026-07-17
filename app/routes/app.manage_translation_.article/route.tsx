@@ -1061,6 +1061,7 @@ justifyContent: "space-between",
               </Sider>
             )}
             <Content
+              key={selectArticleKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",

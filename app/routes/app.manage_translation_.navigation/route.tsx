@@ -724,6 +724,7 @@ const Index = () => {
               </Sider>
             )}
             <Content
+              key={selectNavigationKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",

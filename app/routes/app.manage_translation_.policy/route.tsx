@@ -697,6 +697,7 @@ const Index = () => {
               </Sider>
             )}
             <Content
+              key={selectPolicyKey}
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
                 minHeight: "70vh",
