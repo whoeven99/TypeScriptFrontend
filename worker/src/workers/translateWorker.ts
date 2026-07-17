@@ -347,11 +347,13 @@ function reorderResourcesForPromptGrouping(args: {
         sourceText: field.value,
         targetLocale: args.target,
       });
+      const hasRegionalStyle =
+        "regionalStyle" in selected && Boolean(selected.regionalStyle);
       const footprint =
         [
           selected.shopContext ? "shop" : null,
           selected.terminology ? "term" : null,
-          selected.regionalStyle ? "regional_style" : null,
+          hasRegionalStyle ? "regional_style" : null,
           selected.modulePolicy ? "policy" : null,
         ]
           .filter(Boolean)
