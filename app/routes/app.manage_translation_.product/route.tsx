@@ -532,6 +532,8 @@ const Index = () => {
   const [startCursor, setStartCursor] = useState<string>("");
   const [endCursor, setEndCursor] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const layoutScrollRef = useRef<HTMLDivElement | null>(null);
+  const contentScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     dataFetcher.submit(
@@ -736,6 +738,23 @@ const Index = () => {
       setVariantsLoading(false);
     }
   }, [selectProductKey, productsData]);
+
+  useEffect(() => {
+    if (!selectProductKey) return;
+    const resetScroll = () => {
+      if (layoutScrollRef.current) {
+        layoutScrollRef.current.scrollTop = 0;
+        layoutScrollRef.current.scrollLeft = 0;
+      }
+      if (contentScrollRef.current) {
+        contentScrollRef.current.scrollTop = 0;
+        contentScrollRef.current.scrollLeft = 0;
+      }
+    };
+    resetScroll();
+    const rafId = window.requestAnimationFrame(resetScroll);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [selectProductKey]);
 
   useEffect(() => {
     if (productFetcher.data) {
@@ -1479,10 +1498,16 @@ const Index = () => {
         </div>
       </div>
       <Layout
+        hasSider={!isMobile}
+        ref={layoutScrollRef}
         style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
           minHeight: "70vh",
+          width: "100%",
         }}
       >
         {isLoading ? (
@@ -1500,7 +1525,12 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
+                width={200}
                 style={{
+                  flex: "0 0 200px",
+                  width: 200,
+                  minWidth: 200,
+                  maxWidth: 200,
                   minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
@@ -1537,9 +1567,12 @@ justifyContent: "space-between",
               </Sider>
             )}
             <Content
+              ref={contentScrollRef}
               key={selectProductKey}
               style={{
-                paddingLeft: isMobile ? "16px" : "24px",
+                paddingLeft: isMobile ? "0" : "24px",
+                flex: 1,
+                minWidth: 0,
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
