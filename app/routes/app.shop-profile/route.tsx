@@ -16,6 +16,7 @@ import {
   Tag,
   Tooltip,
   Typography,
+  message,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -34,7 +35,7 @@ import {
   ShopOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import Button from "~/ui/components/AppButton";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppSectionCard from "~/ui/components/AppSectionCard";
@@ -50,7 +51,11 @@ import {
   type ShopScanStageState,
   type ShopScanStatus,
 } from "~/server/shopScan/cosmos.server";
-import { enqueueShopScan } from "~/server/shopScan/trigger.server";
+import {
+  enqueueShopScan,
+  getShopScanDependencyMessage,
+  type EnqueueShopScanResult,
+} from "~/server/shopScan/trigger.server";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 import {
   loadShopScanArtifacts,
@@ -116,10 +121,13 @@ function artifactPriority(status: ShopScanStatus): number {
     case "QUEUED":
     case "CREATED":
       return 2;
+    case "SKIPPED":
     case "FAILED":
       return 1;
-    default:
-      return 0;
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
   }
 }
 
@@ -455,6 +463,7 @@ const STATUS_COLOR: Record<ShopScanStatus, string> = {
   SCANNING: "processing",
   COMPLETED: "success",
   PARTIAL: "warning",
+  SKIPPED: "default",
   FAILED: "error",
 };
 
@@ -464,6 +473,7 @@ const STATUS_LABEL: Record<ShopScanStatus, string> = {
   SCANNING: "扫描中",
   COMPLETED: "已完成",
   PARTIAL: "部分完成",
+  SKIPPED: "已跳过",
   FAILED: "失败",
 };
 
@@ -497,6 +507,7 @@ const STATUS_ICON: Record<ShopScanStatus, React.ReactNode> = {
   SCANNING: <SyncOutlined spin />,
   COMPLETED: <CheckCircleOutlined />,
   PARTIAL: <ExclamationCircleOutlined />,
+  SKIPPED: <ExclamationCircleOutlined />,
   FAILED: <CloseCircleOutlined />,
 };
 
@@ -506,6 +517,7 @@ const STATUS_TONE: Record<ShopScanStatus, string> = {
   SCANNING: "var(--app-accent-primary)",
   COMPLETED: "var(--app-accent-growth)",
   PARTIAL: "var(--app-accent-utility)",
+  SKIPPED: "var(--app-color-text-secondary)",
   FAILED: "var(--app-accent-critical)",
 };
 
@@ -590,14 +602,21 @@ function statusTone(status: ShopScanStatus | null | undefined): "neutral" | "inf
     case "COMPLETED":
       return "success";
     case "PARTIAL":
+    case "SKIPPED":
       return "caution";
     case "FAILED":
       return "critical";
     case "QUEUED":
     case "SCANNING":
       return "info";
-    default:
+    case "CREATED":
+    case null:
+    case undefined:
       return "neutral";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
   }
 }
 
@@ -681,15 +700,43 @@ function mapJobStatusToStage(status: ShopScanStatus | null | undefined): ShopSca
   switch (status) {
     case "COMPLETED":
       return "DONE";
+    case "SKIPPED":
+      return "SKIPPED";
     case "PARTIAL":
     case "FAILED":
       return "FAILED";
     case "CREATED":
     case "QUEUED":
     case "SCANNING":
+    case null:
+    case undefined:
       return "PENDING";
-    default:
-      return "PENDING";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
+  }
+}
+
+function enqueueResultMessage(result: EnqueueShopScanResult): string {
+  if (result.message) return result.message;
+  switch (result.reason) {
+    case "disabled_in_production":
+      return "生产环境已禁用店铺扫描入队";
+    case "not_configured":
+      return "Cosmos 未配置，无法创建扫描任务";
+    case "dependency_not_met":
+      return "前置任务未完成，无法入队";
+    case "skipped_existing":
+      return "已有进行中或已完成的扫描，已跳过";
+    case "error":
+      return "创建扫描任务失败，请稍后重试";
+    case undefined:
+      return result.enqueued ? "任务已入队" : "任务入队失败";
+    default: {
+      const _exhaustive: never = result.reason;
+      return _exhaustive;
+    }
   }
 }
 
@@ -721,7 +768,7 @@ export default function ShopProfilePage() {
     taskRuns,
     artifactSource,
   } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<{ enqueued: boolean; reason?: string }>();
+  const fetcher = useFetcher<EnqueueShopScanResult>();
   const revalidator = useRevalidator();
   const [hydrated, setHydrated] = useState(false);
 
@@ -730,6 +777,13 @@ export default function ShopProfilePage() {
   const taskRunByTask = useMemo(
     () => Object.fromEntries(taskRuns.map((run) => [run.task, run])) as Partial<Record<ShopScanTask, TaskRunView>>,
     [taskRuns],
+  );
+  const latestByTaskStatus = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(taskRunByTask).map(([task, run]) => [task, { status: run!.status }]),
+      ) as Partial<Record<ShopScanTask, { status: ShopScanStatus }>>,
+    [taskRunByTask],
   );
   const profileMaterialRun = taskRunByTask.profile_material;
   const profileIdentityRun = taskRunByTask.profile_identity;
@@ -757,6 +811,19 @@ export default function ShopProfilePage() {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  const lastEnqueueResultRef = useRef<EnqueueShopScanResult | null>(null);
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (lastEnqueueResultRef.current === fetcher.data) return;
+    lastEnqueueResultRef.current = fetcher.data;
+    if (fetcher.data.enqueued) {
+      message.success("任务已入队");
+      if (revalidator.state === "idle") revalidator.revalidate();
+      return;
+    }
+    message.error(enqueueResultMessage(fetcher.data));
+  }, [fetcher.state, fetcher.data, revalidator]);
 
   const moduleRows = useMemo(() => {
     const stats = scan?.summary?.moduleStats ?? {};
@@ -850,7 +917,18 @@ export default function ShopProfilePage() {
   }, [themeSceneProfile]);
 
   const handleScan = (task: ShopScanTask) => {
+    const dependencyMessage = getShopScanDependencyMessage(task, latestByTaskStatus);
+    if (dependencyMessage) {
+      message.warning(dependencyMessage);
+      return;
+    }
     fetcher.submit({ task }, { method: "POST" });
+  };
+
+  const taskButtonDisabledReason = (task: ShopScanTask): string | null => {
+    if (!configured) return "Cosmos 未配置";
+    if (isActive) return "已有扫描任务进行中，请稍候";
+    return getShopScanDependencyMessage(task, latestByTaskStatus);
   };
 
   return (
@@ -977,17 +1055,26 @@ export default function ShopProfilePage() {
                         数据扫描
                       </Text>
                       <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
-                        {DATA_TASKS.map((task) => (
-                          <Button
-                            key={task}
-                            type={task === "profile_material" ? "primary" : "default"}
-                            loading={isRescanning}
-                            disabled={!configured || isActive}
-                            onClick={() => handleScan(task)}
-                          >
-                            {TASK_LABEL[task]}
-                          </Button>
-                        ))}
+                        {DATA_TASKS.map((task) => {
+                          const disabledReason = taskButtonDisabledReason(task);
+                          const button = (
+                            <Button
+                              type={task === "profile_material" ? "primary" : "default"}
+                              loading={isRescanning}
+                              disabled={Boolean(disabledReason)}
+                              onClick={() => handleScan(task)}
+                            >
+                              {TASK_LABEL[task]}
+                            </Button>
+                          );
+                          return disabledReason ? (
+                            <Tooltip key={task} title={disabledReason}>
+                              <span>{button}</span>
+                            </Tooltip>
+                          ) : (
+                            <span key={task}>{button}</span>
+                          );
+                        })}
                       </Flex>
                     </div>
                     <div style={ACTION_GROUP_STYLE}>
@@ -995,18 +1082,27 @@ export default function ShopProfilePage() {
                         AI 整理
                       </Text>
                       <Flex gap={8} wrap="wrap" style={{ marginTop: 8 }}>
-                        {AI_TASKS.map((task) => (
-                          <Button
-                            key={task}
-                            type="default"
-                            icon={<RobotOutlined />}
-                            loading={isRescanning}
-                            disabled={!configured || isActive}
-                            onClick={() => handleScan(task)}
-                          >
-                            {TASK_LABEL[task]}
-                          </Button>
-                        ))}
+                        {AI_TASKS.map((task) => {
+                          const disabledReason = taskButtonDisabledReason(task);
+                          const button = (
+                            <Button
+                              type="default"
+                              icon={<RobotOutlined />}
+                              loading={isRescanning}
+                              disabled={Boolean(disabledReason)}
+                              onClick={() => handleScan(task)}
+                            >
+                              {TASK_LABEL[task]}
+                            </Button>
+                          );
+                          return disabledReason ? (
+                            <Tooltip key={task} title={disabledReason}>
+                              <span>{button}</span>
+                            </Tooltip>
+                          ) : (
+                            <span key={task}>{button}</span>
+                          );
+                        })}
                       </Flex>
                     </div>
                     {taskRuns.length > 0 ? (

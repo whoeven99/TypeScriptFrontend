@@ -34,6 +34,7 @@ export type ShopScanStatus =
   | "SCANNING"
   | "COMPLETED"
   | "PARTIAL"
+  | "SKIPPED"
   | "FAILED";
 
 export type ShopScanStageState = "PENDING" | "DONE" | "SKIPPED" | "FAILED";
@@ -129,6 +130,7 @@ export const PENDING_SHOP_SCAN_STATUSES: ShopScanStatus[] = ["CREATED", "QUEUED"
 export const TERMINAL_SHOP_SCAN_STATUSES: ShopScanStatus[] = [
   "COMPLETED",
   "PARTIAL",
+  "SKIPPED",
   "FAILED",
 ];
 

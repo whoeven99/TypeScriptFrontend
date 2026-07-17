@@ -19,6 +19,4 @@ COPY . .
 
 RUN npm run build:docker
 
-ENV NODE_ENV=production
-
 CMD ["npm", "run", "docker-start"]

@@ -33,6 +33,7 @@ export type ShopScanStatus =
   | "SCANNING"
   | "COMPLETED"
   | "PARTIAL"
+  | "SKIPPED"
   | "FAILED";
 
 export type ShopScanStageState = "PENDING" | "DONE" | "SKIPPED" | "FAILED";

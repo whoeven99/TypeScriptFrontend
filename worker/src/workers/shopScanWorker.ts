@@ -147,16 +147,28 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
 
   const summary: ShopScanSummary = { ...job.summary };
   const stages = { ...job.stages };
+  let skipReason: string | null = null;
 
-  const runTask = async (
-    fn: () => Promise<ShopScanStageState | { state: ShopScanStageState; summary?: Partial<ShopScanSummary> }>,
-  ): Promise<void> => {
+  type TaskRunResult =
+    | ShopScanStageState
+    | {
+        state: ShopScanStageState;
+        summary?: Partial<ShopScanSummary>;
+        skipReason?: string;
+      };
+
+  const runTask = async (fn: () => Promise<TaskRunResult>): Promise<void> => {
     try {
       const result = await fn();
       const state = typeof result === "string" ? result : result.state;
       if (typeof result !== "string" && result.summary) {
         Object.assign(summary, result.summary);
         await updateShopScanJob(shop, scanId, { summary: result.summary });
+      }
+      if (typeof result !== "string" && result.skipReason) {
+        skipReason = result.skipReason;
+      } else if (state === "SKIPPED" && !skipReason) {
+        skipReason = "skipped";
       }
       stages[taskStage] = state;
       await setShopScanStage(shop, scanId, taskStage, state);
@@ -203,6 +215,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
           return {
             state: r.status === "done" ? "DONE" : "SKIPPED",
             summary: { coverage: r.coverage },
+            skipReason: r.status === "done" ? undefined : r.reason ?? "coverage_skipped",
           };
         }
         case "profile_material": {
@@ -216,7 +229,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             heartbeat,
             enableAi: false,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "profile_material_skipped" };
         }
         case "profile_identity": {
           const r = await runProfileIdentityStage({
@@ -226,7 +241,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "profile_identity_skipped" };
         }
         case "market_locale": {
           const r = await runMarketLocaleStage({
@@ -236,7 +253,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "market_locale_skipped" };
         }
         case "catalog_material": {
           const r = await runCatalogSourceStage({
@@ -246,7 +265,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "catalog_material_skipped" };
         }
         case "editorial_material": {
           const r = await runEditorialSourceStage({
@@ -256,7 +277,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "editorial_material_skipped" };
         }
         case "style_material": {
           const r = await runStyleSourceStage({
@@ -266,7 +289,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "style_material_skipped" };
         }
         case "profile_ai": {
           const r = await runProfileAiStageFromBlob({
@@ -281,7 +306,10 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
           });
           return r.status === "done"
             ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
-            : "SKIPPED";
+            : {
+                state: "SKIPPED",
+                skipReason: r.reason ?? "profile_ai_skipped",
+              };
         }
         case "glossary_samples": {
           const r = await runGlossarySamplesStage({
@@ -292,7 +320,9 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
             blobPrefix: job.blobPrefix,
             heartbeat,
           });
-          return r.status === "done" ? "DONE" : "SKIPPED";
+          return r.status === "done"
+            ? "DONE"
+            : { state: "SKIPPED", skipReason: r.reason ?? "glossary_samples_skipped" };
         }
         case "glossary_ai": {
           const r = await runGlossaryAiStageFromBlob({
@@ -306,6 +336,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
               glossaryCount: r.glossaryCount,
               glossarySuggestions: r.glossarySuggestions,
             },
+            skipReason: r.status === "done" ? undefined : r.reason ?? "glossary_ai_skipped",
           };
         }
       }
@@ -335,17 +366,23 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
     }
   }
 
-  const anyFailed = Object.values(stages).some((s) => s === "FAILED");
-  const finalStatus = anyFailed ? "PARTIAL" : "COMPLETED";
+  const taskState = stages[taskStage];
+  const finalStatus =
+    taskState === "FAILED"
+      ? "PARTIAL"
+      : taskState === "SKIPPED"
+        ? "SKIPPED"
+        : "COMPLETED";
   await updateShopScanJob(shop, scanId, {
     status: finalStatus,
     claimedBy: null,
-    errorStage: anyFailed
-      ? (Object.keys(stages) as ShopScanStageName[]).find((k) => stages[k] === "FAILED") ?? null
-      : null,
+    errorMessage: taskState === "SKIPPED" ? skipReason : job.errorMessage,
+    errorStage: taskState === "FAILED" ? taskStage : null,
   });
   console.log(
-    `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} task=${task} stages=${JSON.stringify(stages)}`,
+    `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} task=${task} stages=${JSON.stringify(stages)}${
+      skipReason ? ` reason=${skipReason}` : ""
+    }`,
   );
 }
 
