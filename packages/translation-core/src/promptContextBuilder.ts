@@ -138,6 +138,9 @@ export type TranslationPromptPlan = {
 const MAX_TERMS = 12;
 const MAX_PREFERRED_TERMS = 10;
 const MAX_MARKET_NOTES = 6;
+const MAX_DEFAULT_SITE_TERMS = 4;
+const MAX_DEFAULT_PROFESSIONAL_TERMS = 4;
+const MAX_DEFAULT_SEO_TERMS = 3;
 
 export function buildResolvedPromptContext(args: {
   module?: string | null;
@@ -191,8 +194,9 @@ export function buildPromptContextBlock(
   },
 ): string | null {
   const plan = buildPromptPlan(context, options);
+  const sourceText = options?.sourceText ?? "";
   const terminologyBlocks = plan.selection.terminology
-    ? buildTerminologyBlocks(context.terminology, options?.sourceText)
+    ? buildTerminologyBlocks(context.terminology, context, sourceText)
     : [];
   const blocks = [
     buildConstraintBlock(plan),
@@ -271,7 +275,7 @@ export function selectPromptContextBlocks(
 ): PromptContextBlockSelection {
   const sourceText = trim(options?.sourceText) ?? "";
   const isShortUiCopy = sourceText.length > 0 ? looksLikeShortUiCopy(sourceText, context.role) : false;
-  const terminologyTriggered = shouldInjectTerminology(context.terminology, sourceText);
+  const terminologyTriggered = shouldInjectTerminology(context.terminology, context, sourceText);
   const styleScore = computeStyleContextScore(context, sourceText, isShortUiCopy);
   const marketScore = computeMarketContextScore(context, sourceText, options?.targetLocale);
 
@@ -289,10 +293,6 @@ export function selectPromptContextBlocks(
     modulePolicy,
     scenePolicy: true,
   };
-}
-
-function buildShopContextBlock(profile: ShopPromptContext | null): string | null {
-  return buildShopContextBlockWithSelection(profile, null, undefined);
 }
 
 function buildShopContextBlockWithSelection(
@@ -371,9 +371,14 @@ function buildConstraintBlock(plan: TranslationPromptPlan): string | null {
 
 function buildTerminologyBlocks(
   terminology: TerminologyPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
   sourceText?: string | null,
 ): string[] {
   if (!terminology) return [];
+  const source = sourceText ?? "";
 
   const brandTerms = cleanList(terminology.brandTerms, MAX_TERMS);
   const doNotTranslateTerms = cleanList(terminology.doNotTranslateTerms, MAX_TERMS);
@@ -383,18 +388,46 @@ function buildTerminologyBlocks(
       const source = trim(entry?.source);
       if (!source) return null;
       const note = trim(entry?.note);
-      return note ? `${source} -> ${note}` : source;
+      return {
+        source,
+        rendered: note ? `${source} -> ${note}` : source,
+      };
     })
-    .filter((value): value is string => Boolean(value))
+    .filter((value): value is { source: string; rendered: string } => Boolean(value))
     .slice(0, MAX_PREFERRED_TERMS);
 
-  const normalizedSource = normalizeMatchBlob(sourceText);
-  const filteredBrandTerms = filterTriggeredTerms(brandTerms, normalizedSource);
-  const filteredDoNotTranslateTerms = filterTriggeredTerms(doNotTranslateTerms, normalizedSource);
-  const filteredSeoTerms = filterTriggeredTerms(seoTerms, normalizedSource);
-  const filteredPreferredTerms = preferredTerms.filter((entry) =>
-    normalizedSource ? matchesPromptTerm(normalizedSource, entry.split(" -> ")[0] ?? entry) : true,
+  const normalizedSource = normalizeMatchBlob(source);
+  const brandTermsHit = filterTriggeredTerms(brandTerms, normalizedSource);
+  const doNotTranslateTermsHit = filterTriggeredTerms(doNotTranslateTerms, normalizedSource);
+  const seoTermsHit = filterTriggeredTerms(seoTerms, normalizedSource);
+  const preferredTermsHit = preferredTerms.filter((entry) =>
+    normalizedSource ? matchesPromptTerm(normalizedSource, entry.source) : true,
   );
+  const useDefaultTerms = shouldUseModuleTerminology(context);
+  const filteredBrandTerms =
+    brandTermsHit.length > 0
+      ? brandTermsHit
+      : useDefaultTerms
+        ? brandTerms.slice(0, MAX_DEFAULT_SITE_TERMS)
+        : [];
+  const filteredDoNotTranslateTerms =
+    doNotTranslateTermsHit.length > 0
+      ? doNotTranslateTermsHit
+      : useDefaultTerms
+        ? doNotTranslateTerms.slice(0, MAX_DEFAULT_SITE_TERMS)
+        : [];
+  const filteredSeoTerms =
+    seoTermsHit.length > 0
+      ? seoTermsHit
+      : useDefaultTerms && context?.scene === "seo_copy"
+        ? seoTerms.slice(0, MAX_DEFAULT_SEO_TERMS)
+        : [];
+  const filteredPreferredTerms =
+    preferredTermsHit.length > 0
+      ? preferredTermsHit
+      : useDefaultTerms
+        ? preferredTerms.slice(0, MAX_DEFAULT_PROFESSIONAL_TERMS)
+        : [];
 
   if (
     filteredBrandTerms.length === 0 &&
@@ -415,7 +448,9 @@ function buildTerminologyBlocks(
 
   const professionalLines: string[] = [];
   if (filteredPreferredTerms.length > 0) {
-    professionalLines.push(`- Preferred translations: ${filteredPreferredTerms.join("; ")}`);
+    professionalLines.push(
+      `- Preferred translations: ${filteredPreferredTerms.map((entry) => entry.rendered).join("; ")}`,
+    );
   }
   if (filteredSeoTerms.length > 0) {
     professionalLines.push(
@@ -881,9 +916,15 @@ function shouldInjectLiteralAdaptivePolicy(
 
 function shouldInjectTerminology(
   terminology: TerminologyPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
   sourceText: string,
 ): boolean {
-  if (!terminology || !sourceText) return false;
+  if (!terminology) return false;
+  if (shouldUseModuleTerminology(context)) return true;
+  if (!sourceText) return false;
   const normalizedSource = normalizeMatchBlob(sourceText);
   if (!normalizedSource) return false;
   const terms = [
@@ -893,6 +934,28 @@ function shouldInjectTerminology(
     ...(terminology.seoTerms ?? []),
   ];
   return terms.some((term) => matchesPromptTerm(normalizedSource, term));
+}
+
+function shouldUseModuleTerminology(
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+): boolean {
+  if (!context) return false;
+  if (context.audience !== "shopper") return false;
+  if (
+    context.scene !== "product_catalog" &&
+    context.scene !== "editorial_copy" &&
+    context.scene !== "seo_copy"
+  ) {
+    return false;
+  }
+  return (
+    context.fieldKind === "title" ||
+    context.fieldKind === "description" ||
+    context.fieldKind === "body"
+  );
 }
 
 function filterTriggeredTerms(terms: string[], normalizedSource: string): string[] {
