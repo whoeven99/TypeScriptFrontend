@@ -1504,9 +1504,10 @@ const Index = () => {
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           alignItems: "flex-start",
-          overflow: "auto",
+          overflow: isMobile ? "auto" : "hidden",
           backgroundColor: "var(--p-color-bg)",
-          minHeight: "70vh",
+          minHeight: isMobile ? "70vh" : undefined,
+          height: isMobile ? "auto" : "calc(100vh - 154px)",
           width: "100%",
         }}
       >
@@ -1531,10 +1532,10 @@ const Index = () => {
                   width: 200,
                   minWidth: 200,
                   maxWidth: 200,
-                  minHeight: "70vh",
+                  height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
+                  overflow: "hidden",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -1543,8 +1544,9 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
-minHeight: 0,
-justifyContent: "space-between",
+                    minHeight: 0,
+                    height: "100%",
+                    justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -1573,10 +1575,12 @@ justifyContent: "space-between",
                 paddingLeft: isMobile ? "0" : "24px",
                 flex: 1,
                 minWidth: 0,
-                minHeight: "70vh",
+                minHeight: isMobile ? "70vh" : 0,
+                height: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "auto",
+                overflowY: isMobile ? "visible" : "auto",
+                overflowX: "hidden",
               }}
             >
               {isMobile ? (
