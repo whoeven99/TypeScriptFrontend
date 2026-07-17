@@ -2,12 +2,15 @@ import { randomUUID } from "node:crypto";
 import {
   createShopScanJob,
   getLatestShopScanJobsByTask,
-  type ShopScanStatus,
   type ShopScanTask,
   type ShopScanTrigger,
 } from "./cosmos.server";
 import { pushShopScanHint } from "~/server/translateV4/redis.server";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+import {
+  getShopScanDependencyMessage,
+  type EnqueueShopScanResult,
+} from "~/lib/shopScanTaskDeps";
 
 /**
  * 店铺画像扫描（Shop Profile Scan）通用触发入口。
@@ -25,19 +28,8 @@ function isCiwishop(shop: string): boolean {
   return shop.replace(/\.myshopify\.com$/i, "") === "ciwishop";
 }
 
-export type EnqueueShopScanReason =
-  | "skipped_existing"
-  | "not_configured"
-  | "disabled_in_production"
-  | "dependency_not_met"
-  | "error";
-
-export type EnqueueShopScanResult = {
-  enqueued: boolean;
-  scanId?: string;
-  reason?: EnqueueShopScanReason;
-  message?: string;
-};
+export type { EnqueueShopScanReason, EnqueueShopScanResult } from "~/lib/shopScanTaskDeps";
+export { getShopScanDependencyMessage } from "~/lib/shopScanTaskDeps";
 
 function shopScanCosmosConfigured(): boolean {
   return Boolean(
@@ -72,35 +64,6 @@ function resolveBlobPrefix(shop: string, scanId: string, task: ShopScanTask): st
     default:
       return `shop-scan/${shop}/${scanId}`;
   }
-}
-
-function isSuccessfulScanStatus(status: ShopScanStatus | undefined): boolean {
-  return status === "COMPLETED";
-}
-
-/** AI 任务前置依赖：未满足时返回人类可读说明，满足则返回 null。 */
-export function getShopScanDependencyMessage(
-  task: ShopScanTask,
-  latestByTask: Partial<Record<ShopScanTask, { status: ShopScanStatus }>>,
-): string | null {
-  if (task === "profile_ai") {
-    const hasMaterial =
-      isSuccessfulScanStatus(latestByTask.profile_material?.status) ||
-      isSuccessfulScanStatus(latestByTask.profile_identity?.status);
-    if (!hasMaterial) {
-      return "请先完成「扫描全部画像源」或「扫描店铺身份」，再生成店铺画像";
-    }
-    return null;
-  }
-
-  if (task === "glossary_ai") {
-    if (!isSuccessfulScanStatus(latestByTask.glossary_samples?.status)) {
-      return "请先完成「扫描术语样本」，再生成术语建议";
-    }
-    return null;
-  }
-
-  return null;
 }
 
 export async function enqueueShopScan({

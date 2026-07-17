@@ -51,11 +51,11 @@ import {
   type ShopScanStageState,
   type ShopScanStatus,
 } from "~/server/shopScan/cosmos.server";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import {
-  enqueueShopScan,
   getShopScanDependencyMessage,
   type EnqueueShopScanResult,
-} from "~/server/shopScan/trigger.server";
+} from "~/lib/shopScanTaskDeps";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 import {
   loadShopScanArtifacts,
