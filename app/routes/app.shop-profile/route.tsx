@@ -65,6 +65,10 @@ import {
 
 const { Text, Paragraph } = Typography;
 
+function isCiwishop(shop: string): boolean {
+  return shop.replace(/\.myshopify\.com$/i, "") === "ciwishop";
+}
+
 type ProfileView = {
   shopName: string | null;
   primaryLocale: string | null;
@@ -128,11 +132,11 @@ function sortArtifactJobs(jobs: ShopScanJob[]): ShopScanJob[] {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  if (isProductionNodeEnv()) {
-    throw redirect("/app/translate-v4");
-  }
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+  if (isProductionNodeEnv() && !isCiwishop(shop)) {
+    throw redirect("/app/translate-v4");
+  }
 
   const configured = Boolean(
     process.env.COSMOS_ENDPOINT_V4?.trim() && process.env.COSMOS_KEY_V4?.trim(),
@@ -321,10 +325,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  if (isProductionNodeEnv()) {
+  const { session } = await authenticate.admin(request);
+  if (isProductionNodeEnv() && !isCiwishop(session.shop)) {
     throw redirect("/app/translate-v4");
   }
-  const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const rawTask = String(formData.get("task") ?? "").trim();
   const task: ShopScanTask =
