@@ -59,13 +59,108 @@ export async function translateSingleText(
     };
   });
   const scanContext = artifacts.translationContextProfile;
+  const fallbackStrategy = artifacts.strategy;
+  const fallbackUnderstanding = artifacts.understanding;
   const normalizedModule = args.module?.trim().toUpperCase() || null;
+  const fallbackModulePolicy =
+    normalizedModule && fallbackStrategy?.moduleHints
+      ? fallbackStrategy.moduleHints.find(
+          (hint) => hint.module.trim().toUpperCase() === normalizedModule,
+        ) ?? null
+      : null;
   const modulePolicy =
     normalizedModule && scanContext?.modulePolicyProfile?.moduleHints
       ? scanContext.modulePolicyProfile.moduleHints.find(
           (hint) => hint.module.trim().toUpperCase() === normalizedModule,
         ) ?? null
+      : fallbackModulePolicy;
+
+  const fallbackShopContext = fallbackUnderstanding
+    ? {
+        industry: fallbackUnderstanding.industry,
+        subIndustry: fallbackUnderstanding.subIndustry,
+        brandTone: fallbackUnderstanding.voiceStyle,
+        brandPositioning: fallbackUnderstanding.brandPositioning,
+        description: fallbackUnderstanding.description || null,
+        keywords: fallbackUnderstanding.keywords,
+        sellingPoints: fallbackUnderstanding.sellingPoints,
+        priceRange: fallbackUnderstanding.priceRange,
+      }
+    : null;
+  const fallbackTerminology = fallbackStrategy
+    ? {
+        brandTerms: fallbackStrategy.brandTerms,
+        doNotTranslateTerms: fallbackStrategy.doNotTranslateTerms,
+        preferredTerms: fallbackStrategy.preferredTerms,
+      }
+    : null;
+  const fallbackLocalizationContext =
+    fallbackUnderstanding || fallbackStrategy
+      ? {
+          shopBaseline: {
+            brandTone: fallbackUnderstanding?.voiceStyle ?? profile?.brandTone ?? null,
+            brandPositioning: fallbackUnderstanding?.brandPositioning ?? null,
+            globalProtectedTerms: fallbackStrategy?.brandTerms ?? [],
+            globalDoNotTranslateTerms: fallbackStrategy?.doNotTranslateTerms ?? [],
+          },
+          categoryTerminologyPack:
+            fallbackStrategy?.preferredTerms?.length
+              ? {
+                  key: fallbackUnderstanding?.subIndustry ?? fallbackUnderstanding?.industry ?? null,
+                  professionalTerms: fallbackStrategy.preferredTerms,
+                }
+              : null,
+          seriesArticleTerminologyPack: null,
+          productFamilyProtectedTerms:
+            fallbackStrategy &&
+            [...fallbackStrategy.brandTerms, ...fallbackStrategy.doNotTranslateTerms].length > 0
+              ? {
+                  terms: [
+                    ...fallbackStrategy.brandTerms.filter((term) => term.includes(" ")),
+                    ...fallbackStrategy.doNotTranslateTerms.filter((term) => term.includes(" ")),
+                  ],
+                }
+              : null,
+          regionalStyleProfile:
+            fallbackStrategy?.regionalStyleGuidance?.length
+              ? {
+                  guidanceNotes: fallbackStrategy.regionalStyleGuidance,
+                }
+              : null,
+        }
       : null;
+  const localizationContext = scanContext
+    ? {
+        shopBaseline:
+          scanContext.shopBaseline ?? fallbackLocalizationContext?.shopBaseline ?? null,
+        categoryTerminologyPack:
+          scanContext.categoryTerminologyPack ??
+          fallbackLocalizationContext?.categoryTerminologyPack ??
+          null,
+        seriesArticleTerminologyPack:
+          scanContext.seriesArticleTerminologyPack ??
+          fallbackLocalizationContext?.seriesArticleTerminologyPack ??
+          null,
+        productFamilyProtectedTerms:
+          scanContext.productFamilyProtectedTerms ??
+          fallbackLocalizationContext?.productFamilyProtectedTerms ??
+          null,
+        regionalStyleProfile:
+          scanContext.regionalStyleProfile ??
+          fallbackLocalizationContext?.regionalStyleProfile ??
+          null,
+      }
+    : fallbackLocalizationContext ??
+      (profile
+        ? {
+            shopBaseline: {
+              brandTone: profile.brandTone,
+              brandPositioning: null,
+              globalProtectedTerms: [],
+              globalDoNotTranslateTerms: [],
+            },
+          }
+        : null);
 
   const { translatedText, usedTokens } = await translateSingleField({
     shop: args.shop,
@@ -80,6 +175,7 @@ export async function translateSingleText(
     customPrompt: args.customPrompt,
     shopContext:
       scanContext?.shopContext ??
+      fallbackShopContext ??
       (profile
         ? {
             description: profile.description,
@@ -87,25 +183,8 @@ export async function translateSingleText(
             keywords: Array.isArray(profile.keywords) ? (profile.keywords as string[]) : [],
           }
         : null),
-    terminology: scanContext?.terminologyProfile ?? null,
-    localizationContext: scanContext
-      ? {
-          shopBaseline: scanContext.shopBaseline,
-          categoryTerminologyPack: scanContext.categoryTerminologyPack,
-          seriesArticleTerminologyPack: scanContext.seriesArticleTerminologyPack,
-          productFamilyProtectedTerms: scanContext.productFamilyProtectedTerms,
-          regionalStyleProfile: scanContext.regionalStyleProfile,
-        }
-      : profile
-        ? {
-            shopBaseline: {
-              brandTone: profile.brandTone,
-              brandPositioning: null,
-              globalProtectedTerms: [],
-              globalDoNotTranslateTerms: [],
-            },
-          }
-        : null,
+    terminology: scanContext?.terminologyProfile ?? fallbackTerminology ?? null,
+    localizationContext,
     market: scanContext?.marketProfile
       ? {
           publishedLocales: scanContext.marketProfile.publishedLocales,
