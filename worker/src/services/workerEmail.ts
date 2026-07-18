@@ -192,6 +192,32 @@ export function hasPartialEmailProgress(job: TranslationJobSummary): boolean {
   return (job.translateDone ?? 0) > 0 || (job.completionPercent ?? 0) > 0;
 }
 
+/** 自动翻译成功邮件：同 target 多条任务合并为一个语言块（防并发重复建任务）。 */
+export function mergeAutoJobSummariesByTarget(
+  jobs: TranslationJobSummary[],
+): TranslationJobSummary[] {
+  const byTarget = new Map<string, TranslationJobSummary>();
+  for (const job of jobs) {
+    const key = job.target.trim().replace(/_/g, "-").toLowerCase();
+    const existing = byTarget.get(key);
+    if (!existing) {
+      byTarget.set(key, { ...job });
+      continue;
+    }
+    byTarget.set(key, {
+      target: existing.target,
+      usedTokens: existing.usedTokens + job.usedTokens,
+      translateDone: (existing.translateDone ?? 0) + (job.translateDone ?? 0),
+      elapsedMinutes: Math.max(existing.elapsedMinutes, job.elapsedMinutes),
+      completionPercent: Math.max(
+        existing.completionPercent ?? 0,
+        job.completionPercent ?? 0,
+      ),
+    });
+  }
+  return [...byTarget.values()];
+}
+
 /**
  * 手动翻译成功邮件（模板 137353）。
  * 对齐 TencentEmailService.sendSuccessEmail。

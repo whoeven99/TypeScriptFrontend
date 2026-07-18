@@ -33,6 +33,7 @@ import {
   sendAutoTranslationSuccessEmail,
   sendTranslationPartialEmail,
   hasPartialEmailProgress,
+  mergeAutoJobSummariesByTarget,
   maskEmail,
   type TranslationJobSummary,
 } from "../services/workerEmail.js";
@@ -268,7 +269,7 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
       shopName,
       to,
       userName,
-      completedJobs.map(toJobSummary),
+      mergeAutoJobSummariesByTarget(completedJobs.map(toJobSummary)),
     );
     logDetail("handle-auto-success-send-result", {
       shop: shopName,
@@ -309,7 +310,7 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
       to,
       userName,
       "auto translation",
-      pausedWithProgress,
+      mergeAutoJobSummariesByTarget(pausedWithProgress),
     );
     logDetail("handle-auto-partial-send-result", {
       shop: shopName,

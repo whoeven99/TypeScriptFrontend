@@ -136,7 +136,9 @@ export async function listAutoTranslateShops(): Promise<AutoTranslateShop[]> {
     const primaryLocale = String(r.primaryLocale);
     const target = String(r.target);
     const entry = byShop.get(shop) ?? { shop, primaryLocale, targets: [] };
-    entry.targets.push(target);
+    const targetKey = normalizeLocaleKey(target);
+    const hasTarget = entry.targets.some((t) => normalizeLocaleKey(t) === targetKey);
+    if (!hasTarget) entry.targets.push(target);
     byShop.set(shop, entry);
   }
   return [...byShop.values()];

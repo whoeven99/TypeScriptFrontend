@@ -400,3 +400,42 @@ export async function setItemsCount(
     return false;
   }
 }
+
+const AUTO_SCAN_TICK_LOCK_KEY = "translate:v4:auto_scan:tick";
+const AUTO_SCAN_TICK_LOCK_TTL_SEC = 45 * 60;
+
+function autoScanLockOwner(): string {
+  const host = process.env.HOSTNAME?.trim() || "local";
+  return `${host}:${process.pid}`;
+}
+
+/** 多 worker 同时到点扫描时，仅一个实例执行 tick（catchup + scheduled）。 */
+export async function acquireAutoScanTickLock(): Promise<boolean> {
+  try {
+    const redis = getRedis();
+    const result = await redis.set(
+      AUTO_SCAN_TICK_LOCK_KEY,
+      autoScanLockOwner(),
+      "EX",
+      AUTO_SCAN_TICK_LOCK_TTL_SEC,
+      "NX",
+    );
+    return result === "OK";
+  } catch (err) {
+    console.warn("[redisV4] acquireAutoScanTickLock failed", err);
+    return true;
+  }
+}
+
+export async function releaseAutoScanTickLock(): Promise<void> {
+  try {
+    const redis = getRedis();
+    const owner = autoScanLockOwner();
+    const current = await redis.get(AUTO_SCAN_TICK_LOCK_KEY);
+    if (current === owner) {
+      await redis.del(AUTO_SCAN_TICK_LOCK_KEY);
+    }
+  } catch (err) {
+    console.warn("[redisV4] releaseAutoScanTickLock failed", err);
+  }
+}

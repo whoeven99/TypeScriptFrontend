@@ -1,14 +1,18 @@
 import { randomUUID } from "node:crypto";
 import {
   createJob,
-  findTerminalAutoJobsForTarget,
+  findTerminalAutoJobsForAutoTarget,
   getLatestAutoJobCreatedAtForShop,
-  hasActiveJobForTarget,
+  hasActiveAutoJobForTarget,
   isShopAutoCooldownElapsed,
   TSF_AUTO_TASK_SOURCE,
 } from "./cosmosV4.js";
 import { purgeAutoJob } from "./autoJobCleanup.js";
-import { pushHint } from "./redisV4.js";
+import {
+  acquireAutoScanTickLock,
+  pushHint,
+  releaseAutoScanTickLock,
+} from "./redisV4.js";
 import {
   hasTsfDbCredentials,
   listAutoTranslateShops,
@@ -56,6 +60,10 @@ export type AutoTranslateScanOptions = {
 /** v4 自动翻译任务固定使用 GPT-4.1 nano（与 TSF 手动任务默认模型一致）。 */
 function autoAiModel(): string {
   return "gpt-4.1-nano";
+}
+
+function normalizeTargetKey(locale: string): string {
+  return locale.trim().replace(/_/g, "-").toLowerCase();
 }
 
 function logPrefix(mode: AutoTranslateScanMode): string {
@@ -168,6 +176,8 @@ export async function runAutoTranslateScan(
       );
     }
 
+    const seenTargets = new Set<string>();
+
     for (const rawTarget of targets) {
       if (maxNewJobs > 0 && created >= maxNewJobs) {
         cappedOut = true;
@@ -177,13 +187,17 @@ export async function runAutoTranslateScan(
       const target = String(rawTarget).trim();
       if (!target || target === source) continue;
 
-      if (await hasActiveJobForTarget(shop, source, target)) {
+      const targetKey = normalizeTargetKey(target);
+      if (seenTargets.has(targetKey)) continue;
+      seenTargets.add(targetKey);
+
+      if (await hasActiveAutoJobForTarget(shop, target)) {
         skippedActive++;
         continue;
       }
 
-      // 清理同语言对的旧终态自动任务，避免历史记录积累和重复邮件通知
-      const staleJobs = await findTerminalAutoJobsForTarget(shop, source, target);
+      // 清理同 target 的旧终态自动任务，避免历史记录积累和重复邮件通知
+      const staleJobs = await findTerminalAutoJobsForAutoTarget(shop, target);
       for (const j of staleJobs) {
         try {
           await purgeAutoJob(j);
@@ -256,31 +270,41 @@ export async function runAutoTranslateScan(
  * 整点 tick：先补偿漏掉的上一轮（默认上一小时槽位），再跑本轮定时扫描。
  */
 export async function runAutoTranslateScanTick(): Promise<void> {
-  const lastSuccessRaw = await getAutoScanLastSuccessAt();
-  const lastSuccess = lastSuccessRaw ? new Date(lastSuccessRaw) : null;
-  const maxCatchup = getAutoTranslateMaxCatchupScans();
-  const missed = listMissedClockAlignedScanAt(lastSuccess, new Date(), maxCatchup);
-
-  for (const at of missed) {
-    const sharding = isAutoTranslateShardingEnabled();
-    const slotIndex = sharding ? currentSlotIndex(at) : undefined;
-    console.log(
-      `[autoTranslate] 补偿漏跑扫描 原定=${at.toISOString()}` +
-        (sharding ? ` 槽位=${slotIndex}` : ""),
-    );
-    try {
-      await runAutoTranslateScan({
-        slotIndex,
-        mode: "catchup",
-        scanAt: at,
-      });
-    } catch (err) {
-      console.error(
-        `[autoTranslate] 补偿扫描失败 原定=${at.toISOString()}，继续本轮定时扫描`,
-        err,
-      );
-    }
+  const acquired = await acquireAutoScanTickLock();
+  if (!acquired) {
+    console.log("[autoTranslate] 另一 worker 正在执行扫描 tick，跳过本轮");
+    return;
   }
 
-  await runAutoTranslateScan({ mode: "scheduled" });
+  try {
+    const lastSuccessRaw = await getAutoScanLastSuccessAt();
+    const lastSuccess = lastSuccessRaw ? new Date(lastSuccessRaw) : null;
+    const maxCatchup = getAutoTranslateMaxCatchupScans();
+    const missed = listMissedClockAlignedScanAt(lastSuccess, new Date(), maxCatchup);
+
+    for (const at of missed) {
+      const sharding = isAutoTranslateShardingEnabled();
+      const slotIndex = sharding ? currentSlotIndex(at) : undefined;
+      console.log(
+        `[autoTranslate] 补偿漏跑扫描 原定=${at.toISOString()}` +
+          (sharding ? ` 槽位=${slotIndex}` : ""),
+      );
+      try {
+        await runAutoTranslateScan({
+          slotIndex,
+          mode: "catchup",
+          scanAt: at,
+        });
+      } catch (err) {
+        console.error(
+          `[autoTranslate] 补偿扫描失败 原定=${at.toISOString()}，继续本轮定时扫描`,
+          err,
+        );
+      }
+    }
+
+    await runAutoTranslateScan({ mode: "scheduled" });
+  } finally {
+    await releaseAutoScanTickLock();
+  }
 }

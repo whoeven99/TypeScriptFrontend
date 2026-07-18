@@ -314,6 +314,65 @@ export async function findStaleEmptyAutoJobs(
   }
 }
 
+/** 同 shop + target 是否已有进行中的自动翻译任务（忽略 source，防主语言变更重复建任务）。 */
+export async function hasActiveAutoJobForTarget(
+  shopName: string,
+  target: string,
+): Promise<boolean> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<number>(
+        {
+          query:
+            "SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND c.target = @target AND c.taskSource = @autoSource AND ARRAY_CONTAINS(@statuses, c.status)",
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@target", value: target },
+            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+            { name: "@statuses", value: ACTIVE_V4_STATUSES },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return (resources[0] ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** 查找同店同 target 的终态自动任务（建新任务前清理；忽略 source）。 */
+export async function findTerminalAutoJobsForAutoTarget(
+  shopName: string,
+  target: string,
+): Promise<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">[]> {
+  const terminalStatuses: TranslationV4Status[] = ["COMPLETED", "FAILED", "PAUSED", "CANCELLED"];
+  try {
+    const { resources } = await getContainer()
+      .items.query<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">>(
+        {
+          query: `SELECT c.id, c.shopName, c.blobPrefix FROM c
+                  WHERE c.shopName = @shopName
+                    AND c.target = @target
+                    AND c.taskSource = @autoSource
+                    AND ARRAY_CONTAINS(@terminalStatuses, c.status)`,
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@target", value: target },
+            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+            { name: "@terminalStatuses", value: terminalStatuses },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findTerminalAutoJobsForAutoTarget failed:", err);
+    return [];
+  }
+}
+
 /** 同 shop + target 是否已有进行中的任务（避免自动扫描重复建任务）。 */
 export async function hasActiveJobForTarget(
   shopName: string,
