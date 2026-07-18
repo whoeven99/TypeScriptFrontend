@@ -92,7 +92,7 @@ type ScanView = Pick<
 
 type TaskRunView = Pick<
   ShopScanJob,
-  "id" | "task" | "status" | "updatedAt" | "createdAt" | "errorMessage"
+  "id" | "task" | "status" | "updatedAt" | "createdAt" | "errorMessage" | "blobPrefix"
 >;
 
 type LoaderData = {
@@ -226,6 +226,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           updatedAt: job.updatedAt,
           createdAt: job.createdAt,
           errorMessage: job.errorMessage,
+          blobPrefix: job.blobPrefix,
         }));
 
       const contentJob = latestByTask.content_size ?? null;
@@ -781,8 +782,13 @@ export default function ShopProfilePage() {
   const latestByTaskStatus = useMemo(
     () =>
       Object.fromEntries(
-        Object.entries(taskRunByTask).map(([task, run]) => [task, { status: run!.status }]),
-      ) as Partial<Record<ShopScanTask, { status: ShopScanStatus }>>,
+        Object.entries(taskRunByTask).map(([task, run]) => [
+          task,
+          { status: run!.status, blobPrefix: run!.blobPrefix },
+        ]),
+      ) as Partial<
+        Record<ShopScanTask, { status: ShopScanStatus; blobPrefix?: string | null }>
+      >,
     [taskRunByTask],
   );
   const profileMaterialRun = taskRunByTask.profile_material;
@@ -930,6 +936,7 @@ export default function ShopProfilePage() {
     if (isActive) return "已有扫描任务进行中，请稍候";
     return getShopScanDependencyMessage(task, latestByTaskStatus);
   };
+  const profileAiBlockedReason = taskButtonDisabledReason("profile_ai");
 
   return (
     <Page>
@@ -1722,13 +1729,25 @@ export default function ShopProfilePage() {
                       type="primary"
                       icon={<RobotOutlined />}
                       loading={isRescanning}
-                      disabled={!configured || isActive}
+                      disabled={!configured || isActive || Boolean(profileAiBlockedReason)}
                       onClick={() => handleScan("profile_ai")}
                     >
                       生成参数产物
                     </Button>
                   </Flex>
                 </Flex>
+                {profileAiBlockedReason ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {profileAiBlockedReason}
+                  </Text>
+                ) : profileAiRun?.status === "SKIPPED" && profileAiRun.errorMessage ? (
+                  <Text type="warning" style={{ fontSize: 12 }}>
+                    AI 已跳过：{profileAiRun.errorMessage}
+                    {profileAiRun.errorMessage === "missing_profile_material"
+                      ? "（profile-workspace 缺少店铺身份/信号素材。请先点「扫描全部画像源」，再生成参数产物。）"
+                      : null}
+                  </Text>
+                ) : null}
               {translationContextProfile ? (
                 <Flex vertical gap={16}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -2041,7 +2060,7 @@ export default function ShopProfilePage() {
                 <Empty
                   description={
                     blobConfigured
-                      ? "暂无规则产物（未读到 style-context.json / theme-key-profile.json / profile-facts.json）"
+                      ? "暂无规则产物（未读到 style-context / theme-key-profile / profile-facts）。仅「扫描 Theme」不够，需先「扫描全部画像源」写入 profile-workspace。"
                       : "暂无规则产物（当前页面未配置 Blob 读取）"
                   }
                 />

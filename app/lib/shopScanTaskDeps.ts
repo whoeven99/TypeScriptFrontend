@@ -36,17 +36,29 @@ function isSuccessfulScanStatus(status: ShopScanTaskStatus | undefined): boolean
   return status === "COMPLETED";
 }
 
+/** 模块化画像素材必须写到共享 profile-workspace，旧 per-job 前缀不能解锁 AI。 */
+function isWorkspaceBackedProfileMaterial(job?: {
+  status?: ShopScanTaskStatus;
+  blobPrefix?: string | null;
+}): boolean {
+  if (!isSuccessfulScanStatus(job?.status)) return false;
+  const prefix = job?.blobPrefix?.trim() ?? "";
+  return prefix.endsWith("/profile-workspace") || prefix.includes("/profile-workspace/");
+}
+
 /** AI 任务前置依赖：未满足时返回人类可读说明，满足则返回 null。 */
 export function getShopScanDependencyMessage(
   task: ShopScanTaskName,
-  latestByTask: Partial<Record<ShopScanTaskName, { status: ShopScanTaskStatus }>>,
+  latestByTask: Partial<
+    Record<ShopScanTaskName, { status: ShopScanTaskStatus; blobPrefix?: string | null }>
+  >,
 ): string | null {
   if (task === "profile_ai") {
     const hasMaterial =
-      isSuccessfulScanStatus(latestByTask.profile_material?.status) ||
-      isSuccessfulScanStatus(latestByTask.profile_identity?.status);
+      isWorkspaceBackedProfileMaterial(latestByTask.profile_material) ||
+      isWorkspaceBackedProfileMaterial(latestByTask.profile_identity);
     if (!hasMaterial) {
-      return "请先完成「扫描全部画像源」或「扫描店铺身份」，再生成店铺画像";
+      return "请先重新执行「扫描全部画像源」（写入 profile-workspace）后，再生成参数产物。仅扫描 Theme 或旧版素材不够。";
     }
     return null;
   }
