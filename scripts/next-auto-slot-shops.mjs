@@ -2,18 +2,15 @@
  * 按 worker 自动翻译分槽 hash，列出「下一轮整点扫描会尝试建任务」的 TSF 店。
  *
  * 与 worker/src/services/autoTranslate.ts + autoScanSchedule.ts 口径一致：
- *   - 数据源：Turso（migratedToTsf=1 + ShopTargetLocale.autoTranslate=1）
+ *   - 数据源：Turso（ShopTargetLocale.autoTranslate=1）
  *   - 分槽：shopSlotIndex(shop) === currentSlotIndex(下一轮扫描时刻)
  *   - 可选 --check-cooldown：Cosmos 查最近 TsFrontend-Auto 批次，排除仍在冷却的店
  *   - 可选 --require-token：要求 Session 有 offline accessToken
- *   - 可选 --billing=legacy|tsf|any：按 ShopBillingBinding 过滤（计费灰度用）
  *
  * 用法（TypeScriptFrontend 根目录，凭据 .env.prod）：
  *   npm run migration:next-auto-slot
- *   node scripts/next-auto-slot-shops.mjs --check-cooldown --billing=legacy
+ *   node scripts/next-auto-slot-shops.mjs --check-cooldown
  *   node scripts/next-auto-slot-shops.mjs --scan-at=2026-07-07T08:00:00.000Z   # 指定某次扫描时刻试算
- *
- * 典型灰度：15:00 跑本脚本 → 复制输出到 shop.txt → migration:billing --apply → 重启 worker → 16:00 看自动任务与额度。
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -137,7 +134,7 @@ async function listAutoTranslateShopsFromTurso(turso) {
     SELECT s.shop AS shop, s.primaryLocale AS primaryLocale, t.locale AS target
     FROM ShopTranslationSettings s
     JOIN ShopTargetLocale t ON t.shop = s.shop
-    WHERE s.migratedToTsf = 1 AND t.autoTranslate = 1 AND t.status = 1
+    WHERE t.autoTranslate = 1
   `);
   const byShop = new Map();
   for (const r of rs.rows) {
@@ -149,24 +146,6 @@ async function listAutoTranslateShopsFromTurso(turso) {
     byShop.set(shop, entry);
   }
   return [...byShop.values()];
-}
-
-async function loadBindings(turso, shops) {
-  if (!shops.length) return new Map();
-  const map = new Map();
-  const chunk = 200;
-  for (let i = 0; i < shops.length; i += chunk) {
-    const slice = shops.slice(i, i + chunk);
-    const placeholders = slice.map(() => "?").join(",");
-    const rs = await turso.execute({
-      sql: `SELECT shop, billingSystem FROM ShopBillingBinding WHERE shop IN (${placeholders})`,
-      args: slice,
-    });
-    for (const r of rs.rows) {
-      map.set(normalizeShop(String(r.shop)), String(r.billingSystem));
-    }
-  }
-  return map;
 }
 
 async function loadOfflineTokens(turso, shops) {
@@ -253,7 +232,6 @@ async function main() {
   const checkCooldown = Boolean(args["check-cooldown"]);
   const requireToken = args["require-token"] !== false && args["require-token"] !== "false";
   const excludeShopTxt = args["include-shop-txt"] !== true && args["include-shop-txt"] !== "true";
-  const billingFilter = String(args.billing || "any").toLowerCase();
   const concurrency = Math.max(1, Number(args.concurrency) || 8);
 
   const tz = getAutoTranslateScheduleTimezone(env);
@@ -280,24 +258,13 @@ async function main() {
   try {
     const allShops = await listAutoTranslateShopsFromTurso(turso);
     const shopNames = allShops.map((s) => s.shop);
-    const [bindings, tokenShops] = await Promise.all([
-      loadBindings(turso, shopNames),
-      requireToken ? loadOfflineTokens(turso, shopNames) : Promise.resolve(null),
-    ]);
+    const tokenShops = requireToken ? await loadOfflineTokens(turso, shopNames) : null;
 
     let candidates = allShops.filter((row) => {
       if (excluded.has(row.shop)) return false;
       if (!row.primaryLocale?.trim() || !row.targets?.length) return false;
       if (sharding && shopSlotIndex(row.shop, slotsPerDay) !== targetSlot) return false;
       if (requireToken && !tokenShops.has(row.shop)) return false;
-
-      const billing = bindings.get(row.shop) ?? null;
-      if (billingFilter === "legacy") {
-        return billing === "legacy" || billing === null;
-      }
-      if (billingFilter === "tsf") {
-        return billing === "tsf";
-      }
       return true;
     });
 
@@ -331,32 +298,30 @@ async function main() {
       console.log(`目标槽位:        ${targetSlot}（本地时段 ${describeSlotHour(targetSlot, slotsPerDay)}）`);
     }
     console.log(`店冷却:          ${(cooldownMs / 3_600_000).toFixed(1)}h${checkCooldown ? "（已过滤未过冷却）" : "（未查 Cosmos，可能仍被跳过）"}`);
-    console.log(`billing 过滤:    ${billingFilter}`);
     console.log(`要求 offline token: ${requireToken ? "是" : "否"}`);
     if (excludeShopTxt) console.log(`已排除 shop.txt: ${excluded.size} 家`);
-    console.log(`候选店:          ${candidates.length} / ${allShops.length}（TSF 已迁移且开了 auto）\n`);
+    console.log(`候选店:          ${candidates.length} / ${allShops.length}（开了 auto）\n`);
 
     if (!candidates.length) {
       console.log("本槽位无候选店。可尝试：");
-      console.log("  - 去掉 --billing=legacy 或 --check-cooldown");
-      console.log("  - 确认已有店 migratedToTsf=1 且 ShopTargetLocale.autoTranslate=1");
+      console.log("  - 去掉 --check-cooldown");
+      console.log("  - 确认已有店 ShopTargetLocale.autoTranslate=1");
       console.log("  - 等下一个小时槽位再跑（分槽下每店每天约 1 批）");
       return;
     }
 
-    const header = `${pad("shop", 38)} ${pad("slot", 5)} ${pad("billing", 8)} ${pad("targets", 8)} last_auto`;
+    const header = `${pad("shop", 38)} ${pad("slot", 5)} ${pad("targets", 8)} last_auto`;
     console.log(header);
     console.log("-".repeat(header.length));
 
     for (const row of candidates) {
       const slot = shopSlotIndex(row.shop, slotsPerDay);
-      const billing = bindings.get(row.shop) ?? "(none)";
       const last =
         row.lastAutoAt instanceof Date
           ? row.lastAutoAt.toISOString().slice(0, 19)
           : "-";
       console.log(
-        `${pad(row.shop, 38)} ${pad(slot, 5)} ${pad(billing, 8)} ${pad(row.targets.length, 8)} ${last}`,
+        `${pad(row.shop, 38)} ${pad(slot, 5)} ${pad(row.targets.length, 8)} ${last}`,
       );
     }
 

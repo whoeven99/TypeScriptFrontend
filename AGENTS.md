@@ -345,14 +345,14 @@ Important env names only:
 
 Models:
 
-- `ShopBillingBinding`: `legacy` vs `tsf` ownership.
+- `ShopBillingBinding`: per-shop TSF billing initialization marker.
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
 
 Code:
 
 - `app/server/billing/index.server.ts`: billing barrel exports.
-- `app/server/billing/binding/resolveBillingBinding.server.ts`: ownership routing.
+- `app/server/billing/binding/resolveBillingBinding.server.ts`: TSF account initialization marker.
 - `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing.
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
@@ -379,9 +379,8 @@ Quota work must check:
 Billing notes:
 
 - Runtime billing, quota reads/deductions, and Shopify billing webhooks use TSF
-  Turso. `ShopBillingBinding.billingSystem` and `BILLING_SYSTEM.LEGACY` remain as
-  compatibility data/types; `resolveBillingBinding()` defaults missing rows to
-  `tsf`, but existing binding rows are still returned unchanged.
+  Turso. `ShopBillingBinding` is now only an initialization/idempotency marker;
+  legacy-vs-TSF routing fields have been removed.
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
@@ -536,7 +535,7 @@ Support chat:
 Current models:
 
 - `Session`: Shopify session storage.
-- `ShopTranslationSettings`: per-shop translation settings and migration flag.
+- `ShopTranslationSettings`: per-shop translation settings.
 - `ShopTargetLocale`: per-shop target locale and auto-translate flag.
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
@@ -545,7 +544,7 @@ Current models:
 - `IpRedirection`: IP/region redirect settings.
 - `PageFlyTranslation`: PageFly translations.
 - `LiquidRule`: custom Liquid translation rules.
-- `ShopBillingBinding`: legacy/TSF billing ownership.
+- `ShopBillingBinding`: TSF billing initialization marker.
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
 - `SupportConversation`, `SupportMessage`: support chat.
@@ -719,7 +718,7 @@ node --experimental-vm-modules -e "
 | Table | Common Query |
 |-------|-------------|
 | `Account` | `findMany({ where: { shopName } })` — quota/credit state |
-| `ShopBillingBinding` | `findUnique({ where: { shopName } })` — billing ownership |
+| `ShopBillingBinding` | `findUnique({ where: { shopName } })` — TSF billing initialization marker |
 | `AppSubscription` | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
 | `ShopTargetLocale` | `findMany({ where: { shopName } })` — auto-translate config |
 | `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher |

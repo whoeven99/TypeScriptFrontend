@@ -22,8 +22,6 @@ export { cancelSubscription } from "./subscription/cancelSubscription.server";
 export { applyTokenPackPurchase } from "./purchase/applyTokenPack.server";
 export {
   resolveBillingBinding,
-  getBillingBinding,
-  isTsfBillingShop,
   type BindingResolution,
 } from "./binding/resolveBillingBinding.server";
 export {

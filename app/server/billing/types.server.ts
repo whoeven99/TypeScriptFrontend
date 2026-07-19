@@ -1,11 +1,4 @@
-// 新用户系统（仅新用户启用）计费相关常量/枚举。老用户仍走 Spring 账本。
-
-/** 账本归属：决定某个 shop 走新系统还是老 Java 系统。 */
-export const BILLING_SYSTEM = {
-  LEGACY: "legacy",
-  TSF: "tsf",
-} as const;
-export type BillingSystem = (typeof BILLING_SYSTEM)[keyof typeof BILLING_SYSTEM];
+// TSF 计费相关常量/枚举。
 
 /** 订阅状态。 */
 export const APP_SUBSCRIPTION_STATUS = {

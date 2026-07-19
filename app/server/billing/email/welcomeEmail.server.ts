@@ -155,7 +155,6 @@ export function scheduleTsfWelcomeEmail(
       shop,
       trigger,
       reason: "binding_not_new",
-      billingSystem: binding.billingSystem,
       persisted: binding.persisted,
       hint: "仅 bound:true（首次写入 ShopBillingBinding）会发欢迎邮件",
     });
@@ -165,7 +164,6 @@ export function scheduleTsfWelcomeEmail(
   logDetail("schedule-start", {
     shop,
     trigger,
-    billingSystem: binding.billingSystem,
     persisted: binding.persisted,
   });
 
