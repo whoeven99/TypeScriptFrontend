@@ -63,7 +63,7 @@ function logPrefix(mode: AutoTranslateScanMode): string {
 }
 
 /**
- * 扫描 TSF 库中「已迁移且开启自动翻译」的店，为每个 shop+target 创建
+ * 扫描 TSF 库中「开启自动翻译」的店，为每个 shop+target 创建
  * 自动更新任务（isCover=false，增量、不覆盖已翻译）。
  *
  * - 全局 scheduler 每小时扫描一次（AUTO_TRANSLATE_INTERVAL_MS，默认 1h）。

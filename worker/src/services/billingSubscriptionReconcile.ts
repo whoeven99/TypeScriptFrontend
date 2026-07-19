@@ -764,7 +764,7 @@ async function listLocalSubscriptions(params: {
   dueBefore?: Date;
 } = {}): Promise<LocalSubscription[]> {
   const db = getTsfDb();
-  const where = ["b.billingSystem = 'tsf'"];
+  const where: string[] = [];
   const args: string[] = [];
 
   if (params.shopFilter) {
@@ -783,7 +783,7 @@ async function listLocalSubscriptions(params: {
                  s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
           FROM AppSubscription s
           JOIN ShopBillingBinding b ON b.shop = s.shop
-          WHERE ${where.join(" AND ")}
+          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
           ORDER BY s.shop ASC`,
     args,
   });
@@ -804,7 +804,7 @@ async function listOrphanSessionShops(shopFilter?: string): Promise<string[]> {
   const sql = shopFilter
     ? `SELECT DISTINCT sess.shop AS shop
        FROM Session sess
-       JOIN ShopBillingBinding b ON b.shop = sess.shop AND b.billingSystem = 'tsf'
+       JOIN ShopBillingBinding b ON b.shop = sess.shop
        WHERE sess.isOnline = 0
          AND sess.accessToken IS NOT NULL
          AND lower(sess.shop) = lower(?)
@@ -815,7 +815,7 @@ async function listOrphanSessionShops(shopFilter?: string): Promise<string[]> {
        ORDER BY sess.shop ASC`
     : `SELECT DISTINCT sess.shop AS shop
        FROM Session sess
-       JOIN ShopBillingBinding b ON b.shop = sess.shop AND b.billingSystem = 'tsf'
+       JOIN ShopBillingBinding b ON b.shop = sess.shop
        WHERE sess.isOnline = 0
          AND sess.accessToken IS NOT NULL
          AND NOT EXISTS (

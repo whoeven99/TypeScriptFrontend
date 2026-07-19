@@ -34,18 +34,14 @@ model Session {
   refreshTokenExpires DateTime?
 }
 
-// 取代 Java `Translates` —— 每店一行的翻译配置 + 迁移开关
+// 取代 Java `Translates` —— 每店一行的翻译配置
 model ShopTranslationSettings {
   shop          String    @id // myshopify 域名（Java shopName）
   primaryLocale String // 源语言（Java source），ex "en"
   targets       Json // 目标语言数组 string[]（Java 每 target 一行 → 合并）
   autoTranslate Boolean   @default(false) // 自动增量翻译总开关（Java autoTranslate）
-  migratedToTsf Boolean   @default(false) // 不可逆：true 后只走 TSF
-  migratedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  @@index([autoTranslate, migratedToTsf]) // worker 自动扫描用
 }
 
 // 每店每目标语言一行 —— 语言页的「按语言自动翻译开关」。worker 据此精确按语言建任务。
@@ -54,7 +50,6 @@ model ShopTargetLocale {
   shop          String // myshopify 域名
   locale        String // 目标语言（Shopify locale，如 "fr"）
   autoTranslate Boolean  @default(false)
-  status        Int      @default(1) // 预留：1=启用
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -172,18 +167,14 @@ model LiquidRule {
 // 额度单位统一为 Credits；分池模型对标 Spark。
 // ============================================================
 
-/// 账本路由标记：首次安装判定后写入，不可逆。存在此行即代表已判定归属。
+/// 账本初始化标记：首次安装判定后写入。存在此行即代表已执行 TSF 账户初始化。
 model ShopBillingBinding {
-  shop          String   @id // myshopify 域名
-  billingSystem String // "legacy" | "tsf"
-  boundReason   String? // "default_tsf" | "migrated_from_legacy" | "manual" | ...
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([billingSystem])
+  shop      String   @id // myshopify 域名
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-/// 新用户账户（分池 + 用量），仅 billingSystem="tsf" 的 shop 有行。
+/// TSF 用户账户（分池 + 用量）。
 model Account {
   shop                String   @id
   /// 订阅周期额度：续费时被新周期额度替换（不结转）

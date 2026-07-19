@@ -12,8 +12,6 @@ export async function ensureShopV4Settings(
       primaryLocale,
       targets: [],
       autoTranslate: false,
-      migratedToTsf: true,
-      migratedAt: new Date(),
     },
     update: { primaryLocale },
   });
