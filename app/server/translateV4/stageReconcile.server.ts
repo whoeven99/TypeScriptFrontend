@@ -11,7 +11,11 @@ import {
   writebackResourceTotal,
 } from "./resumeStatus";
 import { reconcileTranslateUnitMetrics } from "./metricsUtils";
-import { isAutoV4TaskSource, type TranslationV4Job } from "./types";
+import {
+  isAutoV4TaskSource,
+  type TranslationV4Job,
+  type TranslationV4Metrics,
+} from "./types";
 
 /**
  * 翻译资源已全部完成，但 Cosmos 仍停在 TRANSLATING/TRANSLATE_QUEUED（常见于额度暂停→

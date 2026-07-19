@@ -27,12 +27,9 @@ const V4_RAW_MESSAGE_KEY_MAP: Record<string, string> = {
   [V4_MESSAGE_TASK_CLAIMED]: "v4.error.workerClaimed",
   [V4_MESSAGE_TASK_NOT_FOUND]: "v4.error.taskNotFound",
   [V4_MESSAGE_TASK_REQUEUED]: "v4.error.taskRequeued",
-  "已手动暂停": "v4.status.PAUSED",
   [V4_MESSAGE_MANUAL_PAUSE]: "v4.status.PAUSED",
-  "已取消": "v4.status.CANCELLED",
   [V4_MESSAGE_CANCELLED]: "v4.status.CANCELLED",
   "taskid required": "v4.error.taskIdRequired",
-  "task not found": "v4.error.taskNotFound",
   "unknown action": "v4.error.unknownAction",
 };
 

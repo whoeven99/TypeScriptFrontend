@@ -25,7 +25,6 @@ interface ManageTableInputProps {
   >;
   handleInputChange?: (record: any, value: string) => void;
   isRtl?: boolean;
-  index?: number;
 }
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
@@ -36,7 +35,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   setTranslatedValues,
   handleInputChange,
   isRtl,
-  index,
 }) => {
   const defaultValue = useMemo(() => {
     return record?.default_language || "";

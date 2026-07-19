@@ -133,7 +133,6 @@ export const appAntdTheme: ThemeConfig = {
     Tag: {
       defaultBg: appDesignTokens.colorSurfaceSecondary,
       defaultColor: appDesignTokens.colorTextSecondary,
-      defaultBorderColor: "transparent",
     },
     Typography: {
       titleMarginBottom: 0,

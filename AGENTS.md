@@ -18,6 +18,8 @@ right route, server helper, worker, extension, script, or Prisma model.
    rewrite whole files for encoding cleanup unless explicitly asked.
 7. For Shopify, billing, quota, worker, and live-store writeback changes, verify
    the smallest meaningful path and report any remaining risk.
+8. `AGENTS.md` is the current root repo index. Do not assume a separate
+   `Agent.md` exists unless it has been restored in the live checkout.
 
 ## Project Overview
 
@@ -156,6 +158,8 @@ execution docs that were consolidated into this file.
 - `/app/glossary`: `app/routes/app.glossary/route.tsx`.
 - `/app/pricing`: `app/routes/app.pricing/route.tsx`.
 - `/app/shop-profile`: `app/routes/app.shop-profile/route.tsx`; nav is hidden in production.
+- Treat an `app/routes/app.*` directory without a route file as inactive until a
+  real `route.tsx` or route module is added.
 
 ### API Routes
 
@@ -201,8 +205,8 @@ Core files:
   `app/server/translateV4/singleTranslate.server.ts` ->
   `packages/translation-core/src/syncTranslate.ts` / `llmTranslate.ts`.
 - Shared translation rules and safeguards live in
-  `packages/translation-core/src/*`. App-side `*.server.ts` compatibility files
-  and Worker `llmTranslate.ts` / `syncTranslate.ts` are thin adapters/re-exports.
+  `packages/translation-core/src/*`. Worker `llmTranslate.ts` is a thin adapter;
+  App and Worker filter/count callers import translation-core subpaths directly.
 
 Data flow:
 
@@ -229,7 +233,8 @@ Common edits:
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,
   `TaskQueueSection.tsx`, and `JobExpandedDetail.tsx`.
 - Change coverage/counts: inspect `coverage.server.ts`, `itemsCount.server.ts`,
-  and `api.translate-v4.coverage.ts`.
+  `metricsUtils.ts`, worker `itemsCount.ts` / `metricsUtils.ts`, and
+  `api.translate-v4.coverage.ts`.
 - Change copy: update locale JSON and any helper in `v4I18n.ts`.
 
 ### Translation Core And Filters
@@ -242,6 +247,10 @@ Common edits:
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
+
+Translation-core compiles into ignored `packages/translation-core/.build`.
+`packages/translation-core/dist` must not exist locally or in Git; if it appears,
+remove it and fix the command that recreated it.
 
 Filter decision chain:
 
@@ -291,14 +300,24 @@ Services:
 - `worker/src/services/redisV4.ts`: progress, **split auto/manual hint queues**, control keys.
 - `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
-- `worker/src/services/llmTranslate.ts`, `syncTranslate.ts`: thin Worker entry
-  points into `@ciwi/translation-core`.
+- `worker/src/services/shopifyFetch.ts`, `shopifyConcurrency.ts`: Shopify Admin
+  GraphQL fetch and per-shop adaptive concurrency driven by cost bucket / 429
+  feedback; init and writeback use this path.
+- `worker/src/services/llmTranslate.ts`: thin Worker entry point into
+  `@ciwi/translation-core`.
 - `packages/translation-core/src/*`: LLM routing, translation memory, glossary
   injection, HTML/JSON handling, filters, quality rules, placeholders, prompt
   constraints, and field limits shared by App and Worker.
+- `worker/src/services/itemsCount.ts`, `metricsUtils.ts`: worker-side count and
+  metric reconciliation helpers kept aligned with `app/server/translateV4/*`.
 - `worker/src/services/userFacingMessages.ts`: Worker status messages.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
+- `worker/src/services/finalizeJobAfterWriteback.ts`: post-writeback final status
+  selection and Redis `items_count` refresh for completed jobs.
+- `worker/src/services/translationReport.ts` and
+  `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
+  for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
@@ -625,9 +644,12 @@ For "合入PR然后发布测试环境", the script will:
 | --- | --- | --- |
 | Translation v4 UI | `app/routes/app.translate-v4/route.tsx` | `components/*`, `v4I18n.ts`, locales |
 | Create task failure | `app/lib/createTranslateV4Tasks.ts` | `api.translate-v4.tasks.ts`, quota guard, Cosmos/Redis |
-| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, worker `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
+| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, translation-core `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
 | Pause/resume/cancel bug | `api.translate-v4.task-action.ts` | `resumeStatus.ts`, worker control logic |
+| Post-writeback completion/counts | `worker/src/services/finalizeJobAfterWriteback.ts` | `worker/src/services/itemsCount.ts`, `app/server/translateV4/itemsCount.server.ts`, Redis `items_count` |
+| Worker Shopify throttling | `worker/src/services/shopifyConcurrency.ts` | `worker/src/services/shopifyFetch.ts`, init/writeback callers |
+| Translation quality report | `worker/src/scripts/exportTranslationReport.ts` | `worker/src/services/translationReport.ts`, Blob translate chunks |
 | Quota mismatch | `quotaRouter.server.ts` | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts` |
 | Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*` |
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
@@ -655,6 +677,8 @@ Operational root scripts:
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
+- `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
+  recent 72-hour window.
 - `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
@@ -663,8 +687,6 @@ Operational root scripts:
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
-- `scripts/language-locale-data.js`: locale/flag data consumed by switcher
-  assets.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
   scripts.
 
@@ -689,6 +711,8 @@ Worker scripts to keep:
   operational recovery tools.
 - `worker/scripts/auto-tasks-24h-trend.mjs`: auto-translate volume report.
 - `worker/scripts/v4-auto-translate-modules.json`: module catalog fixture/data.
+- `worker/src/scripts/exportTranslationReport.ts`: TypeScript source for the
+  translation quality report command; compiled output lives in `worker/dist/scripts/`.
 
 Temporary script policy:
 
@@ -924,6 +948,8 @@ These replace old one-off debug markdown files.
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
 - `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
+- Empty directories under `app/routes/` are not active Remix route modules; confirm
+  a route file exists before documenting or changing a page entry.
 - Runtime billing/quota is TSF Turso, but compatibility binding rows can still
   contain `legacy`; inspect actual callers before deleting the enum/model.
 - Translation v4 state is distributed. State machine changes must consider

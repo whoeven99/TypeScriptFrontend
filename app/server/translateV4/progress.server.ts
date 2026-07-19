@@ -9,7 +9,6 @@ import {
   capTranslateUnitsByResources,
   isTranslateResourceComplete,
   reconcileTranslateUnitMetrics,
-  translateResourceTotal,
 } from "./metricsUtils";
 import { writebackResourceTotal } from "./resumeStatus";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";

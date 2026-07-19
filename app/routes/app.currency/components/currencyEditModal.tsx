@@ -80,7 +80,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         const oldData: CurrencyDataType = dataSource.find(
           (row: CurrencyDataType) => row.key === newData.id,
         );
-        const data: CurrencyDataType[] = [
+        const updatedRows: CurrencyDataType[] = [
           {
             key: oldData.key,
             currency: oldData.currency,
@@ -89,7 +89,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             exchangeRate: newData.exchangeRate,
           },
         ];
-        dispatch(updateTableData(data));
+        dispatch(updateTableData(updatedRows));
         shopify.toast.show(t("Saved successfully"));
         setIsModalOpen(false);
         setUpdateFetcherLoading(false);

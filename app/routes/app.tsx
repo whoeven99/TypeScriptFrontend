@@ -8,7 +8,6 @@ import {
   Link,
   Outlet,
   useLoaderData,
-  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -17,6 +16,8 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { GoogleAnalyticClickReport } from "~/api/googleAnalyticsClient";
+import { queryShopLanguages } from "~/api/admin";
+import type { ShopLocalesType } from "~/routes/app.language/route";
 import {
   bootstrapLocalesFromLoaded,
   type AppBootstrapData,
@@ -239,6 +240,7 @@ export const shouldRevalidate = shouldRevalidateAppShell;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   try {
     const formData = await request.formData();
