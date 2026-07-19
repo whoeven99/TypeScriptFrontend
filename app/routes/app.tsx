@@ -23,6 +23,7 @@ import {
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
 import { scheduleTsfWelcomeEmail } from "~/server/billing/email/welcomeEmail.server";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -141,7 +142,15 @@ async function runAppInitialization({
     );
     scheduleTsfWelcomeEmail(binding, shop, "app-loader-init");
 
-    // 店铺画像扫描改为手动按钮触发，避免安装/首次进入时自动拉 Shopify 或自动调用 AI。
+    // 安装/首次进 App：计量扫描（源语言总量 + 已发布语言覆盖率），幂等、best-effort。
+    void enqueueShopScan({ shop, trigger: "install" }).then((result) => {
+      console.info(
+        `${initLog} shop-scan shop=${shop} enqueued=${result.enqueued}` +
+          (result.scanId ? ` scanId=${result.scanId}` : "") +
+          (result.reason ? ` reason=${result.reason}` : ""),
+      );
+    });
+
     console.info(`${initLog} done shop=${shop}`);
   } catch (error) {
     console.error(`${initLog} failed shop=${shop}`, error);

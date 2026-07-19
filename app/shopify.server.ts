@@ -6,11 +6,13 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { SHOPIFY_ADMIN_API_VERSION } from "./lib/shopifyAdminApiVersion";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.July25,
+  // SDK 枚举可能滞后；与全仓硬编码常量对齐（见 shopifyAdminApiVersion.ts）。
+  apiVersion: SHOPIFY_ADMIN_API_VERSION as ApiVersion,
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
@@ -26,7 +28,7 @@ const shopify = shopifyApp({
 });
 
 export default shopify;
-export const apiVersion = ApiVersion.July25;
+export const apiVersion = SHOPIFY_ADMIN_API_VERSION as ApiVersion;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;

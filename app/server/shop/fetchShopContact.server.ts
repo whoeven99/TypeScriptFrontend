@@ -1,4 +1,5 @@
 import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
+import { buildShopifyAdminGraphqlUrl } from "~/lib/shopifyAdminApiVersion";
 
 export type ShopContact = {
   email: string | null;
@@ -50,8 +51,7 @@ export async function fetchShopContact(
     return { email: null, ownerName: null };
   }
 
-  const graphqlVersion = process.env.GRAPHQL_VERSION?.trim() || "2025-04";
-  const url = `https://${normalizedShop}/admin/api/${graphqlVersion}/graphql.json`;
+  const url = buildShopifyAdminGraphqlUrl(normalizedShop);
 
   try {
     const resp = await fetch(url, {

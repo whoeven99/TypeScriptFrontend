@@ -1,5 +1,6 @@
 import axios from "axios";
 import { LanguagesDataType } from "~/routes/app.language/route";
+import { buildShopifyAdminGraphqlUrl } from "~/lib/shopifyAdminApiVersion";
 
 export const queryMarketDomainData = async ({
   shop,
@@ -41,7 +42,7 @@ export const queryMarketDomainData = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -169,7 +170,7 @@ export const queryPageFlyThemeData = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -202,7 +203,7 @@ export const queryAppByHandle = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -239,7 +240,7 @@ export const queryShopLanguages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -248,8 +249,6 @@ export const queryShopLanguages = async ({
       data: JSON.stringify({ query }),
     });
     const res = response?.data?.data?.shopLocales;
-
-    console.log(`${shop} queryShopLanguages: `, res);
 
     return res;
   } catch (error) {
@@ -281,7 +280,7 @@ export const queryShopBaseConfigData = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -349,7 +348,7 @@ export const queryNextTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -404,7 +403,7 @@ export const queryPreviousTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -442,7 +441,7 @@ export const queryPrimaryMarket = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -490,7 +489,7 @@ export const mutationShopLocaleEnable = async ({
       `;
       try {
         const response = await axios({
-          url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+          url: buildShopifyAdminGraphqlUrl(shop),
           method: "POST",
           headers: {
             "X-Shopify-Access-Token": accessToken,
@@ -546,7 +545,7 @@ export const mutationShopLocaleDisable = async ({
 
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -584,7 +583,7 @@ export const mutationAppPurchaseOneTimeCreate = async ({
   try {
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -612,7 +611,9 @@ export const mutationAppPurchaseOneTimeCreate = async ({
         }`,
         variables: {
           name: `${name} Credits`,
-          returnUrl: returnUrl,
+          // Shopify 确认页对非法/空 returnUrl 会 500；必须传绝对 URL 字符串
+          returnUrl:
+            typeof returnUrl === "string" ? returnUrl : returnUrl.href,
           price: {
             amount: price.amount,
             currencyCode: price.currencyCode,
@@ -659,7 +660,7 @@ export const mutationAppSubscriptionCreate = async ({
   try {
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -694,14 +695,16 @@ export const mutationAppSubscriptionCreate = async ({
         }`,
         variables: {
           name: `${name}`,
-          returnUrl: returnUrl,
+          // Shopify 确认页对非法/空 returnUrl 会 500；必须传绝对 URL 字符串
+          returnUrl:
+            typeof returnUrl === "string" ? returnUrl : returnUrl.href,
           lineItems: [
             {
               plan: {
                 appRecurringPricingDetails: {
                   interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
                   price: {
-                    amount: price.amount,
+                    amount: Number(price.amount),
                     currencyCode: price.currencyCode,
                   },
                 },
@@ -709,7 +712,7 @@ export const mutationAppSubscriptionCreate = async ({
             },
           ],
           replacementBehavior: "APPLY_IMMEDIATELY",
-          trialDays: trialDays,
+          trialDays: Number(trialDays) || 0,
           test: test || false,
         },
       },

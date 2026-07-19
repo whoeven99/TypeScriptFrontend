@@ -280,7 +280,8 @@ Pipeline:
 - `worker/src/workers/translateWorker.ts`: translation stage, LLM calls,
   checkpoints, quota, pause/cancel.
 - `worker/src/workers/writebackWorker.ts`: Shopify translation writeback.
-- `worker/src/workers/shopScanWorker.ts`: shop profile scan.
+- `worker/src/workers/shopScanWorker.ts`: shop scan（install/scheduled 计量；
+  manual AI 画像/术语）。
 - `worker/src/workers/emailWorker.ts`: notifications.
 
 Services:
@@ -493,14 +494,24 @@ Glossary:
 - Worker injection: `worker/src/services/glossary.ts` is loaded by
   `worker/src/services/llmTranslate.ts` for batch and single-field prompts.
 
-Shop Profile:
+Shop Profile / Shop Scan:
 
-- Page: `app/routes/app.shop-profile/route.tsx`.
+- Page (non-prod debug): `app/routes/app.shop-profile/route.tsx`.
 - API: `app/routes/api.shop-profile.ts`.
-- Server: `app/server/shopScan/*`.
+- Trigger: `app/server/shopScan/trigger.server.ts`（`enqueueShopScan`）。
+- Cosmos: `app/server/shopScan/cosmos.server.ts` /
+  `worker/src/services/shopScanCosmos.ts`（容器 `shop_scan_jobs`）。
 - Worker: `worker/src/workers/shopScanWorker.ts`,
   `worker/src/services/shopScan/*`.
-- Model: `ShopProfile`.
+- Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
+  `items_count`。
+- Trigger split:
+  - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
+    `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
+  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。
+  - `manual`（调试页按钮）：只跑 `profile` + `glossary`（AI）；跳过计量阶段，
+    并从上一份 summary 合并计量字段，保证 `getLatestShopScanJob` 仍完整。
+- Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:
 
@@ -629,7 +640,7 @@ For "合入PR然后发布测试环境", the script will:
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
 | Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
-| Shopify auth/API version | `app/shopify.server.ts` | `app/routes/app.tsx`, auth and webhook routes |
+| Shopify auth/API version | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`） | `app/shopify.server.ts`、`worker/.../shopifyAdminApiVersion.ts`、`shopify.app*.toml` |
 | Deploy config | `shopify.app*.toml` | `Dockerfile*`, Render/GitHub Actions config |
 
 ## Scripts
