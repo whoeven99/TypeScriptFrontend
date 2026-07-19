@@ -33,4 +33,5 @@ app/generated/
 /worker/scripts/tmp
 /worker/scripts/out
 /scripts/out
-/packages/translation-core/.build
+/packages/translation-core/.build/
+/packages/translation-core/dist/
