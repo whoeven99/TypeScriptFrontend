@@ -163,16 +163,9 @@ model LiquidRule {
 }
 
 // ============================================================
-// TSF 计费账本（Turso Account 三池 + ShopBillingBinding）
+// TSF 计费账本（Turso Account 三池）
 // 额度单位统一为 Credits；分池模型对标 Spark。
 // ============================================================
-
-/// 账本初始化标记：首次安装判定后写入。存在此行即代表已执行 TSF 账户初始化。
-model ShopBillingBinding {
-  shop      String   @id // myshopify 域名
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
 
 /// TSF 用户账户（分池 + 用量）。
 model Account {

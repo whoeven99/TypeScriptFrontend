@@ -134,7 +134,7 @@ async function runAppInitialization({
   const initLog = "[app:init]";
   try {
     console.info(`${initLog} start shop=${shop}`);
-    // 判定并锁定账本归属；新 TSF 用户只建账户，不在安装时发放试用额度。
+    // 确保 TSF 账户存在；新 TSF 用户只建账户，不在安装时发放试用额度。
     const binding = await resolveBillingBinding(shop);
     console.info(
       `${initLog} billing-resolved shop=${shop} bound=${binding.bound} persisted=${binding.persisted}`,

@@ -2,7 +2,7 @@ import prisma from "../../../db.server";
 import { ensureAccount } from "../account/ensureAccount.server";
 
 export type BindingResolution = {
-  /** 本次是否新建了 binding（首次判定）。 */
+  /** 本次是否新建了 TSF Account（首次判定）。 */
   bound: boolean;
   /** 判定是否落库。 */
   persisted: boolean;
@@ -10,36 +10,21 @@ export type BindingResolution = {
 
 /**
  * 判定并锁定某 shop 的 TSF 账本初始化（幂等）。
- * - 已有 binding：直接返回。
- * - 无 binding：写入初始化标记，并 ensureAccount。
+ * - 已有 Account：恢复可能的软删除状态并返回。
+ * - 无 Account：创建账户，并让调用方触发首次欢迎邮件。
  */
 export async function resolveBillingBinding(
   shop: string,
 ): Promise<BindingResolution> {
-  const existing = await prisma.shopBillingBinding.findUnique({
+  const existing = await prisma.account.findUnique({
     where: { shop },
-  });
-  if (existing) {
-    // 重装/已有 binding 时仍需恢复可能被软删的账户
-    await ensureAccount(shop);
-    return {
-      bound: false,
-      persisted: true,
-    };
-  }
-
-  await prisma.shopBillingBinding.upsert({
-    where: { shop },
-    create: {
-      shop,
-    },
-    update: {},
+    select: { shop: true },
   });
 
   await ensureAccount(shop);
 
   return {
-    bound: true,
+    bound: !existing,
     persisted: true,
   };
 }

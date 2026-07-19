@@ -782,7 +782,7 @@ async function listLocalSubscriptions(params: {
     sql: `SELECT s.shop, s.planKey, s.shopifySubscriptionId, s.billingInterval, s.status,
                  s.creditsPerPeriod, s.currentPeriodStart, s.currentPeriodEnd
           FROM AppSubscription s
-          JOIN ShopBillingBinding b ON b.shop = s.shop
+          JOIN Account a ON a.shop = s.shop AND a.deletedAt IS NULL
           ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
           ORDER BY s.shop ASC`,
     args,
@@ -804,9 +804,10 @@ async function listOrphanSessionShops(shopFilter?: string): Promise<string[]> {
   const sql = shopFilter
     ? `SELECT DISTINCT sess.shop AS shop
        FROM Session sess
-       JOIN ShopBillingBinding b ON b.shop = sess.shop
+       LEFT JOIN Account a ON a.shop = sess.shop
        WHERE sess.isOnline = 0
          AND sess.accessToken IS NOT NULL
+         AND (a.shop IS NULL OR a.deletedAt IS NULL)
          AND lower(sess.shop) = lower(?)
          AND NOT EXISTS (
            SELECT 1 FROM AppSubscription s
@@ -815,9 +816,10 @@ async function listOrphanSessionShops(shopFilter?: string): Promise<string[]> {
        ORDER BY sess.shop ASC`
     : `SELECT DISTINCT sess.shop AS shop
        FROM Session sess
-       JOIN ShopBillingBinding b ON b.shop = sess.shop
+       LEFT JOIN Account a ON a.shop = sess.shop
        WHERE sess.isOnline = 0
          AND sess.accessToken IS NOT NULL
+         AND (a.shop IS NULL OR a.deletedAt IS NULL)
          AND NOT EXISTS (
            SELECT 1 FROM AppSubscription s
            WHERE s.shop = sess.shop AND s.status = 'ACTIVE'
