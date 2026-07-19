@@ -77,6 +77,11 @@ export type TranslationV4Job = {
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
+  /**
+   * 可选：限定只拉取这些 Shopify resource GID（试译单商品等）。
+   * 缺省时 worker 按 module 全店枚举。
+   */
+  resourceIds?: string[] | null;
   /** 任务来源标识（如 "Ciwi-Translator-Task"，"TsFrontend"，"TsFrontend-Auto"）。旧任务可能缺省。 */
   taskSource?: string | null;
   status: TranslationV4Status;
@@ -109,14 +114,22 @@ export const TS_FRONTEND_TASK_SOURCE = "TsFrontend";
 /** 任务来源：worker 定时扫描自动创建的「自动更新」任务（isCover=false）。 */
 export const TSF_AUTO_TASK_SOURCE = "TsFrontend-Auto";
 
+/** 任务来源：免费试译单个商品（翻译后停预览，用户确认才写回）。 */
+export const TS_FRONTEND_TRIAL_TASK_SOURCE = "TsFrontend-Trial";
+
+/** 任务来源：开拓市场（按语言翻译核心商品）。 */
+export const TS_FRONTEND_EXPAND_TASK_SOURCE = "TsFrontend-Expand";
+
 /**
  * 该任务的 Shopify token 是否应直接取 job 快照（跳过 Turso Session 查询）。
- * 外部来源（TsFrontend / 自动任务）的 shop Session 不在本服务的 Turso 里，必须用 job 里存的 token。
+ * 外部来源（TsFrontend / 自动 / 试译 / 开拓市场）的 shop Session 不在本服务的 Turso 里，必须用 job 里存的 token。
  */
 export function prefersStoredToken(job: Pick<TranslationV4Job, "taskSource">): boolean {
   return (
     job.taskSource === TS_FRONTEND_TASK_SOURCE ||
-    job.taskSource === TSF_AUTO_TASK_SOURCE
+    job.taskSource === TSF_AUTO_TASK_SOURCE ||
+    job.taskSource === TS_FRONTEND_TRIAL_TASK_SOURCE ||
+    job.taskSource === TS_FRONTEND_EXPAND_TASK_SOURCE
   );
 }
 
@@ -125,6 +138,20 @@ export function isAutoTranslationJob(
   job: Pick<TranslationV4Job, "taskSource">,
 ): boolean {
   return job.taskSource === TSF_AUTO_TASK_SOURCE;
+}
+
+/** 是否免费试译任务（翻译完成后不自动写回）。 */
+export function isTrialTranslationJob(
+  job: Pick<TranslationV4Job, "taskSource">,
+): boolean {
+  return job.taskSource === TS_FRONTEND_TRIAL_TASK_SOURCE;
+}
+
+/** 是否开拓市场任务。 */
+export function isExpandTranslationJob(
+  job: Pick<TranslationV4Job, "taskSource">,
+): boolean {
+  return job.taskSource === TS_FRONTEND_EXPAND_TASK_SOURCE;
 }
 
 export type TranslationJobWindowStats = {
@@ -851,10 +878,14 @@ export async function findJobsNeedingEmail(limit = 20): Promise<TranslationV4Job
           SELECT * FROM c
           WHERE (c.status = 'COMPLETED' OR c.status = 'PAUSED')
             AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
+            AND (NOT IS_DEFINED(c.taskSource) OR c.taskSource != @trialSource)
           ORDER BY c.updatedAt ASC
           OFFSET 0 LIMIT @limit
         `,
-        parameters: [{ name: "@limit", value: limit }],
+        parameters: [
+          { name: "@limit", value: limit },
+          { name: "@trialSource", value: TS_FRONTEND_TRIAL_TASK_SOURCE },
+        ],
       })
       .fetchAll();
     return resources;

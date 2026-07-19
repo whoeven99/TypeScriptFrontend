@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
-import type { CustomTagProps } from "rc-select/lib/BaseSelect";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { Checkbox, Select, Space } from "antd";
+import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -11,8 +11,12 @@ import {
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
+import { formatExpandCredits } from "~/lib/expandMarket";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import Button from "~/ui/components/AppButton";
+import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
+
+export type { CreateTaskEstimateView };
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -32,6 +36,10 @@ type Props = {
   submitPlacement?: "header" | "footer-center";
   createDisabled?: boolean;
   disabledMessage?: string | null;
+  /** 就绪带「补齐」等引导提示，可关。 */
+  guideHint?: string | null;
+  onDismissGuideHint?: () => void;
+  estimate?: CreateTaskEstimateView | null;
 };
 
 export function CreateTaskCard({
@@ -52,6 +60,9 @@ export function CreateTaskCard({
   submitPlacement = "header",
   createDisabled = false,
   disabledMessage = null,
+  guideHint = null,
+  onDismissGuideHint,
+  estimate = null,
 }: Props) {
   const { t } = useTranslation();
   const canCreate =
@@ -87,6 +98,15 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+  const allTargetValues = targetOptions.map((option) => option.value);
+  const allModuleValues = moduleChips.map((mod) => mod.value);
+  const productModuleValue =
+    moduleChips.find((mod) => mod.value === "products")?.value ??
+    moduleChips[0]?.value;
+  const isFullScope =
+    targets.length > 0 &&
+    targets.length === allTargetValues.length &&
+    modules.length === allModuleValues.length;
 
   const toggleModule = (value: string) => {
     onModulesChange(
@@ -118,7 +138,7 @@ export function CreateTaskCard({
       {creating
         ? t("v4.createTask.creating")
         : targets.length > 1
-          ? t("v4.createTask.createMultiple", { count: targets.length })
+          ? t("v4.createTask.createBulk", { count: targets.length })
           : t("v4.createTask.createOne")}
     </Button>
   );
@@ -137,13 +157,13 @@ export function CreateTaskCard({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: "center",
           gap: 12,
           marginBottom: 18,
           flexWrap: "wrap",
         }}
       >
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ minWidth: 0, flex: "1 1 160px" }}>
           <h2
             style={{
               margin: 0,
@@ -168,31 +188,118 @@ export function CreateTaskCard({
             >
               {disabledMessage}
             </div>
+          ) : (
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 11,
+                lineHeight: "16px",
+                color: v4Colors.textMuted,
+              }}
+            >
+              {t("v4.createTask.estimateFootnote")}
+            </div>
+          )}
+        </div>
+        {submitPlacement === "header" ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "8px 12px",
+              maxWidth: "100%",
+              minWidth: 0,
+            }}
+          >
+            <EstimateInline
+              estimate={estimate}
+              canEstimate={targets.length > 0 && modules.length > 0}
+            />
+            {submitButton}
+          </div>
+        ) : null}
+      </div>
+
+      {guideHint ? (
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: "var(--p-color-bg-surface-info)",
+            border: "1px solid rgba(84, 103, 255, 0.18)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              lineHeight: "18px",
+              color: "var(--p-color-text-info)",
+              flex: 1,
+            }}
+          >
+            {guideHint}
+          </div>
+          {onDismissGuideHint ? (
+            <button
+              type="button"
+              onClick={onDismissGuideHint}
+              aria-label={t("v4.createTask.dismissGuide")}
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: v4Colors.textMuted,
+                padding: 0,
+                lineHeight: 1,
+                fontSize: 14,
+              }}
+            >
+              ×
+            </button>
           ) : null}
         </div>
-        {submitPlacement === "header" ? submitButton : null}
-      </div>
+      ) : null}
+
+      <ScopeReview
+        targetCount={targets.length}
+        totalTargetCount={allTargetValues.length}
+        moduleCount={modules.length}
+        totalModuleCount={allModuleValues.length}
+        isFullScope={isFullScope}
+        canKeepOneLanguage={targets.length > 1}
+        canProductsOnly={
+          Boolean(productModuleValue) &&
+          (modules.length !== 1 || modules[0] !== productModuleValue)
+        }
+        canSelectAll={!isFullScope && allTargetValues.length > 0 && allModuleValues.length > 0}
+        onKeepOneLanguage={() => {
+          const first = targets[0] ?? allTargetValues[0];
+          if (first) onTargetsChange([first]);
+        }}
+        onProductsOnly={() => {
+          if (productModuleValue) onModulesChange([productModuleValue]);
+        }}
+        onSelectAll={() => {
+          onTargetsChange(allTargetValues);
+          onModulesChange(allModuleValues);
+        }}
+      />
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <Select
-          mode="multiple"
+        <TargetLanguagePicker
           placeholder={t("v4.createTask.selectTargetLanguages")}
-          value={targets}
-          onChange={onTargetsChange}
           options={targetSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={(props) => renderLocaleTag(props, targetSelectOptions, t)}
-          optionRender={(option) => (
-            <span>
-              <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
-                {option.data.regionCode}
-              </span>
-              {option.label}
-            </span>
-          )}
+          values={targets}
+          onChange={onTargetsChange}
         />
       </div>
 
@@ -296,15 +403,258 @@ export function CreateTaskCard({
             marginTop: 22,
             paddingTop: 18,
             display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
             justifyContent: "center",
+            gap: "8px 12px",
           }}
         >
+          <EstimateInline
+            estimate={estimate}
+            canEstimate={targets.length > 0 && modules.length > 0}
+          />
           {submitButton}
         </div>
       ) : null}
     </div>
   );
 }
+
+function ScopeReview({
+  targetCount,
+  totalTargetCount,
+  moduleCount,
+  totalModuleCount,
+  isFullScope,
+  canKeepOneLanguage,
+  canProductsOnly,
+  canSelectAll,
+  onKeepOneLanguage,
+  onProductsOnly,
+  onSelectAll,
+}: {
+  targetCount: number;
+  totalTargetCount: number;
+  moduleCount: number;
+  totalModuleCount: number;
+  isFullScope: boolean;
+  canKeepOneLanguage: boolean;
+  canProductsOnly: boolean;
+  canSelectAll: boolean;
+  onKeepOneLanguage: () => void;
+  onProductsOnly: () => void;
+  onSelectAll: () => void;
+}) {
+  const { t } = useTranslation();
+  const hasSelection = targetCount > 0 && moduleCount > 0;
+  if (!hasSelection) return null;
+
+  return (
+    <div
+      style={{
+        marginBottom: 16,
+        padding: "10px 12px",
+        borderRadius: 12,
+        border: `1px solid ${
+          isFullScope ? "rgba(245, 158, 11, 0.28)" : "rgba(84, 103, 255, 0.16)"
+        }`,
+        background: isFullScope
+          ? "rgba(255, 247, 230, 0.72)"
+          : "var(--p-color-bg-surface-secondary)",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "8px 12px",
+      }}
+    >
+      <div style={{ minWidth: 220, flex: "1 1 320px" }}>
+        <div
+          style={{
+            fontSize: 12,
+            lineHeight: "18px",
+            fontWeight: 700,
+            color: v4Colors.text,
+          }}
+        >
+          {t("v4.createTask.scopeTitle")}
+        </div>
+        <div
+          style={{
+            marginTop: 2,
+            fontSize: 12,
+            lineHeight: "18px",
+            color: v4Colors.textMuted,
+          }}
+        >
+          {isFullScope
+            ? t("v4.createTask.scopeFullBody", {
+                languages: targetCount,
+                modules: moduleCount,
+                tasks: targetCount,
+              })
+            : t("v4.createTask.scopeBody", {
+                languages: targetCount,
+                modules: moduleCount,
+                tasks: targetCount,
+              })}
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        {canKeepOneLanguage ? (
+          <ScopeQuickButton onClick={onKeepOneLanguage}>
+            {t("v4.createTask.scopeKeepOneLanguage")}
+          </ScopeQuickButton>
+        ) : null}
+        {canProductsOnly ? (
+          <ScopeQuickButton onClick={onProductsOnly}>
+            {t("v4.createTask.scopeProductsOnly")}
+          </ScopeQuickButton>
+        ) : null}
+        {canSelectAll ? (
+          <ScopeQuickButton onClick={onSelectAll}>
+            {t("v4.createTask.scopeSelectAll", {
+              languages: totalTargetCount,
+              modules: totalModuleCount,
+            })}
+          </ScopeQuickButton>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ScopeQuickButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: "1px solid var(--app-color-border-secondary)",
+        background: "var(--p-color-bg-surface)",
+        borderRadius: 999,
+        padding: "5px 10px",
+        cursor: "pointer",
+        fontSize: 12,
+        lineHeight: "16px",
+        fontWeight: 650,
+        color: "var(--p-color-text-link)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** 创建按钮左侧的一行预估（无灰盒，避免顶栏显得臃肿）。 */
+function EstimateInline({
+  estimate,
+  canEstimate,
+}: {
+  estimate: CreateTaskEstimateView | null;
+  canEstimate: boolean;
+}) {
+  const { t } = useTranslation();
+
+  if (!canEstimate) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateSelectFirst")}
+      </span>
+    );
+  }
+
+  if (!estimate || estimate.loading) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateLoading")}
+      </span>
+    );
+  }
+
+  if (estimate.estimatedCredits == null) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateUnavailable")}
+      </span>
+    );
+  }
+
+  const estimatedLabel = formatExpandCredits(estimate.estimatedCredits);
+  const remainingLabel = formatExpandCredits(estimate.remainingCredits);
+  const primary = estimate.isUpperBound
+    ? t("v4.createTask.estimateUpperBound", { estimated: estimatedLabel })
+    : t("v4.createTask.estimateNeed", { estimated: estimatedLabel });
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 2,
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "baseline",
+          justifyContent: "flex-end",
+          gap: "4px 8px",
+          fontSize: 13,
+          fontWeight: 600,
+          color: estimate.needsMoreCredits
+            ? "var(--p-color-text-caution)"
+            : v4Colors.text,
+          lineHeight: 1.35,
+        }}
+      >
+        <span>{primary}</span>
+        <span style={{ fontWeight: 500, color: v4Colors.textMuted }}>
+          {t("v4.createTask.estimateRemaining", { remaining: remainingLabel })}
+        </span>
+      </div>
+      {estimate.needsMoreCredits ? (
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--p-color-text-caution)",
+            textAlign: "right",
+          }}
+        >
+          {t("v4.createTask.estimateShort")}{" "}
+          <Link to="/app/pricing" style={{ fontWeight: 600 }}>
+            {t("v4.createTask.estimateBuyCredits")}
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const estimateInlineMutedStyle: CSSProperties = {
+  fontSize: 12,
+  color: v4Colors.textMuted,
+  textAlign: "right",
+  maxWidth: 220,
+  lineHeight: 1.35,
+};
 
 function SectionHeader({
   title,
@@ -330,35 +680,247 @@ function SectionLabel({ children }: { children: string }) {
 
 type TargetOption = { value: string; label: string; regionCode: string };
 
-function renderLocaleTag(
-  props: CustomTagProps,
-  options: TargetOption[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-) {
-  const { label, value, closable, onClose } = props;
-  const opt = options.find((item) => item.value === value);
-  const code = opt?.regionCode ?? localeRegionCode(String(value));
-  const name = typeof label === "string" ? label : opt?.label ?? String(value);
+function TargetLanguagePicker({
+  options,
+  values,
+  onChange,
+  placeholder,
+}: {
+  options: TargetOption[];
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.filter((option) => values.includes(option.value));
+  const visibleSelected = selected.slice(0, 6);
+  const hiddenCount = Math.max(0, selected.length - visibleSelected.length);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      const root = rootRef.current;
+      if (root && !root.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  const toggleValue = (value: string) => {
+    onChange(
+      values.includes(value)
+        ? values.filter((item) => item !== value)
+        : [...values, value],
+    );
+  };
+
+  const removeValue = (value: string) => {
+    onChange(values.filter((item) => item !== value));
+  };
 
   return (
-    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
-      <span className="v4-select-tag__code">{code}</span>
-      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {name}
-      </span>
-      {closable ? (
-        <button
-          type="button"
-          className="v4-select-tag__close"
-          onClick={onClose}
-          aria-label={t("v4.createTask.removeTarget", { name })}
+    <div ref={rootRef} style={{ position: "relative", width: "100%" }}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        style={{
+          width: "100%",
+          minHeight: 40,
+          borderRadius: 10,
+          border: `1px solid ${open ? "rgba(84, 103, 255, 0.42)" : "var(--app-color-border-secondary)"}`,
+          background: "var(--p-color-bg-surface)",
+          padding: "6px 34px 6px 8px",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexWrap: "wrap",
+          cursor: "pointer",
+          position: "relative",
+          boxShadow: open ? "0 0 0 3px rgba(84, 103, 255, 0.12)" : "none",
+          fontFamily: "inherit",
+          textAlign: "left",
+        }}
+      >
+        {visibleSelected.length ? (
+          visibleSelected.map((option) => (
+            <LocaleTag
+              key={option.value}
+              option={option}
+              onRemove={(event) => {
+                event.stopPropagation();
+                removeValue(option.value);
+              }}
+              removeLabel={t("v4.createTask.removeTarget", {
+                name: option.label,
+              })}
+            />
+          ))
+        ) : (
+          <span
+            style={{
+              color: v4Colors.textFaint,
+              fontSize: 13,
+              lineHeight: "24px",
+              paddingInline: 4,
+            }}
+          >
+            {placeholder}
+          </span>
+        )}
+        {hiddenCount > 0 ? (
+          <span style={languageMoreTagStyle}>+ {hiddenCount}</span>
+        ) : null}
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            right: 12,
+            top: "50%",
+            transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`,
+            color: v4Colors.textMuted,
+            fontSize: 14,
+            transition: "transform 0.15s ease",
+          }}
         >
-          ×
-        </button>
+          ⌄
+        </span>
+      </button>
+
+      {open ? (
+        <div
+          role="listbox"
+          aria-multiselectable="true"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            zIndex: 30,
+            maxHeight: 280,
+            overflowY: "auto",
+            borderRadius: 12,
+            border: "1px solid var(--app-color-border-secondary)",
+            background: "var(--p-color-bg-surface)",
+            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
+            padding: 6,
+          }}
+        >
+          {options.map((option) => {
+            const checked = values.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={checked}
+                onClick={() => toggleValue(option.value)}
+                style={{
+                  width: "100%",
+                  minHeight: 34,
+                  border: "none",
+                  borderRadius: 8,
+                  background: checked ? v4Colors.primarySoft : "transparent",
+                  color: v4Colors.text,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "7px 8px",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                }}
+              >
+                <span
+                  style={{
+                    width: 16,
+                    flexShrink: 0,
+                    color: checked ? v4Colors.primaryHover : v4Colors.textFaint,
+                    fontWeight: 700,
+                  }}
+                >
+                  {checked ? "✓" : ""}
+                </span>
+                <span style={{ color: v4Colors.primary, fontWeight: 700, minWidth: 24 }}>
+                  {option.regionCode}
+                </span>
+                <span
+                  style={{
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontSize: 13,
+                  }}
+                >
+                  {option.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       ) : null}
+    </div>
+  );
+}
+
+function LocaleTag({
+  option,
+  onRemove,
+  removeLabel,
+}: {
+  option: TargetOption;
+  onRemove: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  removeLabel: string;
+}) {
+  return (
+    <span
+      className="v4-select-tag v4-select-tag--locale"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        maxWidth: 190,
+        minWidth: 0,
+      }}
+    >
+      <span className="v4-select-tag__code">{option.regionCode}</span>
+      <span
+        style={{
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {option.label}
+      </span>
+      <button
+        type="button"
+        className="v4-select-tag__close"
+        onClick={onRemove}
+        aria-label={removeLabel}
+      >
+        ×
+      </button>
     </span>
   );
 }
+
+const languageMoreTagStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: 24,
+  padding: "2px 8px",
+  borderRadius: 6,
+  background: v4Colors.primarySoft,
+  color: v4Colors.primaryHover,
+  fontSize: 12,
+  fontWeight: 700,
+  lineHeight: "18px",
+};
 
 /** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
 function moduleChipStyle(selected: boolean): CSSProperties {

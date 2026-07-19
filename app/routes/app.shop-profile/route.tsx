@@ -354,7 +354,7 @@ export default function ShopProfilePage() {
             disabled={!configured || isActive}
             onClick={handleRescan}
           >
-            {isActive ? "扫描进行中…" : "重新扫描"}
+            {isActive ? "生成中…" : "生成 AI 画像与术语"}
           </Button>
         </Flex>
 
@@ -369,7 +369,7 @@ export default function ShopProfilePage() {
           <Card style={{ boxShadow: "var(--app-shadow-card)" }}>
             <Empty
               image={<ThunderboltOutlined style={{ fontSize: 48, color: "var(--app-accent-primary)" }} />}
-              description="尚未扫描。安装后会自动触发一次扫描，或点击下方按钮开始。"
+              description="安装后会自动扫描源语言总量与已发布语言覆盖率。AI 画像与术语需手动生成。"
             >
               <Button
                 type="primary"
@@ -377,7 +377,7 @@ export default function ShopProfilePage() {
                 loading={isRescanning}
                 onClick={handleRescan}
               >
-                立即扫描
+                生成 AI 画像与术语
               </Button>
             </Empty>
           </Card>

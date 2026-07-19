@@ -46,8 +46,22 @@ export const TS_FRONTEND_TASK_SOURCE = "TsFrontend";
 /** Worker 定时扫描创建的自动增量任务（与 Spark worker TSF_AUTO_TASK_SOURCE 一致）。 */
 export const TSF_AUTO_TASK_SOURCE = "TsFrontend-Auto";
 
+/** 免费试译商品任务：单 product、翻译后停预览、用户确认才写回。 */
+export const TS_FRONTEND_TRIAL_TASK_SOURCE = "TsFrontend-Trial";
+
+/** 开拓市场：按目标语言翻译店面核心商品（国际化主路径，非旧 v4 页）。 */
+export const TS_FRONTEND_EXPAND_TASK_SOURCE = "TsFrontend-Expand";
+
 export function isAutoV4TaskSource(taskSource: string | null | undefined): boolean {
   return taskSource === TSF_AUTO_TASK_SOURCE;
+}
+
+export function isTrialV4TaskSource(taskSource: string | null | undefined): boolean {
+  return taskSource === TS_FRONTEND_TRIAL_TASK_SOURCE;
+}
+
+export function isExpandV4TaskSource(taskSource: string | null | undefined): boolean {
+  return taskSource === TS_FRONTEND_EXPAND_TASK_SOURCE;
 }
 
 /** 每类资源不设上限（worker init 全量枚举）。 */
@@ -129,6 +143,11 @@ export type TranslationV4Job = {
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
+  /**
+   * 可选：限定只拉取这些 Shopify resource GID（试译单商品等）。
+   * 缺省时 worker 按 module 全店枚举。
+   */
+  resourceIds?: string[] | null;
   /** 任务来源标识（TsFrontend）。worker 据此区分入口。 */
   taskSource?: string | null;
   status: TranslationV4Status;

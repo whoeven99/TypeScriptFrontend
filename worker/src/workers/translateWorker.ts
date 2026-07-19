@@ -40,6 +40,7 @@ import {
   type TranslatedResourceOutput,
 } from "../services/llmTranslate.js";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
+import { isTrialTranslationJob } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,
   userFacingPauseMessage,
@@ -839,6 +840,44 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     );
     translateUnitDone = finalizedUnits.translateUnitDone;
     translateUnitTotal = finalizedUnits.translateUnitTotal;
+
+    // 试译任务：翻译完成后停在 TRANSLATE_DONE，等用户确认再写回 Shopify。
+    if (isTrialTranslationJob(job)) {
+      await updateJob(shopName, jobId, {
+        status: "TRANSLATE_DONE",
+        claimedBy: null,
+        pauseAfterWriteback: null,
+        aiModelUsed: engine.model,
+        aiProvider: engine.provider,
+        engineUsage,
+        stageTimings: withStageTiming(
+          latestJob?.stageTimings ?? job.stageTimings,
+          "TRANSLATE",
+          stageStartedAt,
+          new Date().toISOString(),
+        ),
+        metrics: {
+          ...(latestJob?.metrics ?? job.metrics),
+          translateDone,
+          translateFailed,
+          translateFallback,
+          translateUnitDone,
+          translateUnitTotal,
+          writebackTotal: translateDone,
+          usedTokens,
+        },
+      });
+      await setProgress(jobId, {
+        translateUnitDone,
+        translateUnitTotal,
+        writebackTotal: translateDone,
+      });
+      console.log(
+        `[translate] trial preview ready job=${jobId} done=${translateDone} failed=${translateFailed} fallback=${translateFallback}`,
+      );
+      return;
+    }
+
     await updateJob(shopName, jobId, {
       status: "WRITEBACK_QUEUED",
       claimedBy: null,

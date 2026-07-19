@@ -358,6 +358,10 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
             isHandle: job.isHandle,
             onPage: throttledHeartbeat,
             preferLegacyToken: prefersStoredToken(job),
+            resourceIds:
+              Array.isArray(job.resourceIds) && job.resourceIds.length > 0
+                ? job.resourceIds
+                : undefined,
           },
         );
 

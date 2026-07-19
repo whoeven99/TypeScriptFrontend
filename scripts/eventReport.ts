@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 interface ReportData {
   [key: string]: any;
@@ -13,35 +13,41 @@ interface ReportOptions {
 
 const useReport = () => {
   const fetcher = useFetcher();
-  // 通用上报函数
-  const report = async (
-    data: ReportData,
-    options: ReportOptions = {},
-    name: string,
-  ) => {
-    const {
-      action = "/app", // 默认 action 路径
-      method = "post",
-      eventType = "click",
-    } = options;
-    try {
-      const reportData = {
-        data,
-        eventType,
-        timestamp: new Date().toISOString(),
-        name,
-      };
-      fetcher.submit(
-        { googleAnalytics: JSON.stringify(reportData) },
-        {
-          method,
-          action,
-        },
-      );
-    } catch (error) {
-      console.error(`Failed to report ${eventType}:`, error);
-    }
-  };
+  // 用 ref 持有最新的 fetcher，保证 report 引用稳定（[] 依赖）。
+  // 否则 report 每次渲染都是新函数，一旦被放进某个 useEffect 依赖里
+  // （如曝光上报），配合 fetcher.submit 触发的 loader revalidate，
+  // 会形成「渲染→上报→revalidate→渲染」的死循环，最终把浏览器内存打爆。
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
+
+  // 通用上报函数（引用稳定）
+  const report = useCallback(
+    async (data: ReportData, options: ReportOptions = {}, name: string) => {
+      const {
+        action = "/app", // 默认 action 路径
+        method = "post",
+        eventType = "click",
+      } = options;
+      try {
+        const reportData = {
+          data,
+          eventType,
+          timestamp: new Date().toISOString(),
+          name,
+        };
+        fetcherRef.current.submit(
+          { googleAnalytics: JSON.stringify(reportData) },
+          {
+            method,
+            action,
+          },
+        );
+      } catch (error) {
+        console.error(`Failed to report ${eventType}:`, error);
+      }
+    },
+    [],
+  );
 
   // 曝光检测
   const trackExposure = useCallback(
@@ -69,10 +75,13 @@ const useReport = () => {
     },
     [report],
   );
-  const reportClick = (name:string)=>{
-    report({},{ method: "post", action: "/app", eventType: "click" },name);
-  }
-  return { reportClick,report, trackExposure, fetcherState: fetcher.state };
+  const reportClick = useCallback(
+    (name: string) => {
+      report({}, { method: "post", action: "/app", eventType: "click" }, name);
+    },
+    [report],
+  );
+  return { reportClick, report, trackExposure, fetcherState: fetcher.state };
 };
 
 export default useReport;

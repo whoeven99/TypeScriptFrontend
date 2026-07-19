@@ -8,8 +8,11 @@ import {
 
 type StageMetrics = TranslationJobProgressSummary["metrics"];
 
-
 export type VisibleStageIndex = 0 | 1 | 2;
+export type MiniStageProgressJob = Pick<
+  TranslationJobProgressSummary,
+  "status" | "metrics" | "errorStage" | "isTerminal" | "isStopping"
+>;
 
 export function stageOf(
   status: TranslationV4Status,
@@ -59,7 +62,7 @@ function isVerifyHiddenComplete(status: TranslationV4Status): boolean {
 
 export function miniStageSegmentState(
   idx: VisibleStageIndex,
-  job: TranslationJobProgressSummary,
+  job: MiniStageProgressJob,
 ): { percent: number; complete: boolean; active: boolean } {
   const { status, metrics, errorStage, isTerminal, isStopping } = job;
 

@@ -110,20 +110,9 @@ function redirectToBillingConfirmation(confirmationUrl: string) {
 
 const { Title, Text, Link } = Typography;
 
-//计划名与其对应价格Map
-const priceTable: Record<
-  string,
-  { base: number; Premium: number; Pro: number; Basic: number }
-> = {
-  "500K": { base: 3.99, Premium: 1.99, Pro: 2.99, Basic: 3.59 },
-  "1M": { base: 7.99, Premium: 3.99, Pro: 5.99, Basic: 7.19 },
-  "2M": { base: 15.99, Premium: 7.99, Pro: 11.99, Basic: 14.39 },
-  "3M": { base: 23.99, Premium: 11.99, Pro: 17.99, Basic: 21.79 },
-  "5M": { base: 39.99, Premium: 19.99, Pro: 29.99, Basic: 35.99 },
-  "10M": { base: 79.99, Premium: 39.99, Pro: 59.99, Basic: 71.99 },
-  "20M": { base: 159.99, Premium: 79.99, Pro: 119.99, Basic: 143.99 },
-  "30M": { base: 239.99, Premium: 119.99, Pro: 179.99, Basic: 215.99 },
-};
+//计划名与其对应价格Map — 与定价页共用
+import { eNumPlanType } from "~/lib/creditPackPricing";
+export { eNumPlanType } from "~/lib/creditPackPricing";
 
 /** Shopify Billing 测试模式：BILLING_TEST=true 显式开启，或本地/测试环境自动开启（不产生真实扣费）。 */
 const isBillingTestMode = (): boolean =>
@@ -1503,46 +1492,3 @@ const Index = () => {
 
 export default Index;
 
-//根据计划类型返回价格数据
-export const eNumPlanType = ({
-  planType,
-  optionName,
-  isInTrial,
-}: {
-  planType: string;
-  optionName: string;
-  isInTrial: boolean;
-}) => {
-  const findTableData = priceTable[optionName];
-
-  if (!findTableData)
-    return {
-      currentPrice: 239.99,
-      comparedPrice: 239.99,
-      currencyCode: "USD",
-    };
-
-  // 免费期 = base 原价
-  if (isInTrial) {
-    return {
-      currentPrice: findTableData.base,
-      comparedPrice: findTableData.base,
-      currencyCode: "USD",
-    };
-  }
-
-  // 未知类型 → base
-  const map: Record<string, number> = {
-    Premium: findTableData.Premium,
-    Pro: findTableData.Pro,
-    Basic: findTableData.Basic,
-  };
-
-  const currentPrice = map[planType ?? ""] ?? findTableData.base;
-
-  return {
-    currentPrice,
-    comparedPrice: findTableData.base,
-    currencyCode: "USD",
-  };
-};

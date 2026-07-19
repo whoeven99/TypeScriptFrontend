@@ -3,6 +3,8 @@ import { sameTranslationLocale } from "./locale";
 import {
   ACTIVE_V4_STATUSES,
   EMPTY_V4_METRICS,
+  TS_FRONTEND_TRIAL_TASK_SOURCE,
+  isTrialV4TaskSource,
   type TranslationV4Job,
   type TranslationV4Metrics,
   type TranslationV4Status,
@@ -101,7 +103,7 @@ export async function deleteV4Job(shopName: string, jobId: string): Promise<void
   }
 }
 
-/** 同 shop + source + target 是否存在阻塞态任务（用于创建前互斥）。 */
+/** 同 shop + source + target 是否存在阻塞态任务（用于创建前互斥）。试译任务不参与。 */
 export async function existsBlockingV4Job(
   shopName: string,
   source: string,
@@ -115,7 +117,7 @@ export async function existsBlockingV4Job(
       .items.query<TranslationV4Job>(
         {
           query:
-            "SELECT c.source, c.target, c.status FROM c WHERE c.shopName = @shopName AND ARRAY_CONTAINS(@blockingStatuses, c.status)",
+            "SELECT c.source, c.target, c.status, c.taskSource FROM c WHERE c.shopName = @shopName AND ARRAY_CONTAINS(@blockingStatuses, c.status)",
           parameters: [
             { name: "@shopName", value: shopName },
             { name: "@blockingStatuses", value: blockingStatuses },
@@ -127,8 +129,50 @@ export async function existsBlockingV4Job(
 
     return resources.some(
       (job) =>
+        !isTrialV4TaskSource(job.taskSource) &&
         sameTranslationLocale(job.source, source) &&
         sameTranslationLocale(job.target, target),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 同 shop + 同 product + 同 target 是否已有活跃试译任务。
+ * 仅匹配 taskSource=TsFrontend-Trial 且 resourceIds 含该 productId。
+ */
+export async function existsBlockingTrialJob(
+  shopName: string,
+  productId: string,
+  target: string,
+  blockingStatuses: TranslationV4Status[] = ACTIVE_V4_STATUSES,
+): Promise<boolean> {
+  if (!blockingStatuses.length || !productId) return false;
+
+  try {
+    const { resources } = await getContainer()
+      .items.query<TranslationV4Job>(
+        {
+          query: `SELECT c.target, c.status, c.taskSource, c.resourceIds FROM c
+            WHERE c.shopName = @shopName
+              AND c.taskSource = @trialSource
+              AND ARRAY_CONTAINS(@blockingStatuses, c.status)`,
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@trialSource", value: TS_FRONTEND_TRIAL_TASK_SOURCE },
+            { name: "@blockingStatuses", value: blockingStatuses },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+
+    return resources.some(
+      (job) =>
+        sameTranslationLocale(job.target, target) &&
+        Array.isArray(job.resourceIds) &&
+        job.resourceIds.includes(productId),
     );
   } catch {
     return false;
@@ -147,6 +191,34 @@ export async function listV4Jobs(
             "SELECT * FROM c WHERE c.shopName = @shopName ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit",
           parameters: [
             { name: "@shopName", value: shopName },
+            { name: "@limit", value: limit },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources;
+  } catch {
+    return [];
+  }
+}
+
+/** 按 taskSource 列出任务（试译页等隔离列表）。 */
+export async function listV4JobsByTaskSource(
+  shopName: string,
+  taskSource: string,
+  limit = 20,
+): Promise<TranslationV4Job[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<TranslationV4Job>(
+        {
+          query: `SELECT * FROM c
+            WHERE c.shopName = @shopName AND c.taskSource = @taskSource
+            ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit`,
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@taskSource", value: taskSource },
             { name: "@limit", value: limit },
           ],
         },

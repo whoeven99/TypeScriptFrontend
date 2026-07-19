@@ -20,6 +20,7 @@ export type QuotaDeductResult = {
 import {
   TSF_AUTO_TASK_SOURCE,
   TS_FRONTEND_TASK_SOURCE,
+  TS_FRONTEND_EXPAND_TASK_SOURCE,
 } from "./cosmosV4.js";
 import {
   deductTsfAccountCredits,
@@ -30,6 +31,7 @@ import {
 const TSF_QUOTA_TASK_SOURCES = new Set([
   TS_FRONTEND_TASK_SOURCE,
   TSF_AUTO_TASK_SOURCE,
+  TS_FRONTEND_EXPAND_TASK_SOURCE,
 ]);
 
 /**

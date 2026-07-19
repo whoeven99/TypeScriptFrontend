@@ -18,7 +18,7 @@ export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]
   return rows.map((r) => ({
     locale: r.locale,
     autoTranslate: r.autoTranslate,
-    status: 1,
+    status: r.status,
   }));
 }
 

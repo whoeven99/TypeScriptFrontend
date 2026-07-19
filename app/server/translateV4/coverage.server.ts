@@ -2,6 +2,10 @@
  * v4 页「语言覆盖率」与左上汇总 —— 口径与管理翻译汇总页各卡片累加一致
  * （COVERAGE_COUNT_LABELS，不含 Policies / handle）。
  * 优先读 Redis 缓存；缺失时由 API 触发现算。
+ *
+ * 就绪带双口径：
+ * - product*：仅 Products 卡片（商品起步包）
+ * - storePercent：全模块完整缓存时的语言覆盖率；cacheMissing 时为 null（不展示假 100%）
  */
 import {
   COVERAGE_COUNT_LABELS,
@@ -19,14 +23,34 @@ import {
   resolveNextAutoUpdateAt,
 } from "./autoScanSchedule.server";
 
+/** 就绪带「商品覆盖率」：与管理翻译 Products 卡片一致。 */
+const PRODUCT_COVERAGE_LABELS = ["Products"] as const;
+
 export type LocaleCoverageRow = {
   locale: string;
   label: string;
+  /** Shopify 店铺语言是否已发布到店面。 */
+  published: boolean;
   translated: number;
   total: number;
+  /**
+   * 已扫描模块累加百分比（缓存缺 module 时分母偏小，可能虚高）。
+   * CoverageCard 沿用；就绪带请用 storePercent / productPercent。
+   */
   percent: number | null;
-  /** 缓存未命中时为 true */
+  /** 全模块缓存未齐时为 true */
   cacheMissing: boolean;
+  /** 仅 Products；起步包完成后的诚实商品口径 */
+  productTranslated: number;
+  productTotal: number;
+  productPercent: number | null;
+  /** Products 缓存未命中 */
+  productCacheMissing: boolean;
+  /**
+   * 全模块语言覆盖率：仅当 !cacheMissing 时有值。
+   * 缓存不齐时为 null，避免把「仅商品 100%」当成全店 100%。
+   */
+  storePercent: number | null;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
   /** 当前语言是否有活跃中的 v4 任务 */
@@ -50,7 +74,57 @@ function ratioPercent(translated: number, total: number): number | null {
   return Math.min(100, Math.round((translated / total) * 100));
 }
 
-type LocaleInput = { value: string; label: string };
+type LocaleInput = { value: string; label: string; published?: boolean };
+
+type CountAgg = { translated: number; total: number; cacheMissing: boolean };
+
+function buildLocaleCoverageCounts(
+  locale: string,
+  label: string,
+  storeAgg: CountAgg,
+  productAgg: CountAgg,
+): Pick<
+  LocaleCoverageRow,
+  | "locale"
+  | "label"
+  | "translated"
+  | "total"
+  | "percent"
+  | "cacheMissing"
+  | "productTranslated"
+  | "productTotal"
+  | "productPercent"
+  | "productCacheMissing"
+  | "storePercent"
+> {
+  return {
+    locale,
+    label,
+    translated: storeAgg.translated,
+    total: storeAgg.total,
+    percent: ratioPercent(storeAgg.translated, storeAgg.total),
+    cacheMissing: storeAgg.cacheMissing,
+    productTranslated: productAgg.translated,
+    productTotal: productAgg.total,
+    productPercent: ratioPercent(productAgg.translated, productAgg.total),
+    productCacheMissing: productAgg.cacheMissing,
+    storePercent: storeAgg.cacheMissing
+      ? null
+      : ratioPercent(storeAgg.translated, storeAgg.total),
+  };
+}
+
+async function loadLocaleCoverageCountsFromCache(
+  shop: string,
+  locale: string,
+  label: string,
+): Promise<ReturnType<typeof buildLocaleCoverageCounts>> {
+  const [storeAgg, productAgg] = await Promise.all([
+    sumItemsCountByLabelsFromCache(shop, locale, COVERAGE_COUNT_LABELS),
+    sumItemsCountByLabelsFromCache(shop, locale, PRODUCT_COVERAGE_LABELS),
+  ]);
+  return buildLocaleCoverageCounts(locale, label, storeAgg, productAgg);
+}
 
 /** 合并语言页运行态信号：自动翻译开关 + 活跃任务标记。 */
 async function enrichCoverageWithRuntimeSignals(
@@ -131,18 +205,14 @@ export async function getCoverageSummaryFromCache({
 }): Promise<CoverageSummary> {
   const rows = await Promise.all(
     targetLocales.map(async (loc) => {
-      const agg = await sumItemsCountByLabelsFromCache(
+      const counts = await loadLocaleCoverageCountsFromCache(
         shop,
         loc.value,
-        COVERAGE_COUNT_LABELS,
+        loc.label,
       );
       return {
-        locale: loc.value,
-        label: loc.label,
-        translated: agg.translated,
-        total: agg.total,
-        percent: ratioPercent(agg.translated, agg.total),
-        cacheMissing: agg.cacheMissing,
+        ...counts,
+        published: Boolean(loc.published),
         autoTranslate: false,
         isTranslating: false,
         lastAutoUpdateAt: null,
@@ -218,59 +288,66 @@ export async function computeCoverageSummary({
   let totalItems = 0;
 
   for (const loc of targetLocales) {
-    let translated: number;
-    let total: number;
-    let cacheMissing = false;
+    let counts: ReturnType<typeof buildLocaleCoverageCounts>;
 
     try {
       if (forceRefresh) {
-        const cached = await sumItemsCountByLabelsFromCache(
+        counts = await loadLocaleCoverageCountsFromCache(
           shop,
           loc.value,
-          COVERAGE_COUNT_LABELS,
+          loc.label,
         );
-        translated = cached.translated;
-        total = cached.total;
-        cacheMissing = cached.cacheMissing;
       } else {
-        const computed = await sumItemsCountByLabels({
-          admin,
-          shop,
-          target: loc.value,
-          labels: COVERAGE_COUNT_LABELS,
-        });
-        translated = computed.translated;
-        total = computed.total;
+        const [storeComputed, productComputed] = await Promise.all([
+          sumItemsCountByLabels({
+            admin,
+            shop,
+            target: loc.value,
+            labels: COVERAGE_COUNT_LABELS,
+          }),
+          sumItemsCountByLabels({
+            admin,
+            shop,
+            target: loc.value,
+            labels: PRODUCT_COVERAGE_LABELS,
+          }),
+        ]);
+        counts = buildLocaleCoverageCounts(
+          loc.value,
+          loc.label,
+          { ...storeComputed, cacheMissing: false },
+          { ...productComputed, cacheMissing: false },
+        );
       }
     } catch (err) {
       console.error(
         `[translateV4] coverage locale failed shop=${shop} locale=${loc.value}:`,
         err,
       );
-      const cached = await sumItemsCountByLabelsFromCache(
+      counts = await loadLocaleCoverageCountsFromCache(
         shop,
         loc.value,
-        COVERAGE_COUNT_LABELS,
+        loc.label,
       );
-      translated = cached.translated;
-      total = cached.total;
-      cacheMissing = cached.cacheMissing || cached.total === 0;
+      if (counts.total === 0) {
+        counts = {
+          ...counts,
+          cacheMissing: true,
+          storePercent: null,
+        };
+      }
     }
 
     locales.push({
-      locale: loc.value,
-      label: loc.label,
-      translated,
-      total,
-      percent: ratioPercent(translated, total),
-      cacheMissing,
+      ...counts,
+      published: Boolean(loc.published),
       autoTranslate: false,
       isTranslating: false,
       lastAutoUpdateAt: null,
       nextAutoUpdateAt: null,
     });
-    translatedItems += translated;
-    totalItems += total;
+    translatedItems += counts.translated;
+    totalItems += counts.total;
   }
 
   return enrichCoverageWithRuntimeSignals(shop, {

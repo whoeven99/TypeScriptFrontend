@@ -16,6 +16,7 @@ import {
 } from "./ciwi-ui.js";
 import {
   getManualLocalizationPreference,
+  persistManualLocalizationPreference,
   updateLocalization,
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
@@ -63,6 +64,8 @@ const rtlLanguages = [
   "ئۇيغۇرچە",
 ];
 const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
+/** 试译/外部引导：打开店面时自动切到该语言（如 ?ciwi_locale=ar） */
+const CIWI_LOCALE_QUERY_KEY = "ciwi_locale";
 
 function normalizeLocaleCode(locale) {
   return String(locale || "")
@@ -170,6 +173,8 @@ async function ciwiOnload() {
   const currentUrl = new URL(window.location.href);
   const hasManualLocalizationQuery =
     currentUrl.searchParams.get(CIWI_MANUAL_LOCALIZATION_QUERY_KEY) === "1";
+  const requestedLocaleRaw =
+    currentUrl.searchParams.get(CIWI_LOCALE_QUERY_KEY) || "";
   //所有可用语言
   const availableLanguages = Array.from(
     ciwiBlock.querySelectorAll(".language_selector_header option"),
@@ -179,6 +184,36 @@ async function ciwiOnload() {
   const availableCountries = Array.from(
     ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
   ).map((link) => link.getAttribute("data-value"));
+
+  const requestedLanguage = resolveAvailableLanguage(
+    requestedLocaleRaw,
+    availableLanguages,
+  );
+
+  // 试译等外部深链：带 ciwi_locale 且与当前语言不同 → 自动走 Shopify localization
+  const isInThemeEditor = document.documentElement.classList.contains(
+    "shopify-design-mode",
+  );
+  if (
+    requestedLanguage &&
+    normalizeLocaleCode(requestedLanguage) !==
+      normalizeLocaleCode(languageValue) &&
+    !isInThemeEditor
+  ) {
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.delete(CIWI_LOCALE_QUERY_KEY);
+    returnUrl.searchParams.set(CIWI_MANUAL_LOCALIZATION_QUERY_KEY, "1");
+    persistManualLocalizationPreference({
+      country: countryValue || "",
+      language: requestedLanguage,
+    });
+    updateLocalization({
+      country: countryValue || "",
+      language: requestedLanguage,
+      returnTo: `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`,
+    });
+    return;
+  }
 
   const manualLocalizationPreference = getManualLocalizationPreference();
   const preferredLanguage = availableLanguages.includes(
@@ -240,11 +275,6 @@ async function ciwiOnload() {
   detectedCountry = availableCountries.includes(detectedCountry)
     ? detectedCountry
     : countryValue;
-
-  //判断是否在主题编辑器内
-  const isInThemeEditor = document.documentElement.classList.contains(
-    "shopify-design-mode",
-  );
 
   //不在主题编辑器内
   if (!isInThemeEditor && configData?.ipOpen && !hasUserLocalizationData) {

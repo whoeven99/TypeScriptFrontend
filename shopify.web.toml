@@ -4,5 +4,5 @@ webhooks_path = "/webhooks"
 port=8080
 
 [commands]
-predev = "npx prisma generate"
-dev = "npx prisma migrate deploy && npm exec remix vite:dev"
+predev = ""
+dev = "npm exec remix vite:dev"

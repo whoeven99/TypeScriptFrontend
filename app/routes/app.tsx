@@ -20,6 +20,7 @@ import { queryShopLanguages } from "~/api/admin";
 import type { ShopLocalesType } from "~/routes/app.language/route";
 import {
   bootstrapLocalesFromLoaded,
+  loadAppBootstrapData,
   type AppBootstrapData,
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
@@ -49,6 +50,7 @@ import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+import { loadOnboardingWizardComplete } from "~/server/onboarding/progress.server";
 import {
   isPerfDebugEnabled,
   logReactProfilerRender,
@@ -205,11 +207,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const authMs = Date.now() - reqStart;
   const { shop, accessToken } = adminAuthResult.session;
   const localeStart = Date.now();
-  const bootstrap = await loadAppBootstrapLocales({
-    shop,
-    accessToken: accessToken as string | undefined,
-  });
+  const [bootstrap, billingBootstrap] = await Promise.all([
+    loadAppBootstrapLocales({
+      shop,
+      accessToken: accessToken as string | undefined,
+    }),
+    loadAppBootstrapData(shop).catch((err) => {
+      console.error("[app] billing bootstrap failed:", err);
+      return null;
+    }),
+  ]);
   const localeMs = Date.now() - localeStart;
+  /** 从未激活过订阅 → 新人导航（试译 / 开拓 / 定价）。 */
+  const isNew = Boolean(billingBootstrap?.isNew);
+  /** 订 + 自动更新完成后，完整导航不再挂试译/开拓。 */
+  const wizardComplete = isNew
+    ? false
+    : (await loadOnboardingWizardComplete(shop).catch((err) => {
+        console.error("[app] wizardComplete failed:", err);
+        return { complete: false, locale: null };
+      })).complete;
 
   void runAppInitialization({
     shop,
@@ -230,6 +247,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
+    isNew,
+    wizardComplete,
     showShopProfilePage: !isProductionNodeEnv(),
     perfDebug,
   });
@@ -456,8 +475,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, bootstrap, showShopProfilePage, perfDebug } =
-    useLoaderData<typeof loader>();
+  const {
+    apiKey,
+    shop,
+    bootstrap,
+    isNew,
+    wizardComplete,
+    showShopProfilePage,
+    perfDebug,
+  } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
   const [perfDebugEnabled, setPerfDebugEnabled] = useState(perfDebug);
@@ -486,6 +512,7 @@ export default function App() {
         key: language.locale,
       })),
     ));
+    dispatch(setIsNew({ isNew }));
 
     let cancelled = false;
     dispatch(setUserConfigIsLoading({ isLoading: true }));
@@ -519,7 +546,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrap, dispatch, shop]);
+  }, [bootstrap, dispatch, shop, isNew]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -542,22 +569,45 @@ export default function App() {
           }}
         >
           <NavMenu>
-            <Link to="/app/translate-v4" rel="home">
-              {t("v4.title")}
-            </Link>
-            {isClient && (
+            {isNew ? (
               <>
-                <Link to="/app/language">{t("Language")}</Link>
-                <Link to="/app/manage_translation">
-                  {t("Manage Translation")}
+                <Link to="/app/trial-translate" rel="home">
+                  {t("trial.nav")}
                 </Link>
-                <Link to="/app/currency">{t("Currency")}</Link>
-                <Link to="/app/switcher">{t("Switcher")}</Link>
-                <Link to="/app/glossary">{t("Glossary")}</Link>
-                {showShopProfilePage ? (
-                  <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
-                ) : null}
-                <Link to="/app/pricing">{t("Pricing")}</Link>
+                {isClient && (
+                  <>
+                    {/* 新手向导感：一级只留试译 / 开拓 / 定价；高级入口在开拓成功态露出 */}
+                    <Link to="/app/expand-market">{t("expand.nav")}</Link>
+                    <Link to="/app/pricing">{t("Pricing")}</Link>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <Link to="/app/translate-v4" rel="home">
+                  {t("v4.title")}
+                </Link>
+                {isClient && (
+                  <>
+                    <Link to="/app/language">{t("Language")}</Link>
+                    <Link to="/app/manage_translation">
+                      {t("Manage Translation")}
+                    </Link>
+                    <Link to="/app/currency">{t("Currency")}</Link>
+                    <Link to="/app/switcher">{t("Switcher")}</Link>
+                    <Link to="/app/glossary">{t("Glossary")}</Link>
+                    {!wizardComplete ? (
+                      <>
+                        <Link to="/app/trial-translate">{t("trial.nav")}</Link>
+                        <Link to="/app/expand-market">{t("expand.nav")}</Link>
+                      </>
+                    ) : null}
+                    {showShopProfilePage ? (
+                      <Link to="/app/shop-profile">{t("Shop Profile")}</Link>
+                    ) : null}
+                    <Link to="/app/pricing">{t("Pricing")}</Link>
+                  </>
+                )}
               </>
             )}
           </NavMenu>
