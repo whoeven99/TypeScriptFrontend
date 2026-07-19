@@ -145,14 +145,19 @@ export async function createShopScanJob(input: {
   return doc;
 }
 
-/** 该店是否已有「进行中或已完成」的扫描（install 触发幂等）。 */
+/**
+ * 该店是否已有「进行中或已完成」的计量扫描（install 触发幂等）。
+ * 仅看 install/scheduled，或 contentSize 已 DONE 的历史任务；纯 AI manual 不挡安装计量。
+ */
 export async function hasActiveOrCompletedShopScan(shop: string): Promise<boolean> {
   try {
     const { resources } = await getContainer()
       .items.query<number>(
         {
-          query:
-            "SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shop AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL')",
+          query: `SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shop AND (
+            (c.trigger IN ('install', 'scheduled') AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL'))
+            OR c.stages.contentSize = 'DONE'
+          )`,
           parameters: [{ name: "@shop", value: shop }],
         },
         { partitionKey: shop },

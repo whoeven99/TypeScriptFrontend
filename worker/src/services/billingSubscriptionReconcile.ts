@@ -19,6 +19,7 @@ import {
 } from "./tsfDb.js";
 import { fetchShopContact } from "./shopEmail.js";
 import { sendSubscriptionRenewalEmail } from "./workerEmail.js";
+import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERIOD_END_TOLERANCE_MS = 12 * 60 * 60 * 1000;
@@ -128,20 +129,16 @@ async function shopifyGraphql<T>(
   query: string,
   variables?: Record<string, unknown>,
 ): Promise<T | null> {
-  const apiVersion = process.env.GRAPHQL_VERSION || "2025-04";
   try {
-    const resp = await fetch(
-      `https://${shop}/admin/api/${apiVersion}/graphql.json`,
-      {
-        method: "POST",
-        signal: AbortSignal.timeout(20_000),
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, variables }),
+    const resp = await fetch(buildShopifyAdminGraphqlUrl(shop), {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ query, variables }),
+    });
     const body = (await resp.json()) as { data?: T; errors?: unknown };
     if (body.errors) {
       console.warn(`[billingReconcile] GraphQL errors shop=${shop}:`, body.errors);

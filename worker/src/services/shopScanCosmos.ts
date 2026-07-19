@@ -311,7 +311,35 @@ export async function findPendingShopScanJobs(limit = 5): Promise<ShopScanRef[]>
   }
 }
 
-/** 该店是否已有「进行中或已完成」的扫描（触发端幂等判断用）。 */
+/** 该店最近 N 条扫描（供跨 trigger 合并 summary）。 */
+export async function findRecentShopScanJobs(
+  shopName: string,
+  limit = 5,
+): Promise<ShopScanJob[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanJob>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shopName ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit",
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@limit", value: limit },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 该店是否已有「进行中或已完成」的计量扫描（触发端幂等判断用）。
+ * 纯 AI manual 不计入，避免挡住安装计量。
+ */
 export async function hasActiveOrCompletedShopScan(
   shopName: string,
 ): Promise<boolean> {
@@ -319,8 +347,10 @@ export async function hasActiveOrCompletedShopScan(
     const { resources } = await getContainer()
       .items.query<number>(
         {
-          query:
-            "SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL')",
+          query: `SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND (
+            (c.trigger IN ('install', 'scheduled') AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL'))
+            OR c.stages.contentSize = 'DONE'
+          )`,
           parameters: [{ name: "@shopName", value: shopName }],
         },
         { partitionKey: shopName },

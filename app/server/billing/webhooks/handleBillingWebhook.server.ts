@@ -1,5 +1,6 @@
 import axios from "axios";
 import prisma from "../../../db.server";
+import { buildShopifyAdminGraphqlUrl } from "../../../lib/shopifyAdminApiVersion";
 import {
   sendTsfPurchaseSuccessEmail,
   sendTsfSubscribeSuccessEmail,
@@ -59,7 +60,7 @@ async function fetchSubscriptionDetail(
 ): Promise<SubscriptionDetail | null> {
   try {
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
