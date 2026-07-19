@@ -28,12 +28,17 @@ import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import {
   buildManageActionErrorResponse,
+  getManageTranslationLoadErrorMessage,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 
 const { Sider, Content } = Layout;
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 如果没有 language 参数，直接返回空数据

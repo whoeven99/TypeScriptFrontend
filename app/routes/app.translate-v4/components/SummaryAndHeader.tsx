@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { v4Colors, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { formatCredits } from "../localeDisplay";

@@ -139,7 +139,7 @@ export default async function handleRequest(
       });
 
       function buildStreamResponse(
-        pipe: (destination: NodeJS.Writable) => void,
+        pipe: (destination: Writable) => void,
         abort: () => void,
       ) {
         const body = new PassThrough();

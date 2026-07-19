@@ -11,7 +11,6 @@ import {
 } from "./jsonExtractRules.js";
 import { isHtmlContent } from "./htmlContent.js";
 import {
-  glossaryTargetMatchesLocale,
   hasPromptSentinelLeakage,
   isTranslatableLeafText,
   looksLikeEmptySourceHallucination,
@@ -119,38 +118,6 @@ function responseHeadersToRecord(response: Response): Record<string, string> {
 }
 
 const LIMIT_HINT_KEY_RE = /limit|rate|quota|throttle|remaining|retry/i;
-const LIMIT_HINT_MAX = 24;
-
-function formatLimitHintValue(value: unknown): string {
-  if (value == null) return String(value);
-  const s = typeof value === "object" ? JSON.stringify(value) : String(value);
-  return s.length > 160 ? `${s.slice(0, 160)}…` : s;
-}
-
-/** Collect limit/rate/quota-related fields from API JSON (headers are logged separately). */
-function collectLimitHints(value: unknown, path = "", out: string[] = [], depth = 0): string[] {
-  if (depth > 8 || out.length >= LIMIT_HINT_MAX) return out;
-  if (value == null) return out;
-
-  if (Array.isArray(value)) {
-    for (let i = 0; i < Math.min(value.length, 6); i++) {
-      collectLimitHints(value[i], `${path}[${i}]`, out, depth + 1);
-    }
-    return out;
-  }
-
-  if (typeof value === "object") {
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      const nextPath = path ? `${path}.${key}` : key;
-      if (LIMIT_HINT_KEY_RE.test(key)) {
-        out.push(`${nextPath}=${formatLimitHintValue(child)}`);
-      }
-      collectLimitHints(child, nextPath, out, depth + 1);
-    }
-  }
-
-  return out;
-}
 
 function formatLimitHintsForLog(hints: string[]): string {
   if (hints.length === 0) return "";

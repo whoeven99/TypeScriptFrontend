@@ -15,8 +15,6 @@ import {
   runBillingSubscriptionReconcile,
 } from "./services/billingSubscriptionReconcile.js";
 import {
-  getRenderErrorDigestInitialDelayMs,
-  getRenderErrorDigestIntervalMs,
   isRenderErrorDigestEnabled,
   runRenderErrorDigest,
 } from "./services/renderErrorDigest.js";
@@ -161,7 +159,6 @@ function scheduleRenderErrorDigest(): void {
     return;
   }
 
-  const intervalMs = 60 * 60_000; // 每小时一次
   const targetMinute = 30; // 固定在第30分钟
 
   const scheduleNext = () => {

@@ -79,11 +79,9 @@ export async function getTsfRemainingWithRetry(
   attempts = 3,
 ): Promise<number> {
   const maxAttempts = Math.max(1, attempts);
-  let lastRemaining: number | null = null;
   for (let i = 0; i < maxAttempts; i++) {
     const remaining = await getTsfAccountRemaining(shop);
     if (remaining !== null) return remaining;
-    lastRemaining = remaining;
     if (i < maxAttempts - 1) {
       await new Promise((r) => setTimeout(r, 200 * (i + 1)));
     }

@@ -526,12 +526,10 @@ export const mutationShopLocaleDisable = async ({
   shop,
   accessToken,
   language,
-  primaryLanguageCode,
 }: {
   shop: string;
   accessToken: string | undefined;
   language: LanguagesDataType; // 接受语言数组
-  primaryLanguageCode: string;
 }) => {
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation

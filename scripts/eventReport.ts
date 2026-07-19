@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 interface ReportData {
   [key: string]: any;

@@ -6,7 +6,6 @@ import {
   Space,
   Spin,
   Table,
-  Typography,
   } from "antd";
 import Button from "~/ui/components/AppButton";
 import { useEffect,
@@ -18,8 +17,7 @@ import { useFetcher,
 import { Page,
   Pagination,
   Select } from "@shopify/polaris";
-import { ActionFunctionArgs,
-  json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { queryNextTransType,
   queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
@@ -48,8 +46,6 @@ import {
 } from "~/utils/manageSave";
 
 const { Content } = Layout;
-
-const { Text } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 

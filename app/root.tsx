@@ -79,7 +79,7 @@ function isIgnorableClientNoiseError(error: unknown): boolean {
   return (
     isNetworkFetchError(error) ||
     isAbortLikeError(error) ||
-    /Unexpected value for attribute "loading" on <button>/i.test(message)
+    /Unexpected value for attribute "loading" on <button>/i.test(message ?? "")
   );
 }
 
