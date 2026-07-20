@@ -11,6 +11,16 @@ import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.j
 import { runAutoTranslateScanTick } from "./services/autoTranslate.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
 import {
+  cleanupOldTranslationJobs,
+  getJobRetentionCleanupHour,
+  getJobRetentionCleanupMinute,
+  getJobRetentionCleanupTimezone,
+  getJobRetentionDays,
+  isJobRetentionCleanupEnabled,
+  msUntilNextJobRetentionCleanup,
+  resolveNextJobRetentionCleanupAt,
+} from "./services/cleanupOldJobs.js";
+import {
   runBillingSubscriptionNearDueReconcile,
   runBillingSubscriptionReconcile,
 } from "./services/billingSubscriptionReconcile.js";
@@ -181,6 +191,43 @@ function scheduleRenderErrorDigest(): void {
   scheduleNext();
 }
 
+/** 每天定点缓慢清理超过保留期的翻译任务（Cosmos + Blob + Redis）。 */
+function scheduleJobRetentionCleanup(): void {
+  if (!isJobRetentionCleanupEnabled()) {
+    console.log(
+      "[scheduler] jobRetentionCleanup 未启用（V4_JOB_RETENTION_CLEANUP_ENABLED=false）",
+    );
+    return;
+  }
+
+  const tz = getJobRetentionCleanupTimezone();
+  const hour = getJobRetentionCleanupHour();
+  const minute = getJobRetentionCleanupMinute();
+  const retentionDays = getJobRetentionDays();
+
+  const scheduleNext = () => {
+    const waitMs = msUntilNextJobRetentionCleanup();
+    const nextAt = resolveNextJobRetentionCleanupAt();
+    console.log(
+      `[scheduler] jobRetentionCleanup 下次 ${nextAt.toISOString()} (tz=${tz}, ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}, retentionDays=${retentionDays})`,
+    );
+    setTimeout(() => {
+      if (isShuttingDown()) return;
+      void (async () => {
+        try {
+          await cleanupOldTranslationJobs();
+        } catch (err) {
+          console.error("[scheduler] jobRetentionCleanup error", err);
+        } finally {
+          if (!isShuttingDown()) scheduleNext();
+        }
+      })();
+    }, waitMs);
+  };
+
+  scheduleNext();
+}
+
 export function startScheduler(): void {
   const stages = enabledStages();
   const claimSuffix = `-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
@@ -249,6 +296,9 @@ export function startScheduler(): void {
 
   // Render prod error 汇总 → 飞书（独立于 pipeline stages）。
   scheduleRenderErrorDigest();
+
+  // 任务保留期清理：每天定点缓慢删除 N 天前任务（与 pipeline stages 独立）。
+  scheduleJobRetentionCleanup();
 
   for (const stage of ALL_STAGES) {
     if (!stages.has(stage)) {

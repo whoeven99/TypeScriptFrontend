@@ -314,6 +314,41 @@ export async function findStaleEmptyAutoJobs(
   }
 }
 
+export type RetentionCleanupJob = Pick<
+  TranslationV4Job,
+  "id" | "shopName" | "blobPrefix" | "createdAt" | "status" | "lastHeartbeat"
+>;
+
+/**
+ * 查询超过保留期的旧任务（跨 partition，按 createdAt 升序，限量）。
+ * 用于每日 retention 清理；调用方应再做心跳保护等跳过逻辑。
+ */
+export async function findOldJobsForRetentionCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<RetentionCleanupJob[]> {
+  const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<RetentionCleanupJob>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status, c.lastHeartbeat
+                FROM c
+                WHERE c.createdAt < @cutoff
+                ORDER BY c.createdAt ASC
+                OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@limit", value: safeLimit },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findOldJobsForRetentionCleanup failed:", err);
+    return [];
+  }
+}
+
 /** 同 shop + target 是否已有进行中的任务（避免自动扫描重复建任务）。 */
 export async function hasActiveJobForTarget(
   shopName: string,
