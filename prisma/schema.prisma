@@ -50,7 +50,6 @@ model ShopTargetLocale {
   shop          String // myshopify 域名
   locale        String // 目标语言（Shopify locale，如 "fr"）
   autoTranslate Boolean  @default(false)
-  status        Int      @default(1) // 预留：1=启用
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
