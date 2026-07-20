@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
 import {
   createJob,
-  findTerminalAutoJobsForTarget,
   getLatestAutoJobCreatedAtForShop,
   hasActiveJobForTarget,
   isShopAutoCooldownElapsed,
   TSF_AUTO_TASK_SOURCE,
 } from "./cosmosV4.js";
-import { purgeAutoJob } from "./autoJobCleanup.js";
 import { pushHint } from "./redisV4.js";
 import {
   hasTsfDbCredentials,
@@ -180,22 +178,6 @@ export async function runAutoTranslateScan(
       if (await hasActiveJobForTarget(shop, source, target)) {
         skippedActive++;
         continue;
-      }
-
-      // 清理同语言对的旧终态自动任务，避免历史记录积累和重复邮件通知
-      const staleJobs = await findTerminalAutoJobsForTarget(shop, source, target);
-      for (const j of staleJobs) {
-        try {
-          await purgeAutoJob(j);
-          console.log(
-            `${prefix} 清理旧自动任务 id=${j.id} shop=${shop} ${source}→${target}`,
-          );
-        } catch (err) {
-          console.error(
-            `${prefix} 清理旧任务失败 id=${j.id} shop=${shop} ${source}→${target}`,
-            err,
-          );
-        }
       }
 
       const jobId = randomUUID();

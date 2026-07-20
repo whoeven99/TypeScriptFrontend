@@ -278,7 +278,8 @@ Entries:
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
   and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
-  and subscription reconciliation schedules.
+  daily v4 job retention cleanup (`cleanupOldJobs`), and subscription
+  reconciliation schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -321,6 +322,11 @@ Services:
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
+- `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
+  **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7). Manual
+  jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job / per-blob
+  delays; skips jobs with a fresh worker heartbeat. Scheduled from
+  `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
 - `worker/src/services/shopScan/*`: shop profile scan stages.
@@ -351,6 +357,18 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
+  `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
+  `V4_JOB_RETENTION_DAYS` (default 7),
+  `V4_JOB_RETENTION_CLEANUP_TZ` (default `Asia/Shanghai`),
+  `V4_JOB_RETENTION_CLEANUP_HOUR` / `V4_JOB_RETENTION_CLEANUP_MINUTE`
+  (default 15:00 Asia/Shanghai),
+  `V4_JOB_RETENTION_CLEANUP_MAX_PER_RUN` (default 150),
+  `V4_JOB_RETENTION_CLEANUP_DELAY_MS` (default 1000 between jobs),
+  `V4_JOB_RETENTION_BLOB_DELETE_DELAY_MS` (default 50 between blobs),
+  `V4_JOB_RETENTION_CLEANUP_QUERY_BATCH`,
+  `V4_JOB_RETENTION_HEARTBEAT_GRACE_MS`.
+  Code: `worker/src/services/cleanupOldJobs.ts`.
 - Render prod error digest → Feishu:
   `RENDER_API_KEY`, `FEISHU_WEBHOOK_URL_RENDER_DIGEST`,
   `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 30m),
