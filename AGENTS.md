@@ -322,10 +322,11 @@ Services:
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
-- `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for v4 jobs
-  older than N days (default 7). Deletes Cosmos + Blob + Redis slowly with
-  per-job / per-blob delays; skips jobs with a fresh worker heartbeat. Scheduled
-  from `scheduler.ts` via `scheduleJobRetentionCleanup()`.
+- `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
+  **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7). Manual
+  jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job / per-blob
+  delays; skips jobs with a fresh worker heartbeat. Scheduled from
+  `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
 - `worker/src/services/shopScan/*`: shop profile scan stages.
@@ -356,7 +357,7 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
-- V4 job retention cleanup (daily, slow delete):
+- V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
   `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
   `V4_JOB_RETENTION_DAYS` (default 7),
   `V4_JOB_RETENTION_CLEANUP_TZ` (default `Asia/Shanghai`),

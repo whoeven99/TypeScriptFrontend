@@ -297,7 +297,7 @@ export function startScheduler(): void {
   // Render prod error 汇总 → 飞书（独立于 pipeline stages）。
   scheduleRenderErrorDigest();
 
-  // 任务保留期清理：每天定点缓慢删除 N 天前任务（与 pipeline stages 独立）。
+  // 自动任务保留期清理：每天定点缓慢删除 N 天前的自动任务（与 pipeline stages 独立）。
   scheduleJobRetentionCleanup();
 
   for (const stage of ALL_STAGES) {

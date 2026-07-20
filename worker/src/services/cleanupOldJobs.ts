@@ -188,8 +188,8 @@ function hasFreshHeartbeat(
 }
 
 /**
- * 缓慢删除超过保留期的翻译任务（Cosmos + Blob + Redis）。
- * 单次有上限；未删完的次日继续。跳过近心跳的进行中任务。
+ * 缓慢删除超过保留期的自动翻译任务（Cosmos + Blob + Redis）。
+ * 仅 TsFrontend-Auto；单次有上限，未删完次日继续。跳过近心跳任务。
  */
 export async function cleanupOldTranslationJobs(): Promise<void> {
   if (!isJobRetentionCleanupEnabled()) {
@@ -208,7 +208,7 @@ export async function cleanupOldTranslationJobs(): Promise<void> {
   const heartbeatGraceMs = getHeartbeatGraceMs();
 
   console.log(
-    `${LOG} 开始 cutoff=${cutoff} retentionDays=${retentionDays} maxPerRun=${maxPerRun} jobDelayMs=${jobDelayMs} blobDelayMs=${blobDelayMs}`,
+    `${LOG} 开始（仅自动任务） cutoff=${cutoff} retentionDays=${retentionDays} maxPerRun=${maxPerRun} jobDelayMs=${jobDelayMs} blobDelayMs=${blobDelayMs}`,
   );
 
   let deleted = 0;
