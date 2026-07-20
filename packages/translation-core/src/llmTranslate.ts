@@ -11,6 +11,12 @@ import {
 } from "./jsonExtractRules.js";
 import { isHtmlContent } from "./htmlContent.js";
 import {
+  isLiquidTemplate,
+  liquidHtmlNodePartsOf,
+  reassembleLiquidHtmlTranslation,
+  type LiquidHtmlNodePlan,
+} from "./liquidHtmlTranslate.js";
+import {
   hasPromptSentinelLeakage,
   isTranslatableLeafText,
   looksLikeEmptySourceHallucination,
@@ -1554,10 +1560,10 @@ const SHORT_PLAIN_THRESHOLD = 80;
 function fieldTier(
   key: string,
   value: string,
-  klass: "skip" | "html" | "json" | "list" | "plain",
+  klass: "skip" | "html" | "liquid_html" | "json" | "list" | "plain",
 ): "trivial" | "rich" {
   if (isHandleFieldKey(key)) return "rich";
-  if (klass === "html" || klass === "json" || klass === "list") return "rich";
+  if (klass === "html" || klass === "liquid_html" || klass === "json" || klass === "list") return "rich";
   if (key === "meta_description") return "rich";
   return value.length >= SHORT_PLAIN_THRESHOLD ? "rich" : "trivial";
 }
@@ -1828,7 +1834,7 @@ export function classifyField(
   key: string,
   value?: string,
   shopifyType?: string,
-): "skip" | "html" | "json" | "list" | "plain" {
+): "skip" | "html" | "liquid_html" | "json" | "list" | "plain" {
   if (value !== undefined) {
     if (shopifyType === "LIST_SINGLE_LINE_TEXT_FIELD" && isListFormat(value)) {
       return "list";
@@ -1837,7 +1843,9 @@ export function classifyField(
       return shouldTranslateMetafieldJson(value, shopifyType) ? "json" : "skip";
     }
   }
-  if (value !== undefined && isHtml(value)) return "html";
+  if (value !== undefined && isHtml(value)) {
+    return isLiquidTemplate(value) ? "liquid_html" : "html";
+  }
   return "plain";
 }
 
@@ -1885,6 +1893,8 @@ export function countFieldUnits(key: string, value: string, shopifyType?: string
   if (klass === "skip") return 0;
   if (klass === "html")
     return htmlNodePartsOf(value).nodeParts.reduce((n, parts) => n + parts.length, 0);
+  if (klass === "liquid_html")
+    return liquidHtmlNodePartsOf(value).plan.nodeParts.reduce((n, parts) => n + parts.length, 0);
   if (klass === "json") {
     const units = countJsonRuleUnits(value);
     if (units > 0) return units;
@@ -2809,6 +2819,7 @@ type FieldPlan = {
 } & (
   | { kind: "plain"; parts: string[]; isHandle?: boolean }
   | { kind: "html"; template: string; nodeParts: string[][] }
+  | { kind: "liquid_html"; template: string; nodeParts: string[][]; liquidTokens: string[] }
   | { kind: "json"; originalValue: string; root: JsonValue; slotPlans: JsonSlotPlan[] }
   | { kind: "list"; originalValue: string; elements: ListElementPlan[] }
 );
@@ -2837,7 +2848,7 @@ function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
   const texts =
     plan.kind === "plain"
       ? plan.parts
-      : plan.kind === "html"
+      : plan.kind === "html" || plan.kind === "liquid_html"
         ? plan.nodeParts.flat()
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
@@ -2903,6 +2914,40 @@ function reconstructPlan(
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
+  } else if (plan.kind === "liquid_html") {
+    let anyFallback = false;
+    const out = plan.nodeParts.map((parts) => {
+      const pieces = parts.map((p) => {
+        const r = lookup(plan.poolSig, p);
+        if (!r || r.status === "fallback") {
+          anyFallback = true;
+          return p;
+        }
+        if (
+          looksLikeWrongScriptLeak(p, r.value, target) ||
+          looksLikeEmptySourceHallucination(p, r.value) ||
+          hasPromptSentinelLeakage(r.value)
+        ) {
+          anyFallback = true;
+          return p;
+        }
+        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
+      });
+      const joined = pieces.join("");
+      return effectiveTranslation(parts.join(""), joined.trim());
+    });
+    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
+    let value = reassembleLiquidHtmlTranslation(plan.template, out, plan.liquidTokens);
+    if (hasHtmlPlaceholderLeak(value)) {
+      anyFallback = true;
+      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
+    }
+    if (hasPromptSentinelLeakage(value)) {
+      anyFallback = true;
+      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
+    }
+    const liquidStatus = anyFallback ? "fallback" : "translated";
+    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status: liquidStatus });
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
@@ -3109,7 +3154,7 @@ export async function translateResources(
   type FieldWork = {
     resourceId: string;
     f: TranslateItem;
-    klass: "html" | "json" | "list" | "plain";
+    klass: "html" | "liquid_html" | "json" | "list" | "plain";
     order: Engine[];
     cacheModel: string;
   };
@@ -3248,6 +3293,25 @@ export async function translateResources(
         cacheModel,
         template,
         nodeParts,
+      });
+    } else if (klass === "liquid_html") {
+      const { plan: { template, nodeParts }, liquidTokens } = liquidHtmlNodePartsOf(f.value);
+      if (nodeParts.length === 0) {
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        continue;
+      }
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      plans.push({
+        kind: "liquid_html",
+        resourceId,
+        key: f.key,
+        digest: f.digest,
+        order,
+        poolSig: poolSignature(order, false),
+        cacheModel,
+        template,
+        nodeParts,
+        liquidTokens,
       });
     } else if (klass === "json") {
       const root = tryParseJsonContainer(f.value);
