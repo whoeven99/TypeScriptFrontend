@@ -1,6 +1,10 @@
 import { Input, Modal, Space, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AI_MODEL_OPTIONS,
+  DEFAULT_AI_MODEL,
+} from "~/routes/app.translate-v4/constants";
 import Button, { type AppButtonProps } from "~/ui/components/AppButton";
 
 const { TextArea } = Input;
@@ -8,10 +12,15 @@ const { Text } = Typography;
 
 const MAX_PROMPT_LENGTH = 500;
 
+export type SingleTranslateSubmitOptions = {
+  customPrompt?: string;
+  aiModel: string;
+};
+
 interface SingleTranslateActionProps {
   existingTranslation?: string | null;
   loading?: boolean;
-  onSubmit: (customPrompt?: string) => void | Promise<void>;
+  onSubmit: (options: SingleTranslateSubmitOptions) => void | Promise<void>;
   triggerProps?: AppButtonProps;
 }
 
@@ -26,10 +35,20 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
   const hasSubmittedRef = useRef(false);
   const hasExistingTranslation = useMemo(
     () => normalizeText(existingTranslation).length > 0,
     [existingTranslation],
+  );
+
+  const aiModelOptions = useMemo(
+    () =>
+      AI_MODEL_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
+    [],
   );
 
   useEffect(() => {
@@ -48,10 +67,23 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     : t("Translate");
   const promptLabel = hasExistingTranslation
     ? t("Translation quality not good enough?")
-    : t("Translation prompt");
+    : t("Translate");
   const submitLabel = hasExistingTranslation
     ? t("Retranslate")
     : t("Start translation");
+
+  const resetAndClose = () => {
+    setOpen(false);
+    setPrompt("");
+    setAiModel(DEFAULT_AI_MODEL);
+  };
+
+  const handleSubmit = () => {
+    void onSubmit({
+      customPrompt: normalizeText(prompt) || undefined,
+      aiModel: aiModel.trim() || DEFAULT_AI_MODEL,
+    });
+  };
 
   return (
     <>
@@ -60,11 +92,8 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
         type={triggerProps?.type ?? "default"}
         size={triggerProps?.size ?? "middle"}
         onClick={() => {
-          if (!hasExistingTranslation) {
-            hasSubmittedRef.current = true;
-            void onSubmit();
-            return;
-          }
+          setAiModel(DEFAULT_AI_MODEL);
+          setPrompt("");
           setOpen(true);
         }}
         loading={loading}
@@ -77,29 +106,17 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
         centered
         width={560}
         destroyOnHidden
-        onCancel={() => {
-          setOpen(false);
-          setPrompt("");
-        }}
+        onCancel={resetAndClose}
         footer={
           <Space size="small">
             <Button
               type="default"
-              onClick={() => {
-                setOpen(false);
-                setPrompt("");
-              }}
+              onClick={resetAndClose}
               disabled={loading}
             >
               {t("Cancel")}
             </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                void onSubmit(normalizeText(prompt) || undefined);
-              }}
-              loading={loading}
-            >
+            <Button type="primary" onClick={handleSubmit} loading={loading}>
               {submitLabel}
             </Button>
           </Space>
@@ -113,20 +130,47 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
             paddingTop: "8px",
           }}
         >
-          <Text type="secondary">
-            {t(
-              "Add suggestions and translate again.",
-            )}
-          </Text>
-          <TextArea
-            rows={4}
-            maxLength={MAX_PROMPT_LENGTH}
-            value={prompt}
-            placeholder={t(
-              "e.g. Make the wording more natural and aligned with the brand tone",
-            )}
-            onChange={(event) => setPrompt(event.target.value)}
-          />
+          <div>
+            <Text
+              strong
+              style={{ display: "block", marginBottom: 8, fontSize: 13 }}
+            >
+              {t("v4.createTask.aiModel")}
+            </Text>
+            <select
+              className="v4-ai-model-native-select"
+              value={aiModel}
+              onChange={(event) => setAiModel(event.target.value)}
+              aria-label={t("v4.createTask.aiModel")}
+              style={{ marginBottom: 0 }}
+            >
+              {aiModelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {hasExistingTranslation ? (
+            <>
+              <Text type="secondary">
+                {t("Add suggestions and translate again.")}
+              </Text>
+              <TextArea
+                rows={4}
+                maxLength={MAX_PROMPT_LENGTH}
+                value={prompt}
+                placeholder={t(
+                  "e.g. Make the wording more natural and aligned with the brand tone",
+                )}
+                onChange={(event) => setPrompt(event.target.value)}
+              />
+            </>
+          ) : (
+            <Text type="secondary">
+              {t("Choose an AI model and start translation.")}
+            </Text>
+          )}
         </div>
       </Modal>
     </>

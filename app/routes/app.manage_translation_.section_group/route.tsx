@@ -434,12 +434,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={({ customPrompt, aiModel }) => {
           handleTranslate({
             resourceType: "ONLINE_STORE_THEME_SECTION_GROUP",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -561,11 +562,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -588,6 +591,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
