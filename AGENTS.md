@@ -282,9 +282,9 @@ Entries:
 
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
-  and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
-  daily v4 job retention cleanup (`cleanupOldJobs`), and subscription
-  reconciliation schedules.
+  and auto-translate; also runs scheduled shop-scan enqueue (slot-offset +1h),
+  deploy wake/stale reset, empty auto-job cleanup, daily v4 job retention
+  cleanup (`cleanupOldJobs`), and subscription reconciliation schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -325,6 +325,8 @@ Services:
   `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
   for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
+- `worker/src/services/scheduledShopScan.ts`: scheduled metrics shop scan
+  enqueue（同分槽 / 时区 / 整点，槽位相对 auto 延后 1h；`trigger: scheduled`）。
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
 - `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
@@ -362,6 +364,13 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- Scheduled shop scan（计量复扫，与 auto 同分槽时钟，槽位 -1h）：
+  `SHOP_SCAN_SCHEDULE_ENABLED` (default true),
+  `SHOP_SCAN_SHARD_COOLDOWN_MS` (default 同 `AUTO_TRANSLATE_SHARD_COOLDOWN_MS` / 20h),
+  `SHOP_SCAN_MAX_ENQUEUE_PER_TICK` (default 0=不限)。
+  时区 / slots / 整点 minute 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
+  `AUTO_TRANSLATE_SLOTS_PER_DAY` / `AUTO_TRANSLATE_SCHEDULE_MINUTE`。
+  Code: `worker/src/services/scheduledShopScan.ts`.
 - V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
   `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
   `V4_JOB_RETENTION_DAYS` (default 7),
@@ -545,12 +554,18 @@ Shop Profile / Shop Scan:
   `worker/src/services/shopScanCosmos.ts`（容器 `shop_scan_jobs`）。
 - Worker: `worker/src/workers/shopScanWorker.ts`,
   `worker/src/services/shopScan/*`.
+- Scheduled enqueue: `worker/src/services/scheduledShopScan.ts`（挂在
+  `scheduler.ts`，与 init 同 gate）。
 - Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
   `items_count`。
 - Trigger split:
   - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
     `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
-  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。
+  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。Worker 每小时
+    整点入队（与 auto 同一时区 / 24 槽 / 整点 minute），但目标槽为
+    `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
+    有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
+    已有进行中 scan 则跳过。
   - `manual`（调试页按钮）：只跑 `profile` + `glossary`（AI）；跳过计量阶段，
     并从上一份 summary 合并计量字段，保证 `getLatestShopScanJob` 仍完整。
 - Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
@@ -683,6 +698,7 @@ For "合入PR然后发布测试环境", the script will:
 | Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
 | Support chat / notifications | `app/components/SupportChatWidget.tsx` | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
+| Scheduled shop scan | `worker/src/services/scheduledShopScan.ts` | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts` |
 | Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
 | Shopify auth/API version | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`） | `app/shopify.server.ts`、`worker/.../shopifyAdminApiVersion.ts`、`shopify.app*.toml` |

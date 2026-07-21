@@ -9,6 +9,10 @@ import {
 } from "./services/shopScanCosmos.js";
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
 import { runAutoTranslateScanTick } from "./services/autoTranslate.js";
+import {
+  isShopScanScheduleEnabled,
+  runScheduledShopScanTick,
+} from "./services/scheduledShopScan.js";
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
 import {
   cleanupOldTranslationJobs,
@@ -122,6 +126,44 @@ function scheduleAutoTranslateScan(): void {
           await runAutoTranslateScanTick();
         } catch (err) {
           console.error("[scheduler] autoTranslate error", err);
+        } finally {
+          if (!isShuttingDown()) scheduleNext();
+        }
+      })();
+    }, waitMs);
+  };
+
+  scheduleNext();
+}
+
+/**
+ * scheduled shop scan：与 auto 同一整点 / 时区，槽位延后 1h（见 scheduledShopScan.ts）。
+ */
+function scheduleScheduledShopScan(): void {
+  if (!isShopScanScheduleEnabled()) {
+    console.log(
+      "[scheduler] scheduledShopScan 未启用（SHOP_SCAN_SCHEDULE_ENABLED=false）",
+    );
+    return;
+  }
+
+  const tz = getAutoTranslateScheduleTimezone();
+  const intervalMs = getAutoTranslateIntervalMs();
+  const minute = getAutoTranslateScheduleMinute();
+
+  const scheduleNext = () => {
+    const waitMs = msUntilNextClockAlignedScan();
+    const nextAt = resolveNextClockAlignedScanAt();
+    console.log(
+      `[scheduler] scheduledShopScan 下次扫描 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms, slot=auto-1h)`,
+    );
+    setTimeout(() => {
+      if (isShuttingDown()) return;
+      void (async () => {
+        try {
+          await runScheduledShopScanTick();
+        } catch (err) {
+          console.error("[scheduler] scheduledShopScan error", err);
         } finally {
           if (!isShuttingDown()) scheduleNext();
         }
@@ -263,6 +305,7 @@ export function startScheduler(): void {
 
   // 店铺画像扫描：与 init 同 gate（做 Shopify 读扫描）。hint 立即唤醒 + 轮询兜底，
   // stale-reset 自愈崩溃任务，部署重启后 re-hint 待处理扫描。
+  // scheduled 计量复扫：与 auto 同分槽/整点，延后 1h（scheduledShopScan）。
   if (stages.has("init")) {
     safeRun("shopScanDeployWake", async () => {
       await wakeQueuedShopScanJobsAfterDeploy();
@@ -282,6 +325,7 @@ export function startScheduler(): void {
       () => safeRun("shopScan", () => runShopScanWorker()),
       SHOP_SCAN_POLL_INTERVAL_MS,
     );
+    scheduleScheduledShopScan();
   } else {
     console.log('[scheduler] init stage 关闭，跳过店铺画像扫描');
   }
