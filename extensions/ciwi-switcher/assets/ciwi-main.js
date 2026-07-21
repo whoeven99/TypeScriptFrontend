@@ -20,7 +20,9 @@ import {
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
 
-customElements.define("ciwiswitcher-form", CiwiswitcherForm);
+if (!customElements.get("ciwiswitcher-form")) {
+  customElements.define("ciwiswitcher-form", CiwiswitcherForm);
+}
 
 // 原 isLikelyBotByUA 逻辑（简化版）
 function isLikelyBotByUA() {
@@ -63,6 +65,10 @@ const rtlLanguages = [
   "ئۇيغۇرچە",
 ];
 const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
+
+function isThemeEditorMode() {
+  return document.documentElement.classList.contains("shopify-design-mode");
+}
 
 function normalizeLocaleCode(locale) {
   return String(locale || "")
@@ -114,7 +120,13 @@ async function ciwiOnload() {
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) return console.warn("ciwiBlock not found");
+  if (typeof ciwiBlock.__ciwiRuntimeCleanup === "function") {
+    try {
+      ciwiBlock.__ciwiRuntimeCleanup();
+    } catch {}
+  }
   const shop = ciwiBlock.querySelector("#queryCiwiId");
+  const isInThemeEditor = isThemeEditorMode();
   // 爬虫检测（仅拦截，不上报日志）
   const reason = isLikelyBotByUA();
   if (reason) {
@@ -141,9 +153,11 @@ async function ciwiOnload() {
     }
   };
 
-  // 主题 custom liquid 文本：全站需要
-  CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
-  runStorefrontTranslationTasks();
+  if (!isInThemeEditor) {
+    // Theme editor 中跳过高风险翻译任务，避免预览区块热重载时反复打接口。
+    CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+    runStorefrontTranslationTasks();
+  }
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
@@ -240,11 +254,6 @@ async function ciwiOnload() {
   detectedCountry = availableCountries.includes(detectedCountry)
     ? detectedCountry
     : countryValue;
-
-  //判断是否在主题编辑器内
-  const isInThemeEditor = document.documentElement.classList.contains(
-    "shopify-design-mode",
-  );
 
   //不在主题编辑器内
   if (!isInThemeEditor && configData?.ipOpen && !hasUserLocalizationData) {
@@ -518,6 +527,11 @@ async function ciwiOnload() {
     runStorefrontTranslationTasks();
   };
 
+  if (isInThemeEditor) {
+    ciwiBlock.__ciwiRuntimeCleanup = null;
+    return;
+  }
+
   const languageAttrObserver = new MutationObserver(syncRuntimeLanguage);
   languageAttrObserver.observe(document.documentElement, {
     attributes: true,
@@ -526,7 +540,14 @@ async function ciwiOnload() {
 
   window.addEventListener("pageshow", syncRuntimeLanguage);
   window.addEventListener("popstate", syncRuntimeLanguage);
-  window.setInterval(syncRuntimeLanguage, 1200);
+  const syncIntervalId = window.setInterval(syncRuntimeLanguage, 1200);
+  ciwiBlock.__ciwiRuntimeCleanup = () => {
+    languageAttrObserver.disconnect();
+    window.removeEventListener("pageshow", syncRuntimeLanguage);
+    window.removeEventListener("popstate", syncRuntimeLanguage);
+    window.clearInterval(syncIntervalId);
+    ciwiBlock.__ciwiRuntimeCleanup = null;
+  };
 
 }
 
