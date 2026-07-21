@@ -845,7 +845,7 @@ const GEMINI_API_BASE = (
   process.env.GEMINI_API_BASE?.trim() ||
   "https://generativelanguage.googleapis.com/v1beta"
 ).replace(/\/+$/, "");
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash-preview";
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 const GEMINI_CONCURRENCY = Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 8);
 
 function geminiApiKey(): string | null {
