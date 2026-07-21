@@ -7,20 +7,13 @@ import {
   Spin,
   Table,
   Typography,
-  } from "antd";
+} from "antd";
 import Button from "~/ui/components/AppButton";
-import { useEffect,
-  useState,
-  useRef } from "react";
-import { useFetcher,
-  useLoaderData,
-  useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { Page,
-  Pagination,
-  Select } from "@shopify/polaris";
+import { useEffect, useState, useRef } from "react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs } from "@remix-run/node";
-import { queryNextTransType,
-  queryPreviousTransType } from "~/api/admin";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
@@ -35,12 +28,12 @@ import { getItemOptions } from "../app.manage_translation/route";
 import {
   getManageTranslationLanguage,
   manageTranslationLanguageLoader,
-  } from "~/server/manageTranslation/manageTranslationRoute.server";
+} from "~/server/manageTranslation/manageTranslationRoute.server";
 import {
   buildManageActionErrorResponse,
   getManageTranslationLoadErrorMessage,
   logManageTranslationGraphQLErrorDetail,
-  } from "~/utils/manageTranslationErrors";
+} from "~/utils/manageTranslationErrors";
 import {
   applyManageResourceTranslationUpdates,
   splitManageSaveResults,
@@ -193,8 +186,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -472,22 +464,22 @@ const Index = () => {
     }
 
     if (failedItems.length === 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-        if (hasInvalidDigestError || successfulItems.length > 0) {
-          refreshCurrentPageData();
-        }
+      shopify.toast.show(t("Saved successfully"));
+      fetcher.submit(
+        {
+          log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      shopify.toast.show(t("Some items saved failed"));
+      if (hasInvalidDigestError || successfulItems.length > 0) {
+        refreshCurrentPageData();
       }
+    }
 
     setConfirmData([]);
     setSuccessTranslatedKey([]);
@@ -526,12 +518,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType,
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -665,11 +658,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -692,6 +687,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1007,10 +1003,16 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
+        hasSider={!isMobile}
         style={{
-          overflow: "auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
+          overflow: isMobile ? "auto" : "hidden",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: isMobile ? "70vh" : undefined,
+          height: isMobile ? "auto" : "calc(100vh - 154px)",
+          width: "100%",
         }}
       >
         {isLoading ? (
@@ -1028,12 +1030,16 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
+                width={200}
                 style={{
+                  flex: "0 0 200px",
+                  width: 200,
+                  minWidth: 200,
+                  maxWidth: 200,
                   height: "100%",
-                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
+                  overflow: "hidden",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -1041,6 +1047,8 @@ const Index = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
+                    flex: 1,
+                    minHeight: 0,
                     height: "100%",
                     justifyContent: "space-between",
                   }}
@@ -1064,13 +1072,17 @@ const Index = () => {
               </Sider>
             )}
             <Content
+              key={selectArticleKey}
               style={{
-                paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
-                minHeight: "70vh",
+                paddingLeft: isMobile ? "0" : "24px",
+                flex: 1,
+                minWidth: 0,
+                minHeight: isMobile ? "70vh" : 0,
+                height: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "auto",
+                overflowY: isMobile ? "visible" : "auto",
+                overflowX: "hidden",
               }}
             >
               {isMobile ? (
@@ -1132,16 +1144,11 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  {renderMobileSection(
-                    t("Resource"),
-                    resourceData,
-                    "ARTICLE",
-                    {
-                      isHtml: (record) =>
-                        record?.shopifyKey == "body_html" ||
-                        record?.shopifyKey == "summary_html",
-                    },
-                  )}
+                  {renderMobileSection(t("Resource"), resourceData, "ARTICLE", {
+                    isHtml: (record) =>
+                      record?.shopifyKey == "body_html" ||
+                      record?.shopifyKey == "summary_html",
+                  })}
                   {renderMobileSection(t("SEO"), SeoData, "ARTICLE")}
                   <SideMenu
                     items={menuData}

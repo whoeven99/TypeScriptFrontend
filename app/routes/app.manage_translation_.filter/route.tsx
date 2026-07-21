@@ -103,7 +103,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (refreshResourceIds.length > 0) {
     try {
       const response = await admin.graphql(
-          `#graphql
+        `#graphql
             query refreshFilterResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
@@ -122,12 +122,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          {
-            variables: {
-              resourceIds: refreshResourceIds,
-              locale: searchTerm || "",
-            },
+        {
+          variables: {
+            resourceIds: refreshResourceIds,
+            locale: searchTerm || "",
           },
+        },
       );
       const data = await response.json();
 
@@ -141,7 +141,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error refreshing current page",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -179,8 +182,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -301,7 +303,6 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
-
   useEffect(() => {
     const data = consumeConfirmResponse(confirmFetcher.data);
     if (!data?.success) return;
@@ -370,12 +371,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType: "FILTER",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -468,11 +470,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -495,6 +499,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -702,7 +707,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 154px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -720,7 +725,6 @@ const Index = () => {
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
-              height: "calc(100% - 25px)",
               minHeight: "70vh",
               display: "flex",
               flexDirection: "column",

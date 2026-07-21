@@ -205,8 +205,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, pageFlyGrayEligible } =
-    useLoaderData<typeof loader>();
+  const { searchTerm, pageFlyGrayEligible } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -481,11 +480,11 @@ const Index = () => {
           <SingleTranslateAction
             loading={loadingItems.includes(record?.key)}
             existingTranslation={
-              confirmData.find((item: any) => item.key === record?.key)?.value ??
-              record?.translated
+              confirmData.find((item: any) => item.key === record?.key)
+                ?.value ?? record?.translated
             }
-            onSubmit={(customPrompt) => {
-              handleTranslate(record, customPrompt);
+            onSubmit={(customPrompt, aiModel) => {
+              handleTranslate(record, customPrompt, aiModel);
             }}
           />
         );
@@ -576,7 +575,11 @@ const Index = () => {
     });
   };
 
-  const handleTranslate = async (record: any, customPrompt?: string) => {
+  const handleTranslate = async (
+    record: any,
+    customPrompt?: string,
+    aiModel?: string,
+  ) => {
     if (!record) {
       return;
     }
@@ -602,6 +605,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -786,10 +790,16 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
+        hasSider={!isMobile}
         style={{
-          overflow: "auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
+          overflow: isMobile ? "auto" : "hidden",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: isMobile ? "70vh" : undefined,
+          height: isMobile ? "auto" : "calc(100vh - 154px)",
+          width: "100%",
         }}
       >
         {isLoading ? (
@@ -807,12 +817,16 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
+                width={200}
                 style={{
+                  flex: "0 0 200px",
+                  width: 200,
+                  minWidth: 200,
+                  maxWidth: 200,
                   height: "100%",
-                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
+                  overflow: "hidden",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -820,6 +834,8 @@ const Index = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
+                    flex: 1,
+                    minHeight: 0,
                     height: "100%",
                     justifyContent: "space-between",
                   }}
@@ -833,13 +849,17 @@ const Index = () => {
               </Sider>
             )}
             <Content
+              key={selectedMenuKey}
               style={{
-                paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
-                minHeight: "70vh",
+                paddingLeft: isMobile ? "0" : "24px",
+                flex: 1,
+                minWidth: 0,
+                minHeight: isMobile ? "70vh" : 0,
+                height: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "auto",
+                overflowY: isMobile ? "visible" : "auto",
+                overflowX: "hidden",
               }}
             >
               {pageAlert ? (
@@ -993,8 +1013,8 @@ const Index = () => {
                                       confirmItem.key === item?.key,
                                   )?.value ?? item?.translated
                                 }
-                                onSubmit={(customPrompt) => {
-                                  handleTranslate(item, customPrompt);
+                                onSubmit={(customPrompt, aiModel) => {
+                                  handleTranslate(item, customPrompt, aiModel);
                                 }}
                               />
                             </div>

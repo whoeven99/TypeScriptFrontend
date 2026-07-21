@@ -1,37 +1,42 @@
-node_modules
+# Dependencies
+node_modules/
+/worker/node_modules/
 
-/worker/node_modules
-/worker/dist
-
-/.cache
-/build
-/app/build
+# Build outputs (all packages / extensions / worker)
+dist/
+/build/
+/app/build/
 /public/build/
-/public/_dev
-/app/public/build
+/public/_dev/
+/app/public/build/
+/.cache/
+
+# Env & secrets
+.env
+.env.*
+shop.txt
+shops.txt
+
+# Shopify local / one-off config
+shopify.app.wgw.toml
+.shopify/
+.shopify.lock
+
+# Prisma local DB
 /prisma/dev.sqlite
 /prisma/dev.sqlite-journal
 database.sqlite
 
-.env
-.env.*
-.env.prod
-shop.txt
-shops.txt
+# Generated & temp
+/app/generated/
+/scripts/tmp/
+/scripts/out/
+/worker/scripts/tmp/
+/worker/scripts/out/
+# Editor
+/.vscode/
 
+# Nested build outputs
 /extensions/*/dist
-
-shopify.app.wgw.toml
-
-# Ignore shopify files created during app dev
-.shopify/*
-.shopify.lock
-/.vscode
-app/generated/
-/app/generated
-/scripts/tmp
-/worker/scripts/tmp
-/worker/scripts/out
-/scripts/out
 /packages/translation-core/.build/
 /packages/translation-core/dist/

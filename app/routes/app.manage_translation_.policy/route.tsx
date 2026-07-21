@@ -165,7 +165,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
+      logManageTranslationGraphQLErrorDetail(
+        "Error refreshing current page",
+        error,
+      );
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -204,8 +207,7 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const policyFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } =
-    useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -403,12 +405,13 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt) => {
+        onSubmit={(customPrompt, aiModel) => {
           handleTranslate({
             resourceType: "SHOP_POLICY",
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
         }}
       />
@@ -481,11 +484,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -508,6 +513,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -653,10 +659,16 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
+        hasSider={!isMobile}
         style={{
-          overflow: "auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
+          overflow: isMobile ? "auto" : "hidden",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: isMobile ? "70vh" : undefined,
+          height: isMobile ? "auto" : "calc(100vh - 154px)",
+          width: "100%",
         }}
       >
         {isLoading ? (
@@ -674,12 +686,16 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
+                width={200}
                 style={{
+                  flex: "0 0 200px",
+                  width: 200,
+                  minWidth: 200,
+                  maxWidth: 200,
                   height: "100%",
-                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
+                  overflow: "hidden",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -691,13 +707,17 @@ const Index = () => {
               </Sider>
             )}
             <Content
+              key={selectPolicyKey}
               style={{
-                paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
-                minHeight: "70vh",
+                paddingLeft: isMobile ? "0" : "24px",
+                flex: 1,
+                minWidth: 0,
+                minHeight: isMobile ? "70vh" : 0,
+                height: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "auto",
+                overflowY: isMobile ? "visible" : "auto",
+                overflowX: "hidden",
               }}
             >
               {isMobile ? (
