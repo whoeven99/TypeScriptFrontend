@@ -7,13 +7,17 @@
  *
  * Strategy:
  *  1. Replace every Liquid block tag ({% ... %} / {%- ... -%}) with a
- *     numbered sentinel (⟨L0⟩, ⟨L1⟩, …) before HTML parsing.
- *  2. Run the existing `htmlNodePartsOf` on the masked content. Text nodes
- *     now contain only real human text plus Liquid output expressions
- *     ({{ ... }}) — the latter are already protected by `maskPlaceholders`
- *     inside the per-part LLM call.
- *  3. After translation + HTML reassembly, restore the sentinels back to the
- *     original Liquid block tags.
+ *     numbered sentinel (⟨L0⟩, ⟨L1⟩, …).
+ *  2. Wrap each sentinel in a `<script type="application/vnd.ciwi-liquid">`
+ *     element so `htmlNodePartsOf` skips it (script is in SKIP_TAGS). Without
+ *     this wrap, sentinels share text nodes with human copy and the LLM can
+ *     rewrite `{% else %}` / `'Default Title'` inside tags.
+ *  3. Run `htmlNodePartsOf` on the wrapped content. Text nodes now contain
+ *     only real human text plus Liquid output expressions ({{ ... }}) — the
+ *     latter are already protected by `maskPlaceholders` inside the per-part
+ *     LLM call.
+ *  4. After translation + HTML reassembly, unwrap the script carriers and
+ *     restore sentinels to the original Liquid block tags.
  *
  * The Liquid output expressions ({{ ... }}) are intentionally left in-place
  * so they remain visible to `maskPlaceholders` when individual text parts are
@@ -30,6 +34,15 @@ import {
 const LIQUID_SENT_OPEN = "⟨L";
 const LIQUID_SENT_CLOSE = "⟩";
 const LIQUID_SENT_RE = /⟨L(\d+)⟩/g;
+
+/**
+ * Intermediate carrier so Liquid sentinels are not HTML text nodes.
+ * Must stay in sync with unwrapLiquidSentinelCarriers.
+ */
+const LIQUID_CARRIER_OPEN = '<script type="application/vnd.ciwi-liquid">';
+const LIQUID_CARRIER_CLOSE = "</script>";
+const LIQUID_CARRIER_RE =
+  /<script\b[^>]*\btype=["']application\/vnd\.ciwi-liquid["'][^>]*>(⟨L\d+⟩)<\/script>/gi;
 
 /**
  * Matches Liquid block tags including whitespace-strip variants:
@@ -67,6 +80,21 @@ export function restoreLiquidBlockTags(text: string, tokens: string[]): string {
   return text.replace(LIQUID_SENT_RE, (_m, d: string) => tokens[Number(d)] ?? "");
 }
 
+/** Wrap ⟨Ln⟩ so HTML text extraction cannot pull them into the LLM pool. */
+export function wrapLiquidSentinelCarriers(masked: string): string {
+  LIQUID_SENT_RE.lastIndex = 0;
+  return masked.replace(
+    LIQUID_SENT_RE,
+    (sentinel) => `${LIQUID_CARRIER_OPEN}${sentinel}${LIQUID_CARRIER_CLOSE}`,
+  );
+}
+
+/** Remove intermediate script carriers; leave bare ⟨Ln⟩ for restoreLiquidBlockTags. */
+export function unwrapLiquidSentinelCarriers(html: string): string {
+  LIQUID_CARRIER_RE.lastIndex = 0;
+  return html.replace(LIQUID_CARRIER_RE, "$1");
+}
+
 export type LiquidHtmlNodePlan = {
   plan: HtmlNodePlan;
   liquidTokens: string[];
@@ -81,7 +109,7 @@ export type LiquidHtmlNodePlan = {
  */
 export function liquidHtmlNodePartsOf(value: string): LiquidHtmlNodePlan {
   const { masked, tokens } = maskLiquidBlockTags(value);
-  const plan = htmlNodePartsOf(masked);
+  const plan = htmlNodePartsOf(wrapLiquidSentinelCarriers(masked));
   return { plan, liquidTokens: tokens };
 }
 
@@ -89,7 +117,8 @@ export function liquidHtmlNodePartsOf(value: string): LiquidHtmlNodePlan {
  * Reassemble a translated Liquid HTML template.
  *
  * 1. Restores HTML text-node placeholders (standard step).
- * 2. Restores Liquid block tag sentinels to original tags.
+ * 2. Unwraps Liquid sentinel carriers.
+ * 3. Restores Liquid block tag sentinels to original tags.
  */
 export function reassembleLiquidHtmlTranslation(
   template: string,
@@ -97,5 +126,5 @@ export function reassembleLiquidHtmlTranslation(
   liquidTokens: string[],
 ): string {
   const assembled = reassembleHtmlTranslation(template, nodeTranslations);
-  return restoreLiquidBlockTags(assembled, liquidTokens);
+  return restoreLiquidBlockTags(unwrapLiquidSentinelCarriers(assembled), liquidTokens);
 }
