@@ -157,13 +157,11 @@ export async function sendTsfSubscribeSuccessEmail(params: {
 
   const sub = await prisma.appSubscription.findUnique({
     where: { shop: params.shop },
-    select: { currentPeriodStart: true, createdAt: true },
+    select: { currentPeriodStart: true },
   });
+  // 展示用生效日：优先业务传入 / currentPeriodStart。不用 createdAt（非额度锚点，迁移日会错）。
   const effectiveAt =
-    params.effectiveAt ??
-    sub?.currentPeriodStart ??
-    sub?.createdAt ??
-    new Date();
+    params.effectiveAt ?? sub?.currentPeriodStart ?? new Date();
 
   const ok = await sendTencentTemplateEmail({
     templateId: isAnnual ? TEMPLATE_SUBSCRIBE_ANNUAL : TEMPLATE_SUBSCRIBE_MONTHLY,

@@ -24,6 +24,7 @@ import {
   type StagePoolKind,
 } from "../services/stagePool.js";
 import { isShuttingDown } from "../shutdown.js";
+import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
 
 /**
  * Scale-out safe: hostname + pid ensures uniqueness across containers that may
@@ -130,25 +131,32 @@ async function completeEmptyInitJob(
     empty: true,
   });
 
+  const emptyMetrics = {
+    ...job.metrics,
+    initTotal: 0,
+    initDone: 0,
+    translateTotal: 0,
+    translateDone: 0,
+    translateUnitTotal: 0,
+    translateUnitDone: 0,
+    writebackTotal: 0,
+    writebackDone: 0,
+    verifyTotal: 0,
+    verifyDone: 0,
+  };
+  const emptyTimings = withStageTiming(
+    job.stageTimings,
+    "INIT",
+    stageStartedAt,
+    new Date().toISOString(),
+  );
   await updateJob(shopName, jobId, {
     status: "COMPLETED",
     claimedBy: null,
     errorMessage: null,
     errorStage: null,
-    stageTimings: withStageTiming(job.stageTimings, "INIT", stageStartedAt, new Date().toISOString()),
-    metrics: {
-      ...job.metrics,
-      initTotal: 0,
-      initDone: 0,
-      translateTotal: 0,
-      translateDone: 0,
-      translateUnitTotal: 0,
-      translateUnitDone: 0,
-      writebackTotal: 0,
-      writebackDone: 0,
-      verifyTotal: 0,
-      verifyDone: 0,
-    },
+    stageTimings: emptyTimings,
+    metrics: emptyMetrics,
   });
 
   await setProgress(jobId, {
@@ -161,6 +169,16 @@ async function completeEmptyInitJob(
     verifyTotal: 0,
     verifyDone: 0,
   });
+
+  await recordJobUsageSnapshot(
+    {
+      ...job,
+      status: "COMPLETED",
+      metrics: emptyMetrics,
+      stageTimings: emptyTimings,
+    },
+    "COMPLETED",
+  );
 
   console.log(
     `[init] done job=${jobId} totalItems=0 — 无待翻译增量（可能已全部译完或非覆盖模式无 outdated/空译文 字段）→ COMPLETED`,

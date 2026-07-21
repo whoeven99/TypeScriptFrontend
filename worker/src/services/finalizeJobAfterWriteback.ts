@@ -7,6 +7,7 @@ import {
 } from "./cosmosV4.js";
 import { setItemsCount } from "./redisV4.js";
 import { computeModuleCount } from "./itemsCount.js";
+import { recordJobUsageSnapshot } from "./recordJobUsageSnapshot.js";
 
 export type FinalizeAfterWritebackInput = {
   writebackDone: number;
@@ -93,6 +94,17 @@ export async function finalizeJobAfterWriteback(
     stageTimings,
     metrics: mergedMetrics,
   });
+
+  await recordJobUsageSnapshot(
+    {
+      ...(latestJob ?? job),
+      status: finalStatus,
+      metrics: mergedMetrics,
+      stageTimings,
+      engineUsage: latestJob?.engineUsage ?? job.engineUsage,
+    },
+    finalStatus,
+  );
 
   console.log(
     `[finalize] job=${jobId} status=${finalStatus} written=${input.writebackDone} failed=${input.writebackFailed}`,

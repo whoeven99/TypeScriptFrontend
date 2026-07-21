@@ -103,7 +103,12 @@ export async function applyActiveSubscription(
       planKey,
       referenceId: shopifySubscriptionId,
       creditsDelta: creditsPerPeriod,
-      metadata: { billingInterval },
+      metadata: {
+        billingInterval,
+        // 额度周期锚点：Shopify/本地 currentPeriodEnd（禁止用 createdAt）
+        billingPeriodEnd: period.currentPeriodEnd?.toISOString() ?? null,
+        grantKind: "shopify_period",
+      },
     });
   }
 }

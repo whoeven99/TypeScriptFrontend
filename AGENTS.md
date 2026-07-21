@@ -321,6 +321,9 @@ Services:
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
 - `worker/src/services/finalizeJobAfterWriteback.ts`: post-writeback final status
   selection and Redis `items_count` refresh for completed jobs.
+- `worker/src/services/recordJobUsageSnapshot.ts`: task-terminal usage snapshot
+  into Turso `TranslateV4JobUsage` (time / tokens / units / chars; survives Cosmos
+  job retention cleanup).
 - `worker/src/services/translationReport.ts` and
   `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
   for translated blob entries.
@@ -399,6 +402,7 @@ Models:
 
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
+- `TranslateV4JobUsage`: per v4 job usage snapshot (Worker writes on terminal status).
 
 Code:
 
@@ -411,8 +415,14 @@ Code:
 - `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
 - `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
   (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
-- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only 12h Shopify
-  subscription period reconciliation (writes Turso directly; does not call TSF Web).
+- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only Shopify
+  subscription reconciliation (writes Turso directly; does not call TSF Web).
+  Syncs `AppSubscription.currentPeriodEnd/Start` from Shopify for MONTHLY and
+  ANNUAL; for ANNUAL also grants monthly credits every 30 days (max 12 per
+  Shopify year) derived from `currentPeriodEnd` (never from `createdAt`).
+- `worker/src/services/annualCreditCycle.ts` and
+  `app/server/billing/subscription/annualCreditCycle.server.ts`: shared pure
+  helpers for annual credit-cycle math.
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
 - `app/routes/app.pricing/route.tsx`: pricing UI/actions.
@@ -435,10 +445,17 @@ Billing notes:
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
-- Worker runs a near-due reconciliation every 30 minutes and a full subscription
-  reconciliation every 12 hours by default (both configurable) inside the
-  worker process when Turso credentials are set. TSF Web does not schedule or
-  execute these jobs.
+- `AppSubscription.currentPeriodEnd` is always the Shopify next-charge time
+  (MONTHLY ≈ +30d, ANNUAL ≈ +365d). `currentPeriodStart = end - intervalDays`.
+  Do not use `createdAt` as a billing or credit-cycle anchor.
+- Annual plans still bill once per year in Shopify, but TSF grants the monthly
+  `PlanCatalog.credits` every 30 days within that year (max 12). Mid-year grants
+  are Worker-driven (`grantKind: annual_credit_cycle` on `BillingLog`) and must
+  not overwrite `currentPeriodEnd`. After 12 grants, wait for Shopify year renewal.
+- Worker runs a near-due reconciliation every 30 minutes (includes all ACTIVE
+  ANNUAL shops for credit-cycle checks) and a full subscription reconciliation
+  every 12 hours by default (both configurable) inside the worker process when
+  Turso credentials are set. TSF Web does not schedule or execute these jobs.
 - Subscription renewal emails (template 143058) are sent from webhook, near-due,
   and full reconcile on `renewed`. Idempotency uses
   `BillingLog.metadata.renewalEmailSent` so the three paths do not double-send.
@@ -613,6 +630,8 @@ Current models:
 - `LiquidRule`: custom Liquid translation rules.
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
+- `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
+  units, source chars); written by Worker at job terminal states.
 - `SupportConversation`, `SupportMessage`: support chat.
 - `UserPicture`: product/shop image translation metadata and translated image
   URLs used by admin pages and storefront App Proxy reads.
