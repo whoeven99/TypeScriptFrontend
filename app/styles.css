@@ -443,17 +443,24 @@ body {
   align-items: center;
 }
 
-/* 单选（AI 模型）：保持 antd 横向布局，避免箭头被挤到下一行导致点不开 */
-.v4-create-task-card .ant-select-single .ant-select-selector {
-  display: flex !important;
-  flex-wrap: nowrap !important;
+/* AI 模型单选：勿改 selector 的 display/position，否则会打坏箭头与下拉定位 */
+.v4-create-task-card .v4-ai-model-select.ant-select-single {
+  width: 100%;
 }
 
-.v4-create-task-card .ant-select-single .ant-select-selection-item {
-  flex: 1 1 auto;
+.v4-create-task-card .v4-ai-model-select.ant-select-single .ant-select-selector {
+  width: 100%;
+  padding-inline-end: 36px !important;
+}
+
+.v4-create-task-card .v4-ai-model-select.ant-select-single .ant-select-selection-item {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.v4-ai-model-select__popup {
+  z-index: 1100;
 }
 
 .v4-create-task-card .ant-select-selection-overflow {
