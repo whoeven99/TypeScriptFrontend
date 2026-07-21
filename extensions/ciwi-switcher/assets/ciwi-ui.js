@@ -1757,6 +1757,12 @@ export class CiwiswitcherForm extends HTMLElement {
   constructor() {
     super();
     this.elements = {}; // 空对象，等 connectedCallback 再赋值
+    this.boundStopSelectorClick = (event) => event.stopPropagation();
+    this.boundToggleSelector = this.toggleSelector.bind(this);
+    this.boundHandleSelectChange = this.handleSelectChange.bind(this);
+    this.boundHandleCancelClick = this.handleCancelClick.bind(this);
+    this.boundHandleWindowResize = this.handleWindowResize.bind(this);
+    this.boundHandleOutsideClick = this.handleOutsideClick.bind(this);
   }
   connectedCallback() {
     const blockId = this.querySelector('input[name="block_id"]')?.value;
@@ -1795,46 +1801,81 @@ export class CiwiswitcherForm extends HTMLElement {
       requestAnimationFrame(() => this.openSelectorPanel());
     }
   }
+  disconnectedCallback() {
+    this.removeEventListeners();
+    if (this._closeTimer) {
+      clearTimeout(this._closeTimer);
+      this._closeTimer = null;
+    }
+  }
   initializeEventListeners() {
+    this.removeEventListeners();
     // 阻止选择器框的点击事件冒泡
-    this.elements.selectorBox?.addEventListener("click", (event) => {
-      event.stopPropagation();
-    });
-
-    this.elements.mainBox?.addEventListener(
+    this.elements.selectorBox?.addEventListener(
       "click",
-      this.toggleSelector.bind(this),
+      this.boundStopSelectorClick,
     );
+
+    this.elements.mainBox?.addEventListener("click", this.boundToggleSelector);
 
     this.elements.translateFloatBtnText?.addEventListener(
       "click",
-      this.toggleSelector.bind(this),
+      this.boundToggleSelector,
     );
 
     this.elements.languageSelect?.addEventListener(
       "change",
-      this.handleSelectChange.bind(this),
+      this.boundHandleSelectChange,
     );
 
     this.elements.currencySelect?.addEventListener(
       "change",
-      this.handleSelectChange.bind(this),
+      this.boundHandleSelectChange,
     );
 
     this.elements.closeButton?.addEventListener(
       "click",
-      this.handleCancelClick.bind(this),
+      this.boundHandleCancelClick,
     );
 
     this.elements.selectorBackdrop?.addEventListener(
       "click",
-      this.handleCancelClick.bind(this),
+      this.boundHandleCancelClick,
     );
 
-    window.addEventListener("resize", this.handleWindowResize.bind(this));
+    window.addEventListener("resize", this.boundHandleWindowResize);
 
     // 点击外部关闭
-    document.addEventListener("click", this.handleOutsideClick.bind(this));
+    document.addEventListener("click", this.boundHandleOutsideClick);
+  }
+  removeEventListeners() {
+    this.elements.selectorBox?.removeEventListener(
+      "click",
+      this.boundStopSelectorClick,
+    );
+    this.elements.mainBox?.removeEventListener("click", this.boundToggleSelector);
+    this.elements.translateFloatBtnText?.removeEventListener(
+      "click",
+      this.boundToggleSelector,
+    );
+    this.elements.languageSelect?.removeEventListener(
+      "change",
+      this.boundHandleSelectChange,
+    );
+    this.elements.currencySelect?.removeEventListener(
+      "change",
+      this.boundHandleSelectChange,
+    );
+    this.elements.closeButton?.removeEventListener(
+      "click",
+      this.boundHandleCancelClick,
+    );
+    this.elements.selectorBackdrop?.removeEventListener(
+      "click",
+      this.boundHandleCancelClick,
+    );
+    window.removeEventListener("resize", this.boundHandleWindowResize);
+    document.removeEventListener("click", this.boundHandleOutsideClick);
   }
 
   handleWindowResize() {
