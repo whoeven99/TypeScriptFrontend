@@ -8,7 +8,6 @@ import {
   Link,
   Outlet,
   useLoaderData,
-  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -17,12 +16,15 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { GoogleAnalyticClickReport } from "~/api/googleAnalyticsClient";
+import { queryShopLanguages } from "~/api/admin";
+import type { ShopLocalesType } from "~/routes/app.language/route";
 import {
   bootstrapLocalesFromLoaded,
   type AppBootstrapData,
 } from "~/server/appBootstrap.server";
 import { resolveBillingBinding } from "~/server/billing/index.server";
 import { scheduleTsfWelcomeEmail } from "~/server/billing/email/welcomeEmail.server";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -134,14 +136,22 @@ async function runAppInitialization({
   const initLog = "[app:init]";
   try {
     console.info(`${initLog} start shop=${shop}`);
-    // 判定并锁定账本归属；新 TSF 用户只建账户，不在安装时发放试用额度。
+    // 确保 TSF 账户存在；新 TSF 用户只建账户，不在安装时发放试用额度。
     const binding = await resolveBillingBinding(shop);
     console.info(
-      `${initLog} billing-resolved shop=${shop} bound=${binding.bound} system=${binding.billingSystem} persisted=${binding.persisted}`,
+      `${initLog} billing-resolved shop=${shop} bound=${binding.bound} persisted=${binding.persisted}`,
     );
     scheduleTsfWelcomeEmail(binding, shop, "app-loader-init");
 
-    // 店铺画像扫描改为手动按钮触发，避免安装/首次进入时自动拉 Shopify 或自动调用 AI。
+    // 安装/首次进 App：计量扫描（源语言总量 + 已发布语言覆盖率），幂等、best-effort。
+    void enqueueShopScan({ shop, trigger: "install" }).then((result) => {
+      console.info(
+        `${initLog} shop-scan shop=${shop} enqueued=${result.enqueued}` +
+          (result.scanId ? ` scanId=${result.scanId}` : "") +
+          (result.reason ? ` reason=${result.reason}` : ""),
+      );
+    });
+
     console.info(`${initLog} done shop=${shop}`);
   } catch (error) {
     console.error(`${initLog} failed shop=${shop}`, error);
@@ -230,6 +240,7 @@ export const shouldRevalidate = shouldRevalidateAppShell;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   try {
     const formData = await request.formData();

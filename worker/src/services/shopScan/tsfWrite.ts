@@ -78,8 +78,8 @@ export async function upsertTargetLocales(
     if (!loc) continue;
     const res = await tsfExecute({
       sql: `
-        INSERT INTO ShopTargetLocale (shop, locale, autoTranslate, status, createdAt, updatedAt)
-        VALUES (?, ?, 0, 1, datetime('now'), datetime('now'))
+        INSERT INTO ShopTargetLocale (shop, locale, autoTranslate, createdAt, updatedAt)
+        VALUES (?, ?, 0, datetime('now'), datetime('now'))
         ON CONFLICT(shop, locale) DO NOTHING
       `,
       args: [shop, loc],

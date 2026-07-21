@@ -7,7 +7,6 @@ import {
   Space,
   Spin,
   Table,
-  Typography,
   List,
 } from "antd";
 import Button from "~/ui/components/AppButton";

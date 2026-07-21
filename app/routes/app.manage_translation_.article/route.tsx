@@ -18,8 +18,7 @@ import { useFetcher,
 import { Page,
   Pagination,
   Select } from "@shopify/polaris";
-import { ActionFunctionArgs,
-  json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { queryNextTransType,
   queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
@@ -50,7 +49,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 

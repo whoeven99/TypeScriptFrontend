@@ -154,10 +154,9 @@ export function scheduleTsfWelcomeEmail(
     logDetail("schedule-skipped", {
       shop,
       trigger,
-      reason: "binding_not_new",
-      billingSystem: binding.billingSystem,
+      reason: "account_not_new",
       persisted: binding.persisted,
-      hint: "仅 bound:true（首次写入 ShopBillingBinding）会发欢迎邮件",
+      hint: "仅 bound:true（首次创建 TSF Account）会发欢迎邮件",
     });
     return;
   }
@@ -165,7 +164,6 @@ export function scheduleTsfWelcomeEmail(
   logDetail("schedule-start", {
     shop,
     trigger,
-    billingSystem: binding.billingSystem,
     persisted: binding.persisted,
   });
 

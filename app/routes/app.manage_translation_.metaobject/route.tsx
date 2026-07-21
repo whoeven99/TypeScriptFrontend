@@ -3,7 +3,6 @@ import {
   Table,
   Result,
   Space,
-  Typography,
   Spin,
   Divider,
   Card,
@@ -12,7 +11,7 @@ import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
@@ -40,8 +39,6 @@ import {
 } from "~/utils/manageSave";
 
 const { Content } = Layout;
-
-const { Text } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 

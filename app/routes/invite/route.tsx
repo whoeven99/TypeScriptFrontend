@@ -7,7 +7,7 @@ const { Title, Text } = Typography;
 const Index: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
-  const onFinish = (values: { email: string }) => {
+  const onFinish = () => {
     setLoading(true);
     setTimeout(() => {
       window.location.href = "https://apps.shopify.com/translator-by-ciwi";

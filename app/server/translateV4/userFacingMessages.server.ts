@@ -6,7 +6,7 @@ export function sanitizeV4UserErrorMessage(
 ): string | null {
   const trimmed = message?.trim();
   if (!trimmed) return null;
-  if (INTERNAL_V4_USER_MESSAGES.has(trimmed)) return null;
+  if (V4_INTERNAL_USER_MESSAGES.has(trimmed)) return null;
   if (/worker\s*接管/i.test(trimmed)) return null;
   return trimmed;
 }

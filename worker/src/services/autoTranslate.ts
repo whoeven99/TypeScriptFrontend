@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
 import {
   createJob,
-  findTerminalAutoJobsForTarget,
   getLatestAutoJobCreatedAtForShop,
   hasActiveJobForTarget,
   isShopAutoCooldownElapsed,
   TSF_AUTO_TASK_SOURCE,
 } from "./cosmosV4.js";
-import { purgeAutoJob } from "./autoJobCleanup.js";
 import { pushHint } from "./redisV4.js";
 import {
   hasTsfDbCredentials,
@@ -63,7 +61,7 @@ function logPrefix(mode: AutoTranslateScanMode): string {
 }
 
 /**
- * 扫描 TSF 库中「已迁移且开启自动翻译」的店，为每个 shop+target 创建
+ * 扫描 TSF 库中「开启自动翻译」的店，为每个 shop+target 创建
  * 自动更新任务（isCover=false，增量、不覆盖已翻译）。
  *
  * - 全局 scheduler 每小时扫描一次（AUTO_TRANSLATE_INTERVAL_MS，默认 1h）。
@@ -180,22 +178,6 @@ export async function runAutoTranslateScan(
       if (await hasActiveJobForTarget(shop, source, target)) {
         skippedActive++;
         continue;
-      }
-
-      // 清理同语言对的旧终态自动任务，避免历史记录积累和重复邮件通知
-      const staleJobs = await findTerminalAutoJobsForTarget(shop, source, target);
-      for (const j of staleJobs) {
-        try {
-          await purgeAutoJob(j);
-          console.log(
-            `${prefix} 清理旧自动任务 id=${j.id} shop=${shop} ${source}→${target}`,
-          );
-        } catch (err) {
-          console.error(
-            `${prefix} 清理旧任务失败 id=${j.id} shop=${shop} ${source}→${target}`,
-            err,
-          );
-        }
       }
 
       const jobId = randomUUID();

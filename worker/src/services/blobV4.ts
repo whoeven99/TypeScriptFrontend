@@ -77,26 +77,44 @@ export async function blobDelete(path: string): Promise<void> {
   }
 }
 
-/** 删除 blobPrefix 下所有 blob（任务删除 / 空自动任务清理）。 */
-export async function blobDeletePrefix(blobPrefix: string): Promise<number> {
+export type BlobDeletePrefixOptions = {
+  /** 每个 blob 删除后的间隔（毫秒），用于限速清理。 */
+  delayMs?: number;
+  shouldAbort?: () => boolean;
+};
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** 删除 blobPrefix 下所有 blob（任务删除 / 清理）。 */
+export async function blobDeletePrefix(
+  blobPrefix: string,
+  options: BlobDeletePrefixOptions = {},
+): Promise<number> {
   if (!blobPrefix) return 0;
+  const delayMs = Math.max(0, Number(options.delayMs) || 0);
   let deleted = 0;
   try {
     const prefix = blobPrefix.endsWith("/") ? blobPrefix : `${blobPrefix}/`;
     for await (const blob of getContainer().listBlobsFlat({ prefix })) {
+      if (options.shouldAbort?.()) break;
       try {
         await getContainer().deleteBlob(blob.name, { deleteSnapshots: "include" });
         deleted++;
       } catch {
         // best-effort per blob
       }
+      if (delayMs > 0) await sleep(delayMs);
     }
-    try {
-      if (await getContainer().getBlockBlobClient(blobPrefix).deleteIfExists()) {
-        deleted++;
+    if (!options.shouldAbort?.()) {
+      try {
+        if (await getContainer().getBlockBlobClient(blobPrefix).deleteIfExists()) {
+          deleted++;
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
   } catch {
     // ignore list errors

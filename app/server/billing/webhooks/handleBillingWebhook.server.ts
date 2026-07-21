@@ -1,5 +1,6 @@
 import axios from "axios";
 import prisma from "../../../db.server";
+import { buildShopifyAdminGraphqlUrl } from "../../../lib/shopifyAdminApiVersion";
 import {
   sendTsfPurchaseSuccessEmail,
   sendTsfSubscribeSuccessEmail,
@@ -59,7 +60,7 @@ async function fetchSubscriptionDetail(
 ): Promise<SubscriptionDetail | null> {
   try {
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -141,6 +142,26 @@ async function findRenewalLogForPeriod(params: {
       return meta?.nextPeriodEnd === nextPeriodEndIso;
     }) ?? null
   );
+}
+
+/** 标记续费邮件已发送，供 worker nearDue/全量 reconcile 幂等跳过。 */
+async function markRenewalEmailSent(logId: string, metadata: unknown): Promise<void> {
+  const meta =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? (metadata as Record<string, unknown>)
+      : {};
+  if (meta.renewalEmailSent === true) return;
+  await prisma.billingLog.update({
+    where: { id: logId },
+    data: {
+      metadata: {
+        ...meta,
+        renewalEmailSent: true,
+        renewalEmailClaimedAt: new Date().toISOString(),
+        renewalEmailSource: "webhook",
+      },
+    },
+  });
 }
 
 /**
@@ -273,11 +294,23 @@ export async function handleTsfSubscriptionWebhook(params: {
       );
     });
   } else if (shouldSendRenewalEmail && !priorRenewalForPeriod) {
-    void sendTsfSubscriptionRenewalEmail({
-      shop: params.shop,
-      plan,
-      accessToken: params.accessToken,
-    }).catch((err) => {
+    // 仅当本 webhook 首次落续费账时发信；worker 已续费则由 worker 发信（BillingLog.renewalEmailSent 幂等）。
+    void (async () => {
+      const ok = await sendTsfSubscriptionRenewalEmail({
+        shop: params.shop,
+        plan,
+        accessToken: params.accessToken,
+      });
+      if (!ok) return;
+      const log = await findRenewalLogForPeriod({
+        shop: params.shop,
+        referenceId: gid,
+        nextPeriodEnd: currentPeriodEnd,
+      });
+      if (log) {
+        await markRenewalEmailSent(log.id, log.metadata);
+      }
+    })().catch((err) => {
       console.error(
         `[billing webhook] subscription renewal email failed shop=${params.shop}:`,
         err,

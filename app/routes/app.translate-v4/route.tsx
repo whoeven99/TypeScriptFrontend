@@ -120,7 +120,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     listV4JobSummaries(session.shop, { escalateStuck: false }),
     getCoverageSummaryFromCache({
       shop: session.shop,
-      primaryLocale,
       targetLocales,
       includeRuntimeSignals: false,
     }),

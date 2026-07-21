@@ -5,23 +5,23 @@ import {
   type ShopScanTrigger,
 } from "./cosmos.server";
 import { pushShopScanHint } from "~/server/translateV4/redis.server";
-import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 
 /**
- * 店铺画像扫描（Shop Profile Scan）通用触发入口。
+ * 店铺扫描（Shop Scan）通用触发入口。
  *
- * - install：安装/首次进 App 触发，幂等（已有进行中或已完成扫描则跳过），
- *   避免每次进 /app 重复扫。
- * - scheduled / manual：未来定期巡检 / 手动刷新复用同一套（本期仅预留）。
+ * - install：安装/首次进 App 触发计量扫描（contentSize + coverage），幂等
+ *   （已有进行中或已完成的计量扫描则跳过），避免每次进 /app 重复扫。
+ * - scheduled：定期复扫计量，覆写当前生效 summary / Redis 缓存。
+ * - manual：仅跑 AI 阶段（profile + glossary）；调试页入口，生产可不暴露 UI。
  *
- * 生产环境（NODE_ENV=prod/production）一律不入队，避免线上商店进首页触发扫描。
- * 全程 best-effort：Cosmos/Redis 不可用时静默返回，绝不阻断 App 加载。
+ * 生产环境允许 install/scheduled 入队。全程 best-effort：Cosmos/Redis
+ * 不可用时静默返回，绝不阻断 App 加载。
  */
 
 export type EnqueueShopScanResult = {
   enqueued: boolean;
   scanId?: string;
-  reason?: "skipped_existing" | "not_configured" | "disabled_in_production" | "error";
+  reason?: "skipped_existing" | "not_configured" | "error";
 };
 
 function shopScanCosmosConfigured(): boolean {
@@ -42,17 +42,12 @@ export async function enqueueShopScan({
   shop: string;
   trigger: ShopScanTrigger;
 }): Promise<EnqueueShopScanResult> {
-  // 线上关闭：页面/API 已门禁，触发入口再兜一层，避免进 /app 仍入队。
-  if (isProductionNodeEnv()) {
-    return { enqueued: false, reason: "disabled_in_production" };
-  }
-
   if (!shop || !shopScanCosmosConfigured()) {
     return { enqueued: false, reason: "not_configured" };
   }
 
   try {
-    // install 幂等：已有进行中或已完成扫描则跳过（未来 scheduled/manual 允许重扫）
+    // install 幂等：已有进行中或已完成的计量扫描则跳过（scheduled/manual 允许重扫）
     if (trigger === "install") {
       const exists = await hasActiveOrCompletedShopScan(shop);
       if (exists) return { enqueued: false, reason: "skipped_existing" };
