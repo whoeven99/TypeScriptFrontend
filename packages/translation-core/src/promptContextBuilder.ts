@@ -116,6 +116,7 @@ export type ResolvedTranslationPromptContext = {
 
 export type PromptContextBlockSelection = {
   shopContext: boolean;
+  domainContext: boolean;
   terminology: boolean;
   regionalStyle: boolean;
   modulePolicy: boolean;
@@ -233,6 +234,11 @@ export function buildPromptContextBlock(
   const blocks = [
     buildConstraintBlock(plan),
     ...terminologyBlocks,
+    plan.selection.domainContext
+      ? buildDomainContextBlock(context.shopContext, context, {
+          sourceText: options?.sourceText,
+        })
+      : null,
     plan.selection.regionalStyle
       ? buildRegionalStyleBlock(context.localizationContext, context, {
           sourceText: options?.sourceText,
@@ -265,6 +271,7 @@ export function buildPromptPlan(
   const debugReasons: string[] = [];
   if (selection.terminology) debugReasons.push("terminology_hit");
   if (selection.shopContext) debugReasons.push("style_context");
+  if (selection.domainContext) debugReasons.push("domain_context");
   if (selection.regionalStyle) debugReasons.push("regional_style");
   if (selection.modulePolicy) debugReasons.push("module_exception");
   if (context.constraints.maxChars != null) debugReasons.push(`max_chars:${context.constraints.maxChars}`);
@@ -316,6 +323,9 @@ export function selectPromptContextBlocks(
   );
 
   const shopContext = Boolean(context.shopContext) && styleScore >= 2;
+  const domainContext =
+    Boolean(context.shopContext) &&
+    shouldInjectDomainContext(context.shopContext, context, sourceText, isShortUiCopy);
   const terminology = Boolean(context.terminology) && terminologyTriggered && context.scene !== "config_like";
   const modulePolicy =
     Boolean(context.modulePolicy) &&
@@ -323,6 +333,7 @@ export function selectPromptContextBlocks(
 
   return {
     shopContext,
+    domainContext,
     terminology,
     regionalStyle,
     modulePolicy,
@@ -358,6 +369,35 @@ function buildShopContextBlockWithSelection(
 
   return [
     "Style context (use only when it helps tone and wording; do NOT translate or output this block):",
+    ...lines,
+  ].join("\n");
+}
+
+function buildDomainContextBlock(
+  profile: ShopPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  options?: {
+    sourceText?: string | null;
+  },
+): string | null {
+  if (!profile) return null;
+  const sourceText = trim(options?.sourceText) ?? "";
+  if (!shouldInjectDomainContext(profile, context, sourceText, looksLikeShortUiCopy(sourceText, context?.role ?? null))) {
+    return null;
+  }
+
+  const industry = trim(profile.industry);
+  const subIndustry = trim(profile.subIndustry);
+  const lines: string[] = [];
+  if (industry) lines.push(`- Industry: ${industry}`);
+  if (subIndustry) lines.push(`- Sub-industry: ${subIndustry}`);
+  if (lines.length === 0) return null;
+
+  return [
+    "Domain context (use only when it helps terminology and wording; do NOT translate or output this block):",
     ...lines,
   ].join("\n");
 }
@@ -711,9 +751,16 @@ function scenePolicyLines(
       if (context.role === "button_label" || context.fieldKind === "ui_label") {
         return [];
       }
-      return ["Write concise storefront marketing copy for shoppers."];
+      return [
+        "Write concise storefront marketing copy for shoppers.",
+        "Prefer concise, native marketing phrasing over literal sentence-by-sentence mapping.",
+        "Rewrite awkward source-language structures into natural storefront copy when needed.",
+      ];
     case "announcement_bar":
-      return ["Keep the message brief and storefront-friendly."];
+      return [
+        "Keep the message brief and storefront-friendly.",
+        "Prefer concise, native marketing phrasing over literal sentence-by-sentence mapping.",
+      ];
     case "navigation_ui":
       if (context.fieldKind === "ui_label") return [];
       return ["Keep labels short, scannable, and familiar to shoppers."];
@@ -723,7 +770,12 @@ function scenePolicyLines(
       if (context.fieldKind === "ui_label") return [];
       return ["Treat this as theme or UI-facing copy; be conservative and consistent."];
     case "editorial_copy":
-      return ["Write naturally for longer-form editorial content while preserving structure and meaning."];
+      return [
+        "Write naturally for longer-form editorial content while preserving structure and meaning.",
+        "Reorganize sentence structure when necessary so the text reads as if originally written in the target language.",
+        "Keep paragraph flow smooth and coherent for native readers.",
+        "Prefer native rhetorical flow over source-language sentence rhythm when readability would otherwise suffer.",
+      ];
     case "app_embedded_copy":
       return ["Treat this as embedded app/widget copy; be clear and natural without extra marketing language."];
     case "config_like":
@@ -735,6 +787,12 @@ function scenePolicyLines(
     case "seo_copy":
       return ["Preserve keyword intent while avoiding awkward keyword stuffing."];
     case "product_catalog":
+      return [
+        "Use wording and collocations familiar to shoppers in this product category.",
+        "Prefer domain-appropriate terminology commonly used by professionals in the target market.",
+        "When a literal rendering sounds stiff, rewrite it naturally without changing any product facts, claims, or specifications.",
+        "Keep product benefits clear, concrete, and native-sounding.",
+      ];
     default:
       return [];
   }
@@ -742,10 +800,46 @@ function scenePolicyLines(
 
 function normalizeShopContext(profile: ShopPromptContext | null | undefined): ShopPromptContext | null {
   if (!profile) return null;
-  if (!trim(profile.brandTone) && !trim(profile.brandPositioning)) {
+  if (
+    !trim(profile.brandTone) &&
+    !trim(profile.brandPositioning) &&
+    !trim(profile.industry) &&
+    !trim(profile.subIndustry)
+  ) {
     return null;
   }
   return profile;
+}
+
+function shouldInjectDomainContext(
+  profile: ShopPromptContext | null,
+  context: Pick<
+    ResolvedTranslationPromptContext,
+    "scene" | "role" | "fieldKind" | "rewriteFreedom" | "audience"
+  > | null,
+  sourceText: string,
+  isShortUiCopy: boolean,
+): boolean {
+  if (!profile || !context || !sourceText) return false;
+  if (context.audience !== "shopper" || context.rewriteFreedom === "strict" || isShortUiCopy) {
+    return false;
+  }
+  if (!trim(profile.industry) && !trim(profile.subIndustry)) return false;
+  if (
+    context.scene !== "product_catalog" &&
+    context.scene !== "editorial_copy" &&
+    context.scene !== "seo_copy"
+  ) {
+    return false;
+  }
+  return (
+    context.fieldKind === "title" ||
+    context.fieldKind === "description" ||
+    context.fieldKind === "body" ||
+    context.role === "caption" ||
+    sourceText.length >= 24 ||
+    countWords(sourceText) >= 5
+  );
 }
 
 function shouldUseCatalogBrandContext(

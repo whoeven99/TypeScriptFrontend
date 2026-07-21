@@ -2487,6 +2487,10 @@ function buildSystemPrompt(
 Translate the content into "${target}".
 Rules:
 - Be accurate and natural for e-commerce
+- Translate for meaning rather than source-language wording
+- Do not mirror the source language sentence structure when it sounds unnatural in the target language
+- Prefer idiomatic phrasing, collocations, and information flow that native speakers naturally use in the target market
+- Remove obvious translationese while preserving all factual meaning
 - If a value is already entirely in "${target}", return it unchanged
 - translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
 - Output literal characters; do NOT HTML-escape. Use ' and " directly — never &#39; or &quot;
