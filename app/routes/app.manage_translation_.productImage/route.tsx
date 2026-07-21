@@ -29,7 +29,6 @@ import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
-  getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
@@ -42,8 +41,6 @@ export const loader = manageTranslationLanguageLoader;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { admin } = adminAuthResult;
-
-  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const productStartCursor: any = JSON.parse(
@@ -430,8 +427,6 @@ const Index = () => {
   const imageFetcher = useFetcher<any>();
   const translateImageFetcher = useFetcher<any>();
   const replaceTranslateImageFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
-
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [menuData, setMenuData] = useState<any>([]);

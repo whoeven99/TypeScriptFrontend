@@ -13,7 +13,6 @@ import {
 } from "../services/cosmosV4.js";
 import { pushHint, setProgress, type HintPayload } from "../services/redisV4.js";
 import { claimNextJobWithFairScheduling } from "../services/fairStageClaim.js";
-import { runTranslateWorker } from "./translateWorker.js";
 import { blobWrite } from "../services/blobV4.js";
 import { purgeAutoJob } from "../services/autoJobCleanup.js";
 import { fetchTranslatableResources } from "../services/shopifyFetch.js";

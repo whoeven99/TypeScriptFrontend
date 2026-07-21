@@ -13,7 +13,6 @@ import {
   Table,
   Input,
 } from "antd";
-import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -27,7 +26,6 @@ import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
-  getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
@@ -43,10 +41,7 @@ export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
-
-  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);

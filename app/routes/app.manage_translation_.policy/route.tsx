@@ -11,7 +11,7 @@ import {
 import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import { authenticate } from "~/shopify.server";
@@ -41,7 +41,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 

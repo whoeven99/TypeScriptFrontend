@@ -66,6 +66,11 @@ export type FetchTranslatableOptions = {
   onPage?: () => Promise<void>;
   /** 外部来源任务（如 TsFrontend）：直接用 job token */
   preferLegacyToken?: boolean;
+  /**
+   * 若提供，跳过全店枚举，直接按这些 GID 拉取（试译单商品等）。
+   * 仅对 ID-based module（如 PRODUCT）生效。
+   */
+  resourceIds?: string[];
 };
 
 type TranslatableNode = {
@@ -730,15 +735,18 @@ export async function fetchTranslatableResources(
   let allResources: TranslatableResource[];
 
   if ((ID_BASED_MODULES as readonly string[]).includes(module)) {
-    const resourceIds = await fetchResourceIdsByQuery(
-      shopDomain,
-      accessToken,
-      module,
-      limitPerType,
-      updatedAtAfter,
-      options.onPage,
-      options.preferLegacyToken ?? false,
-    );
+    const resourceIds =
+      options.resourceIds && options.resourceIds.length > 0
+        ? options.resourceIds
+        : await fetchResourceIdsByQuery(
+            shopDomain,
+            accessToken,
+            module,
+            limitPerType,
+            updatedAtAfter,
+            options.onPage,
+            options.preferLegacyToken ?? false,
+          );
     if (resourceIds.length === 0) return [];
 
     allResources = await fetchTranslatableResourcesByIds(

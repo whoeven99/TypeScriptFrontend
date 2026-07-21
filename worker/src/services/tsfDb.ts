@@ -121,14 +121,14 @@ export type AutoTranslateShop = {
   targets: string[];
 };
 
-/** 自动扫描用：已迁移到 TSF 且开了自动翻译的店。 */
+/** 自动扫描用：开了自动翻译的店。 */
 export async function listAutoTranslateShops(): Promise<AutoTranslateShop[]> {
-  // 按语言精确取：已迁移店 + 该语言开了自动翻译（ShopTargetLocale）
+  // 按语言精确取：该语言开了自动翻译（ShopTargetLocale）
   const rs = await tsfExecute(
     `SELECT s.shop AS shop, s.primaryLocale AS primaryLocale, t.locale AS target
      FROM ShopTranslationSettings s
      JOIN ShopTargetLocale t ON t.shop = s.shop
-     WHERE s.migratedToTsf = 1 AND t.autoTranslate = 1 AND t.status = 1`,
+     WHERE t.autoTranslate = 1`,
   );
   const byShop = new Map<string, AutoTranslateShop>();
   for (const r of rs.rows) {
@@ -158,8 +158,7 @@ export async function syncShopPrimaryLocaleInTsf(
   if (!primary) return false;
 
   const rs = await tsfExecute({
-    sql:
-      "SELECT primaryLocale FROM ShopTranslationSettings WHERE shop = ? AND migratedToTsf = 1 LIMIT 1",
+    sql: "SELECT primaryLocale FROM ShopTranslationSettings WHERE shop = ? LIMIT 1",
     args: [shop],
   });
   const row = rs.rows[0];

@@ -9,11 +9,26 @@ import {
   Typography,
 } from "antd";
 import Button from "~/ui/components/AppButton";
+<<<<<<< HEAD
 import { useEffect, useState, useRef } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
+=======
+import { useEffect,
+  useState,
+  useRef } from "react";
+import { useFetcher,
+  useLoaderData,
+  useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page,
+  Pagination,
+  Select } from "@shopify/polaris";
+import { ActionFunctionArgs } from "@remix-run/node";
+import { queryNextTransType,
+  queryPreviousTransType } from "~/api/admin";
+>>>>>>> origin/master
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
@@ -42,7 +57,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 

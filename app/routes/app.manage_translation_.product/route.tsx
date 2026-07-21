@@ -44,7 +44,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 const logGraphQLErrorDetail = (context: string, error: unknown) => {
   const e = error as any;

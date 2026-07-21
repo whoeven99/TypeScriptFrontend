@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Input,
-  Table,
   Space,
-  message,
   InputRef,
   Collapse,
   Checkbox,
@@ -15,10 +13,7 @@ import type { CollapseProps } from "antd";
 import Button from "~/ui/components/AppButton";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
-import {
-  LanguagesDataType,
-  ShopLocalesType,
-} from "~/routes/app.language/route";
+import { LanguagesDataType } from "~/routes/app.language/route";
 import { useDispatch, useSelector } from "react-redux";
 import { updateLanguageTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";

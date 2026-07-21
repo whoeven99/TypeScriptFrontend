@@ -250,41 +250,6 @@ export async function deleteJob(shopName: string, jobId: string): Promise<void> 
   }
 }
 
-/** 查找同语言对的终态自动翻译任务（建新任务前清理旧记录用）。 */
-export async function findTerminalAutoJobsForTarget(
-  shopName: string,
-  source: string,
-  target: string,
-): Promise<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">[]> {
-  const terminalStatuses: TranslationV4Status[] = ["COMPLETED", "FAILED", "PAUSED", "CANCELLED"];
-  try {
-    const { resources } = await getContainer()
-      .items.query<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">>(
-        {
-          query: `SELECT c.id, c.shopName, c.blobPrefix FROM c
-                  WHERE c.shopName = @shopName
-                    AND c.source = @source
-                    AND c.target = @target
-                    AND c.taskSource = @autoSource
-                    AND ARRAY_CONTAINS(@terminalStatuses, c.status)`,
-          parameters: [
-            { name: "@shopName", value: shopName },
-            { name: "@source", value: source },
-            { name: "@target", value: target },
-            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
-            { name: "@terminalStatuses", value: terminalStatuses },
-          ],
-        },
-        { partitionKey: shopName },
-      )
-      .fetchAll();
-    return resources ?? [];
-  } catch (err) {
-    console.error("[cosmosV4] findTerminalAutoJobsForTarget failed:", err);
-    return [];
-  }
-}
-
 type StaleEmptyAutoJob = Pick<
   TranslationV4Job,
   "id" | "shopName" | "blobPrefix" | "taskSource" | "status" | "metrics" | "updatedAt"
@@ -310,6 +275,43 @@ export async function findStaleEmptyAutoJobs(
     return resources ?? [];
   } catch (err) {
     console.error("[cosmosV4] findStaleEmptyAutoJobs failed:", err);
+    return [];
+  }
+}
+
+export type RetentionCleanupJob = Pick<
+  TranslationV4Job,
+  "id" | "shopName" | "blobPrefix" | "createdAt" | "status" | "lastHeartbeat"
+>;
+
+/**
+ * 查询超过保留期的旧自动任务（跨 partition，按 createdAt 升序，限量）。
+ * 仅 TsFrontend-Auto；调用方应再做心跳保护等跳过逻辑。
+ */
+export async function findOldJobsForRetentionCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<RetentionCleanupJob[]> {
+  const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<RetentionCleanupJob>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status, c.lastHeartbeat
+                FROM c
+                WHERE c.createdAt < @cutoff
+                  AND c.taskSource = @autoSource
+                ORDER BY c.createdAt ASC
+                OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+          { name: "@limit", value: safeLimit },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findOldJobsForRetentionCleanup failed:", err);
     return [];
   }
 }

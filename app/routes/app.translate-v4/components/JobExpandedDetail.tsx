@@ -142,7 +142,7 @@ export function JobSummaryStats({ job }: { job: TranslationJobProgressSummary })
             {t("v4.job.creditsUsed")}{" "}
             <strong style={{ color: v4Colors.text }}>
               {t("v4.job.creditsShort", {
-                count: formatCreditsCount(credits, i18n.language),
+                formattedCount: formatCreditsCount(credits, i18n.language),
               })}
             </strong>
             <TaskIdSuffix taskId={job.taskId} />
@@ -193,7 +193,7 @@ export function JobCollapsedMeta({ job }: { job: TranslationJobProgressSummary }
   if (job.usedTokens > 0) {
     items.push(
       t("v4.job.creditsShort", {
-        count: formatCreditsCount(credits, i18n.language),
+        formattedCount: formatCreditsCount(credits, i18n.language),
       }),
     );
   } else if (!job.isTerminal) {
@@ -426,7 +426,7 @@ function TranslateWorkingIndicator({
         {moduleLabel ? ` · ${moduleLabel}` : ""}
         {usedCredits > 0
           ? ` · ${t("v4.job.creditsUsedShort", {
-              count: formatCreditsCount(usedCredits, i18n.language),
+              formattedCount: formatCreditsCount(usedCredits, i18n.language),
             })}`
           : ""}
         <span className="v4-dots" />

@@ -2,6 +2,7 @@ import { hostname } from "os";
 import {
   claimShopScanJob,
   findPendingShopScanJobs,
+  findRecentShopScanJobs,
   getShopScanJob,
   heartbeatShopScan,
   setShopScanStage,
@@ -11,7 +12,11 @@ import {
   type ShopScanStageName,
   type ShopScanStageState,
   type ShopScanSummary,
+<<<<<<< HEAD
   type ShopScanTask,
+=======
+  type ShopScanTrigger,
+>>>>>>> origin/master
 } from "../services/shopScanCosmos.js";
 import {
   popShopScanHint,
@@ -45,6 +50,7 @@ const WORKER_ID = `shopscan-${process.env.HOSTNAME ?? hostname()}-${process.pid}
 const DRAIN_MAX = Math.max(1, Number(process.env.SHOP_SCAN_DRAIN_MAX) || 3);
 const HEARTBEAT_THROTTLE_MS = 20_000;
 
+<<<<<<< HEAD
 function buildProfileWorkspacePrefix(shop: string): string {
   return `shop-scan/${shop}/profile-workspace`;
 }
@@ -52,6 +58,12 @@ function buildProfileWorkspacePrefix(shop: string): string {
 function buildGlossaryWorkspacePrefix(shop: string): string {
   return `shop-scan/${shop}/glossary-workspace`;
 }
+=======
+/** 计量阶段：安装/定时默认跑。 */
+const METRICS_STAGES: readonly ShopScanStageName[] = ["contentSize", "coverage"];
+/** AI 阶段：仅手动触发。 */
+const AI_STAGES: readonly ShopScanStageName[] = ["profile", "glossary"];
+>>>>>>> origin/master
 
 /** shop_scan Cosmos 是否配置（未配置则整个 worker 空跑）。 */
 function cosmosConfigured(): boolean {
@@ -60,6 +72,21 @@ function cosmosConfigured(): boolean {
 
 /** 抛出以请求「整任务重新入队」（可恢复错误 + 仍有重试次数）。 */
 class RequeueSignal extends Error {}
+
+function isMetricsTrigger(trigger: ShopScanTrigger): boolean {
+  return trigger === "install" || trigger === "scheduled";
+}
+
+function stagesForTrigger(trigger: ShopScanTrigger): {
+  run: readonly ShopScanStageName[];
+  skip: readonly ShopScanStageName[];
+} {
+  if (isMetricsTrigger(trigger)) {
+    return { run: METRICS_STAGES, skip: AI_STAGES };
+  }
+  // manual（及其它）：只跑 AI
+  return { run: AI_STAGES, skip: METRICS_STAGES };
+}
 
 export async function runShopScanWorker(): Promise<void> {
   if (isShuttingDown()) return;
@@ -121,13 +148,99 @@ function makeHeartbeat(shop: string, scanId: string): () => Promise<void> {
   };
 }
 
+type ShopScanStagesMutable = ShopScanJob["stages"];
+
+async function markSkipped(
+  shop: string,
+  scanId: string,
+  stages: ShopScanStagesMutable,
+  names: readonly ShopScanStageName[],
+): Promise<void> {
+  for (const name of names) {
+    if (stages[name] === "DONE" || stages[name] === "SKIPPED" || stages[name] === "FAILED") {
+      continue;
+    }
+    stages[name] = "SKIPPED";
+    await setShopScanStage(shop, scanId, name, "SKIPPED");
+  }
+}
+
+/**
+ * 本 job 跳过的阶段：从同店上一份有效 summary 合并过来，保证 getLatest 仍有完整「当前生效」数据。
+ */
+async function mergePreviousSummaryForSkipped(args: {
+  shop: string;
+  scanId: string;
+  stages: ShopScanStagesMutable;
+  summary: ShopScanSummary;
+}): Promise<Partial<ShopScanSummary> | null> {
+  const { shop, scanId, stages, summary } = args;
+  const needMetrics =
+    (stages.contentSize === "SKIPPED" && summary.moduleStats == null) ||
+    (stages.coverage === "SKIPPED" && summary.coverage == null);
+  const needAi =
+    (stages.profile === "SKIPPED" && summary.profileStrategy == null) ||
+    (stages.glossary === "SKIPPED" && summary.glossarySuggestions == null);
+  if (!needMetrics && !needAi) return null;
+
+  const previous = await findPreviousSummaryJob(shop, scanId);
+  if (!previous?.summary) return null;
+
+  const merged: Partial<ShopScanSummary> = {};
+  const prev = previous.summary;
+
+  if (stages.contentSize === "SKIPPED") {
+    if (summary.totalItems == null && prev.totalItems != null) merged.totalItems = prev.totalItems;
+    if (summary.totalChars == null && prev.totalChars != null) merged.totalChars = prev.totalChars;
+    if (summary.moduleStats == null && prev.moduleStats != null) {
+      merged.moduleStats = prev.moduleStats;
+    }
+  }
+  if (stages.coverage === "SKIPPED" && summary.coverage == null && prev.coverage != null) {
+    merged.coverage = prev.coverage;
+  }
+  if (
+    stages.profile === "SKIPPED" &&
+    summary.profileStrategy == null &&
+    prev.profileStrategy != null
+  ) {
+    merged.profileStrategy = prev.profileStrategy;
+  }
+  if (stages.glossary === "SKIPPED") {
+    if (summary.glossaryCount == null && prev.glossaryCount != null) {
+      merged.glossaryCount = prev.glossaryCount;
+    }
+    if (summary.glossarySuggestions == null && prev.glossarySuggestions != null) {
+      merged.glossarySuggestions = prev.glossarySuggestions;
+    }
+  }
+
+  return Object.keys(merged).length > 0 ? merged : null;
+}
+
+async function findPreviousSummaryJob(
+  shop: string,
+  excludeScanId: string,
+): Promise<ShopScanJob | null> {
+  const recent = await findRecentShopScanJobs(shop, 5);
+  return (
+    recent.find(
+      (j) => j.id !== excludeScanId && j.summary && Object.keys(j.summary).length > 0,
+    ) ?? null
+  );
+}
+
 async function runScanStages(job: ShopScanJob): Promise<void> {
   const shop = job.shopName;
   const scanId = job.id;
   const task = job.task;
   const heartbeat = makeHeartbeat(shop, scanId);
   const attemptsExhausted = job.attempts >= SHOP_SCAN_MAX_ATTEMPTS;
+<<<<<<< HEAD
   const taskStage = stageNameForTask(task);
+=======
+  const { run: stagesToRun, skip: stagesToSkip } = stagesForTrigger(job.trigger);
+>>>>>>> origin/master
 
   const accessToken = await getOfflineAccessTokenFromTsf(shop);
   if (!accessToken) {
@@ -149,6 +262,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
   const stages = { ...job.stages };
   let skipReason: string | null = null;
 
+<<<<<<< HEAD
   type TaskRunResult =
     | ShopScanStageState
     | {
@@ -158,6 +272,16 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
       };
 
   const runTask = async (fn: () => Promise<TaskRunResult>): Promise<void> => {
+=======
+  await markSkipped(shop, scanId, stages, stagesToSkip);
+
+  const runStage = async (
+    name: ShopScanStageName,
+    fn: () => Promise<ShopScanStageState | { state: ShopScanStageState; summary?: Partial<ShopScanSummary> }>,
+  ): Promise<void> => {
+    if (!stagesToRun.includes(name)) return;
+    if (stages[name] === "DONE" || stages[name] === "SKIPPED") return; // 幂等：已完成阶段跳过
+>>>>>>> origin/master
     try {
       const result = await fn();
       const state = typeof result === "string" ? result : result.state;
@@ -184,6 +308,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
   };
 
   try {
+<<<<<<< HEAD
     await runTask(async () => {
       switch (task) {
         case "content_size": {
@@ -340,6 +465,69 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
           };
         }
       }
+=======
+    await runStage("contentSize", async () => {
+      const r = await runContentSizeStage({
+        shop,
+        accessToken,
+        primaryLocale,
+        blobPrefix: job.blobPrefix,
+        heartbeat,
+      });
+      return {
+        state: "DONE",
+        summary: {
+          totalItems: r.totalItems,
+          totalChars: r.totalChars,
+          moduleStats: r.moduleStats,
+        },
+      };
+    });
+
+    await runStage("coverage", async () => {
+      const r = await runCoverageStage({
+        shop,
+        accessToken,
+        primaryLocale,
+        locales,
+        blobPrefix: job.blobPrefix,
+        heartbeat,
+      });
+      return { state: r.status === "done" ? "DONE" : "SKIPPED", summary: { coverage: r.coverage } };
+    });
+
+    await runStage("profile", async () => {
+      const r = await runProfileStage({
+        shop,
+        accessToken,
+        primaryLocale,
+        locales,
+        scanId,
+        blobPrefix: job.blobPrefix,
+        heartbeat,
+      });
+      return r.status === "done"
+        ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
+        : "SKIPPED";
+    });
+
+    await runStage("glossary", async () => {
+      const r = await runGlossaryStage({
+        shop,
+        accessToken,
+        primaryLocale,
+        locales,
+        blobPrefix: job.blobPrefix,
+        heartbeat,
+      });
+      return {
+        state: r.status === "done" ? "DONE" : "SKIPPED",
+        summary: {
+          glossaryCount: r.glossaryCount,
+          glossarySuggestions: r.glossarySuggestions,
+        },
+      };
+>>>>>>> origin/master
     });
   } catch (signal) {
     if (signal instanceof RequeueSignal) {
@@ -349,6 +537,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
     throw signal;
   }
 
+<<<<<<< HEAD
   // 画像相关任务收尾：确保画像扫描指针更新。
   if (
     task === "profile_material" ||
@@ -359,6 +548,17 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
     task === "style_material" ||
     task === "profile_ai"
   ) {
+=======
+  // 跳过阶段的 summary 从上一份合并，避免 manual/计量交叉后 latest 丢字段
+  const carried = await mergePreviousSummaryForSkipped({ shop, scanId, stages, summary });
+  if (carried) {
+    Object.assign(summary, carried);
+    await updateShopScanJob(shop, scanId, { summary: carried });
+  }
+
+  // 扫描收尾：确保画像扫描指针写入（profile 跳过时也记录一次）
+  if (stages.profile !== "DONE") {
+>>>>>>> origin/master
     try {
       await touchShopProfileScan(shop, scanId);
     } catch {
@@ -380,9 +580,13 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
     errorStage: taskState === "FAILED" ? taskStage : null,
   });
   console.log(
+<<<<<<< HEAD
     `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} task=${task} stages=${JSON.stringify(stages)}${
       skipReason ? ` reason=${skipReason}` : ""
     }`,
+=======
+    `[shopScan] ${finalStatus} shop=${shop} scan=${scanId} trigger=${job.trigger} stages=${JSON.stringify(stages)}`,
+>>>>>>> origin/master
   );
 }
 

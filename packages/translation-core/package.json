@@ -3,64 +3,64 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": ".build/index.js",
+  "types": ".build/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./.build/index.d.ts",
+      "import": "./.build/index.js"
     },
     "./llm-translate": {
-      "types": "./dist/llmTranslate.d.ts",
-      "import": "./dist/llmTranslate.js"
+      "types": "./.build/llmTranslate.d.ts",
+      "import": "./.build/llmTranslate.js"
     },
     "./sync-translate": {
-      "types": "./dist/syncTranslate.d.ts",
-      "import": "./dist/syncTranslate.js"
+      "types": "./.build/syncTranslate.d.ts",
+      "import": "./.build/syncTranslate.js"
     },
     "./runtime": {
-      "types": "./dist/runtime.d.ts",
-      "import": "./dist/runtime.js"
+      "types": "./.build/runtime.d.ts",
+      "import": "./.build/runtime.js"
     },
     "./translation-memory": {
-      "types": "./dist/translationMemory.d.ts",
-      "import": "./dist/translationMemory.js"
+      "types": "./.build/translationMemory.d.ts",
+      "import": "./.build/translationMemory.js"
     },
     "./html-translate": {
-      "types": "./dist/htmlTranslate.d.ts",
-      "import": "./dist/htmlTranslate.js"
+      "types": "./.build/htmlTranslate.d.ts",
+      "import": "./.build/htmlTranslate.js"
     },
     "./json-extract-rules": {
-      "types": "./dist/jsonExtractRules.d.ts",
-      "import": "./dist/jsonExtractRules.js"
+      "types": "./.build/jsonExtractRules.d.ts",
+      "import": "./.build/jsonExtractRules.js"
     },
     "./placeholder-mask": {
-      "types": "./dist/placeholderMask.d.ts",
-      "import": "./dist/placeholderMask.js"
+      "types": "./.build/placeholderMask.d.ts",
+      "import": "./.build/placeholderMask.js"
     },
     "./target-language-prompt": {
-      "types": "./dist/targetLanguagePrompt.d.ts",
-      "import": "./dist/targetLanguagePrompt.js"
+      "types": "./.build/targetLanguagePrompt.d.ts",
+      "import": "./.build/targetLanguagePrompt.js"
     },
     "./translate-quality": {
-      "types": "./dist/translateQuality.d.ts",
-      "import": "./dist/translateQuality.js"
+      "types": "./.build/translateQuality.d.ts",
+      "import": "./.build/translateQuality.js"
     },
     "./translation-field-limits": {
-      "types": "./dist/translationFieldLimits.d.ts",
-      "import": "./dist/translationFieldLimits.js"
+      "types": "./.build/translationFieldLimits.d.ts",
+      "import": "./.build/translationFieldLimits.js"
     },
     "./translation-filter": {
-      "types": "./dist/translationFilter/index.d.ts",
-      "import": "./dist/translationFilter/index.js"
+      "types": "./.build/translationFilter/index.d.ts",
+      "import": "./.build/translationFilter/index.js"
     },
     "./translation-filter/*": {
-      "types": "./dist/translationFilter/*.d.ts",
-      "import": "./dist/translationFilter/*.js"
+      "types": "./.build/translationFilter/*.d.ts",
+      "import": "./.build/translationFilter/*.js"
     }
   },
   "files": [
-    "dist"
+    ".build"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json"

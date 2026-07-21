@@ -18,6 +18,8 @@ right route, server helper, worker, extension, script, or Prisma model.
    rewrite whole files for encoding cleanup unless explicitly asked.
 7. For Shopify, billing, quota, worker, and live-store writeback changes, verify
    the smallest meaningful path and report any remaining risk.
+8. `AGENTS.md` is the current root repo index. Do not assume a separate
+   `Agent.md` exists unless it has been restored in the live checkout.
 
 ## Project Overview
 
@@ -156,6 +158,8 @@ execution docs that were consolidated into this file.
 - `/app/glossary`: `app/routes/app.glossary/route.tsx`.
 - `/app/pricing`: `app/routes/app.pricing/route.tsx`.
 - `/app/shop-profile`: `app/routes/app.shop-profile/route.tsx`; nav is hidden in production.
+- Treat an `app/routes/app.*` directory without a route file as inactive until a
+  real `route.tsx` or route module is added.
 
 ### API Routes
 
@@ -201,8 +205,8 @@ Core files:
   `app/server/translateV4/singleTranslate.server.ts` ->
   `packages/translation-core/src/syncTranslate.ts` / `llmTranslate.ts`.
 - Shared translation rules and safeguards live in
-  `packages/translation-core/src/*`. App-side `*.server.ts` compatibility files
-  and Worker `llmTranslate.ts` / `syncTranslate.ts` are thin adapters/re-exports.
+  `packages/translation-core/src/*`. Worker `llmTranslate.ts` is a thin adapter;
+  App and Worker filter/count callers import translation-core subpaths directly.
 
 Data flow:
 
@@ -229,7 +233,8 @@ Common edits:
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,
   `TaskQueueSection.tsx`, and `JobExpandedDetail.tsx`.
 - Change coverage/counts: inspect `coverage.server.ts`, `itemsCount.server.ts`,
-  and `api.translate-v4.coverage.ts`.
+  `metricsUtils.ts`, worker `itemsCount.ts` / `metricsUtils.ts`, and
+  `api.translate-v4.coverage.ts`.
 - Change copy: update locale JSON and any helper in `v4I18n.ts`.
 
 ### Translation Core And Filters
@@ -242,6 +247,10 @@ Common edits:
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
+
+Translation-core compiles into ignored `packages/translation-core/.build`.
+`packages/translation-core/dist` must not exist locally or in Git; if it appears,
+remove it and fix the command that recreated it.
 
 Filter decision chain:
 
@@ -269,7 +278,8 @@ Entries:
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
   and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
-  and subscription reconciliation schedules.
+  daily v4 job retention cleanup (`cleanupOldJobs`), and subscription
+  reconciliation schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -280,7 +290,8 @@ Pipeline:
 - `worker/src/workers/translateWorker.ts`: translation stage, LLM calls,
   checkpoints, quota, pause/cancel.
 - `worker/src/workers/writebackWorker.ts`: Shopify translation writeback.
-- `worker/src/workers/shopScanWorker.ts`: shop profile scan.
+- `worker/src/workers/shopScanWorker.ts`: shop scan（install/scheduled 计量；
+  manual AI 画像/术语）。
 - `worker/src/workers/emailWorker.ts`: notifications.
 
 Services:
@@ -290,17 +301,32 @@ Services:
 - `worker/src/services/redisV4.ts`: progress, **split auto/manual hint queues**, control keys.
 - `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
-- `worker/src/services/llmTranslate.ts`, `syncTranslate.ts`: thin Worker entry
-  points into `@ciwi/translation-core`.
+- `worker/src/services/shopifyFetch.ts`, `shopifyConcurrency.ts`: Shopify Admin
+  GraphQL fetch and per-shop adaptive concurrency driven by cost bucket / 429
+  feedback; init and writeback use this path.
+- `worker/src/services/llmTranslate.ts`: thin Worker entry point into
+  `@ciwi/translation-core`.
 - `packages/translation-core/src/*`: LLM routing, translation memory, glossary
   injection, HTML/JSON handling, filters, quality rules, placeholders, prompt
   constraints, and field limits shared by App and Worker.
+- `worker/src/services/itemsCount.ts`, `metricsUtils.ts`: worker-side count and
+  metric reconciliation helpers kept aligned with `app/server/translateV4/*`.
 - `worker/src/services/userFacingMessages.ts`: Worker status messages.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
+- `worker/src/services/finalizeJobAfterWriteback.ts`: post-writeback final status
+  selection and Redis `items_count` refresh for completed jobs.
+- `worker/src/services/translationReport.ts` and
+  `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
+  for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
+- `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
+  **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7). Manual
+  jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job / per-blob
+  delays; skips jobs with a fresh worker heartbeat. Scheduled from
+  `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
 - `worker/src/services/shopScan/*`: shop profile scan stages.
@@ -331,6 +357,18 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
+  `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
+  `V4_JOB_RETENTION_DAYS` (default 7),
+  `V4_JOB_RETENTION_CLEANUP_TZ` (default `Asia/Shanghai`),
+  `V4_JOB_RETENTION_CLEANUP_HOUR` / `V4_JOB_RETENTION_CLEANUP_MINUTE`
+  (default 15:00 Asia/Shanghai),
+  `V4_JOB_RETENTION_CLEANUP_MAX_PER_RUN` (default 150),
+  `V4_JOB_RETENTION_CLEANUP_DELAY_MS` (default 1000 between jobs),
+  `V4_JOB_RETENTION_BLOB_DELETE_DELAY_MS` (default 50 between blobs),
+  `V4_JOB_RETENTION_CLEANUP_QUERY_BATCH`,
+  `V4_JOB_RETENTION_HEARTBEAT_GRACE_MS`.
+  Code: `worker/src/services/cleanupOldJobs.ts`.
 - Render prod error digest → Feishu:
   `RENDER_API_KEY`, `FEISHU_WEBHOOK_URL_RENDER_DIGEST`,
   `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 30m),
@@ -345,14 +383,13 @@ Important env names only:
 
 Models:
 
-- `ShopBillingBinding`: `legacy` vs `tsf` ownership.
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
 
 Code:
 
 - `app/server/billing/index.server.ts`: billing barrel exports.
-- `app/server/billing/binding/resolveBillingBinding.server.ts`: ownership routing.
+- `app/server/billing/binding/resolveBillingBinding.server.ts`: TSF account initialization helper.
 - `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing.
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
@@ -379,9 +416,8 @@ Quota work must check:
 Billing notes:
 
 - Runtime billing, quota reads/deductions, and Shopify billing webhooks use TSF
-  Turso. `ShopBillingBinding.billingSystem` and `BILLING_SYSTEM.LEGACY` remain as
-  compatibility data/types; `resolveBillingBinding()` defaults missing rows to
-  `tsf`, but existing binding rows are still returned unchanged.
+  Turso. TSF account initialization is now keyed by `Account`; the old
+  `ShopBillingBinding` marker table has no runtime callers.
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
@@ -495,14 +531,24 @@ Glossary:
 - Worker injection: `worker/src/services/glossary.ts` is loaded by
   `worker/src/services/llmTranslate.ts` for batch and single-field prompts.
 
-Shop Profile:
+Shop Profile / Shop Scan:
 
-- Page: `app/routes/app.shop-profile/route.tsx`.
+- Page (non-prod debug): `app/routes/app.shop-profile/route.tsx`.
 - API: `app/routes/api.shop-profile.ts`.
-- Server: `app/server/shopScan/*`.
+- Trigger: `app/server/shopScan/trigger.server.ts`（`enqueueShopScan`）。
+- Cosmos: `app/server/shopScan/cosmos.server.ts` /
+  `worker/src/services/shopScanCosmos.ts`（容器 `shop_scan_jobs`）。
 - Worker: `worker/src/workers/shopScanWorker.ts`,
   `worker/src/services/shopScan/*`.
-- Model: `ShopProfile`.
+- Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
+  `items_count`。
+- Trigger split:
+  - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
+    `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
+  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。
+  - `manual`（调试页按钮）：只跑 `profile` + `glossary`（AI）；跳过计量阶段，
+    并从上一份 summary 合并计量字段，保证 `getLatestShopScanJob` 仍完整。
+- Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:
 
@@ -536,7 +582,7 @@ Support chat:
 Current models:
 
 - `Session`: Shopify session storage.
-- `ShopTranslationSettings`: per-shop translation settings and migration flag.
+- `ShopTranslationSettings`: per-shop translation settings.
 - `ShopTargetLocale`: per-shop target locale and auto-translate flag.
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
@@ -545,7 +591,6 @@ Current models:
 - `IpRedirection`: IP/region redirect settings.
 - `PageFlyTranslation`: PageFly translations.
 - `LiquidRule`: custom Liquid translation rules.
-- `ShopBillingBinding`: legacy/TSF billing ownership.
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
 - `SupportConversation`, `SupportMessage`: support chat.
@@ -617,9 +662,12 @@ For "合入PR然后发布测试环境", the script will:
 | --- | --- | --- |
 | Translation v4 UI | `app/routes/app.translate-v4/route.tsx` | `components/*`, `v4I18n.ts`, locales |
 | Create task failure | `app/lib/createTranslateV4Tasks.ts` | `api.translate-v4.tasks.ts`, quota guard, Cosmos/Redis |
-| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, worker `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
+| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, translation-core `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
 | Pause/resume/cancel bug | `api.translate-v4.task-action.ts` | `resumeStatus.ts`, worker control logic |
+| Post-writeback completion/counts | `worker/src/services/finalizeJobAfterWriteback.ts` | `worker/src/services/itemsCount.ts`, `app/server/translateV4/itemsCount.server.ts`, Redis `items_count` |
+| Worker Shopify throttling | `worker/src/services/shopifyConcurrency.ts` | `worker/src/services/shopifyFetch.ts`, init/writeback callers |
+| Translation quality report | `worker/src/scripts/exportTranslationReport.ts` | `worker/src/services/translationReport.ts`, Blob translate chunks |
 | Quota mismatch | `quotaRouter.server.ts` | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts` |
 | Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*` |
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
@@ -632,7 +680,7 @@ For "合入PR然后发布测试环境", the script will:
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
 | Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
-| Shopify auth/API version | `app/shopify.server.ts` | `app/routes/app.tsx`, auth and webhook routes |
+| Shopify auth/API version | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`） | `app/shopify.server.ts`、`worker/.../shopifyAdminApiVersion.ts`、`shopify.app*.toml` |
 | Deploy config | `shopify.app*.toml` | `Dockerfile*`, Render/GitHub Actions config |
 
 ## Scripts
@@ -647,6 +695,8 @@ Operational root scripts:
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
+- `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
+  recent 72-hour window.
 - `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
@@ -655,8 +705,6 @@ Operational root scripts:
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
-- `scripts/language-locale-data.js`: locale/flag data consumed by switcher
-  assets.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
   scripts.
 
@@ -681,6 +729,8 @@ Worker scripts to keep:
   operational recovery tools.
 - `worker/scripts/auto-tasks-24h-trend.mjs`: auto-translate volume report.
 - `worker/scripts/v4-auto-translate-modules.json`: module catalog fixture/data.
+- `worker/src/scripts/exportTranslationReport.ts`: TypeScript source for the
+  translation quality report command; compiled output lives in `worker/dist/scripts/`.
 
 Temporary script policy:
 
@@ -719,7 +769,6 @@ node --experimental-vm-modules -e "
 | Table | Common Query |
 |-------|-------------|
 | `Account` | `findMany({ where: { shopName } })` — quota/credit state |
-| `ShopBillingBinding` | `findUnique({ where: { shopName } })` — billing ownership |
 | `AppSubscription` | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
 | `ShopTargetLocale` | `findMany({ where: { shopName } })` — auto-translate config |
 | `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher |
@@ -917,6 +966,8 @@ These replace old one-off debug markdown files.
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
 - `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
+- Empty directories under `app/routes/` are not active Remix route modules; confirm
+  a route file exists before documenting or changing a page entry.
 - Runtime billing/quota is TSF Turso, but compatibility binding rows can still
   contain `legacy`; inspect actual callers before deleting the enum/model.
 - Translation v4 state is distributed. State machine changes must consider

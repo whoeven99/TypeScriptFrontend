@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Button, Popover, ActionList } from '@shopify/polaris';
 import { useEditorState } from '@tiptap/react';
 
