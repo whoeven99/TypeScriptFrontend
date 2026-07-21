@@ -45,6 +45,7 @@ import {
   userFacingPauseMessage,
 } from "../services/userFacingMessages.js";
 import { capTranslateUnitsByResources, finalizeTranslateUnitMetricsFromBlob } from "../services/metricsUtils.js";
+import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
 import { runWritebackWorker } from "./writebackWorker.js";
 import {
   stagePoolKindForJob,
@@ -791,6 +792,16 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         });
         await clearControl(jobId);
         await setProgress(jobId, { pausePending: "0", pauseReason: "" });
+        await recordJobUsageSnapshot(
+          {
+            ...(latestAbort ?? job),
+            status: "CANCELLED",
+            metrics: metricsOnAbort,
+            stageTimings: timingsOnAbort,
+            engineUsage: latestAbort?.engineUsage ?? job.engineUsage,
+          },
+          "CANCELLED",
+        );
         console.log(
           `[translate] job=${jobId} 已取消（丢弃已翻译 ${translateDone}/${translateTotal}，${abort.reason}）`,
         );
@@ -882,18 +893,37 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     );
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : String(e);
+    const failTimings = withStageTiming(
+      job.stageTimings,
+      "TRANSLATE",
+      stageStartedAt,
+      new Date().toISOString(),
+    );
+    const latestFail = await getJob(shopName, jobId).catch(() => null);
     await updateJob(shopName, jobId, {
       status: "FAILED",
       errorMessage,
       errorStage: "TRANSLATE",
       claimedBy: null,
-      stageTimings: withStageTiming(
-        job.stageTimings,
-        "TRANSLATE",
-        stageStartedAt,
-        new Date().toISOString(),
-      ),
+      stageTimings: failTimings,
     });
+    await recordJobUsageSnapshot(
+      {
+        ...(latestFail ?? job),
+        status: "FAILED",
+        stageTimings: failTimings,
+        metrics: {
+          ...(latestFail?.metrics ?? job.metrics),
+          usedTokens: Math.max(
+            liveTokens,
+            latestFail?.metrics.usedTokens ?? 0,
+          ),
+          translateDone,
+          translateUnitDone,
+        },
+      },
+      "FAILED",
+    );
     console.error(`[translate] failed job=${jobId}`, e);
   } finally {
     await wakeNextTranslateForShop(shopName).catch((e) => {

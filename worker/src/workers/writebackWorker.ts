@@ -20,6 +20,7 @@ import { runShopifyAdaptive, getShopifyCap } from "../services/shopifyConcurrenc
 import type { HintPayload } from "../services/redisV4.js";
 import { isShuttingDown } from "../shutdown.js";
 import { finalizeJobAfterWriteback } from "../services/finalizeJobAfterWriteback.js";
+import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
 import {
   stagePoolKindForJob,
   stageSlots,
@@ -361,8 +362,9 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
     // 本次写回是「暂停/取消时先写回已翻译」触发的 → 写回完成后据意图收尾。
     const pauseIntent = latestJob?.pauseAfterWriteback ?? job.pauseAfterWriteback;
     if (pauseIntent === "pause" || pauseIntent === "cancel") {
+      const terminalStatus = pauseIntent === "cancel" ? "CANCELLED" : "PAUSED";
       await updateJob(shopName, jobId, {
-        status: pauseIntent === "cancel" ? "CANCELLED" : "PAUSED",
+        status: terminalStatus,
         claimedBy: null,
         // pause：errorStage=TRANSLATE，resume 时重新入队翻译续译剩余资源。
         errorStage: pauseIntent === "pause" ? "TRANSLATE" : null,
@@ -374,8 +376,18 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
         stageTimings: writebackTiming,
         metrics: updatedMetrics,
       });
+      await recordJobUsageSnapshot(
+        {
+          ...(latestJob ?? job),
+          status: terminalStatus,
+          metrics: updatedMetrics,
+          stageTimings: writebackTiming,
+          engineUsage: latestJob?.engineUsage ?? job.engineUsage,
+        },
+        terminalStatus,
+      );
       console.log(
-        `[writeback] done job=${jobId} written=${writebackDone} failed=${writebackFailed} → ${pauseIntent === "cancel" ? "CANCELLED" : "PAUSED"}（暂停/取消时已写回已翻译）`,
+        `[writeback] done job=${jobId} written=${writebackDone} failed=${writebackFailed} → ${terminalStatus}（暂停/取消时已写回已翻译）`,
       );
       return;
     }
@@ -403,14 +415,29 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
       return;
     }
     const errorMessage = e instanceof Error ? e.message : String(e);
+    const failTimings = withStageTiming(
+      job.stageTimings,
+      "WRITEBACK",
+      stageStartedAt,
+      new Date().toISOString(),
+    );
+    const latestFail = await getJob(shopName, jobId).catch(() => null);
     await updateJob(shopName, jobId, {
       status: "FAILED",
       errorMessage,
       errorStage: "WRITEBACK",
       claimedBy: null,
       pauseAfterWriteback: null, // 清掉暂停意图，避免下次写回被误判
-      stageTimings: withStageTiming(job.stageTimings, "WRITEBACK", stageStartedAt, new Date().toISOString()),
+      stageTimings: failTimings,
     });
+    await recordJobUsageSnapshot(
+      {
+        ...(latestFail ?? job),
+        status: "FAILED",
+        stageTimings: failTimings,
+      },
+      "FAILED",
+    );
     console.error(`[writeback] failed job=${jobId}`, e);
   } finally {
     await wakeNextWritebackForShop(shopName).catch((e) => {
