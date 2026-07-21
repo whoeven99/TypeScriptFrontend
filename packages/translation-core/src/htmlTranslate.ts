@@ -86,7 +86,15 @@ const HTML_NESTED_BLOCK_RE =
 const HTML_TABLE_RE = /<table\b[\s\S]*?<\/table>/gi;
 const INLINE_PRESERVE_RE = /<(a|strong|b|em|i|u|span|mark|small|sub|sup)\b/i;
 
-const SKIP_TAGS = new Set(["script", "style", "pre", "code", "noscript"]);
+const SKIP_TAGS = new Set([
+  "script",
+  "style",
+  "pre",
+  "code",
+  "noscript",
+  // Liquid block-tag sentinel from liquidHtmlTranslate.ts — never translate.
+  "ciwi-liq",
+]);
 const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder"] as const;
 
 function isTranslatableAttrValue(value: string): boolean {

@@ -7,13 +7,16 @@
  *
  * Strategy:
  *  1. Replace every Liquid block tag ({% ... %} / {%- ... -%}) with a
- *     numbered sentinel (⟨L0⟩, ⟨L1⟩, …) before HTML parsing.
+ *     void-like HTML element sentinel (`<ciwi-liq n="0"></ciwi-liq>`) before
+ *     HTML parsing. Element sentinels stay in the structural template and are
+ *     never extracted as text nodes — unlike text sentinels (⟨Ln⟩), which used
+ *     to share nodes with human copy and get rewritten by the LLM.
  *  2. Run the existing `htmlNodePartsOf` on the masked content. Text nodes
  *     now contain only real human text plus Liquid output expressions
  *     ({{ ... }}) — the latter are already protected by `maskPlaceholders`
  *     inside the per-part LLM call.
- *  3. After translation + HTML reassembly, restore the sentinels back to the
- *     original Liquid block tags.
+ *  3. After translation + HTML reassembly, restore the element sentinels back
+ *     to the original Liquid block tags.
  *
  * The Liquid output expressions ({{ ... }}) are intentionally left in-place
  * so they remain visible to `maskPlaceholders` when individual text parts are
@@ -26,10 +29,21 @@ import {
   type HtmlNodePlan,
 } from "./htmlTranslate.js";
 
-// ⟨L…⟩ — distinct from ⟦…⟧ used in placeholderMask.ts.
-const LIQUID_SENT_OPEN = "⟨L";
-const LIQUID_SENT_CLOSE = "⟩";
-const LIQUID_SENT_RE = /⟨L(\d+)⟩/g;
+/** Custom element kept in the HTML template; not extracted as a text node. */
+const LIQUID_SENT_TAG = "ciwi-liq";
+
+function liquidSentinel(index: number): string {
+  return `<${LIQUID_SENT_TAG} n="${index}"></${LIQUID_SENT_TAG}>`;
+}
+
+/**
+ * Matches serialized element sentinels after node-html-parser round-trips
+ * (attribute order / quoting may vary; self-closing forms accepted).
+ */
+const LIQUID_SENT_RE = new RegExp(
+  `<${LIQUID_SENT_TAG}\\b[^>]*\\bn\\s*=\\s*["']?(\\d+)["']?[^>]*(?:\\/\\s*>|><\\/${LIQUID_SENT_TAG}>)`,
+  "gi",
+);
 
 /**
  * Matches Liquid block tags including whitespace-strip variants:
@@ -47,7 +61,7 @@ export function isLiquidTemplate(value: string): boolean {
 }
 
 /**
- * Replace every Liquid block tag with a ⟨Ln⟩ sentinel.
+ * Replace every Liquid block tag with an HTML element sentinel.
  * Returns the masked string and the original tokens array (index → original).
  */
 export function maskLiquidBlockTags(value: string): { masked: string; tokens: string[] } {
@@ -56,12 +70,12 @@ export function maskLiquidBlockTags(value: string): { masked: string; tokens: st
   const masked = value.replace(LIQUID_BLOCK_TAG_RE, (match) => {
     const i = tokens.length;
     tokens.push(match);
-    return `${LIQUID_SENT_OPEN}${i}${LIQUID_SENT_CLOSE}`;
+    return liquidSentinel(i);
   });
   return { masked, tokens };
 }
 
-/** Restore ⟨Ln⟩ sentinels back to original Liquid block tags. */
+/** Restore element sentinels back to original Liquid block tags. */
 export function restoreLiquidBlockTags(text: string, tokens: string[]): string {
   LIQUID_SENT_RE.lastIndex = 0;
   return text.replace(LIQUID_SENT_RE, (_m, d: string) => tokens[Number(d)] ?? "");

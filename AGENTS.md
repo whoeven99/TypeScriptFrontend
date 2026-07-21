@@ -252,6 +252,14 @@ Translation-core compiles into ignored `packages/translation-core/.build`.
 `packages/translation-core/dist` must not exist locally or in Git; if it appears,
 remove it and fix the command that recreated it.
 
+`liquid_html` (EMAIL_TEMPLATE / PACKING_SLIP_TEMPLATE HTML with `{% %}`):
+`packages/translation-core/src/liquidHtmlTranslate.ts` masks Liquid **block**
+tags as `<ciwi-liq n="N">` element sentinels so they stay in the HTML template
+and never enter the LLM text pool. Do not revert to text sentinels (`⟨Ln⟩`);
+those shared text nodes with human copy and let the model rewrite `else` /
+`'Default Title'`. Liquid output `{{ ... }}` stays in text and is protected by
+`maskPlaceholders`.
+
 Filter decision chain:
 
 1. Reject blank values.
