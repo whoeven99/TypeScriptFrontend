@@ -244,6 +244,11 @@ Common edits:
 - Runtime ports: `packages/translation-core/src/runtime.ts`.
 - App adapter: `app/server/translateV4/translationCoreRuntime.server.ts`.
 - Worker adapter: `worker/src/services/translationCoreRuntime.ts`.
+- EMAIL / packing-slip Liquid HTML: `packages/translation-core/src/liquidHtmlTranslate.ts`
+  (`liquid_html` klass). Block tags `{% %}` are masked then carried in skipped
+  `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
+  literals like `else` and `Default Title` never enter the LLM text pool;
+  `{{ }}` stays in-place for `maskPlaceholders`.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
