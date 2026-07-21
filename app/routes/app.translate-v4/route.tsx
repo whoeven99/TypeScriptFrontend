@@ -177,16 +177,17 @@ export default function AppTranslateV4() {
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const { plan, isNew } = useSelector(
+  // 分别取原始字段，避免 selector 每次返回新对象触发 react-redux 引用告警
+  const plan = useSelector(
     (state: {
       userConfig?: {
         plan?: { type?: string; isInFreePlanTime?: boolean };
-        isNew?: boolean | null;
       };
-    }) => ({
-      plan: state.userConfig?.plan,
-      isNew: state.userConfig?.isNew ?? null,
-    }),
+    }) => state.userConfig?.plan,
+  );
+  const isNew = useSelector(
+    (state: { userConfig?: { isNew?: boolean | null } }) =>
+      state.userConfig?.isNew ?? null,
   );
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
