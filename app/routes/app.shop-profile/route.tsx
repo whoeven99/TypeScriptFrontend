@@ -458,7 +458,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return json(result);
 };
 
-<<<<<<< HEAD
 const STATUS_COLOR: Record<ShopScanStatus, string> = {
   CREATED: "default",
   QUEUED: "processing",
@@ -468,9 +467,6 @@ const STATUS_COLOR: Record<ShopScanStatus, string> = {
   SKIPPED: "default",
   FAILED: "error",
 };
-
-=======
->>>>>>> origin/master
 const STATUS_LABEL: Record<ShopScanStatus, string> = {
   CREATED: "已创建",
   QUEUED: "排队中",

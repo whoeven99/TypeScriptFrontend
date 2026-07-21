@@ -33,25 +33,10 @@ database.sqlite
 /scripts/out/
 /worker/scripts/tmp/
 /worker/scripts/out/
-
-<<<<<<< HEAD
 # Editor
 /.vscode/
-=======
+
+# Nested build outputs
 /extensions/*/dist
-
-shopify.app.wgw.toml
-
-# Ignore shopify files created during app dev
-.shopify/*
-.shopify.lock
-/.vscode
-app/generated/
-/app/generated
-/scripts/tmp
-/worker/scripts/tmp
-/worker/scripts/out
-/scripts/out
 /packages/translation-core/.build/
 /packages/translation-core/dist/
->>>>>>> origin/master
