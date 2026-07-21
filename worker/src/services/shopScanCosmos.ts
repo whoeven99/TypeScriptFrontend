@@ -362,6 +362,50 @@ export async function hasActiveOrCompletedShopScan(
   }
 }
 
+/** 该店是否已有进行中的 shop scan（任意 trigger），scheduled 入队前跳过用。 */
+export async function hasActiveShopScan(shopName: string): Promise<boolean> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<number>(
+        {
+          query: `SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND c.status IN ('CREATED','QUEUED','SCANNING')`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return (resources[0] ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 该店最近一次计量扫描（install/scheduled）的 createdAt，供整店冷却判断。
+ * manual（纯 AI）不计入冷却。
+ */
+export async function getLatestMetricsScanCreatedAt(
+  shopName: string,
+): Promise<Date | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<{ createdAt: string }>(
+        {
+          query: `SELECT c.createdAt FROM c WHERE c.shopName = @shopName AND c.trigger IN ('install', 'scheduled') ORDER BY c.createdAt DESC OFFSET 0 LIMIT 1`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    const raw = resources[0]?.createdAt;
+    if (!raw) return null;
+    const at = new Date(raw);
+    return Number.isNaN(at.getTime()) ? null : at;
+  } catch {
+    return null;
+  }
+}
+
 /** 新建扫描文档（upsert）。 */
 export async function createShopScanJob(input: {
   scanId: string;
