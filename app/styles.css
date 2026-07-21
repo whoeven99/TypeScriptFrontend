@@ -432,15 +432,42 @@ body {
   color: var(--v4-accent-primary-hover, var(--app-accent-primary-hover));
 }
 
-/* =========================================================================
-   智能翻译 —— 新建任务卡片 Select / 按钮样式（对齐概览卡）
+﻿/* =========================================================================
+   智能翻译 —— 新建任务卡片原生控件 / 按钮样式（对齐概览卡）
    ========================================================================= */
 
-.v4-create-task-card .ant-select .ant-select-selector {
-  min-height: 44px !important;
-  padding: 6px 10px !important;
-  border-radius: 10px !important;
-  align-items: center;
+/* 目标语言搜索：原生 input，避免 Ant Select 搜索框在嵌入页错位抢焦点 */
+.v4-locale-search {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--app-color-border-secondary);
+  border-radius: 10px;
+  background: var(--app-color-surface);
+  color: var(--app-color-text);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.35;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.v4-locale-search::placeholder {
+  color: var(--app-color-text-tertiary);
+  font-weight: 400;
+}
+
+.v4-locale-search:hover {
+  border-color: var(--v4-accent-primary, var(--app-accent-primary));
+}
+
+.v4-locale-search:focus {
+  outline: none;
+  border-color: var(--v4-accent-primary, var(--app-accent-primary));
+  box-shadow: 0 0 0 3px rgba(91, 75, 214, 0.18);
 }
 
 /* AI 模型：原生 select，避免 Ant Select 在嵌入页/折叠区内下拉定位失效 */
@@ -478,69 +505,25 @@ body {
   box-shadow: 0 0 0 3px rgba(91, 75, 214, 0.18);
 }
 
-.v4-create-task-card .ant-select-selection-overflow {
-  gap: 6px;
-}
-
-/* 仅多选 tag 去边框；勿套到单选 selection-item，否则会打坏下拉触发区 */
-.v4-create-task-card .ant-select-multiple .ant-select-selection-item {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  height: auto !important;
-  line-height: 1.4 !important;
-}
-
-.v4-select-tag {
+.v4-native-check {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.v4-select-tag--locale {
-  background: var(--v4-accent-primary-soft, var(--app-accent-primary-soft));
-  color: var(--v4-accent-primary, var(--app-accent-primary));
-}
-
-.v4-select-tag--locale .v4-select-tag__code {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  opacity: 0.85;
-}
-
-.v4-select-tag--module {
-  background: var(--app-color-surface-secondary);
-  color: var(--app-color-text-secondary);
-}
-
-.v4-select-tag__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  margin-left: 2px;
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  line-height: 1;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--app-color-text);
   cursor: pointer;
-  opacity: 0.55;
-  font-family: inherit;
+  user-select: none;
 }
 
-.v4-select-tag__close:hover {
-  opacity: 1;
+.v4-native-check input {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: var(--v4-accent-primary, var(--app-accent-primary));
+  cursor: pointer;
 }
 
 .v4-create-task-card__submit.ant-btn-primary {

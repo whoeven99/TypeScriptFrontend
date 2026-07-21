@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import type { CustomTagProps } from "rc-select/lib/BaseSelect";
-import { Checkbox, Select, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -57,6 +55,7 @@ export function CreateTaskCard({
   const canCreate =
     targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
+  const [localeQuery, setLocaleQuery] = useState("");
 
   const sortedTargetOptions = useMemo(() => {
     return [...targetOptions].sort((a, b) => {
@@ -67,11 +66,19 @@ export function CreateTaskCard({
     });
   }, [targetOptions, targets]);
 
-  const targetSelectOptions = sortedTargetOptions.map((opt) => ({
-    value: opt.value,
-    label: localeShortName(opt.value, opt.label),
-    regionCode: localeRegionCode(opt.value),
-  }));
+  const filteredTargetOptions = useMemo(() => {
+    const q = localeQuery.trim().toLowerCase();
+    if (!q) return sortedTargetOptions;
+    return sortedTargetOptions.filter((opt) => {
+      const label = localeShortName(opt.value, opt.label).toLowerCase();
+      const code = localeRegionCode(opt.value).toLowerCase();
+      return (
+        label.includes(q) ||
+        code.includes(q) ||
+        opt.value.toLowerCase().includes(q)
+      );
+    });
+  }, [sortedTargetOptions, localeQuery]);
 
   const aiModelOptions = useMemo(
     () =>
@@ -87,6 +94,14 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+
+  const toggleTarget = (value: string) => {
+    onTargetsChange(
+      targets.includes(value)
+        ? targets.filter((item) => item !== value)
+        : [...targets, value],
+    );
+  };
 
   const toggleModule = (value: string) => {
     onModulesChange(
@@ -175,25 +190,41 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <Select
-          mode="multiple"
+        <input
+          className="v4-locale-search"
+          type="search"
+          value={localeQuery}
+          onChange={(event) => setLocaleQuery(event.target.value)}
           placeholder={t("v4.createTask.selectTargetLanguages")}
-          value={targets}
-          onChange={onTargetsChange}
-          options={targetSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={(props) => renderLocaleTag(props, targetSelectOptions, t)}
-          optionRender={(option) => (
-            <span>
-              <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
-                {option.data.regionCode}
-              </span>
-              {option.label}
-            </span>
-          )}
+          aria-label={t("v4.createTask.selectTargetLanguages")}
         />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          {filteredTargetOptions.length === 0 ? (
+            <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
+              {t("v4.createTask.noMatchingLocales")}
+            </span>
+          ) : (
+            filteredTargetOptions.map((opt) => {
+              const selected = targets.includes(opt.value);
+              const code = localeRegionCode(opt.value);
+              const name = localeShortName(opt.value, opt.label);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleTarget(opt.value)}
+                  style={localeChipStyle(selected)}
+                >
+                  <span style={{ opacity: 0.85, fontSize: 11, fontWeight: 700 }}>
+                    {code}
+                  </span>
+                  <span>{name}</span>
+                </button>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -270,22 +301,24 @@ export function CreateTaskCard({
               ))}
             </select>
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
-            <Checkbox.Group
-              value={[
-                ...(isCover ? ["cover"] : []),
-                ...(isHandle ? ["handle"] : []),
-              ]}
-              onChange={(values) => {
-                onIsCoverChange(values.includes("cover"));
-                onIsHandleChange(values.includes("handle"));
-              }}
-              style={{ width: "100%" }}
-            >
-              <Space direction="vertical" size={10}>
-                <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
-                <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
-              </Space>
-            </Checkbox.Group>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <label className="v4-native-check">
+                <input
+                  type="checkbox"
+                  checked={isCover}
+                  onChange={(event) => onIsCoverChange(event.target.checked)}
+                />
+                <span>{t("v4.createTask.overwriteExisting")}</span>
+              </label>
+              <label className="v4-native-check">
+                <input
+                  type="checkbox"
+                  checked={isHandle}
+                  onChange={(event) => onIsHandleChange(event.target.checked)}
+                />
+                <span>{t("v4.createTask.translateHandle")}</span>
+              </label>
+            </div>
           </div>
         ) : null}
       </div>
@@ -328,36 +361,11 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-type TargetOption = { value: string; label: string; regionCode: string };
-
-function renderLocaleTag(
-  props: CustomTagProps,
-  options: TargetOption[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-) {
-  const { label, value, closable, onClose } = props;
-  const opt = options.find((item) => item.value === value);
-  const code = opt?.regionCode ?? localeRegionCode(String(value));
-  const name = typeof label === "string" ? label : opt?.label ?? String(value);
-
-  return (
-    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
-      <span className="v4-select-tag__code">{code}</span>
-      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {name}
-      </span>
-      {closable ? (
-        <button
-          type="button"
-          className="v4-select-tag__close"
-          onClick={onClose}
-          aria-label={t("v4.createTask.removeTarget", { name })}
-        >
-          ×
-        </button>
-      ) : null}
-    </span>
-  );
+function localeChipStyle(selected: boolean): CSSProperties {
+  return {
+    ...moduleChipStyle(selected),
+    gap: 6,
+  };
 }
 
 /** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
