@@ -257,17 +257,18 @@ export function CreateTaskCard({
         {advancedOpen ? (
           <div className="v4-advanced-panel" style={{ marginTop: 12, paddingBottom: 14 }}>
             <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
-            <Select
-              className="v4-ai-model-select"
+            <select
+              className="v4-ai-model-native-select"
               value={aiModel}
-              onChange={onAiModelChange}
-              options={aiModelOptions}
-              listHeight={320}
-              popupMatchSelectWidth
-              getPopupContainer={(trigger) => trigger.parentElement ?? document.body}
-              popupClassName="v4-ai-model-select__popup"
-              style={{ width: "100%", marginBottom: 16 }}
-            />
+              onChange={(event) => onAiModelChange(event.target.value)}
+              aria-label={t("v4.createTask.aiModel")}
+            >
+              {aiModelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
             <Checkbox.Group
               value={[

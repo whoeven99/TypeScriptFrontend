@@ -443,24 +443,39 @@ body {
   align-items: center;
 }
 
-/* AI 模型单选：勿改 selector 的 display/position，否则会打坏箭头与下拉定位 */
-.v4-create-task-card .v4-ai-model-select.ant-select-single {
+/* AI 模型：原生 select，避免 Ant Select 在嵌入页/折叠区内下拉定位失效 */
+.v4-ai-model-native-select {
+  display: block;
   width: 100%;
+  min-height: 44px;
+  margin-bottom: 16px;
+  padding: 6px 36px 6px 10px;
+  border: 1px solid var(--app-color-border-secondary);
+  border-radius: 10px;
+  background-color: var(--app-color-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: var(--app-color-text);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.35;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
-.v4-create-task-card .v4-ai-model-select.ant-select-single .ant-select-selector {
-  width: 100%;
-  padding-inline-end: 36px !important;
+.v4-ai-model-native-select:hover {
+  border-color: var(--v4-accent-primary, var(--app-accent-primary));
 }
 
-.v4-create-task-card .v4-ai-model-select.ant-select-single .ant-select-selection-item {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.v4-ai-model-select__popup {
-  z-index: 1100;
+.v4-ai-model-native-select:focus-visible {
+  outline: none;
+  border-color: var(--v4-accent-primary, var(--app-accent-primary));
+  box-shadow: 0 0 0 3px rgba(91, 75, 214, 0.18);
 }
 
 .v4-create-task-card .ant-select-selection-overflow {
