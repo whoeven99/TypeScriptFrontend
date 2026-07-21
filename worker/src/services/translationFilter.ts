@@ -6,4 +6,4 @@ export {
   type ExistingTranslation,
   type IncludeFieldOptions,
   type IncludeFieldV2Context,
-} from "../../../packages/translation-core/dist/translationFilter/index.js";
+} from "@ciwi/translation-core/translation-filter";

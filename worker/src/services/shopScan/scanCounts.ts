@@ -1,5 +1,5 @@
-import { shouldIncludeFieldV2 } from "../../../../packages/translation-core/dist/translationFilter/index.js";
-import { isBlankValue } from "../../../../packages/translation-core/dist/translationFilter/v3Base.js";
+import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
+import { isBlankValue } from "@ciwi/translation-core/translation-filter/v3Base";
 import { shopScanGraphql } from "./graphql.js";
 
 /**

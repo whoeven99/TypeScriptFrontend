@@ -1,5 +1,5 @@
-import { BLACKLIST_WORDS } from "../../../../packages/translation-core/dist/translationFilter/constants.js";
-import { shouldIncludeFieldV2 } from "../../../../packages/translation-core/dist/translationFilter/index.js";
+import { BLACKLIST_WORDS } from "@ciwi/translation-core/translation-filter/constants";
+import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { shopScanGraphql } from "./graphql.js";
 
 /**

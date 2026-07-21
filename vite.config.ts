@@ -5,48 +5,48 @@ import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
-const translationCoreDist = path.resolve(appRoot, "packages/translation-core/dist");
+const translationCoreBuild = path.resolve(appRoot, "packages/translation-core/.build");
 
 const translationCoreAliases = [
   {
     find: "@ciwi/translation-core/translation-filter/v3Base",
-    replacement: path.resolve(translationCoreDist, "translationFilter/v3Base.js"),
+    replacement: path.resolve(translationCoreBuild, "translationFilter/v3Base.js"),
   },
   {
     find: "@ciwi/translation-core/translation-filter",
-    replacement: path.resolve(translationCoreDist, "translationFilter/index.js"),
+    replacement: path.resolve(translationCoreBuild, "translationFilter/index.js"),
   },
   {
     find: "@ciwi/translation-core/translate-quality",
-    replacement: path.resolve(translationCoreDist, "translateQuality.js"),
+    replacement: path.resolve(translationCoreBuild, "translateQuality.js"),
   },
   {
     find: "@ciwi/translation-core/placeholder-mask",
-    replacement: path.resolve(translationCoreDist, "placeholderMask.js"),
+    replacement: path.resolve(translationCoreBuild, "placeholderMask.js"),
   },
   {
     find: "@ciwi/translation-core/target-language-prompt",
-    replacement: path.resolve(translationCoreDist, "targetLanguagePrompt.js"),
+    replacement: path.resolve(translationCoreBuild, "targetLanguagePrompt.js"),
   },
   {
     find: "@ciwi/translation-core/runtime",
-    replacement: path.resolve(translationCoreDist, "runtime.js"),
+    replacement: path.resolve(translationCoreBuild, "runtime.js"),
   },
   {
     find: "@ciwi/translation-core/sync-translate",
-    replacement: path.resolve(translationCoreDist, "syncTranslate.js"),
+    replacement: path.resolve(translationCoreBuild, "syncTranslate.js"),
   },
   {
     find: "@ciwi/translation-core/json-extract-rules",
-    replacement: path.resolve(translationCoreDist, "jsonExtractRules.js"),
+    replacement: path.resolve(translationCoreBuild, "jsonExtractRules.js"),
   },
   {
     find: "@ciwi/translation-core/html-translate",
-    replacement: path.resolve(translationCoreDist, "htmlTranslate.js"),
+    replacement: path.resolve(translationCoreBuild, "htmlTranslate.js"),
   },
   {
     find: "@ciwi/translation-core",
-    replacement: path.resolve(translationCoreDist, "index.js"),
+    replacement: path.resolve(translationCoreBuild, "index.js"),
   },
 ] as const;
 

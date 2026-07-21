@@ -43,7 +43,7 @@ import {
 import {
   buildResolvedPromptContext,
   selectPromptContextBlocks,
-} from "../../../packages/translation-core/dist/promptContextBuilder.js";
+} from "@ciwi/translation-core";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,

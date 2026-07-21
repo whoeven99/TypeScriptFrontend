@@ -1,6 +1,6 @@
 /** Maps our module names to Shopify's TranslatableResourceType enum values */
 import { getShopAccessToken, invalidateShopAccessTokenCache } from "./shopAccessToken.js";
-import { shouldIncludeFieldV2 } from "../../../packages/translation-core/dist/translationFilter/index.js";
+import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { noteShopifyThrottle } from "./shopifyConcurrency.js";
 import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
 
