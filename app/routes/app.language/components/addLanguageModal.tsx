@@ -9,6 +9,7 @@ import {
   Spin,
   Empty,
 } from "antd";
+import type { CollapseProps } from "antd";
 import Button from "~/ui/components/AppButton";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
@@ -23,8 +24,6 @@ import {
   startClientLogTrace,
 } from "~/utils/clientLog";
 import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
-
-const { Panel } = Collapse;
 
 interface AddLanguageModalProps {
   shop: string;
@@ -521,6 +520,63 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     setCheckedCountries(checkedCountries.filter((isoCode) => isoCode !== key));
   };
 
+  const collapseItems = useMemo<CollapseProps["items"]>(
+    () =>
+      filteredLanguages.map((state: any) => ({
+        key: state.name,
+        label: (
+          <>
+            <Checkbox
+              checked={isRegionChecked(state)}
+              indeterminate={isRegionIndeterminate(state)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRegionChange(state, !isRegionChecked(state));
+              }}
+            />
+            <span style={{ marginLeft: 8 }}>{state.name}</span>
+          </>
+        ),
+        children: state?.countries.map((country: any, index: number) => (
+          <div
+            key={country?.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: 12,
+              marginLeft: 24,
+            }}
+          >
+            <Checkbox
+              checked={checkedCountries.includes(country?.isoCode)}
+              onChange={(e) => handleCountryChange(country, e.target.checked)}
+              style={{ marginRight: 8 }}
+              disabled={selectedLanguagesIscode.includes(country?.isoCode)}
+            />
+            <img
+              key={index}
+              src={country?.flag}
+              alt={`${country?.name} flag`}
+              style={{
+                width: "30px",
+                height: "auto",
+                border: "1px solid #888",
+                borderRadius: "2px",
+                marginRight: 4,
+              }}
+            />
+            <span>{country?.name}</span>
+          </div>
+        )),
+      })),
+    [
+      filteredLanguages,
+      checkedCountries,
+      selectedLanguagesIscode,
+      allSelectedKeys,
+    ],
+  );
+
   return (
     <Modal
       title={t("Select Languages")}
@@ -592,64 +648,11 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
           <Spin />
         </div>
       ) : filteredLanguages.length ? (
-        <Collapse activeKey={activeKeys} onChange={setActiveKeys}>
-          {filteredLanguages.map((state: any) => (
-            <Panel
-              header={
-                <>
-                  <Checkbox
-                    checked={isRegionChecked(state)}
-                    indeterminate={isRegionIndeterminate(state)}
-                    onClick={(e) => {
-                      e.stopPropagation(); // 阻止事件冒泡，防止触发面板展开/收起
-                      handleRegionChange(state, !isRegionChecked(state));
-                    }}
-                    // onChange={(e) => handleRegionChange(state, e.target.checked)}
-                    // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
-                  />
-                  <span style={{ marginLeft: 8 }}>{state.name}</span>
-                </>
-              }
-              key={state.name}
-            >
-              {state?.countries.map((country: any, index: number) => (
-                <div
-                  key={country?.name}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: 12,
-                    marginLeft: 24,
-                  }}
-                >
-                  <Checkbox
-                    checked={checkedCountries.includes(country?.isoCode)}
-                    onChange={(e) =>
-                      handleCountryChange(country, e.target.checked)
-                    }
-                    style={{ marginRight: 8 }}
-                    disabled={selectedLanguagesIscode.includes(
-                      country?.isoCode,
-                    )}
-                  />
-                  <img
-                    key={index} // 为每个 img 标签添加唯一的 key 属性
-                    src={country?.flag}
-                    alt={`${country?.name} flag`}
-                    style={{
-                      width: "30px",
-                      height: "auto",
-                      border: "1px solid #888",
-                      borderRadius: "2px",
-                      marginRight: 4,
-                    }}
-                  />
-                  <span>{country?.name}</span>
-                </div>
-              ))}
-            </Panel>
-          ))}
-        </Collapse>
+        <Collapse
+          activeKey={activeKeys}
+          onChange={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
+          items={collapseItems}
+        />
       ) : (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
