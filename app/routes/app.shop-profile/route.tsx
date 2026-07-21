@@ -575,6 +575,13 @@ const ACTION_GROUP_STYLE: CSSProperties = {
   border: "1px solid var(--app-color-border-secondary)",
   background: "var(--app-color-bg-subtle, #f6f7f9)",
 };
+const SCAN_TAG_STYLE = {
+  bordered: false as const,
+  style: {
+    marginInlineEnd: 0,
+    fontSize: 12,
+  },
+};
 const DENSE_TABLE_PROPS = {
   size: "small" as const,
   scroll: TABLE_SCROLL_X,
