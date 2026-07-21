@@ -443,11 +443,25 @@ body {
   align-items: center;
 }
 
+/* 单选（AI 模型）：保持 antd 横向布局，避免箭头被挤到下一行导致点不开 */
+.v4-create-task-card .ant-select-single .ant-select-selector {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+}
+
+.v4-create-task-card .ant-select-single .ant-select-selection-item {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .v4-create-task-card .ant-select-selection-overflow {
   gap: 6px;
 }
 
-.v4-create-task-card .ant-select-selection-item {
+/* 仅多选 tag 去边框；勿套到单选 selection-item，否则会打坏下拉触发区 */
+.v4-create-task-card .ant-select-multiple .ant-select-selection-item {
   background: transparent !important;
   border: none !important;
   padding: 0 !important;

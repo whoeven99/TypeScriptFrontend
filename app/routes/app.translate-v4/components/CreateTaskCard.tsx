@@ -257,8 +257,10 @@ export function CreateTaskCard({
         <div
           className="v4-collapse"
           style={{
-            maxHeight: advancedOpen ? 420 : 0,
+            // 展开后改为 visible，避免 overflow:hidden 裁切 Ant Select 下拉层
+            maxHeight: advancedOpen ? 640 : 0,
             opacity: advancedOpen ? 1 : 0,
+            overflow: advancedOpen ? "visible" : "hidden",
           }}
         >
           <div style={{ marginTop: 12 }}>
@@ -267,6 +269,9 @@ export function CreateTaskCard({
               value={aiModel}
               onChange={onAiModelChange}
               options={aiModelOptions}
+              listHeight={320}
+              getPopupContainer={() => document.body}
+              styles={{ popup: { root: { zIndex: 1100 } } }}
               style={{ width: "100%", marginBottom: 16 }}
             />
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
