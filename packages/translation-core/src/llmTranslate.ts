@@ -32,6 +32,10 @@ import {
   roundtripHtmlForTest,
   sanitizeHtmlTextTranslation,
 } from "./htmlTranslate.js";
+import {
+  buildPromptContextBlock,
+  buildResolvedPromptContext,
+} from "./promptContextBuilder.js";
 import { enforceTranslateResultLimits } from "./translationFieldLimits.js";
 import {
   maskPlaceholders,
@@ -1568,19 +1572,34 @@ function fieldTier(
   return value.length >= SHORT_PLAIN_THRESHOLD ? "rich" : "trivial";
 }
 
-function poolSignature(order: Engine[], isHandle: boolean): string {
+function poolSignature(
+  order: Engine[],
+  isHandle: boolean,
+  promptProfileId?: string,
+): string {
   const base = order.join(",");
-  return isHandle ? `${HANDLE_POOL_PREFIX}${base}` : base;
+  const scoped = promptProfileId ? `${base}::${promptProfileId}` : base;
+  return isHandle ? `${HANDLE_POOL_PREFIX}${scoped}` : scoped;
 }
 
-function parsePoolSignature(sig: string): { order: Engine[]; isHandle: boolean } {
+function parsePoolSignature(
+  sig: string,
+): { order: Engine[]; isHandle: boolean; promptProfileId: string | null } {
   if (sig.startsWith(HANDLE_POOL_PREFIX)) {
+    const raw = sig.slice(HANDLE_POOL_PREFIX.length);
+    const [orderSig, promptProfileId] = raw.split("::", 2);
     return {
       isHandle: true,
-      order: sig.slice(HANDLE_POOL_PREFIX.length).split(",") as Engine[],
+      order: orderSig.split(",") as Engine[],
+      promptProfileId: promptProfileId ?? null,
     };
   }
-  return { isHandle: false, order: sig.split(",") as Engine[] };
+  const [orderSig, promptProfileId] = sig.split("::", 2);
+  return {
+    isHandle: false,
+    order: orderSig.split(",") as Engine[],
+    promptProfileId: promptProfileId ?? null,
+  };
 }
 
 /** Ordered engine candidates for a tier (primary first, then fallback). */
@@ -2174,6 +2193,7 @@ async function translateItemsRouted(
   shopName: string,
   order: Engine[],
   promptKind: "default" | "handle" = "default",
+  promptContextBlock = "",
   customPrompt = "",
   /** 仅管理页单条翻译：把 LLM 原始返回打到日志。 */
   logSingleTranslate = false,
@@ -2202,14 +2222,15 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
-            : buildSystemPrompt(target, glossary, "", customPrompt);
+            ? buildHandleSystemPrompt(target, glossary, promptContextBlock, customPrompt)
+            : buildSystemPrompt(target, glossary, promptContextBlock, customPrompt);
         if (logSingleTranslate) {
           console.log("[single] prompt", {
             shopName,
             source,
             target,
             promptKind,
+            promptContextBlock,
             customPrompt,
             prompt: systemPrompt,
           });
@@ -2347,6 +2368,7 @@ async function retryPoolFallbacks(
         shopName,
         poolOrder,
         isHandle ? "handle" : "default",
+        "",
         customPrompt,
         logSingleTranslate,
       );
@@ -2427,7 +2449,7 @@ function buildSystemPrompt(
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
     : "";
-  const shopContextBlock = profileBlock ? `\n${profileBlock}\n` : "";
+  const shopContextBlock = profileBlock ? `\nPrompt context:\n${profileBlock}\n` : "";
   const userInstructionBlock = userInstruction.trim()
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
@@ -2464,7 +2486,7 @@ function buildHandleSystemPrompt(
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
     : "";
-  const shopContextBlock = profileBlock ? `\n${profileBlock}\n` : "";
+  const shopContextBlock = profileBlock ? `\nPrompt context:\n${profileBlock}\n` : "";
   const userInstructionBlock = userInstruction.trim()
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
@@ -2815,6 +2837,8 @@ type FieldPlan = {
   digest: string;
   order: Engine[];
   poolSig: string;
+  promptProfileId: string;
+  promptContextBlock: string;
   cacheModel: string;
 } & (
   | { kind: "plain"; parts: string[]; isHandle?: boolean }
@@ -3129,9 +3153,14 @@ export async function translateResources(
   const plans: FieldPlan[] = [];
   // orderSig → (unique text → occurrence count across the chunk).
   const pools = new Map<string, Map<string, number>>();
-  const addUnit = (order: Engine[], text: string, isHandle = false) => {
+  const addUnit = (
+    order: Engine[],
+    text: string,
+    isHandle = false,
+    promptProfileId?: string,
+  ) => {
     if (!isTranslatableLeafText(text)) return;
-    const sig = poolSignature(order, isHandle);
+    const sig = poolSignature(order, isHandle, promptProfileId);
     const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
     occ.set(text, (occ.get(text) ?? 0) + 1);
   };
@@ -3203,6 +3232,14 @@ export async function translateResources(
   for (let wi = 0; wi < fieldWorks.length; wi++) {
     const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
+    const promptContext = buildResolvedPromptContext({
+      module: f.shopifyType ?? null,
+      key: f.key,
+      contentClass: klass === "liquid_html" ? "liquid_html" : (klass as "html" | "json" | "list" | "plain"),
+      shopifyType: f.shopifyType,
+    });
+    const promptProfileId = promptContext.promptProfileId;
+    const promptContextBlock = buildPromptContextBlock(promptContext) ?? "";
     if (!f.value.trim()) {
       logSingleTranslatePath(logSingleTranslate, "skip", {
         reason: "empty_value",
@@ -3282,14 +3319,16 @@ export async function translateResources(
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, promptProfileId)));
       plans.push({
         kind: "html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order, false, promptProfileId),
+        promptProfileId,
+        promptContextBlock,
         cacheModel,
         template,
         nodeParts,
@@ -3300,14 +3339,16 @@ export async function translateResources(
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, promptProfileId)));
       plans.push({
         kind: "liquid_html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order, false, promptProfileId),
+        promptProfileId,
+        promptContextBlock,
         cacheModel,
         template,
         nodeParts,
@@ -3317,14 +3358,16 @@ export async function translateResources(
       const root = tryParseJsonContainer(f.value);
       if (root === undefined) {
         const parts = splitPlainText(f.value);
-        parts.forEach((p) => addUnit(order, p));
+        parts.forEach((p) => addUnit(order, p, false, promptProfileId));
         plans.push({
           kind: "plain",
           resourceId,
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order, false, promptProfileId),
+          promptProfileId,
+          promptContextBlock,
           cacheModel,
           parts,
         });
@@ -3342,10 +3385,10 @@ export async function translateResources(
               slotPlans.push({ ...slot });
               continue;
             }
-            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, promptProfileId)));
             slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
           } else {
-            addUnit(order, slot.text);
+            addUnit(order, slot.text, false, promptProfileId);
             slotPlans.push({ ...slot });
           }
         }
@@ -3355,7 +3398,9 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order, false, promptProfileId),
+          promptProfileId,
+          promptContextBlock,
           cacheModel,
           originalValue: f.value,
           root,
@@ -3371,10 +3416,10 @@ export async function translateResources(
         if (isHtml(el)) {
           const { template, nodeParts } = htmlNodePartsOf(el);
           if (nodeParts.length === 0) continue;
-          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p, false, promptProfileId)));
           elements.push({ index: i, text: el, htmlPlan: { template, nodeParts } });
         } else {
-          addUnit(order, el);
+          addUnit(order, el, false, promptProfileId);
           elements.push({ index: i, text: el });
         }
       }
@@ -3388,7 +3433,9 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order, false, promptProfileId),
+        promptProfileId,
+        promptContextBlock,
         cacheModel,
         originalValue: f.value,
         elements,
@@ -3397,8 +3444,8 @@ export async function translateResources(
       const isHandle = isHandleFieldKey(f.key);
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const poolSig = poolSignature(order, isHandle);
-      parts.forEach((p) => addUnit(order, p, isHandle));
+      const poolSig = poolSignature(order, isHandle, promptProfileId);
+      parts.forEach((p) => addUnit(order, p, isHandle, promptProfileId));
       plans.push({
         kind: "plain",
         resourceId,
@@ -3406,6 +3453,8 @@ export async function translateResources(
         digest: f.digest,
         order,
         poolSig,
+        promptProfileId,
+        promptContextBlock,
         cacheModel,
         parts,
         isHandle,
@@ -3477,6 +3526,8 @@ export async function translateResources(
     const cacheModel = engineModel(order[0]!, aiModel);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
+    const promptContextBlock =
+      plans.find((plan) => plan.poolSig === sig)?.promptContextBlock ?? "";
 
     // 2a. Value-TM prefilter for every unique leaf in this pool.
     if (!skipCacheRead) {
@@ -3525,6 +3576,7 @@ export async function translateResources(
         shopName,
         order,
         isHandle ? "handle" : "default",
+        promptContextBlock,
         customPrompt,
         logSingleTranslate,
       );
