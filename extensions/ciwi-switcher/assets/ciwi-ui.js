@@ -192,11 +192,29 @@ export function renderCurrencyOptions({
   currencySelect,
   currencyData,
   selectedCurrencyCode,
+  fallbackCurrencyCode,
 }) {
   if (!currencySelect) return;
 
+  const normalizedOptions = Array.isArray(currencyData) ? [...currencyData] : [];
+  const knownCurrencyCodes = new Set(
+    normalizedOptions
+      .map((currency) => currency?.currencyCode)
+      .filter(Boolean),
+  );
+  const fallbackCode = fallbackCurrencyCode || selectedCurrencyCode || "";
+
+  if (fallbackCode && !knownCurrencyCodes.has(fallbackCode)) {
+    normalizedOptions.unshift({
+      currencyCode: fallbackCode,
+      symbol: "",
+      exchangeRate: null,
+      primaryStatus: false,
+    });
+  }
+
   currencySelect.innerHTML = "";
-  currencyData.forEach((currency) => {
+  normalizedOptions.forEach((currency) => {
     const optionItem = document.createElement("option");
     optionItem.value = currency?.currencyCode || "";
     optionItem.textContent = currency?.symbol
@@ -268,7 +286,18 @@ export async function initializeCurrency({
     );
   }
   const effectiveSelectedCurrencyCode =
-    selectedCurrency?.currencyCode || selectedCurrencyCode || pageCurrencyCode;
+    selectedCurrency?.currencyCode || pageCurrencyCode || selectedCurrencyCode;
+
+  if (
+    !selectedCurrency &&
+    persistedCurrencyCode &&
+    pageCurrencyCode &&
+    persistedCurrencyCode !== pageCurrencyCode &&
+    typeof localStorage !== "undefined"
+  ) {
+    localStorage.setItem("ciwi_selected_currency", pageCurrencyCode);
+    localStorage.removeItem("ciwi_selected_currency_rate");
+  }
   // 获取新的选择器元素
   const customSelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
@@ -279,6 +308,7 @@ export async function initializeCurrency({
     currencySelect,
     currencyData,
     selectedCurrencyCode: effectiveSelectedCurrencyCode,
+    fallbackCurrencyCode: pageCurrencyCode,
   });
 
   if (currencySelect && effectiveSelectedCurrencyCode) {
