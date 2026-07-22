@@ -12,7 +12,7 @@ import {
   settlePoolsAtRenewal,
 } from "./accountBalance.js";
 import {
-  countGrantsForBillingPeriod,
+  collectGrantedAnnualCreditCycleIndexes,
   decideAnnualCreditGrant,
   getAnnualCreditWindow,
 } from "./annualCreditCycle.js";
@@ -694,6 +694,60 @@ async function loadGrantLogsForSubscription(
   }));
 }
 
+/**
+ * 迁移/空洞场景写入 baseline（creditsDelta=0），
+ * 标记「当前窗口及以前默认已在旧服务发放」，以便下一窗口能正常触发。
+ * 若该 creditCycleIndex 已有记录则不再写入。
+ */
+async function ensureAnnualMigrationBaseline(params: {
+  shop: string;
+  shopifySubscriptionId: string;
+  planKey: string;
+  billingPeriodEnd: Date;
+  creditCycleIndex: number;
+  existingGrantLogs: Array<{ eventType: string; metadata: unknown }>;
+}): Promise<void> {
+  const {
+    shop,
+    shopifySubscriptionId,
+    planKey,
+    billingPeriodEnd,
+    creditCycleIndex,
+    existingGrantLogs,
+  } = params;
+  const already = collectGrantedAnnualCreditCycleIndexes(
+    existingGrantLogs,
+    billingPeriodEnd,
+  );
+  if (already.includes(creditCycleIndex)) return;
+
+  const window = getAnnualCreditWindow(billingPeriodEnd, creditCycleIndex);
+  const now = new Date().toISOString();
+  await getTsfDb().execute({
+    sql: `INSERT INTO BillingLog (
+            id, shop, eventType, planKey, referenceId, creditsDelta, usedCredits, metadata, createdAt
+          ) VALUES (?, ?, 'SUBSCRIPTION_RENEWED', ?, ?, ?, ?, ?, ?)`,
+    args: [
+      randomUUID(),
+      shop,
+      planKey,
+      shopifySubscriptionId,
+      0,
+      null,
+      JSON.stringify({
+        grantKind: "migration_assumed",
+        creditCycleIndex,
+        billingPeriodEnd: billingPeriodEnd.toISOString(),
+        creditWindowStart: window.start.toISOString(),
+        creditWindowEnd: window.end.toISOString(),
+        source: "worker_reconcile",
+        note: "Assume prior annual credit grants already issued elsewhere; no catch-up",
+      }),
+      now,
+    ],
+  });
+}
+
 function resultWithSnapshot(
   base: ReconcileShopResult,
   local?: LocalSubscription | null,
@@ -863,10 +917,13 @@ async function reconcileOneShop(
       shop,
       local.shopifySubscriptionId,
     );
-    const grantedCount = countGrantsForBillingPeriod(grantLogs, currentPeriodEnd);
+    const grantedCycleIndexes = collectGrantedAnnualCreditCycleIndexes(
+      grantLogs,
+      currentPeriodEnd,
+    );
     const decision = decideAnnualCreditGrant({
       currentPeriodEnd,
-      grantedCount,
+      grantedCycleIndexes,
     });
 
     if (decision.action === "grant") {
@@ -908,6 +965,18 @@ async function reconcileOneShop(
         local,
         shopifySub,
       );
+    }
+
+    // 迁移/空洞：写 baseline 标记当前窗已默认发放，下一窗才能按水位+1 触发。
+    if (decision.reason === "migration_assumed_granted" && !dryRun) {
+      await ensureAnnualMigrationBaseline({
+        shop,
+        shopifySubscriptionId: local.shopifySubscriptionId,
+        planKey: plan.planKey,
+        billingPeriodEnd: currentPeriodEnd,
+        creditCycleIndex: decision.currentCycleIndex,
+        existingGrantLogs: grantLogs,
+      });
     }
 
     return resultWithSnapshot(
@@ -1237,6 +1306,14 @@ async function releaseRenewalEmailClaim(logId: string): Promise<void> {
   });
 }
 
+/** Shopify 年/月账期推进才发续费邮件；年付 30 天额度窗发放不发。 */
+function shouldSendReconcileRenewalEmail(result: ReconcileShopResult): boolean {
+  if (result.action !== "renewed") return false;
+  const reason = result.reason ?? "";
+  if (reason.startsWith("annual_credit_cycle_")) return false;
+  return true;
+}
+
 async function sendRenewalEmailForShop(
   shop: string,
   logTag = "[billingReconcile]",
@@ -1326,11 +1403,18 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
 
     for (const result of summary.details) {
       if (result.action === "renewed") {
-        console.log(`[billingReconcile] renewed ${result.shop}`);
-        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
-        void sendRenewalEmailForShop(result.shop).catch((err) =>
-          console.warn(`[billingReconcile] renewal email failed shop=${result.shop}`, err),
+        console.log(
+          `[billingReconcile] renewed ${result.shop}${result.reason ? ` (${result.reason})` : ""}`,
         );
+        if (shouldSendReconcileRenewalEmail(result)) {
+          // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
+          void sendRenewalEmailForShop(result.shop).catch((err) =>
+            console.warn(
+              `[billingReconcile] renewal email failed shop=${result.shop}`,
+              err,
+            ),
+          );
+        }
       } else if (result.action === "activated") {
         console.log(`[billingReconcile] activated ${result.shop}`);
       } else if (result.action === "cancelled") {
@@ -1380,15 +1464,21 @@ export async function runBillingSubscriptionNearDueReconcile(): Promise<void> {
 
     for (const result of summary.details) {
       if (result.action === "renewed") {
-        console.log(`[billingReconcile:nearDue] renewed ${result.shop}`);
-        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
-        void sendRenewalEmailForShop(result.shop, "[billingReconcile:nearDue]").catch(
-          (err) =>
+        console.log(
+          `[billingReconcile:nearDue] renewed ${result.shop}${result.reason ? ` (${result.reason})` : ""}`,
+        );
+        if (shouldSendReconcileRenewalEmail(result)) {
+          // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
+          void sendRenewalEmailForShop(
+            result.shop,
+            "[billingReconcile:nearDue]",
+          ).catch((err) =>
             console.warn(
               `[billingReconcile:nearDue] renewal email failed shop=${result.shop}`,
               err,
             ),
-        );
+          );
+        }
       } else if (result.action === "activated") {
         console.log(`[billingReconcile:nearDue] activated ${result.shop}`);
       } else if (result.action === "cancelled") {

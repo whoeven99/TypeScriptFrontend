@@ -19,6 +19,7 @@ export {
   type SubscriptionPeriodSnapshot,
 } from "./subscription/renewal.server";
 export {
+  collectGrantedAnnualCreditCycleIndexes,
   countGrantsForBillingPeriod,
   decideAnnualCreditGrant,
   getAnnualCreditCycleIndex,

@@ -1,6 +1,11 @@
 /**
  * 年付额度周期纯函数：只从 Shopify/本地 currentPeriodEnd 对齐，禁止用 createdAt。
  * 与 app/server/billing/subscription/annualCreditCycle.server.ts 保持一致。
+ *
+ * 发放策略（禁止历史追补）：
+ * - 看当前时间落在哪个 30 天窗口（creditCycleIndex）
+ * - 仅当该窗恰好是 TSF 水位的下一窗（maxGranted+1）时发放一次
+ * - 无 TSF 周期记录或水位空洞过大 → 默认旧服务已发到当前窗；调用方写 migration_assumed baseline
  */
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
@@ -80,18 +85,34 @@ function samePeriodEndIso(a: string, b: string): boolean {
   return Math.abs(da.getTime() - db.getTime()) < 2000;
 }
 
+function clampCycleIndex(raw: number): number {
+  return Math.max(0, Math.min(MAX_ANNUAL_CREDIT_GRANTS - 1, Math.floor(raw)));
+}
+
+function readCreditCycleIndex(meta: Record<string, unknown>): number | null {
+  const raw = meta.creditCycleIndex;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return clampCycleIndex(raw);
+  }
+  if (typeof raw === "string" && raw.trim() !== "") {
+    const n = Number(raw);
+    if (Number.isFinite(n)) return clampCycleIndex(n);
+  }
+  return null;
+}
+
 /**
- * 统计本 Shopify 年账期内已发放次数（ACTIVATED + RENEWED）。
- * 优先 metadata.billingPeriodEnd === currentPeriodEnd；
- * 若尚无带该字段的日志，则回退计 1 次无 billingPeriodEnd 的 ACTIVATED（legacy 迁移）。
+ * 收集本 Shopify 年账期内已由 TSF 记录的额度窗口索引。
+ * - 需 metadata.billingPeriodEnd 对齐 currentPeriodEnd
+ * - 有 creditCycleIndex 则记该索引；ACTIVATED 无索引时视为 cycle 0（首次 Shopify 账期发放）
+ * - 无 billingPeriodEnd 的 legacy 迁移 ACTIVATED 不计入（由 decide 默认「已发放」）
  */
-export function countGrantsForBillingPeriod(
+export function collectGrantedAnnualCreditCycleIndexes(
   logs: BillingGrantLogLike[],
   currentPeriodEnd: Date,
-): number {
+): number[] {
   const periodEndIso = currentPeriodEnd.toISOString();
-  let withMeta = 0;
-  let legacyActivated = 0;
+  const indexes = new Set<number>();
 
   for (const log of logs) {
     const eventType = String(log.eventType || "");
@@ -103,18 +124,32 @@ export function countGrantsForBillingPeriod(
     }
     const meta = parseMetadata(log.metadata);
     const billingPeriodEnd = meta.billingPeriodEnd;
-    if (typeof billingPeriodEnd === "string" && billingPeriodEnd) {
-      if (samePeriodEndIso(billingPeriodEnd, periodEndIso)) {
-        withMeta += 1;
-      }
+    if (typeof billingPeriodEnd !== "string" || !billingPeriodEnd) {
+      continue;
+    }
+    if (!samePeriodEndIso(billingPeriodEnd, periodEndIso)) {
+      continue;
+    }
+
+    const idx = readCreditCycleIndex(meta);
+    if (idx != null) {
+      indexes.add(idx);
       continue;
     }
     if (eventType === "SUBSCRIPTION_ACTIVATED") {
-      legacyActivated = 1;
+      indexes.add(0);
     }
   }
 
-  return withMeta > 0 ? withMeta : legacyActivated;
+  return [...indexes].sort((a, b) => a - b);
+}
+
+/** @deprecated 使用 collectGrantedAnnualCreditCycleIndexes；保留导出以免外部调用方断裂。 */
+export function countGrantsForBillingPeriod(
+  logs: BillingGrantLogLike[],
+  currentPeriodEnd: Date,
+): number {
+  return collectGrantedAnnualCreditCycleIndexes(logs, currentPeriodEnd).length;
 }
 
 export function getExpectedAnnualGrants(
@@ -131,56 +166,120 @@ export function getExpectedAnnualGrants(
   );
 }
 
-/** 下次额度发放时刻；已满 12 次或已过年账期则 null。 */
+/** 下次额度发放时刻；已覆盖窗口的下一窗起点。 */
 export function getNextAnnualCreditGrantAt(
   currentPeriodEnd: Date,
-  grantedCount: number,
+  grantedCycleIndexes: number[],
 ): Date | null {
-  if (grantedCount >= MAX_ANNUAL_CREDIT_GRANTS) return null;
+  const indexes = [
+    ...new Set(
+      grantedCycleIndexes
+        .filter((i) => typeof i === "number" && Number.isFinite(i))
+        .map((i) => clampCycleIndex(i)),
+    ),
+  ];
+  const nextIndex = indexes.length === 0 ? 0 : Math.max(...indexes) + 1;
+  if (nextIndex >= MAX_ANNUAL_CREDIT_GRANTS) return null;
   const { yearStart, yearEnd } = getAnnualYearWindow(currentPeriodEnd);
-  const next = new Date(yearStart.getTime() + grantedCount * CREDIT_CYCLE_MS);
+  const next = new Date(yearStart.getTime() + nextIndex * CREDIT_CYCLE_MS);
   if (next.getTime() >= yearEnd.getTime()) return null;
   return next;
 }
 
 export type AnnualCreditGrantDecision =
-  | { action: "grant"; creditCycleIndex: number; grantedCount: number }
+  | {
+      action: "grant";
+      creditCycleIndex: number;
+      grantedCount: number;
+      currentCycleIndex: number;
+      expectedGrants: number;
+    }
   | {
       action: "skip";
-      reason: "annual_grants_exhausted" | "not_due_yet";
+      reason:
+        | "annual_grants_exhausted"
+        | "not_due_yet"
+        | "migration_assumed_granted";
       grantedCount: number;
       expectedGrants: number;
+      currentCycleIndex: number;
     };
 
+/**
+ * 是否发放年付额度：
+ * - 只发「已有 TSF 水位的下一窗」（maxGranted+1 === 当前窗）
+ * - 无历史或与水位空洞过大 → 默认旧服务已发到当前窗（不追补）
+ */
 export function decideAnnualCreditGrant(params: {
   now?: Date | number;
   currentPeriodEnd: Date;
-  grantedCount: number;
+  grantedCycleIndexes: number[];
 }): AnnualCreditGrantDecision {
   const now = params.now ?? Date.now();
   const ts = typeof now === "number" ? now : now.getTime();
-  const expected = getExpectedAnnualGrants(ts, params.currentPeriodEnd);
-  const grantedCount = Math.max(0, Math.floor(params.grantedCount));
+  const currentCycleIndex = getAnnualCreditCycleIndex(ts, params.currentPeriodEnd);
+  const expectedGrants = getExpectedAnnualGrants(ts, params.currentPeriodEnd);
+  const grantedCycleIndexes = [
+    ...new Set(
+      params.grantedCycleIndexes
+        .filter((i) => typeof i === "number" && Number.isFinite(i))
+        .map((i) => clampCycleIndex(i)),
+    ),
+  ].sort((a, b) => a - b);
+  const grantedCount = grantedCycleIndexes.length;
 
-  if (grantedCount >= MAX_ANNUAL_CREDIT_GRANTS) {
+  if (grantedCycleIndexes.includes(currentCycleIndex)) {
+    const exhausted =
+      grantedCount >= MAX_ANNUAL_CREDIT_GRANTS ||
+      (currentCycleIndex >= MAX_ANNUAL_CREDIT_GRANTS - 1 &&
+        grantedCycleIndexes.includes(MAX_ANNUAL_CREDIT_GRANTS - 1));
     return {
       action: "skip",
-      reason: "annual_grants_exhausted",
+      reason: exhausted ? "annual_grants_exhausted" : "not_due_yet",
       grantedCount,
-      expectedGrants: expected,
+      expectedGrants,
+      currentCycleIndex,
     };
   }
-  if (grantedCount >= expected) {
+
+  // 无 TSF 周期记录，或水位落后超过 1 窗：默认旧服务已发到当前窗，不追补。
+  if (grantedCycleIndexes.length === 0) {
     return {
       action: "skip",
-      reason: "not_due_yet",
-      grantedCount,
-      expectedGrants: expected,
+      reason: "migration_assumed_granted",
+      grantedCount: 0,
+      expectedGrants,
+      currentCycleIndex,
     };
   }
+
+  const maxGranted = Math.max(...grantedCycleIndexes);
+  if (currentCycleIndex > maxGranted + 1) {
+    return {
+      action: "skip",
+      reason: "migration_assumed_granted",
+      grantedCount,
+      expectedGrants,
+      currentCycleIndex,
+    };
+  }
+
+  // 恰好进入下一窗：只发当前窗一次。
+  if (currentCycleIndex === maxGranted + 1) {
+    return {
+      action: "grant",
+      creditCycleIndex: currentCycleIndex,
+      grantedCount,
+      currentCycleIndex,
+      expectedGrants,
+    };
+  }
+
   return {
-    action: "grant",
-    creditCycleIndex: Math.min(MAX_ANNUAL_CREDIT_GRANTS - 1, grantedCount),
+    action: "skip",
+    reason: "not_due_yet",
     grantedCount,
+    expectedGrants,
+    currentCycleIndex,
   };
 }
