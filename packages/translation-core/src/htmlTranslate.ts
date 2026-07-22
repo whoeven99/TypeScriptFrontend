@@ -24,12 +24,24 @@ const ATTR_HASH_FILENAME_RE =
 
 const BR_PLACEHOLDER = "⟦BR⟧";
 // ASCII 占位符：属性经 node-html-parser 序列化后仍完整保留。
-// 历史上 \x00T{n}\x00 在属性里会变成 u0000T{n}u0000，正则无法还原。
-const TEXT_PLACEHOLDER_PREFIX = "__HXLAT_";
-const TEXT_PLACEHOLDER_SUFFIX = "__";
+// 历史上属性与文本节点共用 __HXLAT_{n}__，会让块合并误把 alt/title
+// 等属性文本当成“可见文本”压成纯文本块。现在显式区分两类占位符。
+const TEXT_PLACEHOLDER_PREFIX = "__HXLAT_TEXT_";
+const ATTR_PLACEHOLDER_PREFIX = "__HXLAT_ATTR_";
+const PLACEHOLDER_SUFFIX = "__";
 
 /** 还原时需兼容的历史占位符（含属性序列化后的 NUL 残骸）。 */
+const TEXT_PLACEHOLDER_RES: readonly RegExp[] = [
+  /__HXLAT_TEXT_(\d+)__/g,
+];
+
+const ATTR_PLACEHOLDER_RES: readonly RegExp[] = [
+  /__HXLAT_ATTR_(\d+)__/g,
+];
+
 const PLACEHOLDER_REPLACE_RES: readonly RegExp[] = [
+  ...TEXT_PLACEHOLDER_RES,
+  ...ATTR_PLACEHOLDER_RES,
   /__HXLAT_(\d+)__/g,
   /⟦T(\d+)⟧/g,
   /\x00T(\d+)\x00/g,
@@ -37,10 +49,14 @@ const PLACEHOLDER_REPLACE_RES: readonly RegExp[] = [
 ];
 
 const HTML_PLACEHOLDER_LEAK_RE =
-  /__HXLAT_\d+__|⟦T\d+⟧|\x00T\d+\x00|u0000T\d+u0000/;
+  /__HXLAT_TEXT_\d+__|__HXLAT_ATTR_\d+__|__HXLAT_\d+__|⟦T\d+⟧|\x00T\d+\x00|u0000T\d+u0000/;
 
 function textPlaceholder(idx: number): string {
-  return `${TEXT_PLACEHOLDER_PREFIX}${idx}${TEXT_PLACEHOLDER_SUFFIX}`;
+  return `${TEXT_PLACEHOLDER_PREFIX}${idx}${PLACEHOLDER_SUFFIX}`;
+}
+
+function attrPlaceholder(idx: number): string {
+  return `${ATTR_PLACEHOLDER_PREFIX}${idx}${PLACEHOLDER_SUFFIX}`;
 }
 
 /** 译文 HTML 中是否仍残留内部占位符（含 TM 缓存的脏数据）。 */
@@ -57,9 +73,9 @@ function replacePlaceholdersInString(value: string, translations: string[]): str
   return out;
 }
 
-function collectPlaceholderIndices(segment: string): number[] {
+function collectTextPlaceholderIndices(segment: string): number[] {
   const indices: number[] = [];
-  for (const re of PLACEHOLDER_REPLACE_RES) {
+  for (const re of TEXT_PLACEHOLDER_RES) {
     re.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(segment)) !== null) {
@@ -116,20 +132,35 @@ function elementTagName(el: HTMLElement): string {
   return (el.rawTagName ?? el.tagName ?? "").toLowerCase();
 }
 
+function walkElementNodes(node: Node, visitor: (el: HTMLElement) => void): void {
+  if (node.nodeType === NodeType.ELEMENT_NODE) {
+    const el = node as HTMLElement;
+    visitor(el);
+    for (const child of [...node.childNodes]) {
+      walkElementNodes(child, visitor);
+    }
+    return;
+  }
+
+  for (const child of [...node.childNodes]) {
+    walkElementNodes(child, visitor);
+  }
+}
+
 /** DOM walk — same idea as Jsoup doc.getAllElements() + textNodes(), skipping script/style. */
 function extractHtmlTextNodes(html: string): { template: string; texts: string[] } {
   const texts: string[] = [];
   const root = parse(html, HTML_PARSE_OPTIONS);
 
-  for (const el of root.querySelectorAll("*")) {
+  walkElementNodes(root, (el) => {
     for (const attr of TRANSLATABLE_ATTRS) {
       const val = el.getAttribute(attr);
       if (val == null || !isTranslatableAttrValue(val)) continue;
       const idx = texts.length;
       texts.push(val.trim());
-      el.setAttribute(attr, textPlaceholder(idx));
+      el.setAttribute(attr, attrPlaceholder(idx));
     }
-  }
+  });
 
   function walkTextNodes(node: Node): void {
     if (node.nodeType === NodeType.TEXT_NODE) {
@@ -162,14 +193,14 @@ function extractHtmlTextNodes(html: string): { template: string; texts: string[]
 export function restoreHtmlTextNodes(template: string, translations: string[]): string {
   const root = parse(template, HTML_PARSE_OPTIONS);
 
-  for (const el of root.querySelectorAll("*")) {
+  walkElementNodes(root, (el) => {
     for (const attr of TRANSLATABLE_ATTRS) {
       const val = el.getAttribute(attr);
       if (val == null || !HTML_PLACEHOLDER_LEAK_RE.test(val)) continue;
       const restored = replacePlaceholdersInString(val, translations);
       if (restored !== val) el.setAttribute(attr, restored);
     }
-  }
+  });
 
   function walkRestore(node: Node): void {
     if (node.nodeType === NodeType.TEXT_NODE) {
@@ -215,8 +246,16 @@ function coalesceBlockTextNodesInner(
 
   const newTemplate = template.replace(blockRe, (full, tag: string, inner: string) => {
     if (HTML_NESTED_BLOCK_RE.test(inner)) return full;
+    // Only coalesce when the block body is effectively just placeholder-backed
+    // text. If markup like <img ... alt="__HXLAT_0__"> is still present,
+    // collapsing would erase the element and leak its attribute text.
+    const innerWithoutPlaceholders = replacePlaceholdersInString(
+      inner,
+      Array.from({ length: texts.length }, () => ""),
+    );
+    if (/<[a-z!/]/i.test(innerWithoutPlaceholders)) return full;
 
-    const indices = collectPlaceholderIndices(inner);
+    const indices = collectTextPlaceholderIndices(inner);
     if (indices.length <= 1) return full;
     if (INLINE_PRESERVE_RE.test(inner)) return full;
 
