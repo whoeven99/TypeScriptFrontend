@@ -113,6 +113,14 @@ export default defineConfig({
   plugins: [
     remix({
       ignoredRouteFiles: ["**/.*"],
+      // 提前对齐 React Router v7 行为，消掉大部分 `shopify app dev` future 警告。
+      // 暂不开 v3_singleFetch：会改 loader 请求形态，单独评估后再开。
+      future: {
+        v3_fetcherPersist: true,
+        v3_relativeSplatPath: true,
+        v3_throwAbortReason: true,
+        v3_lazyRouteDiscovery: true,
+      },
     }),
     tsconfigPaths(),
   ],

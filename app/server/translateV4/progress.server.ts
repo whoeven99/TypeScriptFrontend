@@ -1,5 +1,5 @@
 import { getTranslateV4RedisClient, v4ControlKey, v4ProgressKey, type V4ControlAction } from "./redis.server";
-import { getV4Job, listV4Jobs, updateV4Job } from "./cosmos.server";
+import { getV4Job, listV4Jobs, listV4JobsByTaskSource, updateV4Job } from "./cosmos.server";
 import { escalateStuckPauseIfNeeded } from "./pauseReconcile.server";
 import {
   escalateStuckTranslatingToWritebackIfNeeded,
@@ -17,6 +17,8 @@ import {
   ACTIVE_V4_STATUSES,
   EMPTY_V4_METRICS,
   TERMINAL_V4_STATUSES,
+  isTrialV4TaskSource,
+  isExpandV4TaskSource,
   type StageTimings,
   type TranslationV4Job,
   type TranslationV4Metrics,
@@ -156,7 +158,8 @@ function completedJobProgressPercent(metrics: TranslationV4Metrics): number {
   if (total > 0) {
     return ratioPercent(metrics.writebackDone, total) ?? 0;
   }
-  return 100;
+  // 空跑 COMPLETED（无待译字段）不应显示满进度，否则开拓页会误判为「已译完」。
+  return 0;
 }
 
 /** 当前阶段的进度百分比；终态(非完成)返回 null。 */
@@ -560,6 +563,7 @@ export async function getV4JobProgressSummary(
 /**
  * 任务列表摘要。仅做 Cosmos 查询（不逐条读 Redis，避免列表 N 次往返）；
  * 活跃任务的实时细节由前端逐条轮询 task-progress 获取。
+ * 默认列表排除试译任务（试译仅在 /app/trial-translate 展示）。
  */
 export async function listV4JobSummaries(
   shopName: string,
@@ -567,10 +571,14 @@ export async function listV4JobSummaries(
 ): Promise<TranslationJobProgressSummary[]> {
   const limit = Math.min(Math.max(options?.limit ?? 30, 1), 50);
   const escalateStuck = options?.escalateStuck ?? true;
-  const jobs = await listV4Jobs(shopName, limit);
-  const filtered = options?.taskSource
-    ? jobs.filter((j) => (j.taskSource ?? null) === options.taskSource)
-    : jobs;
+  const jobs = options?.taskSource
+    ? await listV4JobsByTaskSource(shopName, options.taskSource, limit)
+    : (await listV4Jobs(shopName, Math.min(limit + 20, 80))).filter(
+        (j) =>
+          !isTrialV4TaskSource(j.taskSource) &&
+          !isExpandV4TaskSource(j.taskSource),
+      ).slice(0, limit);
+  const filtered = jobs;
   const redisByTaskId = await batchReadRedisForJobs(filtered);
   const summaries: TranslationJobProgressSummary[] = [];
   for (const job of filtered) {

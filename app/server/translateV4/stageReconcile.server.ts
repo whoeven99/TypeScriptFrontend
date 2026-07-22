@@ -13,6 +13,7 @@ import {
 import { reconcileTranslateUnitMetrics } from "./metricsUtils";
 import {
   isAutoV4TaskSource,
+  isTrialV4TaskSource,
   type TranslationV4Job,
   type TranslationV4Metrics,
 } from "./types";
@@ -20,12 +21,14 @@ import {
 /**
  * 翻译资源已全部完成，但 Cosmos 仍停在 TRANSLATING/TRANSLATE_QUEUED（常见于额度暂停→
  * 充值续跑后 worker 竞态或 stale-reset）。由 TSF 代为推进到写回队列。
+ * 试译任务故意停在预览态，绝不自动升写回。
  */
 export async function escalateStuckTranslatingToWritebackIfNeeded(
   shopName: string,
   job: TranslationV4Job,
   metrics: TranslationV4MergedMetrics,
 ): Promise<TranslationV4Job | null> {
+  if (isTrialV4TaskSource(job.taskSource)) return null;
   if (job.status !== "TRANSLATING" && job.status !== "TRANSLATE_QUEUED") {
     return null;
   }

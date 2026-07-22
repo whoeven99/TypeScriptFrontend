@@ -30,16 +30,26 @@ import {
 } from "~/lib/createTranslateV4Tasks";
 import { normalizeShopQuota } from "~/lib/translationQuota";
 import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
-import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
+import {
+  CREATE_TASK_MODULE_OPTIONS,
+  DEFAULT_MODULE_KEYS,
+  DEFAULT_AI_MODEL,
+  FILL_OTHER_MODULE_KEYS,
+} from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
+import { ReadyBand } from "./components/ReadyBand";
 import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
-import { localeRegionCode } from "./localeDisplay";
+import { localeRegionCode, localeShortName } from "./localeDisplay";
 import { formatV4CreateTasksMessage, translateV4Message } from "./v4I18n";
+import {
+  buildUntranslatedRatioByLocale,
+  useCreateTaskEstimate,
+} from "./useCreateTaskEstimate";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
@@ -121,7 +131,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     getCoverageSummaryFromCache({
       shop: session.shop,
       targetLocales,
-      includeRuntimeSignals: false,
+      // "minimal"：补每语言 autoTranslate（就绪带判定「已开自动更新」需要），
+      // 仍跳过 auto-scan 时刻计算，成本可控。
+      includeRuntimeSignals: "minimal",
     }),
   ]);
   const keyDataMs = Date.now() - keyDataStart;
@@ -177,16 +189,16 @@ export default function AppTranslateV4() {
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const { plan, isNew } = useSelector(
+  const plan = useSelector(
     (state: {
       userConfig?: {
         plan?: { type?: string; isInFreePlanTime?: boolean };
-        isNew?: boolean | null;
       };
-    }) => ({
-      plan: state.userConfig?.plan,
-      isNew: state.userConfig?.isNew ?? null,
-    }),
+    }) => state.userConfig?.plan,
+  );
+  const isNew = useSelector(
+    (state: { userConfig?: { isNew?: boolean | null } }) =>
+      state.userConfig?.isNew ?? null,
   );
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
@@ -216,13 +228,18 @@ export default function AppTranslateV4() {
   );
 
   const [targets, setTargets] = useState<string[]>(() =>
-    targetOptions.map((option) => option.value),
+    targetOptions.length > 0 ? [targetOptions[0]!.value] : [],
   );
-  const [moduleKeys, setModuleKeys] = useState<string[]>(DEFAULT_MODULE_KEYS);
+  const [moduleKeys, setModuleKeys] = useState<string[]>(() =>
+    CREATE_TASK_MODULE_OPTIONS.includes("products")
+      ? ["products"]
+      : DEFAULT_MODULE_KEYS.slice(0, 1),
+  );
   const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [guideHint, setGuideHint] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [quotaGateMode, setQuotaGateMode] = useState<
     "trial" | "pricing" | null
@@ -685,6 +702,18 @@ export default function AppTranslateV4() {
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
+  const untranslatedRatioByLocale = useMemo(
+    () => buildUntranslatedRatioByLocale(coverage.locales),
+    [coverage.locales],
+  );
+  const taskEstimate = useCreateTaskEstimate({
+    modules: moduleKeys,
+    targets,
+    isCover,
+    untranslatedRatioByLocale,
+    remainingCredits,
+  });
+
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
     if (typeof window === "undefined") return;
@@ -709,6 +738,42 @@ export default function AppTranslateV4() {
     navigate("/app/language");
   }, [navigate]);
 
+  // 落地时的 ?celebrate=locale（刚毕业锚定这门语言）。
+  // 显隐由 autoTranslate + localStorage 决定；覆盖率数字跟客户端 refresh 走。
+  const celebrateLocale = useMemo(() => {
+    return new URLSearchParams(location.search).get("celebrate")?.trim() || "";
+  }, [location.search]);
+
+  const applyFillModulesGuide = useCallback(
+    (locale: string) => {
+      const loc = locale.trim();
+      if (!loc) return;
+      setTargets([loc]);
+      setModuleKeys(
+        FILL_OTHER_MODULE_KEYS.length > 0
+          ? [...FILL_OTHER_MODULE_KEYS]
+          : DEFAULT_MODULE_KEYS.filter((k) => k !== "products"),
+      );
+      setIsCover(false);
+      const label =
+        coverage.locales.find(
+          (r) => r.locale.trim().toLowerCase() === loc.toLowerCase(),
+        )?.label || loc;
+      setGuideHint(
+        t("v4.createTask.fillGuideHint", {
+          language: localeShortName(loc, label),
+        }),
+      );
+      window.setTimeout(() => {
+        createTaskSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 80);
+    },
+    [coverage.locales, t],
+  );
+
   return (
     <Page>
       <TitleBar title={t("v4.title")} />
@@ -730,6 +795,13 @@ export default function AppTranslateV4() {
           <div className="v4-enter">
             <PageHeaderBar credits={remainingCredits} planType={planType} />
           </div>
+
+          <ReadyBand
+            shop={shop}
+            locales={coverage.locales}
+            celebrate={celebrateLocale}
+            onFillModules={applyFillModulesGuide}
+          />
 
           <div
             style={{
@@ -774,6 +846,7 @@ export default function AppTranslateV4() {
                   onManageLanguages={openLanguagePage}
                   onExpandedChange={setCoverageExpanded}
                   fillPairHeight={!coverageExpanded}
+                  onFillModules={applyFillModulesGuide}
                 />
               </div>
             </div>
@@ -795,6 +868,9 @@ export default function AppTranslateV4() {
                 onIsCoverChange={setIsCover}
                 isHandle={isHandle}
                 onIsHandleChange={setIsHandle}
+                guideHint={guideHint}
+                onDismissGuideHint={() => setGuideHint(null)}
+                estimate={taskEstimate}
               />
             </div>
 

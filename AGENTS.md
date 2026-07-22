@@ -145,11 +145,22 @@ execution docs that were consolidated into this file.
 - `app/routes/publishAction.tsx`: publish/unpublish Shopify locales.
 - `app/routes/_index/route.tsx` and `app/routes/app._index/route.tsx`: root entry
   and embedded `/app` redirect/landing behavior.
+  - `/app` landing: onboarding complete (subscribed + any locale auto) →
+    `/app/translate-v4?celebrate=`；never-subscribed (`isNew`) →
+    `/app/trial-translate`; otherwise → `/app/translate-v4`.
+  - Newbie nav (`isNew` in `app.tsx`): home is trial-translate; primary links
+    are only trial-translate / expand-market / pricing (wizard feel). Full nav
+    returns after first subscription (`isNew=false`); after onboarding complete
+    (`wizardComplete`), trial/expand are removed from nav and their loaders
+    redirect to `/app/translate-v4?celebrate=`.
 - `app/routes/invite/route.tsx`: standalone invite page.
 
 ### Main Pages
 
 - `/app/translate-v4`: `app/routes/app.translate-v4/route.tsx`.
+- `/app/ready`: `app/routes/app.ready/route.tsx`（兼容重定向 → translate-v4 ReadyBand）。
+- `/app/trial-translate`: `app/routes/app.trial-translate/route.tsx`.
+- `/app/expand-market`: `app/routes/app.expand-market/route.tsx`.
 - `/app/language`: `app/routes/app.language/route.tsx`.
 - `/app/manage_translation`: `app/routes/app.manage_translation/route.tsx`.
 - `/app/manage_translation/<module>`: `app/routes/app.manage_translation_.*/route.tsx`.
@@ -170,6 +181,10 @@ execution docs that were consolidated into this file.
 - `/api/storefront/*`: `app/routes/api.storefront.$.ts`, the Shopify App Proxy API.
 - `/api/picture/*`: `app/routes/api.picture.{product,shop,upload,upsert,delete,save-from-url}.ts`.
 - `/api/translate-v4/tasks`: `app/routes/api.translate-v4.tasks.ts`.
+- `/api/trial-translate/tasks`: `app/routes/api.trial-translate.tasks.ts`.
+- `/api/trial-translate/preview`: `app/routes/api.trial-translate.preview.ts`.
+- `/api/trial-translate/save`: `app/routes/api.trial-translate.save.ts`.
+- `/api/expand-market/tasks`: `app/routes/api.expand-market.tasks.ts`.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
@@ -177,6 +192,8 @@ execution docs that were consolidated into this file.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
 - `/api/translate-v4/currency`: `app/routes/api.translate-v4.currency.ts`.
+- `/api/translate-v4/estimate`: `app/routes/api.translate-v4.estimate.ts`
+  （创建任务展示用额度粗估；公式见 `creditEstimate.server.ts`）。
 - `/api/translate-v4/glossary`, `liquid`, `pagefly`, `switcher`,
   `target-locale`: feature-specific translate-v4 APIs.
 
@@ -199,6 +216,8 @@ Core files:
 - Blob helpers: `app/server/translateV4/blob.server.ts`.
 - Types/status rules: `app/server/translateV4/types.ts`.
 - Resume rules: `app/server/translateV4/resumeStatus.ts`.
+- Create-task credit estimate (display): `creditEstimate.server.ts`,
+  `api.translate-v4.estimate.ts`, UI `useCreateTaskEstimate.ts` + CreateTaskCard.
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
   `worker/src/services/moduleCatalog.ts`.
 - Single-field translation: `app/routes/api.translate-v4.single.ts` ->
@@ -207,6 +226,97 @@ Core files:
 - Shared translation rules and safeguards live in
   `packages/translation-core/src/*`. Worker `llmTranslate.ts` is a thin adapter;
   App and Worker filter/count callers import translation-core subpaths directly.
+
+### Trial Translate (single product)
+
+Free single-product trial flow, isolated from regular v4 jobs:
+
+- UI page: `app/routes/app.trial-translate/route.tsx` (`/app/trial-translate`).
+- Components: `app/routes/app.trial-translate/components/*`
+  (`TrialCreateCard`, `TrialPreviewPanels`, `TrialProgressCard`).
+- Create/list: `app/routes/api.trial-translate.tasks.ts`.
+- Preview: `app/routes/api.trial-translate.preview.ts` +
+  `app/server/trialTranslate/preview.server.ts` (returns v4 `summary` for progress UI).
+- Save (user-confirmed writeback): `app/routes/api.trial-translate.save.ts`.
+- Product search: `app/server/trialTranslate/product.server.ts`.
+- Job markers: `taskSource = "TsFrontend-Trial"`, `resourceIds: [productGid]`,
+  `modules: ["PRODUCT"]`, `blobPrefix: tasks/trial/{shop}/{jobId}`.
+- Worker: init honors `resourceIds`; translate stops at `TRANSLATE_DONE` (no
+  auto writeback); save API pushes writeback hint. Main v4 list / blocking /
+  email exclude trial jobs.
+- Free: skips create-task quota guard; worker quota enforce only applies to
+  `TsFrontend` / `TsFrontend-Auto` / `TsFrontend-Expand`.
+- Onboarding: page restores latest non-cancelled trial on load; in-progress UI
+  reuses v4 `ProgressRing` + `MiniStageTrack`; success primary CTA → expand-market.
+- Shared onboarding progress bar (trial → starter → subscribe/auto):
+  `app/lib/onboardingProgress.ts`,
+  `app/server/onboarding/progress.server.ts`,
+  `app/components/OnboardingProgressBar.tsx`. Mounted on trial + expand pages.
+  Funnel ends at subscribed + any locale `autoTranslate`; then progress bar hides
+  and trial/expand redirect to `/app/translate-v4?celebrate=`. Skipping trial
+  is allowed (`preferStarter` on expand page).
+
+### Language ready band (post-onboarding)
+
+Handoff after subscribe + auto-update, embedded on Smart Translate home:
+
+- UI: `app/routes/app.translate-v4/components/ReadyBand.tsx`（`?celebrate=` 锚定语言）。
+- `/app/ready` 仅兼容重定向到 `/app/translate-v4?celebrate=`。
+- 双覆盖率口径（`coverage.server.ts` → `LocaleCoverageRow`）：
+  - `productPercent`：仅 Products 卡片（商品起步包）。
+  - `storePercent`：全模块 `COVERAGE_COUNT_LABELS`；`cacheMissing` 时为 null
+    （不展示假 100%），UI 显示「统计未完整」并引导补齐模块。
+- Primary CTA：补齐其它模块 → 预填非商品模块 + 增量 + 滚到创建任务
+  （`FILL_OTHER_MODULE_KEYS`）；CoverageCard 行内「补齐」同源。
+- 创建任务卡常驻额度预估：`/api/translate-v4/estimate` +
+  `creditEstimate.server.ts`（与开拓市场共用 `estimateCreditsFromChars`）。
+- 次链：术语表 / 切换器（开拓下一语言引导本轮不做）。
+- `/app` 与 trial/expand 在 `loadOnboardingWizardComplete` 时跳转 translate-v4。
+
+### Expand language path (`/app/expand-market`)
+
+New-merchant path focused on **language** (Markets deferred as advanced).
+**Onboarding-only** after funnel complete (loader redirects to translate-v4 ReadyBand).
+
+- UI page: `app/routes/app.expand-market/route.tsx` (`/app/expand-market`).
+- Component: `app/routes/app.expand-market/components/LanguageExpandPanel.tsx`.
+- Starter pack estimate/select: `app/server/expandMarket/starterPack.server.ts`
+  (`buildStarterPackEstimate`).
+- Shared types: `app/lib/expandMarket.ts`.
+- Markets GraphQL helpers still in `app/server/expandMarket/markets.server.ts`
+  (not used by the current language-first UI).
+- Create/list jobs: `app/routes/api.expand-market.tasks.ts`.
+- Job markers: `taskSource = "TsFrontend-Expand"`, `modules: ["PRODUCT"]`,
+  starter mode uses `resourceIds` (top N products), `isCover` defaults to
+  **true** (完整起步包；避免已有译文时 init 空跑仍标 COMPLETED),
+  `blobPrefix: tasks/expand/{shop}/{jobId}`.
+- Flow（一条阶梯）:
+  1. pick language（未发布时点翻译会自动添加并发布）
+  2. **商品起步包**：一次性译全部 PRODUCT（含选项）；估额度 → 买现有加量包 →
+    创建任务（`resourceIds=null`, `isCover` 默认 true）
+  3. 店面预览卡片（最多约 20 个商品，不是翻译上限）
+  4. **成功态推下一步**（仅起步包 `COMPLETED` 且 `translateTotal>0`；进行中不推销）：
+     未订阅主推订阅、次推自动更新；已订阅只推开启自动更新。
+     returnUrl Admin 深链 `…/expand-market?locale=&subscribed=1`。
+  5. **订 + 开启自动更新** → navigate `/app/translate-v4?celebrate=`（引导结束）。
+- UI treats `COMPLETED` with `translateTotal=0` as empty failure, not success.
+- Storefront URL: `onlineStoreUrl` → primaryDomain → `https://{shop}/products/{handle}`；
+  打开店面只加 `?ciwi_locale=`。
+- **Credit estimate**: PRODUCT 起步用 `moduleStats.PRODUCT.chars`；全店建仓用
+  全部 `moduleStats` chars 之和；否则商品 `2500×count`、全店约 `×2.5`。
+  Display only — actual deduct is LLM tokens in worker.
+- Pack purchase: `app/lib/creditPackPricing.ts`；returnUrl
+  `/app/expand-market?locale=&purchased=1`（revalidate）。订阅 returnUrl
+  优先 Admin 深链 + `subscribed=1`；自动更新由本页按钮开启。
+- Helpers: `starterPack.server.ts`, `onboardingOffer.server.ts`,
+  `OnboardingNextSteps.tsx`, `app/server/onboarding/progress.server.ts`
+  (`loadOnboardingWizardComplete`).
+  订阅额度 → `subscriptionCredits`；加量包 → `purchasedCredits`（永久）。
+- Trial success CTA: `?locale=&from=trial`（banner 仅 `from=trial`）。
+- Excluded from main v4 list; same-locale-pair blocking; worker quota like manual.
+- Funnel events: `expand_*` / `trial_*` via `useReport`.
+- Cross-page onboarding strip: `OnboardingProgressBar` on trial + expand until
+  funnel complete.
 
 Data flow:
 
@@ -603,7 +713,8 @@ Shop profile intelligence direction:
   shop-profile page to preview a context block. `llmTranslate.ts` has a
   `profileBlock` parameter, but current callers pass an empty string and there is
   no worker `shopProfilePrompt.ts`; shop profile is not yet injected into live
-  single, batch, or auto translation prompts.
+  single, batch, or auto translation prompts. Install-time metrics scan does feed
+  `creditEstimate.server.ts` via latest Cosmos `moduleStats`.
 - Future work should enrich this into reusable translation context: shop
   intelligence, content signals, terminology policy, market policy, and
   module-specific translation policy.
@@ -707,6 +818,9 @@ For "合入PR然后发布测试环境", the script will:
 | User asks about | First read | Then read |
 | --- | --- | --- |
 | Translation v4 UI | `app/routes/app.translate-v4/route.tsx` | `components/*`, `v4I18n.ts`, locales |
+| Trial translate product | `app/routes/app.trial-translate/route.tsx` | `api.trial-translate.*`, `server/trialTranslate/*`, worker init/translate |
+| Expand market | `app/routes/app.expand-market/route.tsx` | `api.expand-market.tasks`, `server/expandMarket/*` |
+| Language ready (post-onboarding) | `ReadyBand.tsx` on translate-v4 | `coverage.server.ts` product/store percent, `app.ready` redirect |
 | Create task failure | `app/lib/createTranslateV4Tasks.ts` | `api.translate-v4.tasks.ts`, quota guard, Cosmos/Redis |
 | Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, translation-core `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
@@ -750,6 +864,12 @@ Operational root scripts:
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
   UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
+- `scripts/reset-shop-onboarding-test.mjs`: test-only reset of a shop to
+  newbie onboarding (`isNew`); clears Turso billing/target-locale/binding and
+  Cosmos Trial+Expand jobs; by default also `shopLocaleDisable` non-primary
+  Shopify locales (needs Session). No Redis. Default shop
+  `ciwishop.myshopify.com`. Dry-run unless `--apply`. Package:
+  `npm run reset:onboarding:test`.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling

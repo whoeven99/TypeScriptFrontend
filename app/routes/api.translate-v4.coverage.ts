@@ -10,7 +10,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
 
-  let targetLocales: Array<{ value: string; label: string }> = [];
+  let targetLocales: Array<{ value: string; label: string; published?: boolean }> = [];
   let primaryLocale = "en";
   try {
     const loaded = await loadShopLocalesForTranslation({

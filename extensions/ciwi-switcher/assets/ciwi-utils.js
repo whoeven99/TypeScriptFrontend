@@ -237,15 +237,21 @@ export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) 
 }
 
 /**
- * 跳转页面
+ * 跳转页面（Shopify /localization）。
+ * @param {{ country?: string, language?: string, returnTo?: string }} args
  */
-export function updateLocalization({ country, language }) {
+export function updateLocalization({ country, language, returnTo }) {
   const formId = crypto.randomUUID();
+  const returnToValue =
+    typeof returnTo === "string" && returnTo.trim()
+      ? returnTo.trim()
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const formHtml = `
     <form id="${formId}" action="/localization" method="POST" hidden>
       <input name="_method" value="PUT">
-      <input name="country_code" value="${country}">
-      <input name="language_code" value="${language}">
+      <input name="country_code" value="${country || ""}">
+      <input name="language_code" value="${language || ""}">
+      <input name="return_to" value="${returnToValue.replace(/"/g, "&quot;")}">
     </form>
   `;
   document.body.insertAdjacentHTML("beforeend", formHtml);

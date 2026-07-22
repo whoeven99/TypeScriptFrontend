@@ -33,6 +33,23 @@ export async function readV4Blob<T = unknown>(path: string): Promise<T | null> {
   }
 }
 
+/** 列举某前缀下的 blob 路径；未配置/出错时返回 []。 */
+export async function listV4BlobPaths(prefix: string): Promise<string[]> {
+  if (!prefix) return [];
+  const container = getContainer();
+  if (!container) return [];
+  const paths: string[] = [];
+  try {
+    const normalized = prefix.endsWith("/") ? prefix : `${prefix}/`;
+    for await (const blob of container.listBlobsFlat({ prefix: normalized })) {
+      if (blob.name) paths.push(blob.name);
+    }
+  } catch (err) {
+    console.error(`[blob] 列举失败 ${prefix}:`, err);
+  }
+  return paths;
+}
+
 /** 删除某 blobPrefix 下的所有 blob。返回删除数量；未配置/出错时返回 0（不抛）。 */
 export async function deleteV4JobBlobs(blobPrefix: string): Promise<number> {
   if (!blobPrefix) return 0;

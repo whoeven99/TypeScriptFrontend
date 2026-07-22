@@ -11,6 +11,11 @@ export const MODULE_LABELS: Record<string, string> = V4_MODULE_LABELS;
 /** 创建任务默认勾选的 v2 模块 key（对齐 v2 translateSettings3）。 */
 export const DEFAULT_MODULE_KEYS = [...DEFAULT_V2_MODULE_KEYS];
 
+/** 就绪带「补齐其它模块」：排除商品起步包已覆盖的 products。 */
+export const FILL_OTHER_MODULE_KEYS = DEFAULT_MODULE_KEYS.filter(
+  (key) => key !== "products",
+);
+
 
 /**
  * Worker 写入的 usedTokens 已含 QUOTA_TOKEN_MULTIPLIER（默认 1.5），

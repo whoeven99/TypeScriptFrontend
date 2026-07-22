@@ -9,7 +9,6 @@ import { ensureShopV4Settings } from "./migration.server";
 export type TargetLocaleRow = {
   locale: string;
   autoTranslate: boolean;
-  status: number;
 };
 
 export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]> {
@@ -18,7 +17,6 @@ export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]
   return rows.map((r) => ({
     locale: r.locale,
     autoTranslate: r.autoTranslate,
-    status: 1,
   }));
 }
 

@@ -43,7 +43,15 @@ type Props = {
   onExpandedChange?: (expanded: boolean) => void;
   /** 与左侧摘要卡同列拉伸等高（默认收起态） */
   fillPairHeight?: boolean;
+  /** 行内「补齐」：预填创建任务（与 ReadyBand 同源） */
+  onFillModules?: (locale: string) => void;
 };
+
+function needsFillGuide(row: LocaleCoverageRow): boolean {
+  if (!row.autoTranslate) return false;
+  if (row.cacheMissing || row.storePercent == null) return true;
+  return row.storePercent < 100;
+}
 
 export function CoverageCard({
   locales,
@@ -53,14 +61,22 @@ export function CoverageCard({
   onManageLanguages,
   onExpandedChange,
   fillPairHeight = false,
+  onFillModules,
 }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const displayLocales = useMemo(
-    () => locales.filter((row) => !isCoverageUnscanned(row)),
+    () =>
+      sortCoverageRows(
+        locales.filter((row) => !isCoverageUnscanned(row)),
+      ),
     [locales],
   );
   const unscannedCount = locales.length - displayLocales.length;
+  const lowestPublished = useMemo(
+    () => findLowestPublishedCoverage(displayLocales),
+    [displayLocales],
+  );
 
   const toggleExpanded = () => {
     setExpanded((prev) => {
@@ -150,6 +166,7 @@ export function CoverageCard({
           <HeadMetric label={t("v4.coverage.autoTranslate")} value={`${autoTranslateCount}`} />
           <HeadMetric label={t("v4.coverage.needsImprovement")} value={`${lowCoverageCount}`} />
         </div>
+        <LowestPublishedHint row={lowestPublished} />
 
         <style>{AUTO_BADGE_HOVER_CSS}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -159,7 +176,15 @@ export function CoverageCard({
             </div>
           ) : (
             visibleLocales.map((row) => (
-              <CompactCoverageRow key={row.locale} row={row} />
+              <CompactCoverageRow
+                key={row.locale}
+                row={row}
+                onFill={
+                  onFillModules && needsFillGuide(row)
+                    ? () => onFillModules(row.locale)
+                    : undefined
+                }
+              />
             ))
           )}
           {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
@@ -234,11 +259,22 @@ export function CoverageCard({
       </div>
 
       <style>{AUTO_BADGE_HOVER_CSS}</style>
+      <LowestPublishedHint row={lowestPublished} compact={false} />
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {locales.length === 0 ? (
           <div style={{ fontSize: 13, color: v4Colors.textMuted }}>{t("v4.coverage.noTargetLanguages")}</div>
         ) : (
-          displayLocales.map((row) => <CoverageRow key={row.locale} row={row} />)
+          displayLocales.map((row) => (
+            <CoverageRow
+              key={row.locale}
+              row={row}
+              onFill={
+                onFillModules && needsFillGuide(row)
+                  ? () => onFillModules(row.locale)
+                  : undefined
+              }
+            />
+          ))
         )}
         {unscannedCount > 0 ? <UnscannedCoverageSummary count={unscannedCount} /> : null}
       </div>
@@ -280,6 +316,81 @@ function isCoverageUnscanned(row: LocaleCoverageRow): boolean {
   return row.cacheMissing && row.total === 0;
 }
 
+function coverageSortPercent(row: LocaleCoverageRow): number {
+  if (isCoverageUnscanned(row)) return 101;
+  return row.percent ?? 101;
+}
+
+function sortCoverageRows(rows: LocaleCoverageRow[]): LocaleCoverageRow[] {
+  return [...rows].sort((a, b) => {
+    if (a.published !== b.published) return a.published ? -1 : 1;
+
+    const percentDiff = coverageSortPercent(a) - coverageSortPercent(b);
+    if (percentDiff !== 0) return percentDiff;
+
+    if (a.autoTranslate !== b.autoTranslate) return a.autoTranslate ? -1 : 1;
+
+    const aLabel = localeShortName(a.locale, a.label);
+    const bLabel = localeShortName(b.locale, b.label);
+    return aLabel.localeCompare(bLabel);
+  });
+}
+
+function findLowestPublishedCoverage(
+  rows: LocaleCoverageRow[],
+): LocaleCoverageRow | null {
+  return (
+    rows.find(
+      (row) =>
+        row.published &&
+        !isCoverageUnscanned(row) &&
+        row.percent != null,
+    ) ?? null
+  );
+}
+
+function LowestPublishedHint({
+  row,
+  compact = true,
+}: {
+  row: LocaleCoverageRow | null;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
+  if (!row) return null;
+
+  const label = localeShortName(row.locale, row.label);
+  const percent = row.percent ?? 0;
+  const complete = percent >= 100;
+
+  return (
+    <div
+      style={{
+        margin: compact ? "-2px 0 12px" : "0 0 14px",
+        padding: "8px 10px",
+        borderRadius: 10,
+        border: `1px solid ${
+          complete ? "rgba(20, 163, 127, 0.22)" : "rgba(245, 158, 11, 0.28)"
+        }`,
+        background: complete
+          ? "rgba(236, 253, 245, 0.68)"
+          : "rgba(255, 247, 230, 0.72)",
+        fontSize: 12,
+        lineHeight: "18px",
+        color: complete ? "var(--p-color-text-success)" : "var(--p-color-text-caution)",
+        fontWeight: 600,
+      }}
+    >
+      {complete
+        ? t("v4.coverage.publishedAllComplete")
+        : t("v4.coverage.lowestPublishedHint", {
+            language: label,
+            percent,
+          })}
+    </div>
+  );
+}
+
 function UnscannedCoverageSummary({ count }: { count: number }) {
   const { t } = useTranslation();
 
@@ -296,7 +407,13 @@ function UnscannedCoverageSummary({ count }: { count: number }) {
   );
 }
 
-function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
+function CompactCoverageRow({
+  row,
+  onFill,
+}: {
+  row: LocaleCoverageRow;
+  onFill?: () => void;
+}) {
   const { t } = useTranslation();
   const percent = row.percent;
   const unscanned = isCoverageUnscanned(row);
@@ -351,14 +468,40 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
         </span>
         <span
           style={{
-            fontFamily: unscanned ? "inherit" : v4Colors.mono,
-            fontWeight: unscanned ? 600 : 700,
-            fontSize: 11.5,
-            color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
             flexShrink: 0,
           }}
         >
-          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
+          {onFill ? (
+            <button
+              type="button"
+              onClick={onFill}
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 600,
+                color: v4Colors.primary,
+                fontFamily: "inherit",
+              }}
+            >
+              {t("v4.coverage.fillModules")}
+            </button>
+          ) : null}
+          <span
+            style={{
+              fontFamily: unscanned ? "inherit" : v4Colors.mono,
+              fontWeight: unscanned ? 600 : 700,
+              fontSize: 11.5,
+              color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            }}
+          >
+            {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
+          </span>
         </span>
       </div>
       <div
@@ -383,7 +526,13 @@ function CompactCoverageRow({ row }: { row: LocaleCoverageRow }) {
   );
 }
 
-function CoverageRow({ row }: { row: LocaleCoverageRow }) {
+function CoverageRow({
+  row,
+  onFill,
+}: {
+  row: LocaleCoverageRow;
+  onFill?: () => void;
+}) {
   const { t } = useTranslation();
   const [nowMs, setNowMs] = useState<number | null>(null);
 
@@ -432,14 +581,40 @@ function CoverageRow({ row }: { row: LocaleCoverageRow }) {
         </span>
         <span
           style={{
-            fontFamily: unscanned ? "inherit" : v4Colors.mono,
-            fontWeight: unscanned ? 600 : 700,
-            fontSize: 12.5,
-            color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
             flexShrink: 0,
           }}
         >
-          {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
+          {onFill ? (
+            <button
+              type="button"
+              onClick={onFill}
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+                color: v4Colors.primary,
+                fontFamily: "inherit",
+              }}
+            >
+              {t("v4.coverage.fillModules")}
+            </button>
+          ) : null}
+          <span
+            style={{
+              fontFamily: unscanned ? "inherit" : v4Colors.mono,
+              fontWeight: unscanned ? 600 : 700,
+              fontSize: 12.5,
+              color: unscanned ? v4Colors.textMuted : v4Colors.text,
+            }}
+          >
+            {unscanned ? t("v4.coverage.notScanned") : `${displayPercent}%`}
+          </span>
         </span>
       </div>
       <div style={{ height: 6, borderRadius: 4, background: v4Colors.progressTrack, overflow: "hidden" }}>
