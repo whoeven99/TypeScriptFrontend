@@ -248,7 +248,9 @@ Common edits:
   (`liquid_html` klass). Block tags `{% %}` are masked then carried in skipped
   `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
   literals like `else` and `Default Title` never enter the LLM text pool;
-  `{{ }}` stays in-place for `maskPlaceholders`.
+  `{{ }}` stays in-place for per-part `maskPlaceholders`. As defense-in-depth for
+  the plain path, `placeholderMask.ts` also masks `{% %}` / `{%- -%}` before
+  `{{ }}` / URL / path masking. Probe: `node scripts/probe-liquid-placeholder-mask.mjs <file>`.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
@@ -732,6 +734,10 @@ Package-backed root scripts:
 
 Operational root scripts:
 
+- `scripts/probe-liquid-placeholder-mask.mjs`: probe `{% %}` / `{{ }}`
+  masking and `liquid_html` extraction; mock-translates human text as
+  `原文+fanyi` and writes `<input>.fanyi.html` (or `--out`). Pass a file or
+  `--stdin`.
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.

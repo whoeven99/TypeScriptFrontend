@@ -1,15 +1,32 @@
 /**
  * Mask URLs, site paths, and template placeholders before LLM translation.
  * Canonical placeholder masking implementation shared by App and Worker.
+ *
+ * Liquid block tags ({% ... %}) are masked here as defense-in-depth for the
+ * plain / non-liquid_html path so comparison literals like "paypal" and
+ * keywords like else never enter the LLM. liquid_html still masks blocks
+ * earlier via liquidHtmlTranslate.ts; double-masking is avoided there because
+ * block tags are already removed before per-part maskPlaceholders runs.
  */
 
 const PLACEHOLDER_RE =
   /\{\{[^{}]*\}\}|%\{[^}]+\}|\$\{[^}]+\}|%\d*\$?[sd]|\{\d+\}|\[[A-Za-z_][\w-]*\](?!\()/g;
 
+/**
+ * Liquid block tags including whitespace-strip variants:
+ *   {% tag ... %}   {%- tag ... -%}   {%- tag ... %}   {% tag ... -%}
+ * Must run before PLACEHOLDER_RE / path masking so content inside tags is never
+ * treated as translatable text or site paths.
+ */
+const LIQUID_BLOCK_TAG_RE = /\{%-?[\s\S]*?-?%\}/g;
+
 const PROTECTED_URL_RE = /https?:\/\/[^\s<>"']+/gi;
-/** Do not match `/dark` inside `light/dark` — require `/` not preceded by a letter. */
+/**
+ * Do not match `/dark` inside `light/dark` — require `/` not preceded by a letter.
+ * Also exclude HTML closers like `</b>` / `</div>` (`/` preceded by `<`).
+ */
 const PROTECTED_PATH_RE =
-  /(?<![a-zA-Z])\/[a-zA-Z0-9_\-./%~]+(?:\?[a-zA-Z0-9_\-./%&=]*)?/g;
+  /(?<![a-zA-Z<])\/[a-zA-Z0-9_\-./%~]+(?:\?[a-zA-Z0-9_\-./%&=]*)?/g;
 
 const SENT_OPEN = "⟦";
 const SENT_CLOSE = "⟧";
@@ -29,7 +46,9 @@ function maskProtectedLiterals(text: string, tokens: string[]): string {
 
 export function maskPlaceholders(text: string): { masked: string; tokens: string[] } {
   const tokens: string[] = [];
-  let masked = maskProtectedLiterals(text, tokens);
+  LIQUID_BLOCK_TAG_RE.lastIndex = 0;
+  let masked = text.replace(LIQUID_BLOCK_TAG_RE, (m) => pushMaskedToken(tokens, m));
+  masked = maskProtectedLiterals(masked, tokens);
   masked = masked.replace(PLACEHOLDER_RE, (m) => pushMaskedToken(tokens, m));
   return { masked, tokens };
 }

@@ -22,6 +22,8 @@
  * The Liquid output expressions ({{ ... }}) are intentionally left in-place
  * so they remain visible to `maskPlaceholders` when individual text parts are
  * sent to the LLM (e.g. "Order {{ order_name }}" → LLM sees "Order ⟦0⟧").
+ * `maskPlaceholders` also masks any residual `{% %}` block tags (plain-path
+ * defense); after this pipeline, text nodes should not contain block tags.
  */
 
 import {
