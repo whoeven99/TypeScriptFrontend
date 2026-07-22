@@ -33,6 +33,8 @@ export type TranslateSingleFieldArgs = {
   /** 源语言 locale；影响 alreadyInTarget / TM value cache。默认 en。 */
   source?: string;
   aiModel?: string;
+  /** 店铺画像上下文：注入 system prompt，仅用于引导风格/术语，不直接出现在输出中。 */
+  profileBlock?: string;
   /** 字段 key，影响 handle 路由与 classifyField。默认 value。 */
   fieldKey?: string;
   shopifyType?: string;
@@ -72,6 +74,7 @@ export async function translateSingleField(
     shopifyType: args.shopifyType,
     aiModel,
     original: text,
+    hasProfileBlock: Boolean(args.profileBlock?.trim()),
     customPrompt: args.customPrompt ?? "",
   });
 
@@ -92,6 +95,7 @@ export async function translateSingleField(
     undefined,
     undefined,
     {
+      profileBlock: args.profileBlock,
       customPrompt: args.customPrompt,
       // 管理翻译页手动点击：不读缓存、强制 LLM，译后写回 TM。
       skipCacheRead: true,
@@ -116,6 +120,7 @@ export async function translateSingleField(
     original: text,
     translated: translatedText,
     status,
+    hasProfileBlock: Boolean(args.profileBlock?.trim()),
     prompt: args.customPrompt ?? "",
     usedTokens,
   });

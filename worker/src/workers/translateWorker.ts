@@ -262,6 +262,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   const { shopName, id: jobId, source, target, aiModel } = job;
   // Engine routing (Google vs DeepSeek) is applied inside translateBatch.
   const blobPrefix = job.blobPrefix || `tasks/v4/${shopName}/${jobId}`;
+  const hasProfileBlock = Boolean(job.profileBlock?.trim());
+
+  console.log(
+    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock}`,
+  );
 
   // Resume: restore token counter from Cosmos + Redis (412 on pause may leave Cosmos stale).
   const latestAtStart = await getJob(shopName, jobId);
@@ -668,7 +673,10 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             onProgress,
             onResourceDone,
             shouldAbort,
-            { translateHandle: job.isHandle },
+            {
+              profileBlock: job.profileBlock ?? undefined,
+              translateHandle: job.isHandle,
+            },
           );
           mergeEngineUsage(engineUsage, usage);
         } catch (e) {
