@@ -6,6 +6,7 @@ import "./translationCoreRuntime.server";
 import { translateSingleField } from "@ciwi/translation-core";
 import { deductShopCredits } from "~/server/billing/quota/quotaRouter.server";
 import { llmTokensToQuotaCredits } from "./quotaMultiplier.server";
+import { loadShopProfilePromptBlock } from "./shopProfileContext.server";
 
 export type TranslateSingleTextArgs = {
   shop: string;
@@ -22,6 +23,7 @@ export type TranslateSingleTextArgs = {
 export async function translateSingleText(
   args: TranslateSingleTextArgs,
 ): Promise<{ translatedText: string; usedTokens: number }> {
+  const profileBlock = await loadShopProfilePromptBlock(args.shop);
   const { translatedText, usedTokens } = await translateSingleField({
     shop: args.shop,
     target: args.target,
@@ -30,6 +32,7 @@ export async function translateSingleText(
     fieldKey: args.fieldKey,
     shopifyType: args.shopifyType,
     aiModel: args.aiModel,
+    profileBlock,
     customPrompt: args.customPrompt,
   });
   return { translatedText, usedTokens };

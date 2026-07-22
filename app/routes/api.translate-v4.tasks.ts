@@ -6,6 +6,7 @@ import {
   existsBlockingV4Job,
 } from "~/server/translateV4/cosmos.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
+import { loadShopProfilePromptBlock } from "~/server/translateV4/shopProfileContext.server";
 import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
 import {
   getTranslateV4RedisClient,
@@ -74,6 +75,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // worker 写回译文用的长效 offline token，建任务时落到 job 上
   const shopifyAccessToken =
     (await resolveOfflineAccessToken(shopName, session.accessToken)) ?? "";
+  const profileBlock = await loadShopProfilePromptBlock(shopName);
 
   const job = await createV4Job({
     id: jobId,
@@ -81,6 +83,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     shopifyAccessToken,
     source,
     target,
+    profileBlock,
     modules,
     aiModel: body.aiModel?.trim() || "gpt-4.1-nano",
     limitPerType: V4_LIMIT_UNLIMITED,
@@ -103,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   console.log(
-    `[translateV4] job created id=${jobId} shop=${shopName} ${source}→${target} modules=${modules.join(",")} source=${TS_FRONTEND_TASK_SOURCE}`,
+    `[translateV4] job created id=${jobId} shop=${shopName} ${source}→${target} modules=${modules.join(",")} source=${TS_FRONTEND_TASK_SOURCE} hasProfileBlock=${Boolean(profileBlock?.trim())}`,
   );
   return json({ ok: true, jobId: job.id });
 };

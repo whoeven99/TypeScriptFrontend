@@ -67,6 +67,8 @@ export type TranslationV4Job = {
   shopifyAccessToken: string;
   source: string;
   target: string;
+  /** 手动任务创建时固化的店铺画像 prompt block；供 worker 翻译阶段直接消费。 */
+  profileBlock?: string | null;
   modules: string[];
   aiModel: string;
   /** The engine actually used at translate time (real data, set by the worker). */

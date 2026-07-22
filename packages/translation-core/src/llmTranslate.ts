@@ -2174,6 +2174,7 @@ async function translateItemsRouted(
   shopName: string,
   order: Engine[],
   promptKind: "default" | "handle" = "default",
+  profileBlock = "",
   customPrompt = "",
   /** 仅管理页单条翻译：把 LLM 原始返回打到日志。 */
   logSingleTranslate = false,
@@ -2202,14 +2203,15 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
-            : buildSystemPrompt(target, glossary, "", customPrompt);
+            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt)
+            : buildSystemPrompt(target, glossary, profileBlock, customPrompt);
         if (logSingleTranslate) {
           console.log("[single] prompt", {
             shopName,
             source,
             target,
             promptKind,
+            hasProfileBlock: profileBlock.length > 0,
             customPrompt,
             prompt: systemPrompt,
           });
@@ -2316,6 +2318,7 @@ async function retryPoolFallbacks(
   aiModel: string,
   shopName: string,
   shouldAbort: () => boolean | Promise<boolean>,
+  profileBlock = "",
   customPrompt = "",
   onLeafTranslated?: (text: string, result: RoutedResult, poolPrimaryModel: string) => void,
   logSingleTranslate = false,
@@ -2347,6 +2350,7 @@ async function retryPoolFallbacks(
         shopName,
         poolOrder,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
         logSingleTranslate,
       );
@@ -3064,6 +3068,8 @@ export type TranslatedResourceOutput = {
 };
 
 export type TranslateResourcesOptions = {
+  /** 店铺画像上下文：注入 system prompt，仅用于引导风格/术语。 */
+  profileBlock?: string;
   /** 与 TSF `isHandle` 对齐：`false` 时 handle 原样跳过；默认 `true`（INIT 已过滤时 blob 里本就不含 handle）。 */
   translateHandle?: boolean;
   /**
@@ -3105,6 +3111,7 @@ export async function translateResources(
   const abortRequested = async (): Promise<boolean> =>
     shouldAbort ? Boolean(await shouldAbort()) : false;
   const translateHandle = options?.translateHandle !== false;
+  const profileBlock = options?.profileBlock?.trim() ?? "";
   const customPrompt = options?.customPrompt?.trim() ?? "";
   const hasCustomPrompt = customPrompt.length > 0;
   // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
@@ -3117,6 +3124,7 @@ export async function translateResources(
       shopName,
       source,
       target,
+      hasProfileBlock: profileBlock.length > 0,
       skipCacheRead,
       skipCacheWrite,
       customPrompt,
@@ -3525,6 +3533,7 @@ export async function translateResources(
         shopName,
         order,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
         logSingleTranslate,
       );
@@ -3562,6 +3571,7 @@ export async function translateResources(
     aiModel,
     shopName,
     abortRequested,
+    profileBlock,
     customPrompt,
     skipCacheWrite
       ? undefined
