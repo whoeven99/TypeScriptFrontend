@@ -73,7 +73,7 @@ export type FetchTranslatableOptions = {
   resourceIds?: string[];
 };
 
-type TranslatableNode = {
+export type TranslatableNode = {
   resourceId: string;
   translations: Array<{ key: string; value?: string | null; outdated?: boolean | null }>;
   translatableContent: Array<{
@@ -312,7 +312,8 @@ type ShopifyGraphqlOpts = {
   preferLegacyToken?: boolean;
 };
 
-async function shopifyGraphql(
+/** Shared Admin GraphQL entry for init/writeback/bulk helpers. */
+export async function shopifyGraphql(
   shopDomain: string,
   legacyAccessToken: string,
   query: string,
@@ -490,7 +491,7 @@ function buildResourceQueryFilter(
   return query || null;
 }
 
-function mapNodeToResource(
+export function mapNodeToResource(
   node: TranslatableNode,
   module: string,
   options: FetchTranslatableOptions,
@@ -520,8 +521,13 @@ function mapNodeToResource(
   return { resourceId: node.resourceId, fields };
 }
 
-function resourceChars(r: TranslatableResource): number {
+export function resourceChars(r: TranslatableResource): number {
   return r.fields.reduce((sum, f) => sum + (f.value?.length ?? 0), 0);
+}
+
+/** Default max source chars per init chunk (overridable via TRANSLATION_MAX_CHUNK_CHARS). */
+export function getMaxChunkChars(): number {
+  return MAX_CHUNK_CHARS;
 }
 
 /**
@@ -529,7 +535,7 @@ function resourceChars(r: TranslatableResource): number {
  * total char count (`MAX_CHUNK_CHARS`), whichever is hit first. Each resource is
  * kept whole; a single oversized resource gets its own chunk.
  */
-function chunkResources(
+export function chunkResources(
   resources: TranslatableResource[],
   chunkSize: number,
   maxChars: number = MAX_CHUNK_CHARS,
