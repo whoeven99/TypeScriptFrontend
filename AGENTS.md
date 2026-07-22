@@ -452,12 +452,19 @@ Billing notes:
   `PlanCatalog.credits` every 30 days within that year (max 12). Mid-year grants
   are Worker-driven (`grantKind: annual_credit_cycle` on `BillingLog`) and must
   not overwrite `currentPeriodEnd`. After 12 grants, wait for Shopify year renewal.
+- Annual credit grants **never catch up history**. Decision uses the current
+  30-day window vs TSF `creditCycleIndex` watermark only (`maxGranted + 1`).
+  Migrated shops with no TSF cycle logs (or a large gap vs the current window)
+  are assumed already granted elsewhere; Worker writes `grantKind:
+  migration_assumed` (`creditsDelta: 0`) as a baseline so the *next* window can
+  fire normally. See `annualCreditCycle.ts` / `annualCreditCycle.server.ts`.
 - Worker runs a near-due reconciliation every 30 minutes (includes all ACTIVE
   ANNUAL shops for credit-cycle checks) and a full subscription reconciliation
   every 12 hours by default (both configurable) inside the worker process when
   Turso credentials are set. TSF Web does not schedule or execute these jobs.
 - Subscription renewal emails (template 143058) are sent from webhook, near-due,
-  and full reconcile on `renewed`. Idempotency uses
+  and full reconcile on Shopify period `renewed` only — not on
+  `annual_credit_cycle_*`. Idempotency uses
   `BillingLog.metadata.renewalEmailSent` so the three paths do not double-send.
 
 ### Currency
