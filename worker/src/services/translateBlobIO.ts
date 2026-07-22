@@ -19,6 +19,19 @@ export function encodeResourceIdForBlob(resourceId: string): string {
   return Buffer.from(resourceId, "utf8").toString("base64url");
 }
 
+/** Inverse of encodeResourceIdForBlob; path or bare `*.json` name both accepted. */
+export function decodeResourceIdFromBlobPath(pathOrName: string): string | null {
+  const base = pathOrName.split("/").pop();
+  if (!base || !base.endsWith(".json")) return null;
+  const encoded = base.slice(0, -".json".length);
+  if (!encoded) return null;
+  try {
+    return Buffer.from(encoded, "base64url").toString("utf8");
+  } catch {
+    return null;
+  }
+}
+
 export function translatedResourceBlobPath(
   blobPrefix: string,
   module: string,
@@ -75,17 +88,24 @@ async function mapConcurrent<T, R>(
   return results;
 }
 
+/**
+ * List checkpointed resource IDs under a module.
+ *
+ * Only ListBlobs + filename decode — no download/JSON.parse. File names are
+ * base64url(resourceId); downloading every blob just to read resourceId was
+ * O(resources) egress/CPU per call and exploded on large shops.
+ */
 export async function listTranslatedResourceIds(
   blobPrefix: string,
   module: string,
 ): Promise<Set<string>> {
   const prefix = `${blobPrefix}/translate/${module}/${RESOURCES_DIR}/`;
-  const paths = (await blobListPaths(prefix)).filter((p) => p.endsWith(".json"));
-  const items = await mapConcurrent(paths, BLOB_READ_CONCURRENCY, (path) =>
-    blobRead<TranslatedResourceItem>(path),
-  );
+  const paths = await blobListPaths(prefix);
   const ids = new Set<string>();
-  for (const item of items) if (item?.resourceId) ids.add(item.resourceId);
+  for (const path of paths) {
+    const id = decodeResourceIdFromBlobPath(path);
+    if (id) ids.add(id);
+  }
   return ids;
 }
 
