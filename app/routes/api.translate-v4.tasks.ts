@@ -11,6 +11,7 @@ import {
   getTranslateV4RedisClient,
   v4HintKey,
 } from "~/server/translateV4/redis.server";
+import { resolveShopPrimaryLocale } from "~/server/translateV4/shopLocales.server";
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
@@ -32,6 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 /** POST /api/translate-v4/tasks —— 创建一个 TsFrontend 翻译任务，写入 Cosmos 供 worker 消费。 */
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
+  const FALLBACK_SOURCE_LOCALE = "en";
 
   const body = (await request.json().catch(() => ({}))) as {
     source?: string;
@@ -42,7 +44,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     aiModel?: string;
   };
 
-  const source = body.source?.trim() || "zh-CN";
+  const source =
+    body.source?.trim() ||
+    (await resolveShopPrimaryLocale({
+      shop: session.shop,
+      accessToken: session.accessToken,
+    })) ||
+    FALLBACK_SOURCE_LOCALE;
   const target = body.target?.trim() || "";
   if (!target) return json({ ok: false, error: "v4.validation.selectTarget" }, { status: 400 });
   if (target === source)
