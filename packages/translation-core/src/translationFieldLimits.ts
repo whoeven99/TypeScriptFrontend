@@ -4,8 +4,117 @@
  */
 export const SHOPIFY_TITLE_MAX_CHARS = 255;
 
+export type TranslationFieldKind =
+  | "title"
+  | "description"
+  | "body"
+  | "seo_title"
+  | "seo_description"
+  | "handle"
+  | "ui_label"
+  | "unknown";
+
+export type TranslationConstraintOrigin = "shopify_limit" | "scene_policy";
+
+export type TranslationFieldRule = {
+  fieldKind: TranslationFieldKind;
+  maxChars?: number;
+  recommendedMaxChars?: number;
+  mustBeSlugLike?: boolean;
+  shortUiLabelPreferred?: boolean;
+};
+
 export function isTitleFieldKey(key: string): boolean {
   return key.trim().toLowerCase() === "title";
+}
+
+export function getTranslationFieldRule(
+  fieldKind: TranslationFieldKind,
+): TranslationFieldRule {
+  switch (fieldKind) {
+    case "title":
+      return {
+        fieldKind,
+        maxChars: SHOPIFY_TITLE_MAX_CHARS,
+      };
+    case "seo_title":
+      return {
+        fieldKind,
+        recommendedMaxChars: 70,
+      };
+    case "seo_description":
+      return {
+        fieldKind,
+        recommendedMaxChars: 160,
+      };
+    case "handle":
+      return {
+        fieldKind,
+        mustBeSlugLike: true,
+      };
+    case "ui_label":
+      return {
+        fieldKind,
+        recommendedMaxChars: 60,
+        shortUiLabelPreferred: true,
+      };
+    default:
+      return { fieldKind };
+  }
+}
+
+export function getTranslationFieldConstraintHints(
+  rule: TranslationFieldRule,
+): Array<{
+  code: string;
+  origin: TranslationConstraintOrigin;
+  promptText: string;
+  maxChars?: number;
+}> {
+  const hints: Array<{
+    code: string;
+    origin: TranslationConstraintOrigin;
+    promptText: string;
+    maxChars?: number;
+  }> = [];
+
+  if (rule.maxChars != null) {
+    hints.push({
+      code: "max_chars",
+      origin: "shopify_limit",
+      promptText: `Keep the translated value within ${rule.maxChars} characters while preserving the core meaning.`,
+      maxChars: rule.maxChars,
+    });
+  }
+
+  if (rule.recommendedMaxChars != null) {
+    hints.push({
+      code: "recommended_max_chars",
+      origin: "scene_policy",
+      promptText: `Prefer a concise translation around ${rule.recommendedMaxChars} characters or less unless clarity would suffer.`,
+      maxChars: rule.recommendedMaxChars,
+    });
+  }
+
+  if (rule.mustBeSlugLike) {
+    hints.push({
+      code: "slug_like",
+      origin: "scene_policy",
+      promptText:
+        "Keep the result slug-like: plain text only, concise, stable, and suitable for URL handle generation after hyphen joining.",
+    });
+  }
+
+  if (rule.shortUiLabelPreferred) {
+    hints.push({
+      code: "short_ui_label",
+      origin: "scene_policy",
+      promptText:
+        "Prefer a short UI label that remains clear at a glance and avoids unnecessary wording.",
+    });
+  }
+
+  return hints;
 }
 
 /**
