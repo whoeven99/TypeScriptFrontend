@@ -64,7 +64,6 @@ type InferredModulePolicy = {
   summary: string;
   lines: string[];
 } | null;
-
 export function buildResolvedPromptContext(args: {
   module?: string | null;
   key: string;
