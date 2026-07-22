@@ -16,6 +16,7 @@ export type ThemeTextSample = {
   text: string;
   module: string;
   key: string;
+  resourceId: string;
   weight: number;
 };
 
@@ -212,6 +213,7 @@ export async function sampleThemeTexts(
             text,
             module,
             key,
+            resourceId,
             weight: scoreThemeSample({
               module,
               key,

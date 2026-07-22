@@ -13,6 +13,8 @@ import {
   type ShopSignalBundle,
 } from "./signalExtraction.js";
 import { sampleThemeTexts } from "./translationSamples.js";
+import { buildThemeSceneProfile } from "./themeKeyIntelligence.js";
+import { buildTranslationContextProfile } from "./translationContextProfile.js";
 import { upsertShopProfile } from "./tsfWrite.js";
 
 /**
@@ -61,7 +63,12 @@ export async function runProfileStage(args: {
   await heartbeat();
 
   const signals = extractShopSignals(facts, themeTexts);
+  const themeSceneProfile = buildThemeSceneProfile(themeTexts);
   const hasMaterial = hasProfileMaterial(facts, markets, signals);
+  const publishedLocales = locales
+    .filter((locale) => locale.published)
+    .map((locale) => locale.locale);
+  const scannedAt = new Date().toISOString();
 
   if (!shopScanAiConfigured() || !hasMaterial) {
     await blobWrite(`${blobPrefix}/profile-facts.json`, {
@@ -72,8 +79,25 @@ export async function runProfileStage(args: {
       themeTexts,
       signals,
       induction: null,
-      scannedAt: new Date().toISOString(),
+      scannedAt,
     });
+    await blobWrite(`${blobPrefix}/theme-key-profile.json`, {
+      stage: "themeKeyIntelligence",
+      shop,
+      themeSceneProfile,
+      scannedAt,
+    });
+    await blobWrite(
+      `${blobPrefix}/translation-context-profile.json`,
+      buildTranslationContextProfile({
+        publishedLocales,
+        markets,
+        understanding: null,
+        strategy: null,
+        themeSceneProfile,
+        generatedAt: scannedAt,
+      }),
+    );
     return {
       status: "skipped",
       reason: !shopScanAiConfigured() ? "ai_not_configured" : "no_material",
@@ -95,15 +119,45 @@ export async function runProfileStage(args: {
     markets,
     themeTexts,
     signals,
+    themeSceneProfile,
     induction,
-    scannedAt: new Date().toISOString(),
+    scannedAt,
+  });
+  await blobWrite(`${blobPrefix}/theme-key-profile.json`, {
+    stage: "themeKeyIntelligence",
+    shop,
+    themeSceneProfile,
+    scannedAt,
   });
 
   if (!induction.understanding) {
+    await blobWrite(
+      `${blobPrefix}/translation-context-profile.json`,
+      buildTranslationContextProfile({
+        publishedLocales,
+        markets,
+        understanding: null,
+        strategy: induction.strategy,
+        themeSceneProfile,
+        generatedAt: scannedAt,
+      }),
+    );
     return { status: "skipped", reason: "ai_understanding_failed" };
   }
 
   const { understanding, strategy } = induction;
+
+  await blobWrite(
+    `${blobPrefix}/translation-context-profile.json`,
+    buildTranslationContextProfile({
+      publishedLocales,
+      markets,
+      understanding,
+      strategy,
+      themeSceneProfile,
+      generatedAt: scannedAt,
+    }),
+  );
 
   await upsertShopProfile({
     shop,
