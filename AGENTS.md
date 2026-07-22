@@ -244,6 +244,11 @@ Common edits:
 - Runtime ports: `packages/translation-core/src/runtime.ts`.
 - App adapter: `app/server/translateV4/translationCoreRuntime.server.ts`.
 - Worker adapter: `worker/src/services/translationCoreRuntime.ts`.
+- EMAIL / packing-slip Liquid HTML: `packages/translation-core/src/liquidHtmlTranslate.ts`
+  (`liquid_html` klass). Block tags `{% %}` are masked then carried in skipped
+  `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
+  literals like `else` and `Default Title` never enter the LLM text pool;
+  `{{ }}` stays in-place for `maskPlaceholders`.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
@@ -277,9 +282,9 @@ Entries:
 
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
-  and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
-  daily v4 job retention cleanup (`cleanupOldJobs`), and subscription
-  reconciliation schedules.
+  and auto-translate; also runs scheduled shop-scan enqueue (slot-offset +1h),
+  deploy wake/stale reset, empty auto-job cleanup, daily v4 job retention
+  cleanup (`cleanupOldJobs`), and subscription reconciliation schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -316,10 +321,15 @@ Services:
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
 - `worker/src/services/finalizeJobAfterWriteback.ts`: post-writeback final status
   selection and Redis `items_count` refresh for completed jobs.
+- `worker/src/services/recordJobUsageSnapshot.ts`: task-terminal usage snapshot
+  into Turso `TranslateV4JobUsage` (time / tokens / units / chars; survives Cosmos
+  job retention cleanup).
 - `worker/src/services/translationReport.ts` and
   `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
   for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
+- `worker/src/services/scheduledShopScan.ts`: scheduled metrics shop scan
+  enqueue（同分槽 / 时区 / 整点，槽位相对 auto 延后 1h；`trigger: scheduled`）。
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
 - `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
@@ -357,6 +367,13 @@ Important env names only:
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- Scheduled shop scan（计量复扫，与 auto 同分槽时钟，槽位 -1h）：
+  `SHOP_SCAN_SCHEDULE_ENABLED` (default true),
+  `SHOP_SCAN_SHARD_COOLDOWN_MS` (default 同 `AUTO_TRANSLATE_SHARD_COOLDOWN_MS` / 20h),
+  `SHOP_SCAN_MAX_ENQUEUE_PER_TICK` (default 0=不限)。
+  时区 / slots / 整点 minute 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
+  `AUTO_TRANSLATE_SLOTS_PER_DAY` / `AUTO_TRANSLATE_SCHEDULE_MINUTE`。
+  Code: `worker/src/services/scheduledShopScan.ts`.
 - V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
   `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
   `V4_JOB_RETENTION_DAYS` (default 7),
@@ -385,6 +402,7 @@ Models:
 
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
+- `TranslateV4JobUsage`: per v4 job usage snapshot (Worker writes on terminal status).
 
 Code:
 
@@ -397,8 +415,14 @@ Code:
 - `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
 - `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
   (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
-- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only 12h Shopify
-  subscription period reconciliation (writes Turso directly; does not call TSF Web).
+- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only Shopify
+  subscription reconciliation (writes Turso directly; does not call TSF Web).
+  Syncs `AppSubscription.currentPeriodEnd/Start` from Shopify for MONTHLY and
+  ANNUAL; for ANNUAL also grants monthly credits every 30 days (max 12 per
+  Shopify year) derived from `currentPeriodEnd` (never from `createdAt`).
+- `worker/src/services/annualCreditCycle.ts` and
+  `app/server/billing/subscription/annualCreditCycle.server.ts`: shared pure
+  helpers for annual credit-cycle math.
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
 - `app/routes/app.pricing/route.tsx`: pricing UI/actions.
@@ -421,10 +445,17 @@ Billing notes:
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
-- Worker runs a near-due reconciliation every 30 minutes and a full subscription
-  reconciliation every 12 hours by default (both configurable) inside the
-  worker process when Turso credentials are set. TSF Web does not schedule or
-  execute these jobs.
+- `AppSubscription.currentPeriodEnd` is always the Shopify next-charge time
+  (MONTHLY ≈ +30d, ANNUAL ≈ +365d). `currentPeriodStart = end - intervalDays`.
+  Do not use `createdAt` as a billing or credit-cycle anchor.
+- Annual plans still bill once per year in Shopify, but TSF grants the monthly
+  `PlanCatalog.credits` every 30 days within that year (max 12). Mid-year grants
+  are Worker-driven (`grantKind: annual_credit_cycle` on `BillingLog`) and must
+  not overwrite `currentPeriodEnd`. After 12 grants, wait for Shopify year renewal.
+- Worker runs a near-due reconciliation every 30 minutes (includes all ACTIVE
+  ANNUAL shops for credit-cycle checks) and a full subscription reconciliation
+  every 12 hours by default (both configurable) inside the worker process when
+  Turso credentials are set. TSF Web does not schedule or execute these jobs.
 - Subscription renewal emails (template 143058) are sent from webhook, near-due,
   and full reconcile on `renewed`. Idempotency uses
   `BillingLog.metadata.renewalEmailSent` so the three paths do not double-send.
@@ -540,12 +571,18 @@ Shop Profile / Shop Scan:
   `worker/src/services/shopScanCosmos.ts`（容器 `shop_scan_jobs`）。
 - Worker: `worker/src/workers/shopScanWorker.ts`,
   `worker/src/services/shopScan/*`.
+- Scheduled enqueue: `worker/src/services/scheduledShopScan.ts`（挂在
+  `scheduler.ts`，与 init 同 gate）。
 - Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
   `items_count`。
 - Trigger split:
   - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
     `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
-  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。
+  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。Worker 每小时
+    整点入队（与 auto 同一时区 / 24 槽 / 整点 minute），但目标槽为
+    `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
+    有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
+    已有进行中 scan 则跳过。
   - `manual`（调试页按钮）：只跑 `profile` + `glossary`（AI）；跳过计量阶段，
     并从上一份 summary 合并计量字段，保证 `getLatestShopScanJob` 仍完整。
 - Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
@@ -593,6 +630,8 @@ Current models:
 - `LiquidRule`: custom Liquid translation rules.
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
+- `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
+  units, source chars); written by Worker at job terminal states.
 - `SupportConversation`, `SupportMessage`: support chat.
 - `UserPicture`: product/shop image translation metadata and translated image
   URLs used by admin pages and storefront App Proxy reads.
@@ -678,6 +717,7 @@ For "合入PR然后发布测试环境", the script will:
 | Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
 | Support chat / notifications | `app/components/SupportChatWidget.tsx` | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
+| Scheduled shop scan | `worker/src/services/scheduledShopScan.ts` | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts` |
 | Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
 | Shopify auth/API version | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`） | `app/shopify.server.ts`、`worker/.../shopifyAdminApiVersion.ts`、`shopify.app*.toml` |

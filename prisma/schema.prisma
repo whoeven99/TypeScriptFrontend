@@ -273,6 +273,32 @@ model AccountPeriodUsage {
   @@index([shop, periodEnd])
 }
 
+/// v4 翻译任务用量快照：任务终态时由 Worker 幂等写入，不随 Cosmos 任务清理丢失。
+model TranslateV4JobUsage {
+  /// Cosmos job id（幂等键）
+  jobId             String   @id
+  shop              String
+  /// 快照写入时间
+  recordedAt        DateTime @default(now())
+  /// 任务创建时间（来自 Cosmos job.createdAt）
+  createdAt         DateTime?
+  /// COMPLETED | FAILED | CANCELLED | PAUSED
+  status            String
+  taskSource        String?
+  source            String
+  target            String
+  /// 与 Cosmos metrics.usedTokens 一致（token×系数后的计费积分）
+  usedTokens        Int      @default(0)
+  translateUnitDone Int      @default(0)
+  /// engineUsage 汇总的源文字符数
+  sourceChars       Int      @default(0)
+  /// 已翻译资源条数
+  translateDone     Int      @default(0)
+
+  @@index([shop, recordedAt])
+  @@index([recordedAt])
+}
+
 // ============================================================
 // 翻译 v4 人工客服（自 Spark Test API 迁回 TSF 自有 Turso）
 // 一店一会话；商家 ↔ 运营。运营端由 Spark Admin「翻译」Tab 直连本库读写。

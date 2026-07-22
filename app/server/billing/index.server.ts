@@ -18,6 +18,15 @@ export {
   isSubscriptionRenewal,
   type SubscriptionPeriodSnapshot,
 } from "./subscription/renewal.server";
+export {
+  countGrantsForBillingPeriod,
+  decideAnnualCreditGrant,
+  getAnnualCreditCycleIndex,
+  getAnnualYearWindow,
+  getExpectedAnnualGrants,
+  getNextAnnualCreditGrantAt,
+  MAX_ANNUAL_CREDIT_GRANTS,
+} from "./subscription/annualCreditCycle.server";
 export { cancelSubscription } from "./subscription/cancelSubscription.server";
 export { applyTokenPackPurchase } from "./purchase/applyTokenPack.server";
 export {
