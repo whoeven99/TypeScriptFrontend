@@ -1,6 +1,7 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import { evaluateCreateTaskQuotaGuard } from "~/server/billing/quota/createTaskQuotaGuard.server";
+import { resolveShopPrimaryLocale } from "~/server/translateV4/shopLocales.server";
 import {
   translateSingleText,
   deductQuota,
@@ -17,6 +18,7 @@ import {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+  const FALLBACK_SOURCE_LOCALE = "en";
 
   const body = (await request.json().catch(() => ({}))) as {
     source?: string;
@@ -30,7 +32,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
-  const source = (body.source ?? "en").trim() || "en";
+  let source = body.source?.trim() || "";
   const fieldKey = body.key?.trim() || "value";
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
   // 上限保护：自定义提示词最多 500 字，超出截断，避免撑爆 system prompt。
@@ -48,6 +50,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
 
   try {
+    if (!source) {
+      source =
+        (await resolveShopPrimaryLocale({
+          shop,
+          accessToken: session.accessToken,
+        })) ?? "";
+    }
+
+    if (!source) {
+      source = FALLBACK_SOURCE_LOCALE;
+      console.warn("[single] source locale fallback applied", {
+        shop,
+        fallbackSource: source,
+      });
+    }
+
     if (!target) {
       const appError = buildTranslateV4Error(
         TRANSLATE_V4_ERROR_KEYS.SINGLE_TARGET_REQUIRED,
