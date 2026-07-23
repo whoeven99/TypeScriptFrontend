@@ -36,7 +36,8 @@ import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
  */
 const WORKER_ID = `init-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
 
-const CHUNK_SIZE = 50;
+/** Retained for fetchTranslatableResources signature; chunking is byte-sized only. */
+const CHUNK_SIZE = 0;
 const HEARTBEAT_THROTTLE_MS = 30_000;
 
 /**
@@ -397,7 +398,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
           }
           bulkUnitsByModule.set(module, units);
           await blobWrite(
-            `${blobPrefix}/init/${module}/chunk-${String(chunkIndex).padStart(2, "0")}.json`,
+            `${blobPrefix}/init/${module}/chunk-${String(chunkIndex).padStart(5, "0")}.json`,
             chunk,
           );
         },
@@ -454,7 +455,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
           await Promise.all(
             chunks.map((chunk, i) =>
               blobWrite(
-                `${blobPrefix}/init/${module}/chunk-${String(i).padStart(2, "0")}.json`,
+                `${blobPrefix}/init/${module}/chunk-${String(i).padStart(5, "0")}.json`,
                 chunk,
               ),
             ),

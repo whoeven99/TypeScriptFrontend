@@ -370,10 +370,13 @@ Important env names only:
   `INIT_BULK_SHOP_ALLOWLIST`（逗号分隔 shopName，空=全关）,
   `INIT_BULK_SUBMIT_WINDOW`（默认 5，Shopify 同店上限）,
   `INIT_BULK_POLL_MS`（默认 1000）,
-  `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 2）,
+  `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 5，与 Shopify bulk 窗口对齐）,
   `INIT_BULK_TIMEOUT_MS`（默认 6h）,
   `INIT_BULK_FALLBACK`（默认开，失败回退分页）.
-  Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`。
+  Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
+- Init Blob chunk 大小（page/bulk 共用，按文件字节切分，不再按资源数）:
+  `TRANSLATION_MAX_CHUNK_BYTES`（默认 2MiB；单资源超限则独占一个 chunk）.
+  Code: `worker/src/services/shopifyFetch.ts` `chunkResources`.
 - Auxiliary schedules: `SHOP_SCAN_POLL_INTERVAL_MS`, `EMAIL_WORKER_INTERVAL_MS`,
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and

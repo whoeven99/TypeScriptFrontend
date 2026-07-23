@@ -89,9 +89,15 @@ const FETCH_PAGE_SIZE = 50;
 const ID_FETCH_PAGE_SIZE = 250;
 const TRANSLATABLE_RESOURCES_BY_IDS_BATCH = 250;
 
-// Cap a chunk's total translatable text so a chunk blob / in-memory batch never
-// gets huge (a single resource is still kept whole, even if it exceeds this).
-const MAX_CHUNK_CHARS = Number(process.env.TRANSLATION_MAX_CHUNK_CHARS?.trim()) || 50_000;
+/**
+ * Max serialized init-chunk JSON size (matches blobWrite compact JSON).
+ * Default 2 MiB — sweet spot for Azure Blob vs too-many tiny files.
+ * Override with TRANSLATION_MAX_CHUNK_BYTES.
+ */
+const MAX_CHUNK_BYTES = Math.max(
+  64 * 1024,
+  Number(process.env.TRANSLATION_MAX_CHUNK_BYTES?.trim()) || 2 * 1024 * 1024,
+);
 
 /**
  * Minimum remaining Shopify GraphQL bucket points before we proactively wait
@@ -525,34 +531,53 @@ export function resourceChars(r: TranslatableResource): number {
   return r.fields.reduce((sum, f) => sum + (f.value?.length ?? 0), 0);
 }
 
-/** Default max source chars per init chunk (overridable via TRANSLATION_MAX_CHUNK_CHARS). */
-export function getMaxChunkChars(): number {
-  return MAX_CHUNK_CHARS;
+/** UTF-8 byte length of one resource as compact JSON (same encoding as blobWrite). */
+export function resourceBlobBytes(r: TranslatableResource): number {
+  return Buffer.byteLength(JSON.stringify(r), "utf8");
+}
+
+/** Exact UTF-8 byte length of a chunk blob body (same encoding as blobWrite). */
+export function chunkBlobBytes(resources: TranslatableResource[]): number {
+  return Buffer.byteLength(JSON.stringify(resources), "utf8");
+}
+
+/** Default max init chunk file size in bytes (overridable via TRANSLATION_MAX_CHUNK_BYTES). */
+export function getMaxChunkBytes(): number {
+  return MAX_CHUNK_BYTES;
 }
 
 /**
- * Pack resources into chunks bounded by BOTH a max count (`chunkSize`) and a max
- * total char count (`MAX_CHUNK_CHARS`), whichever is hit first. Each resource is
- * kept whole; a single oversized resource gets its own chunk.
+ * Pack resources into chunks capped by serialized JSON file size only
+ * (no per-chunk resource-count limit). Each resource is kept whole; a single
+ * oversized resource gets its own chunk even if it exceeds the max.
+ *
+ * `chunkSize` is retained for call-site compatibility and ignored.
+ *
+ * Size uses the same compact JSON as blobWrite. Per-resource sums plus commas
+ * approximate an array; confirm with exact stringify only when near the limit.
  */
 export function chunkResources(
   resources: TranslatableResource[],
-  chunkSize: number,
-  maxChars: number = MAX_CHUNK_CHARS,
+  _chunkSize?: number,
+  maxBytes: number = MAX_CHUNK_BYTES,
 ): TranslatableResource[][] {
   const chunks: TranslatableResource[][] = [];
   let current: TranslatableResource[] = [];
-  let currentChars = 0;
+  let sumResourceBytes = 0;
 
   for (const r of resources) {
-    const size = resourceChars(r);
-    if (current.length > 0 && (current.length >= chunkSize || currentChars + size > maxChars)) {
-      chunks.push(current);
-      current = [];
-      currentChars = 0;
+    const rBytes = resourceBlobBytes(r);
+    if (current.length > 0) {
+      // Compact array ≈ "[" + items.join(",") + "]"
+      const estimate = sumResourceBytes + rBytes + current.length + 2;
+      if (estimate > maxBytes && chunkBlobBytes(current.concat(r)) > maxBytes) {
+        chunks.push(current);
+        current = [];
+        sumResourceBytes = 0;
+      }
     }
     current.push(r);
-    currentChars += size;
+    sumResourceBytes += rBytes;
   }
 
   if (current.length > 0) chunks.push(current);
@@ -1066,11 +1091,11 @@ export function isIdBasedModuleForTest(module: string): boolean {
   return (ID_BASED_MODULES as readonly string[]).includes(module);
 }
 
-/** @internal Vitest 用：size-aware chunk 切分 */
+/** @internal Vitest 用：size-aware chunk 切分（按 Blob 字节，忽略 resource count） */
 export function chunkResourcesForTest(
   resources: TranslatableResource[],
-  chunkSize: number,
-  maxChars: number,
+  chunkSize?: number,
+  maxBytes?: number,
 ): TranslatableResource[][] {
-  return chunkResources(resources, chunkSize, maxChars);
+  return chunkResources(resources, chunkSize, maxBytes);
 }
