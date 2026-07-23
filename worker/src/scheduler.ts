@@ -17,7 +17,7 @@ import {
 import { cleanupStaleEmptyAutoJobs } from "./services/cleanupEmptyAutoJobs.js";
 import {
   cleanupOldTranslationJobs,
-  getJobRetentionCleanupHour,
+  getJobRetentionCleanupIntervalMs,
   getJobRetentionCleanupMinute,
   getJobRetentionCleanupTimezone,
   getJobRetentionDays,
@@ -25,6 +25,16 @@ import {
   msUntilNextJobRetentionCleanup,
   resolveNextJobRetentionCleanupAt,
 } from "./services/cleanupOldJobs.js";
+import {
+  cleanupOldShopScanJobs,
+  getShopScanJobCleanupIntervalMs,
+  getShopScanJobCleanupMinute,
+  getShopScanJobCleanupTimezone,
+  getShopScanJobRetentionDays,
+  isShopScanJobCleanupEnabled,
+  msUntilNextShopScanJobCleanup,
+  resolveNextShopScanJobCleanupAt,
+} from "./services/cleanupOldShopScanJobs.js";
 import {
   runBillingSubscriptionNearDueReconcile,
   runBillingSubscriptionReconcile,
@@ -244,7 +254,44 @@ function scheduleRenderErrorDigest(): void {
   scheduleNext();
 }
 
-/** 每天定点缓慢清理超过保留期的翻译任务（Cosmos + Blob + Redis）。 */
+/** 每小时 :50 清理过期 shop_scan_jobs（保留每店最新 COMPLETED/PARTIAL）。 */
+function scheduleShopScanJobCleanup(): void {
+  if (!isShopScanJobCleanupEnabled()) {
+    console.log(
+      "[scheduler] shopScanJobCleanup 未启用（SHOP_SCAN_JOB_CLEANUP_ENABLED=false）",
+    );
+    return;
+  }
+
+  const tz = getShopScanJobCleanupTimezone();
+  const minute = getShopScanJobCleanupMinute();
+  const intervalMs = getShopScanJobCleanupIntervalMs();
+  const retentionDays = getShopScanJobRetentionDays();
+
+  const scheduleNext = () => {
+    const waitMs = msUntilNextShopScanJobCleanup();
+    const nextAt = resolveNextShopScanJobCleanupAt();
+    console.log(
+      `[scheduler] shopScanJobCleanup 下次 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms, retentionDays=${retentionDays})`,
+    );
+    setTimeout(() => {
+      if (isShuttingDown()) return;
+      void (async () => {
+        try {
+          await cleanupOldShopScanJobs();
+        } catch (err) {
+          console.error("[scheduler] shopScanJobCleanup error", err);
+        } finally {
+          if (!isShuttingDown()) scheduleNext();
+        }
+      })();
+    }, waitMs);
+  };
+
+  scheduleNext();
+}
+
+/** 每小时 :40 缓慢清理超过保留期的自动翻译任务（Cosmos + Blob + Redis）。 */
 function scheduleJobRetentionCleanup(): void {
   if (!isJobRetentionCleanupEnabled()) {
     console.log(
@@ -254,15 +301,15 @@ function scheduleJobRetentionCleanup(): void {
   }
 
   const tz = getJobRetentionCleanupTimezone();
-  const hour = getJobRetentionCleanupHour();
   const minute = getJobRetentionCleanupMinute();
+  const intervalMs = getJobRetentionCleanupIntervalMs();
   const retentionDays = getJobRetentionDays();
 
   const scheduleNext = () => {
     const waitMs = msUntilNextJobRetentionCleanup();
     const nextAt = resolveNextJobRetentionCleanupAt();
     console.log(
-      `[scheduler] jobRetentionCleanup 下次 ${nextAt.toISOString()} (tz=${tz}, ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}, retentionDays=${retentionDays})`,
+      `[scheduler] jobRetentionCleanup 下次 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms, retentionDays=${retentionDays})`,
     );
     setTimeout(() => {
       if (isShuttingDown()) return;
@@ -352,8 +399,11 @@ export function startScheduler(): void {
   // Render prod error 汇总 → 飞书（独立于 pipeline stages）。
   scheduleRenderErrorDigest();
 
-  // 自动任务保留期清理：每天定点缓慢删除 N 天前的自动任务（与 pipeline stages 独立）。
+  // 自动任务保留期清理：每小时 :40 缓慢删除 N 天前的自动任务（与 pipeline stages 独立）。
   scheduleJobRetentionCleanup();
+
+  // shop_scan_jobs 保留期清理：每小时 :50；Blob 稳定产物 latest-scan.json 不删。
+  scheduleShopScanJobCleanup();
 
   for (const stage of ALL_STAGES) {
     if (!stages.has(stage)) {

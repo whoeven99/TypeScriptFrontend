@@ -54,7 +54,8 @@ export async function enqueueShopScan({
     }
 
     const scanId = buildScanId(shop);
-    const blobPrefix = `shop-scan/${shop}/${scanId}`;
+    // 稳定产物前缀；明细合并写入 shop-profile/{shop}/latest-scan.json
+    const blobPrefix = `shop-profile/${shop}`;
     await createShopScanJob({ scanId, shop, trigger, blobPrefix });
     await pushShopScanHint({ scanId, shopName: shop });
     return { enqueued: true, scanId };

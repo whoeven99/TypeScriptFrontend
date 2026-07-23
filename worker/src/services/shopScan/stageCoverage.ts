@@ -1,13 +1,14 @@
-import { blobWrite } from "../blobV4.js";
 import { AUTO_TRANSLATE_V4_MODULES } from "../moduleCatalog.js";
 import { setItemsCount } from "../redisV4.js";
 import { countModuleScan } from "./scanCounts.js";
 import { upsertTargetLocales } from "./tsfWrite.js";
+import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 import type { ShopLocaleRow } from "./shopContext.js";
 
 /**
  * 阶段3：把已发布的非主语言同步到 ShopTargetLocale，并逐语言统计翻译覆盖率。
- * 逐模块回填 Redis items_count 缓存（v4 首页覆盖率直接受益），逐语言明细写 Blob。
+ * 逐模块回填 Redis items_count 缓存（v4 首页覆盖率直接受益）；
+ * Blob 只在 latest-scan.json 留轻量 locale 汇总（无 perModule）。
  *
  * 覆盖率统计的模块 = 管理翻译汇总页全部卡片对应的 module，因此回填的缓存可被
  * 管理翻译页 getItemsCountByLabel 直接命中（预热），各卡片「已翻译/总数」秒出。
@@ -41,10 +42,13 @@ export async function runCoverageStage(args: {
   accessToken: string;
   primaryLocale: string;
   locales: ShopLocaleRow[];
-  blobPrefix: string;
+  scanId?: string;
+  trigger?: string;
+  /** @deprecated 稳定产物写 shop-profile/{shop}/latest-scan.json。 */
+  blobPrefix?: string;
   heartbeat: () => Promise<void>;
 }): Promise<CoverageStageResult> {
-  const { shop, accessToken, primaryLocale, locales, blobPrefix, heartbeat } = args;
+  const { shop, accessToken, primaryLocale, locales, scanId, trigger, heartbeat } = args;
 
   const publishedTargets = locales.filter(
     (l) =>
@@ -65,16 +69,14 @@ export async function runCoverageStage(args: {
   );
   await heartbeat();
 
-  // 2. 逐语言统计覆盖率 + 回填 Redis + 明细写 Blob
+  // 2. 逐语言统计覆盖率 + 回填 Redis；Blob 只写轻量汇总
   const coverage: CoverageRow[] = [];
   for (const target of publishedTargets) {
-    const perModule: Record<string, { total: number; translated: number }> = {};
     let translated = 0;
     let total = 0;
 
     for (const module of COVERAGE_MODULES) {
       const c = await countModuleScan(shop, accessToken, module, target.locale, heartbeat);
-      perModule[module] = { total: c.total, translated: c.translated };
       total += c.total;
       translated += c.translated;
       // 回填 Redis items_count 缓存（与 v4 首页/汇总页同 key）
@@ -93,18 +95,19 @@ export async function runCoverageStage(args: {
       total,
       percent,
     });
-
-    await blobWrite(`${blobPrefix}/coverage/${target.locale}.json`, {
-      stage: "coverage",
-      shop,
-      locale: target.locale,
-      translated,
-      total,
-      percent,
-      perModule,
-      scannedAt: new Date().toISOString(),
-    });
   }
+
+  await upsertShopProfileLatestScan(shop, {
+    scanId,
+    trigger,
+    coverage: coverage.map((row) => ({
+      locale: row.locale,
+      published: row.published,
+      translated: row.translated,
+      total: row.total,
+      percent: row.percent,
+    })),
+  });
 
   return { status: "done", coverage, syncedLocales };
 }

@@ -74,7 +74,7 @@ function buildScanId(shop: string): string {
 
 async function enqueueScheduledShopScan(shop: string): Promise<string> {
   const scanId = buildScanId(shop);
-  const blobPrefix = `shop-scan/${shop}/${scanId}`;
+  const blobPrefix = `shop-profile/${shop}`;
   await createShopScanJob({
     scanId,
     shopName: shop,

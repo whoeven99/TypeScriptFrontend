@@ -265,7 +265,8 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         shop,
         accessToken,
         primaryLocale,
-        blobPrefix: job.blobPrefix,
+        scanId,
+        trigger: job.trigger,
         heartbeat,
       });
       return {
@@ -284,7 +285,8 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         accessToken,
         primaryLocale,
         locales,
-        blobPrefix: job.blobPrefix,
+        scanId,
+        trigger: job.trigger,
         heartbeat,
       });
       return { state: r.status === "done" ? "DONE" : "SKIPPED", summary: { coverage: r.coverage } };
@@ -297,7 +299,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         primaryLocale,
         locales,
         scanId,
-        blobPrefix: job.blobPrefix,
+        trigger: job.trigger,
         heartbeat,
       });
       return r.status === "done"
@@ -311,7 +313,8 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         accessToken,
         primaryLocale,
         locales,
-        blobPrefix: job.blobPrefix,
+        scanId,
+        trigger: job.trigger,
         heartbeat,
       });
       return {
