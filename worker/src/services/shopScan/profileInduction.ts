@@ -1,6 +1,7 @@
 import { shopScanChatJson, SHOP_SCAN_AI_MODEL, type ChatMessage } from "./ai.js";
 import type { ShopMarket, ShopProfileFacts } from "./shopContext.js";
 import type { ShopSignalBundle } from "./signalExtraction.js";
+import { buildCategoryTerminologyPreload } from "./categoryTerminologyPreload.js";
 
 /**
  * AI 归纳两步链路（文档 Phase 4 / 9 节）。
@@ -33,11 +34,10 @@ export type TerminologyStrategy = {
   brandTerms: string[];
   doNotTranslateTerms: string[];
   preferredTerms: Array<{ source: string; note: string | null }>;
-  seoTerms: string[];
+  regionalStyleGuidance: string[];
   moduleHints: Array<{
     module: string;
     tonePolicy: string | null;
-    keywordPolicy: string | null;
     literalVsAdaptive: string | null;
   }>;
 };
@@ -70,11 +70,10 @@ type AiStrategyResponse = {
   brandTerms?: string[];
   doNotTranslateTerms?: string[];
   preferredTerms?: Array<{ source?: string; note?: string }>;
-  seoTerms?: string[];
+  regionalStyleGuidance?: string[];
   moduleHints?: Array<{
     module?: string;
     tonePolicy?: string;
-    keywordPolicy?: string;
     literalVsAdaptive?: string;
   }>;
 };
@@ -156,14 +155,22 @@ export async function runProfileInduction(args: {
     };
   }
 
+  const preloadedTerminology = buildCategoryTerminologyPreload({
+    facts,
+    signals,
+    understanding,
+  });
+
   const step2Messages: ChatMessage[] = [
     {
       role: "system",
       content:
         "你是多语言电商术语与翻译策略专家。基于已完成的店铺理解结论与原始信号，输出术语控制建议与模块级翻译方向。" +
-        '严格输出 JSON：{"brandTerms":string[],"doNotTranslateTerms":string[],"preferredTerms":[{"source":string,"note":string}],"seoTerms":string[],"moduleHints":[{"module":string,"tonePolicy":string,"keywordPolicy":string,"literalVsAdaptive":string}]}。' +
-        "brandTerms 为应保留或固定表达的品牌/系列词；doNotTranslateTerms 为不应翻译的词（品牌名、型号等）；preferredTerms 为高置信建议固定译法的源词（note 可写译法方向，无则空字符串）；seoTerms 为 SEO 关键词建议 5-15 个；" +
-        "moduleHints 覆盖 PRODUCT_TITLE、COLLECTION_TITLE、MENU_ITEM、THEME_JSON_TEXT、ARTICLE_TITLE、SEO_TITLE、META_DESCRIPTION 中有依据的模块，每项 tonePolicy/keywordPolicy/literalVsAdaptive 各一句话（无则空字符串）。只输出高置信、有信号支撑的内容，不要臆造。",
+        '严格输出 JSON：{"brandTerms":string[],"doNotTranslateTerms":string[],"preferredTerms":[{"source":string,"note":string}],"regionalStyleGuidance":string[],"moduleHints":[{"module":string,"tonePolicy":string,"literalVsAdaptive":string}]}。' +
+        "preferredTerms 主要用于该行业/类目里的专业词汇、工艺词、产品家族词、材质词等“容易直译出错”的源词，重点给出在目标市场更专业、更地道的译法方向；不要把品牌名、店铺名、供应商名混进 preferredTerms。" +
+        "brandTerms 与 doNotTranslateTerms 主要用于网站自身信息，例如品牌名、系列名、供应商名、产品线名、型号名、站点专有词；brandTerms 为应保留或固定表达的品牌/系列词，doNotTranslateTerms 为不应翻译的词（品牌名、型号等）。" +
+        "regionalStyleGuidance 为 3-6 条主翻译阶段使用的地区化行业表达要求，强调当地行业常用说法、避免英语直译、保持品牌词稳定，不考虑 SEO 目标；" +
+        "moduleHints 覆盖 PRODUCT_TITLE、COLLECTION_TITLE、MENU_ITEM、THEME_JSON_TEXT、ARTICLE_TITLE、META_DESCRIPTION 中有依据的模块，每项 tonePolicy/literalVsAdaptive 各一句话（无则空字符串）。只输出高置信、有信号支撑的内容，不要臆造。",
     },
     {
       role: "user",
@@ -176,6 +183,17 @@ export async function runProfileInduction(args: {
         `品类词：${signals.categoryTerms.join(", ") || "无"}`,
         `导航词：${signals.menuTerms.join(", ") || "无"}`,
         `高权重词：${signals.weightedTopTerms.map((t) => t.term).join(", ") || "无"}`,
+        preloadedTerminology?.preferredTerms?.length
+          ? `专业词候选（来自商品/集合/品类）：${preloadedTerminology.preferredTerms
+              .map((term) => term.source)
+              .join(", ")}`
+          : "专业词候选（来自商品/集合/品类）：无",
+        preloadedTerminology?.brandTerms?.length
+          ? `站点品牌/专有词候选：${preloadedTerminology.brandTerms.join(", ")}`
+          : "站点品牌/专有词候选：无",
+        preloadedTerminology?.doNotTranslateTerms?.length
+          ? `站点禁翻词候选：${preloadedTerminology.doNotTranslateTerms.join(", ")}`
+          : "站点禁翻词候选：无",
         markets.length
           ? `市场：${markets.map((m) => `${m.name}(${m.locales.join("/")})`).join("; ")}`
           : "",
@@ -222,7 +240,7 @@ function normalizeStrategy(raw: AiStrategyResponse | null): TerminologyStrategy 
 
   const brandTerms = stringArray(raw.brandTerms, 20);
   const doNotTranslateTerms = stringArray(raw.doNotTranslateTerms, 20);
-  const seoTerms = stringArray(raw.seoTerms, 15);
+  const regionalStyleGuidance = stringArray(raw.regionalStyleGuidance, 8);
   const preferredTerms = (raw.preferredTerms ?? [])
     .map((t) => ({
       source: String(t?.source ?? "").trim(),
@@ -235,7 +253,6 @@ function normalizeStrategy(raw: AiStrategyResponse | null): TerminologyStrategy 
     .map((h) => ({
       module: String(h?.module ?? "").trim(),
       tonePolicy: h?.tonePolicy?.trim() || null,
-      keywordPolicy: h?.keywordPolicy?.trim() || null,
       literalVsAdaptive: h?.literalVsAdaptive?.trim() || null,
     }))
     .filter((h) => h.module)
@@ -245,13 +262,13 @@ function normalizeStrategy(raw: AiStrategyResponse | null): TerminologyStrategy 
     brandTerms.length === 0 &&
     doNotTranslateTerms.length === 0 &&
     preferredTerms.length === 0 &&
-    seoTerms.length === 0 &&
+    regionalStyleGuidance.length === 0 &&
     moduleHints.length === 0
   ) {
     return null;
   }
 
-  return { brandTerms, doNotTranslateTerms, preferredTerms, seoTerms, moduleHints };
+  return { brandTerms, doNotTranslateTerms, preferredTerms, regionalStyleGuidance, moduleHints };
 }
 
 function stringArray(value: unknown, max: number): string[] {

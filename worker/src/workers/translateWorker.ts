@@ -31,6 +31,7 @@ import {
   resolveEngine,
   mergeEngineUsage,
   countFieldUnits,
+  classifyField,
   flushKeyStats,
   pAll,
   setShopQuotaCap,
@@ -38,6 +39,10 @@ import {
   type TranslateItem,
   type TranslatedResourceOutput,
 } from "../services/llmTranslate.js";
+import {
+  buildResolvedPromptContext,
+  selectPromptContextBlocks,
+} from "@ciwi/translation-core";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,
@@ -51,6 +56,74 @@ import {
   stageSlots,
   type StagePoolKind,
 } from "../services/stagePool.js";
+
+type TranslationContextProfileBlob = {
+  shopBaseline?: {
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    globalProtectedTerms?: string[] | null;
+    globalDoNotTranslateTerms?: string[] | null;
+  } | null;
+  categoryTerminologyPack?: {
+    key?: string | null;
+    professionalTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+  } | null;
+  seriesArticleTerminologyPack?: {
+    key?: string | null;
+    professionalTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+  } | null;
+  productFamilyProtectedTerms?: {
+    terms?: string[] | null;
+  } | null;
+  regionalStyleProfile?: {
+    guidanceNotes?: string[] | null;
+  } | null;
+  shopContext?: {
+    industry?: string | null;
+    subIndustry?: string | null;
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    description?: string | null;
+    keywords?: string[] | null;
+    sellingPoints?: string[] | null;
+    priceRange?: string | null;
+  } | null;
+  terminologyProfile?: {
+    brandTerms?: string[] | null;
+    doNotTranslateTerms?: string[] | null;
+    preferredTerms?: Array<{ source?: string | null; note?: string | null }> | null;
+  } | null;
+  marketProfile?: {
+    publishedLocales?: string[] | null;
+    marketNotes?: string[] | null;
+    currencyContext?: string[] | null;
+  } | null;
+  themeSceneProfile?: {
+    sceneHints?: Array<{
+      module?: string | null;
+      keyPattern?: string | null;
+      namespace?: string | null;
+      resourcePattern?: string | null;
+      scene?: string | null;
+      role?: string | null;
+      confidence?: number | null;
+      tonePreference?: string | null;
+      creativity?: string | null;
+    }> | null;
+  } | null;
+  modulePolicyProfile?: {
+    moduleHints?: Array<{
+      module?: string | null;
+      tonePolicy?: string | null;
+      literalVsAdaptive?: string | null;
+    }>;
+  } | null;
+} | null;
+
+type TranslationContextProfileData = NonNullable<TranslationContextProfileBlob>;
+type TerminologyProfileBlob = NonNullable<TranslationContextProfileData["terminologyProfile"]>;
+type ThemeSceneProfileBlob = NonNullable<TranslationContextProfileData["themeSceneProfile"]>;
+type PendingResource = { resourceId: string; fields: TranslateItem[] };
 
 const HEARTBEAT_THROTTLE_MS = 30_000;
 
@@ -76,6 +149,252 @@ const TRANSLATE_CLAIM_SCAN_MAX_BATCHES = Math.max(
   1,
   Number(process.env.TRANSLATE_CLAIM_SCAN_MAX_BATCHES) || 5,
 );
+
+function normalizeStringList(values: string[] | null | undefined): string[] | null {
+  const normalized = (values ?? [])
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeTerminologyPromptContext(
+  profile: TerminologyProfileBlob | null | undefined,
+) {
+  if (!profile) return null;
+  const preferredTerms = (profile.preferredTerms ?? [])
+    .map((term) => {
+      const source = term?.source?.trim();
+      if (!source) return null;
+      return {
+        source,
+        note: term?.note?.trim() || null,
+      };
+    })
+    .filter((term): term is { source: string; note: string | null } => Boolean(term));
+
+  const normalized = {
+    brandTerms: normalizeStringList(profile.brandTerms),
+    doNotTranslateTerms: normalizeStringList(profile.doNotTranslateTerms),
+    preferredTerms: preferredTerms.length > 0 ? preferredTerms : null,
+  };
+
+  if (
+    !normalized.brandTerms &&
+    !normalized.doNotTranslateTerms &&
+    !normalized.preferredTerms
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeLocalizationPromptContext(profile: TranslationContextProfileBlob | null | undefined) {
+  if (!profile) return null;
+  const shopBaseline =
+    profile.shopBaseline &&
+    (profile.shopBaseline.brandTone?.trim() ||
+      profile.shopBaseline.brandPositioning?.trim() ||
+      normalizeStringList(profile.shopBaseline.globalProtectedTerms) ||
+      normalizeStringList(profile.shopBaseline.globalDoNotTranslateTerms))
+      ? {
+          brandTone: profile.shopBaseline.brandTone?.trim() || null,
+          brandPositioning: profile.shopBaseline.brandPositioning?.trim() || null,
+          globalProtectedTerms: normalizeStringList(profile.shopBaseline.globalProtectedTerms),
+          globalDoNotTranslateTerms: normalizeStringList(
+            profile.shopBaseline.globalDoNotTranslateTerms,
+          ),
+        }
+      : null;
+  const categoryTerminologyPack = normalizeProfessionalPack(profile.categoryTerminologyPack);
+  const seriesArticleTerminologyPack = normalizeProfessionalPack(
+    profile.seriesArticleTerminologyPack,
+  );
+  const productFamilyProtectedTerms =
+    profile.productFamilyProtectedTerms &&
+    normalizeStringList(profile.productFamilyProtectedTerms.terms)
+      ? {
+          terms: normalizeStringList(profile.productFamilyProtectedTerms.terms),
+        }
+      : null;
+  const regionalStyleProfile =
+    profile.regionalStyleProfile &&
+    normalizeStringList(profile.regionalStyleProfile.guidanceNotes)
+      ? {
+          guidanceNotes: normalizeStringList(profile.regionalStyleProfile.guidanceNotes),
+        }
+      : null;
+
+  if (
+    !shopBaseline &&
+    !categoryTerminologyPack &&
+    !seriesArticleTerminologyPack &&
+    !productFamilyProtectedTerms &&
+    !regionalStyleProfile
+  ) {
+    return null;
+  }
+
+  return {
+    shopBaseline,
+    categoryTerminologyPack,
+    seriesArticleTerminologyPack,
+    productFamilyProtectedTerms,
+    regionalStyleProfile,
+  };
+}
+
+function normalizeProfessionalPack(
+  profile:
+    | TranslationContextProfileData["categoryTerminologyPack"]
+    | TranslationContextProfileData["seriesArticleTerminologyPack"]
+    | null
+    | undefined,
+) {
+  if (!profile) return null;
+  const professionalTerms = (profile.professionalTerms ?? [])
+    .map((term) => {
+      const source = term?.source?.trim();
+      if (!source) return null;
+      return {
+        source,
+        note: term?.note?.trim() || null,
+      };
+    })
+    .filter((term): term is { source: string; note: string | null } => Boolean(term));
+  if (!professionalTerms.length && !profile.key?.trim()) return null;
+  return {
+    key: profile.key?.trim() || null,
+    professionalTerms: professionalTerms.length > 0 ? professionalTerms : null,
+  };
+}
+
+function normalizeThemeSceneProfileContext(
+  profile: ThemeSceneProfileBlob | null | undefined,
+) {
+  if (!profile) return null;
+  const sceneHints = (profile.sceneHints ?? [])
+    .map((hint) => {
+      const module = hint?.module?.trim();
+      const keyPattern = hint?.keyPattern?.trim();
+      const scene = hint?.scene?.trim();
+      if (!module || !keyPattern || !scene) return null;
+      return {
+        module,
+        keyPattern,
+        namespace: hint?.namespace?.trim() || null,
+        resourcePattern: hint?.resourcePattern?.trim() || null,
+        scene,
+        role: hint?.role?.trim() || null,
+        confidence: typeof hint?.confidence === "number" ? hint.confidence : null,
+        tonePreference: hint?.tonePreference?.trim() || null,
+        creativity: hint?.creativity?.trim() || null,
+      };
+    })
+    .filter(
+      (
+        hint,
+      ): hint is {
+        module: string;
+        keyPattern: string;
+        namespace: string | null;
+        resourcePattern: string | null;
+        scene: string;
+        role: string | null;
+        confidence: number | null;
+        tonePreference: string | null;
+        creativity: string | null;
+      } => Boolean(hint),
+    );
+
+  return sceneHints.length > 0 ? { sceneHints } : null;
+}
+
+function reorderResourcesForPromptGrouping(args: {
+  resources: PendingResource[];
+  module: string;
+  target: string;
+  promptContextBase: {
+    module?: string | null;
+    shopContext?: TranslationContextProfileData["shopContext"];
+    terminology?: ReturnType<typeof normalizeTerminologyPromptContext>;
+    localizationContext?: ReturnType<typeof normalizeLocalizationPromptContext>;
+    market?: TranslationContextProfileData["marketProfile"];
+    themeSceneProfile?: ReturnType<typeof normalizeThemeSceneProfileContext>;
+    modulePolicy?: {
+      module?: string | null;
+      tonePolicy?: string | null;
+      literalVsAdaptive?: string | null;
+    } | null;
+  };
+}): PendingResource[] {
+  const reordered = args.resources.map((resource) => {
+    const rankedFields = resource.fields.map((field, index) => {
+      const klass = classifyField(field.key, field.value, field.shopifyType);
+      if (klass === "skip") {
+        return { field, index, groupKey: `zzzz|skip|${field.key}` };
+      }
+
+      const promptContentClass = klass === "liquid_html" ? "html" : klass;
+      const resolved = buildResolvedPromptContext({
+        module: args.module,
+        resourceId: resource.resourceId,
+        key: field.key,
+        contentClass: promptContentClass,
+        shopifyType: field.shopifyType,
+        base: args.promptContextBase,
+      });
+      const selected = selectPromptContextBlocks(resolved, {
+        sourceText: field.value,
+        targetLocale: args.target,
+      });
+      const hasRegionalStyle =
+        "regionalStyle" in selected && Boolean(selected.regionalStyle);
+      const footprint =
+        [
+          selected.shopContext ? "shop" : null,
+          selected.terminology ? "term" : null,
+          hasRegionalStyle ? "regional_style" : null,
+          selected.modulePolicy ? "policy" : null,
+        ]
+          .filter(Boolean)
+          .join("+") || "scene_only";
+
+      return {
+        field,
+        index,
+        groupKey: [
+          resolved.promptProfileId,
+          resolved.scene,
+          resolved.role ?? "none",
+          klass,
+          footprint,
+          field.key.toLowerCase(),
+        ].join("|"),
+      };
+    });
+
+    rankedFields.sort((a, b) => {
+      if (a.groupKey !== b.groupKey) return a.groupKey.localeCompare(b.groupKey);
+      return a.index - b.index;
+    });
+
+    return {
+      resourceId: resource.resourceId,
+      fields: rankedFields.map((entry) => entry.field),
+      resourceGroupKey: rankedFields[0]?.groupKey ?? `zzzz|${resource.resourceId}`,
+    };
+  });
+
+  reordered.sort((a, b) => {
+    if (a.resourceGroupKey !== b.resourceGroupKey) {
+      return a.resourceGroupKey.localeCompare(b.resourceGroupKey);
+    }
+    return a.resourceId.localeCompare(b.resourceId);
+  });
+
+  return reordered.map(({ resourceId, fields }) => ({ resourceId, fields }));
+}
 /** Serialize shared counter + Redis updates across concurrent chunk handlers. */
 function createExclusiveRunner() {
   let chain: Promise<void> = Promise.resolve();
@@ -262,6 +581,36 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   const { shopName, id: jobId, source, target, aiModel } = job;
   // Engine routing (Google vs DeepSeek) is applied inside translateBatch.
   const blobPrefix = job.blobPrefix || `tasks/v4/${shopName}/${jobId}`;
+  const translationContextProfile = await blobRead<TranslationContextProfileBlob>(
+    `${blobPrefix}/translation-context-profile.json`,
+  );
+  const modulePolicyByModule = new Map(
+    (translationContextProfile?.modulePolicyProfile?.moduleHints ?? [])
+      .map((hint) => {
+        const module = String(hint?.module ?? "").trim().toUpperCase();
+        if (!module) return null;
+        return [
+          module,
+          {
+            module,
+            tonePolicy: hint?.tonePolicy?.trim() || null,
+            literalVsAdaptive: hint?.literalVsAdaptive?.trim() || null,
+          },
+        ] as const;
+      })
+      .filter(
+        (
+          row,
+        ): row is readonly [
+          string,
+          {
+            module: string;
+            tonePolicy: string | null;
+            literalVsAdaptive: string | null;
+          },
+        ] => Boolean(row),
+      ),
+  );
   const hasProfileBlock = Boolean(job.profileBlock?.trim());
 
   console.log(
@@ -694,8 +1043,34 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             });
           };
 
+          const promptContextBase = {
+            module,
+            shopContext: translationContextProfile?.shopContext ?? null,
+            terminology: normalizeTerminologyPromptContext(
+              translationContextProfile?.terminologyProfile,
+            ),
+            localizationContext: normalizeLocalizationPromptContext(
+              translationContextProfile,
+            ),
+            market: translationContextProfile?.marketProfile ?? null,
+            themeSceneProfile: normalizeThemeSceneProfileContext(
+              translationContextProfile?.themeSceneProfile,
+            ),
+            modulePolicy: modulePolicyByModule.get(module.toUpperCase()) ?? null,
+          };
+
+          const orderedPendingResources = reorderResourcesForPromptGrouping({
+            resources: pendingResources.map((r) => ({
+              resourceId: r.resourceId,
+              fields: r.fields,
+            })),
+            module,
+            target,
+            promptContextBase,
+          });
+
           const { usage } = await translateResources(
-            pendingResources.map((r) => ({ resourceId: r.resourceId, fields: r.fields })),
+            orderedPendingResources,
             source,
             target,
             aiModel,
@@ -704,8 +1079,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             onResourceDone,
             shouldAbort,
             {
+              translateHandle: job.isHandle,
+              promptContext: promptContextBase,
               profileBlock: job.profileBlock ?? undefined,
               translateHandle: job.isHandle,
+              promptContext: promptContextBase,
             },
           );
           mergeEngineUsage(engineUsage, usage);

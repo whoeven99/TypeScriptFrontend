@@ -37,16 +37,77 @@ export type TranslateSingleFieldArgs = {
   profileBlock?: string;
   /** 字段 key，影响 handle 路由与 classifyField。默认 value。 */
   fieldKey?: string;
+  /** 资源模块，用于场景路由（如 PRODUCT / MENU / ONLINE_STORE_THEME_JSON_TEMPLATE）。 */
+  module?: string;
+  resourceId?: string;
   shopifyType?: string;
   /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
   customPrompt?: string;
+  shopContext?: {
+    industry?: string | null;
+    subIndustry?: string | null;
+    brandTone?: string | null;
+    brandPositioning?: string | null;
+    description?: string | null;
+    keywords?: string[] | null;
+    sellingPoints?: string[] | null;
+    priceRange?: string | null;
+  } | null;
+  terminology?: {
+    brandTerms?: string[] | null;
+    doNotTranslateTerms?: string[] | null;
+    preferredTerms?: Array<{ source: string; note?: string | null }> | null;
+  } | null;
+  localizationContext?: {
+    shopBaseline?: {
+      brandTone?: string | null;
+      brandPositioning?: string | null;
+      globalProtectedTerms?: string[] | null;
+      globalDoNotTranslateTerms?: string[] | null;
+    } | null;
+    categoryTerminologyPack?: {
+      key?: string | null;
+      professionalTerms?: Array<{ source: string; note?: string | null }> | null;
+    } | null;
+    seriesArticleTerminologyPack?: {
+      key?: string | null;
+      professionalTerms?: Array<{ source: string; note?: string | null }> | null;
+    } | null;
+    productFamilyProtectedTerms?: {
+      terms?: string[] | null;
+    } | null;
+    regionalStyleProfile?: {
+      guidanceNotes?: string[] | null;
+    } | null;
+  } | null;
+  market?: {
+    publishedLocales?: string[] | null;
+    marketNotes?: string[] | null;
+    currencyContext?: string[] | null;
+  } | null;
+  themeSceneProfile?: {
+    sceneHints?: Array<{
+      module: string;
+      keyPattern: string;
+      scene: string;
+      role?: string | null;
+      confidence?: number | null;
+      tonePreference?: string | null;
+      creativity?: string | null;
+    }> | null;
+  } | null;
+  modulePolicy?: {
+    module?: string | null;
+    tonePolicy?: string | null;
+    literalVsAdaptive?: string | null;
+  } | null;
 };
 
 export type TranslateSingleFieldResult = {
   translatedText: string;
   /** LLM API 原始 token 合计（未乘 QUOTA_TOKEN_MULTIPLIER）。 */
   usedTokens: number;
-  status: "translated" | "fallback";
+  status: "translated" | "fallback" | "skipped";
 };
 
 /**
@@ -58,7 +119,7 @@ export async function translateSingleField(
 ): Promise<TranslateSingleFieldResult> {
   const text = args.text ?? "";
   if (!text.trim()) {
-    return { translatedText: text, usedTokens: 0, status: "translated" };
+    return { translatedText: text, usedTokens: 0, status: "skipped" };
   }
 
   const source = (args.source ?? "en").trim() || "en";
@@ -101,6 +162,16 @@ export async function translateSingleField(
       skipCacheRead: true,
       skipCacheWrite: false,
       logSingleTranslate: true,
+      promptContext: {
+        module: args.module,
+        resourceId: args.resourceId,
+        shopContext: args.shopContext ?? null,
+        terminology: args.terminology ?? null,
+        localizationContext: args.localizationContext ?? null,
+        market: args.market ?? null,
+        themeSceneProfile: args.themeSceneProfile ?? null,
+        modulePolicy: args.modulePolicy ?? null,
+      },
     },
   );
 

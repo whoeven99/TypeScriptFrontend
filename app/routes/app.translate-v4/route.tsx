@@ -16,6 +16,7 @@ import { useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
+import type { RootState } from "~/store";
 import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
@@ -177,17 +178,8 @@ export default function AppTranslateV4() {
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const { plan, isNew } = useSelector(
-    (state: {
-      userConfig?: {
-        plan?: { type?: string; isInFreePlanTime?: boolean };
-        isNew?: boolean | null;
-      };
-    }) => ({
-      plan: state.userConfig?.plan,
-      isNew: state.userConfig?.isNew ?? null,
-    }),
-  );
+  const plan = useSelector((state: RootState) => state.userConfig.plan);
+  const isNew = useSelector((state: RootState) => state.userConfig.isNew);
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
     normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;

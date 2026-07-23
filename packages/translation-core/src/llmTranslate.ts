@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { tmGet, tmGetByValue, tmSet, tmSetByValue } from "./translationMemory.js";
 import { loadGlossaryLines } from "./glossary.js";
 import {
@@ -27,10 +28,12 @@ import {
   effectiveTranslation,
   hasHtmlPlaceholderLeak,
   htmlNodePartsOf,
+  htmlNodeTextParts,
   restoreBrPlaceholders,
   restoreHtmlTextNodes,
   roundtripHtmlForTest,
   sanitizeHtmlTextTranslation,
+  flattenHtmlNodeTranslations,
 } from "./htmlTranslate.js";
 import { enforceTranslateResultLimits } from "./translationFieldLimits.js";
 import {
@@ -39,6 +42,11 @@ import {
   protectedLiteralsPreserved,
   restoreMaskedPlaceholders,
 } from "./placeholderMask.js";
+import {
+  buildPromptContextBlock,
+  buildResolvedPromptContext,
+  type TranslationPromptContextInput,
+} from "./promptContextBuilder.js";
 import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
 
@@ -1635,8 +1643,12 @@ export type TranslateResult = {
   key: string;
   translatedValue: string;
   digest: string;
-  /** "translated" = produced by the engine; "fallback" = engine failed, original text returned. */
-  status: "translated" | "fallback";
+  /**
+   * "translated" = translated output was resolved successfully
+   * "fallback" = translation failed and original text was returned
+   * "skipped" = original text was intentionally kept without invoking translation
+   */
+  status: "translated" | "fallback" | "skipped";
 };
 
 // ─── Field classification ──────────────────────────────────────────────────────
@@ -1658,9 +1670,11 @@ export function prepareHandleSourceText(value: string): string {
  * meaning it does not need translation.
  *
  * Strategy:
- *  - For English target: if source is a non-Latin script language AND the text
- *    contains no source-script characters, it is almost certainly already in
- *    English → skip.  (A zh-CN store's product titled "Standard" is English.)
+ *  - For English target: only when source is a distinctive non-Latin script
+ *    language AND the text contains English-looking Latin words while
+ *    containing no source-script characters do we skip. This avoids treating
+ *    Latin-family content such as German/French/Spanish as "already English".
+ *    (A zh-CN store's product titled "Standard" is English and can be skipped.)
  *  - For other targets with a distinctive script (zh, ja, ko, ar, ru, pl, de …):
  *    skip only when the text has ≥2 target-script chars after stripping
  *    punctuation/whitespace and their share of meaningful content exceeds 70%.
@@ -1772,15 +1786,38 @@ function hasTargetScriptChars(text: string, targetLang: string): boolean {
   return meetsScriptThreshold(text, ...patterns);
 }
 
+function canInferEnglishFromMissingSourceScript(source: string): boolean {
+  switch (langPrefix(source)) {
+    case "zh":
+    case "ja":
+    case "ko":
+    case "ar":
+    case "ru":
+    case "uk":
+    case "bg":
+    case "th":
+    case "hi":
+    case "mr":
+    case "ne":
+      return true;
+    default:
+      return false;
+  }
+}
+
 export function alreadyInTarget(text: string, source: string, target: string): boolean {
   const tl = langPrefix(target);
   const sl = langPrefix(source);
 
   // ── English target ──────────────────────────────────────────────────────────
-  // If source is a CJK / non-Latin language and text has no source-script chars,
-  // the content is already in a Latin-script language (overwhelmingly English).
+  // Only infer "already English" from missing source script for distinctive
+  // non-Latin source locales; Latin-family languages can still be untranslated.
   if (tl === "en") {
-    return !containsSourceScript(text, source);
+    return (
+      canInferEnglishFromMissingSourceScript(source) &&
+      hasLatinWords(text) &&
+      !containsSourceScript(text, source)
+    );
   }
 
   // Mixed target-script + Latin (e.g. "测试：Home Work: A Memoir…") is NOT done.
@@ -1856,7 +1893,7 @@ function countJsonRuleUnits(value: string): number {
   let units = 0;
   for (const slot of slots) {
     if (slot.isHtml) {
-      units += htmlNodePartsOf(slot.text).nodeParts.reduce((n, parts) => n + parts.length, 0);
+      units += htmlNodeTextParts(htmlNodePartsOf(slot.text)).length;
     } else {
       units += 1;
     }
@@ -1872,7 +1909,7 @@ function countListUnits(value: string): number {
     for (const el of list) {
       if (!el) continue;
       if (isHtml(el)) {
-        units += htmlNodePartsOf(el).nodeParts.reduce((n, parts) => n + parts.length, 0);
+        units += htmlNodeTextParts(htmlNodePartsOf(el)).length;
       } else {
         units += 1;
       }
@@ -1891,10 +1928,9 @@ function countListUnits(value: string): number {
 export function countFieldUnits(key: string, value: string, shopifyType?: string): number {
   const klass = classifyField(key, value, shopifyType);
   if (klass === "skip") return 0;
-  if (klass === "html")
-    return htmlNodePartsOf(value).nodeParts.reduce((n, parts) => n + parts.length, 0);
+  if (klass === "html") return htmlNodeTextParts(htmlNodePartsOf(value)).length;
   if (klass === "liquid_html")
-    return liquidHtmlNodePartsOf(value).plan.nodeParts.reduce((n, parts) => n + parts.length, 0);
+    return htmlNodeTextParts(liquidHtmlNodePartsOf(value).plan).length;
   if (klass === "json") {
     const units = countJsonRuleUnits(value);
     if (units > 0) return units;
@@ -2164,7 +2200,19 @@ async function callGoogleTranslate(
  * protection applies to every engine (LLM and Google alike). Returns a map of
  * key → { value, status }; items unresolved by all engines get status "fallback".
  */
-type RoutedResult = { value: string; status: "translated" | "fallback"; engine: Engine | null; tokens: number };
+type RoutedResult = {
+  value: string;
+  status: "translated" | "fallback" | "skipped";
+  engine: Engine | null;
+  tokens: number;
+};
+
+type PoolEntry = {
+  occ: Map<string, number>;
+  order: Engine[];
+  isHandle: boolean;
+  profileBlock: string;
+};
 
 async function translateItemsRouted(
   items: TranslateItem[],
@@ -2181,13 +2229,16 @@ async function translateItemsRouted(
 ): Promise<{ results: Map<string, RoutedResult>; llmTokens: number }> {
   // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
   const placeholdersByKey = new Map<string, string[]>();
-  const masked = items.map((it) => {
+  const collected = new Map<string, string>(); // masked translations
+  const masked = items.flatMap((it) => {
+    if (shouldShortCircuitTranslationValue(it.value)) {
+      collected.set(it.key, it.value);
+      return [];
+    }
     const { masked: m, tokens } = maskPlaceholders(it.value);
     placeholdersByKey.set(it.key, tokens);
-    return { key: it.key, value: m, digest: it.digest };
+    return [{ key: it.key, value: m, digest: it.digest }];
   });
-
-  const collected = new Map<string, string>(); // masked translations
   const engineByKey = new Map<string, Engine>(); // which engine resolved each key
   const llmTokensByKey = new Map<string, number>(); // LLM API tokens charged per key
   let systemPrompt: string | null = null;
@@ -2203,8 +2254,8 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt)
-            : buildSystemPrompt(target, glossary, profileBlock, customPrompt);
+            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt, masked)
+            : buildSystemPrompt(target, glossary, profileBlock, customPrompt, masked);
         if (logSingleTranslate) {
           console.log("[single] prompt", {
             shopName,
@@ -2265,6 +2316,10 @@ async function translateItemsRouted(
       result.set(it.key, { value: it.value, status: "fallback", engine: null, tokens: 0 });
       continue;
     }
+    if (shouldShortCircuitTranslationValue(it.value)) {
+      result.set(it.key, { value: it.value, status: "skipped", engine: null, tokens: 0 });
+      continue;
+    }
     const decoded = decodeQuoteEntities(raw);
     const restored = restoreMaskedPlaceholders(decoded, placeholders);
     if (placeholders.length > 0) {
@@ -2312,7 +2367,7 @@ async function translateItemsRouted(
 /** Re-translate pool units that fell back or echoed source, one item per request. */
 async function retryPoolFallbacks(
   translated: Map<string, Map<string, RoutedResult>>,
-  pools: Map<string, Map<string, number>>,
+  pools: Map<string, PoolEntry>,
   source: string,
   target: string,
   aiModel: string,
@@ -2324,10 +2379,11 @@ async function retryPoolFallbacks(
   logSingleTranslate = false,
 ): Promise<number> {
   let retried = 0;
-  for (const [sig, occ] of pools) {
-    const { order } = parsePoolSignature(sig);
-    const poolPrimaryModel = engineModel(order[0]!, aiModel);
-    const tmap = translated.get(sig)!;
+  for (const [, pool] of pools) {
+    const { occ, order, isHandle, profileBlock } = pool;
+          const poolPrimaryModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
+    const poolKey = buildPoolKey(order, isHandle, profileBlock);
+    const tmap = translated.get(poolKey)!;
     const needsRetry: string[] = [];
     for (const text of occ.keys()) {
       const r = tmap.get(text);
@@ -2341,14 +2397,13 @@ async function retryPoolFallbacks(
     }
     for (const text of needsRetry) {
       if (await shouldAbort()) break;
-      const { isHandle, order: poolOrder } = parsePoolSignature(sig);
       const { results: m } = await translateItemsRouted(
         [{ key: "0", value: text, digest: "" }],
         source,
         target,
         aiModel,
         shopName,
-        poolOrder,
+        order,
         isHandle ? "handle" : "default",
         profileBlock,
         customPrompt,
@@ -2427,6 +2482,7 @@ function buildSystemPrompt(
   glossaryLines: string[],
   profileBlock = "",
   userInstruction = "",
+  items: Array<Pick<TranslateItem, "value">> = [],
 ): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
@@ -2436,23 +2492,18 @@ function buildSystemPrompt(
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
+  const dynamicRules = buildDynamicSystemPromptRules(items, profileBlock);
+  const dynamicRulesBlock =
+    dynamicRules.length > 0 ? `${dynamicRules.map((line) => `- ${line}`).join("\n")}\n` : "";
   return `You are a professional e-commerce translator.${shopContextBlock}
-Detect the input language automatically and translate the content into "${target}".
+Translate the content into "${target}".
 Rules:
 - Be accurate and natural for e-commerce
-- Translate ALL content into "${target}", no matter what language the input is in (English, Chinese, Spanish, etc.)
 - If a value is already entirely in "${target}", return it unchanged
 - translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
-- Each value is a plain-text leaf extracted from HTML: never include HTML tags (<td>, <tr>, <table>, etc.) in translatedValue
-- Keep opaque sentinel tokens (⟦0⟧, ⟦1⟧, ⟦2⟧, …) exactly unchanged; never translate, modify, reorder, or drop them
-- Sentinels may represent URLs or site paths (e.g. /blogs/news/article) — preserve them verbatim
-- Keep the literal token ⟦BR⟧ exactly as it appears (line-break placeholder)
 - Output literal characters; do NOT HTML-escape. Use ' and " directly — never &#39; or &quot;
-- Do NOT add or remove leading or trailing whitespace
-- If the value is empty, return it unchanged
-- If a field key is "title", translatedValue MUST be at most 255 characters; shorten naturally while preserving the core meaning
 - You MUST return an entry for every key in the input
-${targetLangBlock}
+${dynamicRulesBlock}${targetLangBlock}
 ${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate.
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
@@ -2464,6 +2515,7 @@ function buildHandleSystemPrompt(
   glossaryLines: string[],
   profileBlock = "",
   userInstruction = "",
+  items: Array<Pick<TranslateItem, "value">> = [],
 ): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
@@ -2473,6 +2525,9 @@ function buildHandleSystemPrompt(
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
+  const dynamicRules = buildDynamicSystemPromptRules(items, profileBlock);
+  const dynamicRulesBlock =
+    dynamicRules.length > 0 ? `${dynamicRules.map((line) => `- ${line}`).join("\n")}\n` : "";
   return `You are a professional e-commerce translator.${shopContextBlock}
 Detect the input language automatically and translate product URL handle/slug text into "${target}".
 Rules:
@@ -2483,12 +2538,52 @@ Rules:
 - Keep numbers, variables, and placeholders unchanged
 - Do NOT output notes, annotations, explanations, corrections, or bilingual text
 - Output literal characters; do NOT HTML-escape
-- Do NOT add or remove leading or trailing whitespace
 - You MUST return an entry for every key in the input
-${targetLangBlock}
+${dynamicRulesBlock}${targetLangBlock}
 ${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate (hyphens may appear as spaces).
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
+}
+
+function buildDynamicSystemPromptRules(
+  items: Array<Pick<TranslateItem, "value">>,
+  profileBlock: string,
+): string[] {
+  const values = items.map((item) => item.value);
+  const hasSentinels = values.some((value) => /⟦[^⟧]+⟧/.test(value));
+  const hasBrPlaceholder = values.some((value) => value.includes("⟦BR⟧"));
+  const hasLeadingTrailingWhitespace = values.some((value) => value !== value.trim());
+  const enforcePlainTextLeaf =
+    profileBlock.includes("Preserve HTML structure") ||
+    profileBlock.includes("Preserve JSON structure") ||
+    values.some((value) => value.includes("⟦HTML_SEG_"));
+
+  const rules: string[] = [];
+  if (enforcePlainTextLeaf) {
+    rules.push("Return plain text for each value; never add HTML tags or wrapper markup");
+  }
+  if (hasSentinels) {
+    rules.push("Keep every sentinel token written like ⟦...⟧ exactly unchanged; never translate, modify, reorder, or drop it");
+  }
+  if (hasBrPlaceholder) {
+    rules.push("Keep the literal token ⟦BR⟧ exactly as it appears");
+  }
+  if (hasLeadingTrailingWhitespace) {
+    rules.push("Do NOT add or remove leading or trailing whitespace");
+  }
+  return rules;
+}
+
+function shouldShortCircuitTranslationValue(value: string): boolean {
+  return value.trim().length === 0;
+}
+
+function combineTranslationStatuses(
+  statuses: Array<"translated" | "fallback" | "skipped">,
+): "translated" | "fallback" | "skipped" {
+  if (statuses.some((status) => status === "fallback")) return "fallback";
+  if (statuses.every((status) => status === "skipped")) return "skipped";
+  return "translated";
 }
 
 /**
@@ -2802,14 +2897,12 @@ export function mergeEngineUsage(into: EngineUsage, from: EngineUsage): void {
   }
 }
 
-type JsonSlotPlan = JsonTextSlot & {
-  htmlPlan?: { template: string; nodeParts: string[][] };
-};
+type JsonSlotPlan = JsonTextSlot & { htmlPlan?: ReturnType<typeof htmlNodePartsOf> };
 
 type ListElementPlan = {
   index: number;
   text: string;
-  htmlPlan?: { template: string; nodeParts: string[][] };
+  htmlPlan?: ReturnType<typeof htmlNodePartsOf>;
 };
 
 // Reconstruction plan for a field whose translation spans one or more text units.
@@ -2822,8 +2915,8 @@ type FieldPlan = {
   cacheModel: string;
 } & (
   | { kind: "plain"; parts: string[]; isHandle?: boolean }
-  | { kind: "html"; template: string; nodeParts: string[][] }
-  | { kind: "liquid_html"; template: string; nodeParts: string[][]; liquidTokens: string[] }
+  | ({ kind: "html" } & ReturnType<typeof htmlNodePartsOf>)
+  | { kind: "liquid_html"; liquidPlan: LiquidHtmlNodePlan }
   | { kind: "json"; originalValue: string; root: JsonValue; slotPlans: JsonSlotPlan[] }
   | { kind: "list"; originalValue: string; elements: ListElementPlan[] }
 );
@@ -2831,7 +2924,7 @@ type FieldPlan = {
 function jsonPlanTexts(plan: Extract<FieldPlan, { kind: "json" }>): string[] {
   const texts: string[] = [];
   for (const slot of plan.slotPlans) {
-    if (slot.htmlPlan) texts.push(...slot.htmlPlan.nodeParts.flat());
+    if (slot.htmlPlan) texts.push(...htmlNodeTextParts(slot.htmlPlan));
     else texts.push(slot.text);
   }
   return texts;
@@ -2840,7 +2933,7 @@ function jsonPlanTexts(plan: Extract<FieldPlan, { kind: "json" }>): string[] {
 function listPlanTexts(plan: Extract<FieldPlan, { kind: "list" }>): string[] {
   const texts: string[] = [];
   for (const el of plan.elements) {
-    if (el.htmlPlan) texts.push(...el.htmlPlan.nodeParts.flat());
+    if (el.htmlPlan) texts.push(...htmlNodeTextParts(el.htmlPlan));
     else texts.push(el.text);
   }
   return texts;
@@ -2852,8 +2945,10 @@ function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
   const texts =
     plan.kind === "plain"
       ? plan.parts
-      : plan.kind === "html" || plan.kind === "liquid_html"
-        ? plan.nodeParts.flat()
+      : plan.kind === "html"
+        ? htmlNodeTextParts(plan)
+      : plan.kind === "liquid_html"
+        ? htmlNodeTextParts(plan.liquidPlan.plan)
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
           : listPlanTexts(plan);
@@ -2873,7 +2968,7 @@ function reconstructPlan(
   if (plan.kind === "plain") {
     const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
     const value = pieces.map((p) => p.value).join("");
-    const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
+    const status = combineTranslationStatuses(pieces.map((p) => p.status));
     const originalValue = plan.parts.join("");
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
     // Plain: field digest TM + value TM (digest if present, else CRC-32).
@@ -2883,29 +2978,23 @@ function reconstructPlan(
     }
   } else if (plan.kind === "html") {
     let anyFallback = false;
-    // Each marker = its parts joined back. A single oversized node was split into
-    // several parts; rejoin them (preserving inner boundaries) for that marker.
-    const out = plan.nodeParts.map((parts) => {
-      const pieces = parts.map((p) => {
-        const r = lookup(plan.poolSig, p);
-        if (!r || r.status === "fallback") {
-          anyFallback = true;
-          return p;
-        }
-        if (
-          looksLikeWrongScriptLeak(p, r.value, target) ||
-          looksLikeEmptySourceHallucination(p, r.value) ||
-          hasPromptSentinelLeakage(r.value)
-        ) {
-          anyFallback = true;
-          return p;
-        }
-        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-      });
-      const joined = pieces.join("");
-      return effectiveTranslation(parts.join(""), joined.trim());
+    const out = flattenHtmlNodeTranslations(plan, (part) => {
+      const r = lookup(plan.poolSig, part);
+      if (!r || r.status === "fallback") {
+        anyFallback = true;
+        return part;
+      }
+      if (
+        looksLikeWrongScriptLeak(part, r.value, target) ||
+        looksLikeEmptySourceHallucination(part, r.value) ||
+        hasPromptSentinelLeakage(r.value)
+      ) {
+        anyFallback = true;
+        return part;
+      }
+      return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
     });
-    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
+    const originalOut = [...plan.texts];
     let value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, out));
     if (hasHtmlPlaceholderLeak(value)) {
       anyFallback = true;
@@ -2920,35 +3009,43 @@ function reconstructPlan(
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "liquid_html") {
     let anyFallback = false;
-    const out = plan.nodeParts.map((parts) => {
-      const pieces = parts.map((p) => {
-        const r = lookup(plan.poolSig, p);
-        if (!r || r.status === "fallback") {
-          anyFallback = true;
-          return p;
-        }
-        if (
-          looksLikeWrongScriptLeak(p, r.value, target) ||
-          looksLikeEmptySourceHallucination(p, r.value) ||
-          hasPromptSentinelLeakage(r.value)
-        ) {
-          anyFallback = true;
-          return p;
-        }
-        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-      });
-      const joined = pieces.join("");
-      return effectiveTranslation(parts.join(""), joined.trim());
+    const out = flattenHtmlNodeTranslations(plan.liquidPlan.plan, (part) => {
+      const r = lookup(plan.poolSig, part);
+      if (!r || r.status === "fallback") {
+        anyFallback = true;
+        return part;
+      }
+      if (
+        looksLikeWrongScriptLeak(part, r.value, target) ||
+        looksLikeEmptySourceHallucination(part, r.value) ||
+        hasPromptSentinelLeakage(r.value)
+      ) {
+        anyFallback = true;
+        return part;
+      }
+      return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
     });
-    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
-    let value = reassembleLiquidHtmlTranslation(plan.template, out, plan.liquidTokens);
+    const originalOut = [...plan.liquidPlan.plan.texts];
+    let value = reassembleLiquidHtmlTranslation(
+      plan.liquidPlan.plan.template,
+      out,
+      plan.liquidPlan.liquidTokens,
+    );
     if (hasHtmlPlaceholderLeak(value)) {
       anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
+      value = reassembleLiquidHtmlTranslation(
+        plan.liquidPlan.plan.template,
+        originalOut,
+        plan.liquidPlan.liquidTokens,
+      );
     }
     if (hasPromptSentinelLeakage(value)) {
       anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
+      value = reassembleLiquidHtmlTranslation(
+        plan.liquidPlan.plan.template,
+        originalOut,
+        plan.liquidPlan.liquidTokens,
+      );
     }
     const liquidStatus = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status: liquidStatus });
@@ -2958,25 +3055,21 @@ function reconstructPlan(
     for (let i = 0; i < plan.slotPlans.length; i++) {
       const slot = plan.slotPlans[i]!;
       if (slot.htmlPlan) {
-        const out = slot.htmlPlan.nodeParts.map((parts) => {
-          const pieces = parts.map((p) => {
-            const r = lookup(plan.poolSig, p);
-            if (!r || r.status === "fallback") {
-              anyFallback = true;
-              return p;
-            }
-            if (
-              looksLikeWrongScriptLeak(p, r.value, target) ||
-              looksLikeEmptySourceHallucination(p, r.value) ||
-              hasPromptSentinelLeakage(r.value)
-            ) {
-              anyFallback = true;
-              return p;
-            }
-            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-          });
-          const joined = pieces.join("");
-          return effectiveTranslation(parts.join(""), joined.trim());
+        const out = flattenHtmlNodeTranslations(slot.htmlPlan, (part) => {
+          const r = lookup(plan.poolSig, part);
+          if (!r || r.status === "fallback") {
+            anyFallback = true;
+            return part;
+          }
+          if (
+            looksLikeWrongScriptLeak(part, r.value, target) ||
+            looksLikeEmptySourceHallucination(part, r.value) ||
+            hasPromptSentinelLeakage(r.value)
+          ) {
+            anyFallback = true;
+            return part;
+          }
+          return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
         });
         let slotHtml = restoreBrPlaceholders(restoreHtmlTextNodes(slot.htmlPlan.template, out));
         if (hasHtmlPlaceholderLeak(slotHtml)) {
@@ -3015,17 +3108,13 @@ function reconstructPlan(
     const result = [...list];
     for (const el of plan.elements) {
       if (el.htmlPlan) {
-        const out = el.htmlPlan.nodeParts.map((parts) => {
-          const pieces = parts.map((p) => {
-            const r = lookup(plan.poolSig, p);
-            if (!r || r.status === "fallback") {
-              anyFallback = true;
-              return p;
-            }
-            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-          });
-          const joined = pieces.join("");
-          return effectiveTranslation(parts.join(""), joined.trim());
+        const out = flattenHtmlNodeTranslations(el.htmlPlan, (part) => {
+          const r = lookup(plan.poolSig, part);
+          if (!r || r.status === "fallback") {
+            anyFallback = true;
+            return part;
+          }
+          return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
         });
         let elHtml = restoreBrPlaceholders(restoreHtmlTextNodes(el.htmlPlan.template, out));
         if (hasHtmlPlaceholderLeak(elHtml)) {
@@ -3086,6 +3175,8 @@ export type TranslateResourcesOptions = {
    * 批量 worker 路径不要开启。
    */
   logSingleTranslate?: boolean;
+  /** 扫描/调用链注入的结构化翻译上下文。 */
+  promptContext?: TranslationPromptContextInput;
 };
 
 function logSingleTranslatePath(
@@ -3135,13 +3226,22 @@ export async function translateResources(
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
-  // orderSig → (unique text → occurrence count across the chunk).
-  const pools = new Map<string, Map<string, number>>();
-  const addUnit = (order: Engine[], text: string, isHandle = false) => {
+  // poolKey → grouped unique text counts for a single prompt profile/context.
+  const pools = new Map<string, PoolEntry>();
+  const addUnit = (
+    order: Engine[],
+    text: string,
+    isHandle = false,
+    profileBlock = "",
+  ) => {
     if (!isTranslatableLeafText(text)) return;
-    const sig = poolSignature(order, isHandle);
-    const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
-    occ.set(text, (occ.get(text) ?? 0) + 1);
+    const poolKey = buildPoolKey(order, isHandle, profileBlock);
+    let entry = pools.get(poolKey);
+    if (!entry) {
+      entry = { occ: new Map(), order, isHandle, profileBlock };
+      pools.set(poolKey, entry);
+    }
+    entry.occ.set(text, (entry.occ.get(text) ?? 0) + 1);
   };
 
   // Units resolved without hitting an engine (cache hits) — credited immediately.
@@ -3165,6 +3265,8 @@ export async function translateResources(
     klass: "html" | "liquid_html" | "json" | "list" | "plain";
     order: Engine[];
     cacheModel: string;
+    profileBlock: string;
+    poolKey: string;
   };
   const fieldWorks: FieldWork[] = [];
 
@@ -3177,7 +3279,7 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         continue;
       }
       const klass = classifyField(f.key, f.value, f.shopifyType);
@@ -3187,12 +3289,35 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         continue;
       }
       const order = engineOrderFor(fieldTier(f.key, f.value, klass), aiModel);
-      const cacheModel = engineModel(order[0], aiModel);
-      fieldWorks.push({ resourceId: res.resourceId, f, klass, order, cacheModel });
+      const promptContentClass = klass === "liquid_html" ? "html" : klass;
+      const promptContext = buildResolvedPromptContext({
+        module: options?.promptContext?.module,
+        resourceId: res.resourceId,
+        key: f.key,
+        contentClass: promptContentClass,
+        shopifyType: f.shopifyType,
+        base: options?.promptContext,
+      });
+      const profileBlock =
+        buildPromptContextBlock(promptContext, {
+          sourceText: f.value,
+          targetLocale: target,
+        }) ?? "";
+      const cacheModel = buildCacheModelKey(engineModel(order[0], aiModel), profileBlock);
+      const poolKey = buildPoolKey(order, false, profileBlock);
+      fieldWorks.push({
+        resourceId: res.resourceId,
+        f,
+        klass,
+        order,
+        cacheModel,
+        profileBlock,
+        poolKey,
+      });
     }
   }
 
@@ -3209,14 +3334,14 @@ export async function translateResources(
 
   // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
-    const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
+    const { resourceId, f, klass, order, cacheModel, profileBlock, poolKey } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
       logSingleTranslatePath(logSingleTranslate, "skip", {
         reason: "empty_value",
         fieldKey: f.key,
       });
-      rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+      rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
       continue;
     }
     const cached = cacheHits[wi];
@@ -3278,82 +3403,79 @@ export async function translateResources(
           target,
         });
       } else {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
       }
     }
 
     if (klass === "html") {
-      const { template, nodeParts } = htmlNodePartsOf(f.value);
-      if (nodeParts.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+      const htmlPlan = htmlNodePartsOf(f.value);
+      if (htmlPlan.nodeGroups.length === 0) {
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
       plans.push({
         kind: "html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolKey,
         cacheModel,
-        template,
-        nodeParts,
+        ...htmlPlan,
       });
     } else if (klass === "liquid_html") {
-      const { plan: { template, nodeParts }, liquidTokens } = liquidHtmlNodePartsOf(f.value);
-      if (nodeParts.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+      const liquidPlan = liquidHtmlNodePartsOf(f.value);
+      if (liquidPlan.plan.nodeGroups.length === 0) {
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      htmlNodeTextParts(liquidPlan.plan).forEach((part) => addUnit(order, part, false, profileBlock));
       plans.push({
         kind: "liquid_html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolKey,
         cacheModel,
-        template,
-        nodeParts,
-        liquidTokens,
+        liquidPlan,
       });
     } else if (klass === "json") {
       const root = tryParseJsonContainer(f.value);
       if (root === undefined) {
         const parts = splitPlainText(f.value);
-        parts.forEach((p) => addUnit(order, p));
+        parts.forEach((p) => addUnit(order, p, false, profileBlock));
         plans.push({
           kind: "plain",
           resourceId,
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolKey,
           cacheModel,
           parts,
         });
       } else {
         const slots = extractJsonTextSlots(root);
         if (slots.length === 0) {
-          rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+          rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
           continue;
         }
         const slotPlans: JsonSlotPlan[] = [];
         for (const slot of slots) {
           if (slot.isHtml) {
-            const { template, nodeParts } = htmlNodePartsOf(slot.text);
-            if (nodeParts.length === 0) {
+            const htmlPlan = htmlNodePartsOf(slot.text);
+            if (htmlPlan.nodeGroups.length === 0) {
               slotPlans.push({ ...slot });
               continue;
             }
-            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
-            slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
+            htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
+            slotPlans.push({ ...slot, htmlPlan });
           } else {
-            addUnit(order, slot.text);
+            addUnit(order, slot.text, false, profileBlock);
             slotPlans.push({ ...slot });
           }
         }
@@ -3363,7 +3485,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolKey,
           cacheModel,
           originalValue: f.value,
           root,
@@ -3377,17 +3499,17 @@ export async function translateResources(
         const el = list[i];
         if (!el) continue;
         if (isHtml(el)) {
-          const { template, nodeParts } = htmlNodePartsOf(el);
-          if (nodeParts.length === 0) continue;
-          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
-          elements.push({ index: i, text: el, htmlPlan: { template, nodeParts } });
+          const htmlPlan = htmlNodePartsOf(el);
+          if (htmlPlan.nodeGroups.length === 0) continue;
+          htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
+          elements.push({ index: i, text: el, htmlPlan });
         } else {
-          addUnit(order, el);
+          addUnit(order, el, false, profileBlock);
           elements.push({ index: i, text: el });
         }
       }
       if (elements.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
         continue;
       }
       plans.push({
@@ -3396,7 +3518,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolKey,
         cacheModel,
         originalValue: f.value,
         elements,
@@ -3405,15 +3527,15 @@ export async function translateResources(
       const isHandle = isHandleFieldKey(f.key);
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const poolSig = poolSignature(order, isHandle);
-      parts.forEach((p) => addUnit(order, p, isHandle));
+      const handlePoolKey = buildPoolKey(order, isHandle, profileBlock);
+      parts.forEach((p) => addUnit(order, p, isHandle, profileBlock));
       plans.push({
         kind: "plain",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig,
+        poolSig: handlePoolKey,
         cacheModel,
         parts,
         isHandle,
@@ -3480,9 +3602,9 @@ export async function translateResources(
   //    Hits go into translated map; misses go to batch. AdaptiveSemaphore throttles.
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
-  for (const [sig, occ] of pools) {
-    const { order, isHandle } = parsePoolSignature(sig);
-    const cacheModel = engineModel(order[0]!, aiModel);
+  for (const [poolKey, pool] of pools) {
+    const { occ, order, isHandle, profileBlock } = pool;
+    const cacheModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
 
@@ -3501,14 +3623,14 @@ export async function translateResources(
           original: text,
           translated: hit,
           cacheModel,
-          poolSig: sig,
+          poolSig: poolKey,
         });
         tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
         leafCacheUnits += occ.get(text) ?? 1;
       }
       if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
       if (tmap.size > 0) {
-        translated.set(sig, tmap);
+        translated.set(poolKey, tmap);
         const lookupHit: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
         await finishReadyResources(lookupHit);
       }
@@ -3516,7 +3638,7 @@ export async function translateResources(
 
     const texts = allTexts.filter((t) => !tmap.has(t));
     if (texts.length === 0) {
-      translated.set(sig, tmap);
+      translated.set(poolKey, tmap);
       continue;
     }
 
@@ -3555,12 +3677,12 @@ export async function translateResources(
           }
         }
       }
-      translated.set(sig, tmap);
+      translated.set(poolKey, tmap);
       if (onProgress) await onProgress(batchUnits, llmTokens);
       const lookup: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
       await finishReadyResources(lookup);
     }));
-    translated.set(sig, tmap);
+    translated.set(poolKey, tmap);
   }
 
   const retried = await retryPoolFallbacks(
@@ -3607,6 +3729,21 @@ export async function translateResources(
     };
   });
   return { resources: out, usage };
+}
+
+function buildPoolKey(order: Engine[], isHandle: boolean, profileBlock: string): string {
+  const base = poolSignature(order, isHandle);
+  return `${base}|ctx:${buildPromptContextScope(profileBlock)}`;
+}
+
+function buildPromptContextScope(profileBlock: string): string {
+  if (!profileBlock) return "none";
+  return createHash("sha1").update(profileBlock).digest("hex").slice(0, 12);
+}
+
+function buildCacheModelKey(model: string, profileBlock: string): string {
+  const scope = buildPromptContextScope(profileBlock);
+  return scope === "none" ? model : `${model}|ctx:${scope}`;
 }
 
 /**

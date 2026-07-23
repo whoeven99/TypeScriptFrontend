@@ -48,7 +48,6 @@ import { setLanguageTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { shouldRevalidateAppShell } from "~/lib/routeShouldRevalidate";
 import { appAntdTheme } from "~/ui/theme";
-import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 import {
   isPerfDebugEnabled,
   logReactProfilerRender,
@@ -204,6 +203,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const authMs = Date.now() - reqStart;
   const { shop, accessToken } = adminAuthResult.session;
+  const showShopProfilePage =
+    shop.replace(/\.myshopify\.com$/i, "") === "ciwishop";
   const localeStart = Date.now();
   const bootstrap = await loadAppBootstrapLocales({
     shop,
@@ -230,7 +231,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     apiKey: process.env.SHOPIFY_API_KEY || "",
     bootstrap,
-    showShopProfilePage: !isProductionNodeEnv(),
+    showShopProfilePage,
     perfDebug,
   });
 };

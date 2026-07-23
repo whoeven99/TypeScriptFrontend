@@ -13,6 +13,19 @@ import { CosmosClient, type Container } from "@azure/cosmos";
  */
 
 export type ShopScanTrigger = "install" | "scheduled" | "manual";
+export type ShopScanMode = "full" | "data_only" | "ai_only";
+export type ShopScanTask =
+  | "content_size"
+  | "coverage"
+  | "profile_material"
+  | "profile_identity"
+  | "market_locale"
+  | "catalog_material"
+  | "editorial_material"
+  | "style_material"
+  | "profile_ai"
+  | "glossary_samples"
+  | "glossary_ai";
 
 export type ShopScanStatus =
   | "CREATED"
@@ -20,6 +33,7 @@ export type ShopScanStatus =
   | "SCANNING"
   | "COMPLETED"
   | "PARTIAL"
+  | "SKIPPED"
   | "FAILED";
 
 export type ShopScanStageState = "PENDING" | "DONE" | "SKIPPED" | "FAILED";
@@ -44,11 +58,10 @@ export type ShopScanProfileStrategy = {
   brandTerms: string[];
   doNotTranslateTerms: string[];
   preferredTerms: Array<{ source: string; note: string | null }>;
-  seoTerms: string[];
+  regionalStyleGuidance: string[];
   moduleHints: Array<{
     module: string;
     tonePolicy: string | null;
-    keywordPolicy: string | null;
     literalVsAdaptive: string | null;
   }>;
 };
@@ -73,6 +86,8 @@ export type ShopScanJob = {
   id: string;
   shopName: string;
   trigger: ShopScanTrigger;
+  mode: ShopScanMode;
+  task: ShopScanTask;
   status: ShopScanStatus;
   stages: ShopScanStages;
   blobPrefix: string;
@@ -121,17 +136,23 @@ export async function createShopScanJob(input: {
   scanId: string;
   shop: string;
   trigger: ShopScanTrigger;
+  mode: ShopScanMode;
+  task: ShopScanTask;
   blobPrefix: string;
+  summary?: ShopScanSummary;
+  stages?: Partial<ShopScanStages>;
 }): Promise<ShopScanJob> {
   const now = new Date().toISOString();
   const doc: ShopScanJob = {
     id: input.scanId,
     shopName: input.shop,
     trigger: input.trigger,
+    mode: input.mode,
+    task: input.task,
     status: "CREATED",
-    stages: { ...EMPTY_STAGES },
+    stages: { ...EMPTY_STAGES, ...(input.stages ?? {}) },
     blobPrefix: input.blobPrefix,
-    summary: {},
+    summary: input.summary ?? {},
     claimedBy: null,
     claimedAt: null,
     lastHeartbeat: null,
@@ -167,6 +188,41 @@ export async function hasActiveOrCompletedShopScan(shop: string): Promise<boolea
   } catch {
     return false;
   }
+}
+
+export async function listRecentShopScanJobs(
+  shop: string,
+  limit = 20,
+): Promise<ShopScanJob[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanJob>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shop ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit",
+          parameters: [
+            { name: "@shop", value: shop },
+            { name: "@limit", value: limit },
+          ],
+        },
+        { partitionKey: shop },
+      )
+      .fetchAll();
+    return resources;
+  } catch {
+    return [];
+  }
+}
+
+export async function getLatestShopScanJobsByTask(
+  shop: string,
+): Promise<Partial<Record<ShopScanTask, ShopScanJob>>> {
+  const jobs = await listRecentShopScanJobs(shop, 30);
+  const latestByTask: Partial<Record<ShopScanTask, ShopScanJob>> = {};
+  for (const job of jobs) {
+    if (!latestByTask[job.task]) latestByTask[job.task] = job;
+  }
+  return latestByTask;
 }
 
 /** 该店最近一次扫描（供 status API）。无则 null。 */

@@ -14,6 +14,8 @@ export type TranslateSingleTextArgs = {
   text: string;
   source?: string;
   fieldKey?: string;
+  module?: string;
+  resourceId?: string | null;
   shopifyType?: string;
   aiModel?: string;
   /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
@@ -30,6 +32,8 @@ export async function translateSingleText(
     text: args.text,
     source: args.source,
     fieldKey: args.fieldKey,
+    module: args.module,
+    resourceId: args.resourceId ?? undefined,
     shopifyType: args.shopifyType,
     aiModel: args.aiModel,
     profileBlock,

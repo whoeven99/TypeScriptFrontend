@@ -97,10 +97,27 @@ const HTML_PARSE_OPTIONS = {
 } as const;
 
 const HTML_BLOCK_COALESCE_TAGS = "p|li|h[1-6]|dt|dd|blockquote|figcaption";
+const HTML_BLOCK_GROUP_TAGS = new Set([
+  "p",
+  "li",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "dt",
+  "dd",
+  "blockquote",
+  "figcaption",
+]);
 const HTML_NESTED_BLOCK_RE =
   /<(p|li|h[1-6]|td|th|dt|dd|blockquote|figcaption|div|ul|ol|table|thead|tbody|tr)\b/i;
 const HTML_TABLE_RE = /<table\b[\s\S]*?<\/table>/gi;
 const INLINE_PRESERVE_RE = /<(a|strong|b|em|i|u|span|mark|small|sub|sup)\b/i;
+const INLINE_TAG_RE = /<\/?(a|strong|b|em|i|u|span|mark|small|sub|sup)\b[^>]*>/gi;
+const CJK_BOUNDARY_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const HTML_SEG_BOUNDARY_PREFIX = "⟦HTML_SEG_";
 
 const SKIP_TAGS = new Set(["script", "style", "pre", "code", "noscript"]);
 const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder"] as const;
@@ -302,6 +319,145 @@ function coalesceBlockTextNodes(
   return { template: out, texts: newTexts };
 }
 
+function buildHtmlSegmentBoundary(groupId: number, boundaryIndex: number): string {
+  return `${HTML_SEG_BOUNDARY_PREFIX}${groupId}_${boundaryIndex}⟧`;
+}
+
+function shouldInsertSpaceBetweenSegments(prev: string, next: string): boolean {
+  if (!prev || !next) return false;
+  if (CJK_BOUNDARY_RE.test(prev) || CJK_BOUNDARY_RE.test(next)) return false;
+  if (/^[,.;:!?%)}\]"'”’]/u.test(next)) return false;
+  if (/[([{/"'“‘-]$/u.test(prev)) return false;
+  return true;
+}
+
+function shouldAttachBoundarySpaceToNext(prev: string): boolean {
+  return /[.!?;:,)\]"'”’]$/u.test(prev);
+}
+
+function buildGroupedHtmlText(
+  placeholderIndices: number[],
+  texts: string[],
+  groupId: number,
+): {
+  text: string;
+  boundarySpaceHints: HtmlNodeGroup["boundarySpaceHints"];
+} {
+  let merged = texts[placeholderIndices[0]] ?? "";
+  const boundarySpaceHints: HtmlNodeGroup["boundarySpaceHints"] = [];
+  for (let i = 1; i < placeholderIndices.length; i++) {
+    const prev = texts[placeholderIndices[i - 1]] ?? "";
+    const next = texts[placeholderIndices[i]] ?? "";
+    const boundary = buildHtmlSegmentBoundary(groupId, i - 1);
+    if (!shouldInsertSpaceBetweenSegments(prev, next)) {
+      merged += boundary;
+      merged += next;
+      boundarySpaceHints.push({
+        trimTrailingSpaceFromPrevious: false,
+        trimLeadingSpaceFromNext: false,
+      });
+      continue;
+    }
+    if (shouldAttachBoundarySpaceToNext(prev)) {
+      merged += `${boundary} ${next}`;
+      boundarySpaceHints.push({
+        trimTrailingSpaceFromPrevious: false,
+        trimLeadingSpaceFromNext: true,
+      });
+      continue;
+    }
+    merged += ` ${boundary}${next}`;
+    boundarySpaceHints.push({
+      trimTrailingSpaceFromPrevious: true,
+      trimLeadingSpaceFromNext: false,
+    });
+  }
+  return { text: merged, boundarySpaceHints };
+}
+
+function splitGroupedHtmlText(
+  translated: string,
+  groupId: number,
+  segmentCount: number,
+  boundarySpaceHints: HtmlNodeGroup["boundarySpaceHints"],
+): string[] | null {
+  const out: string[] = [];
+  let cursor = 0;
+
+  for (let i = 0; i < segmentCount - 1; i++) {
+    const boundary = buildHtmlSegmentBoundary(groupId, i);
+    const idx = translated.indexOf(boundary, cursor);
+    if (idx < 0) return null;
+    out.push(translated.slice(cursor, idx));
+    cursor = idx + boundary.length;
+  }
+
+  out.push(translated.slice(cursor));
+  if (out.length !== segmentCount) return null;
+
+  for (let i = 0; i < boundarySpaceHints.length; i++) {
+    const hint = boundarySpaceHints[i];
+    if (!hint) continue;
+    if (hint.trimTrailingSpaceFromPrevious) {
+      out[i] = out[i]!.replace(/ $/, "");
+    }
+    if (hint.trimLeadingSpaceFromNext) {
+      out[i + 1] = out[i + 1]!.replace(/^ /, "");
+    }
+  }
+
+  return out;
+}
+
+function buildInlineAwareNodeGroups(
+  template: string,
+  texts: string[],
+): HtmlNodeGroup[] {
+  const groups: HtmlNodeGroup[] = [];
+  const groupedIndices = new Set<number>();
+  let groupId = 0;
+  const root = parse(template, HTML_PARSE_OPTIONS);
+
+  walkElementNodes(root, (el) => {
+    if (!HTML_BLOCK_GROUP_TAGS.has(elementTagName(el))) return;
+    const inner = el.innerHTML ?? "";
+    if (!INLINE_PRESERVE_RE.test(inner) || HTML_NESTED_BLOCK_RE.test(inner)) return;
+
+    const indices = collectTextPlaceholderIndices(inner);
+    if (indices.length <= 1 || indices.some((idx) => groupedIndices.has(idx))) return;
+
+    const innerWithoutPlaceholders = replacePlaceholdersInString(
+      inner,
+      Array.from({ length: texts.length }, () => ""),
+    );
+    const withoutInlineTags = innerWithoutPlaceholders.replace(INLINE_TAG_RE, "");
+    if (/<[a-z!/]/i.test(withoutInlineTags)) return;
+
+    const currentGroupId = groupId++;
+    const grouped = buildGroupedHtmlText(indices, texts, currentGroupId);
+    groups.push({
+      groupId: currentGroupId,
+      placeholderIndices: indices,
+      parts: splitPlainText(grouped.text),
+      boundarySpaceHints: grouped.boundarySpaceHints,
+    });
+    indices.forEach((idx) => groupedIndices.add(idx));
+  });
+
+  for (let idx = 0; idx < texts.length; idx++) {
+    if (groupedIndices.has(idx)) continue;
+    groups.push({
+      groupId: groupId++,
+      placeholderIndices: [idx],
+      parts: texts[idx]!.length > LONG_TEXT_THRESHOLD ? splitPlainText(texts[idx]!) : [texts[idx]!],
+      boundarySpaceHints: [],
+    });
+  }
+
+  groups.sort((a, b) => (a.placeholderIndices[0] ?? 0) - (b.placeholderIndices[0] ?? 0));
+  return groups;
+}
+
 function splitPlainText(text: string): string[] {
   if (text.length <= LONG_TEXT_THRESHOLD) return [text];
 
@@ -332,16 +488,31 @@ function splitPlainText(text: string): string[] {
   return parts;
 }
 
-export type HtmlNodePlan = { template: string; nodeParts: string[][] };
+export type HtmlNodeGroup = {
+  groupId: number;
+  placeholderIndices: number[];
+  parts: string[];
+  boundarySpaceHints: Array<{
+    trimTrailingSpaceFromPrevious: boolean;
+    trimLeadingSpaceFromNext: boolean;
+  }>;
+};
+
+export type HtmlNodePlan = { template: string; texts: string[]; nodeGroups: HtmlNodeGroup[] };
 
 /** Split HTML into a structural template and translatable text-node parts. */
 export function htmlNodePartsOf(value: string): HtmlNodePlan {
   let { template, texts } = extractHtmlTextNodes(preprocessHtmlForTranslation(value));
   ({ template, texts } = coalesceBlockTextNodes(template, texts));
-  const nodeParts = texts.map((t) =>
-    t.length > LONG_TEXT_THRESHOLD ? splitPlainText(t) : [t],
-  );
-  return { template, nodeParts };
+  return {
+    template,
+    texts,
+    nodeGroups: buildInlineAwareNodeGroups(template, texts),
+  };
+}
+
+export function htmlNodeTextParts(plan: HtmlNodePlan): string[] {
+  return plan.nodeGroups.flatMap((group) => group.parts);
 }
 
 /**
@@ -350,24 +521,48 @@ export function htmlNodePartsOf(value: string): HtmlNodePlan {
  */
 export function isTranslatableHtmlContent(value: string): boolean {
   if (!isHtmlContent(value)) return false;
-  const { nodeParts } = htmlNodePartsOf(value);
-  return nodeParts.some((parts) => parts.some((p) => p.trim().length > 0));
+  return htmlNodeTextParts(htmlNodePartsOf(value)).some((part) => part.trim().length > 0);
 }
 
 /** Flatten node parts to per-marker translations for reassembly. */
 export function flattenHtmlNodeTranslations(
-  nodeParts: string[][],
+  plan: HtmlNodePlan,
   translatePart: (part: string, partIndex: number) => string,
 ): string[] {
   let partIndex = 0;
-  return nodeParts.map((parts) => {
-    const pieces = parts.map((part) => {
-      const translated = translatePart(part, partIndex++);
-      return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, translated));
-    });
+  const out = [...plan.texts];
+
+  for (const group of plan.nodeGroups) {
+    const pieces = group.parts.map((part) => translatePart(part, partIndex++));
     const joined = pieces.join("");
-    return effectiveTranslation(parts.join(""), joined.trim());
-  });
+
+    if (group.placeholderIndices.length === 1) {
+      const idx = group.placeholderIndices[0]!;
+      out[idx] = effectiveTranslation(
+        plan.texts[idx] ?? "",
+        sanitizeHtmlTextTranslation(plan.texts[idx] ?? "", joined.trim()),
+      );
+      continue;
+    }
+
+    const translatedSegments = splitGroupedHtmlText(
+      joined,
+      group.groupId,
+      group.placeholderIndices.length,
+      group.boundarySpaceHints,
+    );
+    if (!translatedSegments) continue;
+
+    group.placeholderIndices.forEach((placeholderIdx, index) => {
+      const original = plan.texts[placeholderIdx] ?? "";
+      out[placeholderIdx] = effectiveTranslation(
+        original,
+        sanitizeHtmlTextTranslation(original, translatedSegments[index] ?? ""),
+      );
+    });
+  }
+
+  return out;
 }
 
 /** Reassemble translated text nodes back into HTML. */
@@ -380,7 +575,7 @@ export function roundtripHtmlForTest(
   html: string,
   translateFn: (text: string, index: number) => string,
 ): string {
-  const { template, nodeParts } = htmlNodePartsOf(html);
-  const out = flattenHtmlNodeTranslations(nodeParts, (text, i) => translateFn(text, i));
-  return reassembleHtmlTranslation(template, out);
+  const plan = htmlNodePartsOf(html);
+  const out = flattenHtmlNodeTranslations(plan, (text, i) => translateFn(text, i));
+  return reassembleHtmlTranslation(plan.template, out);
 }
