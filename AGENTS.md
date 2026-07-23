@@ -332,7 +332,7 @@ Services:
   for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
 - `worker/src/services/scheduledShopScan.ts`: scheduled metrics shop scan
-  enqueue（同分槽 / 时区 / 整点，槽位相对 auto 延后 1h；`trigger: scheduled`）。
+  enqueue（同分槽 / 时区，默认每小时 :30，槽位相对 auto 延后 1h；`trigger: scheduled`）。
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
 - `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
@@ -383,10 +383,11 @@ Important env names only:
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
 - Scheduled shop scan（计量复扫，与 auto 同分槽时钟，槽位 -1h）：
   `SHOP_SCAN_SCHEDULE_ENABLED` (default true),
+  `SHOP_SCAN_SCHEDULE_MINUTE` (default 30；与 auto 的 :00 错开),
   `SHOP_SCAN_SHARD_COOLDOWN_MS` (default 同 `AUTO_TRANSLATE_SHARD_COOLDOWN_MS` / 20h),
   `SHOP_SCAN_MAX_ENQUEUE_PER_TICK` (default 0=不限)。
-  时区 / slots / 整点 minute 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
-  `AUTO_TRANSLATE_SLOTS_PER_DAY` / `AUTO_TRANSLATE_SCHEDULE_MINUTE`。
+  时区 / slots 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
+  `AUTO_TRANSLATE_SLOTS_PER_DAY`；触发分钟用 `SHOP_SCAN_SCHEDULE_MINUTE`。
   Code: `worker/src/services/scheduledShopScan.ts`.
 - V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
   `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
@@ -600,7 +601,8 @@ Shop Profile / Shop Scan:
   - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
     `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
   - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。Worker 每小时
-    整点入队（与 auto 同一时区 / 24 槽 / 整点 minute），但目标槽为
+    :30 入队（与 auto 同一时区 / 24 槽；分钟默认 30，可用
+    `SHOP_SCAN_SCHEDULE_MINUTE` 覆盖），但目标槽为
     `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
     有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
     已有进行中 scan 则跳过。
