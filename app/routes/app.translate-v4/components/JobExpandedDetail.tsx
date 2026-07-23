@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
+import type { TFunction } from "i18next";
+import type {
+  TranslationJobProgressSummary,
+  V4InitActiveModule,
+  V4InitCompletedModule,
+} from "~/server/translateV4/progress.server";
 import type { StageName } from "~/server/translateV4/types";
 import { capTranslateUnitsByResources } from "~/server/translateV4/metricsUtils";
 import { MODULE_LABELS, QUOTA_TOKEN_MULTIPLIER } from "../constants";
 import { v4Colors } from "../v4Styles";
 import {
+  initModuleProgress,
   isStageBarComplete,
   jobElapsedMs,
   jobQuotaCredits,
@@ -42,8 +48,26 @@ function taskResourceTotal(m: StageMetrics): number {
   return m.translateTotal || m.initTotal || 0;
 }
 
-function stageDetail(idx: number, m: StageMetrics): string {
-  if (idx === 0) return `${m.initDone}/${m.initTotal}`;
+function moduleLabel(moduleKey: string, t: TFunction): string {
+  return (
+    getV4ModuleLabel(moduleKey, t) ||
+    MODULE_LABELS[moduleKey] ||
+    moduleKey
+  );
+}
+
+function stageDetail(
+  idx: number,
+  m: StageMetrics,
+  jobModules?: string[],
+): string {
+  if (idx === 0) {
+    const { done, total } = initModuleProgress(m, jobModules);
+    if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
+      return `${done}/${total}`;
+    }
+    return `${m.initDone}/${m.initTotal}`;
+  }
   if (idx === 1) {
     const res = `${m.translateDone}/${m.translateTotal}`;
     return m.translateUnitTotal > 0
@@ -245,8 +269,8 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
     <div>
       <style>{INIT_SCAN_CSS}</style>
       {STAGE_DEF_KEYS.map(({ labelKey, key }, idx) => {
-        const complete = isStageBarComplete(idx, m, job.status);
-        const percent = stageBarPercent(idx, m, job.status);
+        const complete = isStageBarComplete(idx, m, job.status, job.modules);
+        const percent = stageBarPercent(idx, m, job.status, job.modules);
         const current =
           idx === activeStage && !job.isTerminal && !isPaused && !job.isStopping;
         const pausedHere = isPaused && idx === activeStage;
@@ -256,7 +280,18 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
             ? freezeAt
             : undefined;
         const ms = stageElapsedMs(timings[key], stageFreezeAt, nowMs);
-        const initScanning = idx === 0 && current && m.initTotal <= 0;
+        const showInitActivity =
+          idx === 0 &&
+          current &&
+          (job.status === "INIT_QUEUED" || job.status === "INITIALIZING");
+        // Old workers with no module telemetry and no selected-module list.
+        const legacyInitScanning =
+          showInitActivity &&
+          job.modules.length === 0 &&
+          m.initModulesTotal <= 0 &&
+          m.initActiveModules.length === 0 &&
+          m.initCompletedModules.length === 0 &&
+          m.initTotal <= 0;
         const translateWarmingUp =
           idx === 1 &&
           current &&
@@ -266,99 +301,104 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
         const inProgress = percent > 0 && !complete;
 
         return (
-          <div
-            key={key}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 6,
-            }}
-          >
-            <span
+          <div key={key} style={{ marginBottom: 6 }}>
+            <div
               style={{
-              width: 56,
-                fontSize: 12,
-                flexShrink: 0,
-              lineHeight: 1.45,
-                color: complete
-                  ? v4Colors.success
-                  : pausedHere || stoppingHere
-                    ? v4Colors.warning
-                    : current
-                      ? v4Colors.text
-                      : v4Colors.textFaint,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
               }}
             >
-              {t(labelKey)}
-            </span>
-            {initScanning ? (
-              <InitScanIndicator
-                initDone={m.initDone}
-                moduleLabel={
-                  m.currentModule
-                    ? getV4ModuleLabel(m.currentModule, t) ||
-                      MODULE_LABELS[m.currentModule] ||
-                      m.currentModule
-                    : null
-                }
-              />
-            ) : translateWarmingUp ? (
-              <TranslateWorkingIndicator
-                moduleLabel={
-                  m.currentModule
-                    ? getV4ModuleLabel(m.currentModule, t) ||
-                      MODULE_LABELS[m.currentModule] ||
-                      m.currentModule
-                    : null
-                }
-                usedCredits={jobQuotaCredits(job.usedTokens, QUOTA_TOKEN_MULTIPLIER)}
-              />
-            ) : (
-              <>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    borderRadius: 3,
-                    background: v4Colors.progressTrack,
-                    overflow: "hidden",
-                  }}
-                >
+              <span
+                style={{
+                  width: 56,
+                  fontSize: 12,
+                  flexShrink: 0,
+                  lineHeight: 1.45,
+                  color: complete
+                    ? v4Colors.success
+                    : pausedHere || stoppingHere
+                      ? v4Colors.warning
+                      : current
+                        ? v4Colors.text
+                        : v4Colors.textFaint,
+                }}
+              >
+                {t(labelKey)}
+              </span>
+              {legacyInitScanning ? (
+                <InitScanIndicator
+                  initDone={m.initDone}
+                  moduleLabel={
+                    m.currentModule ? moduleLabel(m.currentModule, t) : null
+                  }
+                />
+              ) : translateWarmingUp ? (
+                <TranslateWorkingIndicator
+                  moduleLabel={
+                    m.currentModule ? moduleLabel(m.currentModule, t) : null
+                  }
+                  usedCredits={jobQuotaCredits(
+                    job.usedTokens,
+                    QUOTA_TOKEN_MULTIPLIER,
+                  )}
+                />
+              ) : (
+                <>
                   <div
                     style={{
-                      width: `${percent}%`,
-                      height: "100%",
+                      flex: 1,
+                      height: 6,
                       borderRadius: 3,
-                      background:
-                        job.status === "FAILED" && (current || pausedHere)
-                          ? v4Colors.danger
-                          : complete
-                            ? v4Colors.success
-                            : inProgress
-                              ? v4Colors.primary
-                              : v4Colors.progressTrack,
-                      transition: "width 0.2s",
+                      background: v4Colors.progressTrack,
+                      overflow: "hidden",
                     }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: v4Colors.textMuted,
-                    minWidth: 132,
-                    textAlign: "right",
-                    flexShrink: 0,
-                    lineHeight: 1.45,
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  {stageDetail(idx, m)}
-                  {complete ? " ✓" : ""}
-                  {ms != null ? ` · ${t("v4.job.elapsedShort", { time: formatV4Elapsed(ms, t) })}` : ""}
-                </span>
-              </>
-            )}
+                  >
+                    <div
+                      style={{
+                        width: `${percent}%`,
+                        height: "100%",
+                        borderRadius: 3,
+                        background:
+                          job.status === "FAILED" && (current || pausedHere)
+                            ? v4Colors.danger
+                            : complete
+                              ? v4Colors.success
+                              : inProgress || (showInitActivity && percent >= 0)
+                                ? v4Colors.primary
+                                : v4Colors.progressTrack,
+                        transition: "width 0.2s",
+                        opacity:
+                          showInitActivity && percent === 0 && !complete
+                            ? 0.45
+                            : 1,
+                      }}
+                    />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: v4Colors.textMuted,
+                      minWidth: 72,
+                      textAlign: "right",
+                      flexShrink: 0,
+                      lineHeight: 1.45,
+                      overflowWrap: "anywhere",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {stageDetail(idx, m, job.modules)}
+                    {complete ? " ✓" : ""}
+                    {ms != null
+                      ? ` · ${t("v4.job.elapsedShort", { time: formatV4Elapsed(ms, t) })}`
+                      : ""}
+                  </span>
+                </>
+              )}
+            </div>
+            {showInitActivity && !legacyInitScanning ? (
+              <InitActivityLog job={job} />
+            ) : null}
           </div>
         );
       })}
@@ -395,6 +435,212 @@ function InitScanIndicator({
         <span className="v4-dots" />
       </span>
     </>
+  );
+}
+
+type InitLogLine = {
+  verbKey: string;
+  detail: string;
+  meta?: string;
+  kind: "done" | "active" | "pending";
+  parallel?: boolean;
+};
+
+function InitActivityLog({ job }: { job: TranslationJobProgressSummary }) {
+  const { t } = useTranslation();
+  const m = job.metrics;
+  const active: V4InitActiveModule[] = m.initActiveModules ?? [];
+  const completed: V4InitCompletedModule[] = m.initCompletedModules ?? [];
+  const activeSet = new Set(active.map((a) => a.module));
+  const completedSet = new Set(completed.map((c) => c.module));
+  const waiting = job.modules.filter(
+    (mod) => !activeSet.has(mod) && !completedSet.has(mod),
+  );
+  const lines: InitLogLine[] = [];
+
+  if (job.status === "INIT_QUEUED" && active.length === 0 && completed.length === 0) {
+    lines.push({
+      verbKey: "v4.initLog.verb.queued",
+      detail: t("v4.initLog.waitingInitializer"),
+      kind: "active",
+    });
+  }
+
+  const recentCompleted = completed.slice(-4);
+  for (const c of recentCompleted) {
+    lines.push({
+      verbKey: "v4.initLog.verb.saved",
+      detail: moduleLabel(c.module, t),
+      meta:
+        c.items > 0
+          ? t("v4.initLog.plusItems", { count: c.items })
+          : undefined,
+      kind: "done",
+    });
+  }
+
+  if (active.length > 1) {
+    lines.push({
+      verbKey: "v4.initLog.verb.parallel",
+      detail: t("v4.initLog.queryingShopifyN", { count: active.length }),
+      kind: "active",
+    });
+  }
+
+  for (const a of active) {
+    const phaseVerb =
+      a.phase === "saving"
+        ? "v4.initLog.verb.saving"
+        : "v4.initLog.verb.querying";
+    lines.push({
+      verbKey: phaseVerb,
+      detail: moduleLabel(a.module, t),
+      kind: "active",
+      parallel: active.length > 1,
+    });
+  }
+
+  if (m.initPhase === "writing_manifest") {
+    lines.push({
+      verbKey: "v4.initLog.verb.writing",
+      detail: t("v4.initLog.writingManifest"),
+      kind: "active",
+    });
+  }
+
+  if (waiting.length > 0 && job.status === "INITIALIZING") {
+    const shown = waiting.slice(0, 3).map((mod) => moduleLabel(mod, t));
+    const extra = waiting.length - shown.length;
+    const modulesText =
+      extra > 0 ? `${shown.join(" · ")} +${extra}` : shown.join(" · ");
+    lines.push({
+      verbKey: "v4.initLog.verb.queued",
+      detail: t("v4.initLog.waitingForSlot", { modules: modulesText }),
+      kind: "pending",
+    });
+  }
+
+  if (lines.length === 0) {
+    lines.push({
+      verbKey: "v4.initLog.verb.querying",
+      detail: t("v4.initLog.waitingInitializer"),
+      kind: "active",
+    });
+  }
+
+  return (
+    <div
+      style={{
+        marginLeft: 66,
+        marginTop: 8,
+        borderLeft: `1px solid ${v4Colors.divider}`,
+        paddingLeft: 12,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          alignItems: "center",
+          marginBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            color: v4Colors.textMuted,
+            lineHeight: 1.45,
+          }}
+        >
+          {t("v4.job.itemsFound", { count: m.initDone })}
+        </span>
+        {active.length > 1 ? (
+          <span
+            style={{
+              fontSize: 11,
+              color: v4Colors.warning,
+              fontWeight: 600,
+              lineHeight: 1.45,
+            }}
+          >
+            {t("v4.initLog.inFlight", { count: active.length })}
+          </span>
+        ) : null}
+      </div>
+      <div
+        style={{
+          background: v4Colors.cardSubdued,
+          borderRadius: 8,
+          border: `1px solid ${v4Colors.cardBorder}`,
+          padding: "8px 10px",
+          maxHeight: 180,
+          overflow: "auto",
+        }}
+      >
+        {lines.map((line, i) => (
+          <div
+            key={`${line.verbKey}-${line.detail}-${i}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              paddingLeft: line.parallel ? 12 : 0,
+              borderLeft: line.parallel
+                ? `2px solid ${v4Colors.primary}`
+                : undefined,
+              marginBottom: i === lines.length - 1 ? 0 : 6,
+              fontSize: 12,
+              lineHeight: 1.45,
+            }}
+          >
+            <span
+              style={{
+                width: 56,
+                flexShrink: 0,
+                fontWeight: line.kind === "active" ? 600 : 400,
+                color:
+                  line.kind === "active"
+                    ? v4Colors.text
+                    : line.kind === "done"
+                      ? v4Colors.textMuted
+                      : v4Colors.textFaint,
+              }}
+            >
+              {t(line.verbKey)}
+            </span>
+            <span
+              style={{
+                flex: 1,
+                color:
+                  line.kind === "pending"
+                    ? v4Colors.textFaint
+                    : line.kind === "active"
+                      ? v4Colors.text
+                      : v4Colors.textMuted,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {line.detail}
+              {line.kind === "active" ? <span className="v4-dots" /> : null}
+            </span>
+            {line.meta ? (
+              <span
+                style={{
+                  flexShrink: 0,
+                  color: line.meta.startsWith("+")
+                    ? v4Colors.success
+                    : v4Colors.textFaint,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {line.meta}
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
