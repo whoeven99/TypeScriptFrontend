@@ -283,8 +283,10 @@ Entries:
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
   and auto-translate; also runs scheduled shop-scan enqueue (slot-offset +1h),
-  deploy wake/stale reset, empty auto-job cleanup, daily v4 job retention
-  cleanup (`cleanupOldJobs`), and subscription reconciliation schedules.
+  deploy wake/stale reset, empty auto-job cleanup, hourly v4 job retention
+  cleanup (`cleanupOldJobs`，默认每小时 :40), shop_scan_jobs retention
+  (`cleanupOldShopScanJobs`，默认每小时 :50), and subscription reconciliation
+  schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -335,10 +337,10 @@ Services:
   enqueue（同分槽 / 时区，默认每小时 :30，槽位相对 auto 延后 1h；`trigger: scheduled`）。
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
-- `worker/src/services/cleanupOldJobs.ts`: daily retention cleanup for
-  **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7). Manual
-  jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job / per-blob
-  delays; skips jobs with a fresh worker heartbeat. Scheduled from
+- `worker/src/services/cleanupOldJobs.ts`: hourly retention cleanup（默认每小时
+  :40）for **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7).
+  Manual jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job /
+  per-blob delays; skips jobs with a fresh worker heartbeat. Scheduled from
   `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
@@ -356,6 +358,9 @@ Important env names only:
 
 - Cosmos: `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_TRANSLATION_DATABASE_ID`,
   `COSMOS_TRANSLATION_V4_JOBS_CONTAINER`, and app-side `_V4` variants.
+  Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
+  `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
+  `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
@@ -389,13 +394,13 @@ Important env names only:
   时区 / slots 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
   `AUTO_TRANSLATE_SLOTS_PER_DAY`；触发分钟用 `SHOP_SCAN_SCHEDULE_MINUTE`。
   Code: `worker/src/services/scheduledShopScan.ts`.
-- V4 **auto** job retention cleanup (daily, slow delete; manual jobs kept):
+- V4 **auto** job retention cleanup (hourly :40, slow delete; manual jobs kept):
   `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
   `V4_JOB_RETENTION_DAYS` (default 7),
   `V4_JOB_RETENTION_CLEANUP_TZ` (default `Asia/Shanghai`),
-  `V4_JOB_RETENTION_CLEANUP_HOUR` / `V4_JOB_RETENTION_CLEANUP_MINUTE`
-  (default 15:00 Asia/Shanghai),
-  `V4_JOB_RETENTION_CLEANUP_MAX_PER_RUN` (default 150),
+  `V4_JOB_RETENTION_CLEANUP_MINUTE` (default 40；每小时该分钟触发),
+  `V4_JOB_RETENTION_CLEANUP_INTERVAL_MS` (default 1h),
+  `V4_JOB_RETENTION_CLEANUP_MAX_PER_RUN` (default 150；删不完下小时继续),
   `V4_JOB_RETENTION_CLEANUP_DELAY_MS` (default 1000 between jobs),
   `V4_JOB_RETENTION_BLOB_DELETE_DELAY_MS` (default 50 between blobs),
   `V4_JOB_RETENTION_CLEANUP_QUERY_BATCH`,
@@ -597,6 +602,26 @@ Shop Profile / Shop Scan:
   `scheduler.ts`，与 init 同 gate）。
 - Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
   `items_count`。
+- **稳定 Blob 产物**（每店一份，覆盖写 / patch 合并）：
+  `shop-profile/{shop}/latest-scan.json`
+  （helper：`worker/src/services/shopScan/shopProfileArtifact.ts`）。
+  Job `blobPrefix` = `shop-profile/{shop}`。段：`contentSize`、轻量
+  `coverage`（无 perModule）、`profile`、`glossary`。
+  `install`/`scheduled` 只更新计量段并**保留**已有 AI 段；`manual` 只更新
+  AI 段并**保留**计量段。读者（TSF `artifacts.server.ts` / Spark
+  `tsfShopProfileArtifacts.ts`）优先读该文件，再 fallback 旧
+  `shop-scan/{shop}/{scanId}/` 散文件。
+- **覆盖率双写分工**：`coverage` 阶段仍写 Redis `tsf:items_count`（线上权威，
+  v4 / 语言页 / Spark 语言覆盖率读此）；Blob latest-scan 只留 locale 汇总快照。
+- **shop_scan_jobs 清理**（与 v4 job retention 独立）：每小时 :50
+  （`cleanupOldShopScanJobs.ts`）；默认保留 7 天终态任务，每店保留最新一条
+  COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
+  `shop-scan/{shop}/{scanId}/`。开关：`SHOP_SCAN_JOB_CLEANUP_*`。
+- Admin 体量标签（超大/大/中等/小商店）：Cosmos DB `shop` / 容器
+  `shop_profile`（`type: "size"`）。由 shop scan `contentSize` 写入
+  （`worker/src/services/shopScan/shopSizeProfile.ts`）；Spark Admin 翻译任务
+  列表读取。翻译 INIT **不再**更新该文档。`dataBytes` 口径为源语言
+  `totalChars`；分档默认 2MB / 10MB / 50MB（`SHOP_SIZE_TIER_*_BYTES`）。
 - Trigger split:
   - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
     `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。

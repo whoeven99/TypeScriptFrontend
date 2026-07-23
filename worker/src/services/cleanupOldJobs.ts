@@ -6,11 +6,11 @@ const LOG = "[jobRetentionCleanup]";
 
 /** 默认保留 7 天。 */
 const DEFAULT_RETENTION_DAYS = 7;
-/** 默认北京时间每天 15:00 开始清理（工作时间便于观察）。 */
-const DEFAULT_HOUR = 15;
-const DEFAULT_MINUTE = 0;
+/** 默认每小时 :40 触发（与 auto :00 / shop-scan :30 错开）。 */
+const DEFAULT_MINUTE = 40;
+const DEFAULT_INTERVAL_MS = 60 * 60_000;
 const DEFAULT_TZ = "Asia/Shanghai";
-/** 单次最多删除条数，剩余顺延到次日。 */
+/** 单次最多删除条数，剩余顺延到下一小时。 */
 const DEFAULT_MAX_PER_RUN = 150;
 /** 两条任务删除间隔，降低 Cosmos/Blob/Redis 突发压力。 */
 const DEFAULT_JOB_DELAY_MS = 1_000;
@@ -55,12 +55,19 @@ export function getJobRetentionCleanupTimezone(): string {
   return process.env.V4_JOB_RETENTION_CLEANUP_TZ?.trim() || DEFAULT_TZ;
 }
 
-export function getJobRetentionCleanupHour(): number {
-  return envInt("V4_JOB_RETENTION_CLEANUP_HOUR", DEFAULT_HOUR, 0, 23);
-}
-
+/** 每小时触发的分钟（0–59），默认 40。 */
 export function getJobRetentionCleanupMinute(): number {
   return envInt("V4_JOB_RETENTION_CLEANUP_MINUTE", DEFAULT_MINUTE, 0, 59);
+}
+
+/** 对齐间隔，默认 1 小时。 */
+export function getJobRetentionCleanupIntervalMs(): number {
+  return envInt(
+    "V4_JOB_RETENTION_CLEANUP_INTERVAL_MS",
+    DEFAULT_INTERVAL_MS,
+    60_000,
+    24 * 60 * 60_000,
+  );
 }
 
 function getMaxPerRun(): number {
@@ -157,19 +164,29 @@ function utcFromTzLocal(
   return new Date(guess);
 }
 
-/** 下一次定点清理时刻（按配置时区的时:分）。 */
+/**
+ * 下一次清理时刻：按配置时区对齐到每小时的 scheduleMinute（默认 :40）。
+ */
 export function resolveNextJobRetentionCleanupAt(now = new Date()): Date {
   const timeZone = getJobRetentionCleanupTimezone();
-  const hour = getJobRetentionCleanupHour();
-  const minute = getJobRetentionCleanupMinute();
+  const scheduleMinute = getJobRetentionCleanupMinute();
+  const intervalMs = getJobRetentionCleanupIntervalMs();
   const cur = tzYmdHm(now, timeZone);
-  let next = utcFromTzLocal(cur.y, cur.m, cur.d, hour, minute, timeZone);
-  if (next.getTime() <= now.getTime() + 1000) {
-    const tomorrow = new Date(next.getTime() + 24 * 60 * 60_000);
-    const t = tzYmdHm(tomorrow, timeZone);
-    next = utcFromTzLocal(t.y, t.m, t.d, hour, minute, timeZone);
+  let slot = utcFromTzLocal(
+    cur.y,
+    cur.m,
+    cur.d,
+    cur.h,
+    scheduleMinute,
+    timeZone,
+  );
+
+  while (slot.getTime() <= now.getTime() + 1000) {
+    const p = tzYmdHm(new Date(slot.getTime() + intervalMs), timeZone);
+    slot = utcFromTzLocal(p.y, p.m, p.d, p.h, scheduleMinute, timeZone);
   }
-  return next;
+
+  return slot;
 }
 
 export function msUntilNextJobRetentionCleanup(now = new Date()): number {
@@ -269,7 +286,7 @@ export async function cleanupOldTranslationJobs(): Promise<void> {
     // 整批都被心跳跳过时避免死循环
     if (!progressed) {
       console.log(
-        `${LOG} 本批候选均被心跳保护跳过，结束本轮（次日再试） skippedHeartbeat=${skippedHeartbeat}`,
+        `${LOG} 本批候选均被心跳保护跳过，结束本轮（下小时再试） skippedHeartbeat=${skippedHeartbeat}`,
       );
       break;
     }

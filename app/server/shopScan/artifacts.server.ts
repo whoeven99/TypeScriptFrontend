@@ -81,9 +81,23 @@ type GlossaryRawBlob = {
   }>;
 };
 
+type LatestScanBlob = {
+  profile?: ProfileFactsBlob | null;
+  glossary?: GlossaryRawBlob | null;
+};
+
+/** 从 blobPrefix 推断 shop：`shop-profile/{shop}` 或历史 `shop-scan/{shop}/{scanId}`。 */
+function shopFromBlobPrefix(blobPrefix: string): string | null {
+  const parts = blobPrefix.replace(/\/+$/, "").split("/").filter(Boolean);
+  if (parts[0] === "shop-profile" && parts[1]) return parts[1];
+  if (parts[0] === "shop-scan" && parts[1]) return parts[1];
+  return null;
+}
+
 /**
  * 读取扫描产出的术语策略、术语建议，以及 Blob 中的理解/市场/信号明细。
  * strategy / glossary 优先 Cosmos summary；understanding / markets / signals 仅在 Blob。
+ * 优先读稳定文件 `shop-profile/{shop}/latest-scan.json`，再 fallback 旧散文件。
  */
 export async function loadShopScanArtifacts(
   blobPrefix: string | null | undefined,
@@ -98,16 +112,38 @@ export async function loadShopScanArtifacts(
   let glossaryFromBlob: GlossarySuggestionView[] = [];
   let readBlob = false;
 
-  if (blobPrefix) {
+  let profileFacts: ProfileFactsBlob | null = null;
+  let glossaryRaw: GlossaryRawBlob | null = null;
+
+  const shop = blobPrefix ? shopFromBlobPrefix(blobPrefix) : null;
+  if (shop) {
+    const latest = await readV4Blob<LatestScanBlob>(
+      `shop-profile/${shop}/latest-scan.json`,
+    );
+    if (latest?.profile || latest?.glossary) {
+      profileFacts = latest.profile ?? null;
+      glossaryRaw =
+        fromCosmos.glossarySuggestions.length > 0
+          ? null
+          : (latest.glossary ?? null);
+      readBlob = true;
+    }
+  }
+
+  if (!profileFacts && !glossaryRaw && blobPrefix) {
     const prefix = blobPrefix.endsWith("/") ? blobPrefix : `${blobPrefix}/`;
-    const [profileFacts, glossaryRaw] = await Promise.all([
+    const [legacyProfile, legacyGlossary] = await Promise.all([
       readV4Blob<ProfileFactsBlob>(`${prefix}profile-facts.json`),
       fromCosmos.glossarySuggestions.length > 0
         ? Promise.resolve(null)
         : readV4Blob<GlossaryRawBlob>(`${prefix}glossary-raw.json`),
     ]);
+    profileFacts = legacyProfile;
+    glossaryRaw = legacyGlossary;
     readBlob = Boolean(profileFacts || glossaryRaw);
+  }
 
+  if (profileFacts || glossaryRaw) {
     understanding = normalizeUnderstanding(profileFacts?.induction?.understanding);
     markets = normalizeMarkets(profileFacts?.markets);
     signals = normalizeSignals(profileFacts?.signals);

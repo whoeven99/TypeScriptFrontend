@@ -77,7 +77,7 @@ export type ShopScanJob = {
   trigger: ShopScanTrigger;
   status: ShopScanStatus;
   stages: ShopScanStages;
-  blobPrefix: string; // "shop-scan/{shop}/{scanId}"
+  blobPrefix: string; // 稳定产物前缀：`shop-profile/{shop}`（历史为 `shop-scan/{shop}/{scanId}`）
   summary: ShopScanSummary;
   claimedBy: string | null;
   claimedAt: string | null;
@@ -463,6 +463,73 @@ export async function resetStaleShopScanJobs(): Promise<number> {
   }
   if (reset > 0) console.log(`[shopScanCosmos] reset ${reset} stale scan(s) → QUEUED`);
   return reset;
+}
+
+/** 终态任务中最新一条的 id（COMPLETED/PARTIAL）；无则 null。 */
+export async function getLatestTerminalShopScanId(
+  shopName: string,
+): Promise<string | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<{ id: string }>(
+        {
+          query: `SELECT TOP 1 c.id FROM c WHERE c.shopName = @shopName AND c.status IN ('COMPLETED', 'PARTIAL') ORDER BY c.createdAt DESC`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type ShopScanCleanupCandidate = {
+  id: string;
+  shopName: string;
+  blobPrefix: string;
+  createdAt: string;
+  status: ShopScanStatus;
+};
+
+/**
+ * 超过 cutoff 的终态扫描（旧→新），供保留期清理。
+ * 调用方负责「每店保留最新 COMPLETED/PARTIAL」。
+ */
+export async function findOldShopScanJobsForCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<ShopScanCleanupCandidate[]> {
+  const take = Math.max(1, Math.min(200, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanCleanupCandidate>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status
+FROM c
+WHERE c.createdAt < @cutoff
+  AND c.status IN ('COMPLETED', 'PARTIAL', 'FAILED')
+ORDER BY c.createdAt ASC
+OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@limit", value: take },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (e) {
+    console.warn("[shopScanCosmos] findOldShopScanJobsForCleanup failed", e);
+    return [];
+  }
+}
+
+/** 删除一条 shop_scan_jobs 文档（不删 Blob）。 */
+export async function deleteShopScanJob(
+  shopName: string,
+  scanId: string,
+): Promise<void> {
+  await getContainer().item(scanId, shopName).delete();
 }
 
 /** 部署重启后：给所有 CREATED/QUEUED 扫描补 push hint，新进程立即接管。 */
