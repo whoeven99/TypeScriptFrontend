@@ -134,7 +134,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error("[single] translate stage failed", requestSummary, err);
       throw err;
     }
-
     try {
       await deductQuota(shop, usedTokens);
     } catch (err) {

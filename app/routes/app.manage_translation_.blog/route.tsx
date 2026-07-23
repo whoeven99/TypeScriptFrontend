@@ -106,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (refreshResourceIds.length > 0) {
     try {
       const response = await admin.graphql(
-        `#graphql
+          `#graphql
             query refreshBlogResources($resourceIds: [ID!]!, $locale: String!) {
               translatableResourcesByIds(resourceIds: $resourceIds, first: 250) {
                 nodes {
@@ -125,12 +125,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-        {
-          variables: {
-            resourceIds: refreshResourceIds,
-            locale: searchTerm || "",
+          {
+            variables: {
+              resourceIds: refreshResourceIds,
+              locale: searchTerm || "",
+            },
           },
-        },
       );
       const data = await response.json();
 
@@ -144,10 +144,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail(
-        "Error refreshing current page",
-        error,
-      );
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -185,7 +182,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -358,6 +356,7 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
+
   useEffect(() => {
     const data = consumeConfirmResponse(confirmFetcher.data);
     if (!data?.success) return;
@@ -426,13 +425,12 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt, aiModel) => {
+        onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType: "BLOG",
             record,
             handleInputChange,
             customPrompt,
-            aiModel,
           });
         }}
       />
@@ -513,13 +511,11 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
-    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
-    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -542,7 +538,6 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
-      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -769,16 +764,10 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
-        hasSider={!isMobile}
         style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: "flex-start",
-          overflow: isMobile ? "auto" : "hidden",
+          overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          minHeight: isMobile ? "70vh" : undefined,
-          height: isMobile ? "auto" : "calc(100vh - 154px)",
-          width: "100%",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -796,16 +785,12 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
-                width={200}
                 style={{
-                  flex: "0 0 200px",
-                  width: 200,
-                  minWidth: 200,
-                  maxWidth: 200,
                   height: "100%",
+                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden",
+                  overflow: "auto",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -814,9 +799,8 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
-                    minHeight: 0,
-                    height: "100%",
-                    justifyContent: "space-between",
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -838,17 +822,12 @@ const Index = () => {
               </Sider>
             )}
             <Content
-              key={selectBlogKey}
               style={{
-                paddingLeft: isMobile ? "0" : "24px",
-                flex: 1,
-                minWidth: 0,
-                minHeight: isMobile ? "70vh" : 0,
-                height: isMobile ? "auto" : "100%",
+                paddingLeft: isMobile ? "16px" : "24px",
+                minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
-                overflowY: isMobile ? "visible" : "auto",
-                overflowX: "hidden",
+                overflow: "auto",
               }}
             >
               {isMobile ? (

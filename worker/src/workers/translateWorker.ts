@@ -21,7 +21,6 @@ import {
 import { blobRead, blobWrite, blobListPaths } from "../services/blobV4.js";
 import {
   assembleLegacyChunkBlob,
-  countTranslatedResources,
   isChunkFullyCheckpointed,
   listTranslatedResourceIds,
   writeTranslatedResourceBlob,
@@ -412,10 +411,11 @@ function createExclusiveRunner() {
 async function countUnitsForCheckpointedResources(
   blobPrefix: string,
   modules: string[],
+  loadDoneIds: (module: string) => Promise<Set<string>>,
 ): Promise<number> {
   let units = 0;
   for (const module of modules) {
-    const doneIds = await listTranslatedResourceIds(blobPrefix, module);
+    const doneIds = await loadDoneIds(module);
     if (doneIds.size === 0) continue;
     const initPaths = (await blobListPaths(`${blobPrefix}/init/${module}/`)).filter((p) =>
       p.endsWith(".json"),
@@ -611,6 +611,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         ] => Boolean(row),
       ),
   );
+  const hasProfileBlock = Boolean(job.profileBlock?.trim());
+
+  console.log(
+    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock}`,
+  );
 
   // Resume: restore token counter from Cosmos + Redis (412 on pause may leave Cosmos stale).
   const latestAtStart = await getJob(shopName, jobId);
@@ -622,8 +627,36 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   );
 
   const runExclusive = createExclusiveRunner();
-  const durableDone = await countTranslatedResources(blobPrefix, job.modules);
-  const durableUnits = await countUnitsForCheckpointedResources(blobPrefix, job.modules);
+
+  // Per-module checkpoint ID cache for this job run. listTranslatedResourceIds is
+  // list-only (cheap), but re-listing on every chunk still multiplies Azure List
+  // calls under TRANSLATE_CHUNK_CONCURRENCY — load once, mutate as we write.
+  const checkpointIdsByModule = new Map<string, Set<string>>();
+  const checkpointLoadPromises = new Map<string, Promise<Set<string>>>();
+  const getModuleCheckpointIds = (module: string): Promise<Set<string>> => {
+    const hit = checkpointIdsByModule.get(module);
+    if (hit) return Promise.resolve(hit);
+    let pending = checkpointLoadPromises.get(module);
+    if (!pending) {
+      pending = listTranslatedResourceIds(blobPrefix, module).then((set) => {
+        checkpointIdsByModule.set(module, set);
+        checkpointLoadPromises.delete(module);
+        return set;
+      });
+      checkpointLoadPromises.set(module, pending);
+    }
+    return pending;
+  };
+
+  let durableDone = 0;
+  for (const module of job.modules) {
+    durableDone += (await getModuleCheckpointIds(module)).size;
+  }
+  const durableUnits = await countUnitsForCheckpointedResources(
+    blobPrefix,
+    job.modules,
+    getModuleCheckpointIds,
+  );
   const redisDone = Number(redisProgressAtStart.translateDone) || 0;
 
   let translateDone = Math.max(durableDone, redisDone);
@@ -894,7 +927,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         if (!chunk) return;
 
         const chunkResources = chunk.filter((r) => r.fields?.length);
-        const checkpointIds = await listTranslatedResourceIds(blobPrefix, module);
+        const checkpointIds = await getModuleCheckpointIds(module);
 
         // Legacy: full chunk file already written in a prior run.
         const existingChunk = await blobRead<Array<{ resourceId: string }>>(translatePath);
@@ -970,6 +1003,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
               const orig = chunkResources.find((r) => r.resourceId === resourceId);
               if (!orig) return;
               checkpointedThisRun.add(resourceId); // 立即认领，防止并发重复写
+              checkpointIds.add(resourceId); // module 级缓存同步，避免其它 chunk 重复翻
               claimedItem = toTranslatedResourceItem(resourceId, results, orig.fields);
             });
             const item = claimedItem;
@@ -981,6 +1015,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
               // 写失败 → 撤销认领，允许后续重试重新 checkpoint
               await runExclusive(async () => {
                 checkpointedThisRun.delete(resourceId);
+                checkpointIds.delete(resourceId);
               });
               throw e;
             }
@@ -1044,6 +1079,9 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             onResourceDone,
             shouldAbort,
             {
+              translateHandle: job.isHandle,
+              promptContext: promptContextBase,
+              profileBlock: job.profileBlock ?? undefined,
               translateHandle: job.isHandle,
               promptContext: promptContextBase,
             },
@@ -1127,7 +1165,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         return;
       }
       const redisUsedOnAbort = Number((await getProgress(jobId)).usedTokens) || 0;
-      const unitsFromBlob = await countUnitsForCheckpointedResources(blobPrefix, job.modules);
+      const unitsFromBlob = await countUnitsForCheckpointedResources(
+        blobPrefix,
+        job.modules,
+        getModuleCheckpointIds,
+      );
       const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(
         translateDone,
         translateTotal,
@@ -1218,7 +1260,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       latestJob?.metrics.usedTokens ?? 0,
       redisUsedOnComplete,
     );
-    const unitsFromBlob = await countUnitsForCheckpointedResources(blobPrefix, job.modules);
+    const unitsFromBlob = await countUnitsForCheckpointedResources(
+      blobPrefix,
+      job.modules,
+      getModuleCheckpointIds,
+    );
     const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(
       translateDone,
       translateTotal,

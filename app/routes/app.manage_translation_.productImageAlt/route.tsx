@@ -713,13 +713,12 @@ const Index = () => {
         }}
         loading={loadingItems.includes(record?.key || "")}
         existingTranslation={getTranslatedAltValue(record)}
-        onSubmit={(customPrompt, aiModel) => {
+        onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType: "PRODUCT_OPTION_VALUE",
             record,
             handleInputChange,
             customPrompt,
-            aiModel,
           });
           reportClick("editor_list_translate");
         }}
@@ -779,9 +778,7 @@ const Index = () => {
               minWidth: 0,
             }}
           >
-            <div
-              style={{ display: "flex", alignItems: "center", minHeight: 24 }}
-            >
+            <div style={{ display: "flex", alignItems: "center", minHeight: 24 }}>
               <Text
                 style={{
                   fontSize: 12,
@@ -886,13 +883,11 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
-    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
-    aiModel?: string;
   }) => {
     if (!record?.key || !record?.altText) {
       shopify.toast.show(
@@ -922,7 +917,6 @@ const Index = () => {
       type: "SINGLE_LINE_TEXT_FIELD",
       resourceId: record?.resourceId,
       customPrompt,
-      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1135,16 +1129,10 @@ const Index = () => {
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
       <Layout
-        hasSider={!isMobile}
         style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: "flex-start",
-          overflow: isMobile ? "auto" : "hidden",
+          overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          minHeight: isMobile ? "70vh" : undefined,
-          height: isMobile ? "auto" : "calc(100vh - 154px)",
-          width: "100%",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -1162,16 +1150,12 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
-                width={200}
                 style={{
-                  flex: "0 0 200px",
-                  width: 200,
-                  minWidth: 200,
-                  maxWidth: 200,
                   height: "100%",
+                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden",
+                  overflow: "auto",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -1180,9 +1164,8 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
-                    minHeight: 0,
-                    height: "100%",
-                    justifyContent: "space-between",
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -1204,17 +1187,12 @@ const Index = () => {
               </Sider>
             )}
             <Content
-              key={selectedKey}
               style={{
-                paddingLeft: isMobile ? "0" : "24px",
-                flex: 1,
-                minWidth: 0,
-                minHeight: isMobile ? "70vh" : 0,
-                height: isMobile ? "auto" : "100%",
+                paddingLeft: isMobile ? "16px" : "24px",
+                minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
-                overflowY: isMobile ? "visible" : "auto",
-                overflowX: "hidden",
+                overflow: "auto",
               }}
             >
               {isMobile ? (

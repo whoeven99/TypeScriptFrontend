@@ -494,7 +494,8 @@ const Index = () => {
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -532,8 +533,6 @@ const Index = () => {
   const [startCursor, setStartCursor] = useState<string>("");
   const [endCursor, setEndCursor] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const layoutScrollRef = useRef<HTMLDivElement | null>(null);
-  const contentScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     dataFetcher.submit(
@@ -672,6 +671,7 @@ const Index = () => {
     );
   }, [dataFetcher.data, t]);
 
+
   // 更新 loadingItemsRef 的�?
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -738,23 +738,6 @@ const Index = () => {
       setVariantsLoading(false);
     }
   }, [selectProductKey, productsData]);
-
-  useEffect(() => {
-    if (!selectProductKey) return;
-    const resetScroll = () => {
-      if (layoutScrollRef.current) {
-        layoutScrollRef.current.scrollTop = 0;
-        layoutScrollRef.current.scrollLeft = 0;
-      }
-      if (contentScrollRef.current) {
-        contentScrollRef.current.scrollTop = 0;
-        contentScrollRef.current.scrollLeft = 0;
-      }
-    };
-    resetScroll();
-    const rafId = window.requestAnimationFrame(resetScroll);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [selectProductKey]);
 
   useEffect(() => {
     if (productFetcher.data) {
@@ -845,10 +828,7 @@ const Index = () => {
         if (metafieldsData) setMetafieldsData(metafieldsData);
       } else {
         shopify.toast.show(
-          getManageTranslationLoadErrorMessage(
-            t,
-            productFetcher.data?.errorMsg,
-          ),
+          getManageTranslationLoadErrorMessage(t, productFetcher.data?.errorMsg),
         );
       }
     }
@@ -880,22 +860,22 @@ const Index = () => {
     }
 
     if (failedItems.length === 0) {
-      shopify.toast.show(t("Saved successfully"));
-      fetcher.submit(
-        {
-          log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
-        },
-        {
-          method: "POST",
-          action: "/log",
-        },
-      );
-    } else {
-      shopify.toast.show(t("Some items saved failed"));
-      if (hasInvalidDigestError || successfulItems.length > 0) {
-        refreshCurrentPageData();
+        shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else {
+        shopify.toast.show(t("Some items saved failed"));
+        if (hasInvalidDigestError || successfulItems.length > 0) {
+          refreshCurrentPageData();
+        }
       }
-    }
 
     setConfirmData([]);
     setSuccessTranslatedKey([]);
@@ -972,13 +952,12 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
-        onSubmit={(customPrompt, aiModel) => {
+        onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType,
             record,
             handleInputChange,
             customPrompt,
-            aiModel,
           });
           if (trackClick) {
             reportClick("editor_list_translate");
@@ -1148,13 +1127,11 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
-    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
-    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -1177,7 +1154,6 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
-      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -1498,17 +1474,10 @@ const Index = () => {
         </div>
       </div>
       <Layout
-        hasSider={!isMobile}
-        ref={layoutScrollRef}
         style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: "flex-start",
-          overflow: isMobile ? "auto" : "hidden",
+          overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          minHeight: isMobile ? "70vh" : undefined,
-          height: isMobile ? "auto" : "calc(100vh - 154px)",
-          width: "100%",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -1526,16 +1495,11 @@ const Index = () => {
           <>
             {!isMobile && (
               <Sider
-                width={200}
                 style={{
-                  flex: "0 0 200px",
-                  width: 200,
-                  minWidth: 200,
-                  maxWidth: 200,
-                  height: "100%",
+                  minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden",
+                  overflow: "auto",
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
@@ -1544,9 +1508,8 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
-                    minHeight: 0,
-                    height: "100%",
-                    justifyContent: "space-between",
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -1569,18 +1532,12 @@ const Index = () => {
               </Sider>
             )}
             <Content
-              ref={contentScrollRef}
-              key={selectProductKey}
               style={{
-                paddingLeft: isMobile ? "0" : "24px",
-                flex: 1,
-                minWidth: 0,
-                minHeight: isMobile ? "70vh" : 0,
-                height: isMobile ? "auto" : "100%",
+                paddingLeft: isMobile ? "16px" : "24px",
+                minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
-                overflowY: isMobile ? "visible" : "auto",
-                overflowX: "hidden",
+                overflow: "auto",
               }}
             >
               {isMobile ? (

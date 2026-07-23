@@ -258,7 +258,8 @@ function normalizeKeyPattern(key: string): string {
 
 function normalizeResourcePattern(resourceId: string): string | null {
   const normalized = (resourceId ?? "").trim().toLowerCase();
-  return normalized || null;
+  if (!normalized) return null;
+  return normalized.replace(/\d+/g, "*");
 }
 
 function bump<T>(map: Map<T, number>, key: T): void {
