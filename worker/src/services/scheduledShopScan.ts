@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   currentSlotIndex,
+  getAutoTranslateIntervalMs,
+  getAutoTranslateScheduleTimezone,
   getAutoTranslateShardCooldownMs,
   getAutoTranslateSlotsPerDay,
   resolveNextClockAlignedScanAt,
@@ -20,6 +22,8 @@ import { isShopAutoCooldownElapsed } from "./cosmosV4.js";
 
 /** 整店冷却默认 20h（与 auto 分槽冷却同量级；可用 SHOP_SCAN_SHARD_COOLDOWN_MS 覆盖）。 */
 const SHOP_SCAN_SHARD_COOLDOWN_MS_DEFAULT = 20 * 60 * 60_000;
+/** scheduled shop scan 默认每小时 :30（与 auto 的 :00 错开）。 */
+export const SHOP_SCAN_SCHEDULE_MINUTE_DEFAULT = 30;
 
 export function isShopScanScheduleEnabled(): boolean {
   const raw = process.env.SHOP_SCAN_SCHEDULE_ENABLED?.trim().toLowerCase();
@@ -27,6 +31,15 @@ export function isShopScanScheduleEnabled(): boolean {
     return false;
   }
   return true;
+}
+
+/** 每小时触发分钟（0–59）；默认 30，可用 SHOP_SCAN_SCHEDULE_MINUTE 覆盖。 */
+export function getShopScanScheduleMinute(): number {
+  const n = Number(process.env.SHOP_SCAN_SCHEDULE_MINUTE);
+  if (!Number.isFinite(n) || n < 0 || n > 59) {
+    return SHOP_SCAN_SCHEDULE_MINUTE_DEFAULT;
+  }
+  return Math.floor(n);
 }
 
 export function getShopScanShardCooldownMs(): number {
@@ -79,9 +92,10 @@ export type ScheduledShopScanOptions = {
 };
 
 /**
- * 定时计量 shop scan：与自动翻译同一套 24 槽 / 时区 / 整点，但延后 1 小时。
+ * 定时计量 shop scan：与自动翻译同一套 24 槽 / 时区，槽位延后 1 小时；
+ * 触发分钟独立（默认 :30，auto 默认 :00）。
  *
- * - 每小时整点 tick（与 auto 同一 minute）。
+ * - 每小时 :30 tick（SHOP_SCAN_SCHEDULE_MINUTE，默认 30）。
  * - 当前槽 S 只入队 shopSlotIndex === (S-1)%slots 的店。
  * - trigger=scheduled → worker 只跑 contentSize + coverage。
  * - 整店冷却默认 ~20h，每店约每天一轮。
@@ -166,11 +180,16 @@ export async function runScheduledShopScan(
       ` 跳过(进行中)=${skippedActive}` +
       ` 跳过(冷却<${cooldownMs / 3600_000}h)=${skippedCooldown}` +
       (cappedOut ? ` [达单次上限 ${maxEnqueue}，剩余顺延下轮]` : "") +
-      ` 下次整点≈${resolveNextClockAlignedScanAt().toISOString()}`,
+      ` 下次≈${resolveNextClockAlignedScanAt(
+        new Date(),
+        getAutoTranslateIntervalMs(),
+        getAutoTranslateScheduleTimezone(),
+        getShopScanScheduleMinute(),
+      ).toISOString()}`,
   );
 }
 
-/** Scheduler 整点入口。 */
+/** Scheduler 对齐入口（默认每小时 :30）。 */
 export async function runScheduledShopScanTick(): Promise<void> {
   await runScheduledShopScan();
 }

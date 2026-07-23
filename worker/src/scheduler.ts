@@ -10,6 +10,7 @@ import {
 import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
 import { runAutoTranslateScanTick } from "./services/autoTranslate.js";
 import {
+  getShopScanScheduleMinute,
   isShopScanScheduleEnabled,
   runScheduledShopScanTick,
 } from "./services/scheduledShopScan.js";
@@ -137,7 +138,7 @@ function scheduleAutoTranslateScan(): void {
 }
 
 /**
- * scheduled shop scan：与 auto 同一整点 / 时区，槽位延后 1h（见 scheduledShopScan.ts）。
+ * scheduled shop scan：与 auto 同时区 / 分槽，触发分钟独立（默认 :30），槽位延后 1h。
  */
 function scheduleScheduledShopScan(): void {
   if (!isShopScanScheduleEnabled()) {
@@ -149,11 +150,21 @@ function scheduleScheduledShopScan(): void {
 
   const tz = getAutoTranslateScheduleTimezone();
   const intervalMs = getAutoTranslateIntervalMs();
-  const minute = getAutoTranslateScheduleMinute();
+  const minute = getShopScanScheduleMinute();
 
   const scheduleNext = () => {
-    const waitMs = msUntilNextClockAlignedScan();
-    const nextAt = resolveNextClockAlignedScanAt();
+    const waitMs = msUntilNextClockAlignedScan(
+      new Date(),
+      intervalMs,
+      tz,
+      minute,
+    );
+    const nextAt = resolveNextClockAlignedScanAt(
+      new Date(),
+      intervalMs,
+      tz,
+      minute,
+    );
     console.log(
       `[scheduler] scheduledShopScan 下次扫描 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms, slot=auto-1h)`,
     );
@@ -305,7 +316,7 @@ export function startScheduler(): void {
 
   // 店铺画像扫描：与 init 同 gate（做 Shopify 读扫描）。hint 立即唤醒 + 轮询兜底，
   // stale-reset 自愈崩溃任务，部署重启后 re-hint 待处理扫描。
-  // scheduled 计量复扫：与 auto 同分槽/整点，延后 1h（scheduledShopScan）。
+  // scheduled 计量复扫：与 auto 同分槽，默认 :30 触发，槽位延后 1h（scheduledShopScan）。
   if (stages.has("init")) {
     safeRun("shopScanDeployWake", async () => {
       await wakeQueuedShopScanJobsAfterDeploy();
