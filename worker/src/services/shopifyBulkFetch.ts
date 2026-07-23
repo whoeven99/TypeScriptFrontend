@@ -5,17 +5,18 @@
  * paginated GraphQL in shopifyFetch.ts unchanged.
  *
  * Flow: sliding window of up to 5 bulk queries → poll every 1s → on complete,
- * submit next module and stream-download JSONL (download concurrency default 2)
+ * submit next module and stream-download JSONL (download concurrency default 5)
  * → filter → chunk → Blob via caller callback.
  */
 import { createInterface } from "readline";
 import { Readable } from "stream";
 import {
   MODULE_TO_SHOPIFY_TYPE,
+  chunkBlobBytes,
   fetchTranslatableResources,
-  getMaxChunkChars,
+  getMaxChunkBytes,
   mapNodeToResource,
-  resourceChars,
+  resourceBlobBytes,
   shopifyGraphql,
   type FetchTranslatableOptions,
   type TranslatableResource,
@@ -30,7 +31,7 @@ const BULK_SUBMIT_WINDOW = Math.max(
 const BULK_POLL_MS = Math.max(250, Number(process.env.INIT_BULK_POLL_MS?.trim()) || 1_000);
 const BULK_DOWNLOAD_CONCURRENCY = Math.max(
   1,
-  Number(process.env.INIT_BULK_DOWNLOAD_CONCURRENCY?.trim()) || 2,
+  Math.min(5, Number(process.env.INIT_BULK_DOWNLOAD_CONCURRENCY?.trim()) || 5),
 );
 const BULK_TIMEOUT_MS = Math.max(
   60_000,
@@ -270,15 +271,7 @@ async function streamJsonlToChunks(args: {
   writeChunk: (chunkIndex: number, chunk: TranslatableResource[]) => Promise<void>;
   onHeartbeat: () => Promise<void>;
 }): Promise<{ totalItems: number; chunks: number }> {
-  const {
-    url,
-    module,
-    options,
-    limitPerType,
-    chunkSize,
-    writeChunk,
-    onHeartbeat,
-  } = args;
+  const { url, module, options, limitPerType, writeChunk, onHeartbeat } = args;
 
   const resp = await fetch(url);
   if (!resp.ok || !resp.body) {
@@ -290,12 +283,12 @@ async function streamJsonlToChunks(args: {
   );
   const rl = createInterface({ input: nodeStream, crlfDelay: Infinity });
 
-  const maxChars = getMaxChunkChars();
+  const maxBytes = getMaxChunkBytes();
   let fetchedRaw = 0;
   let chunkIndex = 0;
   let totalItems = 0;
   let current: TranslatableResource[] = [];
-  let currentChars = 0;
+  let sumResourceBytes = 0;
   let lastHeartbeat = 0;
 
   const flushCurrent = async () => {
@@ -304,7 +297,7 @@ async function streamJsonlToChunks(args: {
     totalItems += current.length;
     chunkIndex++;
     current = [];
-    currentChars = 0;
+    sumResourceBytes = 0;
   };
 
   try {
@@ -335,15 +328,15 @@ async function streamJsonlToChunks(args: {
       );
       if (!resource) continue;
 
-      const size = resourceChars(resource);
-      if (
-        current.length > 0 &&
-        (current.length >= chunkSize || currentChars + size > maxChars)
-      ) {
-        await flushCurrent();
+      const rBytes = resourceBlobBytes(resource);
+      if (current.length > 0) {
+        const estimate = sumResourceBytes + rBytes + current.length + 2;
+        if (estimate > maxBytes && chunkBlobBytes(current.concat(resource)) > maxBytes) {
+          await flushCurrent();
+        }
       }
       current.push(resource);
-      currentChars += size;
+      sumResourceBytes += rBytes;
 
       const now = Date.now();
       if (now - lastHeartbeat > 15_000) {
