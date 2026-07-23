@@ -194,6 +194,10 @@ Core files:
 - Create/list jobs: `app/routes/api.translate-v4.tasks.ts`.
 - Pause/resume/cancel/delete: `app/routes/api.translate-v4.task-action.ts`.
 - Progress summaries: `app/server/translateV4/progress.server.ts`.
+- Init activity UI (module `x/N` bar + i18n activity log): Redis fields
+  `initModulesTotal` / `initModulesDone` / `initActiveModules` /
+  `initCompletedModules` / `initPhase` written by `initWorker.ts`; rendered in
+  `JobExpandedDetail.tsx` via `v4.initLog.*` locale keys.
 - Cosmos jobs: `app/server/translateV4/cosmos.server.ts`.
 - Redis progress/control/hints: `app/server/translateV4/redis.server.ts`.
 - Blob helpers: `app/server/translateV4/blob.server.ts`.

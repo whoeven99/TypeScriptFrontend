@@ -365,6 +365,8 @@ async function writePageChunks(args: {
   return { totalItems, chunks: chunks.length };
 }
 
+export type BulkInitModulePhase = "querying" | "saving";
+
 export type RunBulkInitModulesArgs = {
   shopDomain: string;
   modules: string[];
@@ -378,6 +380,10 @@ export type RunBulkInitModulesArgs = {
     chunk: TranslatableResource[],
   ) => Promise<void>;
   onModuleComplete: (stats: BulkInitModuleStats) => Promise<void>;
+  /** Fired when a module enters the submit/download pipeline (UI activity). */
+  onModuleStart?: (module: string) => Promise<void>;
+  /** Fired when a module changes coarse phase (querying → saving). */
+  onModulePhase?: (module: string, phase: BulkInitModulePhase) => Promise<void>;
   isShutdown: () => boolean;
 };
 
@@ -395,6 +401,8 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
     onHeartbeat,
     writeChunk,
     onModuleComplete,
+    onModuleStart,
+    onModulePhase,
     isShutdown,
   } = args;
 
@@ -405,6 +413,17 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
     }
     return true;
   });
+
+  for (const m of modules) {
+    if (!MODULE_TO_SHOPIFY_TYPE[m]) {
+      await onModuleComplete({
+        module: m,
+        totalItems: 0,
+        chunks: 0,
+        usedFallback: false,
+      });
+    }
+  }
 
   const inFlight = new Map<string, InFlightBulk>();
   type DownloadItem = {
@@ -443,9 +462,22 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
           throw new Error("shutdown: init yielding for deploy");
         }
         await onHeartbeat();
+        await onModuleStart?.(item.module);
+        await onModulePhase?.(item.module, "querying");
 
         let stats: { totalItems: number; chunks: number };
         let usedFallback = false;
+        let savingAnnounced = false;
+        const writeChunkTracked = async (
+          i: number,
+          chunk: TranslatableResource[],
+        ) => {
+          if (!savingAnnounced) {
+            savingAnnounced = true;
+            await onModulePhase?.(item.module, "saving");
+          }
+          await writeChunk(item.module, i, chunk);
+        };
 
         if (item.mode === "empty") {
           stats = { totalItems: 0, chunks: 0 };
@@ -458,7 +490,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
             limitPerType,
             chunkSize,
             options: { ...options, onPage: onHeartbeat },
-            writeChunk: (i, chunk) => writeChunk(item.module, i, chunk),
+            writeChunk: writeChunkTracked,
           });
         } else {
           console.log(`${LOG} download module=${item.module}`);
@@ -469,7 +501,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
               options,
               limitPerType,
               chunkSize,
-              writeChunk: (i, chunk) => writeChunk(item.module, i, chunk),
+              writeChunk: writeChunkTracked,
               onHeartbeat,
             });
           } catch (e) {
@@ -483,7 +515,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
               limitPerType,
               chunkSize,
               options: { ...options, onPage: onHeartbeat },
-              writeChunk: (i, chunk) => writeChunk(item.module, i, chunk),
+              writeChunk: writeChunkTracked,
             });
           }
         }
@@ -533,6 +565,8 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
           operationId,
           submittedAt: Date.now(),
         });
+        await onModuleStart?.(module);
+        await onModulePhase?.(module, "querying");
         console.log(`${LOG} submitted module=${module} op=${operationId}`);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);

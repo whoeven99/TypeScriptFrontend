@@ -67,8 +67,10 @@ export function miniStageSegmentState(
     return { percent: 100, complete: true, active: false };
   }
 
-  const complete = isStageBarComplete(idx, metrics, status);
-  const percent = complete ? 100 : stageBarPercent(idx, metrics, status);
+  const complete = isStageBarComplete(idx, metrics, status, job.modules);
+  const percent = complete
+    ? 100
+    : stageBarPercent(idx, metrics, status, job.modules);
   const activeIdx = visibleStageIndex(status, errorStage, metrics);
   const active =
     !isTerminal &&
@@ -104,14 +106,40 @@ function translateStageProgress(m: StageMetrics): { done: number; total: number 
   return { done: m.translateDone, total: 0 };
 }
 
+/** Init bar uses selected-module x/N when available; falls back to item counts. */
+export function initModuleProgress(
+  m: StageMetrics,
+  jobModules?: string[],
+): { done: number; total: number } {
+  const total =
+    m.initModulesTotal > 0
+      ? m.initModulesTotal
+      : Array.isArray(jobModules)
+        ? jobModules.length
+        : 0;
+  if (total <= 0) {
+    return { done: m.initDone, total: m.initTotal };
+  }
+  return {
+    done: Math.min(m.initModulesDone, total),
+    total,
+  };
+}
+
 export function stageBarPercent(
   idx: number,
   m: StageMetrics,
   _jobStatus: TranslationV4Status,
+  jobModules?: string[],
 ): number {
   switch (idx) {
-    case 0:
+    case 0: {
+      const { done, total } = initModuleProgress(m, jobModules);
+      if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
+        return ratioPercent(done, total);
+      }
       return ratioPercent(m.initDone, m.initTotal);
+    }
     case 1: {
       const { done, total } = translateStageProgress(m);
       return ratioPercent(done, total);
@@ -128,11 +156,22 @@ export function stageBarPercent(
 export function isStageBarComplete(
   idx: number,
   m: StageMetrics,
-  _jobStatus: TranslationV4Status,
+  jobStatus: TranslationV4Status,
+  jobModules?: string[],
 ): boolean {
   switch (idx) {
-    case 0:
+    case 0: {
+      // While still initializing, never mark the bar complete (even at x===N
+      // during writing_manifest). After leaving init, prefer module x/N.
+      if (jobStatus === "INIT_QUEUED" || jobStatus === "INITIALIZING") {
+        return false;
+      }
+      const { done, total } = initModuleProgress(m, jobModules);
+      if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
+        return done >= total;
+      }
       return m.initTotal > 0 && m.initDone >= m.initTotal;
+    }
     case 1: {
       if (isTranslateResourceComplete(m)) return true;
       const resourceTotal = taskResourceTotal(m);

@@ -172,6 +172,10 @@ async function completeEmptyInitJob(
     writebackDone: 0,
     verifyTotal: 0,
     verifyDone: 0,
+    initModulesTotal: job.modules.length,
+    initModulesDone: job.modules.length,
+    initActiveModules: "[]",
+    initPhase: "",
   });
 
   await recordJobUsageSnapshot(
@@ -341,6 +345,64 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
   let totalItems = 0;
   let totalUnits = 0;
   let lastHeartbeatAt = 0;
+  const initModulesTotal = job.modules.length;
+  let initModulesDone = 0;
+  const activeModules = new Map<string, "querying" | "saving">();
+  const completedModules: Array<{ module: string; items: number }> = [];
+  const completedSet = new Set<string>();
+
+  const flushInitActivity = async (
+    extra: Record<string, string | number> = {},
+  ) => {
+    await setProgress(jobId, {
+      initModulesTotal,
+      initModulesDone,
+      initActiveModules: JSON.stringify(
+        [...activeModules.entries()].map(([module, phase]) => ({
+          module,
+          phase,
+        })),
+      ),
+      initCompletedModules: JSON.stringify(completedModules),
+      initDone: totalItems,
+      ...extra,
+    });
+  };
+
+  const setModulePhase = async (
+    module: string,
+    phase: "querying" | "saving",
+  ) => {
+    if (completedSet.has(module)) return;
+    activeModules.set(module, phase);
+    await flushInitActivity({ currentModule: module });
+  };
+
+  const completeModule = async (
+    module: string,
+    moduleItemCount: number,
+    moduleChunkCount: number,
+    moduleUnits: number,
+  ) => {
+    if (completedSet.has(module)) return;
+    // Accumulate into shared totals. These += happen synchronously (no await
+    // between read and write) so they are safe despite interleaved async work.
+    if (moduleItemCount > 0 || moduleChunkCount > 0) {
+      manifest[module] = {
+        totalItems: moduleItemCount,
+        chunks: moduleChunkCount,
+      };
+    }
+    totalItems += moduleItemCount;
+    totalUnits += moduleUnits;
+    activeModules.delete(module);
+    completedSet.add(module);
+    initModulesDone += 1;
+    completedModules.push({ module, items: moduleItemCount });
+    await flushInitActivity({ currentModule: module, initPhase: "" });
+    await throttledHeartbeat();
+  };
+
   const throttledHeartbeat = async () => {
     const now = Date.now();
     // Synchronous guard update before the async heartbeat call prevents
@@ -351,20 +413,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
     }
   };
 
-  const recordModuleStats = async (
-    module: string,
-    moduleItemCount: number,
-    moduleChunkCount: number,
-    moduleUnits: number,
-  ) => {
-    // Accumulate into shared totals. These += happen synchronously (no await
-    // between read and write) so they are safe despite interleaved async work.
-    manifest[module] = { totalItems: moduleItemCount, chunks: moduleChunkCount };
-    totalItems += moduleItemCount;
-    totalUnits += moduleUnits;
-    await setProgress(jobId, { initDone: totalItems, currentModule: module });
-    await throttledHeartbeat();
-  };
+  await flushInitActivity({ initPhase: "" });
 
   try {
     const useBulk = isShopInBulkInitAllowlist(shopDomain);
@@ -399,18 +448,25 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
             chunk,
           );
         },
+        onModuleStart: async (module) => {
+          await setModulePhase(module, "querying");
+        },
+        onModulePhase: async (module, phase) => {
+          await setModulePhase(module, phase);
+        },
         onModuleComplete: async ({ module, totalItems: moduleItemCount, chunks, usedFallback }) => {
           if (moduleItemCount === 0) {
             console.log(
               `[init] module=${module} 0 items${usedFallback ? " (fallback)" : ""}, skipping`,
             );
+            await completeModule(module, 0, 0, 0);
             return;
           }
           console.log(
             `[init] module=${module} items=${moduleItemCount} chunks=${chunks}${usedFallback ? " fallback=page" : " fetch=bulk"}`,
           );
           const moduleUnits = bulkUnitsByModule.get(module) ?? 0;
-          await recordModuleStats(module, moduleItemCount, chunks, moduleUnits);
+          await completeModule(module, moduleItemCount, chunks, moduleUnits);
         },
       });
     } else {
@@ -427,6 +483,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
             throw new Error("shutdown: init yielding for deploy");
           }
           await throttledHeartbeat();
+          await setModulePhase(module, "querying");
 
           console.log(`[init] fetching module=${module} job=${jobId}`);
           const chunks = await fetchTranslatableResources(
@@ -444,9 +501,11 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
 
           if (chunks.length === 0) {
             console.log(`[init] module=${module} 0 items, skipping`);
+            await completeModule(module, 0, 0, 0);
             return;
           }
 
+          await setModulePhase(module, "saving");
           await Promise.all(
             chunks.map((chunk, i) =>
               blobWrite(
@@ -466,11 +525,21 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
             }
           }
 
-          await recordModuleStats(module, moduleItemCount, chunks.length, moduleUnits);
+          await completeModule(module, moduleItemCount, chunks.length, moduleUnits);
         },
         { maxConcurrency: MODULE_CONCURRENCY, propagateErrors: true },
       );
     }
+
+    // Ensure every selected module counts toward x/N even if a path skipped it.
+    for (const module of job.modules) {
+      if (!completedSet.has(module)) {
+        await completeModule(module, 0, 0, 0);
+      }
+    }
+
+    activeModules.clear();
+    await flushInitActivity({ initPhase: "writing_manifest" });
 
     // ── Write manifest and advance status ────────────────────────────────────
     await blobWrite(`${blobPrefix}/manifest.json`, {
@@ -509,6 +578,11 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
       initTotal: totalItems,
       initDone: totalItems,
       translateUnitTotal: totalUnits,
+      initModulesTotal,
+      initModulesDone: initModulesTotal,
+      initActiveModules: "[]",
+      initCompletedModules: JSON.stringify(completedModules),
+      initPhase: "",
     });
 
     await pushHint(
