@@ -121,10 +121,8 @@ function buildTranslatableResourcesBulkQuery(
 
 async function submitBulkQuery(
   shopDomain: string,
-  accessToken: string,
   resourceType: string,
   targetLocale: string,
-  preferLegacyToken: boolean,
 ): Promise<string> {
   const inner = buildTranslatableResourcesBulkQuery(resourceType, targetLocale);
   const mutation = `
@@ -137,10 +135,8 @@ mutation BulkInitTranslatableResources($query: String!) {
 
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     mutation,
     { query: inner },
-    { preferLegacyToken },
   )) as {
     bulkOperationRunQuery: {
       bulkOperation: { id: string; status: string } | null;
@@ -164,9 +160,7 @@ mutation BulkInitTranslatableResources($query: String!) {
 
 async function pollBulkOperation(
   shopDomain: string,
-  accessToken: string,
   operationId: string,
-  preferLegacyToken: boolean,
 ): Promise<{
   status: BulkStatus;
   errorCode: string | null;
@@ -187,10 +181,8 @@ query BulkInitPoll($id: ID!) {
 
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     query,
     { id: operationId },
-    { preferLegacyToken },
   )) as {
     bulkOperation: {
       id: string;
@@ -216,9 +208,7 @@ query BulkInitPoll($id: ID!) {
 
 async function cancelBulkOperation(
   shopDomain: string,
-  accessToken: string,
   operationId: string,
-  preferLegacyToken: boolean,
 ): Promise<void> {
   const mutation = `
 mutation BulkInitCancel($id: ID!) {
@@ -230,10 +220,8 @@ mutation BulkInitCancel($id: ID!) {
   try {
     await shopifyGraphql(
       shopDomain,
-      accessToken,
       mutation,
       { id: operationId },
-      { preferLegacyToken },
     );
   } catch (e) {
     console.warn(
@@ -355,7 +343,6 @@ async function streamJsonlToChunks(args: {
 
 async function writePageChunks(args: {
   shopDomain: string;
-  accessToken: string;
   module: string;
   limitPerType: number;
   chunkSize: number;
@@ -364,7 +351,6 @@ async function writePageChunks(args: {
 }): Promise<{ totalItems: number; chunks: number }> {
   const chunks = await fetchTranslatableResources(
     args.shopDomain,
-    args.accessToken,
     args.module,
     args.limitPerType,
     args.chunkSize,
@@ -381,7 +367,6 @@ async function writePageChunks(args: {
 
 export type RunBulkInitModulesArgs = {
   shopDomain: string;
-  accessToken: string;
   modules: string[];
   limitPerType: number;
   chunkSize: number;
@@ -403,7 +388,6 @@ export type RunBulkInitModulesArgs = {
 export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<void> {
   const {
     shopDomain,
-    accessToken,
     modules,
     limitPerType,
     chunkSize,
@@ -414,7 +398,6 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
     isShutdown,
   } = args;
 
-  const preferLegacyToken = options.preferLegacyToken ?? false;
   const queue = modules.filter((m) => {
     if (!MODULE_TO_SHOPIFY_TYPE[m]) {
       console.warn(`${LOG} unsupported module=${m}, skip`);
@@ -471,7 +454,6 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
           usedFallback = true;
           stats = await writePageChunks({
             shopDomain,
-            accessToken,
             module: item.module,
             limitPerType,
             chunkSize,
@@ -497,7 +479,6 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
             usedFallback = true;
             stats = await writePageChunks({
               shopDomain,
-              accessToken,
               module: item.module,
               limitPerType,
               chunkSize,
@@ -544,10 +525,8 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
         );
         const operationId = await submitBulkQuery(
           shopDomain,
-          accessToken,
           resourceType,
           options.targetLocale,
-          preferLegacyToken,
         );
         inFlight.set(module, {
           module,
@@ -576,9 +555,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
         for (const [, op] of inFlight) {
           await cancelBulkOperation(
             shopDomain,
-            accessToken,
             op.operationId,
-            preferLegacyToken,
           );
         }
         throw new Error("shutdown: init yielding for deploy");
@@ -591,9 +568,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
         try {
           polled = await pollBulkOperation(
             shopDomain,
-            accessToken,
             op.operationId,
-            preferLegacyToken,
           );
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -639,9 +614,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
           console.warn(`${LOG} timeout module=${module} op=${op.operationId}`);
           await cancelBulkOperation(
             shopDomain,
-            accessToken,
             op.operationId,
-            preferLegacyToken,
           );
           inFlight.delete(module);
           if (BULK_FALLBACK) {
@@ -667,9 +640,7 @@ export async function runBulkInitModules(args: RunBulkInitModulesArgs): Promise<
     for (const [, op] of inFlight) {
       await cancelBulkOperation(
         shopDomain,
-        accessToken,
         op.operationId,
-        preferLegacyToken,
       );
     }
     throw e;

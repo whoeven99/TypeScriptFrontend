@@ -5,7 +5,6 @@ import {
   heartbeat,
   getJob,
   withStageTiming,
-  prefersStoredToken,
   countShopWritingBackJobs,
   findWritebackQueuedJobsForShop,
   type TranslationV4Job,
@@ -295,10 +294,8 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
 
       const result = await registerTranslations(
         shopDomain,
-        job.shopifyAccessToken,
         resource.resourceId,
         translations,
-        prefersStoredToken(job),
       );
 
       if (result.success) {

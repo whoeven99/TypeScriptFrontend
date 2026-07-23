@@ -6,7 +6,6 @@ import {
   deleteV4Job,
 } from "~/server/translateV4/cosmos.server";
 import { deleteV4JobBlobs } from "~/server/translateV4/blob.server";
-import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
 import {
   getTranslateV4RedisClient,
   v4HintKey,
@@ -141,17 +140,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ ok: false, error: quotaGuard.error }, { status: quotaGuard.status });
     }
 
-    // 续跑前刷新 offline token（worker 写回用）
-    const freshToken =
-      (await resolveOfflineAccessToken(shopName, session.accessToken)) ??
-      job.shopifyAccessToken;
-
     await updateV4Job(shopName, taskId, {
       status: resumeStatus,
       claimedBy: null,
       errorMessage: null,
       errorStage: null,
-      shopifyAccessToken: freshToken,
     });
     await clearV4Control(taskId); // 清除暂停/取消键，避免 resume 后立即再次中断
     await clearV4PausePending(taskId); // 清掉「额度不足/暂停待落盘」标记，避免续跑后仍显示旧提示

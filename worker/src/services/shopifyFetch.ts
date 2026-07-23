@@ -1,5 +1,5 @@
 /** Maps our module names to Shopify's TranslatableResourceType enum values */
-import { getShopAccessToken, invalidateShopAccessTokenCache } from "./shopAccessToken.js";
+import { getShopAccessToken } from "./shopAccessToken.js";
 import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { noteShopifyThrottle } from "./shopifyConcurrency.js";
 import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
@@ -64,8 +64,6 @@ export type FetchTranslatableOptions = {
   isHandle: boolean;
   /** Called after each paginated API response — use to keep heartbeat alive on long fetches */
   onPage?: () => Promise<void>;
-  /** 外部来源任务（如 TsFrontend）：直接用 job token */
-  preferLegacyToken?: boolean;
   /**
    * 若提供，跳过全店枚举，直接按这些 GID 拉取（试译单商品等）。
    * 仅对 ID-based module（如 PRODUCT）生效。
@@ -314,25 +312,18 @@ type ShopifyGraphqlOpts = {
   retries5xx?: number;
   /** 401 后已用同一 token 重试过一次 */
   tokenRetried?: boolean;
-  /** 外部来源任务（如 TsFrontend）：优先 job / TSF token */
-  preferLegacyToken?: boolean;
 };
 
 /** Shared Admin GraphQL entry for init/writeback/bulk helpers. */
 export async function shopifyGraphql(
   shopDomain: string,
-  legacyAccessToken: string,
   query: string,
   variables: Record<string, unknown>,
   opts: ShopifyGraphqlOpts = {},
 ): Promise<unknown> {
   const retries = opts.retries ?? 4;
   const retries5xx = opts.retries5xx ?? SHOPIFY_5XX_MAX_RETRIES;
-  const accessToken = await getShopAccessToken(
-    shopDomain,
-    legacyAccessToken,
-    opts.preferLegacyToken ?? false,
-  );
+  const accessToken = await getShopAccessToken(shopDomain);
   const url = buildShopifyAdminGraphqlUrl(shopDomain);
   const resp = await fetch(url, {
     method: "POST",
@@ -356,7 +347,7 @@ export async function shopifyGraphql(
       `[shopifyFetch] 429 on ${shopDomain} — waiting ${waitMs}ms (retries left: ${retries - 1})`,
     );
     await new Promise((r) => setTimeout(r, waitMs));
-    return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+    return shopifyGraphql(shopDomain, query, variables, {
       ...opts,
       retries: retries - 1,
     });
@@ -365,9 +356,10 @@ export async function shopifyGraphql(
   if (resp.status === 401) {
     const body = await resp.text();
     if (!opts.tokenRetried) {
-      invalidateShopAccessTokenCache(shopDomain);
-      console.warn(`[shopifyFetch] 401 on ${shopDomain} — retrying with same token`);
-      return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+      console.warn(
+        `[shopifyFetch] 401 on ${shopDomain} — reloading offline token from Turso Session`,
+      );
+      return shopifyGraphql(shopDomain, query, variables, {
         ...opts,
         tokenRetried: true,
       });
@@ -392,7 +384,7 @@ export async function shopifyGraphql(
       `[shopifyFetch] ${resp.status} on ${shopDomain} — waiting ${waitMs}ms (5xx retries left: ${retries5xx - 1})`,
     );
     await new Promise((r) => setTimeout(r, waitMs));
-    return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+    return shopifyGraphql(shopDomain, query, variables, {
       ...opts,
       retries5xx: retries5xx - 1,
     });
@@ -430,7 +422,7 @@ export async function shopifyGraphql(
           `[shopifyFetch] THROTTLED on ${shopDomain} — waiting ${waitMs}ms (retries left: ${retries - 1})`,
         );
         await new Promise((r) => setTimeout(r, waitMs));
-        return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+        return shopifyGraphql(shopDomain, query, variables, {
           ...opts,
           retries: retries - 1,
         });
@@ -450,7 +442,7 @@ export async function shopifyGraphql(
         `[shopifyFetch] SERVER_ERROR on ${shopDomain} — waiting ${waitMs}ms (5xx retries left: ${retries5xx - 1})`,
       );
       await new Promise((r) => setTimeout(r, waitMs));
-      return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+      return shopifyGraphql(shopDomain, query, variables, {
         ...opts,
         retries5xx: retries5xx - 1,
       });
@@ -587,12 +579,10 @@ export function chunkResources(
 /** 按 config query 分页拉取资源 GID，最多 limit 条。 */
 export async function fetchResourceIdsByQuery(
   shopDomain: string,
-  accessToken: string,
   module: string,
   limit: number,
   updatedAtAfter?: string,
   onPage?: () => Promise<void>,
-  preferLegacyToken = false,
 ): Promise<string[]> {
   const spec = MODULE_ID_QUERY[module];
   if (!spec) return [];
@@ -611,10 +601,8 @@ export async function fetchResourceIdsByQuery(
 
     const data = (await shopifyGraphql(
       shopDomain,
-      accessToken,
       spec.gql,
       variables,
-      { preferLegacyToken },
     )) as Record<
       string,
       {
@@ -641,7 +629,6 @@ export async function fetchResourceIdsByQuery(
 
 async function fetchTranslatableResourcesByType(
   shopDomain: string,
-  accessToken: string,
   module: string,
   shopifyType: string,
   limitPerType: number,
@@ -663,10 +650,8 @@ async function fetchTranslatableResourcesByType(
 
     const data = (await shopifyGraphql(
       shopDomain,
-      accessToken,
       TRANSLATABLE_RESOURCES_QUERY,
       variables,
-      { preferLegacyToken: options.preferLegacyToken ?? false },
     )) as {
       translatableResources: {
         edges: Array<{ node: TranslatableNode }>;
@@ -691,7 +676,6 @@ async function fetchTranslatableResourcesByType(
 
 async function fetchTranslatableResourcesByIds(
   shopDomain: string,
-  accessToken: string,
   module: string,
   resourceIds: string[],
   limitPerType: number,
@@ -714,10 +698,8 @@ async function fetchTranslatableResourcesByIds(
 
       const data = (await shopifyGraphql(
         shopDomain,
-        accessToken,
         TRANSLATABLE_RESOURCES_BY_IDS_QUERY,
         variables,
-        { preferLegacyToken: options.preferLegacyToken ?? false },
       )) as {
         translatableResourcesByIds: {
           nodes: TranslatableNode[];
@@ -750,7 +732,6 @@ async function fetchTranslatableResourcesByIds(
 /** Fetch translatable resources for a module, filtered by isCover/isHandle rules. Returns chunked arrays. */
 export async function fetchTranslatableResources(
   shopDomain: string,
-  accessToken: string,
   module: string,
   limitPerType: number,
   chunkSize: number,
@@ -771,18 +752,15 @@ export async function fetchTranslatableResources(
         ? options.resourceIds
         : await fetchResourceIdsByQuery(
             shopDomain,
-            accessToken,
             module,
             limitPerType,
             updatedAtAfter,
             options.onPage,
-            options.preferLegacyToken ?? false,
           );
     if (resourceIds.length === 0) return [];
 
     allResources = await fetchTranslatableResourcesByIds(
       shopDomain,
-      accessToken,
       module,
       resourceIds,
       limitPerType,
@@ -791,7 +769,6 @@ export async function fetchTranslatableResources(
   } else {
     allResources = await fetchTranslatableResourcesByType(
       shopDomain,
-      accessToken,
       module,
       shopifyType,
       limitPerType,
@@ -822,17 +799,13 @@ export function translationValuesMatch(expected: string, actual: string): boolea
 
 async function registerTranslationsBatch(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken = false,
 ): Promise<TranslationRegisterResult> {
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     TRANSLATIONS_REGISTER_MUTATION,
     { resourceId, translations },
-    { preferLegacyToken },
   )) as {
     translationsRegister: {
       translations: Array<{ key: string; value: string }>;
@@ -875,10 +848,8 @@ function mergeTranslationRegisterResults(
  */
 async function registerTranslationsChunkWithSplit(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken: boolean,
 ): Promise<TranslationRegisterResult> {
   if (translations.length === 0) {
     return { success: true, userErrors: [], registeredKeys: [] };
@@ -886,10 +857,8 @@ async function registerTranslationsChunkWithSplit(
 
   const result = await registerTranslationsBatch(
     shopDomain,
-    accessToken,
     resourceId,
     translations,
-    preferLegacyToken,
   );
 
   if (result.success) return result;
@@ -905,17 +874,13 @@ async function registerTranslationsChunkWithSplit(
 
   const left = await registerTranslationsChunkWithSplit(
     shopDomain,
-    accessToken,
     resourceId,
     translations.slice(0, mid),
-    preferLegacyToken,
   );
   const right = await registerTranslationsChunkWithSplit(
     shopDomain,
-    accessToken,
     resourceId,
     translations.slice(mid),
-    preferLegacyToken,
   );
   return mergeTranslationRegisterResults(left, right);
 }
@@ -926,10 +891,8 @@ async function registerTranslationsChunkWithSplit(
  */
 export async function registerTranslations(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken = false,
 ): Promise<TranslationRegisterResult> {
   if (translations.length === 0) {
     return { success: true, userErrors: [], registeredKeys: [] };
@@ -943,10 +906,8 @@ export async function registerTranslations(
       const batch = translations.slice(i, i + WRITEBACK_TRANSLATIONS_BATCH);
       const result = await registerTranslationsChunkWithSplit(
         shopDomain,
-        accessToken,
         resourceId,
         batch,
-        preferLegacyToken,
       );
       allErrors.push(...result.userErrors);
       allRegisteredKeys.push(...result.registeredKeys);
@@ -987,17 +948,13 @@ export type StoredTranslation = {
 /** Read back translations already stored on Shopify for one resource + locale. */
 export async function fetchResourceTranslations(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   locale: string,
-  preferLegacyToken = false,
 ): Promise<StoredTranslation[]> {
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     TRANSLATABLE_RESOURCE_BY_ID_QUERY,
     { resourceId, locale },
-    { preferLegacyToken },
   )) as {
     translatableResource: {
       translations: Array<{ key: string; value: string; outdated?: boolean | null }>;
@@ -1031,15 +988,11 @@ const SHOP_PRIMARY_LOCALE_QUERY = `#graphql
 /** 读取店铺当前默认语言（Shopify 实时为准）。 */
 export async function fetchShopPrimaryLocale(
   shopDomain: string,
-  accessToken: string,
-  preferLegacyToken = true,
 ): Promise<string | null> {
   const payload = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     SHOP_PRIMARY_LOCALE_QUERY,
     {},
-    { preferLegacyToken },
   )) as {
     data?: { shopLocales?: Array<{ locale: string; primary: boolean }> | null };
   };
