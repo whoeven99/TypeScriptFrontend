@@ -309,6 +309,9 @@ Services:
 - `worker/src/services/shopifyFetch.ts`, `shopifyConcurrency.ts`: Shopify Admin
   GraphQL fetch and per-shop adaptive concurrency driven by cost bucket / 429
   feedback; init and writeback use this path.
+- `worker/src/services/shopifyBulkFetch.ts`: allowlist-only init via
+  `bulkOperationRunQuery` JSONL (sliding window ≤5, poll, stream download);
+  non-allowlist shops stay on paginated `shopifyFetch`.
 - `worker/src/services/llmTranslate.ts`: thin Worker entry point into
   `@ciwi/translation-core`.
 - `packages/translation-core/src/*`: LLM routing, translation memory, glossary
@@ -363,6 +366,14 @@ Important env names only:
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
   `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
+- Init Shopify bulk JSONL（仅灰度店；名单外仍分页）:
+  `INIT_BULK_SHOP_ALLOWLIST`（逗号分隔 shopName，空=全关）,
+  `INIT_BULK_SUBMIT_WINDOW`（默认 5，Shopify 同店上限）,
+  `INIT_BULK_POLL_MS`（默认 1000）,
+  `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 2）,
+  `INIT_BULK_TIMEOUT_MS`（默认 6h）,
+  `INIT_BULK_FALLBACK`（默认开，失败回退分页）.
+  Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`。
 - Auxiliary schedules: `SHOP_SCAN_POLL_INTERVAL_MS`, `EMAIL_WORKER_INTERVAL_MS`,
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
