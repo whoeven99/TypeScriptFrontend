@@ -5,7 +5,6 @@ import {
   heartbeat,
   getJob,
   withStageTiming,
-  prefersStoredToken,
   countShopInitializingJobs,
   findInitQueuedJobsForShop,
   TSF_AUTO_TASK_SOURCE,
@@ -377,7 +376,6 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
       const bulkUnitsByModule = new Map<string, number>();
       await runBulkInitModules({
         shopDomain,
-        accessToken: job.shopifyAccessToken,
         modules: job.modules,
         limitPerType: job.limitPerType,
         chunkSize: CHUNK_SIZE,
@@ -385,7 +383,6 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
           targetLocale: job.target,
           isCover: job.isCover,
           isHandle: job.isHandle,
-          preferLegacyToken: prefersStoredToken(job),
         },
         onHeartbeat: throttledHeartbeat,
         isShutdown: isShuttingDown,
@@ -434,7 +431,6 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
           console.log(`[init] fetching module=${module} job=${jobId}`);
           const chunks = await fetchTranslatableResources(
             shopDomain,
-            job.shopifyAccessToken,
             module,
             job.limitPerType,
             CHUNK_SIZE,
@@ -443,7 +439,6 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
               isCover: job.isCover,
               isHandle: job.isHandle,
               onPage: throttledHeartbeat,
-              preferLegacyToken: prefersStoredToken(job),
             },
           );
 

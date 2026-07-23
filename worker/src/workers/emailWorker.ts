@@ -24,7 +24,6 @@ import {
   findShopsWithPendingAutoEmail,
   hasActiveAutoJobsForShop,
   isAutoTranslationJob,
-  prefersStoredToken,
   updateJob,
 } from "../services/cosmosV4.js";
 import { fetchShopContact } from "../services/shopEmail.js";
@@ -55,7 +54,6 @@ function describeJob(job: TranslationV4Job): Record<string, unknown> {
     usedTokens: job.metrics.usedTokens ?? 0,
     translateDone: job.metrics.translateDone,
     translateTotal: job.metrics.translateTotal,
-    preferStoredToken: prefersStoredToken(job),
   };
 }
 
@@ -110,13 +108,8 @@ async function resolveRecipientContact(
   logDetail("resolve-recipient-start", {
     jobId: job.id,
     shop: job.shopName,
-    preferStoredToken: prefersStoredToken(job),
-    hasLegacyToken: Boolean(job.shopifyAccessToken?.trim()),
   });
-  const contact = await fetchShopContact(job.shopName, {
-    legacyToken: job.shopifyAccessToken,
-    preferLegacyToken: prefersStoredToken(job),
-  });
+  const contact = await fetchShopContact(job.shopName);
   const email = contact.email;
   const userName = contact.firstName?.trim() || parseShopName(job.shopName);
   logDetail("resolve-recipient-done", {

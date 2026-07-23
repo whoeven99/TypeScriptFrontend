@@ -2,40 +2,21 @@ import { getOfflineAccessTokenFromTsf } from "./tsfDb.js";
 
 const LOG = "[shop-token]";
 
-function normalizeEnv(value: string | undefined): string {
-  return (value ?? "").trim();
-}
-
 /**
- * 解析 Shopify Admin API token：优先 job 快照；TSF 来源任务可回退 TSF Session。
+ * Shopify Admin API 的唯一 token 来源：Turso Session 表中的 offline session。
+ * 不接受 job 快照、调用方兜底值，也不做进程内缓存。
  */
-export async function getShopAccessToken(
-  shop: string,
-  legacyFallback?: string,
-  preferLegacy = false,
-): Promise<string> {
+export async function getShopAccessToken(shop: string): Promise<string> {
   const normalizedShop = shop.trim();
   if (!normalizedShop) {
     throw new Error(`${LOG} shop is required`);
   }
 
-  if (preferLegacy) {
-    const tsfToken = await getOfflineAccessTokenFromTsf(normalizedShop);
-    if (tsfToken) return tsfToken;
-  }
-
-  const token = normalizeEnv(legacyFallback);
+  const token = (await getOfflineAccessTokenFromTsf(normalizedShop))?.trim();
   if (!token) {
-    throw new Error(`${LOG} no access token on job for shop=${normalizedShop}`);
+    throw new Error(
+      `${LOG} no offline token in Turso Session for shop=${normalizedShop}`,
+    );
   }
   return token;
-}
-
-export function invalidateShopAccessTokenCache(_shop: string): void {}
-
-/** 仅测试用 */
-export function resetShopAccessTokenStateForTests(): void {}
-
-export function isTursoSessionConfigured(): boolean {
-  return false;
 }

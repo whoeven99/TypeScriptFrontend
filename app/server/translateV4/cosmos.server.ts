@@ -20,6 +20,12 @@ import {
  */
 let _client: CosmosClient | null = null;
 
+function stripLegacyJobSecrets(job: TranslationV4Job): TranslationV4Job {
+  const clean = { ...job } as TranslationV4Job & Record<string, unknown>;
+  delete clean.shopifyAccessToken;
+  return clean;
+}
+
 function getClient(): CosmosClient {
   if (!_client) {
     const endpoint = process.env.COSMOS_ENDPOINT_V4?.trim();
@@ -58,7 +64,7 @@ export async function createV4Job(
   > & { metrics?: Partial<TranslationV4Metrics> },
 ): Promise<TranslationV4Job> {
   const now = new Date().toISOString();
-  const doc: TranslationV4Job = {
+  const doc = stripLegacyJobSecrets({
     ...input,
     metrics: { ...EMPTY_V4_METRICS, ...input.metrics },
     aiModelUsed: null,
@@ -71,7 +77,7 @@ export async function createV4Job(
     errorStage: null,
     createdAt: now,
     updatedAt: now,
-  };
+  } as TranslationV4Job);
   await getContainer().items.upsert(doc);
   return doc;
 }
@@ -84,7 +90,7 @@ export async function getV4Job(
     const { resource } = await getContainer()
       .item(jobId, shopName)
       .read<TranslationV4Job>();
-    return resource ?? null;
+    return resource ? stripLegacyJobSecrets(resource) : null;
   } catch {
     return null;
   }
@@ -153,7 +159,7 @@ export async function listV4Jobs(
         { partitionKey: shopName },
       )
       .fetchAll();
-    return resources;
+    return resources.map(stripLegacyJobSecrets);
   } catch {
     return [];
   }
@@ -174,7 +180,6 @@ export type UpdateV4JobInput = Partial<
     | "aiModelUsed"
     | "aiProvider"
     | "engineUsage"
-    | "shopifyAccessToken"
   >
 >;
 
@@ -188,17 +193,17 @@ export async function updateV4Job(
       .item(jobId, shopName)
       .read<TranslationV4Job>();
     if (!existing) return null;
-    const updated: TranslationV4Job = {
-      ...existing,
+    const updated = stripLegacyJobSecrets({
+      ...stripLegacyJobSecrets(existing),
       ...updates,
       updatedAt: new Date().toISOString(),
-    };
+    } as TranslationV4Job);
     const { resource: saved } = await getContainer()
       .item(jobId, shopName)
       .replace<TranslationV4Job>(updated, {
         accessCondition: { type: "IfMatch", condition: etag! },
       });
-    return saved ?? updated;
+    return saved ? stripLegacyJobSecrets(saved) : updated;
   } catch {
     return null;
   }

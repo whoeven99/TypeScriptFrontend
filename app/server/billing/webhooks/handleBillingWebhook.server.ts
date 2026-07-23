@@ -289,7 +289,6 @@ export async function handleTsfSubscriptionWebhook(params: {
       trialEndsAt,
       trialStartsAt: detail?.createdAt ?? currentPeriodStart,
       effectiveAt: currentPeriodStart,
-      accessToken: params.accessToken,
     }).catch((err) => {
       console.error(
         `[billing webhook] subscribe success email failed shop=${params.shop}:`,
@@ -302,7 +301,6 @@ export async function handleTsfSubscriptionWebhook(params: {
       const ok = await sendTsfSubscriptionRenewalEmail({
         shop: params.shop,
         plan,
-        accessToken: params.accessToken,
       });
       if (!ok) return;
       const log = await findRenewalLogForPeriod({
@@ -368,7 +366,6 @@ export async function handleTsfPurchaseWebhook(params: {
     void sendTsfPurchaseSuccessEmail({
       shop: params.shop,
       plan,
-      accessToken: params.accessToken,
     }).catch((err) => {
       console.error(
         `[billing webhook] purchase success email failed shop=${params.shop}:`,

@@ -7,7 +7,10 @@ import {
   resetStaleShopScanJobs,
   wakeQueuedShopScanJobsAfterDeploy,
 } from "./services/shopScanCosmos.js";
-import { resetStaleJobs, wakeQueuedJobsAfterDeploy } from "./services/cosmosV4.js";
+import {
+  resetStaleJobs,
+  wakeQueuedJobsAfterDeploy,
+} from "./services/cosmosV4.js";
 import { runAutoTranslateScanTick } from "./services/autoTranslate.js";
 import {
   getShopScanScheduleMinute,

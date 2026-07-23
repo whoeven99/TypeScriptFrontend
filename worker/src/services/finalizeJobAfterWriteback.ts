@@ -1,13 +1,13 @@
 import {
   getJob,
   updateJob,
-  prefersStoredToken,
   type TranslationV4Job,
   type StageTimings,
 } from "./cosmosV4.js";
 import { setItemsCount } from "./redisV4.js";
 import { computeModuleCount } from "./itemsCount.js";
 import { recordJobUsageSnapshot } from "./recordJobUsageSnapshot.js";
+import { getOfflineAccessTokenFromTsf } from "./tsfDb.js";
 
 export type FinalizeAfterWritebackInput = {
   writebackDone: number;
@@ -44,16 +44,19 @@ export async function finalizeJobAfterWriteback(
       ? "COMPLETED"
       : "FAILED";
 
-  if (
-    finalStatus === "COMPLETED" &&
-    prefersStoredToken(job) &&
-    job.shopifyAccessToken
-  ) {
+  if (finalStatus === "COMPLETED") {
+    const accessToken = await getOfflineAccessTokenFromTsf(shopName);
+    if (!accessToken) {
+      console.warn(
+        `[finalize] skip items_count job=${jobId}: Turso Session 中缺少 offline token`,
+      );
+    }
     for (const module of job.modules) {
+      if (!accessToken) break;
       try {
         const count = await computeModuleCount(
           shopName,
-          job.shopifyAccessToken,
+          accessToken,
           module,
           job.target,
         );

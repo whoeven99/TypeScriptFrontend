@@ -214,8 +214,10 @@ Data flow:
 2. `POST /api/translate-v4/tasks` validates locales, modules, and quota guard.
 3. `createV4Job()` writes a Cosmos job and pushes a Redis init hint into the
    **manual** or **auto** pool queue (`translate:v4:hint:init:{manual|auto}`).
+   Cosmos jobs must never contain a Shopify access token.
 4. `worker/src/workers/initWorker.ts` claims via `fairStageClaim` (manual first),
-   reads Shopify translatable resources and writes init blobs.
+   resolves the current offline token from Turso `Session`, reads Shopify
+   translatable resources, and writes init blobs.
 5. `worker/src/workers/translateWorker.ts` reads blobs, calls LLMs, writes
    checkpoints, updates Redis/Cosmos progress, and deducts quota.
 6. `worker/src/workers/writebackWorker.ts` writes translations back to Shopify.
@@ -310,7 +312,11 @@ Services:
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
 - `worker/src/services/shopifyFetch.ts`, `shopifyConcurrency.ts`: Shopify Admin
   GraphQL fetch and per-shop adaptive concurrency driven by cost bucket / 429
-  feedback; init and writeback use this path.
+  feedback; init and writeback use this path. Shopify access tokens are loaded
+  just-in-time from Turso `Session`; do not persist copies in Cosmos, Redis,
+  Blob, job payloads, or other business tables.
+- `worker/src/services/shopAccessToken.ts`: the enforced Worker token boundary;
+  it only reads an offline token from Turso `Session` and has no fallback/cache.
 - `worker/src/services/shopifyBulkFetch.ts`: allowlist-only init via
   `bulkOperationRunQuery` JSONL (sliding window ≤5, poll, stream download);
   non-allowlist shops stay on paginated `shopifyFetch`.
@@ -700,7 +706,7 @@ and external AI/email providers).
 
 The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. Historical
 `Spring`, `Java`, and `legacy` wording remains in compatibility comments, enum
-values, old blob/token handling, and response-shape notes; it is not proof of a
+values, old blob handling, and response-shape notes; it is not proof of a
 live network dependency.
 
 Residual `SERVER_URL` or Spring DB references in env files are historical
