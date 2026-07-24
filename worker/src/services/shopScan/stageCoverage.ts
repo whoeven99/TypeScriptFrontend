@@ -1,6 +1,6 @@
 import { AUTO_TRANSLATE_V4_MODULES } from "../moduleCatalog.js";
 import { setItemsCount } from "../redisV4.js";
-import { countModuleScan } from "./scanCounts.js";
+import { runBulkScanCounts } from "./bulkScanCounts.js";
 import { upsertTargetLocales } from "./tsfWrite.js";
 import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 import type { ShopLocaleRow } from "./shopContext.js";
@@ -16,6 +16,8 @@ import type { ShopLocaleRow } from "./shopContext.js";
  * 相比自动翻译模块（AUTO_TRANSLATE_V4_MODULES）额外补齐两个仅手动翻译的 module：
  *   - EMAIL_TEMPLATE（管理翻译「电子邮件通知」卡片）
  *   - ONLINE_STORE_THEME_LOCALE_CONTENT（主题语言内容，Theme 卡片累加项之一）
+ *
+ * 拉数：Shopify bulk JSONL（全量，失败回退分页）。
  */
 const COVERAGE_MODULES: readonly string[] = [
   ...AUTO_TRANSLATE_V4_MODULES,
@@ -62,13 +64,28 @@ export async function runCoverageStage(args: {
   /** @deprecated 稳定产物写 shop-profile/{shop}/latest-scan.json。 */
   blobPrefix?: string;
   heartbeat: () => Promise<void>;
+  isShutdown?: () => boolean;
 }): Promise<CoverageStageResult> {
-  const { shop, accessToken, primaryLocale, locales, scanId, trigger, heartbeat } = args;
+  const {
+    shop,
+    accessToken,
+    primaryLocale,
+    locales,
+    scanId,
+    trigger,
+    heartbeat,
+    isShutdown,
+  } = args;
 
   const targetLocales = selectCoverageTargetLocales(locales, primaryLocale);
 
   if (targetLocales.length === 0) {
-    return { status: "skipped", reason: "no_target_locales", coverage: [], syncedLocales: 0 };
+    return {
+      status: "skipped",
+      reason: "no_target_locales",
+      coverage: [],
+      syncedLocales: 0,
+    };
   }
 
   // 1. 同步目标语言到 ShopTargetLocale（只增不删，默认 autoTranslate=0）
@@ -78,34 +95,70 @@ export async function runCoverageStage(args: {
   );
   await heartbeat();
 
-  // 2. 逐语言统计覆盖率 + 回填 Redis；Blob 只写轻量汇总
-  const coverage: CoverageRow[] = [];
+  // 2. 全量 (module × locale) bulk 计数；边完成边回填 Redis
+  const localeAgg = new Map<
+    string,
+    { published: boolean; translated: number; total: number }
+  >();
   for (const target of targetLocales) {
-    let translated = 0;
-    let total = 0;
-
-    for (const module of COVERAGE_MODULES) {
-      const c = await countModuleScan(shop, accessToken, module, target.locale, heartbeat);
-      total += c.total;
-      translated += c.translated;
-      // 回填 Redis items_count 缓存（与 v4 首页/汇总页同 key）
-      await setItemsCount(shop, target.locale, module, {
-        total: c.total,
-        translated: c.translated,
-      });
-      await heartbeat();
-    }
-
-    const percent = total > 0 ? Math.round((translated / total) * 1000) / 10 : null;
-    coverage.push({
-      locale: target.locale,
+    localeAgg.set(target.locale, {
       published: target.published,
-      translated,
-      total,
-      percent,
+      translated: 0,
+      total: 0,
     });
   }
 
+  const jobs = targetLocales.flatMap((target) =>
+    COVERAGE_MODULES.map((module) => ({
+      id: `${module}::${target.locale}`,
+      module,
+      locale: target.locale,
+    })),
+  );
+
+  await runBulkScanCounts({
+    shop,
+    accessToken,
+    jobs,
+    onHeartbeat: heartbeat,
+    isShutdown,
+    onResult: async ({ job, count, usedFallback }) => {
+      const agg = localeAgg.get(job.locale);
+      if (agg) {
+        agg.total += count.total;
+        agg.translated += count.translated;
+      }
+      await setItemsCount(shop, job.locale, job.module, {
+        total: count.total,
+        translated: count.translated,
+      });
+      if (usedFallback) {
+        console.log(
+          `[shopScan:coverage] fallback=page module=${job.module} locale=${job.locale}`,
+        );
+      }
+      await heartbeat();
+    },
+  });
+
+  const coverage: CoverageRow[] = targetLocales.map((target) => {
+    const agg = localeAgg.get(target.locale) ?? {
+      published: target.published,
+      translated: 0,
+      total: 0,
+    };
+    const percent =
+      agg.total > 0
+        ? Math.round((agg.translated / agg.total) * 1000) / 10
+        : null;
+    return {
+      locale: target.locale,
+      published: agg.published,
+      translated: agg.translated,
+      total: agg.total,
+      percent,
+    };
+  });
   await upsertShopProfileLatestScan(shop, {
     scanId,
     trigger,

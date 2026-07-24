@@ -12,10 +12,19 @@ export type CreateTaskEstimateView = {
 const EMPTY_ESTIMATE: CreateTaskEstimateView = {
   estimatedCredits: null,
   remainingCredits: 0,
-  isUpperBound: false,
+  isUpperBound: true,
   needsMoreCredits: false,
   loading: false,
 };
+
+/** 展示用额度简写：1200 → 1K，1_500_000 → 1.5M */
+export function formatEstimateCredits(n: number): string {
+  if (n >= 1_000_000) {
+    return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  }
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return String(n);
+}
 
 /** 从覆盖率行推导未译比例（0=已全译，1=全未译；未知为 null）。 */
 export function buildUntranslatedRatioByLocale(
@@ -46,8 +55,13 @@ export function useCreateTaskEstimate(args: {
   untranslatedRatioByLocale: Record<string, number | null>;
   remainingCredits: number | null;
 }): CreateTaskEstimateView {
-  const { modules, targets, isCover, untranslatedRatioByLocale, remainingCredits } =
-    args;
+  const {
+    modules,
+    targets,
+    isCover,
+    untranslatedRatioByLocale,
+    remainingCredits,
+  } = args;
   const [estimate, setEstimate] =
     useState<CreateTaskEstimateView>(EMPTY_ESTIMATE);
 
@@ -59,7 +73,7 @@ export function useCreateTaskEstimate(args: {
         remainingCredits: remainingCredits ?? prev.remainingCredits,
         loading: false,
         needsMoreCredits: false,
-        isUpperBound: false,
+        isUpperBound: true,
       }));
       return;
     }
@@ -91,7 +105,7 @@ export function useCreateTaskEstimate(args: {
             setEstimate({
               estimatedCredits: data.estimate.estimatedCredits,
               remainingCredits: data.estimate.remainingCredits,
-              isUpperBound: data.estimate.isUpperBound,
+              isUpperBound: data.estimate.isUpperBound ?? true,
               needsMoreCredits: data.estimate.needsMoreCredits,
               loading: false,
             });

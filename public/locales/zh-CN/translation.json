@@ -873,7 +873,7 @@
   "v4.createTask.estimateRemaining": "· 剩余 {{remaining}}",
   "v4.createTask.estimateShort": "额度可能不足。",
   "v4.createTask.estimateBuyCredits": "购买额度",
-  "v4.createTask.estimateFootnote": "仅为预估，实际扣费以翻译消耗为准。",
+  "v4.createTask.estimateFootnote": "仅为上限预估，实际扣费以翻译消耗为准。",
   "v4.tasks.title": "任务列表 · {{count}}",
   "v4.tasks.syncLive": "实时同步",
   "v4.tasks.currentTab": "当前任务 {{count}}",

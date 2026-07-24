@@ -870,7 +870,7 @@
   "v4.createTask.estimateRemaining": "· {{remaining}} left",
   "v4.createTask.estimateShort": "Credits may not be enough.",
   "v4.createTask.estimateBuyCredits": "Buy credits",
-  "v4.createTask.estimateFootnote": "Estimate only — actual usage depends on translation tokens.",
+  "v4.createTask.estimateFootnote": "Upper-bound estimate only — actual usage depends on translation tokens.",
   "v4.tasks.title": "Task list · {{count}}",
   "v4.tasks.syncLive": "Live sync",
   "v4.tasks.currentTab": "Current tasks {{count}}",

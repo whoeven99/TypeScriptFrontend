@@ -5,7 +5,7 @@ import { estimateCreateTaskCredits } from "~/server/translateV4/creditEstimate.s
 /**
  * POST /api/translate-v4/estimate
  * body: { modules, targets, isCover, untranslatedRatioByLocale? }
- * 展示用粗估，不替代 create-task quota guard。
+ * 展示用上限粗估，不替代 create-task quota guard。
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method !== "POST") {

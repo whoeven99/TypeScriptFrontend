@@ -1,5 +1,5 @@
 import { AUTO_TRANSLATE_V4_MODULES } from "../moduleCatalog.js";
-import { countModuleScan } from "./scanCounts.js";
+import { runBulkScanCounts } from "./bulkScanCounts.js";
 import { recordShopSizeFromContentSize } from "./shopSizeProfile.js";
 import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 
@@ -20,27 +20,46 @@ export async function runContentSizeStage(args: {
   /** @deprecated 稳定产物写 shop-profile/{shop}/latest-scan.json，不再使用 per-scan 前缀。 */
   blobPrefix?: string;
   heartbeat: () => Promise<void>;
+  isShutdown?: () => boolean;
 }): Promise<ContentSizeResult> {
-  const { shop, accessToken, primaryLocale, scanId, trigger, heartbeat } = args;
+  const {
+    shop,
+    accessToken,
+    primaryLocale,
+    scanId,
+    trigger,
+    heartbeat,
+    isShutdown,
+  } = args;
   const moduleStats: Record<string, { items: number; chars: number }> = {};
   let totalItems = 0;
   let totalChars = 0;
 
-  for (const module of AUTO_TRANSLATE_V4_MODULES) {
-    // 源语言内容量：以 primaryLocale 作 locale（translated 数此处无意义，只取 total/chars）
-    const { total, chars } = await countModuleScan(
-      shop,
-      accessToken,
-      module,
-      primaryLocale,
-      heartbeat,
-    );
-    moduleStats[module] = { items: total, chars };
-    totalItems += total;
-    totalChars += chars;
-    await heartbeat();
-  }
+  const jobs = AUTO_TRANSLATE_V4_MODULES.map((module) => ({
+    id: `${module}::${primaryLocale}`,
+    module,
+    locale: primaryLocale,
+  }));
 
+  await runBulkScanCounts({
+    shop,
+    accessToken,
+    jobs,
+    onHeartbeat: heartbeat,
+    isShutdown,
+    onResult: async ({ job, count, usedFallback }) => {
+      // 源语言内容量：translated 无意义，只取 total/chars
+      moduleStats[job.module] = { items: count.total, chars: count.chars };
+      totalItems += count.total;
+      totalChars += count.chars;
+      console.log(
+        `[shopScan:contentSize] module=${job.module} items=${count.total} chars=${count.chars}${
+          usedFallback ? " fallback=page" : " fetch=bulk"
+        }`,
+      );
+      await heartbeat();
+    },
+  });
   const scannedAt = new Date().toISOString();
   await upsertShopProfileLatestScan(shop, {
     scanId,

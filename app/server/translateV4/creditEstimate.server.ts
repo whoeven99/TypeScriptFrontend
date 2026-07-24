@@ -1,14 +1,15 @@
 /**
- * 创建任务 / 开拓市场共用的展示用额度粗估。
+ * 创建任务展示用额度粗估（上限口径）。
+ * 公式：credits ≈ ceil(chars × k) × 语言数；默认 k=1.6（历史手动任务约 80% 覆盖）。
  * 与 worker 实扣（LLM token × QUOTA_TOKEN_MULTIPLIER）不是同一公式。
  */
 import { getLatestShopScanJob } from "~/server/shopScan/cosmos.server";
 import { getShopCreditQuota } from "~/server/billing/quota/quotaRouter.server";
 import { expandV2ModuleKeys } from "./moduleCatalog";
 
-const CHARS_PER_WORD = 4;
-const ESTIMATE_TOKEN_MULTIPLIER = Number(
-  process.env.QUOTA_TOKEN_MULTIPLIER?.trim() || "1.5",
+/** 历史上限系数：credits ≈ ceil(sourceChars × k)。 */
+const ESTIMATE_CREDITS_PER_CHAR = Number(
+  process.env.TRANSLATE_ESTIMATE_CREDITS_PER_CHAR?.trim() || "1.6",
 );
 
 /** 无 scan 时：每个 v2 模块粗估字符（偏保守）。 */
@@ -19,18 +20,17 @@ const INCREMENTAL_MIN_RATIO = 0.15;
 
 export function estimateCreditsFromChars(chars: number): number {
   if (chars <= 0) return 0;
-  const words = Math.ceil(chars / CHARS_PER_WORD);
-  const mult = Number.isFinite(ESTIMATE_TOKEN_MULTIPLIER)
-    ? ESTIMATE_TOKEN_MULTIPLIER
-    : 1.5;
-  return Math.max(1, Math.ceil(words * mult));
+  const k = Number.isFinite(ESTIMATE_CREDITS_PER_CHAR)
+    ? ESTIMATE_CREDITS_PER_CHAR
+    : 1.6;
+  return Math.max(1, Math.ceil(chars * k));
 }
 
 export type CreateTaskCreditEstimate = {
   estimatedCredits: number | null;
   remainingCredits: number;
   usedShopScan: boolean;
-  /** true：增量且无覆盖率，数字为未缩放上限 */
+  /** 上限文案：默认 true（k=1.6 为覆盖绝大部分情况的上限口径） */
   isUpperBound: boolean;
   needsMoreCredits: boolean;
 };
@@ -69,8 +69,8 @@ function fallbackChars(
 }
 
 /**
- * 按所选 v2 模块 + 目标语言数粗估创建任务额度。
- * untranslatedRatioByLocale：0=已全译，1=全未译；缺省则增量模式标为上限。
+ * 按所选 v2 模块 + 目标语言数粗估创建任务额度（上限口径）。
+ * untranslatedRatioByLocale：0=已全译，1=全未译；缺省则增量模式不缩放。
  */
 export async function estimateCreateTaskCredits(args: {
   shop: string;
@@ -80,7 +80,9 @@ export async function estimateCreateTaskCredits(args: {
   untranslatedRatioByLocale?: Record<string, number | null>;
 }): Promise<CreateTaskCreditEstimate> {
   const targets = args.targets.map((t) => t.trim()).filter(Boolean);
-  const v2ModuleKeys = [...new Set(args.v2ModuleKeys.map((k) => k.trim()).filter(Boolean))];
+  const v2ModuleKeys = [
+    ...new Set(args.v2ModuleKeys.map((k) => k.trim()).filter(Boolean)),
+  ];
 
   const quota = await getShopCreditQuota(args.shop).catch(() => null);
   const remainingCredits = Math.max(0, Math.floor(quota?.remaining ?? 0));
@@ -90,7 +92,7 @@ export async function estimateCreateTaskCredits(args: {
       estimatedCredits: null,
       remainingCredits,
       usedShopScan: false,
-      isUpperBound: false,
+      isUpperBound: true,
       needsMoreCredits: false,
     };
   }
@@ -113,7 +115,6 @@ export async function estimateCreateTaskCredits(args: {
   }
 
   let estimated = estimateCreditsFromChars(chars) * targets.length;
-  let isUpperBound = false;
 
   if (!args.isCover) {
     const ratios = targets.map((locale) => {
@@ -127,8 +128,6 @@ export async function estimateCreateTaskCredits(args: {
         known.length;
       const scale = Math.max(INCREMENTAL_MIN_RATIO, avg);
       estimated = Math.max(1, Math.ceil(estimated * scale));
-    } else {
-      isUpperBound = true;
     }
   }
 
@@ -137,7 +136,7 @@ export async function estimateCreateTaskCredits(args: {
     estimatedCredits,
     remainingCredits,
     usedShopScan,
-    isUpperBound,
+    isUpperBound: true,
     needsMoreCredits:
       remainingCredits >= 0 && estimatedCredits > remainingCredits,
   };

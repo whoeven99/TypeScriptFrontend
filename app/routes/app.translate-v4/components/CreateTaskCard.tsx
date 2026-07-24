@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { BlockStack, Checkbox, Select } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,10 @@ import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { formatExpandCredits } from "~/lib/expandMarket";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import Button from "~/ui/components/AppButton";
-import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
+import {
+  formatEstimateCredits,
+  type CreateTaskEstimateView,
+} from "../useCreateTaskEstimate";
 
 export type { CreateTaskEstimateView };
 
@@ -119,99 +122,6 @@ export function CreateTaskCard({
   const toggleModule = (value: string) => {
     onModulesChange(
       modules.includes(value)
-        ? modules.filter((m) => m !== value)
-        : [...modules, value],
-    );
-  };
-
-  const submitButton = (
-    <Button
-      type="primary"
-      className="v4-create-task-card__submit"
-      disabled={!canCreate}
-      loading={creating}
-      onClick={onCreate}
-      style={{
-        maxWidth: "100%",
-        minWidth: submitPlacement === "footer-center" ? 220 : undefined,
-        height: "auto",
-        minHeight: 36,
-        whiteSpace: "normal",
-        textAlign: "center",
-        lineHeight: 1.35,
-        paddingBlock: 8,
-        paddingInline: 24,
-      }}
-    >
-      {creating
-        ? t("v4.createTask.creating")
-        : targets.length > 1
-          ? t("v4.createTask.createBulk", { count: targets.length })
-          : t("v4.createTask.createOne")}
-    </Button>
-  );
-
-  return (
-    <div
-      className="v4-create-task-card v4-lift"
-      style={{
-        ...v4CardStyle,
-        borderRadius: 18,
-        padding: "20px 22px",
-        boxShadow: "var(--app-shadow-card-strong)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 18,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ minWidth: 0, flex: "1 1 160px" }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              color: v4Colors.text,
-              lineHeight: 1.4,
-              overflowWrap: "anywhere",
-            }}
-          >
-            {t("v4.createTask.title")}
-          </h2>
-          {disabledMessage ? (
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 12,
-                lineHeight: 1.5,
-                color: v4Colors.textMuted,
-              }}
-            >
-              {disabledMessage}
-            </div>
-          ) : (
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 11,
-                lineHeight: "16px",
-                color: v4Colors.textMuted,
-              }}
-            >
-              {t("v4.createTask.estimateFootnote")}
-            </div>
-          )}
-        </div>
-        {submitPlacement === "header" ? (
-          <div
-            style={{
               display: "flex",
               flexDirection: "row",
               flexWrap: "wrap",
@@ -288,6 +198,99 @@ export function CreateTaskCard({
           (modules.length !== 1 || modules[0] !== productModuleValue)
         }
         canSelectAll={!isFullScope && allTargetValues.length > 0 && allModuleValues.length > 0}
+        onKeepOneLanguage={() => {
+          const first = targets[0] ?? allTargetValues[0];
+          if (first) onTargetsChange([first]);
+        }}
+        onProductsOnly={() => {
+          if (productModuleValue) onModulesChange([productModuleValue]);
+        }}
+        onSelectAll={() => {
+          onTargetsChange(allTargetValues);
+          onModulesChange(allModuleValues);
+        }}
+      />
+        </div>
+        {submitPlacement === "header" ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "8px 12px",
+              maxWidth: "100%",
+              minWidth: 0,
+            }}
+          >
+            <EstimateInline
+              estimate={estimate}
+              canEstimate={targets.length > 0 && modules.length > 0}
+            />
+            {submitButton}
+          </div>
+        ) : null}
+      </div>
+      {guideHint ? (
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: "var(--p-color-bg-surface-info)",
+            border: "1px solid rgba(84, 103, 255, 0.18)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              lineHeight: "18px",
+              color: "var(--p-color-text-info)",
+              flex: 1,
+            }}
+          >
+            {guideHint}
+          </div>
+          {onDismissGuideHint ? (
+            <button
+              type="button"
+              onClick={onDismissGuideHint}
+              aria-label={t("v4.createTask.dismissGuide")}
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: v4Colors.textMuted,
+                padding: 0,
+                lineHeight: 1,
+                fontSize: 14,
+              }}
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      <ScopeReview
+        targetCount={targets.length}
+        totalTargetCount={allTargetValues.length}
+        moduleCount={modules.length}
+        totalModuleCount={allModuleValues.length}
+        isFullScope={isFullScope}
+        canKeepOneLanguage={targets.length > 1}
+        canProductsOnly={
+          Boolean(productModuleValue) &&
+          (modules.length !== 1 || modules[0] !== productModuleValue)
+        }
+        canSelectAll={
+          !isFullScope && allTargetValues.length > 0 && allModuleValues.length > 0
+        }
         onKeepOneLanguage={() => {
           const first = targets[0] ?? allTargetValues[0];
           if (first) onTargetsChange([first]);
@@ -592,7 +595,7 @@ function ScopeQuickButton({
   );
 }
 
-/** 创建按钮左侧的一行预估（无灰盒，避免顶栏显得臃肿）。 */
+/** 创建按钮旁的上限预估（无灰盒，避免顶栏臃肿）。 */
 function EstimateInline({
   estimate,
   canEstimate,
@@ -625,9 +628,8 @@ function EstimateInline({
       </span>
     );
   }
-
-  const estimatedLabel = formatExpandCredits(estimate.estimatedCredits);
-  const remainingLabel = formatExpandCredits(estimate.remainingCredits);
+  const estimatedLabel = formatEstimateCredits(estimate.estimatedCredits);
+  const remainingLabel = formatEstimateCredits(estimate.remainingCredits);
   const primary = estimate.isUpperBound
     ? t("v4.createTask.estimateUpperBound", { estimated: estimatedLabel })
     : t("v4.createTask.estimateNeed", { estimated: estimatedLabel });
