@@ -1,8 +1,17 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import type { CustomTagProps } from "rc-select/lib/BaseSelect";
 import { Checkbox, Select, Space } from "antd";
+import {
+  AutoSelection,
+  Combobox,
+  Icon,
+  InlineStack,
+  Listbox,
+  Tag,
+} from "@shopify/polaris";
+import { SearchIcon } from "@shopify/polaris-icons";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -34,6 +43,8 @@ type Props = {
   disabledMessage?: string | null;
 };
 
+type TargetOption = { value: string; label: string; regionCode: string };
+
 export function CreateTaskCard({
   targetOptions,
   targets,
@@ -58,20 +69,15 @@ export function CreateTaskCard({
     targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
-  const sortedTargetOptions = useMemo(() => {
-    return [...targetOptions].sort((a, b) => {
-      const aSelected = targets.includes(a.value) ? 0 : 1;
-      const bSelected = targets.includes(b.value) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return a.label.localeCompare(b.label);
-    });
-  }, [targetOptions, targets]);
-
-  const targetSelectOptions = sortedTargetOptions.map((opt) => ({
-    value: opt.value,
-    label: localeShortName(opt.value, opt.label),
-    regionCode: localeRegionCode(opt.value),
-  }));
+  const targetSelectOptions = useMemo<TargetOption[]>(
+    () =>
+      targetOptions.map((opt) => ({
+        value: opt.value,
+        label: localeShortName(opt.value, opt.label),
+        regionCode: localeRegionCode(opt.value),
+      })),
+    [targetOptions],
+  );
 
   const aiModelOptions = useMemo(
     () =>
@@ -175,24 +181,13 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <Select
-          mode="multiple"
-          placeholder={t("v4.createTask.selectTargetLanguages")}
+        <TargetLocaleCombobox
+          options={targetSelectOptions}
           value={targets}
           onChange={onTargetsChange}
-          options={targetSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={(props) => renderLocaleTag(props, targetSelectOptions, t)}
-          optionRender={(option) => (
-            <span>
-              <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
-                {option.data.regionCode}
-              </span>
-              {option.label}
-            </span>
-          )}
+          placeholder={t("v4.createTask.selectTargetLanguages")}
+          label={t("v4.createTask.targetLanguages")}
+          t={t}
         />
       </div>
 
@@ -249,7 +244,11 @@ export function CreateTaskCard({
           <span style={{ minWidth: 0, textAlign: "left", lineHeight: 1.35, overflowWrap: "anywhere" }}>
             {t("v4.createTask.advancedSettings")}
           </span>
-          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden style={{ flexShrink: 0 }}>
+          <span
+            className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`}
+            aria-hidden
+            style={{ flexShrink: 0 }}
+          >
             ⌄
           </span>
         </button>
@@ -306,6 +305,151 @@ export function CreateTaskCard({
   );
 }
 
+function TargetLocaleCombobox({
+  options,
+  value,
+  onChange,
+  placeholder,
+  label,
+  t,
+}: {
+  options: TargetOption[];
+  value: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+  label: string;
+  t: TFunction;
+}) {
+  const [query, setQuery] = useState("");
+
+  const escapeRegExp = useCallback(
+    (raw: string) => raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    [],
+  );
+
+  const filteredOptions = useMemo(() => {
+    const q = query.trim();
+    const filterRegex = q ? new RegExp(escapeRegExp(q), "i") : null;
+    const list = filterRegex
+      ? options.filter(
+          (opt) =>
+            filterRegex.test(opt.label) ||
+            filterRegex.test(opt.regionCode) ||
+            filterRegex.test(opt.value),
+        )
+      : options;
+
+    return [...list].sort((a, b) => {
+      const aSelected = value.includes(a.value) ? 0 : 1;
+      const bSelected = value.includes(b.value) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      return a.label.localeCompare(b.label);
+    });
+  }, [escapeRegExp, options, query, value]);
+
+  const updateSelection = useCallback(
+    (selected: string) => {
+      if (value.includes(selected)) {
+        onChange(value.filter((item) => item !== selected));
+      } else {
+        onChange([...value, selected]);
+      }
+      setQuery("");
+    },
+    [onChange, value],
+  );
+
+  const removeTag = useCallback(
+    (locale: string) => {
+      onChange(value.filter((item) => item !== locale));
+    },
+    [onChange, value],
+  );
+
+  const verticalContentMarkup =
+    value.length > 0 ? (
+      <InlineStack gap="200" align="start" wrap>
+        {value.map((locale) => {
+          const opt = options.find((item) => item.value === locale);
+          const code = opt?.regionCode ?? localeRegionCode(locale);
+          const name = opt?.label ?? locale;
+          return (
+            <Tag
+              key={locale}
+              onRemove={() => removeTag(locale)}
+              accessibilityLabel={t("v4.createTask.removeTarget", { name })}
+            >
+              <span className="v4-select-tag v4-select-tag--locale v4-select-tag--in-polaris">
+                <span className="v4-select-tag__code">{code}</span>
+                <span>{name}</span>
+              </span>
+            </Tag>
+          );
+        })}
+      </InlineStack>
+    ) : null;
+
+  const optionsMarkup =
+    filteredOptions.length > 0
+      ? filteredOptions.map((option) => {
+          const selected = value.includes(option.value);
+          return (
+            <Listbox.Option
+              key={option.value}
+              value={option.value}
+              selected={selected}
+              accessibilityLabel={`${option.regionCode} ${option.label}`}
+            >
+              <Listbox.TextOption selected={selected}>
+                <span>
+                  <span
+                    style={{
+                      color: v4Colors.primary,
+                      fontWeight: 600,
+                      marginRight: 6,
+                    }}
+                  >
+                    {option.regionCode}
+                  </span>
+                  {option.label}
+                </span>
+              </Listbox.TextOption>
+            </Listbox.Option>
+          );
+        })
+      : null;
+
+  return (
+    <div className="v4-target-locale-combobox">
+      <Combobox
+        allowMultiple
+        activator={
+          <Combobox.TextField
+            prefix={<Icon source={SearchIcon} />}
+            onChange={setQuery}
+            label={label}
+            labelHidden
+            value={query}
+            placeholder={placeholder}
+            autoComplete="off"
+            verticalContent={verticalContentMarkup}
+          />
+        }
+      >
+        {optionsMarkup ? (
+          <Listbox
+            autoSelection={AutoSelection.None}
+            onSelect={updateSelection}
+            accessibilityLabel={label}
+          >
+            {optionsMarkup}
+          </Listbox>
+        ) : null}
+      </Combobox>
+    </div>
+  );
+}
+
 function SectionHeader({
   title,
 }: {
@@ -325,38 +469,6 @@ function SectionLabel({ children }: { children: string }) {
     <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.textMuted, marginBottom: 8, lineHeight: 1.35, overflowWrap: "anywhere" }}>
       {children}
     </div>
-  );
-}
-
-type TargetOption = { value: string; label: string; regionCode: string };
-
-function renderLocaleTag(
-  props: CustomTagProps,
-  options: TargetOption[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-) {
-  const { label, value, closable, onClose } = props;
-  const opt = options.find((item) => item.value === value);
-  const code = opt?.regionCode ?? localeRegionCode(String(value));
-  const name = typeof label === "string" ? label : opt?.label ?? String(value);
-
-  return (
-    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
-      <span className="v4-select-tag__code">{code}</span>
-      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {name}
-      </span>
-      {closable ? (
-        <button
-          type="button"
-          className="v4-select-tag__close"
-          onClick={onClose}
-          aria-label={t("v4.createTask.removeTarget", { name })}
-        >
-          ×
-        </button>
-      ) : null}
-    </span>
   );
 }
 
