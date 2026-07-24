@@ -272,6 +272,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         scanId,
         trigger: job.trigger,
         heartbeat,
+        isShutdown: isShuttingDown,
       });
       return {
         state: "DONE",
@@ -292,6 +293,7 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         scanId,
         trigger: job.trigger,
         heartbeat,
+        isShutdown: isShuttingDown,
       });
       return { state: r.status === "done" ? "DONE" : "SKIPPED", summary: { coverage: r.coverage } };
     });

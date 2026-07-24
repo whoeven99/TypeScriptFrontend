@@ -184,6 +184,7 @@ execution docs that were consolidated into this file.
 - `/api/storefront/*`: `app/routes/api.storefront.$.ts`, the Shopify App Proxy API.
 - `/api/picture/*`: `app/routes/api.picture.{product,shop,upload,upsert,delete,save-from-url}.ts`.
 - `/api/translate-v4/tasks`: `app/routes/api.translate-v4.tasks.ts`.
+- `/api/translate-v4/estimate`: `app/routes/api.translate-v4.estimate.ts`.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
@@ -206,6 +207,13 @@ Core files:
   `v4JobNotice.ts`, `localeDisplay.ts`.
 - Client create-task helper: `app/lib/createTranslateV4Tasks.ts`.
 - Create/list jobs: `app/routes/api.translate-v4.tasks.ts`.
+- Create-task credit estimate (display upper bound): 
+  `app/server/translateV4/creditEstimate.server.ts` (`credits ≈ ceil(chars × k)`,
+  default `k=1.6` / `TRANSLATE_ESTIMATE_CREDITS_PER_CHAR`),
+  `app/routes/api.translate-v4.estimate.ts`,
+  `app/routes/app.translate-v4/useCreateTaskEstimate.ts` (wired in
+  `CreateTaskCard` / `route.tsx`). Uses shop scan `moduleStats.chars` +
+  coverage untranslated ratio; not the worker bill formula.
 - Pause/resume/cancel/delete: `app/routes/api.translate-v4.task-action.ts`.
 - Progress summaries: `app/server/translateV4/progress.server.ts`.
 - Init activity UI (module `x/N` bar + i18n activity log): Redis fields
@@ -343,9 +351,14 @@ Services:
   Blob, job payloads, or other business tables.
 - `worker/src/services/shopAccessToken.ts`: the enforced Worker token boundary;
   it only reads an offline token from Turso `Session` and has no fallback/cache.
-- `worker/src/services/shopifyBulkFetch.ts`: allowlist-only init via
-  `bulkOperationRunQuery` JSONL (sliding window ≤5, poll, stream download);
-  non-allowlist shops stay on paginated `shopifyFetch`.
+- `worker/src/services/shopifyBulkShared.ts`: shared Shopify bulk primitives
+  (submit / poll / cancel / JSONL stream / sliding-window queue ≤5).
+- `worker/src/services/shopifyBulkFetch.ts`: allowlist-only **init** via shared
+  bulk queue → filter → Blob chunks; non-allowlist shops stay on paginated
+  `shopifyFetch`.
+- `worker/src/services/shopScan/bulkScanCounts.ts`: shop scan metrics **always**
+  use shared bulk JSONL (no allowlist); failure falls back to paginated
+  `scanCounts.countModuleScan`. Wired in `stageContentSize` / `stageCoverage`.
 - `worker/src/services/llmTranslate.ts`: thin Worker entry point into
   `@ciwi/translation-core`.
 - `worker/src/services/translationCoreRuntime.ts` + `tsfDb.ts`: Worker runtime
@@ -382,7 +395,8 @@ Services:
   `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
-- `worker/src/services/shopScan/*`: shop profile scan stages.
+- `worker/src/services/shopScan/*`: shop profile scan stages；计量
+  `contentSize` / `coverage` 经 `bulkScanCounts.ts` 全量 bulk JSONL。
 
 Hint queue keys (Redis lists):
 
@@ -409,14 +423,20 @@ Important env names only:
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
   `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
-- Init Shopify bulk JSONL（仅灰度店；名单外仍分页）:
+- Shared Shopify bulk JSONL（init 灰度 + shop scan 全量）:
+  `SHOPIFY_BULK_SUBMIT_WINDOW` / `INIT_BULK_SUBMIT_WINDOW`（默认 5，同店上限）,
+  `SHOPIFY_BULK_POLL_MS` / `INIT_BULK_POLL_MS`（默认 1000）,
+  `SHOPIFY_BULK_DOWNLOAD_CONCURRENCY` / `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 5）,
+  `SHOPIFY_BULK_TIMEOUT_MS` / `INIT_BULK_TIMEOUT_MS`（默认 6h）.
+  Code: `worker/src/services/shopifyBulkShared.ts`.
+- Init bulk（仅灰度店；名单外仍分页）:
   `INIT_BULK_SHOP_ALLOWLIST`（逗号分隔 shopName，空=全关）,
-  `INIT_BULK_SUBMIT_WINDOW`（默认 5，Shopify 同店上限）,
-  `INIT_BULK_POLL_MS`（默认 1000）,
-  `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 5，与 Shopify bulk 窗口对齐）,
-  `INIT_BULK_TIMEOUT_MS`（默认 6h）,
   `INIT_BULK_FALLBACK`（默认开，失败回退分页）.
   Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
+- Shop scan bulk（计量全量，无 allowlist）:
+  `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）.
+  Code: `worker/src/services/shopScan/bulkScanCounts.ts` →
+  `stageContentSize.ts` / `stageCoverage.ts`.
 - Init Blob chunk 大小（page/bulk 共用，按文件字节切分，不再按资源数）:
   `TRANSLATION_MAX_CHUNK_BYTES`（默认 2MiB；单资源超限则独占一个 chunk）.
   Code: `worker/src/services/shopifyFetch.ts` `chunkResources`.
