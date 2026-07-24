@@ -3,7 +3,7 @@ import { tsfExecute } from "../tsfDb.js";
 /**
  * 店铺画像扫描的 TSF Turso 写入（worker 侧走 libsql 原生 SQL，非 Prisma）。
  *
- * 只写「当前生效」的结构化产物：ShopProfile（画像）、ShopTargetLocale（已发布语言同步）、
+ * 只写「当前生效」的结构化产物：ShopProfile（画像）、ShopTargetLocale（目标语言同步）、
  * Glossary（AI 术语，status=0 待确认）。大块明细在 Blob，任务状态在 Cosmos。
  */
 
@@ -65,7 +65,8 @@ export async function touchShopProfileScan(
 }
 
 /**
- * 同步已发布目标语言到 ShopTargetLocale（新增默认 autoTranslate=0），已有行保留开关。
+ * 同步目标语言到 ShopTargetLocale（新增默认 autoTranslate=0），已有行保留开关。
+ * coverage 入参为店铺全部非主语言（含未发布），与 v4「刷新统计」一致。
  * 与 TSF `addTargetLocales` 口径一致：只增不删（画像扫描不负责删语言）。
  */
 export async function upsertTargetLocales(

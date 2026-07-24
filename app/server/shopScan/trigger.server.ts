@@ -12,7 +12,7 @@ import { pushShopScanHint } from "~/server/translateV4/redis.server";
  * - install：安装/首次进 App 触发计量扫描（contentSize + coverage），幂等
  *   （已有进行中或已完成的计量扫描则跳过），避免每次进 /app 重复扫。
  * - scheduled：定期复扫计量，覆写当前生效 summary / Redis 缓存。
- * - manual：仅跑 AI 阶段（profile + glossary）；调试页入口，生产可不暴露 UI。
+ * - manual：仅跑 AI 阶段（profile）；glossary 已停用。调试页入口，生产可不暴露 UI。
  *
  * 生产环境允许 install/scheduled 入队。全程 best-effort：Cosmos/Redis
  * 不可用时静默返回，绝不阻断 App 加载。
