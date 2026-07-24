@@ -116,6 +116,11 @@ execution docs that were consolidated into this file.
 - Polaris is the visual and semantic baseline. Ant Design is allowed for complex
   tables, charts, dense filters, modal interiors, and high-density business
   controls.
+- **Dropdowns in the embedded app:** prefer Polaris `Select` for single-select
+  and chip / `ChoiceList` / `Combobox` for multi-select. Avoid Ant Design
+  `Select` on translate-v4 / create-task surfaces unless there is a strong
+  reason; do not add page-local CSS that overrides `.ant-select-selection-item`
+  globally inside a card (it breaks Ant single-select layout).
 - Ant Design theme values should be derived from Polaris-like tokens through
   `app/ui/theme.ts`; avoid creating a second visual system.
 - Prefer existing shared wrappers in `app/ui/components/*`, including

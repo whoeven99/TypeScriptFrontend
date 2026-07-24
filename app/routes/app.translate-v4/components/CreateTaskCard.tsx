@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { Checkbox, Select, Space } from "antd";
+import { BlockStack, Checkbox, Select } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -282,29 +282,28 @@ export function CreateTaskCard({
         >
           <div style={{ marginTop: 12 }}>
             <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
-            <Select
-              value={aiModel}
-              onChange={onAiModelChange}
-              options={aiModelOptions}
-              style={{ width: "100%", marginBottom: 16 }}
-            />
+            <div style={{ marginBottom: 16 }}>
+              <Select
+                label={t("v4.createTask.aiModel")}
+                labelHidden
+                options={aiModelOptions}
+                value={aiModel}
+                onChange={onAiModelChange}
+              />
+            </div>
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
-            <Checkbox.Group
-              value={[
-                ...(isCover ? ["cover"] : []),
-                ...(isHandle ? ["handle"] : []),
-              ]}
-              onChange={(values) => {
-                onIsCoverChange(values.includes("cover"));
-                onIsHandleChange(values.includes("handle"));
-              }}
-              style={{ width: "100%" }}
-            >
-              <Space direction="vertical" size={10}>
-                <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
-                <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
-              </Space>
-            </Checkbox.Group>
+            <BlockStack gap="300">
+              <Checkbox
+                label={t("v4.createTask.overwriteExisting")}
+                checked={isCover}
+                onChange={onIsCoverChange}
+              />
+              <Checkbox
+                label={t("v4.createTask.translateHandle")}
+                checked={isHandle}
+                onChange={onIsHandleChange}
+              />
+            </BlockStack>
           </div>
         </div>
       </div>
