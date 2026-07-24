@@ -184,6 +184,7 @@ execution docs that were consolidated into this file.
 - `/api/storefront/*`: `app/routes/api.storefront.$.ts`, the Shopify App Proxy API.
 - `/api/picture/*`: `app/routes/api.picture.{product,shop,upload,upsert,delete,save-from-url}.ts`.
 - `/api/translate-v4/tasks`: `app/routes/api.translate-v4.tasks.ts`.
+- `/api/translate-v4/estimate`: `app/routes/api.translate-v4.estimate.ts`.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
@@ -206,6 +207,13 @@ Core files:
   `v4JobNotice.ts`, `localeDisplay.ts`.
 - Client create-task helper: `app/lib/createTranslateV4Tasks.ts`.
 - Create/list jobs: `app/routes/api.translate-v4.tasks.ts`.
+- Create-task credit estimate (display upper bound): 
+  `app/server/translateV4/creditEstimate.server.ts` (`credits ≈ ceil(chars × k)`,
+  default `k=1.6` / `TRANSLATE_ESTIMATE_CREDITS_PER_CHAR`),
+  `app/routes/api.translate-v4.estimate.ts`,
+  `app/routes/app.translate-v4/useCreateTaskEstimate.ts` (wired in
+  `CreateTaskCard` / `route.tsx`). Uses shop scan `moduleStats.chars` +
+  coverage untranslated ratio; not the worker bill formula.
 - Pause/resume/cancel/delete: `app/routes/api.translate-v4.task-action.ts`.
 - Progress summaries: `app/server/translateV4/progress.server.ts`.
 - Init activity UI (module `x/N` bar + i18n activity log): Redis fields
