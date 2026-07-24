@@ -9,6 +9,7 @@ import {
   capTranslateUnitsByResources,
   isTranslateResourceComplete,
   reconcileTranslateUnitMetrics,
+  resolveInitModuleProgress,
 } from "./metricsUtils";
 import { writebackResourceTotal } from "./resumeStatus";
 import { sanitizeV4UserErrorMessage } from "./userFacingMessages.server";
@@ -122,11 +123,43 @@ export function mergeV4JobMetrics(
     translateUnitDone: merge("translateUnitDone"),
     translateUnitTotal: merge("translateUnitTotal"),
   });
-  return {
+  const initCompletedModules = parseInitCompletedModules(
+    redisProgress.initCompletedModules,
+  );
+  const rawInitModulesTotal = Number(redisProgress.initModulesTotal) || 0;
+  const rawInitModulesDone = Number(redisProgress.initModulesDone) || 0;
+  const mergedItemMetrics = {
     initTotal: merge("initTotal"),
     initDone: merge("initDone"),
     translateTotal,
     translateDone,
+    translateUnitTotal: mergedUnits.translateUnitTotal,
+    translateUnitDone: mergedUnits.translateUnitDone,
+    writebackTotal: merge("writebackTotal"),
+    writebackDone: merge("writebackDone"),
+    verifyTotal: merge("verifyTotal"),
+    verifyDone: merge("verifyDone"),
+    usedTokens: merge("usedTokens"),
+  };
+  const resolvedInitModules = resolveInitModuleProgress(
+    {
+      initModulesTotal: rawInitModulesTotal,
+      initModulesDone: rawInitModulesDone,
+      initCompletedModules,
+      initDone: mergedItemMetrics.initDone,
+      initTotal: mergedItemMetrics.initTotal,
+      translateTotal: mergedItemMetrics.translateTotal,
+      translateDone: mergedItemMetrics.translateDone,
+      writebackDone: mergedItemMetrics.writebackDone,
+    },
+    job.modules,
+    job.status,
+  );
+  return {
+    initTotal: mergedItemMetrics.initTotal,
+    initDone: mergedItemMetrics.initDone,
+    translateTotal: mergedItemMetrics.translateTotal,
+    translateDone: mergedItemMetrics.translateDone,
     translateFailed: merge("translateFailed"),
     translateFallback: Math.max(
       Number(redisProgress.translateFallback) || 0,
@@ -148,12 +181,10 @@ export function mergeV4JobMetrics(
     pauseReason: redisProgress.pauseReason?.trim() || null,
     controlAction,
     pauseRequestedAt: redisProgress.pauseRequestedAt ?? null,
-    initModulesTotal: Number(redisProgress.initModulesTotal) || 0,
-    initModulesDone: Number(redisProgress.initModulesDone) || 0,
+    initModulesTotal: resolvedInitModules.total,
+    initModulesDone: resolvedInitModules.done,
     initActiveModules: parseInitActiveModules(redisProgress.initActiveModules),
-    initCompletedModules: parseInitCompletedModules(
-      redisProgress.initCompletedModules,
-    ),
+    initCompletedModules,
     initPhase: redisProgress.initPhase?.trim() || null,
   };
 }
@@ -235,6 +266,7 @@ export function computeTranslationV4ProgressPercent(
   status: TranslationV4Status,
   metrics: TranslationV4Metrics,
   errorStage?: string | null,
+  jobModules?: string[],
 ): number | null {
   if (status === "COMPLETED") return completedJobProgressPercent(metrics);
   if (TERMINAL_V4_STATUSES.includes(status)) return null;
@@ -263,16 +295,35 @@ export function computeTranslationV4ProgressPercent(
     status === "INIT_DONE" ||
     status === "CREATED"
   ) {
-    const modulesTotal =
-      "initModulesTotal" in metrics
-        ? Number((metrics as TranslationV4MergedMetrics).initModulesTotal) || 0
-        : 0;
-    const modulesDone =
-      "initModulesDone" in metrics
-        ? Number((metrics as TranslationV4MergedMetrics).initModulesDone) || 0
-        : 0;
-    if (modulesTotal > 0) {
-      return ratioPercent(modulesDone, modulesTotal);
+    if ("initModulesTotal" in metrics || (jobModules?.length ?? 0) > 0) {
+      const { done, total } = resolveInitModuleProgress(
+        {
+          initModulesTotal:
+            "initModulesTotal" in metrics
+              ? Number((metrics as TranslationV4MergedMetrics).initModulesTotal) ||
+                0
+              : 0,
+          initModulesDone:
+            "initModulesDone" in metrics
+              ? Number((metrics as TranslationV4MergedMetrics).initModulesDone) ||
+                0
+              : 0,
+          initCompletedModules:
+            "initCompletedModules" in metrics
+              ? (metrics as TranslationV4MergedMetrics).initCompletedModules
+              : undefined,
+          initDone: metrics.initDone,
+          initTotal: metrics.initTotal,
+          translateTotal: metrics.translateTotal,
+          translateDone: metrics.translateDone,
+          writebackDone: metrics.writebackDone,
+        },
+        jobModules,
+        status,
+      );
+      if (total > 0) {
+        return ratioPercent(done, total);
+      }
     }
     return ratioPercent(metrics.initDone, metrics.initTotal);
   }
@@ -524,6 +575,7 @@ function toProgressSummary(
       displayStatus,
       metrics,
       errorStage,
+      job.modules,
     ),
     usedTokens: metrics.usedTokens,
     metrics: {

@@ -1,3 +1,86 @@
+import type { TranslationV4Status } from "./types";
+
+const INIT_RUNNING_STATUSES: ReadonlySet<TranslationV4Status> = new Set([
+  "CREATED",
+  "INIT_QUEUED",
+  "INITIALIZING",
+]);
+
+const INIT_PAST_STATUSES: ReadonlySet<TranslationV4Status> = new Set([
+  "INIT_DONE",
+  "TRANSLATE_QUEUED",
+  "TRANSLATING",
+  "TRANSLATE_DONE",
+  "WRITEBACK_QUEUED",
+  "WRITING_BACK",
+  "VERIFY_QUEUED",
+  "VERIFYING",
+  "COMPLETED",
+]);
+
+/** Init x/N bar inputs (Redis module counters + Cosmos item counts). */
+export type InitModuleProgressMetrics = {
+  initModulesTotal: number;
+  initModulesDone: number;
+  initCompletedModules?: ReadonlyArray<{ module: string; items: number }>;
+  initDone: number;
+  initTotal: number;
+  translateTotal: number;
+  translateDone: number;
+  writebackDone: number;
+};
+
+/**
+ * Resolve init stage x/N for UI. Module counters live only in Redis; when they are
+ * missing the UI used job.modules.length as total but left done at 0 → "0/N".
+ */
+export function resolveInitModuleProgress(
+  metrics: InitModuleProgressMetrics,
+  jobModules: string[] | undefined,
+  jobStatus: TranslationV4Status,
+): { done: number; total: number } {
+  const moduleCount = Array.isArray(jobModules) ? jobModules.length : 0;
+  const total =
+    metrics.initModulesTotal > 0
+      ? metrics.initModulesTotal
+      : moduleCount > 0
+        ? moduleCount
+        : 0;
+
+  if (total <= 0) {
+    return { done: metrics.initDone, total: metrics.initTotal };
+  }
+
+  let done = Math.min(
+    Math.max(
+      metrics.initModulesDone,
+      metrics.initCompletedModules?.length ?? 0,
+    ),
+    total,
+  );
+
+  if (done >= total || INIT_RUNNING_STATUSES.has(jobStatus)) {
+    return { done, total };
+  }
+
+  const initItemsComplete =
+    metrics.initTotal > 0 && metrics.initDone >= metrics.initTotal;
+  const downstreamStarted =
+    metrics.translateTotal > 0 ||
+    metrics.translateDone > 0 ||
+    metrics.writebackDone > 0;
+
+  if (
+    INIT_PAST_STATUSES.has(jobStatus) ||
+    initItemsComplete ||
+    downstreamStarted
+  ) {
+    return { done: total, total };
+  }
+
+  return { done, total };
+}
+
 /** 翻译 metrics 子集（Cosmos / Redis 合并后均可传入）。 */
 export type TranslateProgressMetrics = {
   translateDone: number;

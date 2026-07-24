@@ -3,6 +3,7 @@ import type { TranslationJobProgressSummary } from "~/server/translateV4/progres
 import {
   capTranslateUnitsByResources,
   isTranslateResourceComplete,
+  resolveInitModuleProgress,
   translateResourceTotal,
 } from "~/server/translateV4/metricsUtils";
 
@@ -109,21 +110,10 @@ function translateStageProgress(m: StageMetrics): { done: number; total: number 
 /** Init bar uses selected-module x/N when available; falls back to item counts. */
 export function initModuleProgress(
   m: StageMetrics,
-  jobModules?: string[],
+  jobModules: string[] | undefined,
+  jobStatus: TranslationV4Status,
 ): { done: number; total: number } {
-  const total =
-    m.initModulesTotal > 0
-      ? m.initModulesTotal
-      : Array.isArray(jobModules)
-        ? jobModules.length
-        : 0;
-  if (total <= 0) {
-    return { done: m.initDone, total: m.initTotal };
-  }
-  return {
-    done: Math.min(m.initModulesDone, total),
-    total,
-  };
+  return resolveInitModuleProgress(m, jobModules, jobStatus);
 }
 
 export function stageBarPercent(
@@ -134,7 +124,7 @@ export function stageBarPercent(
 ): number {
   switch (idx) {
     case 0: {
-      const { done, total } = initModuleProgress(m, jobModules);
+      const { done, total } = initModuleProgress(m, jobModules, _jobStatus);
       if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
         return ratioPercent(done, total);
       }
@@ -166,7 +156,7 @@ export function isStageBarComplete(
       if (jobStatus === "INIT_QUEUED" || jobStatus === "INITIALIZING") {
         return false;
       }
-      const { done, total } = initModuleProgress(m, jobModules);
+      const { done, total } = initModuleProgress(m, jobModules, jobStatus);
       if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
         return done >= total;
       }
