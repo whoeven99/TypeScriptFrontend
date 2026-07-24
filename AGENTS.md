@@ -120,7 +120,12 @@ execution docs that were consolidated into this file.
   and chip / `ChoiceList` / `Combobox` for multi-select. Avoid Ant Design
   `Select` on translate-v4 / create-task surfaces unless there is a strong
   reason; do not add page-local CSS that overrides `.ant-select-selection-item`
-  globally inside a card (it breaks Ant single-select layout).
+  globally inside a card (it breaks Ant single-select layout). ESLint
+  `no-restricted-imports` blocks `Select` from `antd` under
+  `app/routes/app.translate-v4/**`. Remaining Ant Selects (allow for now):
+  manage-translation header / custom liquid / glossary / currency edit /
+  productImage — prefer Polaris when those screens are next touched. Cursor
+  rule: `.cursor/rules/polaris-dropdowns.mdc`.
 - Ant Design theme values should be derived from Polaris-like tokens through
   `app/ui/theme.ts`; avoid creating a second visual system.
 - Prefer existing shared wrappers in `app/ui/components/*`, including
