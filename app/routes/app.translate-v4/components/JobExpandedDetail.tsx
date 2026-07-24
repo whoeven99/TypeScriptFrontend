@@ -60,9 +60,10 @@ function stageDetail(
   idx: number,
   m: StageMetrics,
   jobModules?: string[],
+  jobStatus?: TranslationJobProgressSummary["status"],
 ): string {
   if (idx === 0) {
-    const { done, total } = initModuleProgress(m, jobModules);
+    const { done, total } = initModuleProgress(m, jobModules, jobStatus);
     if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
       return `${done}/${total}`;
     }
@@ -387,7 +388,7 @@ export function JobStageProgressList({ job }: { job: TranslationJobProgressSumma
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    {stageDetail(idx, m, job.modules)}
+                    {stageDetail(idx, m, job.modules, job.status)}
                     {complete ? " ✓" : ""}
                     {ms != null
                       ? ` · ${t("v4.job.elapsedShort", { time: formatV4Elapsed(ms, t) })}`

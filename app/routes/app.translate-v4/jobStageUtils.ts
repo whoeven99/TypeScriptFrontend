@@ -106,10 +106,20 @@ function translateStageProgress(m: StageMetrics): { done: number; total: number 
   return { done: m.translateDone, total: 0 };
 }
 
-/** Init bar uses selected-module x/N when available; falls back to item counts. */
+function isInitStageActive(status: TranslationV4Status): boolean {
+  return status === "INIT_QUEUED" || status === "INITIALIZING";
+}
+
+/**
+ * Init bar uses selected-module x/N when available; falls back to item counts.
+ * When init has already finished (status past INITIALIZING) but Redis module
+ * counters expired / were never written, assume done === total so completed
+ * jobs do not render as "0/N" with an empty bar.
+ */
 export function initModuleProgress(
   m: StageMetrics,
   jobModules?: string[],
+  jobStatus?: TranslationV4Status,
 ): { done: number; total: number } {
   const total =
     m.initModulesTotal > 0
@@ -120,21 +130,24 @@ export function initModuleProgress(
   if (total <= 0) {
     return { done: m.initDone, total: m.initTotal };
   }
-  return {
-    done: Math.min(m.initModulesDone, total),
-    total,
-  };
+  let done = Math.min(Math.max(0, m.initModulesDone), total);
+  // Past init + missing Redis counters → show N/N (not 0/N).
+  if (jobStatus != null && !isInitStageActive(jobStatus) && done < total) {
+    done = total;
+  }
+  return { done, total };
 }
 
 export function stageBarPercent(
   idx: number,
   m: StageMetrics,
-  _jobStatus: TranslationV4Status,
+  jobStatus: TranslationV4Status,
   jobModules?: string[],
 ): number {
   switch (idx) {
     case 0: {
-      const { done, total } = initModuleProgress(m, jobModules);
+      if (!isInitStageActive(jobStatus)) return 100;
+      const { done, total } = initModuleProgress(m, jobModules, jobStatus);
       if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
         return ratioPercent(done, total);
       }
@@ -161,16 +174,11 @@ export function isStageBarComplete(
 ): boolean {
   switch (idx) {
     case 0: {
-      // While still initializing, never mark the bar complete (even at x===N
-      // during writing_manifest). After leaving init, prefer module x/N.
-      if (jobStatus === "INIT_QUEUED" || jobStatus === "INITIALIZING") {
-        return false;
-      }
-      const { done, total } = initModuleProgress(m, jobModules);
-      if (total > 0 && (m.initModulesTotal > 0 || (jobModules?.length ?? 0) > 0)) {
-        return done >= total;
-      }
-      return m.initTotal > 0 && m.initDone >= m.initTotal;
+      // While still initializing, never mark complete (even at x===N during
+      // writing_manifest). Once the job left init, the stage is complete even
+      // if Redis initModules* counters are gone.
+      if (isInitStageActive(jobStatus)) return false;
+      return true;
     }
     case 1: {
       if (isTranslateResourceComplete(m)) return true;
