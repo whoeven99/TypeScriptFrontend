@@ -1,17 +1,7 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { Checkbox, Select, Space } from "antd";
-import {
-  AutoSelection,
-  Combobox,
-  Icon,
-  InlineStack,
-  Listbox,
-  Tag,
-} from "@shopify/polaris";
-import { SearchIcon } from "@shopify/polaris-icons";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
@@ -69,13 +59,16 @@ export function CreateTaskCard({
     targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
-  const targetSelectOptions = useMemo<TargetOption[]>(
+  // 顺序固定（按名称），避免点选时 chip 跳动。
+  const localeChips = useMemo<TargetOption[]>(
     () =>
-      targetOptions.map((opt) => ({
-        value: opt.value,
-        label: localeShortName(opt.value, opt.label),
-        regionCode: localeRegionCode(opt.value),
-      })),
+      [...targetOptions]
+        .map((opt) => ({
+          value: opt.value,
+          label: localeShortName(opt.value, opt.label),
+          regionCode: localeRegionCode(opt.value),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [targetOptions],
   );
 
@@ -93,6 +86,14 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+
+  const toggleTarget = (value: string) => {
+    onTargetsChange(
+      targets.includes(value)
+        ? targets.filter((item) => item !== value)
+        : [...targets, value],
+    );
+  };
 
   const toggleModule = (value: string) => {
     onModulesChange(
@@ -181,14 +182,33 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <TargetLocaleCombobox
-          options={targetSelectOptions}
-          value={targets}
-          onChange={onTargetsChange}
-          placeholder={t("v4.createTask.selectTargetLanguages")}
-          label={t("v4.createTask.targetLanguages")}
-          t={t}
-        />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {localeChips.map((locale) => {
+            const selected = targets.includes(locale.value);
+            return (
+              <button
+                key={locale.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleTarget(locale.value)}
+                style={moduleChipStyle(selected)}
+              >
+                <span
+                  style={{
+                    opacity: selected ? 0.85 : 0.7,
+                    marginRight: 5,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {locale.regionCode}
+                </span>
+                {locale.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -305,151 +325,6 @@ export function CreateTaskCard({
   );
 }
 
-function TargetLocaleCombobox({
-  options,
-  value,
-  onChange,
-  placeholder,
-  label,
-  t,
-}: {
-  options: TargetOption[];
-  value: string[];
-  onChange: (values: string[]) => void;
-  placeholder: string;
-  label: string;
-  t: TFunction;
-}) {
-  const [query, setQuery] = useState("");
-
-  const escapeRegExp = useCallback(
-    (raw: string) => raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-    [],
-  );
-
-  const filteredOptions = useMemo(() => {
-    const q = query.trim();
-    const filterRegex = q ? new RegExp(escapeRegExp(q), "i") : null;
-    const list = filterRegex
-      ? options.filter(
-          (opt) =>
-            filterRegex.test(opt.label) ||
-            filterRegex.test(opt.regionCode) ||
-            filterRegex.test(opt.value),
-        )
-      : options;
-
-    return [...list].sort((a, b) => {
-      const aSelected = value.includes(a.value) ? 0 : 1;
-      const bSelected = value.includes(b.value) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return a.label.localeCompare(b.label);
-    });
-  }, [escapeRegExp, options, query, value]);
-
-  const updateSelection = useCallback(
-    (selected: string) => {
-      if (value.includes(selected)) {
-        onChange(value.filter((item) => item !== selected));
-      } else {
-        onChange([...value, selected]);
-      }
-      setQuery("");
-    },
-    [onChange, value],
-  );
-
-  const removeTag = useCallback(
-    (locale: string) => {
-      onChange(value.filter((item) => item !== locale));
-    },
-    [onChange, value],
-  );
-
-  const verticalContentMarkup =
-    value.length > 0 ? (
-      <InlineStack gap="200" align="start" wrap>
-        {value.map((locale) => {
-          const opt = options.find((item) => item.value === locale);
-          const code = opt?.regionCode ?? localeRegionCode(locale);
-          const name = opt?.label ?? locale;
-          return (
-            <Tag
-              key={locale}
-              onRemove={() => removeTag(locale)}
-              accessibilityLabel={t("v4.createTask.removeTarget", { name })}
-            >
-              <span className="v4-select-tag v4-select-tag--locale v4-select-tag--in-polaris">
-                <span className="v4-select-tag__code">{code}</span>
-                <span>{name}</span>
-              </span>
-            </Tag>
-          );
-        })}
-      </InlineStack>
-    ) : null;
-
-  const optionsMarkup =
-    filteredOptions.length > 0
-      ? filteredOptions.map((option) => {
-          const selected = value.includes(option.value);
-          return (
-            <Listbox.Option
-              key={option.value}
-              value={option.value}
-              selected={selected}
-              accessibilityLabel={`${option.regionCode} ${option.label}`}
-            >
-              <Listbox.TextOption selected={selected}>
-                <span>
-                  <span
-                    style={{
-                      color: v4Colors.primary,
-                      fontWeight: 600,
-                      marginRight: 6,
-                    }}
-                  >
-                    {option.regionCode}
-                  </span>
-                  {option.label}
-                </span>
-              </Listbox.TextOption>
-            </Listbox.Option>
-          );
-        })
-      : null;
-
-  return (
-    <div className="v4-target-locale-combobox">
-      <Combobox
-        allowMultiple
-        activator={
-          <Combobox.TextField
-            prefix={<Icon source={SearchIcon} />}
-            onChange={setQuery}
-            label={label}
-            labelHidden
-            value={query}
-            placeholder={placeholder}
-            autoComplete="off"
-            verticalContent={verticalContentMarkup}
-          />
-        }
-      >
-        {optionsMarkup ? (
-          <Listbox
-            autoSelection={AutoSelection.None}
-            onSelect={updateSelection}
-            accessibilityLabel={label}
-          >
-            {optionsMarkup}
-          </Listbox>
-        ) : null}
-      </Combobox>
-    </div>
-  );
-}
-
 function SectionHeader({
   title,
 }: {
@@ -472,7 +347,7 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-/** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
+/** 内联多选 chip：选中 primary-soft，未选中中性灰；语言/模块共用。 */
 function moduleChipStyle(selected: boolean): CSSProperties {
   return {
     display: "inline-flex",

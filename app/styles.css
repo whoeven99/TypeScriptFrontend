@@ -479,18 +479,6 @@ body {
   opacity: 0.85;
 }
 
-/* Polaris Tag 内嵌的语言 chip：去掉外层重复 padding/背景，保留区域码样式 */
-.v4-select-tag--in-polaris {
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  gap: 4px;
-}
-
-.v4-target-locale-combobox .Polaris-TextField__VerticalContent {
-  padding-bottom: 4px;
-}
-
 .v4-select-tag--module {
   background: var(--app-color-surface-secondary);
   color: var(--app-color-text-secondary);
