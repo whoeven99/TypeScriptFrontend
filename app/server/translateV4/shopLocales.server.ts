@@ -77,3 +77,11 @@ export async function loadShopLocalesForTranslation(args: {
     localesInFlight.delete(args.shop);
   }
 }
+
+export async function resolveShopPrimaryLocale(args: {
+  shop: string;
+  accessToken: string;
+}): Promise<string | null> {
+  const loaded = await loadShopLocalesForTranslation(args);
+  return loaded.rows.find((row) => row.primary)?.locale ?? null;
+}

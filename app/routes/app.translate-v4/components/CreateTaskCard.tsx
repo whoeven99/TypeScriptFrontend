@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { Checkbox, Select, Space } from "antd";
+import { useMemo, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { BlockStack, Checkbox, Select } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
@@ -42,6 +42,8 @@ type Props = {
   estimate?: CreateTaskEstimateView | null;
 };
 
+type TargetOption = { value: string; label: string; regionCode: string };
+
 export function CreateTaskCard({
   targetOptions,
   targets,
@@ -69,20 +71,18 @@ export function CreateTaskCard({
     targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
-  const sortedTargetOptions = useMemo(() => {
-    return [...targetOptions].sort((a, b) => {
-      const aSelected = targets.includes(a.value) ? 0 : 1;
-      const bSelected = targets.includes(b.value) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return a.label.localeCompare(b.label);
-    });
-  }, [targetOptions, targets]);
-
-  const targetSelectOptions = sortedTargetOptions.map((opt) => ({
-    value: opt.value,
-    label: localeShortName(opt.value, opt.label),
-    regionCode: localeRegionCode(opt.value),
-  }));
+  // 顺序固定（按名称），避免点选时 chip 跳动。
+  const localeChips = useMemo<TargetOption[]>(
+    () =>
+      [...targetOptions]
+        .map((opt) => ({
+          value: opt.value,
+          label: localeShortName(opt.value, opt.label),
+          regionCode: localeRegionCode(opt.value),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [targetOptions],
+  );
 
   const aiModelOptions = useMemo(
     () =>
@@ -107,6 +107,14 @@ export function CreateTaskCard({
     targets.length > 0 &&
     targets.length === allTargetValues.length &&
     modules.length === allModuleValues.length;
+
+  const toggleTarget = (value: string) => {
+    onTargetsChange(
+      targets.includes(value)
+        ? targets.filter((item) => item !== value)
+        : [...targets, value],
+    );
+  };
 
   const toggleModule = (value: string) => {
     onModulesChange(
@@ -295,12 +303,33 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <TargetLanguagePicker
-          placeholder={t("v4.createTask.selectTargetLanguages")}
-          options={targetSelectOptions}
-          values={targets}
-          onChange={onTargetsChange}
-        />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {localeChips.map((locale) => {
+            const selected = targets.includes(locale.value);
+            return (
+              <button
+                key={locale.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleTarget(locale.value)}
+                style={moduleChipStyle(selected)}
+              >
+                <span
+                  style={{
+                    opacity: selected ? 0.85 : 0.7,
+                    marginRight: 5,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {locale.regionCode}
+                </span>
+                {locale.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -356,7 +385,11 @@ export function CreateTaskCard({
           <span style={{ minWidth: 0, textAlign: "left", lineHeight: 1.35, overflowWrap: "anywhere" }}>
             {t("v4.createTask.advancedSettings")}
           </span>
-          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden style={{ flexShrink: 0 }}>
+          <span
+            className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`}
+            aria-hidden
+            style={{ flexShrink: 0 }}
+          >
             ⌄
           </span>
         </button>
@@ -370,29 +403,28 @@ export function CreateTaskCard({
         >
           <div style={{ marginTop: 12 }}>
             <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
-            <Select
-              value={aiModel}
-              onChange={onAiModelChange}
-              options={aiModelOptions}
-              style={{ width: "100%", marginBottom: 16 }}
-            />
+            <div style={{ marginBottom: 16 }}>
+              <Select
+                label={t("v4.createTask.aiModel")}
+                labelHidden
+                options={aiModelOptions}
+                value={aiModel}
+                onChange={onAiModelChange}
+              />
+            </div>
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
-            <Checkbox.Group
-              value={[
-                ...(isCover ? ["cover"] : []),
-                ...(isHandle ? ["handle"] : []),
-              ]}
-              onChange={(values) => {
-                onIsCoverChange(values.includes("cover"));
-                onIsHandleChange(values.includes("handle"));
-              }}
-              style={{ width: "100%" }}
-            >
-              <Space direction="vertical" size={10}>
-                <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
-                <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
-              </Space>
-            </Checkbox.Group>
+            <BlockStack gap="300">
+              <Checkbox
+                label={t("v4.createTask.overwriteExisting")}
+                checked={isCover}
+                onChange={onIsCoverChange}
+              />
+              <Checkbox
+                label={t("v4.createTask.translateHandle")}
+                checked={isHandle}
+                onChange={onIsHandleChange}
+              />
+            </BlockStack>
           </div>
         </div>
       </div>
@@ -678,251 +710,7 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-type TargetOption = { value: string; label: string; regionCode: string };
-
-function TargetLanguagePicker({
-  options,
-  values,
-  onChange,
-  placeholder,
-}: {
-  options: TargetOption[];
-  values: string[];
-  onChange: (values: string[]) => void;
-  placeholder: string;
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const selected = options.filter((option) => values.includes(option.value));
-  const visibleSelected = selected.slice(0, 6);
-  const hiddenCount = Math.max(0, selected.length - visibleSelected.length);
-
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      const root = rootRef.current;
-      if (root && !root.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [open]);
-
-  const toggleValue = (value: string) => {
-    onChange(
-      values.includes(value)
-        ? values.filter((item) => item !== value)
-        : [...values, value],
-    );
-  };
-
-  const removeValue = (value: string) => {
-    onChange(values.filter((item) => item !== value));
-  };
-
-  return (
-    <div ref={rootRef} style={{ position: "relative", width: "100%" }}>
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        style={{
-          width: "100%",
-          minHeight: 40,
-          borderRadius: 10,
-          border: `1px solid ${open ? "rgba(84, 103, 255, 0.42)" : "var(--app-color-border-secondary)"}`,
-          background: "var(--p-color-bg-surface)",
-          padding: "6px 34px 6px 8px",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          flexWrap: "wrap",
-          cursor: "pointer",
-          position: "relative",
-          boxShadow: open ? "0 0 0 3px rgba(84, 103, 255, 0.12)" : "none",
-          fontFamily: "inherit",
-          textAlign: "left",
-        }}
-      >
-        {visibleSelected.length ? (
-          visibleSelected.map((option) => (
-            <LocaleTag
-              key={option.value}
-              option={option}
-              onRemove={(event) => {
-                event.stopPropagation();
-                removeValue(option.value);
-              }}
-              removeLabel={t("v4.createTask.removeTarget", {
-                name: option.label,
-              })}
-            />
-          ))
-        ) : (
-          <span
-            style={{
-              color: v4Colors.textFaint,
-              fontSize: 13,
-              lineHeight: "24px",
-              paddingInline: 4,
-            }}
-          >
-            {placeholder}
-          </span>
-        )}
-        {hiddenCount > 0 ? (
-          <span style={languageMoreTagStyle}>+ {hiddenCount}</span>
-        ) : null}
-        <span
-          aria-hidden
-          style={{
-            position: "absolute",
-            right: 12,
-            top: "50%",
-            transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`,
-            color: v4Colors.textMuted,
-            fontSize: 14,
-            transition: "transform 0.15s ease",
-          }}
-        >
-          ⌄
-        </span>
-      </button>
-
-      {open ? (
-        <div
-          role="listbox"
-          aria-multiselectable="true"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            right: 0,
-            zIndex: 30,
-            maxHeight: 280,
-            overflowY: "auto",
-            borderRadius: 12,
-            border: "1px solid var(--app-color-border-secondary)",
-            background: "var(--p-color-bg-surface)",
-            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
-            padding: 6,
-          }}
-        >
-          {options.map((option) => {
-            const checked = values.includes(option.value);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={checked}
-                onClick={() => toggleValue(option.value)}
-                style={{
-                  width: "100%",
-                  minHeight: 34,
-                  border: "none",
-                  borderRadius: 8,
-                  background: checked ? v4Colors.primarySoft : "transparent",
-                  color: v4Colors.text,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "7px 8px",
-                  fontFamily: "inherit",
-                  textAlign: "left",
-                }}
-              >
-                <span
-                  style={{
-                    width: 16,
-                    flexShrink: 0,
-                    color: checked ? v4Colors.primaryHover : v4Colors.textFaint,
-                    fontWeight: 700,
-                  }}
-                >
-                  {checked ? "✓" : ""}
-                </span>
-                <span style={{ color: v4Colors.primary, fontWeight: 700, minWidth: 24 }}>
-                  {option.regionCode}
-                </span>
-                <span
-                  style={{
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    fontSize: 13,
-                  }}
-                >
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function LocaleTag({
-  option,
-  onRemove,
-  removeLabel,
-}: {
-  option: TargetOption;
-  onRemove: (event: ReactMouseEvent<HTMLButtonElement>) => void;
-  removeLabel: string;
-}) {
-  return (
-    <span
-      className="v4-select-tag v4-select-tag--locale"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        maxWidth: 190,
-        minWidth: 0,
-      }}
-    >
-      <span className="v4-select-tag__code">{option.regionCode}</span>
-      <span
-        style={{
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {option.label}
-      </span>
-      <button
-        type="button"
-        className="v4-select-tag__close"
-        onClick={onRemove}
-        aria-label={removeLabel}
-      >
-        ×
-      </button>
-    </span>
-  );
-}
-
-const languageMoreTagStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  minHeight: 24,
-  padding: "2px 8px",
-  borderRadius: 6,
-  background: v4Colors.primarySoft,
-  color: v4Colors.primaryHover,
-  fontSize: 12,
-  fontWeight: 700,
-  lineHeight: "18px",
-};
-
-/** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
+/** 内联多选 chip：选中 primary-soft，未选中中性灰；语言/模块共用。 */
 function moduleChipStyle(selected: boolean): CSSProperties {
   return {
     display: "inline-flex",

@@ -6,11 +6,12 @@ import {
   existsBlockingV4Job,
 } from "~/server/translateV4/cosmos.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
-import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
+import { loadShopProfilePromptBlock } from "~/server/translateV4/shopProfileContext.server";
 import {
   getTranslateV4RedisClient,
   v4HintKey,
 } from "~/server/translateV4/redis.server";
+import { resolveShopPrimaryLocale } from "~/server/translateV4/shopLocales.server";
 import {
   TRANSLATION_V4_MODULES,
   TS_FRONTEND_TASK_SOURCE,
@@ -32,6 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 /** POST /api/translate-v4/tasks —— 创建一个 TsFrontend 翻译任务，写入 Cosmos 供 worker 消费。 */
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
+  const FALLBACK_SOURCE_LOCALE = "en";
 
   const body = (await request.json().catch(() => ({}))) as {
     source?: string;
@@ -42,7 +44,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     aiModel?: string;
   };
 
-  const source = body.source?.trim() || "zh-CN";
+  const source =
+    body.source?.trim() ||
+    (await resolveShopPrimaryLocale({
+      shop: session.shop,
+      accessToken: session.accessToken,
+    })) ||
+    FALLBACK_SOURCE_LOCALE;
   const target = body.target?.trim() || "";
   if (!target) return json({ ok: false, error: "v4.validation.selectTarget" }, { status: 400 });
   if (target === source)
@@ -70,17 +78,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   const jobId = crypto.randomUUID();
-
-  // worker 写回译文用的长效 offline token，建任务时落到 job 上
-  const shopifyAccessToken =
-    (await resolveOfflineAccessToken(shopName, session.accessToken)) ?? "";
+  const profileBlock = await loadShopProfilePromptBlock(shopName);
 
   const job = await createV4Job({
     id: jobId,
     shopName,
-    shopifyAccessToken,
     source,
     target,
+    profileBlock,
     modules,
     aiModel: body.aiModel?.trim() || "gpt-4.1-nano",
     limitPerType: V4_LIMIT_UNLIMITED,
@@ -103,7 +108,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   console.log(
-    `[translateV4] job created id=${jobId} shop=${shopName} ${source}→${target} modules=${modules.join(",")} source=${TS_FRONTEND_TASK_SOURCE}`,
+    `[translateV4] job created id=${jobId} shop=${shopName} ${source}→${target} modules=${modules.join(",")} source=${TS_FRONTEND_TASK_SOURCE} hasProfileBlock=${Boolean(profileBlock?.trim())}`,
   );
   return json({ ok: true, jobId: job.id });
 };

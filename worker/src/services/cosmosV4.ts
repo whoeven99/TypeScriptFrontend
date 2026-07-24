@@ -64,9 +64,10 @@ export function withStageTiming(
 export type TranslationV4Job = {
   id: string;
   shopName: string;
-  shopifyAccessToken: string;
   source: string;
   target: string;
+  /** 手动任务创建时固化的店铺画像 prompt block；供 worker 翻译阶段直接消费。 */
+  profileBlock?: string | null;
   modules: string[];
   aiModel: string;
   /** The engine actually used at translate time (real data, set by the worker). */
@@ -119,19 +120,6 @@ export const TS_FRONTEND_TRIAL_TASK_SOURCE = "TsFrontend-Trial";
 
 /** 任务来源：开拓市场（按语言翻译核心商品）。 */
 export const TS_FRONTEND_EXPAND_TASK_SOURCE = "TsFrontend-Expand";
-
-/**
- * 该任务的 Shopify token 是否应直接取 job 快照（跳过 Turso Session 查询）。
- * 外部来源（TsFrontend / 自动 / 试译 / 开拓市场）的 shop Session 不在本服务的 Turso 里，必须用 job 里存的 token。
- */
-export function prefersStoredToken(job: Pick<TranslationV4Job, "taskSource">): boolean {
-  return (
-    job.taskSource === TS_FRONTEND_TASK_SOURCE ||
-    job.taskSource === TSF_AUTO_TASK_SOURCE ||
-    job.taskSource === TS_FRONTEND_TRIAL_TASK_SOURCE ||
-    job.taskSource === TS_FRONTEND_EXPAND_TASK_SOURCE
-  );
-}
 
 /** 是否 worker 定时扫描创建的自动翻译任务（影响邮件汇总策略）。 */
 export function isAutoTranslationJob(
@@ -215,6 +203,12 @@ export const EMPTY_V4_METRICS: TranslationV4Metrics = {
   usedTokens: 0,
 };
 
+function stripLegacyJobSecrets(job: TranslationV4Job): TranslationV4Job {
+  const clean = { ...job } as TranslationV4Job & Record<string, unknown>;
+  delete clean.shopifyAccessToken;
+  return clean;
+}
+
 /** 进行中（非终态）状态，用于创建前互斥判断。 */
 const ACTIVE_V4_STATUSES: TranslationV4Status[] = [
   "CREATED",
@@ -249,7 +243,7 @@ type CreateJobInput = Omit<
 /** 新建一个 v4 任务文档（upsert）。 */
 export async function createJob(input: CreateJobInput): Promise<TranslationV4Job> {
   const now = new Date().toISOString();
-  const doc: TranslationV4Job = {
+  const doc = stripLegacyJobSecrets({
     ...input,
     metrics: { ...EMPTY_V4_METRICS },
     aiModelUsed: null,
@@ -262,7 +256,7 @@ export async function createJob(input: CreateJobInput): Promise<TranslationV4Job
     errorStage: null,
     createdAt: now,
     updatedAt: now,
-  };
+  } as TranslationV4Job);
   await getContainer().items.upsert(doc);
   return doc;
 }
@@ -274,41 +268,6 @@ export async function deleteJob(shopName: string, jobId: string): Promise<void> 
   } catch (err) {
     const code = (err as { code?: number })?.code;
     if (code !== 404) throw err;
-  }
-}
-
-/** 查找同语言对的终态自动翻译任务（建新任务前清理旧记录用）。 */
-export async function findTerminalAutoJobsForTarget(
-  shopName: string,
-  source: string,
-  target: string,
-): Promise<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">[]> {
-  const terminalStatuses: TranslationV4Status[] = ["COMPLETED", "FAILED", "PAUSED", "CANCELLED"];
-  try {
-    const { resources } = await getContainer()
-      .items.query<Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">>(
-        {
-          query: `SELECT c.id, c.shopName, c.blobPrefix FROM c
-                  WHERE c.shopName = @shopName
-                    AND c.source = @source
-                    AND c.target = @target
-                    AND c.taskSource = @autoSource
-                    AND ARRAY_CONTAINS(@terminalStatuses, c.status)`,
-          parameters: [
-            { name: "@shopName", value: shopName },
-            { name: "@source", value: source },
-            { name: "@target", value: target },
-            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
-            { name: "@terminalStatuses", value: terminalStatuses },
-          ],
-        },
-        { partitionKey: shopName },
-      )
-      .fetchAll();
-    return resources ?? [];
-  } catch (err) {
-    console.error("[cosmosV4] findTerminalAutoJobsForTarget failed:", err);
-    return [];
   }
 }
 
@@ -337,6 +296,43 @@ export async function findStaleEmptyAutoJobs(
     return resources ?? [];
   } catch (err) {
     console.error("[cosmosV4] findStaleEmptyAutoJobs failed:", err);
+    return [];
+  }
+}
+
+export type RetentionCleanupJob = Pick<
+  TranslationV4Job,
+  "id" | "shopName" | "blobPrefix" | "createdAt" | "status" | "lastHeartbeat"
+>;
+
+/**
+ * 查询超过保留期的旧自动任务（跨 partition，按 createdAt 升序，限量）。
+ * 仅 TsFrontend-Auto；调用方应再做心跳保护等跳过逻辑。
+ */
+export async function findOldJobsForRetentionCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<RetentionCleanupJob[]> {
+  const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<RetentionCleanupJob>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status, c.lastHeartbeat
+                FROM c
+                WHERE c.createdAt < @cutoff
+                  AND c.taskSource = @autoSource
+                ORDER BY c.createdAt ASC
+                OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+          { name: "@limit", value: safeLimit },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findOldJobsForRetentionCleanup failed:", err);
     return [];
   }
 }
@@ -457,7 +453,7 @@ export async function getJob(shopName: string, jobId: string): Promise<Translati
     const { resource } = await getContainer()
       .item(jobId, shopName)
       .read<TranslationV4Job>();
-    return resource ?? null;
+    return resource ? stripLegacyJobSecrets(resource) : null;
   } catch {
     return null;
   }
@@ -478,7 +474,7 @@ export async function claimJob(
     if (!existing || existing.status !== expectedStatus) return null;
     const now = new Date().toISOString();
     const updated: TranslationV4Job = {
-      ...existing,
+      ...stripLegacyJobSecrets(existing),
       status: newStatus,
       claimedBy,
       claimedAt: now,
@@ -490,7 +486,7 @@ export async function claimJob(
       .replace<TranslationV4Job>(updated, {
         accessCondition: { type: "IfMatch", condition: etag! },
       });
-    return saved ?? updated;
+    return saved ? stripLegacyJobSecrets(saved) : updated;
   } catch {
     return null;
   }
@@ -548,11 +544,11 @@ export async function updateJob(
         );
         return;
       }
-      const updated: TranslationV4Job = {
-        ...existing,
+      const updated = stripLegacyJobSecrets({
+        ...stripLegacyJobSecrets(existing),
         ...updates,
         updatedAt: new Date().toISOString(),
-      };
+      } as TranslationV4Job);
       await getContainer()
         .item(jobId, shopName)
         .replace<TranslationV4Job>(updated, {

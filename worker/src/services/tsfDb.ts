@@ -142,6 +142,22 @@ export async function listAutoTranslateShops(): Promise<AutoTranslateShop[]> {
   return [...byShop.values()];
 }
 
+/**
+ * scheduled shop scan 候选店：有未软删 Account + offline Session token。
+ * 不要求开启自动翻译（「每个可扫店」覆盖）。
+ */
+export async function listScannableShops(): Promise<string[]> {
+  const rs = await tsfExecute(
+    `SELECT DISTINCT sess.shop AS shop
+     FROM Session sess
+     INNER JOIN Account a ON a.shop = sess.shop AND a.deletedAt IS NULL
+     WHERE sess.isOnline = 0
+       AND sess.accessToken IS NOT NULL
+     ORDER BY sess.shop ASC`,
+  );
+  return rs.rows.map((r) => String(r.shop));
+}
+
 function normalizeLocaleKey(locale: string): string {
   return locale.trim().replace(/_/g, "-").toLowerCase();
 }
@@ -176,8 +192,8 @@ export async function syncShopPrimaryLocaleInTsf(
 }
 
 /**
- * 从 TSF 的 Session 表取该店的 offline accessToken（自动任务回写 Shopify 用）。
- * TSF 用 @shopify/shopify-app Prisma session 存储，offline session 的 isOnline=0。
+ * 从 TSF 的 Session 表取该店的 offline accessToken。
+ * 这是 Worker 调用 Shopify Admin API 的唯一 token 来源；不使用 job 快照或缓存。
  */
 export async function getOfflineAccessTokenFromTsf(shop: string): Promise<string | null> {
   const rs = await tsfExecute({

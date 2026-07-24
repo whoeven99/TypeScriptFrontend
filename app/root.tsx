@@ -74,11 +74,29 @@ function isAbortLikeError(error: unknown): boolean {
   return /signal is aborted without reason|aborted|aborterror/i.test(message);
 }
 
+function isShopifyIdTokenNoise(error: unknown): boolean {
+  const { message, stack } = getErrorDetails(error);
+  return (
+    /idtoken unavailable|failed to fetch an idtoken/i.test(message ?? "") ||
+    (/shopifycloud\/app-bridge\.js/i.test(stack ?? "") &&
+      /idtoken/i.test(`${message ?? ""} ${stack ?? ""}`))
+  );
+}
+
+function isLibraryDeprecationWarningMessage(message: string | undefined): boolean {
+  if (!message) return false;
+  return /\[rc-collapse\].*`children` will be removed in next major version.*use `items` instead/i.test(
+    message,
+  );
+}
+
 function isIgnorableClientNoiseError(error: unknown): boolean {
   const { message } = getErrorDetails(error);
   return (
     isNetworkFetchError(error) ||
     isAbortLikeError(error) ||
+    isShopifyIdTokenNoise(error) ||
+    isLibraryDeprecationWarningMessage(message) ||
     /Unexpected value for attribute "loading" on <button>/i.test(message ?? "")
   );
 }
@@ -104,6 +122,8 @@ function shouldIgnoreConsoleErrorReport(args: unknown[]): boolean {
     .filter(Boolean)
     .join(" ");
   return (
+    /failed to fetch an idtoken|idtoken unavailable/i.test(normalizedArgs) ||
+    isLibraryDeprecationWarningMessage(normalizedArgs) ||
     /Unexpected value for attribute "loading" on <button>/i.test(normalizedArgs) ||
     ((/^\[translateV4\] refresh coverage from cache failed:/i.test(firstArg) ||
       /^\[app\] bootstrap java fetch failed:/i.test(firstArg) ||

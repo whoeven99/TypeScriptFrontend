@@ -58,8 +58,11 @@ export async function archivePeriodAndRenew(params: {
     eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
     planKey: subscription.planKey,
     referenceId: subscription.shopifySubscriptionId,
+    creditsDelta: next.creditsPerPeriod,
     usedCredits: account.usedCredits,
     metadata: {
+      grantKind: "shopify_period",
+      billingPeriodEnd: next.currentPeriodEnd?.toISOString() ?? null,
       previousPeriodEnd: periodEnd?.toISOString() ?? null,
       nextPeriodEnd: next.currentPeriodEnd?.toISOString() ?? null,
     },
