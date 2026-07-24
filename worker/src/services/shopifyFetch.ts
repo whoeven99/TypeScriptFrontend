@@ -246,8 +246,8 @@ const MODULE_ID_QUERY: Record<string, { gql: string; connectionKey: string }> = 
   COLLECTION: { gql: COLLECTIONS_IDS_QUERY, connectionKey: "collections" },
 };
 
-/** Transient Shopify gateway errors — retry with short back-off before failing. */
-const SHOPIFY_5XX_RETRY_STATUSES = new Set([502, 503, 504]);
+/** Transient Shopify/Cloudflare gateway errors — retry with short back-off before failing. */
+const SHOPIFY_5XX_RETRY_STATUSES = new Set([502, 503, 504, 522]);
 const SHOPIFY_5XX_MAX_RETRIES = Math.max(
   0,
   Number(process.env.SHOPIFY_5XX_MAX_RETRIES?.trim()) || 2,
@@ -260,7 +260,7 @@ const SHOPIFY_5XX_MAX_RETRIES = Math.max(
  *  - 429 retry: respects the Retry-After header, up to MAX_RETRIES attempts.
  *    Multiple concurrent workers for the same shop share the same rate-limit
  *    bucket; back-off prevents thundering-herd amplification.
- *  - 502/503/504 retry: short exponential back-off (default 2 attempts).
+ *  - 502/503/504/522 retry: short exponential back-off (default 2 attempts).
  *  - Proactive throttle: reads extensions.cost.throttleStatus from every
  *    response and inserts a calculated sleep whenever the remaining bucket
  *    points drop below SHOPIFY_BUCKET_FLOOR.  This keeps parallel module
@@ -308,7 +308,7 @@ export function resetShopifyCallStats(shopDomain: string): void {
 
 type ShopifyGraphqlOpts = {
   retries?: number;
-  /** Remaining 502/503/504 retries for this request chain. */
+  /** Remaining 502/503/504/522 retries for this request chain. */
   retries5xx?: number;
   /** 401 后已用同一 token 重试过一次 */
   tokenRetried?: boolean;
@@ -369,7 +369,7 @@ export async function shopifyGraphql(
     );
   }
 
-  // ── 502/503/504: transient Shopify gateway errors ─────────────────────────
+  // ── 502/503/504/522: transient Shopify/Cloudflare gateway errors ───────────
   if (SHOPIFY_5XX_RETRY_STATUSES.has(resp.status)) {
     const body = await resp.text();
     if (retries5xx <= 0) {
