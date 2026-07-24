@@ -6,7 +6,8 @@ import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 import type { ShopLocaleRow } from "./shopContext.js";
 
 /**
- * 阶段3：把已发布的非主语言同步到 ShopTargetLocale，并逐语言统计翻译覆盖率。
+ * 阶段3：把非主语言同步到 ShopTargetLocale，并逐语言统计翻译覆盖率。
+ * 语言集合与 v4「刷新统计」一致：店铺内所有非主语言（含未发布）。
  * 逐模块回填 Redis items_count 缓存（v4 首页覆盖率直接受益）；
  * Blob 只在 latest-scan.json 留轻量 locale 汇总（无 perModule）。
  *
@@ -37,6 +38,20 @@ export type CoverageStageResult = {
   syncedLocales: number;
 };
 
+/** 与 App `selectShopTargetLocales` 同口径：所有非主语言（含未发布）。 */
+function selectCoverageTargetLocales(
+  locales: ShopLocaleRow[],
+  primaryLocale: string,
+): ShopLocaleRow[] {
+  const source = primaryLocale.trim().toLowerCase();
+  return locales.filter(
+    (l) =>
+      !l.primary &&
+      Boolean(l.locale.trim()) &&
+      l.locale.trim().toLowerCase() !== source,
+  );
+}
+
 export async function runCoverageStage(args: {
   shop: string;
   accessToken: string;
@@ -50,28 +65,22 @@ export async function runCoverageStage(args: {
 }): Promise<CoverageStageResult> {
   const { shop, accessToken, primaryLocale, locales, scanId, trigger, heartbeat } = args;
 
-  const publishedTargets = locales.filter(
-    (l) =>
-      l.published &&
-      !l.primary &&
-      l.locale.trim() &&
-      l.locale.trim().toLowerCase() !== primaryLocale.trim().toLowerCase(),
-  );
+  const targetLocales = selectCoverageTargetLocales(locales, primaryLocale);
 
-  if (publishedTargets.length === 0) {
-    return { status: "skipped", reason: "no_published_targets", coverage: [], syncedLocales: 0 };
+  if (targetLocales.length === 0) {
+    return { status: "skipped", reason: "no_target_locales", coverage: [], syncedLocales: 0 };
   }
 
-  // 1. 同步已发布语言到 ShopTargetLocale（只增不删，默认 autoTranslate=0）
+  // 1. 同步目标语言到 ShopTargetLocale（只增不删，默认 autoTranslate=0）
   const syncedLocales = await upsertTargetLocales(
     shop,
-    publishedTargets.map((l) => l.locale),
+    targetLocales.map((l) => l.locale),
   );
   await heartbeat();
 
   // 2. 逐语言统计覆盖率 + 回填 Redis；Blob 只写轻量汇总
   const coverage: CoverageRow[] = [];
-  for (const target of publishedTargets) {
+  for (const target of targetLocales) {
     let translated = 0;
     let total = 0;
 

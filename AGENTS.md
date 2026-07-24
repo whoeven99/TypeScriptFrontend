@@ -326,7 +326,7 @@ Pipeline:
   checkpoints, quota, pause/cancel.
 - `worker/src/workers/writebackWorker.ts`: Shopify translation writeback.
 - `worker/src/workers/shopScanWorker.ts`: shop scan（install/scheduled 计量；
-  manual AI 画像/术语）。
+  manual AI 画像；glossary 阶段已停用）。
 - `worker/src/workers/emailWorker.ts`: notifications.
 
 Services:
@@ -647,9 +647,9 @@ Shop Profile / Shop Scan:
   `shop-profile/{shop}/latest-scan.json`
   （helper：`worker/src/services/shopScan/shopProfileArtifact.ts`）。
   Job `blobPrefix` = `shop-profile/{shop}`。段：`contentSize`、轻量
-  `coverage`（无 perModule）、`profile`、`glossary`。
+  `coverage`（无 perModule）、`profile`；`glossary` 段保留兼容、scan 不再写入。
   `install`/`scheduled` 只更新计量段并**保留**已有 AI 段；`manual` 只更新
-  AI 段并**保留**计量段。读者（TSF `artifacts.server.ts` / Spark
+  `profile` 并**保留**计量段（不再写 glossary）。读者（TSF `artifacts.server.ts` / Spark
   `tsfShopProfileArtifacts.ts`）优先读该文件，再 fallback 旧
   `shop-scan/{shop}/{scanId}/` 散文件。
 - **覆盖率双写分工**：`coverage` 阶段仍写 Redis `tsf:items_count`（线上权威，
@@ -665,15 +665,17 @@ Shop Profile / Shop Scan:
   `totalChars`；分档默认 2MB / 10MB / 50MB（`SHOP_SIZE_TIER_*_BYTES`）。
 - Trigger split:
   - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
-    `contentSize`（源语言总量）+ `coverage`（已发布语言覆盖率），无 AI。
+    `contentSize`（源语言总量）+ `coverage`（全部非主语言覆盖率，含未发布；
+    与 v4「刷新统计」/`selectShopTargetLocales` 同口径），无 AI。
   - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。Worker 每小时
     :30 入队（与 auto 同一时区 / 24 槽；分钟默认 30，可用
     `SHOP_SCAN_SCHEDULE_MINUTE` 覆盖），但目标槽为
     `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
     有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
     已有进行中 scan 则跳过。
-  - `manual`（调试页按钮）：只跑 `profile` + `glossary`（AI）；跳过计量阶段，
-    并从上一份 summary 合并计量字段，保证 `getLatestShopScanJob` 仍完整。
+  - `manual`（调试页按钮）：只跑 `profile`（AI）；`glossary` 阶段已停用（一律
+    SKIPPED）。跳过计量阶段，并从上一份 summary 合并计量字段，保证
+    `getLatestShopScanJob` 仍完整。
 - Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:

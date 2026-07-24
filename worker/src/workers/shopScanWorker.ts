@@ -25,7 +25,6 @@ import { isRecoverableScanError } from "../services/shopScan/graphql.js";
 import { runContentSizeStage } from "../services/shopScan/stageContentSize.js";
 import { runProfileStage } from "../services/shopScan/stageProfile.js";
 import { runCoverageStage } from "../services/shopScan/stageCoverage.js";
-import { runGlossaryStage } from "../services/shopScan/stageGlossary.js";
 import { touchShopProfileScan } from "../services/shopScan/tsfWrite.js";
 import { isShuttingDown } from "../shutdown.js";
 
@@ -37,8 +36,10 @@ const HEARTBEAT_THROTTLE_MS = 20_000;
 
 /** 计量阶段：安装/定时默认跑。 */
 const METRICS_STAGES: readonly ShopScanStageName[] = ["contentSize", "coverage"];
-/** AI 阶段：仅手动触发。 */
-const AI_STAGES: readonly ShopScanStageName[] = ["profile", "glossary"];
+/** AI 阶段：仅手动触发；不再跑 glossary。 */
+const AI_STAGES: readonly ShopScanStageName[] = ["profile"];
+/** 已停用阶段：Cosmos 字段保留，一律 SKIPPED。 */
+const RETIRED_STAGES: readonly ShopScanStageName[] = ["glossary"];
 
 /** shop_scan Cosmos 是否配置（未配置则整个 worker 空跑）。 */
 function cosmosConfigured(): boolean {
@@ -57,10 +58,13 @@ function stagesForTrigger(trigger: ShopScanTrigger): {
   skip: readonly ShopScanStageName[];
 } {
   if (isMetricsTrigger(trigger)) {
-    return { run: METRICS_STAGES, skip: AI_STAGES };
+    return { run: METRICS_STAGES, skip: [...AI_STAGES, ...RETIRED_STAGES] };
   }
-  // manual（及其它）：只跑 AI
-  return { run: AI_STAGES, skip: METRICS_STAGES };
+  // manual（及其它）：只跑 profile；glossary 已停用
+  return {
+    run: AI_STAGES,
+    skip: [...METRICS_STAGES, ...RETIRED_STAGES],
+  };
 }
 
 export async function runShopScanWorker(): Promise<void> {
@@ -305,25 +309,6 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
       return r.status === "done"
         ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
         : "SKIPPED";
-    });
-
-    await runStage("glossary", async () => {
-      const r = await runGlossaryStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        locales,
-        scanId,
-        trigger: job.trigger,
-        heartbeat,
-      });
-      return {
-        state: r.status === "done" ? "DONE" : "SKIPPED",
-        summary: {
-          glossaryCount: r.glossaryCount,
-          glossarySuggestions: r.glossarySuggestions,
-        },
-      };
     });
   } catch (signal) {
     if (signal instanceof RequeueSignal) {

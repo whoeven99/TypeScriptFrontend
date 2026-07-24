@@ -4,8 +4,10 @@ import type { ShopLocaleRow } from "./shopContext.js";
 import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 
 /**
- * 阶段4：从已发布语言的既有译文采样「源文→译文」对，AI 归纳应固定翻译的术语。
+ * @deprecated shop scan 已不再调用本阶段（worker 一律 SKIPPED）。
+ * 保留文件供历史 Blob / 调试页读旧 glossary 段；勿再接入 runShopScanWorker。
  *
+ * 原阶段4：从已发布语言的既有译文采样「源文→译文」对，AI 归纳应固定翻译的术语。
  * 写入 shop-profile/{shop}/latest-scan.json 的 glossary 段（轻量 perLocale.terms）；
  * 不写入 Glossary 数据库，避免污染正式术语表。
  */
