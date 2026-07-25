@@ -77,7 +77,8 @@ export function isRecoverableScanError(error: unknown): boolean {
   return (
     /THROTTLED|429|rate limit/i.test(msg) ||
     /HTTP 50[234]/i.test(msg) ||
-    /ETIMEDOUT|ECONNRESET|EAI_AGAIN|fetch failed/i.test(msg)
+    /ETIMEDOUT|ECONNRESET|EAI_AGAIN|fetch failed/i.test(msg) ||
+    /shutdown:.*yielding for deploy/i.test(msg)
   );
 }
 

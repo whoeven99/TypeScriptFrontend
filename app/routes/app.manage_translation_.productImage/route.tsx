@@ -29,7 +29,6 @@ import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import {
-  getManageTranslationLanguage,
   manageTranslationLanguageLoader,
 } from "~/server/manageTranslation/manageTranslationRoute.server";
 import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslationErrors";
@@ -42,8 +41,6 @@ export const loader = manageTranslationLanguageLoader;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { admin } = adminAuthResult;
-
-  const searchTerm = getManageTranslationLanguage(request);
 
   const formData = await request.formData();
   const productStartCursor: any = JSON.parse(
@@ -430,8 +427,6 @@ const Index = () => {
   const imageFetcher = useFetcher<any>();
   const translateImageFetcher = useFetcher<any>();
   const replaceTranslateImageFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
-
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [menuData, setMenuData] = useState<any>([]);
@@ -1218,7 +1213,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 154px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -1254,8 +1249,9 @@ const Index = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    height: "100%",
-                    justifyContent: "space-between",
+                    flex: 1,
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <Menu
@@ -1286,7 +1282,6 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",

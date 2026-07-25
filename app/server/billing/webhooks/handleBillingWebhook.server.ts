@@ -1,5 +1,6 @@
 import axios from "axios";
 import prisma from "../../../db.server";
+import { buildShopifyAdminGraphqlUrl } from "../../../lib/shopifyAdminApiVersion";
 import {
   sendTsfPurchaseSuccessEmail,
   sendTsfSubscribeSuccessEmail,
@@ -59,7 +60,7 @@ async function fetchSubscriptionDetail(
 ): Promise<SubscriptionDetail | null> {
   try {
     const response = await axios({
-      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+      url: buildShopifyAdminGraphqlUrl(shop),
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -205,21 +206,24 @@ export async function handleTsfSubscriptionWebhook(params: {
     return;
   }
 
-  const now = Date.now();
+  const existingSub = await prisma.appSubscription.findUnique({
+    where: { shop: params.shop },
+  });
+
+  // currentPeriodEnd 必须以 Shopify 为准；仅 Shopify 缺失时才 fallback（优先保留本地已对齐值）。
   const currentPeriodEnd =
     detail?.currentPeriodEnd ??
-    new Date(now + (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS);
+    existingSub?.currentPeriodEnd ??
+    new Date(Date.now() + (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS);
   const currentPeriodStart = new Date(
     currentPeriodEnd.getTime() - (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS,
   );
+  // Shopify createdAt 仅用于试用结束时间推算，禁止用作额度/账期锚点。
   const trialEndsAt =
     detail && detail.trialDays > 0 && detail.createdAt
       ? new Date(detail.createdAt.getTime() + detail.trialDays * DAY_MS)
       : null;
 
-  const existingSub = await prisma.appSubscription.findUnique({
-    where: { shop: params.shop },
-  });
   const isRenewal =
     existingSub != null &&
     existingSub.shopifySubscriptionId === gid &&
@@ -285,7 +289,6 @@ export async function handleTsfSubscriptionWebhook(params: {
       trialEndsAt,
       trialStartsAt: detail?.createdAt ?? currentPeriodStart,
       effectiveAt: currentPeriodStart,
-      accessToken: params.accessToken,
     }).catch((err) => {
       console.error(
         `[billing webhook] subscribe success email failed shop=${params.shop}:`,
@@ -298,7 +301,6 @@ export async function handleTsfSubscriptionWebhook(params: {
       const ok = await sendTsfSubscriptionRenewalEmail({
         shop: params.shop,
         plan,
-        accessToken: params.accessToken,
       });
       if (!ok) return;
       const log = await findRenewalLogForPeriod({
@@ -364,7 +366,6 @@ export async function handleTsfPurchaseWebhook(params: {
     void sendTsfPurchaseSuccessEmail({
       shop: params.shop,
       plan,
-      accessToken: params.accessToken,
     }).catch((err) => {
       console.error(
         `[billing webhook] purchase success email failed shop=${params.shop}:`,

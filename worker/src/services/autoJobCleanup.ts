@@ -6,14 +6,31 @@ import {
 import { blobDeletePrefix } from "./blobV4.js";
 import { clearTaskRedis } from "./redisV4.js";
 
-/** 删除自动任务及其 Blob / Redis 进度（用于 0 条空任务清理）。 */
-export async function purgeAutoJob(job: Pick<
-  TranslationV4Job,
-  "id" | "shopName" | "blobPrefix"
->): Promise<void> {
-  await blobDeletePrefix(job.blobPrefix);
+export type PurgeV4JobOptions = {
+  /** 删除 Blob 时每个文件间隔，降低对存储的突发压力。 */
+  blobDeleteDelayMs?: number;
+  shouldAbort?: () => boolean;
+};
+
+/** 删除 v4 任务及其 Blob / Redis 进度。 */
+export async function purgeV4Job(
+  job: Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">,
+  options: PurgeV4JobOptions = {},
+): Promise<void> {
+  await blobDeletePrefix(job.blobPrefix, {
+    delayMs: options.blobDeleteDelayMs,
+    shouldAbort: options.shouldAbort,
+  });
+  if (options.shouldAbort?.()) return;
   await deleteJob(job.shopName, job.id);
   await clearTaskRedis(job.id);
+}
+
+/** 兼容旧调用；等价于 purgeV4Job。 */
+export async function purgeAutoJob(
+  job: Pick<TranslationV4Job, "id" | "shopName" | "blobPrefix">,
+): Promise<void> {
+  await purgeV4Job(job);
 }
 
 export function isEmptyAutoJob(job: TranslationV4Job): boolean {

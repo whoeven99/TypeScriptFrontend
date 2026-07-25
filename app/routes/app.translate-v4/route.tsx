@@ -40,6 +40,10 @@ import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
 import { formatV4CreateTasksMessage, translateV4Message } from "./v4I18n";
+import {
+  buildUntranslatedRatioByLocale,
+  useCreateTaskEstimate,
+} from "./useCreateTaskEstimate";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
@@ -120,7 +124,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     listV4JobSummaries(session.shop, { escalateStuck: false }),
     getCoverageSummaryFromCache({
       shop: session.shop,
-      primaryLocale,
       targetLocales,
       includeRuntimeSignals: false,
     }),
@@ -686,6 +689,18 @@ export default function AppTranslateV4() {
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
+  const untranslatedRatioByLocale = useMemo(
+    () => buildUntranslatedRatioByLocale(coverage.locales),
+    [coverage.locales],
+  );
+  const taskEstimate = useCreateTaskEstimate({
+    modules: moduleKeys,
+    targets,
+    isCover,
+    untranslatedRatioByLocale,
+    remainingCredits,
+  });
+
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
     if (typeof window === "undefined") return;
@@ -796,6 +811,7 @@ export default function AppTranslateV4() {
                 onIsCoverChange={setIsCover}
                 isHandle={isHandle}
                 onIsHandleChange={setIsHandle}
+                estimate={taskEstimate}
               />
             </div>
 

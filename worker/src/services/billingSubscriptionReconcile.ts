@@ -12,6 +12,11 @@ import {
   settlePoolsAtRenewal,
 } from "./accountBalance.js";
 import {
+  collectGrantedAnnualCreditCycleIndexes,
+  decideAnnualCreditGrant,
+  getAnnualCreditWindow,
+} from "./annualCreditCycle.js";
+import {
   getOfflineAccessTokenFromTsf,
   getTsfDb,
   getTsfAccountRemaining,
@@ -19,9 +24,11 @@ import {
 } from "./tsfDb.js";
 import { fetchShopContact } from "./shopEmail.js";
 import { sendSubscriptionRenewalEmail } from "./workerEmail.js";
+import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERIOD_END_TOLERANCE_MS = 12 * 60 * 60 * 1000;
+const PERIOD_FIELD_TOLERANCE_MS = 1000;
 const INTERVAL_DAYS: Record<string, number> = {
   MONTHLY: 30,
   ANNUAL: 365,
@@ -113,13 +120,13 @@ function isRenewal(
   return delta > PERIOD_END_TOLERANCE_MS;
 }
 
-function isPeriodEndBehindShopify(
-  localEnd: Date | null,
-  shopifyEnd: Date,
+function datesDiffer(
+  local: Date | null,
+  remote: Date,
+  toleranceMs = PERIOD_FIELD_TOLERANCE_MS,
 ): boolean {
-  if (!localEnd) return true;
-  const delta = shopifyEnd.getTime() - localEnd.getTime();
-  return delta > PERIOD_END_TOLERANCE_MS;
+  if (!local) return true;
+  return Math.abs(local.getTime() - remote.getTime()) > toleranceMs;
 }
 
 async function shopifyGraphql<T>(
@@ -128,20 +135,16 @@ async function shopifyGraphql<T>(
   query: string,
   variables?: Record<string, unknown>,
 ): Promise<T | null> {
-  const apiVersion = process.env.GRAPHQL_VERSION || "2025-04";
   try {
-    const resp = await fetch(
-      `https://${shop}/admin/api/${apiVersion}/graphql.json`,
-      {
-        method: "POST",
-        signal: AbortSignal.timeout(20_000),
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, variables }),
+    const resp = await fetch(buildShopifyAdminGraphqlUrl(shop), {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ query, variables }),
+    });
     const body = (await resp.json()) as { data?: T; errors?: unknown };
     if (body.errors) {
       console.warn(`[billingReconcile] GraphQL errors shop=${shop}:`, body.errors);
@@ -333,14 +336,17 @@ async function archivePeriodAndRenew(params: {
   await db.execute({
     sql: `INSERT INTO BillingLog (
             id, shop, eventType, planKey, referenceId, creditsDelta, usedCredits, metadata, createdAt
-          ) VALUES (?, ?, 'SUBSCRIPTION_RENEWED', ?, ?, NULL, ?, ?, ?)`,
+          ) VALUES (?, ?, 'SUBSCRIPTION_RENEWED', ?, ?, ?, ?, ?, ?)`,
     args: [
       randomUUID(),
       shop,
       local.planKey,
       local.shopifySubscriptionId,
+      next.creditsPerPeriod,
       account.usedCredits,
       JSON.stringify({
+        grantKind: "shopify_period",
+        billingPeriodEnd: next.currentPeriodEnd.toISOString(),
         previousPeriodEnd: local.currentPeriodEnd?.toISOString() ?? null,
         nextPeriodEnd: next.currentPeriodEnd.toISOString(),
         source: "worker_reconcile",
@@ -514,11 +520,232 @@ async function activateOrReplaceSubscription(params: {
         planKey,
         shopifySub.id,
         creditsPerPeriod,
-        JSON.stringify({ billingInterval, source: "worker_reconcile" }),
+        JSON.stringify({
+          billingInterval,
+          billingPeriodEnd: currentPeriodEnd.toISOString(),
+          grantKind: "shopify_period",
+          source: "worker_reconcile",
+        }),
         now,
       ],
     });
   }
+}
+
+/** 仅同步 Shopify 账期字段，不改额度（用于修脏 currentPeriodStart 等）。 */
+async function syncLocalPeriodFields(params: {
+  shop: string;
+  shopifySubscriptionId: string;
+  billingInterval: string;
+  planKey: string;
+  creditsPerPeriod: number;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  await getTsfDb().execute({
+    sql: `UPDATE AppSubscription SET
+            shopifySubscriptionId = ?,
+            billingInterval = ?,
+            planKey = ?,
+            creditsPerPeriod = ?,
+            currentPeriodStart = ?,
+            currentPeriodEnd = ?,
+            status = 'ACTIVE',
+            updatedAt = ?
+          WHERE shop = ?`,
+    args: [
+      params.shopifySubscriptionId,
+      params.billingInterval,
+      params.planKey,
+      params.creditsPerPeriod,
+      toSqlDate(params.currentPeriodStart),
+      toSqlDate(params.currentPeriodEnd),
+      now,
+      params.shop,
+    ],
+  });
+}
+
+/**
+ * 年付 30 天额度发放：结算池 + 写 RENEWED + 重置 subscriptionCredits。
+ * 不改 AppSubscription.currentPeriodEnd（保持 Shopify 年账期真值）。
+ */
+async function grantAnnualCreditCycle(params: {
+  shop: string;
+  local: LocalSubscription;
+  account: {
+    subscriptionCredits: number;
+    purchasedCredits: number;
+    trialCredits: number;
+    usedCredits: number;
+  };
+  planKey: string;
+  creditsPerPeriod: number;
+  billingPeriodEnd: Date;
+  creditCycleIndex: number;
+}): Promise<void> {
+  const {
+    shop,
+    local,
+    account,
+    planKey,
+    creditsPerPeriod,
+    billingPeriodEnd,
+    creditCycleIndex,
+  } = params;
+  const db = getTsfDb();
+  const now = new Date().toISOString();
+  const window = getAnnualCreditWindow(billingPeriodEnd, creditCycleIndex);
+  const prevWindow = getAnnualCreditWindow(
+    billingPeriodEnd,
+    Math.max(0, creditCycleIndex - 1),
+  );
+
+  if (creditCycleIndex > 0) {
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO AccountPeriodUsage (
+              id, shop, appSubscriptionId, planKey, periodStart, periodEnd,
+              usedCredits, subscriptionCreditsAllocated,
+              purchasedCreditsRemaining, trialCreditsRemaining, archivedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        randomUUID(),
+        shop,
+        local.shopifySubscriptionId,
+        local.planKey,
+        toSqlDate(prevWindow.start),
+        toSqlDate(prevWindow.end),
+        account.usedCredits,
+        local.creditsPerPeriod,
+        account.purchasedCredits,
+        account.trialCredits,
+        now,
+      ],
+    });
+  }
+
+  await db.execute({
+    sql: `INSERT INTO BillingLog (
+            id, shop, eventType, planKey, referenceId, creditsDelta, usedCredits, metadata, createdAt
+          ) VALUES (?, ?, 'SUBSCRIPTION_RENEWED', ?, ?, ?, ?, ?, ?)`,
+    args: [
+      randomUUID(),
+      shop,
+      planKey,
+      local.shopifySubscriptionId,
+      creditsPerPeriod,
+      account.usedCredits,
+      JSON.stringify({
+        grantKind: "annual_credit_cycle",
+        creditCycleIndex,
+        billingPeriodEnd: billingPeriodEnd.toISOString(),
+        previousPeriodEnd: billingPeriodEnd.toISOString(),
+        nextPeriodEnd: billingPeriodEnd.toISOString(),
+        creditWindowStart: window.start.toISOString(),
+        creditWindowEnd: window.end.toISOString(),
+        source: "worker_reconcile",
+      }),
+      now,
+    ],
+  });
+
+  const settled = canSettleAtRenewal(account)
+    ? settlePoolsAtRenewal(account)
+    : {
+        subscriptionCredits: account.subscriptionCredits,
+        purchasedCredits: account.purchasedCredits,
+        trialCredits: account.trialCredits,
+      };
+
+  await db.execute({
+    sql: `UPDATE Account SET
+            usedCredits = 0,
+            subscriptionCredits = ?,
+            purchasedCredits = ?,
+            trialCredits = ?,
+            updatedAt = ?
+          WHERE shop = ?`,
+    args: [
+      creditsPerPeriod,
+      settled.purchasedCredits,
+      settled.trialCredits,
+      now,
+      shop,
+    ],
+  });
+}
+
+async function loadGrantLogsForSubscription(
+  shop: string,
+  shopifySubscriptionId: string,
+): Promise<Array<{ eventType: string; metadata: unknown }>> {
+  const rs = await getTsfDb().execute({
+    sql: `SELECT eventType, metadata FROM BillingLog
+          WHERE shop = ?
+            AND referenceId = ?
+            AND eventType IN ('SUBSCRIPTION_ACTIVATED','SUBSCRIPTION_RENEWED')
+          ORDER BY createdAt ASC`,
+    args: [shop, shopifySubscriptionId],
+  });
+  return rs.rows.map((row) => ({
+    eventType: String(row.eventType),
+    metadata: row.metadata,
+  }));
+}
+
+/**
+ * 迁移/空洞场景写入 baseline（creditsDelta=0），
+ * 标记「当前窗口及以前默认已在旧服务发放」，以便下一窗口能正常触发。
+ * 若该 creditCycleIndex 已有记录则不再写入。
+ */
+async function ensureAnnualMigrationBaseline(params: {
+  shop: string;
+  shopifySubscriptionId: string;
+  planKey: string;
+  billingPeriodEnd: Date;
+  creditCycleIndex: number;
+  existingGrantLogs: Array<{ eventType: string; metadata: unknown }>;
+}): Promise<void> {
+  const {
+    shop,
+    shopifySubscriptionId,
+    planKey,
+    billingPeriodEnd,
+    creditCycleIndex,
+    existingGrantLogs,
+  } = params;
+  const already = collectGrantedAnnualCreditCycleIndexes(
+    existingGrantLogs,
+    billingPeriodEnd,
+  );
+  if (already.includes(creditCycleIndex)) return;
+
+  const window = getAnnualCreditWindow(billingPeriodEnd, creditCycleIndex);
+  const now = new Date().toISOString();
+  await getTsfDb().execute({
+    sql: `INSERT INTO BillingLog (
+            id, shop, eventType, planKey, referenceId, creditsDelta, usedCredits, metadata, createdAt
+          ) VALUES (?, ?, 'SUBSCRIPTION_RENEWED', ?, ?, ?, ?, ?, ?)`,
+    args: [
+      randomUUID(),
+      shop,
+      planKey,
+      shopifySubscriptionId,
+      0,
+      null,
+      JSON.stringify({
+        grantKind: "migration_assumed",
+        creditCycleIndex,
+        billingPeriodEnd: billingPeriodEnd.toISOString(),
+        creditWindowStart: window.start.toISOString(),
+        creditWindowEnd: window.end.toISOString(),
+        source: "worker_reconcile",
+        note: "Assume prior annual credit grants already issued elsewhere; no catch-up",
+      }),
+      now,
+    ],
+  });
 }
 
 function resultWithSnapshot(
@@ -539,9 +766,10 @@ function resultWithSnapshot(
 
 async function reconcileOneShop(
   shop: string,
-  local: LocalSubscription,
+  localInput: LocalSubscription,
   dryRun = false,
 ): Promise<ReconcileShopResult> {
+  let local = localInput;
   const accessToken = await getOfflineAccessTokenFromTsf(shop);
   if (!accessToken) {
     return resultWithSnapshot(
@@ -590,30 +818,24 @@ async function reconcileOneShop(
       credits: local.creditsPerPeriod,
     };
 
+  // currentPeriodEnd = Shopify 下次扣款时间（月付/年付统一）；禁止用 createdAt 推算账期。
   const currentPeriodEnd =
     shopifySub.currentPeriodEnd ??
+    local.currentPeriodEnd ??
     new Date(Date.now() + (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS);
   const currentPeriodStart = new Date(
     currentPeriodEnd.getTime() - (INTERVAL_DAYS[billingInterval] ?? 30) * DAY_MS,
   );
 
-  const needsSync =
-    shopifySub.id !== local.shopifySubscriptionId ||
-    isRenewal(local, currentPeriodEnd) ||
-    isPeriodEndBehindShopify(local.currentPeriodEnd, currentPeriodEnd);
+  const sameSubscription = shopifySub.id === local.shopifySubscriptionId;
+  const periodEndAdvanced = sameSubscription && isRenewal(local, currentPeriodEnd);
+  const periodFieldsMismatch =
+    !sameSubscription ||
+    billingInterval !== local.billingInterval ||
+    datesDiffer(local.currentPeriodEnd, currentPeriodEnd) ||
+    datesDiffer(local.currentPeriodStart, currentPeriodStart);
 
-  if (!needsSync) {
-    return resultWithSnapshot(
-      { shop, action: "skipped", reason: "already_synced" },
-      local,
-      shopifySub,
-    );
-  }
-
-  if (
-    shopifySub.id === local.shopifySubscriptionId &&
-    isRenewal(local, currentPeriodEnd)
-  ) {
+  if (periodEndAdvanced) {
     const accRs = await getTsfDb().execute({
       sql: `SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits
             FROM Account WHERE shop = ? LIMIT 1`,
@@ -645,21 +867,142 @@ async function reconcileOneShop(
         },
       });
     }
-    return resultWithSnapshot({ shop, action: "renewed" }, local, shopifySub);
+    return resultWithSnapshot(
+      { shop, action: "renewed", reason: "shopify_period_advanced" },
+      local,
+      shopifySub,
+    );
   }
 
-  if (!dryRun) {
-    await activateOrReplaceSubscription({
-      shop,
-      shopifySub,
-      planKey: plan.planKey,
+  if (!sameSubscription) {
+    if (!dryRun) {
+      await activateOrReplaceSubscription({
+        shop,
+        shopifySub,
+        planKey: plan.planKey,
+        billingInterval,
+        creditsPerPeriod: plan.credits,
+        currentPeriodStart,
+        currentPeriodEnd,
+      });
+    }
+    return resultWithSnapshot({ shop, action: "activated" }, local, shopifySub);
+  }
+
+  if (periodFieldsMismatch) {
+    if (!dryRun) {
+      await syncLocalPeriodFields({
+        shop,
+        shopifySubscriptionId: shopifySub.id,
+        billingInterval,
+        planKey: plan.planKey,
+        creditsPerPeriod: plan.credits,
+        currentPeriodStart,
+        currentPeriodEnd,
+      });
+    }
+    local = {
+      ...local,
+      shopifySubscriptionId: shopifySub.id,
       billingInterval,
+      planKey: plan.planKey,
       creditsPerPeriod: plan.credits,
       currentPeriodStart,
       currentPeriodEnd,
-    });
+    };
   }
-  return resultWithSnapshot({ shop, action: "activated" }, local, shopifySub);
+
+  if (billingInterval === "ANNUAL") {
+    const grantLogs = await loadGrantLogsForSubscription(
+      shop,
+      local.shopifySubscriptionId,
+    );
+    const grantedCycleIndexes = collectGrantedAnnualCreditCycleIndexes(
+      grantLogs,
+      currentPeriodEnd,
+    );
+    const decision = decideAnnualCreditGrant({
+      currentPeriodEnd,
+      grantedCycleIndexes,
+    });
+
+    if (decision.action === "grant") {
+      const accRs = await getTsfDb().execute({
+        sql: `SELECT subscriptionCredits, purchasedCredits, trialCredits, usedCredits
+              FROM Account WHERE shop = ? LIMIT 1`,
+        args: [shop],
+      });
+      const acc = accRs.rows[0];
+      if (!acc) {
+        return resultWithSnapshot(
+          { shop, action: "error", reason: "no_account" },
+          local,
+          shopifySub,
+        );
+      }
+      if (!dryRun) {
+        await grantAnnualCreditCycle({
+          shop,
+          local,
+          account: {
+            subscriptionCredits: Number(acc.subscriptionCredits ?? 0),
+            purchasedCredits: Number(acc.purchasedCredits ?? 0),
+            trialCredits: Number(acc.trialCredits ?? 0),
+            usedCredits: Number(acc.usedCredits ?? 0),
+          },
+          planKey: plan.planKey,
+          creditsPerPeriod: plan.credits,
+          billingPeriodEnd: currentPeriodEnd,
+          creditCycleIndex: decision.creditCycleIndex,
+        });
+      }
+      return resultWithSnapshot(
+        {
+          shop,
+          action: "renewed",
+          reason: `annual_credit_cycle_${decision.creditCycleIndex}`,
+        },
+        local,
+        shopifySub,
+      );
+    }
+
+    // 迁移/空洞：写 baseline 标记当前窗已默认发放，下一窗才能按水位+1 触发。
+    if (decision.reason === "migration_assumed_granted" && !dryRun) {
+      await ensureAnnualMigrationBaseline({
+        shop,
+        shopifySubscriptionId: local.shopifySubscriptionId,
+        planKey: plan.planKey,
+        billingPeriodEnd: currentPeriodEnd,
+        creditCycleIndex: decision.currentCycleIndex,
+        existingGrantLogs: grantLogs,
+      });
+    }
+
+    return resultWithSnapshot(
+      {
+        shop,
+        action: "skipped",
+        reason: decision.reason,
+      },
+      local,
+      shopifySub,
+    );
+  }
+
+  if (periodFieldsMismatch) {
+    return resultWithSnapshot(
+      { shop, action: "skipped", reason: "period_fields_synced" },
+      local,
+      shopifySub,
+    );
+  }
+
+  return resultWithSnapshot(
+    { shop, action: "skipped", reason: "already_synced" },
+    local,
+    shopifySub,
+  );
 }
 
 async function reconcileShopWithoutLocal(
@@ -772,9 +1115,11 @@ async function listLocalSubscriptions(params: {
     args.push(params.shopFilter);
   }
   if (params.dueBefore) {
+    // 月付：Shopify currentPeriodEnd 到期；年付：始终纳入（额度窗由 periodEnd 推导，不写回 periodEnd）
     where.push("s.status = 'ACTIVE'");
-    where.push("s.currentPeriodEnd IS NOT NULL");
-    where.push("s.currentPeriodEnd <= ?");
+    where.push(
+      `(s.billingInterval = 'ANNUAL' OR (s.currentPeriodEnd IS NOT NULL AND s.currentPeriodEnd <= ?))`,
+    );
     args.push(params.dueBefore.toISOString());
   }
 
@@ -961,6 +1306,14 @@ async function releaseRenewalEmailClaim(logId: string): Promise<void> {
   });
 }
 
+/** Shopify 年/月账期推进才发续费邮件；年付 30 天额度窗发放不发。 */
+function shouldSendReconcileRenewalEmail(result: ReconcileShopResult): boolean {
+  if (result.action !== "renewed") return false;
+  const reason = result.reason ?? "";
+  if (reason.startsWith("annual_credit_cycle_")) return false;
+  return true;
+}
+
 async function sendRenewalEmailForShop(
   shop: string,
   logTag = "[billingReconcile]",
@@ -990,7 +1343,7 @@ async function sendRenewalEmailForShop(
       sql: "SELECT creditsPerPeriod FROM AppSubscription WHERE shop = ? AND status = 'ACTIVE' LIMIT 1",
       args: [shop],
     }),
-    fetchShopContact(shop, { preferLegacyToken: true }).catch(() => null),
+    fetchShopContact(shop).catch(() => null),
     getTsfAccountRemaining(shop),
   ]);
 
@@ -1050,11 +1403,18 @@ export async function runBillingSubscriptionReconcile(): Promise<void> {
 
     for (const result of summary.details) {
       if (result.action === "renewed") {
-        console.log(`[billingReconcile] renewed ${result.shop}`);
-        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
-        void sendRenewalEmailForShop(result.shop).catch((err) =>
-          console.warn(`[billingReconcile] renewal email failed shop=${result.shop}`, err),
+        console.log(
+          `[billingReconcile] renewed ${result.shop}${result.reason ? ` (${result.reason})` : ""}`,
         );
+        if (shouldSendReconcileRenewalEmail(result)) {
+          // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
+          void sendRenewalEmailForShop(result.shop).catch((err) =>
+            console.warn(
+              `[billingReconcile] renewal email failed shop=${result.shop}`,
+              err,
+            ),
+          );
+        }
       } else if (result.action === "activated") {
         console.log(`[billingReconcile] activated ${result.shop}`);
       } else if (result.action === "cancelled") {
@@ -1104,15 +1464,21 @@ export async function runBillingSubscriptionNearDueReconcile(): Promise<void> {
 
     for (const result of summary.details) {
       if (result.action === "renewed") {
-        console.log(`[billingReconcile:nearDue] renewed ${result.shop}`);
-        // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
-        void sendRenewalEmailForShop(result.shop, "[billingReconcile:nearDue]").catch(
-          (err) =>
+        console.log(
+          `[billingReconcile:nearDue] renewed ${result.shop}${result.reason ? ` (${result.reason})` : ""}`,
+        );
+        if (shouldSendReconcileRenewalEmail(result)) {
+          // 续费成功 → 异步发邮件（非阻断）；BillingLog.metadata.renewalEmailSent 幂等防重
+          void sendRenewalEmailForShop(
+            result.shop,
+            "[billingReconcile:nearDue]",
+          ).catch((err) =>
             console.warn(
               `[billingReconcile:nearDue] renewal email failed shop=${result.shop}`,
               err,
             ),
-        );
+          );
+        }
       } else if (result.action === "activated") {
         console.log(`[billingReconcile:nearDue] activated ${result.shop}`);
       } else if (result.action === "cancelled") {

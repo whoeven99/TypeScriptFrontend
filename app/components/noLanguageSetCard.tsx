@@ -1,10 +1,8 @@
-import { Card, Space, Typography } from "antd";
+import { Space } from "antd";
 import Button from "~/ui/components/AppButton";
 import { useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import AppSectionCard from "~/ui/components/AppSectionCard";
-
-const { Title, Paragraph } = Typography;
 
 const NoLanguageSetCard = () => {
   const navigate = useNavigate(); // 用来处理路由跳转

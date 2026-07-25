@@ -28,12 +28,17 @@ import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import {
   buildManageActionErrorResponse,
+  getManageTranslationLoadErrorMessage,
   logManageTranslationGraphQLErrorDetail,
 } from "~/utils/manageTranslationErrors";
+import {
+  applyManageResourceTranslationUpdates,
+  splitManageSaveResults,
+} from "~/utils/manageSave";
 
 const { Sider, Content } = Layout;
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 如果没有 language 参数，直接返回空数据
@@ -678,7 +683,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -715,7 +720,6 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",

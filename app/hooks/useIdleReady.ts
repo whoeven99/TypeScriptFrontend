@@ -20,10 +20,10 @@ export function useIdleReady(timeout = 2500) {
       };
     }
 
-    const id = window.setTimeout(markReady, Math.min(timeout, 1500));
+    const id = globalThis.setTimeout(markReady, Math.min(timeout, 1500));
     return () => {
       cancelled = true;
-      window.clearTimeout(id);
+      globalThis.clearTimeout(id);
     };
   }, [ready, timeout]);
 

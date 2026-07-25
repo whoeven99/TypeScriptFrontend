@@ -10,12 +10,6 @@ import HeadingMenu from "./components/Heading";
 import { Button, InlineStack, Tooltip } from "@shopify/polaris";
 
 const Commands = ({ editor, handleTiptap, className, readOnly }: any) => {
-  const sanitizeHtml = (html: any) => {
-    return html
-      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "") // 移除 script
-      .replace(/\son\w+="[^"]*"/gi, ""); // 移除 onClick/onError 等事件
-  };
-
   const textareaRef = useRef(null);
 
   const [isHtmlMode, setIsHtmlMode] = useState(false);

@@ -18,6 +18,8 @@ right route, server helper, worker, extension, script, or Prisma model.
    rewrite whole files for encoding cleanup unless explicitly asked.
 7. For Shopify, billing, quota, worker, and live-store writeback changes, verify
    the smallest meaningful path and report any remaining risk.
+8. `AGENTS.md` is the current root repo index. Do not assume a separate
+   `Agent.md` exists unless it has been restored in the live checkout.
 
 ## Project Overview
 
@@ -73,7 +75,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `scripts/*` | Migration, audit, diagnostic, cleanup, and one-off operational scripts. |
 | `public/locales/*/translation.json` | App i18n strings. Add at least `en` and `zh-CN` for new UI text. |
 | `.github/workflows/tsf-deploy.yml` | Manual Shopify extension/config and Render app/worker deployment workflow. |
-| `Dockerfile`, `DockerfileDev`, `DockerfileProd` | Render container builds for the Remix app; the worker is built from `worker/`. |
+| `Dockerfile` | Render container build for the Remix app; the worker is built from `worker/`. |
 
 ## Commands And Validation
 
@@ -88,8 +90,12 @@ Package scripts:
   mode or from compiled `worker/dist`.
 - `npm run lint`: repository ESLint check; existing repository-wide noise may
   make a focused build/type check more useful for small changes.
+- `npm run core:build`: build shared `packages/translation-core` into `.build`.
 - `npm run turso:migrate:test` / `npm run turso:migrate:prod`: run Turso migrations.
 - `npm run deployTest` / `npm run deployProd`: Shopify app deploy with matching config.
+- `npm run push:pr`: commit (skips secrets) → push → create/reuse PR (`PR_URL:`).
+- `npm run merge:deploy:test`: squash-merge current PR to master, then trigger
+  test web + worker deploy (`MERGED_PR_URL:`, `DEPLOY_RUN_URL:`).
 
 Validation choices:
 
@@ -110,6 +116,16 @@ execution docs that were consolidated into this file.
 - Polaris is the visual and semantic baseline. Ant Design is allowed for complex
   tables, charts, dense filters, modal interiors, and high-density business
   controls.
+- **Dropdowns in the embedded app:** prefer Polaris `Select` for single-select
+  and chip / `ChoiceList` / `Combobox` for multi-select. Avoid Ant Design
+  `Select` on translate-v4 / create-task surfaces unless there is a strong
+  reason; do not add page-local CSS that overrides `.ant-select-selection-item`
+  globally inside a card (it breaks Ant single-select layout). ESLint
+  `no-restricted-imports` blocks `Select` from `antd` under
+  `app/routes/app.translate-v4/**`. Remaining Ant Selects (allow for now):
+  manage-translation header / custom liquid / glossary / currency edit /
+  productImage — prefer Polaris when those screens are next touched. Cursor
+  rule: `.cursor/rules/polaris-dropdowns.mdc`.
 - Ant Design theme values should be derived from Polaris-like tokens through
   `app/ui/theme.ts`; avoid creating a second visual system.
 - Prefer existing shared wrappers in `app/ui/components/*`, including
@@ -156,6 +172,8 @@ execution docs that were consolidated into this file.
 - `/app/glossary`: `app/routes/app.glossary/route.tsx`.
 - `/app/pricing`: `app/routes/app.pricing/route.tsx`.
 - `/app/shop-profile`: `app/routes/app.shop-profile/route.tsx`; nav is hidden in production.
+- Treat an `app/routes/app.*` directory without a route file as inactive until a
+  real `route.tsx` or route module is added.
 
 ### API Routes
 
@@ -166,6 +184,7 @@ execution docs that were consolidated into this file.
 - `/api/storefront/*`: `app/routes/api.storefront.$.ts`, the Shopify App Proxy API.
 - `/api/picture/*`: `app/routes/api.picture.{product,shop,upload,upsert,delete,save-from-url}.ts`.
 - `/api/translate-v4/tasks`: `app/routes/api.translate-v4.tasks.ts`.
+- `/api/translate-v4/estimate`: `app/routes/api.translate-v4.estimate.ts`.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
@@ -188,8 +207,23 @@ Core files:
   `v4JobNotice.ts`, `localeDisplay.ts`.
 - Client create-task helper: `app/lib/createTranslateV4Tasks.ts`.
 - Create/list jobs: `app/routes/api.translate-v4.tasks.ts`.
+- Create-task credit estimate (display upper bound): 
+  `app/server/translateV4/creditEstimate.server.ts` (`credits ≈ ceil(chars × k)`,
+  default `k=1.6` / `TRANSLATE_ESTIMATE_CREDITS_PER_CHAR`),
+  `app/routes/api.translate-v4.estimate.ts`,
+  `app/routes/app.translate-v4/useCreateTaskEstimate.ts` (wired in
+  `CreateTaskCard` / `route.tsx`). Uses shop scan `moduleStats.chars` +
+  coverage untranslated ratio; not the worker bill formula.
 - Pause/resume/cancel/delete: `app/routes/api.translate-v4.task-action.ts`.
 - Progress summaries: `app/server/translateV4/progress.server.ts`.
+- Init activity UI (module `x/N` bar + i18n activity log): Redis fields
+  `initModulesTotal` / `initModulesDone` / `initActiveModules` /
+  `initCompletedModules` / `initPhase` written by `initWorker.ts`; rendered in
+  `JobExpandedDetail.tsx` via `v4.initLog.*` locale keys.
+- Shop profile prompt for live translation: `shopProfilePrompt.server.ts`
+  (`buildShopProfilePromptBlock`) and `shopProfileContext.server.ts`
+  (`loadShopProfilePromptBlock`); manual create-task and single-field paths
+  persist/pass `profileBlock` on the Cosmos job / sync call.
 - Cosmos jobs: `app/server/translateV4/cosmos.server.ts`.
 - Redis progress/control/hints: `app/server/translateV4/redis.server.ts`.
 - Blob helpers: `app/server/translateV4/blob.server.ts`.
@@ -201,19 +235,24 @@ Core files:
   `app/server/translateV4/singleTranslate.server.ts` ->
   `packages/translation-core/src/syncTranslate.ts` / `llmTranslate.ts`.
 - Shared translation rules and safeguards live in
-  `packages/translation-core/src/*`. App-side `*.server.ts` compatibility files
-  and Worker `llmTranslate.ts` / `syncTranslate.ts` are thin adapters/re-exports.
+  `packages/translation-core/src/*`. Worker `llmTranslate.ts` is a thin adapter;
+  App and Worker filter/count callers import translation-core subpaths directly.
 
 Data flow:
 
 1. UI calls `createTranslateV4Tasks()`.
-2. `POST /api/translate-v4/tasks` validates locales, modules, and quota guard.
-3. `createV4Job()` writes a Cosmos job and pushes a Redis init hint into the
-   **manual** or **auto** pool queue (`translate:v4:hint:init:{manual|auto}`).
+2. `POST /api/translate-v4/tasks` validates locales, modules, and quota guard;
+   loads `profileBlock` via `loadShopProfilePromptBlock` for manual jobs.
+3. `createV4Job()` writes a Cosmos job (may include `profileBlock`) and pushes a
+   Redis init hint into the **manual** or **auto** pool queue
+   (`translate:v4:hint:init:{manual|auto}`). Cosmos jobs must never contain a
+   Shopify access token.
 4. `worker/src/workers/initWorker.ts` claims via `fairStageClaim` (manual first),
-   reads Shopify translatable resources and writes init blobs.
-5. `worker/src/workers/translateWorker.ts` reads blobs, calls LLMs, writes
-   checkpoints, updates Redis/Cosmos progress, and deducts quota.
+   resolves the current offline token from Turso `Session`, reads Shopify
+   translatable resources, and writes init blobs.
+5. `worker/src/workers/translateWorker.ts` reads blobs, calls LLMs (passing
+   `job.profileBlock` when present), writes checkpoints, updates Redis/Cosmos
+   progress, and deducts quota.
 6. `worker/src/workers/writebackWorker.ts` writes translations back to Shopify.
 7. UI polls summaries/progress and renders job state.
 
@@ -229,7 +268,8 @@ Common edits:
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,
   `TaskQueueSection.tsx`, and `JobExpandedDetail.tsx`.
 - Change coverage/counts: inspect `coverage.server.ts`, `itemsCount.server.ts`,
-  and `api.translate-v4.coverage.ts`.
+  `metricsUtils.ts`, worker `itemsCount.ts` / `metricsUtils.ts`, and
+  `api.translate-v4.coverage.ts`.
 - Change copy: update locale JSON and any helper in `v4I18n.ts`.
 
 ### Translation Core And Filters
@@ -239,9 +279,18 @@ Common edits:
 - Runtime ports: `packages/translation-core/src/runtime.ts`.
 - App adapter: `app/server/translateV4/translationCoreRuntime.server.ts`.
 - Worker adapter: `worker/src/services/translationCoreRuntime.ts`.
+- EMAIL / packing-slip Liquid HTML: `packages/translation-core/src/liquidHtmlTranslate.ts`
+  (`liquid_html` klass). Block tags `{% %}` are masked then carried in skipped
+  `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
+  literals like `else` and `Default Title` never enter the LLM text pool;
+  `{{ }}` stays in-place for `maskPlaceholders`.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
+
+Translation-core compiles into ignored `packages/translation-core/.build`.
+`packages/translation-core/dist` must not exist locally or in Git; if it appears,
+remove it and fix the command that recreated it.
 
 Filter decision chain:
 
@@ -268,8 +317,12 @@ Entries:
 
 - `worker/src/index.ts`: env loading, Redis ping, shutdown, scheduler start.
 - `worker/src/scheduler.ts`: polls init/translate/writeback, email, shop scan,
-  and auto-translate; also runs deploy wake/stale reset, empty auto-job cleanup,
-  and subscription reconciliation schedules.
+  and auto-translate; also runs scheduled shop-scan enqueue (target slot =
+  `(currentSlot - 1) % slots`, i.e. 1h after the shop's auto slot), deploy
+  wake/stale reset, empty auto-job cleanup, hourly v4 job retention cleanup
+  (`cleanupOldJobs`，默认每小时 :40), shop_scan_jobs retention
+  (`cleanupOldShopScanJobs`，默认每小时 :50), and subscription reconciliation
+  schedules.
 - `worker/src/env.ts`: required env diagnostics.
 - `worker/src/shutdown.ts`: shared shutdown flag; `index.ts` releases jobs
   claimed by the current process on SIGTERM/SIGINT before exit.
@@ -280,7 +333,8 @@ Pipeline:
 - `worker/src/workers/translateWorker.ts`: translation stage, LLM calls,
   checkpoints, quota, pause/cancel.
 - `worker/src/workers/writebackWorker.ts`: Shopify translation writeback.
-- `worker/src/workers/shopScanWorker.ts`: shop profile scan.
+- `worker/src/workers/shopScanWorker.ts`: shop scan（install/scheduled 计量；
+  manual AI 画像；glossary 阶段已停用）。
 - `worker/src/workers/emailWorker.ts`: notifications.
 
 Services:
@@ -290,20 +344,59 @@ Services:
 - `worker/src/services/redisV4.ts`: progress, **split auto/manual hint queues**, control keys.
 - `worker/src/services/fairStageClaim.ts`: claim order = manual hint → auto hint →
   legacy mixed queue → Cosmos scan (manual first). Manual never waits behind auto.
-- `worker/src/services/llmTranslate.ts`, `syncTranslate.ts`: thin Worker entry
-  points into `@ciwi/translation-core`.
+- `worker/src/services/shopifyFetch.ts`, `shopifyConcurrency.ts`: Shopify Admin
+  GraphQL fetch and per-shop adaptive concurrency driven by cost bucket / 429
+  feedback; init and writeback use this path. Shopify access tokens are loaded
+  just-in-time from Turso `Session`; do not persist copies in Cosmos, Redis,
+  Blob, job payloads, or other business tables.
+- `worker/src/services/shopAccessToken.ts`: the enforced Worker token boundary;
+  it only reads an offline token from Turso `Session` and has no fallback/cache.
+- `worker/src/services/shopifyBulkShared.ts`: shared Shopify bulk primitives
+  (submit / poll / cancel / JSONL stream / sliding-window queue ≤5).
+- `worker/src/services/shopifyBulkFetch.ts`: allowlist-only **init** via shared
+  bulk queue → filter → Blob chunks; non-allowlist shops stay on paginated
+  `shopifyFetch`.
+- `worker/src/services/shopScan/bulkScanCounts.ts`: shop scan metrics **always**
+  use shared bulk JSONL (no allowlist); failure falls back to paginated
+  `scanCounts.countModuleScan`. Wired in `stageContentSize` / `stageCoverage`.
+- `worker/src/services/llmTranslate.ts`: thin Worker entry point into
+  `@ciwi/translation-core`.
+- `worker/src/services/translationCoreRuntime.ts` + `tsfDb.ts`: Worker runtime
+  ports; glossary rows load via `loadGlossaryRowsFromTsf()` (no separate
+  `glossary.ts`).
+- `worker/src/services/writebackFields.ts`: writeback field shaping helpers.
+- `worker/src/services/shopifyAdminApiVersion.ts`: Worker Shopify Admin API
+  version (keep aligned with `app/lib/shopifyAdminApiVersion.ts`).
 - `packages/translation-core/src/*`: LLM routing, translation memory, glossary
   injection, HTML/JSON handling, filters, quality rules, placeholders, prompt
   constraints, and field limits shared by App and Worker.
+- `worker/src/services/itemsCount.ts`, `metricsUtils.ts`: worker-side count and
+  metric reconciliation helpers kept aligned with `app/server/translateV4/*`.
 - `worker/src/services/userFacingMessages.ts`: Worker status messages.
 - `worker/src/services/tsfQuota.ts`: quota query/deduct adapter.
 - `worker/src/services/stagePool.ts`: stage concurrency (auto/manual slot pools).
+- `worker/src/services/finalizeJobAfterWriteback.ts`: post-writeback final status
+  selection and Redis `items_count` refresh for completed jobs.
+- `worker/src/services/recordJobUsageSnapshot.ts`: task-terminal usage snapshot
+  into Turso `TranslateV4JobUsage` (time / tokens / units / chars; survives Cosmos
+  job retention cleanup).
+- `worker/src/services/translationReport.ts` and
+  `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
+  for translated blob entries.
 - `worker/src/services/autoTranslate.ts`, `autoScanSchedule.ts`: auto translate.
+- `worker/src/services/scheduledShopScan.ts`: scheduled metrics shop scan
+  enqueue（同分槽 / 时区，默认每小时 :30，槽位相对 auto 延后 1h；`trigger: scheduled`）。
 - `worker/src/services/cleanupEmptyAutoJobs.ts`, `autoJobCleanup.ts`: automatic
   job cleanup helpers; the scheduler invokes `cleanupStaleEmptyAutoJobs()`.
+- `worker/src/services/cleanupOldJobs.ts`: hourly retention cleanup（默认每小时
+  :40）for **auto** v4 jobs (`TsFrontend-Auto`) older than N days (default 7).
+  Manual jobs are kept. Deletes Cosmos + Blob + Redis slowly with per-job /
+  per-blob delays; skips jobs with a fresh worker heartbeat. Scheduled from
+  `scheduler.ts` via `scheduleJobRetentionCleanup()`.
 - `worker/src/services/billingSubscriptionReconcile.ts`: near-due and periodic
   Shopify subscription reconciliation against Turso.
-- `worker/src/services/shopScan/*`: shop profile scan stages.
+- `worker/src/services/shopScan/*`: shop profile scan stages；计量
+  `contentSize` / `coverage` 经 `bulkScanCounts.ts` 全量 bulk JSONL。
 
 Hint queue keys (Redis lists):
 
@@ -317,6 +410,9 @@ Important env names only:
 
 - Cosmos: `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_TRANSLATION_DATABASE_ID`,
   `COSMOS_TRANSLATION_V4_JOBS_CONTAINER`, and app-side `_V4` variants.
+  Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
+  `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
+  `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
@@ -327,10 +423,48 @@ Important env names only:
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
   `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
+- Shared Shopify bulk JSONL（init 灰度 + shop scan 全量）:
+  `SHOPIFY_BULK_SUBMIT_WINDOW` / `INIT_BULK_SUBMIT_WINDOW`（默认 5，同店上限）,
+  `SHOPIFY_BULK_POLL_MS` / `INIT_BULK_POLL_MS`（默认 1000）,
+  `SHOPIFY_BULK_DOWNLOAD_CONCURRENCY` / `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 5）,
+  `SHOPIFY_BULK_TIMEOUT_MS` / `INIT_BULK_TIMEOUT_MS`（默认 6h）.
+  Code: `worker/src/services/shopifyBulkShared.ts`.
+- Init bulk（仅灰度店；名单外仍分页）:
+  `INIT_BULK_SHOP_ALLOWLIST`（逗号分隔 shopName，空=全关）,
+  `INIT_BULK_FALLBACK`（默认开，失败回退分页）.
+  Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
+- Shop scan bulk（计量全量，无 allowlist）:
+  `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）.
+  Code: `worker/src/services/shopScan/bulkScanCounts.ts` →
+  `stageContentSize.ts` / `stageCoverage.ts`.
+- Init Blob chunk 大小（page/bulk 共用，按文件字节切分，不再按资源数）:
+  `TRANSLATION_MAX_CHUNK_BYTES`（默认 2MiB；单资源超限则独占一个 chunk）.
+  Code: `worker/src/services/shopifyFetch.ts` `chunkResources`.
 - Auxiliary schedules: `SHOP_SCAN_POLL_INTERVAL_MS`, `EMAIL_WORKER_INTERVAL_MS`,
   `AUTO_EMPTY_JOB_CLEANUP_INTERVAL_MS`,
   `BILLING_SUBSCRIPTION_RECONCILE_INTERVAL_MS`, and
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
+- Scheduled shop scan（计量复扫，与 auto 同一时区 / slots；目标槽
+  `(currentSlot - 1) % slots`，即相对同店 auto 延后 1h）：
+  `SHOP_SCAN_SCHEDULE_ENABLED` (default true),
+  `SHOP_SCAN_SCHEDULE_MINUTE` (default 30；与 auto 的 :00 错开),
+  `SHOP_SCAN_SHARD_COOLDOWN_MS` (default 同 `AUTO_TRANSLATE_SHARD_COOLDOWN_MS` / 20h),
+  `SHOP_SCAN_MAX_ENQUEUE_PER_TICK` (default 0=不限)。
+  时区 / slots 复用 `AUTO_TRANSLATE_SCHEDULE_TZ` /
+  `AUTO_TRANSLATE_SLOTS_PER_DAY`；触发分钟用 `SHOP_SCAN_SCHEDULE_MINUTE`。
+  Code: `worker/src/services/scheduledShopScan.ts`.
+- V4 **auto** job retention cleanup (hourly :40, slow delete; manual jobs kept):
+  `V4_JOB_RETENTION_CLEANUP_ENABLED` (default true),
+  `V4_JOB_RETENTION_DAYS` (default 7),
+  `V4_JOB_RETENTION_CLEANUP_TZ` (default `Asia/Shanghai`),
+  `V4_JOB_RETENTION_CLEANUP_MINUTE` (default 40；每小时该分钟触发),
+  `V4_JOB_RETENTION_CLEANUP_INTERVAL_MS` (default 1h),
+  `V4_JOB_RETENTION_CLEANUP_MAX_PER_RUN` (default 150；删不完下小时继续),
+  `V4_JOB_RETENTION_CLEANUP_DELAY_MS` (default 1000 between jobs),
+  `V4_JOB_RETENTION_BLOB_DELETE_DELAY_MS` (default 50 between blobs),
+  `V4_JOB_RETENTION_CLEANUP_QUERY_BATCH`,
+  `V4_JOB_RETENTION_HEARTBEAT_GRACE_MS`.
+  Code: `worker/src/services/cleanupOldJobs.ts`.
 - Render prod error digest → Feishu:
   `RENDER_API_KEY`, `FEISHU_WEBHOOK_URL_RENDER_DIGEST`,
   `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 1h),
@@ -350,6 +484,7 @@ Models:
 
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
+- `TranslateV4JobUsage`: per v4 job usage snapshot (Worker writes on terminal status).
 
 Code:
 
@@ -362,8 +497,14 @@ Code:
 - `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
 - `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
   (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
-- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only 12h Shopify
-  subscription period reconciliation (writes Turso directly; does not call TSF Web).
+- `worker/src/services/billingSubscriptionReconcile.ts`: worker-only Shopify
+  subscription reconciliation (writes Turso directly; does not call TSF Web).
+  Syncs `AppSubscription.currentPeriodEnd/Start` from Shopify for MONTHLY and
+  ANNUAL; for ANNUAL also grants monthly credits every 30 days (max 12 per
+  Shopify year) derived from `currentPeriodEnd` (never from `createdAt`).
+- `worker/src/services/annualCreditCycle.ts` and
+  `app/server/billing/subscription/annualCreditCycle.server.ts`: shared pure
+  helpers for annual credit-cycle math.
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
 - `app/routes/app.pricing/route.tsx`: pricing UI/actions.
@@ -386,12 +527,26 @@ Billing notes:
 - TSF quota remaining is derived from `subscriptionCredits + purchasedCredits +
   trialCredits - usedCredits`.
 - Worker 额度读写直连 Turso Account。
-- Worker runs a near-due reconciliation every 30 minutes and a full subscription
-  reconciliation every 12 hours by default (both configurable) inside the
-  worker process when Turso credentials are set. TSF Web does not schedule or
-  execute these jobs.
+- `AppSubscription.currentPeriodEnd` is always the Shopify next-charge time
+  (MONTHLY ≈ +30d, ANNUAL ≈ +365d). `currentPeriodStart = end - intervalDays`.
+  Do not use `createdAt` as a billing or credit-cycle anchor.
+- Annual plans still bill once per year in Shopify, but TSF grants the monthly
+  `PlanCatalog.credits` every 30 days within that year (max 12). Mid-year grants
+  are Worker-driven (`grantKind: annual_credit_cycle` on `BillingLog`) and must
+  not overwrite `currentPeriodEnd`. After 12 grants, wait for Shopify year renewal.
+- Annual credit grants **never catch up history**. Decision uses the current
+  30-day window vs TSF `creditCycleIndex` watermark only (`maxGranted + 1`).
+  Migrated shops with no TSF cycle logs (or a large gap vs the current window)
+  are assumed already granted elsewhere; Worker writes `grantKind:
+  migration_assumed` (`creditsDelta: 0`) as a baseline so the *next* window can
+  fire normally. See `annualCreditCycle.ts` / `annualCreditCycle.server.ts`.
+- Worker runs a near-due reconciliation every 30 minutes (includes all ACTIVE
+  ANNUAL shops for credit-cycle checks) and a full subscription reconciliation
+  every 12 hours by default (both configurable) inside the worker process when
+  Turso credentials are set. TSF Web does not schedule or execute these jobs.
 - Subscription renewal emails (template 143058) are sent from webhook, near-due,
-  and full reconcile on `renewed`. Idempotency uses
+  and full reconcile on Shopify period `renewed` only — not on
+  `annual_credit_cycle_*`. Idempotency uses
   `BillingLog.metadata.renewalEmailSent` so the three paths do not double-send.
 
 ### Currency
@@ -419,13 +574,14 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
   `extensions/ciwi-switcher/assets/ciwi-*.js`.
 - Constants: `app/lib/switcherConstants.ts`.
-- `ipOpen` is the live geolocation switch. Prisma model `IpRedirection` still
-  exists, but the current app/extension source has no live route or service
-  caller for it. Do not assume the removed `api.translate-v4.ip-redirections` /
-  `custom_redirects` path exists; verify and design a new owner before reviving
-  region-specific redirect records.
-- `ipOpen` 写入 Turso `SwitcherConfiguration`；确认保存时**不再**调用 Spring
-  `/userIp/addOrUpdateUserIp`。店面 IP 定位走 `ciwi-main.js` + ipapi。
+- `ipOpen` is the live geolocation switch and is stored on Turso
+  `SwitcherConfiguration`. The old `IpRedirection` table/model was dropped
+  (`prisma/migrations/20260713000000_drop_ip_redirection`). Do not assume the
+  removed `api.translate-v4.ip-redirections` / `custom_redirects` path or the
+  Prisma model still exist; design a new owner before reviving region-specific
+  redirect records.
+- 确认保存时**不再**调用 Spring `/userIp/addOrUpdateUserIp`。店面 IP 定位走
+  `ciwi-main.js` + ipapi。
 
 Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
 
@@ -493,34 +649,77 @@ Glossary:
 - Page: `app/routes/app.glossary/route.tsx`.
 - Server/API: `app/server/translateV4/glossary.server.ts`,
   `app/routes/api.translate-v4.glossary.ts`.
-- Worker injection: `worker/src/services/glossary.ts` is loaded by
-  `worker/src/services/llmTranslate.ts` for batch and single-field prompts.
+- Worker injection: `worker/src/services/translationCoreRuntime.ts` loads rows
+  via `tsfDb.loadGlossaryRowsFromTsf()` for batch/single prompts (no separate
+  `glossary.ts`).
 
-Shop Profile:
+Shop Profile / Shop Scan:
 
-- Page: `app/routes/app.shop-profile/route.tsx`.
+- Page (non-prod debug): `app/routes/app.shop-profile/route.tsx`.
 - API: `app/routes/api.shop-profile.ts`.
-- Server: `app/server/shopScan/*`.
+- Trigger: `app/server/shopScan/trigger.server.ts`（`enqueueShopScan`）。
+- Cosmos: `app/server/shopScan/cosmos.server.ts` /
+  `worker/src/services/shopScanCosmos.ts`（容器 `shop_scan_jobs`）。
 - Worker: `worker/src/workers/shopScanWorker.ts`,
   `worker/src/services/shopScan/*`.
-- Model: `ShopProfile`.
+- Scheduled enqueue: `worker/src/services/scheduledShopScan.ts`（挂在
+  `scheduler.ts`，与 init 同 gate）。
+- Model: `ShopProfile`（AI 画像当前生效行）；计量 summary 在 Cosmos + Redis
+  `items_count`。
+- **稳定 Blob 产物**（每店一份，覆盖写 / patch 合并）：
+  `shop-profile/{shop}/latest-scan.json`
+  （helper：`worker/src/services/shopScan/shopProfileArtifact.ts`）。
+  Job `blobPrefix` = `shop-profile/{shop}`。段：`contentSize`、轻量
+  `coverage`（无 perModule）、`profile`；`glossary` 段保留兼容、scan 不再写入。
+  `install`/`scheduled` 只更新计量段并**保留**已有 AI 段；`manual` 只更新
+  `profile` 并**保留**计量段（不再写 glossary）。读者（TSF `artifacts.server.ts` / Spark
+  `tsfShopProfileArtifacts.ts`）优先读该文件，再 fallback 旧
+  `shop-scan/{shop}/{scanId}/` 散文件。
+- **覆盖率双写分工**：`coverage` 阶段仍写 Redis `tsf:items_count`（线上权威，
+  v4 / 语言页 / Spark 语言覆盖率读此）；Blob latest-scan 只留 locale 汇总快照。
+- **shop_scan_jobs 清理**（与 v4 job retention 独立）：每小时 :50
+  （`cleanupOldShopScanJobs.ts`）；默认保留 7 天终态任务，每店保留最新一条
+  COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
+  `shop-scan/{shop}/{scanId}/`。开关：`SHOP_SCAN_JOB_CLEANUP_*`。
+- Admin 体量标签（超大/大/中等/小商店）：Cosmos DB `shop` / 容器
+  `shop_profile`（`type: "size"`）。由 shop scan `contentSize` 写入
+  （`worker/src/services/shopScan/shopSizeProfile.ts`）；Spark Admin 翻译任务
+  列表读取。翻译 INIT **不再**更新该文档。`dataBytes` 口径为源语言
+  `totalChars`；分档默认 2MB / 10MB / 50MB（`SHOP_SIZE_TIER_*_BYTES`）。
+- Trigger split:
+  - `install`（`app/routes/app.tsx` 首次进 App，生产也开，幂等）：只跑
+    `contentSize`（源语言总量）+ `coverage`（全部非主语言覆盖率，含未发布；
+    与 v4「刷新统计」/`selectShopTargetLocales` 同口径），无 AI。
+  - `scheduled`：同计量两段，复扫覆写 latest summary / Redis。Worker 每小时
+    :30 入队（与 auto 同一时区 / 24 槽；分钟默认 30，可用
+    `SHOP_SCAN_SCHEDULE_MINUTE` 覆盖），但目标槽为
+    `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
+    有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
+    已有进行中 scan 则跳过。
+  - `manual`（调试页按钮）：只跑 `profile`（AI）；`glossary` 阶段已停用（一律
+    SKIPPED）。跳过计量阶段，并从上一份 summary 合并计量字段，保证
+    `getLatestShopScanJob` 仍完整。
+- Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:
 
 - Treat `ShopProfile` as translation context, not only a display card.
 - Current scan/profile code extracts shop identity, industry, keywords,
   description, brand tone, coverage, glossary suggestions, and content scale.
-- Current production boundary: `buildShopProfilePromptBlock()` is used by the
-  shop-profile page to preview a context block. `llmTranslate.ts` has a
-  `profileBlock` parameter, but current callers pass an empty string and there is
-  no worker `shopProfilePrompt.ts`; shop profile is not yet injected into live
-  single, batch, or auto translation prompts.
-- Future work should enrich this into reusable translation context: shop
-  intelligence, content signals, terminology policy, market policy, and
-  module-specific translation policy.
+- Current production boundary:
+  - Preview: shop-profile page uses `buildShopProfilePromptBlock()`.
+  - Live manual create-task: `api.translate-v4.tasks.ts` →
+    `loadShopProfilePromptBlock` → Cosmos job `profileBlock` →
+    `translateWorker` passes it into translation-core.
+  - Live single-field: `singleTranslate.server.ts` loads and passes
+    `profileBlock` into sync translation.
+  - Not yet live for auto: `autoTranslate.ts` `createJob()` does not set
+    `profileBlock`. Prompt block construction lives in the App
+    (`shopProfilePrompt.server.ts`); there is no Worker-side builder.
+- Future work: enrich reusable translation context (shop intelligence, content
+  signals, terminology/market/module policy) and inject into auto-translate.
 - Prompt injection points include `buildShopProfilePromptBlock`,
-  `buildSystemPrompt`, single translation, batch translation, and future
-  auto-translate paths.
+  `buildSystemPrompt`, single translation, batch translation, and auto paths.
 - Do not dump raw full-store text into prompts. Prefer sampled, cleaned,
   weighted signals plus AI summarization.
 
@@ -543,11 +742,12 @@ Current models:
 - `ShopProfile`: AI-generated shop profile.
 - `SwitcherConfiguration`: storefront switcher settings.
 - `Currency`, `CurrencyRate`: currency list and rate cache.
-- `IpRedirection`: IP/region redirect settings.
 - `PageFlyTranslation`: PageFly translations.
 - `LiquidRule`: custom Liquid translation rules.
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
   `AccountPeriodUsage`: TSF billing/quota.
+- `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
+  units, source chars); written by Worker at job terminal states.
 - `SupportConversation`, `SupportMessage`: support chat.
 - `UserPicture`: product/shop image translation metadata and translated image
   URLs used by admin pages and storefront App Proxy reads.
@@ -568,7 +768,7 @@ and external AI/email providers).
 
 The legacy Spring wrapper `app/api/JavaServer.ts` has been deleted. Historical
 `Spring`, `Java`, and `legacy` wording remains in compatibility comments, enum
-values, old blob/token handling, and response-shape notes; it is not proof of a
+values, old blob handling, and response-shape notes; it is not proof of a
 live network dependency.
 
 Residual `SERVER_URL` or Spring DB references in env files are historical
@@ -617,23 +817,27 @@ For "合入PR然后发布测试环境", the script will:
 | --- | --- | --- |
 | Translation v4 UI | `app/routes/app.translate-v4/route.tsx` | `components/*`, `v4I18n.ts`, locales |
 | Create task failure | `app/lib/createTranslateV4Tasks.ts` | `api.translate-v4.tasks.ts`, quota guard, Cosmos/Redis |
-| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, worker `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
+| Single-field translation | `api.translate-v4.single.ts` | `singleTranslate.server.ts`, translation-core `syncTranslate.ts` / `llmTranslate.ts`, quota guard |
 | Stuck task/progress | `progress.server.ts` | worker scheduler/init/translate/writeback, Redis/Cosmos scripts |
 | Pause/resume/cancel bug | `api.translate-v4.task-action.ts` | `resumeStatus.ts`, worker control logic |
+| Post-writeback completion/counts | `worker/src/services/finalizeJobAfterWriteback.ts` | `worker/src/services/itemsCount.ts`, `app/server/translateV4/itemsCount.server.ts`, Redis `items_count` |
+| Worker Shopify throttling | `worker/src/services/shopifyConcurrency.ts` | `worker/src/services/shopifyFetch.ts`, init/writeback callers |
+| Translation quality report | `worker/src/scripts/exportTranslationReport.ts` | `worker/src/services/translationReport.ts`, Blob translate chunks |
 | Quota mismatch | `quotaRouter.server.ts` | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts` |
 | Subscription/purchase bug | `app/routes/app.pricing/route.tsx` | `webhooks.tsx`, `app/server/billing/*` |
 | Currency switcher bug | `app/server/currency/currency.server.ts` | `api.storefront.$.ts`, extension `ciwi-api.js` |
 | App Proxy 401/404 | `api.storefront.$.ts` | `server/storefront/auth.server.ts`, extension caller |
 | Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `pictureClient.ts` |
 | Picture translation/storage | `app/server/picture/picture.server.ts` | `api.picture.*`, `api.translate-v4.image`, `UserPicture`, App Proxy picture branches |
-| Glossary | `app/routes/app.glossary/route.tsx` | `glossary.server.ts`, worker glossary injection |
-| Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, worker shop scan |
+| Glossary | `app/routes/app.glossary/route.tsx` | `glossary.server.ts`, Worker `tsfDb.loadGlossaryRowsFromTsf` via `translationCoreRuntime.ts` |
+| Shop profile / AI profile | `app/routes/app.shop-profile/route.tsx` | `server/shopScan/*`, `shopProfileContext.server.ts` / `shopProfilePrompt.server.ts`, worker shop scan |
 | Support chat / notifications | `app/components/SupportChatWidget.tsx` | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers |
 | Auto translate | `worker/src/services/autoTranslate.ts` | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog |
+| Scheduled shop scan | `worker/src/services/scheduledShopScan.ts` | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts` |
 | Translation core/filter rule | `packages/translation-core/src/*` | App and Worker runtime adapters, focused builds |
 | i18n copy | `public/locales/en/translation.json` | `public/locales/zh-CN/translation.json`, other locales |
-| Shopify auth/API version | `app/shopify.server.ts` | `app/routes/app.tsx`, auth and webhook routes |
-| Deploy config | `shopify.app*.toml` | `Dockerfile*`, Render/GitHub Actions config |
+| Shopify auth/API version | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`） | `app/shopify.server.ts`、`worker/src/services/shopifyAdminApiVersion.ts`、`shopify.app*.toml` |
+| Deploy config | `shopify.app*.toml` | `Dockerfile`, Render/GitHub Actions config |
 
 ## Scripts
 
@@ -647,7 +851,8 @@ Operational root scripts:
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
-- `scripts/cleanup-duplicate-target-locales.mjs`: target-locale cleanup.
+- `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
+  recent 72-hour window.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
@@ -655,32 +860,32 @@ Operational root scripts:
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
   client reporting code, not a throwaway script.
-- `scripts/language-locale-data.js`: locale/flag data consumed by switcher
-  assets.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
   scripts.
 
-Operational PowerShell scripts:
+Agent / deploy helper scripts:
 
 - `scripts/cursor-push-pr.mjs`: `npm run push:pr` — commit（跳过敏感文件）→ push → 创建 PR；
   成功输出 `PR_URL:`。供 Cursor Agent 在「提个pr」时直接调用。
-- `scripts/pr.ps1`: 交互式 PowerShell 版提 PR（本地手动用）。
 - `scripts/merge-deploy-test.mjs`: `npm run merge:deploy:test` — 合入当前分支 PR 并触发
   TSF Web Test + Worker Test 部署；成功输出 `MERGED_PR_URL:` 与 `DEPLOY_RUN_URL:`。
-- `scripts/merge-deploy-test.ps1`: 交互式 PowerShell 版合入+部署（本地手动用）。
 
 Worker scripts to keep:
 
 - `worker/scripts/check-auto-translate-modules.mjs`: package-backed module
   catalog check.
 - `worker/scripts/cleanup-stale-hints.mjs`: package-backed cleanup command.
-- `worker/scripts/probe-hint-queues.mjs`: package-backed queue probe.
-- `worker/scripts/diag-stuck-job.mjs`, `diag-failed-jobs.mjs`, and
+- `worker/scripts/probe-hint-queues.mjs`, `probe-job-redis.mjs`,
+  `probe-job-progress.mjs`, `probe-job-status-counts.mjs`, `probe-prod-jobs.mjs`,
+  `probe-auto-batch.mjs`: queue/job probes.
+- `worker/scripts/diag-stuck-job.mjs`, `diag-failed-jobs.mjs`, and other
   `probe-*.mjs`: worker diagnostics.
 - `worker/scripts/resume-job.mjs` and `resume-orphaned-processing.mjs`:
   operational recovery tools.
 - `worker/scripts/auto-tasks-24h-trend.mjs`: auto-translate volume report.
 - `worker/scripts/v4-auto-translate-modules.json`: module catalog fixture/data.
+- `worker/src/scripts/exportTranslationReport.ts`: TypeScript source for the
+  translation quality report command; compiled output lives in `worker/dist/scripts/`.
 
 Temporary script policy:
 
@@ -916,6 +1121,8 @@ These replace old one-off debug markdown files.
 - `.env`, `.env.test`, and `.env.prod` may contain live credentials. Never echo
   values in responses or docs.
 - `node_modules/`, `build/`, and extension `dist/` are not places for manual edits.
+- Empty directories under `app/routes/` are not active Remix route modules; confirm
+  a route file exists before documenting or changing a page entry.
 - Runtime billing/quota is TSF Turso, but compatibility binding rows can still
   contain `legacy`; inspect actual callers before deleting the enum/model.
 - Translation v4 state is distributed. State machine changes must consider
@@ -937,8 +1144,9 @@ These replace old one-off debug markdown files.
   validates provenance for the app copy only and can fail when that generated
   copy drifts. Treat the failure as an ownership/sync issue, not a worker build
   failure.
-- Shop-profile prompt preview is not production prompt injection yet. Verify an
-  actual non-empty `profileBlock` call path before documenting it as live.
+- Shop-profile `profileBlock` is live for manual create-task and single-field
+  translation, but auto-translate still does not set it. Empty Turso
+  `ShopProfile` rows still yield an empty block.
 - `app/routes/app.tsx` affects every embedded page.
 - Legacy manage-translation pages and v4 job pages are separate experiences.
 

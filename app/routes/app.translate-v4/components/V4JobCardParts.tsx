@@ -137,8 +137,8 @@ export function StatusTag({
   status: TranslationJobProgressSummary["status"];
   label: string;
 }) {
-  let bg = v4Colors.primarySoft;
-  let color = v4Colors.primary;
+  let bg: string = v4Colors.primarySoft;
+  let color: string = v4Colors.primary;
   if (status === "COMPLETED") {
     bg = v4Colors.successBg;
     color = v4Colors.success;

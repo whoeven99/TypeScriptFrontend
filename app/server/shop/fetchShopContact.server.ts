@@ -1,4 +1,5 @@
-import { resolveOfflineAccessToken } from "~/server/translateV4/token.server";
+import { getOfflineSessionAccessToken } from "./offlineSessionToken.server";
+import { buildShopifyAdminGraphqlUrl } from "~/lib/shopifyAdminApiVersion";
 
 export type ShopContact = {
   email: string | null;
@@ -32,26 +33,19 @@ function pickOwnerName(shop: {
 
 /**
  * 从 Shopify Admin GraphQL 拉取店铺联系邮箱与店主称呼（shopOwnerName 全称）。
- * accessToken 缺省时从 offline session 解析。
+ * token 始终从 Turso offline Session 读取。
  */
-export async function fetchShopContact(
-  shop: string,
-  accessToken?: string | null,
-): Promise<ShopContact> {
+export async function fetchShopContact(shop: string): Promise<ShopContact> {
   const normalizedShop = shop.trim();
   if (!normalizedShop) return { email: null, ownerName: null };
 
-  const token =
-    accessToken?.trim() ||
-    (await resolveOfflineAccessToken(normalizedShop)) ||
-    "";
+  const token = (await getOfflineSessionAccessToken(normalizedShop)) || "";
   if (!token) {
     console.warn(`[fetchShopContact] no access token shop=${normalizedShop}`);
     return { email: null, ownerName: null };
   }
 
-  const graphqlVersion = process.env.GRAPHQL_VERSION?.trim() || "2025-04";
-  const url = `https://${normalizedShop}/admin/api/${graphqlVersion}/graphql.json`;
+  const url = buildShopifyAdminGraphqlUrl(normalizedShop);
 
   try {
     const resp = await fetch(url, {

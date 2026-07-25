@@ -9,7 +9,7 @@ EXPOSE 8080
 
 WORKDIR /app
 
-COPY package.json package-lock.json* .npmrc ./
+COPY package.json package-lock.json* ./
 COPY packages/translation-core/package.json ./packages/translation-core/package.json
 COPY patches ./patches
 

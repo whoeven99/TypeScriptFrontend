@@ -17,7 +17,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shop: session.shop,
       accessToken: session.accessToken,
     });
-    primaryLocale = loaded.primaryLocale;
+    primaryLocale = loaded.primaryLocale ?? "en";
     targetLocales = selectShopTargetLocales(loaded.localeOptions, primaryLocale);
   } catch (err) {
     console.error("[translateV4] coverage locales failed:", err);
@@ -42,7 +42,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     if (cacheOnly) {
       const summary = await getCoverageSummaryFromCache({
         shop: shopName,
-        primaryLocale,
         targetLocales,
         includeRuntimeSignals,
       });
@@ -51,7 +50,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const summary = await computeCoverageSummary({
       admin,
       shop: shopName,
-      primaryLocale,
       targetLocales,
       forceRefresh,
       localesToRefresh,
@@ -62,7 +60,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     try {
       const summary = await getCoverageSummaryFromCache({
         shop: shopName,
-        primaryLocale,
         targetLocales,
       });
       return json({ ok: true, summary, degraded: true });

@@ -121,12 +121,10 @@ async function enrichCoverageWithMinimalRuntimeSignals(
 /** 仅从 Redis 读缓存，适合 loader 快速路径。 */
 export async function getCoverageSummaryFromCache({
   shop,
-  primaryLocale,
   targetLocales,
   includeRuntimeSignals = true,
 }: {
   shop: string;
-  primaryLocale: string;
   targetLocales: LocaleInput[];
   /** true=完整信号；false=跳过；'minimal'=仅 autoTranslate/isTranslating */
   includeRuntimeSignals?: boolean | "minimal";
@@ -179,14 +177,12 @@ export async function getCoverageSummaryFromCache({
 export async function computeCoverageSummary({
   admin,
   shop,
-  primaryLocale,
   targetLocales,
   forceRefresh = false,
   localesToRefresh,
 }: {
   admin: AdminGraphqlClient;
   shop: string;
-  primaryLocale: string;
   targetLocales: LocaleInput[];
   /** true：与管理翻译「刷新统计」同效 —— 现算并写 Redis（不 invalidate，避免翻译进行中清空缓存） */
   forceRefresh?: boolean;

@@ -2,7 +2,6 @@ import {
   Layout,
   Table,
   Result,
-  Typography,
   Spin,
   Space,
   Card,
@@ -11,14 +10,14 @@ import {
 import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { globalStore } from "~/globalStore";
@@ -40,8 +39,6 @@ import {
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 
 const { Content } = Layout;
-
-const { Text } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 
@@ -642,7 +639,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 154px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -660,7 +657,6 @@ const Index = () => {
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
-              height: "calc(100% - 25px)",
               minHeight: "70vh",
               display: "flex",
               flexDirection: "column",

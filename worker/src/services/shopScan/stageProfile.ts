@@ -1,4 +1,3 @@
-import { blobWrite } from "../blobV4.js";
 import { shopScanAiConfigured, SHOP_SCAN_AI_MODEL } from "./ai.js";
 import {
   fetchShopMarkets,
@@ -13,7 +12,10 @@ import {
   type ShopSignalBundle,
 } from "./signalExtraction.js";
 import { sampleThemeTexts } from "./translationSamples.js";
+import { buildThemeSceneProfile } from "./themeKeyIntelligence.js";
+import { buildTranslationContextProfile } from "./translationContextProfile.js";
 import { upsertShopProfile } from "./tsfWrite.js";
+import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 
 /**
  * 阶段2：采集店铺素材 → 信号提取 → AI 两步归纳（理解 + 术语策略）→
@@ -48,10 +50,12 @@ export async function runProfileStage(args: {
   primaryLocale: string;
   locales: ShopLocaleRow[];
   scanId: string;
-  blobPrefix: string;
+  trigger?: string;
+  /** @deprecated 稳定产物写 shop-profile/{shop}/latest-scan.json。 */
+  blobPrefix?: string;
   heartbeat: () => Promise<void>;
 }): Promise<ProfileStageResult> {
-  const { shop, accessToken, primaryLocale, locales, scanId, blobPrefix, heartbeat } = args;
+  const { shop, accessToken, primaryLocale, locales, scanId, trigger, heartbeat } = args;
 
   const [facts, markets, themeTexts] = await Promise.all([
     fetchShopProfileFacts(shop, accessToken),
@@ -61,18 +65,37 @@ export async function runProfileStage(args: {
   await heartbeat();
 
   const signals = extractShopSignals(facts, themeTexts);
+  const themeSceneProfile = buildThemeSceneProfile(themeTexts);
   const hasMaterial = hasProfileMaterial(facts, markets, signals);
+  const publishedLocales = locales
+    .filter((locale) => locale.published)
+    .map((locale) => locale.locale);
+  const scannedAt = new Date().toISOString();
 
   if (!shopScanAiConfigured() || !hasMaterial) {
-    await blobWrite(`${blobPrefix}/profile-facts.json`, {
-      stage: "profile",
-      shop,
-      facts,
+    const translationContext = buildTranslationContextProfile({
+      publishedLocales,
       markets,
-      themeTexts,
-      signals,
-      induction: null,
-      scannedAt: new Date().toISOString(),
+      understanding: null,
+      strategy: null,
+      themeSceneProfile,
+      generatedAt: scannedAt,
+    });
+    await upsertShopProfileLatestScan(shop, {
+      scanId,
+      trigger,
+      profile: {
+        stage: "profile",
+        shop,
+        facts,
+        markets,
+        themeTexts,
+        signals,
+        themeSceneProfile,
+        translationContext,
+        induction: null,
+        scannedAt,
+      },
     });
     return {
       status: "skipped",
@@ -88,22 +111,61 @@ export async function runProfileStage(args: {
   });
   await heartbeat();
 
-  await blobWrite(`${blobPrefix}/profile-facts.json`, {
-    stage: "profile",
-    shop,
-    facts,
-    markets,
-    themeTexts,
-    signals,
-    induction,
-    scannedAt: new Date().toISOString(),
-  });
-
   if (!induction.understanding) {
+    const translationContext = buildTranslationContextProfile({
+      publishedLocales,
+      markets,
+      understanding: null,
+      strategy: induction.strategy,
+      themeSceneProfile,
+      generatedAt: scannedAt,
+    });
+    await upsertShopProfileLatestScan(shop, {
+      scanId,
+      trigger,
+      profile: {
+        stage: "profile",
+        shop,
+        facts,
+        markets,
+        themeTexts,
+        signals,
+        themeSceneProfile,
+        translationContext,
+        induction,
+        scannedAt,
+      },
+    });
     return { status: "skipped", reason: "ai_understanding_failed" };
   }
 
   const { understanding, strategy } = induction;
+
+  const translationContext = buildTranslationContextProfile({
+    publishedLocales,
+    markets,
+    understanding,
+    strategy,
+    themeSceneProfile,
+    generatedAt: scannedAt,
+  });
+
+  await upsertShopProfileLatestScan(shop, {
+    scanId,
+    trigger,
+    profile: {
+      stage: "profile",
+      shop,
+      facts,
+      markets,
+      themeTexts,
+      signals,
+      themeSceneProfile,
+      translationContext,
+      induction,
+      scannedAt,
+    },
+  });
 
   await upsertShopProfile({
     shop,

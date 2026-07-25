@@ -11,7 +11,7 @@ import {
 import Button from "~/ui/components/AppButton";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import { authenticate } from "~/shopify.server";
@@ -41,7 +41,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 
@@ -339,7 +339,7 @@ const Index = () => {
       splitManageSaveResults(data.response);
 
     if (successfulItems.length) {
-      setPolicyData((prev) => {
+      setPolicyData((prev: any) => {
         const [nextPolicy] = applyManageResourceTranslationUpdates(
           prev ? [prev] : [],
           successfulItems,
@@ -656,7 +656,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -693,7 +693,6 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",

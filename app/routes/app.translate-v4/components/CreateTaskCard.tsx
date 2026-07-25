@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import type { CustomTagProps } from "rc-select/lib/BaseSelect";
-import { Checkbox, Select, Space } from "antd";
+import { BlockStack, Checkbox, Select } from "@shopify/polaris";
+import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -13,6 +13,12 @@ import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import Button from "~/ui/components/AppButton";
+import {
+  formatEstimateCredits,
+  type CreateTaskEstimateView,
+} from "../useCreateTaskEstimate";
+
+export type { CreateTaskEstimateView };
 
 type Props = {
   targetOptions: ShopLocaleOption[];
@@ -32,7 +38,10 @@ type Props = {
   submitPlacement?: "header" | "footer-center";
   createDisabled?: boolean;
   disabledMessage?: string | null;
+  estimate?: CreateTaskEstimateView | null;
 };
+
+type TargetOption = { value: string; label: string; regionCode: string };
 
 export function CreateTaskCard({
   targetOptions,
@@ -52,26 +61,25 @@ export function CreateTaskCard({
   submitPlacement = "header",
   createDisabled = false,
   disabledMessage = null,
+  estimate = null,
 }: Props) {
   const { t } = useTranslation();
   const canCreate =
     targets.length > 0 && modules.length > 0 && !creating && !createDisabled;
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen);
 
-  const sortedTargetOptions = useMemo(() => {
-    return [...targetOptions].sort((a, b) => {
-      const aSelected = targets.includes(a.value) ? 0 : 1;
-      const bSelected = targets.includes(b.value) ? 0 : 1;
-      if (aSelected !== bSelected) return aSelected - bSelected;
-      return a.label.localeCompare(b.label);
-    });
-  }, [targetOptions, targets]);
-
-  const targetSelectOptions = sortedTargetOptions.map((opt) => ({
-    value: opt.value,
-    label: localeShortName(opt.value, opt.label),
-    regionCode: localeRegionCode(opt.value),
-  }));
+  // 顺序固定（按名称），避免点选时 chip 跳动。
+  const localeChips = useMemo<TargetOption[]>(
+    () =>
+      [...targetOptions]
+        .map((opt) => ({
+          value: opt.value,
+          label: localeShortName(opt.value, opt.label),
+          regionCode: localeRegionCode(opt.value),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [targetOptions],
+  );
 
   const aiModelOptions = useMemo(
     () =>
@@ -87,6 +95,14 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+
+  const toggleTarget = (value: string) => {
+    onTargetsChange(
+      targets.includes(value)
+        ? targets.filter((item) => item !== value)
+        : [...targets, value],
+    );
+  };
 
   const toggleModule = (value: string) => {
     onModulesChange(
@@ -168,32 +184,70 @@ export function CreateTaskCard({
             >
               {disabledMessage}
             </div>
-          ) : null}
+          ) : (
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 11,
+                lineHeight: "16px",
+                color: v4Colors.textMuted,
+              }}
+            >
+              {t("v4.createTask.estimateFootnote")}
+            </div>
+          )}
         </div>
-        {submitPlacement === "header" ? submitButton : null}
+        {submitPlacement === "header" ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "8px 12px",
+              maxWidth: "100%",
+              minWidth: 0,
+            }}
+          >
+            <EstimateInline
+              estimate={estimate}
+              canEstimate={targets.length > 0 && modules.length > 0}
+            />
+            {submitButton}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <Select
-          mode="multiple"
-          placeholder={t("v4.createTask.selectTargetLanguages")}
-          value={targets}
-          onChange={onTargetsChange}
-          options={targetSelectOptions}
-          maxTagCount="responsive"
-          style={{ width: "100%" }}
-          optionFilterProp="label"
-          tagRender={(props) => renderLocaleTag(props, targetSelectOptions, t)}
-          optionRender={(option) => (
-            <span>
-              <span style={{ color: v4Colors.primary, fontWeight: 600, marginRight: 6 }}>
-                {option.data.regionCode}
-              </span>
-              {option.label}
-            </span>
-          )}
-        />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {localeChips.map((locale) => {
+            const selected = targets.includes(locale.value);
+            return (
+              <button
+                key={locale.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleTarget(locale.value)}
+                style={moduleChipStyle(selected)}
+              >
+                <span
+                  style={{
+                    opacity: selected ? 0.85 : 0.7,
+                    marginRight: 5,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {locale.regionCode}
+                </span>
+                {locale.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -249,7 +303,11 @@ export function CreateTaskCard({
           <span style={{ minWidth: 0, textAlign: "left", lineHeight: 1.35, overflowWrap: "anywhere" }}>
             {t("v4.createTask.advancedSettings")}
           </span>
-          <span className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`} aria-hidden style={{ flexShrink: 0 }}>
+          <span
+            className={`v4-caret${advancedOpen ? " v4-caret--open" : ""}`}
+            aria-hidden
+            style={{ flexShrink: 0 }}
+          >
             ⌄
           </span>
         </button>
@@ -263,29 +321,28 @@ export function CreateTaskCard({
         >
           <div style={{ marginTop: 12 }}>
             <SectionLabel>{t("v4.createTask.aiModel")}</SectionLabel>
-            <Select
-              value={aiModel}
-              onChange={onAiModelChange}
-              options={aiModelOptions}
-              style={{ width: "100%", marginBottom: 16 }}
-            />
+            <div style={{ marginBottom: 16 }}>
+              <Select
+                label={t("v4.createTask.aiModel")}
+                labelHidden
+                options={aiModelOptions}
+                value={aiModel}
+                onChange={onAiModelChange}
+              />
+            </div>
             <SectionLabel>{t("v4.createTask.translationOptions")}</SectionLabel>
-            <Checkbox.Group
-              value={[
-                ...(isCover ? ["cover"] : []),
-                ...(isHandle ? ["handle"] : []),
-              ]}
-              onChange={(values) => {
-                onIsCoverChange(values.includes("cover"));
-                onIsHandleChange(values.includes("handle"));
-              }}
-              style={{ width: "100%" }}
-            >
-              <Space direction="vertical" size={10}>
-                <Checkbox value="cover">{t("v4.createTask.overwriteExisting")}</Checkbox>
-                <Checkbox value="handle">{t("v4.createTask.translateHandle")}</Checkbox>
-              </Space>
-            </Checkbox.Group>
+            <BlockStack gap="300">
+              <Checkbox
+                label={t("v4.createTask.overwriteExisting")}
+                checked={isCover}
+                onChange={onIsCoverChange}
+              />
+              <Checkbox
+                label={t("v4.createTask.translateHandle")}
+                checked={isHandle}
+                onChange={onIsHandleChange}
+              />
+            </BlockStack>
           </div>
         </div>
       </div>
@@ -296,15 +353,119 @@ export function CreateTaskCard({
             marginTop: 22,
             paddingTop: 18,
             display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
             justifyContent: "center",
+            gap: "8px 12px",
           }}
         >
+          <EstimateInline
+            estimate={estimate}
+            canEstimate={targets.length > 0 && modules.length > 0}
+          />
           {submitButton}
         </div>
       ) : null}
     </div>
   );
 }
+
+/** 创建按钮旁的上限预估（无灰盒，避免顶栏臃肿）。 */
+function EstimateInline({
+  estimate,
+  canEstimate,
+}: {
+  estimate: CreateTaskEstimateView | null;
+  canEstimate: boolean;
+}) {
+  const { t } = useTranslation();
+
+  if (!canEstimate) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateSelectFirst")}
+      </span>
+    );
+  }
+
+  if (!estimate || estimate.loading) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateLoading")}
+      </span>
+    );
+  }
+
+  if (estimate.estimatedCredits == null) {
+    return (
+      <span style={estimateInlineMutedStyle}>
+        {t("v4.createTask.estimateUnavailable")}
+      </span>
+    );
+  }
+
+  const estimatedLabel = formatEstimateCredits(estimate.estimatedCredits);
+  const remainingLabel = formatEstimateCredits(estimate.remainingCredits);
+  const primary = estimate.isUpperBound
+    ? t("v4.createTask.estimateUpperBound", { estimated: estimatedLabel })
+    : t("v4.createTask.estimateNeed", { estimated: estimatedLabel });
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 2,
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "baseline",
+          justifyContent: "flex-end",
+          gap: "4px 8px",
+          fontSize: 13,
+          fontWeight: 600,
+          color: estimate.needsMoreCredits
+            ? "var(--p-color-text-caution)"
+            : v4Colors.text,
+          lineHeight: 1.35,
+        }}
+      >
+        <span>{primary}</span>
+        <span style={{ fontWeight: 500, color: v4Colors.textMuted }}>
+          {t("v4.createTask.estimateRemaining", { remaining: remainingLabel })}
+        </span>
+      </div>
+      {estimate.needsMoreCredits ? (
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--p-color-text-caution)",
+            textAlign: "right",
+          }}
+        >
+          {t("v4.createTask.estimateShort")}{" "}
+          <Link to="/app/pricing" style={{ fontWeight: 600 }}>
+            {t("v4.createTask.estimateBuyCredits")}
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const estimateInlineMutedStyle: CSSProperties = {
+  fontSize: 12,
+  color: v4Colors.textMuted,
+  textAlign: "right",
+  maxWidth: 220,
+  lineHeight: 1.35,
+};
 
 function SectionHeader({
   title,
@@ -328,39 +489,7 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-type TargetOption = { value: string; label: string; regionCode: string };
-
-function renderLocaleTag(
-  props: CustomTagProps,
-  options: TargetOption[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-) {
-  const { label, value, closable, onClose } = props;
-  const opt = options.find((item) => item.value === value);
-  const code = opt?.regionCode ?? localeRegionCode(String(value));
-  const name = typeof label === "string" ? label : opt?.label ?? String(value);
-
-  return (
-    <span className="v4-select-tag v4-select-tag--locale" style={{ display: "inline-flex", alignItems: "center", maxWidth: "100%", minWidth: 0 }}>
-      <span className="v4-select-tag__code">{code}</span>
-      <span style={{ minWidth: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {name}
-      </span>
-      {closable ? (
-        <button
-          type="button"
-          className="v4-select-tag__close"
-          onClick={onClose}
-          aria-label={t("v4.createTask.removeTarget", { name })}
-        >
-          ×
-        </button>
-      ) : null}
-    </span>
-  );
-}
-
-/** 翻译内容 chip 样式：选中态与目标语言标签同色（primary-soft / primary-hover），未选中为中性灰。 */
+/** 内联多选 chip：选中 primary-soft，未选中中性灰；语言/模块共用。 */
 function moduleChipStyle(selected: boolean): CSSProperties {
   return {
     display: "inline-flex",

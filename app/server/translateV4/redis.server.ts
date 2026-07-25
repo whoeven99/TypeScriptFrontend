@@ -71,14 +71,6 @@ export function v4HintKey(
   return `translate:v4:hint:${stage}:${pool}`;
 }
 
-/** @deprecated 使用 v4HintKey(stage, pool)；默认指向 manual 池。 */
-export const V4_HINT_KEYS = {
-  init: v4HintKey("init", "manual"),
-  translate: v4HintKey("translate", "manual"),
-  writeback: v4HintKey("writeback", "manual"),
-  verify: "translate:v4:hint:verify",
-} as const;
-
 /** worker 实时写入的进度 hash key。 */
 export function v4ProgressKey(taskId: string): string {
   return `translate:v4:progress:${taskId}`;

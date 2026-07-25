@@ -461,27 +461,6 @@ export async function getManageTranslationLocaleSnapshotFromCache(
   return buildSnapshotFromModuleMap(locale, moduleMap);
 }
 
-/** @deprecated 使用 getManageTranslationLocaleSnapshotFromCache */
-export async function getManageTranslationLocaleSummaryFromCache(
-  shop: string,
-  locale: string,
-): Promise<{
-  locale: string;
-  translated: number;
-  total: number;
-  percent: number | null;
-  cacheMissing: boolean;
-}> {
-  const snap = await getManageTranslationLocaleSnapshotFromCache(shop, locale);
-  return {
-    locale: snap.locale,
-    translated: snap.translated,
-    total: snap.total,
-    percent: snap.percent,
-    cacheMissing: snap.cacheMissing,
-  };
-}
-
 /**
  * Shopify GID 资源类型 → 缓存 module（仅含已纳入本地统计的类型）。
  * gid://shopify/<Type>/<id> 的 <Type> 段映射到此。未列出的（如 ProductOption、

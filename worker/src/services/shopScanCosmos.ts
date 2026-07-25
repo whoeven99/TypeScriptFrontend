@@ -77,7 +77,7 @@ export type ShopScanJob = {
   trigger: ShopScanTrigger;
   status: ShopScanStatus;
   stages: ShopScanStages;
-  blobPrefix: string; // "shop-scan/{shop}/{scanId}"
+  blobPrefix: string; // 稳定产物前缀：`shop-profile/{shop}`（历史为 `shop-scan/{shop}/{scanId}`）
   summary: ShopScanSummary;
   claimedBy: string | null;
   claimedAt: string | null;
@@ -311,7 +311,35 @@ export async function findPendingShopScanJobs(limit = 5): Promise<ShopScanRef[]>
   }
 }
 
-/** 该店是否已有「进行中或已完成」的扫描（触发端幂等判断用）。 */
+/** 该店最近 N 条扫描（供跨 trigger 合并 summary）。 */
+export async function findRecentShopScanJobs(
+  shopName: string,
+  limit = 5,
+): Promise<ShopScanJob[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanJob>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shopName ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit",
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@limit", value: limit },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 该店是否已有「进行中或已完成」的计量扫描（触发端幂等判断用）。
+ * 纯 AI manual 不计入，避免挡住安装计量。
+ */
 export async function hasActiveOrCompletedShopScan(
   shopName: string,
 ): Promise<boolean> {
@@ -319,8 +347,10 @@ export async function hasActiveOrCompletedShopScan(
     const { resources } = await getContainer()
       .items.query<number>(
         {
-          query:
-            "SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL')",
+          query: `SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND (
+            (c.trigger IN ('install', 'scheduled') AND c.status IN ('CREATED','QUEUED','SCANNING','COMPLETED','PARTIAL'))
+            OR c.stages.contentSize = 'DONE'
+          )`,
           parameters: [{ name: "@shopName", value: shopName }],
         },
         { partitionKey: shopName },
@@ -329,6 +359,50 @@ export async function hasActiveOrCompletedShopScan(
     return (resources[0] ?? 0) > 0;
   } catch {
     return false;
+  }
+}
+
+/** 该店是否已有进行中的 shop scan（任意 trigger），scheduled 入队前跳过用。 */
+export async function hasActiveShopScan(shopName: string): Promise<boolean> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<number>(
+        {
+          query: `SELECT VALUE COUNT(1) FROM c WHERE c.shopName = @shopName AND c.status IN ('CREATED','QUEUED','SCANNING')`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return (resources[0] ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 该店最近一次计量扫描（install/scheduled）的 createdAt，供整店冷却判断。
+ * manual（纯 AI）不计入冷却。
+ */
+export async function getLatestMetricsScanCreatedAt(
+  shopName: string,
+): Promise<Date | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<{ createdAt: string }>(
+        {
+          query: `SELECT c.createdAt FROM c WHERE c.shopName = @shopName AND c.trigger IN ('install', 'scheduled') ORDER BY c.createdAt DESC OFFSET 0 LIMIT 1`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    const raw = resources[0]?.createdAt;
+    if (!raw) return null;
+    const at = new Date(raw);
+    return Number.isNaN(at.getTime()) ? null : at;
+  } catch {
+    return null;
   }
 }
 
@@ -389,6 +463,73 @@ export async function resetStaleShopScanJobs(): Promise<number> {
   }
   if (reset > 0) console.log(`[shopScanCosmos] reset ${reset} stale scan(s) → QUEUED`);
   return reset;
+}
+
+/** 终态任务中最新一条的 id（COMPLETED/PARTIAL）；无则 null。 */
+export async function getLatestTerminalShopScanId(
+  shopName: string,
+): Promise<string | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<{ id: string }>(
+        {
+          query: `SELECT TOP 1 c.id FROM c WHERE c.shopName = @shopName AND c.status IN ('COMPLETED', 'PARTIAL') ORDER BY c.createdAt DESC`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type ShopScanCleanupCandidate = {
+  id: string;
+  shopName: string;
+  blobPrefix: string;
+  createdAt: string;
+  status: ShopScanStatus;
+};
+
+/**
+ * 超过 cutoff 的终态扫描（旧→新），供保留期清理。
+ * 调用方负责「每店保留最新 COMPLETED/PARTIAL」。
+ */
+export async function findOldShopScanJobsForCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<ShopScanCleanupCandidate[]> {
+  const take = Math.max(1, Math.min(200, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanCleanupCandidate>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status
+FROM c
+WHERE c.createdAt < @cutoff
+  AND c.status IN ('COMPLETED', 'PARTIAL', 'FAILED')
+ORDER BY c.createdAt ASC
+OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@limit", value: take },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (e) {
+    console.warn("[shopScanCosmos] findOldShopScanJobsForCleanup failed", e);
+    return [];
+  }
+}
+
+/** 删除一条 shop_scan_jobs 文档（不删 Blob）。 */
+export async function deleteShopScanJob(
+  shopName: string,
+  scanId: string,
+): Promise<void> {
+  await getContainer().item(scanId, shopName).delete();
 }
 
 /** 部署重启后：给所有 CREATED/QUEUED 扫描补 push hint，新进程立即接管。 */

@@ -61,3 +61,11 @@ export async function loadShopLocalesForTranslation(args: {
   localesCache.set(args.shop, { value: result, expiresAt: now + CACHE_TTL_MS });
   return result;
 }
+
+export async function resolveShopPrimaryLocale(args: {
+  shop: string;
+  accessToken: string;
+}): Promise<string | null> {
+  const loaded = await loadShopLocalesForTranslation(args);
+  return loaded.rows.find((row) => row.primary)?.locale ?? null;
+}

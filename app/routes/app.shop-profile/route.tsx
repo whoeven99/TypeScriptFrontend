@@ -171,15 +171,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return json(result);
 };
 
-const STATUS_COLOR: Record<ShopScanStatus, string> = {
-  CREATED: "default",
-  QUEUED: "processing",
-  SCANNING: "processing",
-  COMPLETED: "success",
-  PARTIAL: "warning",
-  FAILED: "error",
-};
-
 const STATUS_LABEL: Record<ShopScanStatus, string> = {
   CREATED: "已创建",
   QUEUED: "排队中",
@@ -196,22 +187,12 @@ const STAGE_LABEL: Record<string, string> = {
   glossary: "AI 术语建议",
 };
 
-const STAGE_STATE_COLOR: Record<ShopScanStageState, string> = {
-  PENDING: "default",
-  DONE: "success",
-  SKIPPED: "default",
-  FAILED: "error",
-};
-
 const STAGE_STATE_LABEL: Record<ShopScanStageState, string> = {
   PENDING: "待处理",
   DONE: "完成",
   SKIPPED: "跳过",
   FAILED: "失败",
 };
-
-/** 扫描状态 Tag：白底描边，避免 success 等预设色的深色填充 */
-const SCAN_TAG_STYLE = { variant: "outlined" as const };
 
 const STATUS_ICON: Record<ShopScanStatus, React.ReactNode> = {
   CREATED: <ClockCircleOutlined />,
@@ -229,13 +210,6 @@ const STATUS_TONE: Record<ShopScanStatus, string> = {
   COMPLETED: "var(--app-accent-growth)",
   PARTIAL: "var(--app-accent-utility)",
   FAILED: "var(--app-accent-critical)",
-};
-
-const STAGE_ICON: Record<ShopScanStageState, React.ReactNode> = {
-  PENDING: <ClockCircleOutlined />,
-  DONE: <CheckCircleOutlined />,
-  SKIPPED: <ClockCircleOutlined />,
-  FAILED: <CloseCircleOutlined />,
 };
 
 const STAGE_TONE: Record<ShopScanStageState, string> = {

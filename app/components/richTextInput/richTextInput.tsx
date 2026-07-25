@@ -1,7 +1,7 @@
 // src/Tiptap.tsx
 import { EditorContent, Editor } from "@tiptap/react";
 import Commands from "./commands";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import "./styles/tiptap.css";
 import "../styles.css";
 

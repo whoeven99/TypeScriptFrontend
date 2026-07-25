@@ -18,8 +18,7 @@ import { useFetcher,
 import { Page,
   Pagination,
   Select } from "@shopify/polaris";
-import { ActionFunctionArgs,
-  json } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { queryNextTransType,
   queryPreviousTransType } from "~/api/admin";
 import { SingleTextTranslate } from "~/api/translateV4Client";
@@ -50,7 +49,7 @@ import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const loader = manageTranslationLanguageLoader;
 
@@ -1011,7 +1010,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -1042,8 +1041,9 @@ const Index = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    height: "100%",
-                    justifyContent: "space-between",
+                    flex: 1,
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <SideMenu
@@ -1067,7 +1067,6 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
