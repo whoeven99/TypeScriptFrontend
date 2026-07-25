@@ -333,11 +333,14 @@ Important env names only:
   `BILLING_SUBSCRIPTION_NEAR_DUE_RECONCILE_INTERVAL_MS`.
 - Render prod error digest → Feishu:
   `RENDER_API_KEY`, `FEISHU_WEBHOOK_URL_RENDER_DIGEST`,
-  `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 30m),
-  `RENDER_ERROR_DIGEST_LOOKBACK_MS` (default 30m),
+  `RENDER_ERROR_DIGEST_INTERVAL_MS` (default 1h),
+  `RENDER_ERROR_DIGEST_LOOKBACK_MS` (default 1h),
+  `RENDER_ERROR_DIGEST_TZ` (default `Asia/Shanghai`),
+  `RENDER_ERROR_DIGEST_SCHEDULE_MINUTE` (default 45，与 autoTranslate `:00` 错峰),
   `RENDER_ERROR_DIGEST_ENABLED` (set `false` on test worker),
   optional `RENDER_OWNER_ID`.
-  Code: `worker/src/services/renderErrorDigest.ts`, scheduled in `scheduler.ts`.
+  Code: `worker/src/services/renderErrorDigest.ts`, scheduled in `scheduler.ts`
+  via clock-aligned `Asia/Shanghai` `:45` (not process-local `:30`).
 - Email: `TENCENT_CLOUD_KEY_ID`, `TENCENT_CLOUD_KEY`, and template/recipient
   variables consumed by `workerEmail.ts` and TSF email helpers.
 

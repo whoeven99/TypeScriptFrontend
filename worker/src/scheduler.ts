@@ -15,8 +15,9 @@ import {
   runBillingSubscriptionReconcile,
 } from "./services/billingSubscriptionReconcile.js";
 import {
-  getRenderErrorDigestInitialDelayMs,
   getRenderErrorDigestIntervalMs,
+  getRenderErrorDigestScheduleMinute,
+  getRenderErrorDigestScheduleTimezone,
   isRenderErrorDigestEnabled,
   runRenderErrorDigest,
 } from "./services/renderErrorDigest.js";
@@ -161,18 +162,26 @@ function scheduleRenderErrorDigest(): void {
     return;
   }
 
-  const intervalMs = 60 * 60_000; // 每小时一次
-  const targetMinute = 30; // 固定在第30分钟
+  // 与 autoTranslate（CST :00）错峰：默认 Asia/Shanghai 每小时 :45。
+  const tz = getRenderErrorDigestScheduleTimezone();
+  const intervalMs = getRenderErrorDigestIntervalMs();
+  const minute = getRenderErrorDigestScheduleMinute();
 
   const scheduleNext = () => {
-    const now = new Date();
-    const next = new Date(now);
-    next.setMinutes(targetMinute, 0, 0);
-    if (next <= now) next.setHours(next.getHours() + 1);
-    const waitMs = next.getTime() - now.getTime();
-
+    const waitMs = msUntilNextClockAlignedScan(
+      new Date(),
+      intervalMs,
+      tz,
+      minute,
+    );
+    const nextAt = resolveNextClockAlignedScanAt(
+      new Date(),
+      intervalMs,
+      tz,
+      minute,
+    );
     console.log(
-      `[scheduler] renderErrDigest 下次汇总 ${next.toISOString()}（每小时第${targetMinute}分钟）`,
+      `[scheduler] renderErrDigest 下次汇总 ${nextAt.toISOString()} (tz=${tz}, :${String(minute).padStart(2, "0")}, interval=${intervalMs}ms)`,
     );
     setTimeout(() => {
       if (isShuttingDown()) return;

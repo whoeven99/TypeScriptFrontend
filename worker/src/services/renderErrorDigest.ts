@@ -25,6 +25,9 @@ const PROD_RENDER_SERVICES = [
 const DEFAULT_INTERVAL_MS = 60 * 60_000;
 const DEFAULT_LOOKBACK_MS = 60 * 60_000;
 const DEFAULT_INITIAL_DELAY_MS = 3 * 60_000;
+/** 与 autoTranslate 错峰：默认北京时间每小时 :45。 */
+const DEFAULT_SCHEDULE_TZ = "Asia/Shanghai";
+const DEFAULT_SCHEDULE_MINUTE = 45;
 const MAX_PAGES = 10;
 const PAGE_LIMIT = 100;
 const TOP_ERRORS = 8;
@@ -66,6 +69,22 @@ export function getRenderErrorDigestLookbackMs(): number {
 export function getRenderErrorDigestInitialDelayMs(): number {
   const n = Number(process.env.RENDER_ERROR_DIGEST_INITIAL_DELAY_MS);
   return n >= 0 ? n : DEFAULT_INITIAL_DELAY_MS;
+}
+
+/** digest 时钟对齐时区（默认 Asia/Shanghai，与 autoTranslate 同一套）。 */
+export function getRenderErrorDigestScheduleTimezone(): string {
+  return (
+    process.env.RENDER_ERROR_DIGEST_TZ?.trim() || DEFAULT_SCHEDULE_TZ
+  );
+}
+
+/** digest 每小时触发的分钟（默认 45，避开整点后管线高峰）。 */
+export function getRenderErrorDigestScheduleMinute(): number {
+  const n = Number(process.env.RENDER_ERROR_DIGEST_SCHEDULE_MINUTE);
+  if (!Number.isFinite(n) || n < 0 || n > 59) {
+    return DEFAULT_SCHEDULE_MINUTE;
+  }
+  return Math.floor(n);
 }
 
 export function isRenderErrorDigestEnabled(): boolean {
