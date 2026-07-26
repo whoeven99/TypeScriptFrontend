@@ -592,6 +592,9 @@ Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
   `aidge.server.ts`, `cos.server.ts`.
 - Admin client: `app/api/pictureClient.ts`, using TSF endpoints
   `/api/picture/*` and `/api/translate-v4/image`.
+- Manual replace upload must use `UploadProductImage` (`fetch` + FormData).
+  Ant Design `Upload` default XHR does not carry the embedded session token and
+  gets `302` from `authenticate.admin` on `/api/picture/upload`.
 - Routes: `api.picture.*`, `api.translate-v4.image`, storefront picture paths in
   `api.storefront.$.ts`.
 - Admin pages: `app.manage_translation/route.tsx`,
@@ -599,6 +602,8 @@ Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
   `app.manage_translation_.productImageAlt/route.tsx`.
 - Extension reads: `extensions/ciwi-switcher/assets/ciwi-api.js` via App Proxy.
 - 图片翻译扣费走 TSF Turso `deductShopCredits`。
+- COS credentials on Render: `TENCENT_BUCKET_SECRET_ID` /
+  `TENCENT_BUCKET_SECRET_KEY` (also accepted as `TENCENT_COS_SECRET_*`).
 
 ### Manage Translation Legacy Pages
 
