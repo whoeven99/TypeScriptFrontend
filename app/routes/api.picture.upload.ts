@@ -15,14 +15,7 @@ type UserPicturesDoJson = {
   altAfterTranslation?: string | null;
 };
 
-type FileLike = {
-  size: number;
-  type?: string;
-  name?: string;
-  arrayBuffer: () => Promise<ArrayBuffer>;
-};
-
-function isFileLike(value: FormDataEntryValue | null): value is FileLike {
+function isFileLike(value: FormDataEntryValue | null): value is File {
   return Boolean(
     value &&
       typeof value === "object" &&
@@ -39,85 +32,107 @@ function isFileLike(value: FormDataEntryValue | null): value is FileLike {
  * 对齐 Spring /picture/insertPictureToDbAndCloud（Ant Design Upload）。
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const form = await request.formData();
-  const shopNameRaw = form.get("shopName");
-  const shopName =
-    typeof shopNameRaw === "string" && shopNameRaw.trim()
-      ? shopNameRaw.trim()
-      : session.shop;
-  const jsonRaw = form.get("userPicturesDoJson");
-  const file = form.get("file");
-
-  if (shopName !== session.shop) {
-    return json({
-      success: false,
-      errorCode: 403,
-      errorMsg: "forbidden",
-      response: null as UserPicturePayload | null,
-    });
-  }
-
-  let meta: UserPicturesDoJson = {};
+  let stage = "authenticate";
   try {
-    meta =
-      typeof jsonRaw === "string" && jsonRaw
-        ? (JSON.parse(jsonRaw) as UserPicturesDoJson)
-        : {};
-  } catch {
-    return json({
-      success: false,
-      errorCode: 400,
-      errorMsg: "invalid userPicturesDoJson",
-      response: null as UserPicturePayload | null,
-    });
-  }
+    const { session } = await authenticate.admin(request);
+    stage = "formData";
+    const form = await request.formData();
+    const shopNameRaw = form.get("shopName");
+    const shopName =
+      typeof shopNameRaw === "string" && shopNameRaw.trim()
+        ? shopNameRaw.trim()
+        : session.shop;
+    const jsonRaw = form.get("userPicturesDoJson");
+    const file = form.get("file");
 
-  const imageId = typeof meta.imageId === "string" ? meta.imageId : "";
-  const imageBeforeUrl =
-    typeof meta.imageBeforeUrl === "string" ? meta.imageBeforeUrl : "";
-  const languageCode =
-    typeof meta.languageCode === "string" ? meta.languageCode : "";
+    if (shopName !== session.shop) {
+      return json({
+        success: false,
+        errorCode: 403,
+        errorMsg: "forbidden",
+        response: null as UserPicturePayload | null,
+      });
+    }
 
-  if (!imageId || !imageBeforeUrl || !languageCode) {
-    return json({
-      success: false,
-      errorCode: 400,
-      errorMsg: "imageId, imageBeforeUrl, languageCode required",
-      response: null as UserPicturePayload | null,
-    });
-  }
+    let meta: UserPicturesDoJson = {};
+    try {
+      meta =
+        typeof jsonRaw === "string" && jsonRaw
+          ? (JSON.parse(jsonRaw) as UserPicturesDoJson)
+          : {};
+    } catch {
+      return json({
+        success: false,
+        errorCode: 400,
+        errorMsg: "invalid userPicturesDoJson",
+        response: null as UserPicturePayload | null,
+      });
+    }
 
-  const hasFile = isFileLike(file) && file.size > 0;
+    const imageId = typeof meta.imageId === "string" ? meta.imageId : "";
+    const imageBeforeUrl =
+      typeof meta.imageBeforeUrl === "string" ? meta.imageBeforeUrl : "";
+    const languageCode =
+      typeof meta.languageCode === "string" ? meta.languageCode : "";
 
-  if (!hasFile || !isFileLike(file)) {
-    // 空文件：仅 upsert 元数据（对齐 Spring file.isEmpty 分支）
+    if (!imageId || !imageBeforeUrl || !languageCode) {
+      return json({
+        success: false,
+        errorCode: 400,
+        errorMsg: "imageId, imageBeforeUrl, languageCode required",
+        response: null as UserPicturePayload | null,
+      });
+    }
+
+    const hasFile = isFileLike(file) && file.size > 0;
+
+    if (!hasFile || !isFileLike(file)) {
+      stage = "upsertMeta";
+      // 空文件：仅 upsert 元数据（对齐 Spring file.isEmpty 分支）
+      return json(
+        await upsertUserPicture({
+          shop: shopName,
+          imageId,
+          imageBeforeUrl,
+          languageCode,
+          altBeforeTranslation: meta.altBeforeTranslation ?? "",
+          altAfterTranslation: meta.altAfterTranslation ?? "",
+        }),
+      );
+    }
+
+    stage = "readFile";
+    const buffer = Buffer.from(await file.arrayBuffer());
+    stage = "uploadAndUpsert";
     return json(
-      await upsertUserPicture({
+      await uploadAndUpsertUserPicture({
         shop: shopName,
         imageId,
         imageBeforeUrl,
         languageCode,
+        file: {
+          buffer,
+          contentType: file.type || "image/jpeg",
+          filename: file.name,
+        },
         altBeforeTranslation: meta.altBeforeTranslation ?? "",
         altAfterTranslation: meta.altAfterTranslation ?? "",
       }),
     );
+  } catch (error) {
+    console.error("[api.picture.upload] request failed", {
+      stage,
+      method: request.method,
+      url: request.url,
+      contentType: request.headers.get("content-type"),
+      contentLength: request.headers.get("content-length"),
+      error,
+    });
+    return json({
+      success: false,
+      errorCode: 500,
+      errorMsg: error instanceof Error ? error.message : "SERVER_ERROR",
+      response: null as UserPicturePayload | null,
+    });
   }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  return json(
-    await uploadAndUpsertUserPicture({
-      shop: shopName,
-      imageId,
-      imageBeforeUrl,
-      languageCode,
-      file: {
-        buffer,
-        contentType: file.type || "image/jpeg",
-        filename: file.name,
-      },
-      altBeforeTranslation: meta.altBeforeTranslation ?? "",
-      altAfterTranslation: meta.altAfterTranslation ?? "",
-    }),
-  );
 };

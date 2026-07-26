@@ -978,7 +978,6 @@ const Index = () => {
               data={(file) => {
                 return {
                   shopName: globalStore?.shop,
-                  file: file,
                   userPicturesDoJson: JSON.stringify({
                     shopName: globalStore?.shop,
                     imageId: record?.productId,
@@ -1450,7 +1449,6 @@ justifyContent: "space-between",
                                   data={(file) => {
                                     return {
                                       shopName: globalStore?.shop,
-                                      file: file,
                                       userPicturesDoJson: JSON.stringify({
                                         shopName: globalStore?.shop,
                                         imageId: item?.productId,
