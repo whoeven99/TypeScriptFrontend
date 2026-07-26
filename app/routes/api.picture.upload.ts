@@ -15,6 +15,24 @@ type UserPicturesDoJson = {
   altAfterTranslation?: string | null;
 };
 
+type FileLike = {
+  size: number;
+  type?: string;
+  name?: string;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+};
+
+function isFileLike(value: FormDataEntryValue | null): value is FileLike {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "size" in value &&
+      typeof (value as { size?: unknown }).size === "number" &&
+      "arrayBuffer" in value &&
+      typeof (value as { arrayBuffer?: unknown }).arrayBuffer === "function",
+  );
+}
+
 /**
  * POST /api/picture/upload
  * multipart: file, shopName, userPicturesDoJson
@@ -70,10 +88,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   }
 
-  const hasFile =
-    file instanceof File && typeof file.size === "number" && file.size > 0;
+  const hasFile = isFileLike(file) && file.size > 0;
 
-  if (!hasFile || !(file instanceof File)) {
+  if (!hasFile || !isFileLike(file)) {
     // 空文件：仅 upsert 元数据（对齐 Spring file.isEmpty 分支）
     return json(
       await upsertUserPicture({

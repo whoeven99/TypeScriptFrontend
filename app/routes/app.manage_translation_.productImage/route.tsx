@@ -36,6 +36,20 @@ import { logManageTranslationGraphQLErrorDetail } from "~/utils/manageTranslatio
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
+function getUploadFailureMessage(info: any, t: any): string {
+  const fileName = info?.file?.name || t("Image");
+  const candidates = [
+    info?.file?.response?.errorMsg,
+    info?.fileList?.[0]?.response?.errorMsg,
+    info?.file?.error?.message,
+    info?.event?.error?.message,
+  ];
+  const detail = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
+  );
+  return detail ? `${fileName} ${detail}` : `${fileName} ${t("Upload Failed")}`;
+}
+
 export const loader = manageTranslationLanguageLoader;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -1001,12 +1015,12 @@ const Index = () => {
                       `${info.file.name} ${t("Upload Success")}`,
                     );
                   } else {
-                    shopify.toast.show(
-                      `${info.file.name} ${t("Upload Failed")}`,
-                    );
+                    console.error("picture upload failed", info.fileList[0].response);
+                    shopify.toast.show(getUploadFailureMessage(info, t));
                   }
                 } else if (info.file.status === "error") {
-                  shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+                  console.error("picture upload request error", info.file);
+                  shopify.toast.show(getUploadFailureMessage(info, t));
                 }
               }}
             >
@@ -1475,13 +1489,21 @@ justifyContent: "space-between",
                                           `${info.file.name} ${t("Upload Success")}`,
                                         );
                                       } else {
+                                        console.error(
+                                          "picture upload failed",
+                                          info.fileList[0].response,
+                                        );
                                         shopify.toast.show(
-                                          `${info.file.name} ${t("Upload Failed")}`,
+                                          getUploadFailureMessage(info, t),
                                         );
                                       }
                                     } else if (info.file.status === "error") {
+                                      console.error(
+                                        "picture upload request error",
+                                        info.file,
+                                      );
                                       shopify.toast.show(
-                                        `${info.file.name} ${t("Upload Failed")}`,
+                                        getUploadFailureMessage(info, t),
                                       );
                                     }
                                   }}

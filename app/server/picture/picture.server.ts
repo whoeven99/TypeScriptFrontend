@@ -69,6 +69,13 @@ function toPayload(row: {
   };
 }
 
+function isUniqueConstraintError(err: unknown): boolean {
+  const code = (err as { code?: unknown })?.code;
+  if (code === "P2002") return true;
+  const message = err instanceof Error ? err.message : String(err);
+  return /unique constraint|unique failed|duplicate/i.test(message);
+}
+
 async function nextUserPictureId(): Promise<number> {
   const agg = await prisma.userPicture.aggregate({ _max: { id: true } });
   return (agg._max.id ?? 0) + 1;
@@ -139,50 +146,64 @@ export async function upsertUserPicture(
   input: UserPictureWriteInput,
 ): Promise<BaseResponse<UserPicturePayload>> {
   try {
-    const existing = await prisma.userPicture.findUnique({
-      where: {
-        shop_imageId_imageBeforeUrl_languageCode: {
-          shop: input.shop,
-          imageId: input.imageId,
-          imageBeforeUrl: input.imageBeforeUrl,
-          languageCode: input.languageCode,
-        },
-      },
-    });
-
-    if (existing) {
-      const updated = await prisma.userPicture.update({
-        where: { id: existing.id },
-        data: {
-          isDelete: false,
-          ...(input.imageAfterUrl !== undefined
-            ? { imageAfterUrl: input.imageAfterUrl }
-            : {}),
-          ...(input.altBeforeTranslation !== undefined
-            ? { altBeforeTranslation: input.altBeforeTranslation }
-            : {}),
-          ...(input.altAfterTranslation !== undefined
-            ? { altAfterTranslation: input.altAfterTranslation }
-            : {}),
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const existing = await prisma.userPicture.findUnique({
+        where: {
+          shop_imageId_imageBeforeUrl_languageCode: {
+            shop: input.shop,
+            imageId: input.imageId,
+            imageBeforeUrl: input.imageBeforeUrl,
+            languageCode: input.languageCode,
+          },
         },
       });
-      return ok(toPayload(updated));
+
+      if (existing) {
+        const updated = await prisma.userPicture.update({
+          where: { id: existing.id },
+          data: {
+            isDelete: false,
+            ...(input.imageAfterUrl !== undefined
+              ? { imageAfterUrl: input.imageAfterUrl }
+              : {}),
+            ...(input.altBeforeTranslation !== undefined
+              ? { altBeforeTranslation: input.altBeforeTranslation }
+              : {}),
+            ...(input.altAfterTranslation !== undefined
+              ? { altAfterTranslation: input.altAfterTranslation }
+              : {}),
+          },
+        });
+        return ok(toPayload(updated));
+      }
+
+      try {
+        const created = await prisma.userPicture.create({
+          data: {
+            id: await nextUserPictureId(),
+            shop: input.shop,
+            imageId: input.imageId,
+            imageBeforeUrl: input.imageBeforeUrl,
+            languageCode: input.languageCode,
+            imageAfterUrl: input.imageAfterUrl ?? null,
+            altBeforeTranslation: input.altBeforeTranslation ?? null,
+            altAfterTranslation: input.altAfterTranslation ?? null,
+            isDelete: false,
+          },
+        });
+        return ok(toPayload(created));
+      } catch (err) {
+        if (attempt < 3 && isUniqueConstraintError(err)) {
+          console.warn(
+            `[picture] userPicture create conflict, retrying attempt=${attempt} shop=${input.shop}`,
+          );
+          continue;
+        }
+        throw err;
+      }
     }
 
-    const created = await prisma.userPicture.create({
-      data: {
-        id: await nextUserPictureId(),
-        shop: input.shop,
-        imageId: input.imageId,
-        imageBeforeUrl: input.imageBeforeUrl,
-        languageCode: input.languageCode,
-        imageAfterUrl: input.imageAfterUrl ?? null,
-        altBeforeTranslation: input.altBeforeTranslation ?? null,
-        altAfterTranslation: input.altAfterTranslation ?? null,
-        isDelete: false,
-      },
-    });
-    return ok(toPayload(created));
+    throw new Error("USER_PICTURE_UPSERT_RETRY_EXHAUSTED");
   } catch (err) {
     console.error(`[picture] upsert failed shop=${input.shop}:`, err);
     return fail(null as unknown as UserPicturePayload, "SERVER_ERROR");
