@@ -8,7 +8,7 @@ alwaysApply: true
 当用户说 **「上传代码」**、**「提个 pr」**、**「提交并创建 pr」**、**「push pr」** 或类似意思时：
 
 1. **不要**手动跑 `git status` / `git diff` / `git commit` / `gh pr create` 等一串命令。
-2. **直接运行**（在 TypeScriptFrontend 仓库根目录）：
+2. **直接运行**（在 ciwi-translate 仓库根目录）：
    ```bash
    npm run push:pr
    ```
