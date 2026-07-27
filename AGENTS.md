@@ -429,11 +429,8 @@ Important env names only:
   `SHOPIFY_BULK_TIMEOUT_MS` / `INIT_BULK_TIMEOUT_MS`（默认 6h）.
   Code: `worker/src/services/shopifyBulkShared.ts`.
   同店 bulk **submit** 串行（Shopify 每店仅 1 个 bulk query）；多 module 排队 submit + 滑动下载。
-- Init bulk（全量；失败回退分页）:
-  `INIT_BULK_FALLBACK`（默认开，失败回退 `fetchTranslatableResources` 分页）,
-  `INIT_BULK_DISABLED`（设 `1` 可紧急全量回退分页）,
-  `SHOPIFY_BULK_SUBMIT_MAX_RETRIES`（默认 24，槽位忙/限流时 submit 重试）.
-  进行中任务：`initFetchMode` 已固化则沿用；无固化且已有 init blob → 分页；否则 bulk。
+- Init bulk（全量；submit 限流/槽位忙自动重试；单 module 失败重入队 bulk，不回退分页）:
+  `SHOPIFY_BULK_SUBMIT_MAX_RETRIES`（默认 24，submit 与 module 级重试共用上限）.
   Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
 - Shop scan bulk（计量全量，无 allowlist；默认偏慢以削平 CPU）:
   `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）,
