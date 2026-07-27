@@ -353,9 +353,8 @@ Services:
   it only reads an offline token from Turso `Session` and has no fallback/cache.
 - `worker/src/services/shopifyBulkShared.ts`: shared Shopify bulk primitives
   (submit / poll / cancel / JSONL stream / sliding-window queue ≤5).
-- `worker/src/services/shopifyBulkFetch.ts`: allowlist-only **init** via shared
-  bulk queue → filter → Blob chunks; non-allowlist shops stay on paginated
-  `shopifyFetch`.
+- `worker/src/services/shopifyBulkFetch.ts`: **init** via shared bulk queue →
+  filter → Blob chunks; per-module failure falls back to paginated `shopifyFetch`.
 - `worker/src/services/shopScan/bulkScanCounts.ts`: shop scan metrics **always**
   use shared bulk JSONL (no allowlist); failure falls back to paginated
   `scanCounts.countModuleScan`. Wired in `stageContentSize` / `stageCoverage`.
@@ -423,15 +422,15 @@ Important env names only:
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
   `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
   `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
-- Shared Shopify bulk JSONL（init 灰度 + shop scan 全量）:
-  `SHOPIFY_BULK_SUBMIT_WINDOW` / `INIT_BULK_SUBMIT_WINDOW`（默认 5，同店上限）,
+- Shared Shopify bulk JSONL（init + shop scan 全量）:
+  `SHOPIFY_BULK_SUBMIT_WINDOW` / `INIT_BULK_SUBMIT_WINDOW`（默认 5，**JSONL 下载**并发上限）,
   `SHOPIFY_BULK_POLL_MS` / `INIT_BULK_POLL_MS`（默认 1000）,
   `SHOPIFY_BULK_DOWNLOAD_CONCURRENCY` / `INIT_BULK_DOWNLOAD_CONCURRENCY`（默认 5）,
   `SHOPIFY_BULK_TIMEOUT_MS` / `INIT_BULK_TIMEOUT_MS`（默认 6h）.
   Code: `worker/src/services/shopifyBulkShared.ts`.
-- Init bulk（仅灰度店；名单外仍分页）:
-  `INIT_BULK_SHOP_ALLOWLIST`（逗号分隔 shopName，空=全关）,
-  `INIT_BULK_FALLBACK`（默认开，失败回退分页）.
+  同店 bulk **submit** 串行（Shopify 每店仅 1 个 bulk query）；多 module 排队 submit + 滑动下载。
+- Init bulk（全量；submit 限流/槽位忙自动重试；单 module 失败重入队 bulk，不回退分页）:
+  `SHOPIFY_BULK_SUBMIT_MAX_RETRIES`（默认 24，submit 与 module 级重试共用上限）.
   Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
 - Shop scan bulk（计量全量，无 allowlist；默认偏慢以削平 CPU）:
   `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）,
