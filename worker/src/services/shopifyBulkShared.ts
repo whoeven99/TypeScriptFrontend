@@ -8,9 +8,6 @@
  *   SHOPIFY_BULK_DOWNLOAD_CONCURRENCY / INIT_BULK_DOWNLOAD_CONCURRENCY (default 5)
  *   SHOPIFY_BULK_TIMEOUT_MS / INIT_BULK_TIMEOUT_MS (default 6h)
  *   SHOPIFY_BULK_SUBMIT_MAX_RETRIES (default 24; slot busy / throttle)
- *
- * Shopify allows only one bulk query operation per shop at a time; the submit
- * loop keeps at most one in-flight operation per runShopifyBulkJobQueue call.
  */
 import { createInterface } from "readline";
 import { Readable } from "stream";
@@ -383,6 +380,10 @@ export async function runShopifyBulkJobQueue(args: {
     logPrefix = LOG,
   } = args;
 
+  const submitWindow = Math.min(
+    5,
+    Math.max(1, args.submitWindow ?? getBulkSubmitWindow()),
+  );
   const pollMs = getBulkPollMs();
   const downloadConcurrency = Math.min(
     5,
@@ -390,8 +391,6 @@ export async function runShopifyBulkJobQueue(args: {
   );
   const timeoutMs = getBulkTimeoutMs();
   const submitMaxRetries = getBulkSubmitMaxRetries();
-  /** Shopify: one bulk query operation per shop at a time. */
-  const maxInFlightSubmits = 1;
 
   const queue = [...jobs];
   const inFlight = new Map<string, InFlightBulk>();
@@ -497,7 +496,7 @@ export async function runShopifyBulkJobQueue(args: {
   };
 
   const submitAvailable = async () => {
-    while (inFlight.size < maxInFlightSubmits && queue.length > 0) {
+    while (inFlight.size < submitWindow && queue.length > 0) {
       if (isShutdown()) {
         throw new Error("shutdown: bulk queue yielding for deploy");
       }
