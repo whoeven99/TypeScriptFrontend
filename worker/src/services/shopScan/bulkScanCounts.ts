@@ -2,6 +2,7 @@
  * Shop scan metrics via Shopify Bulk Operations JSONL (full rollout, no allowlist).
  *
  * contentSize / coverage 全量走 bulk；失败时回退 `countModuleScan` 分页。
+ * 下载/解析默认串行并带 JSONL yield（见 scanPace.ts），优先削平 CPU 尖刺。
  */
 import { MODULE_TO_SHOPIFY_TYPE } from "../shopifyFetch.js";
 import {
@@ -15,6 +16,12 @@ import {
   emptyModuleScanCount,
   type ModuleScanCount,
 } from "./scanCounts.js";
+import {
+  getShopScanBulkDownloadConcurrency,
+  getShopScanBulkSubmitWindow,
+  getShopScanJsonlYieldEveryLines,
+  getShopScanJsonlYieldMs,
+} from "./scanPace.js";
 
 const LOG = "[shopifyBulk:scan]";
 
@@ -46,6 +53,8 @@ async function countFromJsonlUrl(args: {
     url: args.url,
     logLabel: args.module,
     onHeartbeat: args.onHeartbeat,
+    yieldEveryLines: getShopScanJsonlYieldEveryLines(),
+    yieldMs: getShopScanJsonlYieldMs(),
     onLine: (row) => {
       accumulateScanCountNode(acc, args.module, {
         translations: row.translations ?? [],
@@ -100,8 +109,11 @@ export async function runBulkScanCounts(args: {
 
   if (bulkJobs.length === 0) return;
 
+  const downloadConcurrency = getShopScanBulkDownloadConcurrency();
+  const submitWindow = getShopScanBulkSubmitWindow();
   console.log(
-    `${LOG} start shop=${shop} jobs=${bulkJobs.length} fallback=${SCAN_BULK_FALLBACK}`,
+    `${LOG} start shop=${shop} jobs=${bulkJobs.length} fallback=${SCAN_BULK_FALLBACK}` +
+      ` downloadConcurrency=${downloadConcurrency} submitWindow=${submitWindow}`,
   );
 
   await runShopifyBulkJobQueue({
@@ -111,6 +123,8 @@ export async function runBulkScanCounts(args: {
     isShutdown,
     fallbackOnFailure: SCAN_BULK_FALLBACK,
     logPrefix: LOG,
+    downloadConcurrency,
+    submitWindow,
     processOutcome: async (outcome) => {
       const job = jobById.get(outcome.job.id);
       if (!job) {

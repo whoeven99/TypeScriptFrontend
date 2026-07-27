@@ -26,13 +26,22 @@ import { runContentSizeStage } from "../services/shopScan/stageContentSize.js";
 import { runProfileStage } from "../services/shopScan/stageProfile.js";
 import { runCoverageStage } from "../services/shopScan/stageCoverage.js";
 import { touchShopProfileScan } from "../services/shopScan/tsfWrite.js";
+import {
+  getShopScanDrainMax,
+  getShopScanInterShopDelayMs,
+} from "../services/shopScan/scanPace.js";
+import { sleep } from "../services/shopifyBulkShared.js";
 import { isShuttingDown } from "../shutdown.js";
 
 const WORKER_ID = `shopscan-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
 
-/** 每 tick 最多处理的扫描数（扫描较重，保守串行）。 */
-const DRAIN_MAX = Math.max(1, Number(process.env.SHOP_SCAN_DRAIN_MAX) || 3);
 const HEARTBEAT_THROTTLE_MS = 20_000;
+
+/**
+ * Prevent overlapping setInterval ticks from stacking concurrent scans
+ * (safeRun does not await). One in-flight runScanWorker at a time.
+ */
+let shopScanTickInFlight = false;
 
 /** 计量阶段：安装/定时默认跑。 */
 const METRICS_STAGES: readonly ShopScanStageName[] = ["contentSize", "coverage"];
@@ -70,29 +79,60 @@ function stagesForTrigger(trigger: ShopScanTrigger): {
 export async function runShopScanWorker(): Promise<void> {
   if (isShuttingDown()) return;
   if (!cosmosConfigured() || !hasTsfDbCredentials()) return;
+  if (shopScanTickInFlight) return;
+  shopScanTickInFlight = true;
 
+  const drainMax = getShopScanDrainMax();
+  const interShopDelayMs = getShopScanInterShopDelayMs();
   let processed = 0;
 
-  // 1. 优先消费 hint（立即唤醒）
-  for (let i = 0; i < DRAIN_MAX && !isShuttingDown(); i++) {
-    const hint = await popShopScanHint();
-    if (!hint) break;
-    const ran = await tryProcessScan(hint.shopName, hint.scanId);
-    if (ran === "busy") {
-      // 已被别的进程领走或状态不符，尾插回队列避免热轮询同一条
-      await requeueShopScanHintTail(hint);
-    } else if (ran === "ok") {
-      processed++;
+  try {
+    // 1. 优先消费 hint（立即唤醒）
+    for (let i = 0; i < drainMax && !isShuttingDown(); i++) {
+      const hint = await popShopScanHint();
+      if (!hint) break;
+      const ran = await tryProcessScan(hint.shopName, hint.scanId);
+      if (ran === "busy") {
+        // 已被别的进程领走或状态不符，尾插回队列避免热轮询同一条
+        await requeueShopScanHintTail(hint);
+      } else if (ran === "ok") {
+        processed++;
+        if (
+          interShopDelayMs > 0 &&
+          processed < drainMax &&
+          !isShuttingDown()
+        ) {
+          await sleep(interShopDelayMs);
+        }
+      }
     }
-  }
 
-  // 2. 兜底：轮询 Cosmos 里 CREATED/QUEUED 的扫描（hint 丢失/部署重启后自愈）
-  if (processed < DRAIN_MAX && !isShuttingDown()) {
-    const refs = await findPendingShopScanJobs(DRAIN_MAX - processed);
-    for (const ref of refs) {
-      if (isShuttingDown()) break;
-      await tryProcessScan(ref.shopName, ref.id);
+    // 2. 兜底：轮询 Cosmos 里 CREATED/QUEUED 的扫描（hint 丢失/部署重启后自愈）
+    if (processed < drainMax && !isShuttingDown()) {
+      const refs = await findPendingShopScanJobs(drainMax - processed);
+      for (const ref of refs) {
+        if (isShuttingDown()) break;
+        const ran = await tryProcessScan(ref.shopName, ref.id);
+        if (ran === "ok") {
+          processed++;
+          if (
+            interShopDelayMs > 0 &&
+            processed < drainMax &&
+            !isShuttingDown()
+          ) {
+            await sleep(interShopDelayMs);
+          }
+        }
+      }
     }
+
+    // Hold the mutex briefly after work so the next poll tick cannot
+    // immediately start another heavy shop (flattens :30 bursts).
+    if (processed > 0 && interShopDelayMs > 0 && !isShuttingDown()) {
+      await sleep(interShopDelayMs);
+    }
+  } finally {
+    shopScanTickInFlight = false;
   }
 }
 
