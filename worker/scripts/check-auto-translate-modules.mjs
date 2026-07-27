@@ -28,7 +28,7 @@ const workerModules = [...workerMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]
 
 const tsfPath = resolve(
   __dirname,
-  "../../../TypeScriptFrontend/app/server/translateV4/moduleCatalog.ts",
+  "../../app/server/translateV4/moduleCatalog.ts",
 );
 let tsfModules = [];
 try {
