@@ -435,9 +435,16 @@ Important env names only:
   `SHOPIFY_BULK_SUBMIT_MAX_RETRIES`（默认 24，槽位忙/限流时 submit 重试）.
   进行中任务：`initFetchMode` 已固化则沿用；无固化且已有 init blob → 分页；否则 bulk。
   Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
-- Shop scan bulk（计量全量，无 allowlist）:
-  `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）.
-  Code: `worker/src/services/shopScan/bulkScanCounts.ts` →
+- Shop scan bulk（计量全量，无 allowlist；默认偏慢以削平 CPU）:
+  `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）,
+  `SHOP_SCAN_DRAIN_MAX`（默认 1；且 tick 互斥，避免 setInterval 叠跑）,
+  `SHOP_SCAN_BULK_DOWNLOAD_CONCURRENCY`（默认 1，与 init 的 5 独立）,
+  `SHOP_SCAN_BULK_SUBMIT_WINDOW`（默认 2）,
+  `SHOP_SCAN_JSONL_YIELD_EVERY_LINES` / `SHOP_SCAN_JSONL_YIELD_MS`
+  （默认每 200 行 pause 25ms）,
+  `SHOP_SCAN_INTER_SHOP_DELAY_MS`（默认 5s，店与店之间/tick 结束后）。
+  Code: `worker/src/services/shopScan/scanPace.ts`、
+  `bulkScanCounts.ts`、`shopScanWorker.ts` →
   `stageContentSize.ts` / `stageCoverage.ts`.
 - Init Blob chunk 大小（page/bulk 共用，按文件字节切分，不再按资源数）:
   `TRANSLATION_MAX_CHUNK_BYTES`（默认 2MiB；单资源超限则独占一个 chunk）.

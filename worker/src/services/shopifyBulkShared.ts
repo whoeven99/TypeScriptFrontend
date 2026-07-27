@@ -273,14 +273,28 @@ export function isResourceJsonlLine(row: BulkJsonlResourceLine): boolean {
 
 /**
  * Stream-download a bulk JSONL URL and invoke onLine for each resource row.
+ *
+ * Optional yieldEveryLines / yieldMs deliberately slow CPU-bound parse (shop
+ * scan) so the event loop stays responsive and metrics stay flatter.
  */
 export async function streamBulkJsonlResources(args: {
   url: string;
   onLine: (row: BulkJsonlResourceLine) => void | Promise<void>;
   onHeartbeat?: () => Promise<void>;
   logLabel?: string;
+  /** Pause after every N resource lines (0 = never). */
+  yieldEveryLines?: number;
+  /** Sleep duration when yielding (ms). */
+  yieldMs?: number;
 }): Promise<void> {
-  const { url, onLine, onHeartbeat, logLabel = "?" } = args;
+  const {
+    url,
+    onLine,
+    onHeartbeat,
+    logLabel = "?",
+    yieldEveryLines = 0,
+    yieldMs = 0,
+  } = args;
   const resp = await fetch(url);
   if (!resp.ok || !resp.body) {
     throw new Error(
@@ -293,6 +307,7 @@ export async function streamBulkJsonlResources(args: {
   );
   const rl = createInterface({ input: nodeStream, crlfDelay: Infinity });
   let lastHeartbeat = 0;
+  let resourceLines = 0;
 
   try {
     for await (const line of rl) {
@@ -308,7 +323,18 @@ export async function streamBulkJsonlResources(args: {
       }
 
       if (!isResourceJsonlLine(row)) continue;
-      await onLine(row);
+
+      const maybePromise = onLine(row);
+      if (maybePromise) await maybePromise;
+
+      resourceLines++;
+      if (
+        yieldEveryLines > 0 &&
+        yieldMs > 0 &&
+        resourceLines % yieldEveryLines === 0
+      ) {
+        await sleep(yieldMs);
+      }
 
       const now = Date.now();
       if (onHeartbeat && now - lastHeartbeat > 15_000) {
@@ -342,6 +368,10 @@ export async function runShopifyBulkJobQueue(args: {
   fallbackOnFailure?: boolean;
   processOutcome: (outcome: ShopifyBulkJobOutcome) => Promise<void>;
   logPrefix?: string;
+  /** Override shared SHOPIFY_BULK_SUBMIT_WINDOW (clamped 1–5). */
+  submitWindow?: number;
+  /** Override shared SHOPIFY_BULK_DOWNLOAD_CONCURRENCY (clamped 1–5). */
+  downloadConcurrency?: number;
 }): Promise<void> {
   const {
     shopDomain,
@@ -354,7 +384,10 @@ export async function runShopifyBulkJobQueue(args: {
   } = args;
 
   const pollMs = getBulkPollMs();
-  const downloadConcurrency = getBulkDownloadConcurrency();
+  const downloadConcurrency = Math.min(
+    5,
+    Math.max(1, args.downloadConcurrency ?? getBulkDownloadConcurrency()),
+  );
   const timeoutMs = getBulkTimeoutMs();
   const submitMaxRetries = getBulkSubmitMaxRetries();
   /** Shopify: one bulk query operation per shop at a time. */
