@@ -4,7 +4,7 @@
  */
 
 const PLACEHOLDER_RE =
-  /\{\{[^{}]*\}\}|%\{[^}]+\}|\$\{[^}]+\}|%\d*\$?[sd]|\{\d+\}|\[[A-Za-z_][\w-]*\](?!\()/g;
+  /\{%-?[\s\S]*?-?%\}|\{\{[^{}]*\}\}|%\{[^}]+\}|\$\{[^}]+\}|%\d*\$?[sd]|\{\d+\}|\[[A-Za-z_][\w-]*\](?!\()/g;
 
 const PROTECTED_URL_RE = /https?:\/\/[^\s<>"']+/gi;
 /** Do not match `/dark` inside `light/dark` — require `/` not preceded by a letter. */

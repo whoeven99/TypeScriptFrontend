@@ -14,7 +14,7 @@ export type WritebackField = {
  * but still write other fields even when translatedValue === originalValue
  * (brand terms / glossary).
  */
-export function filterWritebackFields<T extends WritebackField>(fields: T[]): T[] {
+export function filterWritebackFields<T extends WritebackField>(fields: T[], module?: string): T[] {
   return fields
     .filter((t) => {
       const translated = (t.translatedValue ?? t.value ?? "").trim();
@@ -25,7 +25,7 @@ export function filterWritebackFields<T extends WritebackField>(fields: T[]): T[
     })
     .map((t) => {
       const raw = (t.translatedValue ?? t.value ?? "").trim();
-      const clamped = enforceFieldTranslationLimits(t.key, raw);
+      const clamped = enforceFieldTranslationLimits(t.key, raw, module);
       if (clamped === raw) return t;
       if (t.translatedValue != null) {
         return { ...t, translatedValue: clamped };

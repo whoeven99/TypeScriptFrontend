@@ -7,6 +7,7 @@
  *   SHOPIFY_BULK_POLL_MS / INIT_BULK_POLL_MS (default 1000)
  *   SHOPIFY_BULK_DOWNLOAD_CONCURRENCY / INIT_BULK_DOWNLOAD_CONCURRENCY (default 5)
  *   SHOPIFY_BULK_TIMEOUT_MS / INIT_BULK_TIMEOUT_MS (default 6h)
+ *   SHOPIFY_BULK_SUBMIT_MAX_RETRIES (default 24; slot busy / throttle)
  */
 import { createInterface } from "readline";
 import { Readable } from "stream";
@@ -99,6 +100,24 @@ export function getBulkTimeoutMs(): number {
     "INIT_BULK_TIMEOUT_MS",
     6 * 60 * 60 * 1_000,
     { min: 60_000 },
+  );
+}
+
+export function getBulkSubmitMaxRetries(): number {
+  return envNumber("SHOPIFY_BULK_SUBMIT_MAX_RETRIES", "", 24, {
+    min: 1,
+    max: 120,
+  });
+}
+
+/** Shopify bulk submit errors that should wait and retry instead of immediate fallback. */
+export function isRetriableBulkSubmitError(message: string): boolean {
+  return (
+    /already in progress|OPERATION_ALREADY_RUNNING|bulk operation is already running/i.test(
+      message,
+    ) ||
+    /THROTTLED|429|rate limit|Too many requests/i.test(message) ||
+    /HTTP.*502|HTTP.*503|HTTP.*504|ETIMEDOUT|ECONNRESET/i.test(message)
   );
 }
 
@@ -335,7 +354,8 @@ type InFlightBulk = {
 /**
  * Sliding-window bulk submit + poll; completed jobs are handed to processOutcome
  * with download concurrency limiting. Failures become mode:"fallback" when
- * fallbackOnFailure is true, otherwise accumulate and throw at the end.
+ * fallbackOnFailure is true; when false and retryOnFailure is true, the job is
+ * re-queued up to submitMaxRetries; otherwise accumulate and throw at the end.
  */
 export async function runShopifyBulkJobQueue(args: {
   shopDomain: string;
@@ -344,6 +364,8 @@ export async function runShopifyBulkJobQueue(args: {
   isShutdown?: () => boolean;
   /** default true */
   fallbackOnFailure?: boolean;
+  /** Re-submit failed jobs when fallbackOnFailure is false (default false). */
+  retryOnFailure?: boolean;
   processOutcome: (outcome: ShopifyBulkJobOutcome) => Promise<void>;
   logPrefix?: string;
   /** Override shared SHOPIFY_BULK_SUBMIT_WINDOW (clamped 1–5). */
@@ -357,6 +379,7 @@ export async function runShopifyBulkJobQueue(args: {
     onHeartbeat,
     isShutdown = () => false,
     fallbackOnFailure = true,
+    retryOnFailure = false,
     processOutcome,
     logPrefix = LOG,
   } = args;
@@ -371,10 +394,12 @@ export async function runShopifyBulkJobQueue(args: {
     Math.max(1, args.downloadConcurrency ?? getBulkDownloadConcurrency()),
   );
   const timeoutMs = getBulkTimeoutMs();
+  const submitMaxRetries = getBulkSubmitMaxRetries();
 
   const queue = [...jobs];
   const inFlight = new Map<string, InFlightBulk>();
   const outcomeQueue: ShopifyBulkJobOutcome[] = [];
+  const jobRetryCounts = new Map<string, number>();
   let activeProcessors = 0;
   const processorWaiters: Array<() => void> = [];
   const processorTasks: Promise<void>[] = [];
@@ -408,6 +433,16 @@ export async function runShopifyBulkJobQueue(args: {
         await processOutcome(outcome);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        if (
+          retryOnFailure &&
+          !fallbackOnFailure &&
+          outcome.mode !== "fallback" &&
+          !isShutdown()
+        ) {
+          failOrFallback(outcome.job, `process ${msg}`);
+          await submitAvailable();
+          return;
+        }
         errors.push(`${outcome.job.id}: ${msg}`);
         console.error(
           `${logPrefix} process failed id=${outcome.job.id}: ${msg}`,
@@ -429,20 +464,28 @@ export async function runShopifyBulkJobQueue(args: {
   const failOrFallback = (job: ShopifyBulkJob, reason: string) => {
     if (fallbackOnFailure) {
       enqueueOutcome({ job, mode: "fallback", reason });
-    } else {
-      errors.push(`${job.id}: ${reason}`);
+      return;
     }
+    const attempts = jobRetryCounts.get(job.id) ?? 0;
+    if (retryOnFailure && attempts + 1 < submitMaxRetries && !isShutdown()) {
+      jobRetryCounts.set(job.id, attempts + 1);
+      console.warn(
+        `${logPrefix} requeue id=${job.id} attempt=${attempts + 1}/${submitMaxRetries - 1}: ${reason}`,
+      );
+      queue.push(job);
+      return;
+    }
+    errors.push(`${job.id}: ${reason}`);
   };
 
-  const submitAvailable = async () => {
-    while (inFlight.size < submitWindow && queue.length > 0) {
+  const submitOneWithRetry = async (job: ShopifyBulkJob): Promise<void> => {
+    for (let attempt = 1; attempt <= submitMaxRetries; attempt++) {
       if (isShutdown()) {
         throw new Error("shutdown: bulk queue yielding for deploy");
       }
-      const job = queue.shift()!;
       try {
         console.log(
-          `${logPrefix} submit id=${job.id} type=${job.resourceType} locale=${job.locale} shop=${shopDomain}`,
+          `${logPrefix} submit id=${job.id} type=${job.resourceType} locale=${job.locale} shop=${shopDomain} attempt=${attempt}/${submitMaxRetries}`,
         );
         const operationId = await submitTranslatableResourcesBulk(
           shopDomain,
@@ -454,14 +497,35 @@ export async function runShopifyBulkJobQueue(args: {
           operationId,
           submittedAt: Date.now(),
         });
-        console.log(
-          `${logPrefix} submitted id=${job.id} op=${operationId}`,
-        );
+        console.log(`${logPrefix} submitted id=${job.id} op=${operationId}`);
+        return;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        if (
+          isRetriableBulkSubmitError(msg) &&
+          attempt < submitMaxRetries &&
+          !isShutdown()
+        ) {
+          console.warn(
+            `${logPrefix} submit retry id=${job.id} attempt=${attempt}/${submitMaxRetries}: ${msg}`,
+          );
+          await sleep(pollMs);
+          continue;
+        }
         console.warn(`${logPrefix} submit failed id=${job.id}: ${msg}`);
         failOrFallback(job, `submit ${msg}`);
+        return;
       }
+    }
+  };
+
+  const submitAvailable = async () => {
+    while (inFlight.size < submitWindow && queue.length > 0) {
+      if (isShutdown()) {
+        throw new Error("shutdown: bulk queue yielding for deploy");
+      }
+      const job = queue.shift()!;
+      await submitOneWithRetry(job);
       await onHeartbeat();
     }
   };

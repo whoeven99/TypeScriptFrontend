@@ -271,7 +271,7 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
 
       await maybeHeartbeat();
 
-      const translations: TranslationInput[] = filterWritebackFields(resource.translations)
+      const translations: TranslationInput[] = filterWritebackFields(resource.translations, module)
         .map((t) => ({
           locale: target,
           key: t.key,

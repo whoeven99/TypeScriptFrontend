@@ -695,7 +695,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           };
 
           const { usage } = await translateResources(
-            pendingResources.map((r) => ({ resourceId: r.resourceId, fields: r.fields })),
+            pendingResources.map((r) => ({ resourceId: r.resourceId, fields: r.fields, module })),
             source,
             target,
             aiModel,
