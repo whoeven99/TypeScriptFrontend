@@ -2787,7 +2787,7 @@ async function gatherTranslations(
 
 // ─── Main exported functions ────────────────────────────────────────────────────
 
-export type ResourceInput = { resourceId: string; fields: TranslateItem[] };
+export type ResourceInput = { resourceId: string; fields: TranslateItem[]; module?: string };
 export type ResourceResult = { resourceId: string; results: TranslateResult[] };
 /** Per-engine-model tally of how much content each engine translated. */
 export type EngineUsage = Record<string, { units: number; chars: number; tokens: number }>;
@@ -3602,6 +3602,7 @@ export async function translateResources(
             digest: f.digest,
             status: "fallback" as const,
           },
+          res.module,
         ),
       ),
     };
