@@ -7,6 +7,10 @@
  *   SHOPIFY_BULK_POLL_MS / INIT_BULK_POLL_MS (default 1000)
  *   SHOPIFY_BULK_DOWNLOAD_CONCURRENCY / INIT_BULK_DOWNLOAD_CONCURRENCY (default 5)
  *   SHOPIFY_BULK_TIMEOUT_MS / INIT_BULK_TIMEOUT_MS (default 6h)
+ *   SHOPIFY_BULK_SUBMIT_MAX_RETRIES (default 24; slot busy / throttle)
+ *
+ * Shopify allows only one bulk query operation per shop at a time; the submit
+ * loop keeps at most one in-flight operation per runShopifyBulkJobQueue call.
  */
 import { createInterface } from "readline";
 import { Readable } from "stream";
@@ -99,6 +103,24 @@ export function getBulkTimeoutMs(): number {
     "INIT_BULK_TIMEOUT_MS",
     6 * 60 * 60 * 1_000,
     { min: 60_000 },
+  );
+}
+
+export function getBulkSubmitMaxRetries(): number {
+  return envNumber("SHOPIFY_BULK_SUBMIT_MAX_RETRIES", "", 24, {
+    min: 1,
+    max: 120,
+  });
+}
+
+/** Shopify bulk submit errors that should wait and retry instead of immediate fallback. */
+export function isRetriableBulkSubmitError(message: string): boolean {
+  return (
+    /already in progress|OPERATION_ALREADY_RUNNING|bulk operation is already running/i.test(
+      message,
+    ) ||
+    /THROTTLED|429|rate limit|Too many requests/i.test(message) ||
+    /HTTP.*502|HTTP.*503|HTTP.*504|ETIMEDOUT|ECONNRESET/i.test(message)
   );
 }
 
@@ -331,10 +353,12 @@ export async function runShopifyBulkJobQueue(args: {
     logPrefix = LOG,
   } = args;
 
-  const submitWindow = getBulkSubmitWindow();
   const pollMs = getBulkPollMs();
   const downloadConcurrency = getBulkDownloadConcurrency();
   const timeoutMs = getBulkTimeoutMs();
+  const submitMaxRetries = getBulkSubmitMaxRetries();
+  /** Shopify: one bulk query operation per shop at a time. */
+  const maxInFlightSubmits = 1;
 
   const queue = [...jobs];
   const inFlight = new Map<string, InFlightBulk>();
@@ -398,15 +422,14 @@ export async function runShopifyBulkJobQueue(args: {
     }
   };
 
-  const submitAvailable = async () => {
-    while (inFlight.size < submitWindow && queue.length > 0) {
+  const submitOneWithRetry = async (job: ShopifyBulkJob): Promise<void> => {
+    for (let attempt = 1; attempt <= submitMaxRetries; attempt++) {
       if (isShutdown()) {
         throw new Error("shutdown: bulk queue yielding for deploy");
       }
-      const job = queue.shift()!;
       try {
         console.log(
-          `${logPrefix} submit id=${job.id} type=${job.resourceType} locale=${job.locale} shop=${shopDomain}`,
+          `${logPrefix} submit id=${job.id} type=${job.resourceType} locale=${job.locale} shop=${shopDomain} attempt=${attempt}/${submitMaxRetries}`,
         );
         const operationId = await submitTranslatableResourcesBulk(
           shopDomain,
@@ -418,14 +441,35 @@ export async function runShopifyBulkJobQueue(args: {
           operationId,
           submittedAt: Date.now(),
         });
-        console.log(
-          `${logPrefix} submitted id=${job.id} op=${operationId}`,
-        );
+        console.log(`${logPrefix} submitted id=${job.id} op=${operationId}`);
+        return;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        if (
+          isRetriableBulkSubmitError(msg) &&
+          attempt < submitMaxRetries &&
+          !isShutdown()
+        ) {
+          console.warn(
+            `${logPrefix} submit retry id=${job.id} attempt=${attempt}/${submitMaxRetries}: ${msg}`,
+          );
+          await sleep(pollMs);
+          continue;
+        }
         console.warn(`${logPrefix} submit failed id=${job.id}: ${msg}`);
         failOrFallback(job, `submit ${msg}`);
+        return;
       }
+    }
+  };
+
+  const submitAvailable = async () => {
+    while (inFlight.size < maxInFlightSubmits && queue.length > 0) {
+      if (isShutdown()) {
+        throw new Error("shutdown: bulk queue yielding for deploy");
+      }
+      const job = queue.shift()!;
+      await submitOneWithRetry(job);
       await onHeartbeat();
     }
   };

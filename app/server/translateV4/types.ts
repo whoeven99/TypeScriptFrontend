@@ -137,6 +137,8 @@ export type TranslationV4Job = {
   claimedAt: string | null;
   lastHeartbeat: string | null;
   blobPrefix: string;
+  /** Init fetch path pinned at first processInitJob entry (bulk | page). */
+  initFetchMode?: "bulk" | "page" | null;
   metrics: TranslationV4Metrics;
   stageTimings?: StageTimings | null;
   errorMessage: string | null;

@@ -12,12 +12,13 @@ import {
 } from "../services/cosmosV4.js";
 import { pushHint, setProgress, type HintPayload } from "../services/redisV4.js";
 import { claimNextJobWithFairScheduling } from "../services/fairStageClaim.js";
-import { blobWrite } from "../services/blobV4.js";
+import { blobWrite, blobListPaths } from "../services/blobV4.js";
 import { purgeAutoJob } from "../services/autoJobCleanup.js";
 import { fetchTranslatableResources } from "../services/shopifyFetch.js";
 import {
-  isShopInBulkInitAllowlist,
+  resolveInitFetchMode,
   runBulkInitModules,
+  type InitFetchMode,
 } from "../services/shopifyBulkFetch.js";
 import { countFieldUnits } from "../services/llmTranslate.js";
 import { getShopifyCap, runShopifyAdaptive } from "../services/shopifyConcurrency.js";
@@ -415,10 +416,25 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
 
   await flushInitActivity({ initPhase: "" });
 
+  const partialInitPaths = await blobListPaths(`${blobPrefix}/init/`);
+  const hasPartialInitBlobs = partialInitPaths.some((p) =>
+    /\/chunk-\d+\.json$/i.test(p),
+  );
+  const fetchMode: InitFetchMode = resolveInitFetchMode({
+    initFetchMode: job.initFetchMode,
+    hasPartialInitBlobs,
+  });
+  if (job.initFetchMode !== fetchMode) {
+    await updateJob(shopName, jobId, { initFetchMode: fetchMode });
+  }
+  console.log(
+    `[init] job=${jobId} fetchMode=${fetchMode} partialBlobs=${hasPartialInitBlobs}`,
+  );
+
   try {
-    const useBulk = isShopInBulkInitAllowlist(shopDomain);
+    const useBulk = fetchMode === "bulk";
     if (useBulk) {
-      // Allowlisted shops only — sliding-window Shopify bulk JSONL init.
+      // Full rollout — sliding-window Shopify bulk JSONL init.
       console.log(
         `[init] job=${jobId} fetchMode=bulk modules=${job.modules.length} shop=${shopDomain}`,
       );

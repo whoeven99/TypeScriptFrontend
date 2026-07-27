@@ -1,9 +1,7 @@
 /**
- * Shopify Bulk Operations path for translation v4 init.
+ * Shopify Bulk Operations path for translation v4 init (full rollout).
  *
- * Only shops listed in INIT_BULK_SHOP_ALLOWLIST use this module. Others keep
- * paginated GraphQL in shopifyFetch.ts unchanged.
- *
+ * Per-module failure falls back to paginated GraphQL in shopifyFetch.ts.
  * Shared submit/poll/JSONL/queue live in shopifyBulkShared.ts.
  */
 import {
@@ -28,25 +26,32 @@ const BULK_FALLBACK =
   (process.env.INIT_BULK_FALLBACK?.trim() ?? "1") !== "0" &&
   (process.env.INIT_BULK_FALLBACK?.trim() ?? "1").toLowerCase() !== "false";
 
-function normalizeShopName(shop: string): string {
-  return shop
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "");
+const BULK_DISABLED =
+  (process.env.INIT_BULK_DISABLED?.trim() ?? "0") === "1" ||
+  (process.env.INIT_BULK_DISABLED?.trim() ?? "").toLowerCase() === "true";
+
+export type InitFetchMode = "bulk" | "page";
+
+/** Default on; set INIT_BULK_DISABLED=1 to force paginated init for all shops. */
+export function isBulkInitEnabled(): boolean {
+  return !BULK_DISABLED;
 }
 
-/** True only when shop is listed in INIT_BULK_SHOP_ALLOWLIST (comma-separated). */
-export function isShopInBulkInitAllowlist(shopName: string): boolean {
-  const raw = process.env.INIT_BULK_SHOP_ALLOWLIST?.trim() ?? "";
-  if (!raw) return false;
-  const needle = normalizeShopName(shopName);
-  if (!needle) return false;
-  return raw
-    .split(",")
-    .map((s) => normalizeShopName(s))
-    .filter(Boolean)
-    .includes(needle);
+/**
+ * Resolve init fetch path for a job.
+ * - Persisted initFetchMode wins.
+ * - Partial init blobs without a mode → page (in-flight jobs before rollout).
+ * - Fresh jobs → bulk when enabled.
+ */
+export function resolveInitFetchMode(args: {
+  initFetchMode?: InitFetchMode | null;
+  hasPartialInitBlobs: boolean;
+}): InitFetchMode {
+  if (args.initFetchMode === "bulk" || args.initFetchMode === "page") {
+    return args.initFetchMode;
+  }
+  if (args.hasPartialInitBlobs) return "page";
+  return isBulkInitEnabled() ? "bulk" : "page";
 }
 
 async function streamJsonlToChunks(args: {
