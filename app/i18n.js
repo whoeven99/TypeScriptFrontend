@@ -1,22 +1,8 @@
+import { APP_I18N_LANGUAGE_CODES } from "./lib/appI18nLanguages";
+
 export default {
-  // This is the list of languages your application supports
-  supportedLngs: [
-    "en",
-    "fr",
-    "de",
-    "es",
-    "it",
-    "nl",
-    "pt",
-    "sv",
-    "ja",
-    "ko",
-    "ru",
-    "tr",
-    "uk",
-    "zh-CN",
-    "zh-TW",
-  ],
+  // Keep in sync with APP_I18N_LANGUAGES in app/lib/appI18nLanguages.ts
+  supportedLngs: APP_I18N_LANGUAGE_CODES,
   // This is the language you want to use in case
   // if the user language is not in the supportedLngs
   interpolation: {
