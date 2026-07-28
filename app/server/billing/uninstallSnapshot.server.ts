@@ -1,7 +1,7 @@
-import prisma from "../../../db.server";
-import { getAccountQuota } from "../quota/getAccountQuota.server";
-import { APP_SUBSCRIPTION_STATUS, BILLING_INTERVAL } from "../types.server";
-import { readShopSizeProfile } from "../../shopScan/shopSizeProfile.server";
+import prisma from "../../db.server";
+import { getAccountQuota } from "./quota/getAccountQuota.server";
+import { APP_SUBSCRIPTION_STATUS, BILLING_INTERVAL } from "./types.server";
+import { readShopSizeProfile } from "../shopScan/shopSizeProfile.server";
 
 export type UninstallShopSnapshot = {
   shop: string;
