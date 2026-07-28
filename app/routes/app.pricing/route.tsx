@@ -827,13 +827,6 @@ const Index = () => {
   const collapseData: CollapseProps["items"] = useMemo(
     () => [
       {
-        key: 0,
-        label: t("How does the 5-day free trial work?"),
-        children: t(
-          "Choosing Pro or Premium gives you 5 days of full access to all features, including your plan's full monthly credits. Cancel anytime before the trial ends to avoid billing.",
-        ),
-      },
-      {
         key: 1,
         label: t("Can I get a discount on my plan?"),
         children: t(
@@ -1253,10 +1246,10 @@ const Index = () => {
                       >
                         {item.buttonText}
                       </Button>
-                      {isNew && plan.type === "Free" ? (
+                      {isNew && plan.type === "Free" && item.title === "Basic" ? (
                         <Button
                           id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
-                          type={item.isRecommended ? "primary" : "default"}
+                          type="default"
                           block
                           disabled={item.disabled || selectedPayPlanOption}
                           style={{ marginBottom: "20px" }}
