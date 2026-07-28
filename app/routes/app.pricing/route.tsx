@@ -1183,10 +1183,12 @@ const Index = () => {
                       }}
                       loading={!plan.id}
                     >
-                      <Space
-                        direction="vertical"
-                        size={12}
-                        style={{ display: "flex" }}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "12px",
+                        }}
                       >
                         {item.disabled ? (
                           <AppStatusBadge tone="info">
@@ -1212,7 +1214,7 @@ const Index = () => {
                             {t("/month")}
                           </Text>
                         </div>
-                      </Space>
+                      </div>
                       {yearly && (
                         <div className="pricing-plan-card__billing-note">
                           <strong>{t("Yearly billing")}</strong>
