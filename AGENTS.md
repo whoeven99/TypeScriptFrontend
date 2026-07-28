@@ -169,7 +169,11 @@ not compete visually with the main action.
 - `app/routes/app.tsx`: app shell loader/action, navigation, app bootstrap.
 - `app/routes/auth.$.tsx`, `app/routes/auth.login/route.tsx`: Shopify auth.
 - `app/routes/webhooks.tsx`: Shopify webhook topic handling. Billing and uninstall
-logic use TSF billing exclusively.
+logic use TSF billing exclusively. `APP_UNINSTALLED` / `SHOP_REDACT` call
+`cleanupBillingOnUninstall` (best-effort Shopify cancel + local
+`cancelSubscription`) before Account soft-delete and Session delete.
+`APP_UNINSTALLED` snapshots subscription/quota/size via
+`uninstallSnapshot.server.ts` before cleanup, then sends that text to Feishu.
 - `app/routes/currencyInit.tsx`: currency initialization route.
 - `app/routes/web-vitals-metrics.tsx`: web vitals receiver.
 - `app/routes/log.tsx`: structured client log receiver plus legacy form payload
@@ -531,7 +535,16 @@ Code:
 - `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing.
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
-- `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling.
+- `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling
+(`APP_SUBSCRIPTIONS_UPDATE` CANCELLED/EXPIRED → `cancelSubscription`; idempotent
+if uninstall already cleared the row).
+- `app/server/billing/subscription/cleanupOnUninstall.server.ts`: uninstall /
+redact billing cleanup (Shopify `appSubscriptionCancel` best-effort + local
+cancel). Reinstall path in `ensureAccount.server.ts` also clears leftover
+`AppSubscription` when restoring a soft-deleted Account.
+- `app/server/billing/uninstallSnapshot.server.ts`: pre-cleanup snapshot for
+uninstall Feishu (plan, interval, quota, size tier via
+`shopScan/shopSizeProfile.server.ts`).
 - `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
 - `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
 (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
