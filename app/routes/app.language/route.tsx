@@ -142,6 +142,8 @@ type LanguageCoverageRow = {
   total: number;
   percent: number | null;
   cacheMissing: boolean;
+  /** Redis HGETALL 完全无内容 */
+  cacheEmpty?: boolean;
   autoTranslate: boolean;
   isTranslating: boolean;
 };
@@ -555,14 +557,46 @@ const Index = () => {
         await coverageRequestRef.current;
         return;
       }
+      const targets = baseRows.map((row) => row.locale).filter(Boolean);
       coverageRequestRef.current = (async () => {
         try {
-          const coverageData = await listLanguageCoverageCompat();
+          const coverageData = await listLanguageCoverageCompat({ targets });
           const coverageRows = (coverageData?.summary?.locales ??
             []) as LanguageCoverageRow[];
           dispatch(
             setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
           );
+
+          // HGETALL 无任何 field：与首页「刷新统计」同效，按语言逐个 refresh=1
+          const emptyLocales = coverageRows
+            .filter((row) => row.cacheEmpty)
+            .map((row) => row.locale);
+          if (emptyLocales.length > 0) {
+            void (async () => {
+              try {
+                let latestRows = coverageRows;
+                for (const locale of emptyLocales) {
+                  const refreshed = await listLanguageCoverageCompat({
+                    targets,
+                    forceRefresh: true,
+                    refreshLocales: [locale],
+                  });
+                  latestRows = (refreshed?.summary?.locales ??
+                    latestRows) as LanguageCoverageRow[];
+                  dispatch(
+                    setLanguageTableData(
+                      applyCoverageToLanguageRows(baseRows, latestRows),
+                    ),
+                  );
+                }
+              } catch (error) {
+                console.error(
+                  "[language] background coverage refresh failed:",
+                  error,
+                );
+              }
+            })();
+          }
         } catch (error) {
           console.error("[language] load coverage status failed:", error);
           dispatch(setLanguageTableData(baseRows));
@@ -785,7 +819,8 @@ const Index = () => {
       }
 
       try {
-        const coverageData = await listLanguageCoverageCompat();
+        const targets = dataSource.map((lang) => lang.locale).filter(Boolean);
+        const coverageData = await listLanguageCoverageCompat({ targets });
         const rows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
         const nextStatusSignature = dataSource
           .map((lang) => {
