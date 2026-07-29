@@ -214,6 +214,10 @@ real `route.tsx` or route module is added.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
+  Optional `targets=locale,locale` skips Shopify locale fetch (language page
+  passes locales it already loaded). Cache reads use one Redis `HGETALL` per
+  locale; language page force-refreshes a locale only when that hash is empty
+  (`cacheEmpty`, same as v4「刷新统计」`refresh=1&locales=`).
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.

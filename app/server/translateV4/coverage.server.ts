@@ -25,8 +25,10 @@ export type LocaleCoverageRow = {
   translated: number;
   total: number;
   percent: number | null;
-  /** 缓存未命中时为 true */
+  /** 缓存未命中时为 true（缺部分 module 也算） */
   cacheMissing: boolean;
+  /** Redis HGETALL 完全无内容（key 不存在或空 hash） */
+  cacheEmpty: boolean;
   /** 与语言页自动翻译开关同源：ShopTargetLocale.autoTranslate */
   autoTranslate: boolean;
   /** 当前语言是否有活跃中的 v4 任务 */
@@ -143,6 +145,7 @@ export async function getCoverageSummaryFromCache({
         total: agg.total,
         percent: ratioPercent(agg.translated, agg.total),
         cacheMissing: agg.cacheMissing,
+        cacheEmpty: agg.cacheEmpty,
         autoTranslate: false,
         isTranslating: false,
         lastAutoUpdateAt: null,
@@ -221,6 +224,7 @@ export async function computeCoverageSummary({
     let translated: number;
     let total: number;
     let cacheMissing = false;
+    let cacheEmpty = false;
 
     try {
       if (forceRefresh) {
@@ -232,6 +236,7 @@ export async function computeCoverageSummary({
         translated = cached.translated;
         total = cached.total;
         cacheMissing = cached.cacheMissing;
+        cacheEmpty = cached.cacheEmpty;
       } else {
         const computed = await sumItemsCountByLabels({
           admin,
@@ -255,6 +260,7 @@ export async function computeCoverageSummary({
       translated = cached.translated;
       total = cached.total;
       cacheMissing = cached.cacheMissing || cached.total === 0;
+      cacheEmpty = cached.cacheEmpty;
     }
 
     locales.push({
@@ -264,6 +270,7 @@ export async function computeCoverageSummary({
       total,
       percent: ratioPercent(translated, total),
       cacheMissing,
+      cacheEmpty,
       autoTranslate: false,
       isTranslating: false,
       lastAutoUpdateAt: null,

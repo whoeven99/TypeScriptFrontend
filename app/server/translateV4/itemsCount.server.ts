@@ -595,7 +595,19 @@ export async function sumItemsCountByLabelsFromCache(
   shop: string,
   locale: string,
   labels: readonly string[] = COVERAGE_COUNT_LABELS,
-): Promise<{ translated: number; total: number; cacheMissing: boolean }> {
+): Promise<{
+  translated: number;
+  total: number;
+  cacheMissing: boolean;
+  /** Redis HGETALL 无任何 field（key 不存在或空 hash） */
+  cacheEmpty: boolean;
+}> {
+  // 一次 HGETALL，避免每 module 串行 HGET（语言页 N 语言 × ~20 module）
+  const moduleMap = await readAllModuleCountsFromCache(shop, locale);
+  if (moduleMap.size === 0) {
+    return { translated: 0, total: 0, cacheMissing: true, cacheEmpty: true };
+  }
+
   let translated = 0;
   let total = 0;
   let cacheMissing = false;
@@ -607,7 +619,7 @@ export async function sumItemsCountByLabelsFromCache(
       continue;
     }
     for (const module of spec.modules) {
-      const cached = await readStoredModuleCount(shop, locale, module);
+      const cached = moduleMap.get(module);
       if (!cached) {
         cacheMissing = true;
         continue;
@@ -617,7 +629,7 @@ export async function sumItemsCountByLabelsFromCache(
     }
   }
 
-  return { translated, total, cacheMissing };
+  return { translated, total, cacheMissing, cacheEmpty: false };
 }
 
 /** 现算 Shopify 并累加多个汇总卡片（与管理翻译汇总页同口径）。 */
