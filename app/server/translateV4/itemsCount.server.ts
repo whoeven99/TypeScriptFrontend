@@ -8,7 +8,8 @@
  * 数据源仍是 Shopify（与 Java 一样需翻页拉取），本模块不提速，只保证去 Java + 口径一致。
  *
  * 覆盖范围（见 LOCAL_COUNT_SPEC + COVERAGE_COUNT_LABELS）：与管理翻译汇总页
- * 各卡片累加口径一致（不含 Policies）；id-based 类型亦用 translatableResources 枚举。
+ * 各卡片累加口径一致；Product / Shop 会并入其关联子模块，避免任务完成后
+ * 语言覆盖率仍停留在 0 的错觉。
  */
 import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { isBlankValue } from "@ciwi/translation-core/translation-filter/v3Base";
@@ -54,7 +55,10 @@ export type ItemsCountRow = {
  * Navigation 由 MENU + LINK 合并，组件按 type "LINK" 读取（对齐 Java 既有行为）。
  */
 const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
-  Products: { type: "PRODUCT", modules: ["PRODUCT"] },
+  Products: {
+    type: "PRODUCT",
+    modules: ["PRODUCT", "PRODUCT_OPTION", "PRODUCT_OPTION_VALUE"],
+  },
   Collections: { type: "COLLECTION", modules: ["COLLECTION"] },
   /** 与管理翻译页 ITEMS_COUNT 的 `Collection` label 对齐。 */
   Collection: { type: "COLLECTION", modules: ["COLLECTION"] },
@@ -67,7 +71,10 @@ const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
   Metaobjects: { type: "METAOBJECT", modules: ["METAOBJECT"] },
   "Store metadata": { type: "METAFIELD", modules: ["METAFIELD"] },
   Delivery: { type: "DELIVERY_METHOD_DEFINITION", modules: ["DELIVERY_METHOD_DEFINITION"] },
-  Shop: { type: "SHOP", modules: ["SHOP"] },
+  Shop: {
+    type: "SHOP",
+    modules: ["SHOP", "PAYMENT_GATEWAY", "SELLING_PLAN", "SELLING_PLAN_GROUP"],
+  },
   Navigation: { type: "LINK", modules: ["MENU", "LINK"] },
   Notifications: { type: "EMAIL_TEMPLATE", modules: ["EMAIL_TEMPLATE"] },
   Policies: { type: "SHOP_POLICY", modules: ["SHOP_POLICY"] },

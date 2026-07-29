@@ -84,6 +84,7 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
+import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { normalizeShopQuota } from "~/lib/translationQuota";
 import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
 import type { ShopQuota } from "~/lib/translationQuota";
@@ -466,6 +467,7 @@ const Index = () => {
   const pollFailureLoggedRef = useRef(false);
   const skipWebPresencesResyncRef = useRef(true);
   const coverageRequestRef = useRef<Promise<void> | null>(null);
+  const dataSourceRef = useRef<LanguagesDataType[]>([]);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -549,31 +551,60 @@ const Index = () => {
     }
   }, [shop]);
 
-  const applyCoverageToRows = useCallback(
-    async (baseRows: LanguagesDataType[]) => {
+  const refreshCoverageRows = useCallback(
+    async ({
+      baseRows,
+      forceRefresh = false,
+      locales,
+    }: {
+      baseRows?: LanguagesDataType[];
+      forceRefresh?: boolean;
+      locales?: string[];
+    }) => {
       if (coverageRequestRef.current) {
         await coverageRequestRef.current;
-        return;
+        if (!forceRefresh) return;
       }
       coverageRequestRef.current = (async () => {
         try {
-          const coverageData = await listLanguageCoverageCompat();
+          const coverageData = await listLanguageCoverageCompat({
+            forceRefresh,
+            locales,
+          });
           const coverageRows = (coverageData?.summary?.locales ??
             []) as LanguageCoverageRow[];
-          dispatch(
-            setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
+          const nextRows = applyCoverageToLanguageRows(
+            baseRows ?? dataSourceRef.current,
+            coverageRows,
           );
+          dispatch(setLanguageTableData(nextRows));
         } catch (error) {
-          console.error("[language] load coverage status failed:", error);
-          dispatch(setLanguageTableData(baseRows));
+          console.error(
+            forceRefresh
+              ? "[language] refresh coverage status failed:"
+              : "[language] load coverage status failed:",
+            error,
+          );
+          if (baseRows) {
+            dispatch(setLanguageTableData(baseRows));
+          }
         } finally {
-          setLoading(false);
+          if (baseRows) {
+            setLoading(false);
+          }
           coverageRequestRef.current = null;
         }
       })();
       await coverageRequestRef.current;
     },
     [dispatch],
+  );
+
+  const applyCoverageToRows = useCallback(
+    async (baseRows: LanguagesDataType[]) => {
+      await refreshCoverageRows({ baseRows });
+    },
+    [refreshCoverageRows],
   );
 
   const hydrateLanguageRows = useCallback(
@@ -585,6 +616,10 @@ const Index = () => {
     },
     [applyCoverageToRows, dispatch],
   );
+
+  useEffect(() => {
+    dataSourceRef.current = dataSource;
+  }, [dataSource]);
 
   useEffect(() => {
     if (loaderShopLanguages.length > 0) {
@@ -757,6 +792,22 @@ const Index = () => {
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
+    return onTranslationStatsUpdated((detail) => {
+      if (
+        !dataSourceRef.current.some((item) =>
+          sameTranslationLocale(item.locale, detail.target),
+        )
+      ) {
+        return;
+      }
+      void refreshCoverageRows({
+        forceRefresh: true,
+        locales: [detail.target],
+      });
+    });
+  }, [refreshCoverageRows]);
+
+  useEffect(() => {
     if (!dataSource?.some((item: any) => item.status === 2)) return;
     if (!source?.code) return;
 
@@ -801,6 +852,7 @@ const Index = () => {
         lastStatusSignature = nextStatusSignature;
 
         let hasPendingStatus = false;
+        const completedLocales: string[] = [];
         const updates: LanguagesDataType[] = [];
         for (const lang of dataSource) {
           const row = rows.find((r) =>
@@ -809,6 +861,9 @@ const Index = () => {
           const nextStatus = row ? statusFromCoverage(row) : lang.status;
           const nextStatusDetail = statusDetailFromCoverage(row);
           if (nextStatus === 2) hasPendingStatus = true;
+          if (lang.status === 2 && nextStatus !== 2) {
+            completedLocales.push(lang.locale);
+          }
           if (
             lang.status !== nextStatus ||
             lang.statusDetail !== nextStatusDetail
@@ -823,6 +878,13 @@ const Index = () => {
 
         if (updates.length > 0) {
           dispatch(updateLanguageTableData(updates));
+        }
+
+        if (completedLocales.length > 0) {
+          void refreshCoverageRows({
+            forceRefresh: true,
+            locales: completedLocales,
+          });
         }
 
         if (pollFailureLoggedRef.current) {
@@ -881,7 +943,7 @@ const Index = () => {
       disposed = true;
       if (timer) clearTimeout(timer);
     };
-  }, [dataSource, source?.code, shop, dispatch]);
+  }, [dataSource, source?.code, shop, dispatch, refreshCoverageRows]);
 
   const columns = [
     {
