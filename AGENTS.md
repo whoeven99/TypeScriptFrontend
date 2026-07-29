@@ -877,6 +877,7 @@ corresponding script without asking for confirmation:
 | "提个pr" / "提pr" / "创建PR" / "push and create PR"        | Run `npm run push:pr`（或 `npm run push:pr -- --message "说明"`）                                  |
 | "合入PR然后发布测试环境" / "合入pr发布测试" / "merge and deploy test" | Run `npm run merge:deploy:test`                                                               |
 | "发布测试环境" / "deploy test" (单独发布，不合入PR)                 | 触发 `tsf-deploy.yml` workflow on master，参数 `render_service_test=true, render_worker_test=true` |
+| "审计店面多语言" / "storefront locale audit"                 | Cursor browser 发现语言并切 locale → `node scripts/storefront-locale-audit.mjs` 落盘（见 Scripts） |
 
 
 For "合入PR然后发布测试环境", the script will:
@@ -913,6 +914,7 @@ For "合入PR然后发布测试环境", the script will:
 | Support chat / notifications     | `app/components/SupportChatWidget.tsx`                | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers                                         |
 | Auto translate                   | `worker/src/services/autoTranslate.ts`                | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog                                               |
 | Scheduled shop scan              | `worker/src/services/scheduledShopScan.ts`            | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts`                                         |
+| Public storefront locale audit   | `scripts/storefront-locale-audit.mjs`                 | Cursor browser locale discovery; local tree under `scripts/tmp/storefront-audit/`                       |
 | Translation core/filter rule     | `packages/translation-core/src/*`                     | App and Worker runtime adapters, focused builds                                                         |
 | i18n copy                        | `public/locales/en/translation.json`                  | `public/locales/zh-CN/translation.json`, other locales                                                  |
 | Shopify auth/API version         | `app/lib/shopifyAdminApiVersion.ts`（硬编码 `2026-07`）    | `app/shopify.server.ts`、`worker/src/services/shopifyAdminApiVersion.ts`、`shopify.app*.toml`             |
@@ -940,10 +942,37 @@ recent 72-hour window.
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
+- `scripts/storefront-locale-audit.mjs`: public storefront multi-locale product
+field audit (competitor research). Paginates `/products.json` (or
+`/{locale}/products.json`), writes a local tree mirroring v4 blob layout under
+`scripts/tmp/storefront-audit/{shopHost}/{runId}/` (`init/PRODUCT/chunk-*.json`,
+`scrape/{locale}/PRODUCT/resources/{base64url}.json`, `diff/summary.json`,
+`report.md`), and computes obviously-untranslated ratios vs primary.
 - `scripts/eventReport.ts`: imported by app routes/components; this is runtime
 client reporting code, not a throwaway script.
 - `scripts/lib/autoScanSchedule.mjs`: helper used by auto-scan scheduling
 scripts.
+
+Storefront locale audit playbook (trigger: 「审计店面多语言」):
+
+1. Open the public shop URL in the Cursor browser.
+2. Discover locales from the language dropdown / `hreflang` /
+   `document.documentElement.lang` / `window.Shopify?.locale`; switch each
+   locale via the UI or Shopify `/localization` when needed; record evidence in
+   `locales.json` if collecting manually.
+3. Run the script (HTTP fetch path; pass `--cookie` if the browser session is
+   required for Markets):
+   `node scripts/storefront-locale-audit.mjs --shop <url> --locales <a,b,c> [--primary <a>]`
+   If Node HTTP is rate-limited, fetch `products.json` in the Cursor browser,
+   save each locale as `{locale}.json` under a raw dir, then:
+   `node scripts/storefront-locale-audit.mjs --shop <url> --primary <a> --from-raw <rawDir>`
+   Or rebuild diff only:
+   `node scripts/storefront-locale-audit.mjs --out <runDir> --diff-only`
+4. Reply with locale count, primary product count, local root path
+   (`blobPrefix` equivalent `storefront-audit/{host}/{runId}`), and
+   per-locale `untranslatedRatio` from `diff/summary.json`. Prefer quoting
+   the auto-generated Chinese `report.md` in the run folder.
+5. Artifacts stay under ignored `scripts/tmp/`; do not commit them.
 
 Agent / deploy helper scripts:
 
