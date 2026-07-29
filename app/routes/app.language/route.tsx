@@ -467,7 +467,6 @@ const Index = () => {
   const pollFailureLoggedRef = useRef(false);
   const skipWebPresencesResyncRef = useRef(true);
   const coverageRequestRef = useRef<Promise<void> | null>(null);
-  const initialCoverageRefreshDoneRef = useRef(false);
   const dataSourceRef = useRef<LanguagesDataType[]>([]);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -807,18 +806,6 @@ const Index = () => {
       });
     });
   }, [refreshCoverageRows]);
-
-  useEffect(() => {
-    if (initialCoverageRefreshDoneRef.current) return;
-    if (loading || dataSource.length === 0) return;
-    if (dataSource.some((item) => item.status === 2)) return;
-
-    initialCoverageRefreshDoneRef.current = true;
-    void refreshCoverageRows({
-      forceRefresh: true,
-      locales: dataSource.map((item) => item.locale),
-    });
-  }, [dataSource, loading, refreshCoverageRows]);
 
   useEffect(() => {
     if (!dataSource?.some((item: any) => item.status === 2)) return;
