@@ -45,7 +45,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         targetLocales,
         includeRuntimeSignals,
       });
-      return json({ ok: true, summary });
+      const missingLocales = summary.locales
+        .filter((row) => row.cacheMissing)
+        .map((row) => row.locale);
+      if (missingLocales.length === 0) {
+        return json({ ok: true, summary });
+      }
+
+      const refreshedSummary = await computeCoverageSummary({
+        admin,
+        shop: shopName,
+        targetLocales,
+        forceRefresh: true,
+        localesToRefresh: missingLocales,
+      });
+      return json({
+        ok: true,
+        summary: refreshedSummary,
+        hydratedMissingLocales: missingLocales,
+      });
     }
     const summary = await computeCoverageSummary({
       admin,
