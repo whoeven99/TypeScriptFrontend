@@ -316,6 +316,15 @@ then `api.translate-v4.tasks.ts`.
 `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
 literals like `else` and `Default Title` never enter the LLM text pool;
 `{{ }}` stays in-place for `maskPlaceholders`.
+- Short plain fields (`<80` chars, not handle / meta_description): chunk-level
+  JSON pack in `llmTranslate.ts` — field/value TM first, then dedupe by text,
+  then size-capped JSON batches (`TRANSLATE_SHORT_JSON_MAX_CHARS` /
+  `TRANSLATE_SHORT_JSON_MAX_ITEMS`, defaults 3000/40) with LLM first and Google
+  fallback. Pool prefix `@short@` keeps pack limits separate from rich
+  HTML/JSON. Rollback: `TRANSLATE_SHORT_PACK_LLM_FIRST=false` restores
+  Google-first for short plain. Forced `aiModel=google-translate` still
+  Google-only. Metafield `json` FieldPlan remains single-value slot extract/
+  reassemble — it does not pack multiple Shopify fields into one JSON document.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.

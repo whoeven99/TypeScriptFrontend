@@ -1533,7 +1533,9 @@ export function setShopQuotaCap(shop: string, cap: number): void {
 // ─── Engine router ──────────────────────────────────────────────────────────────
 //
 // Two engine *families*: "llm" (DeepSeek) and "google" (Google Translate).
-// Cost-tiered routing applies unless the job requests google-translate only.
+// Short plain fields pack into JSON batches (LLM first, Google fallback) unless
+// the job forces google-translate only. Set TRANSLATE_SHORT_PACK_LLM_FIRST=false
+// to restore the old Google-first order for short plain.
 
 type Engine = "llm" | "google";
 
@@ -1546,6 +1548,13 @@ function llmConfigured(): boolean {
     process.env.DEEPSEEK_API_KEY?.trim() ||
       process.env.DEEPSEEK_API_KEYS?.trim(),
   );
+}
+
+/** Short plain JSON-pack path uses LLM first by default (rollback via env). */
+function shortPackLlmFirst(): boolean {
+  const v = process.env.TRANSLATE_SHORT_PACK_LLM_FIRST;
+  if (v === undefined || v.trim() === "") return true;
+  return /^(1|true|yes)$/i.test(v);
 }
 
 /** A single forced engine family, or null when auto-routing should apply. */
@@ -1568,19 +1577,38 @@ function fieldTier(
   return value.length >= SHORT_PLAIN_THRESHOLD ? "rich" : "trivial";
 }
 
-function poolSignature(order: Engine[], isHandle: boolean): string {
+type PoolSigOpts = { isHandle?: boolean; isShort?: boolean };
+
+function poolSignature(order: Engine[], opts: boolean | PoolSigOpts = false): string {
+  // Legacy callers passed `isHandle` as a boolean.
+  const { isHandle, isShort } =
+    typeof opts === "boolean" ? { isHandle: opts, isShort: false } : opts;
   const base = order.join(",");
-  return isHandle ? `${HANDLE_POOL_PREFIX}${base}` : base;
+  if (isHandle) return `${HANDLE_POOL_PREFIX}${base}`;
+  if (isShort) return `${SHORT_POOL_PREFIX}${base}`;
+  return base;
 }
 
-function parsePoolSignature(sig: string): { order: Engine[]; isHandle: boolean } {
+function parsePoolSignature(sig: string): {
+  order: Engine[];
+  isHandle: boolean;
+  isShort: boolean;
+} {
   if (sig.startsWith(HANDLE_POOL_PREFIX)) {
     return {
       isHandle: true,
+      isShort: false,
       order: sig.slice(HANDLE_POOL_PREFIX.length).split(",") as Engine[],
     };
   }
-  return { isHandle: false, order: sig.split(",") as Engine[] };
+  if (sig.startsWith(SHORT_POOL_PREFIX)) {
+    return {
+      isHandle: false,
+      isShort: true,
+      order: sig.slice(SHORT_POOL_PREFIX.length).split(",") as Engine[],
+    };
+  }
+  return { isHandle: false, isShort: false, order: sig.split(",") as Engine[] };
 }
 
 /** Ordered engine candidates for a tier (primary first, then fallback). */
@@ -1591,12 +1619,14 @@ function engineOrderFor(tier: "trivial" | "rich", aiModel?: string): Engine[] {
   const g = googleConfigured();
   const l = llmConfigured();
   const order: Engine[] = [];
-  if (tier === "trivial") {
-    if (g) order.push("google");
+  // Short plain: LLM JSON-pack first (default); rich always LLM first.
+  const llmFirst = tier === "rich" || shortPackLlmFirst();
+  if (llmFirst) {
     if (l) order.push("llm");
+    if (g) order.push("google");
   } else {
-    if (l) order.push("llm");
     if (g) order.push("google");
+    if (l) order.push("llm");
   }
   // Always have at least one candidate.
   if (order.length === 0) order.push(l ? "llm" : "google");
@@ -1643,6 +1673,8 @@ export type TranslateResult = {
 
 /** Pool signature prefix for handle/slug texts (hyphen→space preprocessed). */
 const HANDLE_POOL_PREFIX = "@handle@";
+/** Pool signature prefix for short plain JSON-pack batches (keeps limits separate from rich). */
+const SHORT_POOL_PREFIX = "@short@";
 
 export function isHandleFieldKey(key: string): boolean {
   return key.trim().toLowerCase() === "handle";
@@ -1933,12 +1965,33 @@ const RICH_MAX_ITEMS_PER_BATCH = Math.max(
   1,
   Number(process.env.TRANSLATE_RICH_MAX_ITEMS_PER_BATCH) || 8,
 );
+/** Short plain JSON-pack pools: more items per request (many tiny titles/labels). */
+const SHORT_JSON_MAX_CHARS_PER_BATCH = Math.max(
+  500,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_CHARS) || 3_000,
+);
+const SHORT_JSON_MAX_ITEMS_PER_BATCH = Math.max(
+  1,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_ITEMS) || 40,
+);
 
-/** LLM-first engine order ⇒ rich tier (HTML/JSON/long plain). Google-first ⇒ trivial. */
-export function resolveBatchLimits(order: Engine[]): {
+/**
+ * Batch size for a pool. Short plain JSON packs use dedicated higher item caps;
+ * rich LLM-first pools stay small; legacy Google-first uses the general cap.
+ */
+export function resolveBatchLimits(
+  order: Engine[],
+  opts?: { isShort?: boolean },
+): {
   maxChars: number;
   maxItems: number;
 } {
+  if (opts?.isShort) {
+    return {
+      maxChars: SHORT_JSON_MAX_CHARS_PER_BATCH,
+      maxItems: SHORT_JSON_MAX_ITEMS_PER_BATCH,
+    };
+  }
   if (order[0] === "llm") {
     return { maxChars: RICH_MAX_CHARS_PER_BATCH, maxItems: RICH_MAX_ITEMS_PER_BATCH };
   }
@@ -3058,9 +3111,12 @@ function reconstructPlan(
  *  - Dedup: each unique (engine-order, text) is translated once and reused
  *    everywhere it occurs in the chunk.
  *
- * Engine selection: cost-tiered routing (Google for short/simple, DeepSeek for rich)
- * with cross-engine fallback, unless the job sets aiModel=google-translate.
+ * Engine selection: short plain packs into JSON batches (LLM first, Google
+ * fallback); rich (HTML/JSON/long plain) stays LLM-first. Forced
+ * aiModel=google-translate skips packing and uses Google only.
  * Placeholders are masked across all engines; TM cache keyed by tier model.
+ * Pipeline for short plain: field/value TM → chunk dedupe → size-capped JSON
+ * packs → translate → reconstruct.
  */
 export type TranslatedResourceOutput = {
   resourceId: string;
@@ -3137,9 +3193,13 @@ export async function translateResources(
   const plans: FieldPlan[] = [];
   // orderSig → (unique text → occurrence count across the chunk).
   const pools = new Map<string, Map<string, number>>();
-  const addUnit = (order: Engine[], text: string, isHandle = false) => {
+  const addUnit = (
+    order: Engine[],
+    text: string,
+    opts: PoolSigOpts = {},
+  ) => {
     if (!isTranslatableLeafText(text)) return;
-    const sig = poolSignature(order, isHandle);
+    const sig = poolSignature(order, opts);
     const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
     occ.set(text, (occ.get(text) ?? 0) + 1);
   };
@@ -3163,6 +3223,7 @@ export async function translateResources(
     resourceId: string;
     f: TranslateItem;
     klass: "html" | "liquid_html" | "json" | "list" | "plain";
+    tier: "trivial" | "rich";
     order: Engine[];
     cacheModel: string;
   };
@@ -3190,9 +3251,10 @@ export async function translateResources(
         rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
         continue;
       }
-      const order = engineOrderFor(fieldTier(f.key, f.value, klass), aiModel);
+      const tier = fieldTier(f.key, f.value, klass);
+      const order = engineOrderFor(tier, aiModel);
       const cacheModel = engineModel(order[0], aiModel);
-      fieldWorks.push({ resourceId: res.resourceId, f, klass, order, cacheModel });
+      fieldWorks.push({ resourceId: res.resourceId, f, klass, tier, order, cacheModel });
     }
   }
 
@@ -3209,7 +3271,7 @@ export async function translateResources(
 
   // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
-    const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
+    const { resourceId, f, klass, tier, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
       logSingleTranslatePath(logSingleTranslate, "skip", {
@@ -3297,7 +3359,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         template,
         nodeParts,
@@ -3315,7 +3377,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         template,
         nodeParts,
@@ -3332,7 +3394,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order),
           cacheModel,
           parts,
         });
@@ -3363,7 +3425,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order),
           cacheModel,
           originalValue: f.value,
           root,
@@ -3396,17 +3458,20 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         originalValue: f.value,
         elements,
       });
     } else {
       const isHandle = isHandleFieldKey(f.key);
+      // Short plain (trivial) shares a dedicated pool so JSON-pack limits stay separate from rich.
+      const isShort = !isHandle && tier === "trivial";
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const poolSig = poolSignature(order, isHandle);
-      parts.forEach((p) => addUnit(order, p, isHandle));
+      const poolOpts: PoolSigOpts = { isHandle, isShort };
+      const poolSig = poolSignature(order, poolOpts);
+      parts.forEach((p) => addUnit(order, p, poolOpts));
       plans.push({
         kind: "plain",
         resourceId,
@@ -3481,12 +3546,12 @@ export async function translateResources(
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
   for (const [sig, occ] of pools) {
-    const { order, isHandle } = parsePoolSignature(sig);
+    const { order, isHandle, isShort } = parsePoolSignature(sig);
     const cacheModel = engineModel(order[0]!, aiModel);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
 
-    // 2a. Value-TM prefilter for every unique leaf in this pool.
+    // 2a. Value-TM prefilter for every unique leaf in this pool (before JSON pack).
     if (!skipCacheRead) {
       const leafHits = await Promise.all(
         allTexts.map((text) => tmGetByValue(text, source, target, cacheModel)),
@@ -3514,6 +3579,7 @@ export async function translateResources(
       }
     }
 
+    // Cache misses only: deduped unique texts → size-capped JSON packs.
     const texts = allTexts.filter((t) => !tmap.has(t));
     if (texts.length === 0) {
       translated.set(sig, tmap);
@@ -3521,7 +3587,7 @@ export async function translateResources(
     }
 
     const items: TranslateItem[] = texts.map((t, i) => ({ key: String(i), value: t, digest: "" }));
-    const { maxChars, maxItems } = resolveBatchLimits(order);
+    const { maxChars, maxItems } = resolveBatchLimits(order, { isShort });
     const batches = batchByChars(items, maxChars, maxItems);
     await Promise.all(batches.map(async (batch) => {
       if (await abortRequested()) return;
