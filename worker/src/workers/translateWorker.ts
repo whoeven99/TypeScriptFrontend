@@ -128,6 +128,7 @@ function toTranslatedResourceItem(
       translatedValue: r.translatedValue,
       digest: r.digest,
       status: r.status,
+      ...(r.cost ? { cost: r.cost } : {}),
     })),
   };
 }

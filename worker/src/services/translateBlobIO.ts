@@ -1,3 +1,4 @@
+import type { TranslationFieldCost } from "@ciwi/translation-core/llm-translate";
 import { blobExists, blobListPaths, blobRead, blobWrite } from "./blobV4.js";
 
 /** One translated Shopify resource — same shape as a chunk array element. */
@@ -9,6 +10,8 @@ export type TranslatedResourceItem = {
     translatedValue: string;
     digest: string;
     status?: "translated" | "fallback";
+    /** Per-field LLM/Google/cache cost metadata for Admin inspection. */
+    cost?: TranslationFieldCost;
   }>;
 };
 
