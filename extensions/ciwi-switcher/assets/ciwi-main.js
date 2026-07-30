@@ -20,8 +20,6 @@ import {
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
 
-customElements.define("ciwiswitcher-form", CiwiswitcherForm);
-
 // 原 isLikelyBotByUA 逻辑（简化版）
 function isLikelyBotByUA() {
   const ua = navigator.userAgent.toLowerCase();
@@ -113,6 +111,58 @@ function isTruthyPreviewFlag(value) {
   return value === true || value === "true" || value === "1" || value === 1;
 }
 
+function hasShopifyVisualPreviewParams(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    const source = url.searchParams.get("source");
+    return (
+      source === "visualPreview" ||
+      source === "visualPreviewInitialLoad" ||
+      url.searchParams.has("oseid") ||
+      url.searchParams.has("osectx")
+    );
+  } catch {
+    return (
+      raw.includes("source=visualPreview") ||
+      raw.includes("source=visualPreviewInitialLoad") ||
+      raw.includes("oseid=") ||
+      raw.includes("osectx=")
+    );
+  }
+}
+
+function isShopifyThemeEditorAppsContext() {
+  const matchesEditorAppsContext = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return false;
+
+    try {
+      const url = new URL(raw, window.location.origin);
+      return (
+        url.pathname.includes("/editor") &&
+        url.searchParams.get("context") === "apps" &&
+        url.searchParams.has("previewPath")
+      );
+    } catch {
+      return (
+        raw.includes("/editor") &&
+        raw.includes("context=apps") &&
+        raw.includes("previewPath=")
+      );
+    }
+  };
+
+  return (
+    matchesEditorAppsContext(window.location.href) ||
+    matchesEditorAppsContext(document.referrer) ||
+    hasShopifyVisualPreviewParams(window.location.href) ||
+    hasShopifyVisualPreviewParams(document.referrer)
+  );
+}
+
 function isShopifyThemePreviewContext(ciwiBlock) {
   const currentUrl = new URL(window.location.href);
   const params = currentUrl.searchParams;
@@ -143,6 +193,10 @@ function isShopifyThemePreviewContext(ciwiBlock) {
     return true;
   }
 
+  if (isShopifyThemeEditorAppsContext()) {
+    return true;
+  }
+
   // 主题预览链接通常会带 preview_theme_id；部分预览链路还会附带 _ab/_fd/pb。
   if (params.has("preview_theme_id") || params.has("preview_token")) {
     return true;
@@ -165,11 +219,105 @@ function isShopifyThemePreviewContext(ciwiBlock) {
   );
 }
 
+function buildPreviewCurrencyLabel(ciwiBlock, currencyCode) {
+  if (!ciwiBlock || !currencyCode) return currencyCode || "";
+
+  const selectedCountryCode =
+    ciwiBlock.querySelector('input[name="country_code"]')?.value || "";
+  const selectedCountryLink = selectedCountryCode
+    ? ciwiBlock.querySelector(`ul[role="list"] a[data-value="${selectedCountryCode}"]`)
+    : null;
+  const linkText = selectedCountryLink?.textContent?.replace(/\s+/g, " ").trim() || "";
+  const currencyPart = linkText.includes("|")
+    ? linkText.split("|")[1]?.trim() || ""
+    : linkText;
+
+  const symbol = currencyPart
+    .replace(currencyCode, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return symbol ? `${currencyCode} (${symbol})` : currencyCode;
+}
+
+function renderPreviewCurrencySelector({ ciwiBlock, configData, enabled }) {
+  if (!enabled || !ciwiBlock) return;
+
+  const currencyCode =
+    ciwiBlock.querySelector('input[name="currency_code"]')?.value || "";
+  const currencyLabel = buildPreviewCurrencyLabel(ciwiBlock, currencyCode);
+  const currencySelector = ciwiBlock.querySelector(
+    "#currency-switcher-container",
+  );
+  const currencySelectorHeader = ciwiBlock.querySelector(
+    ".currency_selector_header",
+  );
+  const currencySelectorWrapper = currencySelectorHeader?.closest(
+    ".native-selector",
+  );
+
+  if (!currencySelector || !currencySelectorHeader) return;
+
+  if (currencySelectorWrapper) {
+    currencySelectorWrapper.style.backgroundColor = configData.backgroundColor;
+    currencySelectorWrapper.style.border = `1px solid ${configData.optionBorderColor}`;
+  }
+  currencySelectorHeader.style.backgroundColor = "transparent";
+  currencySelectorHeader.style.border = "none";
+  currencySelector.style.display = "block";
+  currencySelectorHeader.innerHTML = "";
+
+  const optionItem = document.createElement("option");
+  optionItem.value = currencyCode;
+  optionItem.textContent = currencyLabel;
+  optionItem.selected = true;
+  currencySelectorHeader.appendChild(optionItem);
+}
+
+function disableCiwiInteractionsInThemePreview(ciwiBlock) {
+  if (!ciwiBlock) return;
+
+  const switcher = ciwiBlock.querySelector("#ciwi-container");
+  const selectorBackdrop = ciwiBlock.querySelector("#selector-backdrop");
+  const mainBox = ciwiBlock.querySelector("#main-box");
+  const floatButtonText = ciwiBlock.querySelector("#translate-float-btn-text");
+  const languageSelect = ciwiBlock.querySelector(".language_selector_header");
+  const currencySelect = ciwiBlock.querySelector(".currency_selector_header");
+
+  if (switcher) {
+    switcher.dataset.ciwiPreviewDisabled = "1";
+  }
+  if (selectorBackdrop) {
+    selectorBackdrop.style.display = "none";
+  }
+  if (mainBox) {
+    mainBox.style.pointerEvents = "none";
+    mainBox.style.cursor = "default";
+  }
+  if (floatButtonText) {
+    floatButtonText.style.pointerEvents = "none";
+    floatButtonText.style.cursor = "default";
+  }
+  if (languageSelect) {
+    languageSelect.tabIndex = -1;
+    languageSelect.setAttribute("aria-disabled", "true");
+    languageSelect.style.pointerEvents = "none";
+    languageSelect.style.cursor = "default";
+  }
+  if (currencySelect) {
+    currencySelect.tabIndex = -1;
+    currencySelect.setAttribute("aria-disabled", "true");
+    currencySelect.style.pointerEvents = "none";
+    currencySelect.style.cursor = "default";
+  }
+}
+
 async function ciwiOnload() {
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) return console.warn("ciwiBlock not found");
+  const isInThemePreview = isShopifyThemePreviewContext(ciwiBlock);
   const shop = ciwiBlock.querySelector("#queryCiwiId");
   // 爬虫检测（仅拦截，不上报日志）
   const reason = isLikelyBotByUA();
@@ -182,6 +330,7 @@ async function ciwiOnload() {
   const pageContext = getCiwiPageContext(ciwiBlock);
 
   const runStorefrontTranslationTasks = () => {
+    if (isInThemePreview) return;
     const tasks = [];
     if (pageContext.isProductPage) {
       tasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
@@ -198,7 +347,9 @@ async function ciwiOnload() {
   };
 
   // 主题 custom liquid 文本：全站需要
-  CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+  if (!isInThemePreview) {
+    CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+  }
   runStorefrontTranslationTasks();
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
@@ -251,7 +402,7 @@ async function ciwiOnload() {
     hasManualLocalizationQuery || preferredLanguage || preferredCountry,
   );
 
-  if (hasManualLocalizationQuery) {
+  if (hasManualLocalizationQuery && !isInThemePreview) {
     currentUrl.searchParams.delete(CIWI_MANUAL_LOCALIZATION_QUERY_KEY);
     window.history.replaceState(
       {},
@@ -272,7 +423,6 @@ async function ciwiOnload() {
 
   let detectedCountry = preferredCountry || countryValue;
   let detectedLanguage = preferredLanguage || browserLanguage;
-  const isInThemePreview = isShopifyThemePreviewContext(ciwiBlock);
   const shouldRunAutoLocalization =
     !isInThemePreview &&
     configData?.ipOpen &&
@@ -343,7 +493,7 @@ async function ciwiOnload() {
 
   // 国旗数据（24KB）按需加载：浏览器空闲时加载并渲染国旗；
   // 若用户在此之前先接触切换器，则立即加载（先于 idle）。两条路径都只渲染一次。
-  if (isLanguageSelectorTakeEffect && configData?.includedFlag) {
+  if (isLanguageSelectorTakeEffect && configData?.includedFlag && !isInThemePreview) {
     const loadFlags = () =>
       ensureLanguageLocaleData().then(() =>
         renderLanguageFlags(configData, ciwiBlock),
@@ -360,13 +510,21 @@ async function ciwiOnload() {
     languageSelect?.addEventListener("focus", loadFlags, { once: true });
   }
 
-  CurrencySelectorTakeEffect(
-    blockId,
-    isCurrencySelectorTakeEffect,
-    shop.value,
-    configData,
-    ciwiBlock,
-  );
+  if (isInThemePreview) {
+    renderPreviewCurrencySelector({
+      ciwiBlock,
+      configData,
+      enabled: isCurrencySelectorTakeEffect,
+    });
+  } else {
+    CurrencySelectorTakeEffect(
+      blockId,
+      isCurrencySelectorTakeEffect,
+      shop.value,
+      configData,
+      ciwiBlock,
+    );
+  }
 
   // UI 样式控制（top/bottom left/right）
   const switcher = ciwiBlock.querySelector("#ciwi-container");
@@ -525,6 +683,11 @@ async function ciwiOnload() {
 
   syncCompactSwitcherLayout(ciwiBlock);
 
+  if (isInThemePreview) {
+    disableCiwiInteractionsInThemePreview(ciwiBlock);
+    return;
+  }
+
   // 仅在命中缓存时后台刷新 config（异步，不阻塞）；
   // 首次无缓存时 useCacheThenRefresh 已经拉取并缓存，无需再请求一次
   if (hadConfigCache) {
@@ -591,11 +754,19 @@ async function ciwiOnload() {
 
 }
 
-// 尽早初始化：DOM 就绪即可运行，无需等待整页所有图片/字体等资源（原 window load）。
-// 三个数据脚本在 liquid 中改用 defer，保证在 DOMContentLoaded 前按序加载完，
-// 因此此处运行时 window.countryCurMap 等已就绪。
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", ciwiOnload);
-} else {
-  ciwiOnload();
+const shouldDisableCiwiBootstrap = isShopifyThemeEditorAppsContext();
+
+if (!shouldDisableCiwiBootstrap) {
+  if (!customElements.get("ciwiswitcher-form")) {
+    customElements.define("ciwiswitcher-form", CiwiswitcherForm);
+  }
+
+  // 尽早初始化：DOM 就绪即可运行，无需等待整页所有图片/字体等资源（原 window load）。
+  // 三个数据脚本在 liquid 中改用 defer，保证在 DOMContentLoaded 前按序加载完，
+  // 因此此处运行时 window.countryCurMap 等已就绪。
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", ciwiOnload);
+  } else {
+    ciwiOnload();
+  }
 }

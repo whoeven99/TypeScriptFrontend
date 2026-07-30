@@ -59,6 +59,84 @@ const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
 let activePriceObserver = null;
 
+function isTruthyPreviewFlag(value) {
+  return value === true || value === "true" || value === "1" || value === 1;
+}
+
+function hasShopifyVisualPreviewParams(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    const source = url.searchParams.get("source");
+    return (
+      source === "visualPreview" ||
+      source === "visualPreviewInitialLoad" ||
+      url.searchParams.has("oseid") ||
+      url.searchParams.has("osectx")
+    );
+  } catch {
+    return (
+      raw.includes("source=visualPreview") ||
+      raw.includes("source=visualPreviewInitialLoad") ||
+      raw.includes("oseid=") ||
+      raw.includes("osectx=")
+    );
+  }
+}
+
+function isThemePreviewDisabledForCiwi(ciwiBlock) {
+  const params = new URL(window.location.href).searchParams;
+  const referrer = String(document.referrer || "");
+  const requestDesignMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_design_mode"]',
+  )?.value;
+  const requestVisualPreviewMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_visual_preview_mode"]',
+  )?.value;
+
+  if (
+    isTruthyPreviewFlag(requestDesignMode) ||
+    isTruthyPreviewFlag(requestVisualPreviewMode)
+  ) {
+    return true;
+  }
+
+  if (document.documentElement.classList.contains("shopify-design-mode")) {
+    return true;
+  }
+
+  if (window.Shopify?.designMode === true) {
+    return true;
+  }
+
+  if (window.Shopify?.visualPreviewMode === true) {
+    return true;
+  }
+
+  if (
+    hasShopifyVisualPreviewParams(window.location.href) ||
+    hasShopifyVisualPreviewParams(referrer)
+  ) {
+    return true;
+  }
+
+  if (params.has("preview_theme_id") || params.has("preview_token")) {
+    return true;
+  }
+
+  if (
+    referrer.includes("admin.shopify.com/store/") &&
+    referrer.includes("/themes/") &&
+    referrer.includes("/editor")
+  ) {
+    return true;
+  }
+
+  return params.has("_ab") && params.has("_fd") && params.has("pb");
+}
+
 function measureTextWidth(referenceElement, text) {
   if (!referenceElement || !text) return 0;
 
@@ -2092,6 +2170,41 @@ export class CiwiswitcherForm extends HTMLElement {
     // 第二个 <ciwiswitcher-form> 只含隐藏国家列表、没有 block_id，
     // 解析不到 ciwiBlock，无需绑定任何交互（否则会白挂一个全局 click 监听）。
     if (!ciwiBlock) return;
+    if (isThemePreviewDisabledForCiwi(ciwiBlock)) {
+      const ciwiContainer = this.querySelector("#ciwi-container");
+      const mainBox = this.querySelector("#main-box");
+      const translateFloatBtnText = this.querySelector("#translate-float-btn-text");
+      const selectorBackdrop = this.querySelector("#selector-backdrop");
+      const languageSelect = this.querySelector(".language_selector_header");
+      const currencySelect = this.querySelector(".currency_selector_header");
+      if (ciwiContainer) {
+        ciwiContainer.dataset.ciwiPreviewDisabled = "1";
+      }
+      if (mainBox) {
+        mainBox.style.pointerEvents = "none";
+        mainBox.style.cursor = "default";
+      }
+      if (translateFloatBtnText) {
+        translateFloatBtnText.style.pointerEvents = "none";
+        translateFloatBtnText.style.cursor = "default";
+      }
+      if (selectorBackdrop) {
+        selectorBackdrop.style.display = "none";
+      }
+      if (languageSelect) {
+        languageSelect.tabIndex = -1;
+        languageSelect.setAttribute("aria-disabled", "true");
+        languageSelect.style.pointerEvents = "none";
+        languageSelect.style.cursor = "default";
+      }
+      if (currencySelect) {
+        currencySelect.tabIndex = -1;
+        currencySelect.setAttribute("aria-disabled", "true");
+        currencySelect.style.pointerEvents = "none";
+        currencySelect.style.cursor = "default";
+      }
+      return;
+    }
 
     this.elements = {
       ciwiBlock,

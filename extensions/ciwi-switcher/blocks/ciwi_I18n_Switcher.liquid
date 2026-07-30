@@ -1,4 +1,8 @@
 {% assign language_iso = localization.language.iso_code %}
+{% assign ciwi_is_theme_preview = false %}
+{% if request.design_mode or request.visual_preview_mode %}
+  {% assign ciwi_is_theme_preview = true %}
+{% endif %}
 <link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
 <div dir="{% if language_iso == 'ar' or language_iso == 'fa' or language_iso == 'ur' or language_iso == 'he' %}rtl{% else %}ltr{% endif %}">
@@ -81,7 +85,7 @@
         <div
           id="main-box"
           class="ciwi_main_box"
-          style="display: none;"
+          style="{% if ciwi_is_theme_preview %}display: flex; pointer-events: none; cursor: default;{% else %}display: none;{% endif %}"
         >
           <img
             id="main-language-flag"
@@ -190,12 +194,14 @@
     不在此处 eager 加载，由 ciwi-main 在浏览器空闲或用户首次接触切换器时
     通过 #ciwiLocaleDataUrl 动态注入，避免每页关键路径都下载它。
   {% endcomment %}
-  <script src="{{ 'currency-format-config.js' | asset_url }}" defer></script>
-  <script src="{{ 'country-cur-map.js' | asset_url }}" defer></script>
-  <script type="module" src="{{ 'ciwi-main.js' | asset_url }}"></script>
-  <script>
-    window.__JS_EXECUTED__ = true;
-  </script>
+  {% unless ciwi_is_theme_preview %}
+    <script src="{{ 'currency-format-config.js' | asset_url }}" defer></script>
+    <script src="{{ 'country-cur-map.js' | asset_url }}" defer></script>
+    <script type="module" src="{{ 'ciwi-main.js' | asset_url }}"></script>
+    <script>
+      window.__JS_EXECUTED__ = true;
+    </script>
+  {% endunless %}
 </div>
 
 {% schema %}
