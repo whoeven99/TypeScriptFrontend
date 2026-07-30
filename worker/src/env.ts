@@ -136,6 +136,15 @@ export function ensureWorkerEnv(): void {
     console.warn(`${LOG} ${c.label} 未就绪 → 需要 ${c.hint}`);
   }
 
+  const renderKv = Boolean(process.env.RENDER_KEY_VALUE?.trim());
+  const dual = (process.env.REDIS_DUAL_WRITE?.trim() || "").toLowerCase();
+  const cutover = process.env.REDIS_CUTOVER?.trim() || "(empty)";
+  if (renderKv || dual === "true" || dual === "1" || dual === "yes" || process.env.REDIS_CUTOVER?.trim()) {
+    console.info(
+      `${LOG} redis migrate: RENDER_KEY_VALUE=${renderKv ? "set" : "missing"} dualWrite=${dual || "false"} cutover=${cutover}`,
+    );
+  }
+
   const cosmosOk = checks.find((c) => c.label === "Cosmos")?.ok;
   if (!cosmosOk && secretApplied === 0) {
     console.warn(

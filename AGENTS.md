@@ -460,6 +460,8 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
 `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
+  Migration to Render KV: `RENDER_KEY_VALUE`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
+  (see Operations → Redis).
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
@@ -963,6 +965,9 @@ recent 72-hour window.
 - `scripts/backfill-locale-coverage-from-redis.mjs`: Redis `items_count` →
   Turso `ShopTargetLocale.coverage*`（默认 dry-run；`--write` 写线上；
   支持 `--shop=` / `--only-missing`；MOVED 重连重试）。
+- `scripts/migrate-redis-azure-to-render.mjs`: Azure → Render KV SCAN 回填
+  （`--env=.env.test --prefixes=tm,items_count`；默认 dry-run；`--write` 写入；
+  token 同 `REDIS_CUTOVER`）。
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -1118,27 +1123,81 @@ node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
 Redis holds real-time progress counters, hint queues, control flags, and
 translation memory cache.
 
-**Hint queue inspection:**
+**Connection sources (do not print URL/password values):**
+
+| Audience | Env / URL | Notes |
+| --- | --- | --- |
+| Azure Cache (migration primary) | `REDIS_URL` / `REDIS_URL_V4` on Web/Worker | Keep until cutover finishes |
+| Render Key Value (migration secondary) | `RENDER_KEY_VALUE` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
+| One-off CLI | Dashboard **Valkey CLI Command** | External URL wrapped for `redis-cli` / `valkey-cli` |
+
+**Azure → Render KV migration switches** (code: `redisDualClient` in App + Worker):
+
+| Env | Meaning |
+| --- | --- |
+| `RENDER_KEY_VALUE` | Secondary Redis URL |
+| `REDIS_DUAL_WRITE=true` | Dual-write **cache** String/Hash to both; **never** dual-write hint/shop_scan lists |
+| `REDIS_CUTOVER` | Comma tokens for read/write source = Render: `tm`, `items_count`, `progress`, `control`, `auto_scan`, `hints`, `shop_scan`, `keystat`, or `all`. Empty = all traffic still on Azure |
+
+Backfill (dry-run default):
 
 ```ps1
-# Prod hint queues (reads .env.prod)
+node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm,items_count
+node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm --write
+```
+
+Gray test: deploy with `REDIS_DUAL_WRITE=true` and empty `REDIS_CUTOVER` → backfill a token → set the same `REDIS_CUTOVER` on **Web + Worker** → exercise that feature → clear cutover to roll back. Migrate `hints` / `shop_scan` last (lists are never dual-written).
+
+**Ping Render Key Value from local `.env` / `.env.test` (masks host only; never echo secrets):**
+
+```ps1
+# From repo root; reads RENDER_KEY_VALUE from the named file
+node -e "
+const fs=require('fs'); const Redis=require('ioredis');
+const file=process.argv[1]||'.env.test';
+const m=fs.readFileSync(file,'utf8').match(/^RENDER_KEY_VALUE=(.+)$/m);
+if(!m) throw new Error('RENDER_KEY_VALUE missing in '+file);
+const url=m[1].trim().replace(/^[\"']|[\"']$/g,'');
+const r=new Redis(url,{maxRetriesPerRequest:1,connectTimeout:8000});
+r.ping().then(async (pong)=>{
+  const n=await r.dbsize();
+  console.log(JSON.stringify({file, ok:pong==='PONG', pong, dbsize:n}));
+  r.quit();
+}).catch((e)=>{ console.error(file, e.message); process.exit(1); });
+" .env.test
+```
+
+**Hint queue inspection (Azure / current primary via `.env.prod`):**
+
+```ps1
+# Prod hint queues (reads .env.prod REDIS_URL)
 node worker/scripts/probe-hint-queues.mjs
 ```
 
 **Key Redis keys:**
 
 
-| Pattern                                                      | Purpose                           |
-| ------------------------------------------------------------ | --------------------------------- |
-| `translate:v4:hint:{init|translate|writeback}:{manual|auto}` | Stage hint queues                 |
-| `translate:v4:progress:<jobId>`                              | Hash: per-stage done/total        |
-| `translate:v4:control:<jobId>`                               | String: `pause` / `cancel` / null |
-| `translate:v4:progress:total:<jobId>`                        | String: total items per stage     |
-| `translate:v4:tm:<hash>`                                     | Translation memory cache          |
-| `translate:v4:auto_scan:last_at`                             | Last auto-scan timestamp          |
+| Pattern | Type / Purpose |
+| --- | --- |
+| `translate:v4:hint:{stage}:{manual\|auto}` | List: stage hint queues (`stage` = init / translate / writeback; claim prefers manual) |
+| `translate:v4:hint:{stage}` | List: legacy mixed queues (drain-only during deploy) |
+| `translate:v4:hint:verify`, `translate:v4:hint:analysis` | List: retired stages (compat / probe only; no live producers) |
+| `translate:v4:progress:<jobId>` | Hash: per-stage done/total, init module activity, pausePending (TTL 7d) |
+| `translate:v4:control:<jobId>` | String: `pause` / `cancel` (TTL 1d) |
+| `translate:v4:auto_scan:last_at` | String: last / next auto-scan schedule marker |
+| `translate:v4:auto_scan:last_success_at` | String: last successful auto-scan completion |
+| `tsf:shop_scan:hints` | List: shop-scan wake hints `{scanId,shopName}` (Cosmos poll is fallback) |
+| `tsf:items_count:{shop}:{locale}` | Hash: module → `{total,translated,updatedAt}` (TTL 7d; language summary in Turso) |
+| `tm:v5:{shop}:{target}:{model}:{digest}` | String: field-digest translation memory (TTL default 30d) |
+| `tm:v5:val:{source}:{target}:{model}:{id}` | String: value-level TM; id = digest or CRC-32 (TTL default 30d) |
+| `translate:v4:keystat:{label}` | Hash: LLM API-key snapshot (TTL 24h) |
+| `translate:v4:keystatlog:{label}` | List: LLM key throughput history (~30 min, TTL 2h) |
+
+Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
+`packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
 
 
-**Manual Redis query (if you have** `REDIS_URL_V4` **or** `REDIS_URL`**):**
+**Manual query — Azure / live primary (`REDIS_URL_V4` or `REDIS_URL`):**
 
 ```ps1
 node -e "
@@ -1149,6 +1208,25 @@ node -e "
     r.quit();
   });
 "
+```
+
+**Manual query — Render Key Value via `RENDER_KEY_VALUE` (local / agent):**
+
+```ps1
+# PowerShell: load from .env.test then query a progress hash
+$line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KEY_VALUE=' })
+$url = ($line -replace '^RENDER_KEY_VALUE=','').Trim().Trim('\"').Trim(\"'\")
+node -e "
+const Redis=require('ioredis');
+const r=new Redis(process.argv[1],{maxRetriesPerRequest:1,connectTimeout:8000});
+const key=process.argv[2]||'translate:v4:auto_scan:last_at';
+(async()=>{
+  const t=await r.type(key);
+  const out=t==='hash'?await r.hgetall(key):t==='list'?await r.lrange(key,0,20):await r.get(key);
+  console.log(JSON.stringify({key,t,out},null,2));
+  r.quit();
+})().catch(e=>{console.error(e.message);process.exit(1)});
+" $url translate:v4:auto_scan:last_at
 ```
 
 

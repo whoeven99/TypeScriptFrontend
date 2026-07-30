@@ -1,40 +1,48 @@
 import Redis from "ioredis";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+import {
+  getRenderKeyValueUrl,
+  warnIfMigrationEnvIncomplete,
+  wrapRedisPair,
+} from "./redisDualClient.server";
 
 /**
- * TsFrontend 专用 Redis 客户端，与 Spark worker 连同一个 Azure Cache 实例。
+ * TsFrontend 专用 Redis 客户端。
  *
- * 环境变量统一带 `_V4` 后缀，与 TSF 既有配置隔离：
- *   REDIS_URL_V4                 （优先；形如 rediss://:password@host:port/0）
- *   REDIS_URL                    （未设 REDIS_URL_V4 时的回退；prod 须与 worker 同一实例）
- *   REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4 [+ REDIS_PORT_V4 + REDIS_TLS_V4]
- *   REDIS_CONNECTION_NAME        （可选；默认 tsf-web-prod / tsf-web-test，Azure CLIENT LIST 可识别）
+ * Primary（迁移期 = Azure）:
+ *   REDIS_URL_V4 / REDIS_URL / REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4
+ *
+ * Secondary（Render Key Value，可选）:
+ *   RENDER_KEY_VALUE   Internal URL on Render services; External in local .env*
+ *   REDIS_DUAL_WRITE   cache dual-write (lists never dual-written)
+ *   REDIS_CUTOVER      comma tokens: tm,items_count,progress,control,auto_scan,hints,shop_scan,keystat,all
  */
 let singleton: Redis | undefined;
 
-function resolveRedisConnectionName(): string {
+function resolveRedisConnectionName(kind: "primary" | "secondary"): string {
   const override = process.env.REDIS_CONNECTION_NAME?.trim();
-  if (override) return override;
-  return isProductionNodeEnv() ? "tsf-web-prod" : "tsf-web-test";
+  const base = override
+    ? override
+    : isProductionNodeEnv()
+      ? "tsf-web-prod"
+      : "tsf-web-test";
+  return kind === "secondary" ? `${base}-render-kv` : base;
 }
 
-function redisClientOptions() {
+function redisClientOptions(kind: "primary" | "secondary" = "primary") {
   return {
     maxRetriesPerRequest: 2,
     connectTimeout: 10_000,
-    connectionName: resolveRedisConnectionName(),
+    connectionName: resolveRedisConnectionName(kind),
   } as const;
 }
 
-export function getTranslateV4RedisClient(): Redis {
-  if (singleton) return singleton;
-
+function createPrimaryRedis(): Redis {
   const url =
     process.env.REDIS_URL_V4?.trim() ||
     process.env.REDIS_URL?.trim();
   if (url) {
-    singleton = new Redis(url, redisClientOptions());
-    return singleton;
+    return new Redis(url, redisClientOptions("primary"));
   }
 
   const host = process.env.REDIS_HOSTNAME_V4?.trim();
@@ -49,13 +57,28 @@ export function getTranslateV4RedisClient(): Redis {
   const port = Number(process.env.REDIS_PORT_V4?.trim() || "6380");
   const useTls = process.env.REDIS_TLS_V4 !== "false";
 
-  singleton = new Redis({
+  return new Redis({
     host,
     port,
     password,
     tls: useTls ? {} : undefined,
-    ...redisClientOptions(),
+    ...redisClientOptions("primary"),
   });
+}
+
+export function getTranslateV4RedisClient(): Redis {
+  if (singleton) return singleton;
+
+  warnIfMigrationEnvIncomplete();
+  const primary = createPrimaryRedis();
+  const secondaryUrl = getRenderKeyValueUrl();
+  if (!secondaryUrl) {
+    singleton = primary;
+    return singleton;
+  }
+
+  const secondary = new Redis(secondaryUrl, redisClientOptions("secondary"));
+  singleton = wrapRedisPair(primary, secondary);
   return singleton;
 }
 
