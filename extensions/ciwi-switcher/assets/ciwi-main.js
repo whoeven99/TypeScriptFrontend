@@ -109,16 +109,37 @@ function detectRuntimeLanguage(ciwiBlock, availableLanguages) {
   return "";
 }
 
-function isShopifyThemePreviewContext() {
+function isTruthyPreviewFlag(value) {
+  return value === true || value === "true" || value === "1" || value === 1;
+}
+
+function isShopifyThemePreviewContext(ciwiBlock) {
   const currentUrl = new URL(window.location.href);
   const params = currentUrl.searchParams;
   const referrer = String(document.referrer || "");
+  const requestDesignMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_design_mode"]',
+  )?.value;
+  const requestVisualPreviewMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_visual_preview_mode"]',
+  )?.value;
+
+  if (
+    isTruthyPreviewFlag(requestDesignMode) ||
+    isTruthyPreviewFlag(requestVisualPreviewMode)
+  ) {
+    return true;
+  }
 
   if (document.documentElement.classList.contains("shopify-design-mode")) {
     return true;
   }
 
   if (window.Shopify?.designMode === true) {
+    return true;
+  }
+
+  if (window.Shopify?.visualPreviewMode === true) {
     return true;
   }
 
@@ -251,7 +272,7 @@ async function ciwiOnload() {
 
   let detectedCountry = preferredCountry || countryValue;
   let detectedLanguage = preferredLanguage || browserLanguage;
-  const isInThemePreview = isShopifyThemePreviewContext();
+  const isInThemePreview = isShopifyThemePreviewContext(ciwiBlock);
   const shouldRunAutoLocalization =
     !isInThemePreview &&
     configData?.ipOpen &&

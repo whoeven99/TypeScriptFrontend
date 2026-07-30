@@ -151,6 +151,8 @@
       <input type="hidden" name="page_type" value="{{ request.page_type }}">
       <input type="hidden" name="template_name" value="{{ template.name }}">
       <input type="hidden" name="block_id" value="{{ block.id }}">
+      <input type="hidden" name="ciwi_request_design_mode" value="{% if request.design_mode %}1{% else %}0{% endif %}">
+      <input type="hidden" name="ciwi_request_visual_preview_mode" value="{% if request.visual_preview_mode %}1{% else %}0{% endif %}">
       <input type="hidden" id="ciwiLocaleDataUrl" value="{{ 'language-locale-data.js' | asset_url }}">
     {% endform %}
   </ciwiswitcher-form>
