@@ -715,7 +715,17 @@ Language:
 - Client: `app/routes/app.language/languageClient.ts`.
 - Server: `app/server/translateV4/targetLocale.server.ts`,
 `shopLocales.server.ts`.
-- Models: `ShopTranslationSettings`, `ShopTargetLocale`.
+- Models: `ShopTranslationSettings`, `ShopTargetLocale`（含语言级覆盖率汇总
+  `coverageTranslated` / `coverageTotal` / `coveragePercent` /
+  `coverageUpdatedAt` / `coverageSource`；权威在 Turso，与 autoTranslate 同表）。
+- Coverage 写入：`app/server/translateV4/coverageStore.server.ts`（App refresh）、
+  `worker/src/services/localeCoverageTsf.ts`（finalize / shop_scan）；
+  口径 `COVERAGE_COUNT_LABELS` / `COVERAGE_SUMMARY_MODULES`。
+- Coverage 读取：`coverage.server.ts` / Spark `tsfLanguageCoverage.ts` 优先
+  Turso `ShopTargetLocale.coverage*`；未统计时 TSF 可回退 Redis；
+  `cacheEmpty` 触发语言页后台 refresh。
+- 线上 Redis→Turso 回填：`scripts/backfill-locale-coverage-from-redis.mjs`
+  （默认 dry-run；`--write` 写入；`--shop=` / `--only-missing`）。
 
 Glossary:
 
@@ -748,8 +758,10 @@ Job `blobPrefix` = `shop-profile/{shop}`。段：`contentSize`、轻量
 `profile` 并**保留**计量段（不再写 glossary）。读者（TSF `artifacts.server.ts` / Spark
 `tsfShopProfileArtifacts.ts`）优先读该文件，再 fallback 旧
 `shop-scan/{shop}/{scanId}/` 散文件。
-- **覆盖率双写分工**：`coverage` 阶段仍写 Redis `tsf:items_count`（线上权威，
-v4 / 语言页 / Spark 语言覆盖率读此）；Blob latest-scan 只留 locale 汇总快照。
+- **覆盖率双写分工**：语言级汇总权威在 Turso `ShopTargetLocale.coverage*`
+  （v4 / 语言页 / Spark 读此）；`coverage` 阶段仍写 Redis `tsf:items_count`
+  module 明细（管理翻译卡片）并 upsert Turso 汇总；Blob latest-scan 只留
+  locale 汇总快照。
 - **shop_scan_jobs 清理**（与 v4 job retention 独立）：每小时 :50
 （`cleanupOldShopScanJobs.ts`）；默认保留 7 天终态任务，每店保留最新一条
 COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
@@ -812,7 +824,9 @@ Current models:
 
 - `Session`: Shopify session storage.
 - `ShopTranslationSettings`: per-shop translation settings.
-- `ShopTargetLocale`: per-shop target locale and auto-translate flag.
+- `ShopTargetLocale`: per-shop target locale, auto-translate flag, and
+  language-level coverage summary (`coverageTranslated` / `coverageTotal` /
+  `coveragePercent` / `coverageUpdatedAt` / `coverageSource`).
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
 - `SwitcherConfiguration`: storefront switcher settings.
@@ -943,6 +957,9 @@ Operational root scripts:
 recent 72-hour window.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
+- `scripts/backfill-locale-coverage-from-redis.mjs`: Redis `items_count` →
+  Turso `ShopTargetLocale.coverage*`（默认 dry-run；`--write` 写线上；
+  支持 `--shop=` / `--only-missing`；MOVED 重连重试）。
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -1043,7 +1060,7 @@ node --experimental-vm-modules -e "
 | ----------------------- | ------------------------------------------------------------------- |
 | `Account`               | `findMany({ where: { shopName } })` — quota/credit state            |
 | `AppSubscription`       | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
-| `ShopTargetLocale`      | `findMany({ where: { shopName } })` — auto-translate config         |
+| `ShopTargetLocale`      | `findMany({ where: { shop } })` — auto-translate + coverage summary |
 | `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher         |
 | `Glossary`              | `findMany({ where: { shopName } })` — glossary entries              |
 
