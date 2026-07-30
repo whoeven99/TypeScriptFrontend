@@ -1297,6 +1297,13 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     );
 
     const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root))
+    ) {
+      nodes.push(root);
+    }
     while (walker.nextNode()) nodes.push(walker.currentNode);
 
     const replacements = [];
@@ -1552,6 +1559,181 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     });
   };
 
+  const textLikeAttributeNames = new Set([
+    "alt",
+    "aria-label",
+    "caption",
+    "header-text",
+    "label",
+    "placeholder",
+    "subtitle",
+    "text",
+    "title",
+  ]);
+
+  const blockedAttributeNames = new Set([
+    "class",
+    "content",
+    "href",
+    "id",
+    "name",
+    "rel",
+    "role",
+    "src",
+    "srcset",
+    "style",
+    "target",
+    "value",
+  ]);
+
+  const isTranslatableAttribute = (node, attribute) => {
+    if (!node || !attribute) return false;
+    const attrName = String(attribute.name || "").trim().toLowerCase();
+    if (!attrName || blockedAttributeNames.has(attrName)) return false;
+    if (attrName.startsWith("on")) return false;
+    if (!String(attribute.value ?? "").trim()) return false;
+    if (textLikeAttributeNames.has(attrName) || attrName.startsWith("aria-")) {
+      return true;
+    }
+
+    // 允许 web component 上常见的 *-text / *-title / *-label 这类展示属性。
+    return Boolean(
+      node.tagName?.includes("-") &&
+        /(?:text|title|label|caption|subtitle)$/i.test(attrName),
+    );
+  };
+
+  const replaceAttributeEntriesFast = (
+    exactEntryList,
+    fuzzyEntryList,
+    root = document.body,
+  ) => {
+    if (!root?.isConnected) return;
+
+    const exactMap = new Map();
+    exactEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
+        ? normalizeCollapsedText(trimmedBefore)
+        : normalizeText(trimmedBefore);
+      exactMap.set(key, { replacement: afterRaw });
+    });
+
+    const fuzzyPreparedEntries = [];
+    fuzzyEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
+      fuzzyPreparedEntries.push({
+        trimmedBefore,
+        afterRaw,
+        flexibleWhitespace,
+        collapsedBefore: flexibleWhitespace
+          ? normalizeCollapsedText(trimmedBefore)
+          : null,
+        re: new RegExp(
+          flexibleWhitespace
+            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
+            : escapeRegExp(trimmedBefore),
+          "g",
+        ),
+      });
+    });
+
+    if (exactMap.size === 0 && fuzzyPreparedEntries.length === 0) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          const tag = node?.nodeName;
+          if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+          if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root))
+    ) {
+      nodes.push(root);
+    }
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      if (isElementHiddenForTranslation(node)) return;
+
+      Array.from(node.attributes || []).forEach((attribute) => {
+        if (!isTranslatableAttribute(node, attribute)) return;
+
+        const original = attribute.value;
+        const strictKey = normalizeText(original);
+        const collapsedKey = normalizeCollapsedText(original);
+        const exactEntry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
+        if (exactEntry) {
+          const replacement = preserveBoundaryWhitespace(
+            original,
+            exactEntry.replacement,
+          );
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(replacement, 200),
+            });
+          }
+          node.setAttribute(attribute.name, replacement);
+          return;
+        }
+
+        let nextValue = original;
+        let normalized = normalizeText(nextValue);
+        let collapsed = null;
+
+        for (const entry of fuzzyPreparedEntries) {
+          if (entry.flexibleWhitespace && collapsed === null) {
+            collapsed = normalizeCollapsedText(normalized);
+          }
+          const matches = entry.flexibleWhitespace
+            ? collapsed.includes(entry.collapsedBefore)
+            : normalized.includes(entry.trimmedBefore);
+          if (!matches) continue;
+
+          nextValue = preserveBoundaryWhitespace(
+            nextValue,
+            nextValue.replace(entry.re, () => entry.afterRaw),
+          );
+          normalized = normalizeText(nextValue);
+          collapsed = null;
+        }
+
+        if (nextValue !== original) {
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(nextValue, 200),
+            });
+          }
+          node.setAttribute(attribute.name, nextValue);
+        }
+      });
+    });
+  };
+
   const hasHtmlEntries = (entryList) =>
     entryList.some(
       ({ before, after }) => looksLikeHtml(before) || looksLikeHtml(after),
@@ -1567,6 +1749,13 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const collectMutationRoots = (mutations) => {
     const roots = [];
     for (const mutation of mutations) {
+      if (mutation.type === "attributes") {
+        const target = mutation.target;
+        if (target?.nodeType === Node.ELEMENT_NODE && !shouldSkipTranslationRoot(target)) {
+          roots.push(target);
+        }
+        continue;
+      }
       if (mutation.type !== "childList") continue;
       for (const node of mutation.addedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -1596,11 +1785,45 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     );
     if (targets.length === 0) return;
 
+    const scopes = [];
+    const seenScopes = new Set();
+    const pushScope = (scope) => {
+      if (!scope?.isConnected || seenScopes.has(scope)) return;
+      seenScopes.add(scope);
+      scopes.push(scope);
+    };
+
     for (const root of targets) {
+      pushScope(root);
+      if (root instanceof Element && root.shadowRoot) {
+        pushScope(root.shadowRoot);
+      }
+      const shadowWalker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_ELEMENT,
+        {
+          acceptNode(node) {
+            const tag = node?.nodeName;
+            if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+            if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        },
+      );
+
+      while (shadowWalker.nextNode()) {
+        if (shadowWalker.currentNode.shadowRoot) {
+          pushScope(shadowWalker.currentNode.shadowRoot);
+        }
+      }
+    }
+
+    for (const root of scopes) {
       if (hasHtmlEntries(exactEntries) || hasHtmlEntries(fuzzyEntries)) {
         replaceHtmlExactEntries(exactEntries, root);
         replaceHtmlExactEntries(fuzzyEntries, root);
       }
+      replaceAttributeEntriesFast(exactEntries, fuzzyEntries, root);
       replaceExactEntriesFast(exactEntries, root);
       replaceFuzzyEntriesFast(fuzzyEntries, root);
     }
@@ -1647,7 +1870,22 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         scheduleIncrementalRun();
       });
 
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          "alt",
+          "aria-label",
+          "caption",
+          "header-text",
+          "label",
+          "placeholder",
+          "subtitle",
+          "text",
+          "title",
+        ],
+      });
       window[observerKey] = observer;
 
       setTimeout(() => {
