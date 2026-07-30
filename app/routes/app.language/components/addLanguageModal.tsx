@@ -582,6 +582,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       title={t("Select Languages")}
       width={1000}
       open={isVisible}
+      centered
       onCancel={handleCloseModal}
       footer={[
         <div
