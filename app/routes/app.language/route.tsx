@@ -482,9 +482,6 @@ const Index = () => {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [publishModalLanguageCode, setPublishModalLanguageCode] =
     useState<string>("");
-  const [noFirstTranslation, setNoFirstTranslation] = useState(false);
-  const [noFirstTranslationLocale, setNoFirstTranslationLocale] =
-    useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [autoTranslateAlert, setAutoTranslateAlert] = useState<string>("");
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
@@ -981,11 +978,7 @@ const Index = () => {
         <Switch
           checked={record.autoTranslate}
           onChange={(checked) =>
-            handleAutoUpdateTranslationChange(
-              record.locale,
-              checked,
-              record.status,
-            )
+            handleAutoUpdateTranslationChange(record.locale, checked)
           }
           loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
         />
@@ -1177,7 +1170,6 @@ const Index = () => {
   const handleAutoUpdateTranslationChange = async (
     locale: string,
     checked: boolean,
-    status: number,
   ) => {
     const trace = startClientLogTrace({
       event: "language_toggle_auto_translate",
@@ -1185,7 +1177,6 @@ const Index = () => {
       shop,
       context: {
         locale,
-        currentStatus: status,
       },
     });
     if (!plan) {
@@ -1194,16 +1185,6 @@ const Index = () => {
         status: "failure",
         message: "Plan not loaded",
       });
-      return;
-    }
-    if (status === 0) {
-      finishClientLogTrace(trace, {
-        level: "warn",
-        status: "failure",
-        message: "Auto translate requires an initial translation",
-      });
-      setNoFirstTranslationLocale(locale);
-      setNoFirstTranslation(true);
       return;
     }
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
@@ -1471,7 +1452,6 @@ const Index = () => {
                                 handleAutoUpdateTranslationChange(
                                   item.locale,
                                   checked,
-                                  item.status,
                                 )
                               }
                             />
@@ -1615,37 +1595,6 @@ const Index = () => {
         setIsModalOpen={setIsPublishModalOpen}
         publishLangaugeCode={publishModalLanguageCode}
       />
-      <Modal
-        open={noFirstTranslation}
-        onCancel={() => setNoFirstTranslation(false)}
-        footer={
-          <Space>
-            <Button onClick={() => setNoFirstTranslation(false)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setNoFirstTranslation(false);
-                openTranslateModal([noFirstTranslationLocale]);
-              }}
-            >
-              {t("Translate")}
-            </Button>
-          </Space>
-        }
-        style={{
-          top: "40%",
-          zIndex: 1001,
-        }}
-        width={700}
-      >
-        <Text>
-          {t(
-            "Please manually start a translation task first. You can then use the automatic translation function.",
-          )}
-        </Text>
-      </Modal>
       <CreateTaskQuotaGateModal
         open={translateQuotaGateMode !== null}
         mode={translateQuotaGateMode ?? "pricing"}
