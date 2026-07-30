@@ -14,8 +14,12 @@ import {
   resolveStorefrontProductId,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
-import { persistManualLocalizationPreference } from "./ciwi-utils.js";
-import { isLikelyMoneyText, transformPrices } from "./ciwi-utils.js";
+import {
+  CIWI_MONEY_SELECTOR,
+  persistManualLocalizationPreference,
+  shouldTrackMoneyNode,
+  transformPrices,
+} from "./ciwi-utils.js";
 
 /**
  * Skip hidden nodes during translation without forcing style recalc on every walker step.
@@ -252,6 +256,38 @@ async function refreshSelectedCurrency({ blockId, shop, ciwiBlock }) {
   await initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
 }
 
+function syncCurrencySelectionState({
+  ciwiBlock,
+  currencySelect,
+  selectedCurrencyCode,
+  persist = true,
+}) {
+  const nextCode = String(selectedCurrencyCode || "").trim();
+  const currencyInput = ciwiBlock?.querySelector('input[name="currency_code"]');
+  if (currencySelect && nextCode && currencySelect.value !== nextCode) {
+    currencySelect.value = nextCode;
+  }
+  if (currencyInput && currencyInput.value !== nextCode) {
+    currencyInput.value = nextCode;
+    currencyInput.setAttribute("value", nextCode);
+  }
+  if (persist && typeof localStorage !== "undefined" && nextCode) {
+    localStorage.setItem("ciwi_selected_currency", nextCode);
+  }
+
+  const languageSelectorContainer = ciwiBlock?.querySelector(
+    "#language-switcher-container",
+  );
+  const currencySelectorContainer = ciwiBlock?.querySelector(
+    "#currency-switcher-container",
+  );
+  updateDisplayText(
+    languageSelectorContainer?.style.display === "block",
+    currencySelectorContainer?.style.display === "block",
+    ciwiBlock,
+  );
+}
+
 /**
  * 初始化货币选择器
  */
@@ -311,9 +347,11 @@ export async function initializeCurrency({
     fallbackCurrencyCode: pageCurrencyCode,
   });
 
-  if (currencySelect && effectiveSelectedCurrencyCode) {
-    currencySelect.value = effectiveSelectedCurrencyCode;
-  }
+  syncCurrencySelectionState({
+    ciwiBlock,
+    currencySelect,
+    selectedCurrencyCode: effectiveSelectedCurrencyCode,
+  });
 
   if (activePriceObserver) {
     activePriceObserver.disconnect();
@@ -324,6 +362,11 @@ export async function initializeCurrency({
     !selectedCurrency ||
     effectiveSelectedCurrencyCode === baseCurrencyCode
   ) {
+    syncCurrencySelectionState({
+      ciwiBlock,
+      currencySelect,
+      selectedCurrencyCode: baseCurrencyCode,
+    });
     transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
     return;
   }
@@ -353,6 +396,14 @@ export async function initializeCurrency({
       if (typeof autoRate == "number") {
         rate = autoRate;
       } else {
+        syncCurrencySelectionState({
+          ciwiBlock,
+          currencySelect,
+          selectedCurrencyCode: baseCurrencyCode,
+        });
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem("ciwi_selected_currency_rate");
+        }
         transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
         return;
       }
@@ -370,6 +421,14 @@ export async function initializeCurrency({
   } else {
     rate = Number(selectedCurrency.exchangeRate);
     if (!Number.isFinite(rate)) {
+      syncCurrencySelectionState({
+        ciwiBlock,
+        currencySelect,
+        selectedCurrencyCode: baseCurrencyCode,
+      });
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("ciwi_selected_currency_rate");
+      }
       transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
       return;
     }
@@ -383,8 +442,7 @@ export async function initializeCurrency({
  * 观察 DOM 变化，动态处理新价格
  */
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
-  const moneySelector =
-    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price";
+  const moneySelector = CIWI_MONEY_SELECTOR;
   if (activePriceObserver) {
     activePriceObserver.disconnect();
   }
@@ -399,7 +457,7 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
         const add = (el) => {
           if (!(el instanceof Element)) return;
           if (!el.classList.contains("ciwi-money")) {
-            if (!isLikelyMoneyText(el.textContent || el.innerText || "")) return;
+            if (!shouldTrackMoneyNode(el)) return;
             el.classList.add("ciwi-money");
           }
           pending.add(el);
