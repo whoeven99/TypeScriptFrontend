@@ -1,6 +1,7 @@
 import IORedis from "ioredis";
 import {
-  getRenderKeyValueUrl,
+  getRenderKvUrl,
+  isRenderKvSoleClientMode,
   warnIfMigrationEnvIncomplete,
   wrapRedisPair,
 } from "./redisDualClient.js";
@@ -108,15 +109,30 @@ function createPrimaryRedis(): IORedis {
 }
 
 /**
- * Primary = Azure（REDIS_URL）；Secondary = RENDER_KEY_VALUE（Render KV）。
- * REDIS_DUAL_WRITE / REDIS_CUTOVER 见 redisDualClient.ts。
+ * Sole mode（REDIS_DUAL_WRITE off + REDIS_CUTOVER=all）→ 只连 RENDER_KV。
+ * 否则 Primary = REDIS_URL*；Secondary = RENDER_KV。见 redisDualClient.ts。
  */
 export function getRedis(): IORedis {
   if (_redis) return _redis;
 
   warnIfMigrationEnvIncomplete();
+
+  if (isRenderKvSoleClientMode()) {
+    const kvUrl = getRenderKvUrl();
+    if (!kvUrl) {
+      throw new Error(
+        "Redis sole mode (REDIS_CUTOVER=all, REDIS_DUAL_WRITE off) requires RENDER_KV",
+      );
+    }
+    console.info("[redisV4] sole client mode: RENDER_KV only (skip REDIS_URL*)");
+    const redis = new IORedis(kvUrl, redisClientOptions("secondary"));
+    attachRedisListeners(redis, "render-kv");
+    _redis = redis;
+    return _redis;
+  }
+
   const primary = createPrimaryRedis();
-  const secondaryUrl = getRenderKeyValueUrl();
+  const secondaryUrl = getRenderKvUrl();
   if (!secondaryUrl) {
     _redis = primary;
     return _redis;

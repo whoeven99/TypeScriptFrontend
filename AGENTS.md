@@ -460,7 +460,7 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
 `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
-  Migration to Render KV: `RENDER_KEY_VALUE`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
+  Migration to Render KV: `RENDER_KV`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
   (see Operations → Redis).
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
@@ -1127,17 +1127,19 @@ translation memory cache.
 
 | Audience | Env / URL | Notes |
 | --- | --- | --- |
-| Azure Cache (migration primary) | `REDIS_URL` / `REDIS_URL_V4` on Web/Worker | Keep until cutover finishes |
-| Render Key Value (migration secondary) | `RENDER_KEY_VALUE` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
+| Render Key Value (live / sole) | `RENDER_KV` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
+| Azure Cache (migration primary only) | `REDIS_URL` / `REDIS_URL_V4` | Needed only while dual-write or partial cutover; drop when sole mode |
 | One-off CLI | Dashboard **Valkey CLI Command** | External URL wrapped for `redis-cli` / `valkey-cli` |
 
 **Azure → Render KV migration switches** (code: `redisDualClient` in App + Worker):
 
 | Env | Meaning |
 | --- | --- |
-| `RENDER_KEY_VALUE` | Secondary Redis URL |
+| `RENDER_KV` | Render KV URL（sole 模式下是唯一 Redis） |
 | `REDIS_DUAL_WRITE=true` | Dual-write **cache** String/Hash to both; **never** dual-write hint/shop_scan lists |
 | `REDIS_CUTOVER` | Comma tokens for read/write source = Render: `tm`, `items_count`, `progress`, `control`, `auto_scan`, `hints`, `shop_scan`, `keystat`, or `all`. Empty = all traffic still on Azure |
+
+**Sole-client mode**（可删测试 Azure Redis）: `REDIS_DUAL_WRITE=false`（或未设）+ `REDIS_CUTOVER=all` + `RENDER_KV` 已设 → App/Worker **不再创建** `REDIS_URL*` client。此时可去掉 `REDIS_URL` / `REDIS_URL_V4` 并删除 Azure 实例。
 
 Backfill (dry-run default):
 
@@ -1151,12 +1153,12 @@ Gray test: deploy with `REDIS_DUAL_WRITE=true` and empty `REDIS_CUTOVER` → bac
 **Ping Render Key Value from local `.env` / `.env.test` (masks host only; never echo secrets):**
 
 ```ps1
-# From repo root; reads RENDER_KEY_VALUE from the named file
+# From repo root; reads RENDER_KV from the named file
 node -e "
 const fs=require('fs'); const Redis=require('ioredis');
 const file=process.argv[1]||'.env.test';
-const m=fs.readFileSync(file,'utf8').match(/^RENDER_KEY_VALUE=(.+)$/m);
-if(!m) throw new Error('RENDER_KEY_VALUE missing in '+file);
+const m=fs.readFileSync(file,'utf8').match(/^RENDER_KV=(.+)$/m);
+if(!m) throw new Error('RENDER_KV missing in '+file);
 const url=m[1].trim().replace(/^[\"']|[\"']$/g,'');
 const r=new Redis(url,{maxRetriesPerRequest:1,connectTimeout:8000});
 r.ping().then(async (pong)=>{
@@ -1210,20 +1212,51 @@ node -e "
 "
 ```
 
-**Manual query — Render Key Value via `RENDER_KEY_VALUE` (local / agent):**
+**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value); instances run **Valkey 8**, Redis-compatible):
+
+| How | When | Notes |
+| --- | --- | --- |
+| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). Docs: enable external connections first. |
+| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). Install CLI locally first. |
+| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`); `redis-cli` is available in the service environment. |
+| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | Prefer this in-repo; never print the URL/password. |
+
+Dashboard / CLI (do not commit the pasted command; it contains secrets):
+
+```bash
+# After enabling external access, Dashboard → Key Value → External Access
+# shows a copy-pasteable redis-cli line (includes --tls).
+# Then, examples (Redis protocol):
+PING
+DBSIZE
+GET translate:v4:auto_scan:last_at
+HGETALL translate:v4:progress:<jobId>
+PTTL tm:v5:val:...
+# Prefer SCAN over KEYS on prod. KEYS is OK only on small test instances.
+```
+
+Same-region service Shell (Internal URL, usually no TLS):
+
+```bash
+# On Ciwi Translate Test / Worker Test Shell (same region as KV):
+redis-cli -u "$RENDER_KV"   # or the Internal connectionString
+# then: PING / DBSIZE / GET …
+```
+
+Node (local / agent; reads `.env.test`, never echo secrets):
 
 ```ps1
-# PowerShell: load from .env.test then query a progress hash
-$line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KEY_VALUE=' })
-$url = ($line -replace '^RENDER_KEY_VALUE=','').Trim().Trim('\"').Trim(\"'\")
+$line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KV=' })
+$url = ($line -replace '^RENDER_KV=','').Trim().Trim('"').Trim("'")
 node -e "
 const Redis=require('ioredis');
 const r=new Redis(process.argv[1],{maxRetriesPerRequest:1,connectTimeout:8000});
 const key=process.argv[2]||'translate:v4:auto_scan:last_at';
 (async()=>{
-  const t=await r.type(key);
+  const [pong, dbsize, t] = await Promise.all([r.ping(), r.dbsize(), r.type(key)]);
   const out=t==='hash'?await r.hgetall(key):t==='list'?await r.lrange(key,0,20):await r.get(key);
-  console.log(JSON.stringify({key,t,out},null,2));
+  const pttl=await r.pttl(key);
+  console.log(JSON.stringify({pong, dbsize, key, t, pttl, out},null,2));
   r.quit();
 })().catch(e=>{console.error(e.message);process.exit(1)});
 " $url translate:v4:auto_scan:last_at

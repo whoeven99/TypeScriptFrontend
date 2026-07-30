@@ -2,9 +2,12 @@
  * Azure Redis → Render Key Value 迁移包装。
  *
  * Env:
- *   RENDER_KEY_VALUE   secondary URL（Render KV；服务内用 Internal）
+ *   RENDER_KV          Render KV URL（服务内用 Internal；本地/Agent 用 External）
  *   REDIS_DUAL_WRITE   true/1/yes → cache 写双端；hint/shop_scan list 永不双写
  *   REDIS_CUTOVER      逗号分隔 token（tm,items_count,...）或 all/*；命中则读写走 secondary
+ *
+ * Sole-client mode: REDIS_DUAL_WRITE off + REDIS_CUTOVER=all → 只连 RENDER_KV，
+ * 不再创建 REDIS_URL / REDIS_URL_V4 client（可删 Azure Redis）。
  *
  * KEEP IN SYNC with app/server/translateV4/redisDualClient.server.ts
  */
@@ -516,19 +519,35 @@ class MigratingRedis implements RedisLike {
   }
 }
 
-export function getRenderKeyValueUrl(): string | undefined {
-  return process.env.RENDER_KEY_VALUE?.trim() || undefined;
+/** Render KV URL（`RENDER_KV`）。 */
+export function getRenderKvUrl(): string | undefined {
+  return process.env.RENDER_KV?.trim() || undefined;
+}
+
+/**
+ * 已全量切到 Render 且关闭双写：只建 RENDER_KV 一个 client，不读 REDIS_URL*。
+ */
+export function isRenderKvSoleClientMode(): boolean {
+  return !envFlagTrue("REDIS_DUAL_WRITE") && parseCutoverPrefixes().all;
 }
 
 export function warnIfMigrationEnvIncomplete(): void {
+  if (_loggedMissingSecondary) return;
+  const kv = getRenderKvUrl();
+  if (isRenderKvSoleClientMode() && !kv) {
+    _loggedMissingSecondary = true;
+    console.warn(
+      "[redisDual] sole mode (REDIS_CUTOVER=all, REDIS_DUAL_WRITE off) but RENDER_KV missing",
+    );
+    return;
+  }
   if (
     (envFlagTrue("REDIS_DUAL_WRITE") || process.env.REDIS_CUTOVER?.trim()) &&
-    !getRenderKeyValueUrl() &&
-    !_loggedMissingSecondary
+    !kv
   ) {
     _loggedMissingSecondary = true;
     console.warn(
-      "[redisDual] REDIS_DUAL_WRITE/REDIS_CUTOVER set but RENDER_KEY_VALUE missing; using primary only",
+      "[redisDual] REDIS_DUAL_WRITE/REDIS_CUTOVER set but RENDER_KV missing; using primary only",
     );
   }
 }

@@ -1,7 +1,8 @@
 import Redis from "ioredis";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
 import {
-  getRenderKeyValueUrl,
+  getRenderKvUrl,
+  isRenderKvSoleClientMode,
   warnIfMigrationEnvIncomplete,
   wrapRedisPair,
 } from "./redisDualClient.server";
@@ -9,13 +10,13 @@ import {
 /**
  * TsFrontend 专用 Redis 客户端。
  *
- * Primary（迁移期 = Azure）:
- *   REDIS_URL_V4 / REDIS_URL / REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4
+ * Sole mode（`REDIS_DUAL_WRITE` off + `REDIS_CUTOVER=all`）:
+ *   只连 `RENDER_KV`，不读 `REDIS_URL*`（可删 Azure Redis）。
  *
- * Secondary（Render Key Value，可选）:
- *   RENDER_KEY_VALUE   Internal URL on Render services; External in local .env*
- *   REDIS_DUAL_WRITE   cache dual-write (lists never dual-written)
- *   REDIS_CUTOVER      comma tokens: tm,items_count,progress,control,auto_scan,hints,shop_scan,keystat,all
+ * 迁移期双端:
+ *   Primary = `REDIS_URL_V4` / `REDIS_URL` / host+password
+ *   Secondary = `RENDER_KV`
+ *   `REDIS_DUAL_WRITE` / `REDIS_CUTOVER` 见 redisDualClient.server.ts
  */
 let singleton: Redis | undefined;
 
@@ -70,8 +71,21 @@ export function getTranslateV4RedisClient(): Redis {
   if (singleton) return singleton;
 
   warnIfMigrationEnvIncomplete();
+
+  if (isRenderKvSoleClientMode()) {
+    const kvUrl = getRenderKvUrl();
+    if (!kvUrl) {
+      throw new Error(
+        "Redis sole mode (REDIS_CUTOVER=all, REDIS_DUAL_WRITE off) requires RENDER_KV",
+      );
+    }
+    console.info("[redis] sole client mode: RENDER_KV only (skip REDIS_URL*)");
+    singleton = new Redis(kvUrl, redisClientOptions("secondary"));
+    return singleton;
+  }
+
   const primary = createPrimaryRedis();
-  const secondaryUrl = getRenderKeyValueUrl();
+  const secondaryUrl = getRenderKvUrl();
   if (!secondaryUrl) {
     singleton = primary;
     return singleton;
