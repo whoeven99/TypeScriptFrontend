@@ -990,9 +990,10 @@ const Index = () => {
       key: "action",
       width: "25%",
       render: (_: any, record: any) => (
-        <Flex gap={8} align="center" style={{ flexWrap: "nowrap" }}>
+        <Space>
           <Button
             onClick={() => openTranslateModal([record.locale])}
+            style={{ width: "100px" }}
             type="primary"
           >
             {record?.status === 1 ? t("Update") : t("Translate")}
@@ -1000,7 +1001,7 @@ const Index = () => {
           <Button onClick={() => navigateToManage(record.locale)}>
             {t("Manage")}
           </Button>
-        </Flex>
+        </Space>
       ),
     },
   ];
