@@ -49,6 +49,8 @@ const METRICS_STAGES: readonly ShopScanStageName[] = ["contentSize", "coverage"]
 const AI_STAGES: readonly ShopScanStageName[] = ["profile"];
 /** 已停用阶段：Cosmos 字段保留，一律 SKIPPED。 */
 const RETIRED_STAGES: readonly ShopScanStageName[] = ["glossary"];
+/** Admin 现算：只跑 coverage（对齐语言页「刷新统计」写 Turso）。 */
+const ADMIN_COVERAGE_STAGES: readonly ShopScanStageName[] = ["coverage"];
 
 /** shop_scan Cosmos 是否配置（未配置则整个 worker 空跑）。 */
 function cosmosConfigured(): boolean {
@@ -58,22 +60,26 @@ function cosmosConfigured(): boolean {
 /** 抛出以请求「整任务重新入队」（可恢复错误 + 仍有重试次数）。 */
 class RequeueSignal extends Error {}
 
-function isMetricsTrigger(trigger: ShopScanTrigger): boolean {
-  return trigger === "install" || trigger === "scheduled";
-}
-
 function stagesForTrigger(trigger: ShopScanTrigger): {
   run: readonly ShopScanStageName[];
   skip: readonly ShopScanStageName[];
 } {
-  if (isMetricsTrigger(trigger)) {
-    return { run: METRICS_STAGES, skip: [...AI_STAGES, ...RETIRED_STAGES] };
+  switch (trigger) {
+    case "install":
+    case "scheduled":
+      return { run: METRICS_STAGES, skip: [...AI_STAGES, ...RETIRED_STAGES] };
+    case "manual":
+      return { run: AI_STAGES, skip: [...METRICS_STAGES, ...RETIRED_STAGES] };
+    case "admin":
+      return {
+        run: ADMIN_COVERAGE_STAGES,
+        skip: ["contentSize", "profile", ...RETIRED_STAGES],
+      };
+    default: {
+      const _exhaustive: never = trigger;
+      return _exhaustive;
+    }
   }
-  // manual（及其它）：只跑 profile；glossary 已停用
-  return {
-    run: AI_STAGES,
-    skip: [...METRICS_STAGES, ...RETIRED_STAGES],
-  };
 }
 
 export async function runShopScanWorker(): Promise<void> {

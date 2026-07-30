@@ -12,7 +12,8 @@ import { CosmosClient, type Container } from "@azure/cosmos";
  *   COSMOS_SHOP_SCAN_CONTAINER           （默认 "shop_scan_jobs"）
  */
 
-export type ShopScanTrigger = "install" | "scheduled" | "manual";
+/** admin：Spark Admin「现算覆盖率」，只跑 coverage 写 Turso（对齐语言页刷新统计）。 */
+export type ShopScanTrigger = "install" | "scheduled" | "manual" | "admin";
 
 export type ShopScanStatus =
   | "CREATED"
