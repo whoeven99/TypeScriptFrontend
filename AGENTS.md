@@ -781,9 +781,12 @@ COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
   `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
   有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
   已有进行中 scan 则跳过。
-  - `manual`（调试页按钮）：只跑 `profile`（AI）；`glossary` 阶段已停用（一律
-  SKIPPED）。跳过计量阶段，并从上一份 summary 合并计量字段，保证
-  `getLatestShopScanJob` 仍完整。
+  - `manual`（调试页按钮 / Admin 画像「重新扫描」）：只跑 `profile`（AI）；
+  `glossary` 阶段已停用（一律 SKIPPED）。跳过计量阶段，并从上一份 summary
+  合并计量字段，保证 `getLatestShopScanJob` 仍完整。
+  - `admin`（Spark Admin 语言覆盖率「现算」）：只跑 `coverage` → 写 Turso
+  `ShopTargetLocale.coverage*`（`source=shop_scan`），对齐语言页「刷新统计」
+  展示口径；不跑 contentSize / profile。
 - Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:
