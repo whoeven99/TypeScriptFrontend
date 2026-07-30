@@ -564,7 +564,7 @@ const Index = () => {
             setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
           );
 
-          // HGETALL 无任何 field：与首页「刷新统计」同效，按语言逐个 refresh=1
+          // Turso 未写入覆盖率（且 Redis 回退也空）：与「刷新统计」同效，按语言逐个 refresh=1
           const emptyLocales = coverageRows
             .filter((row) => row.cacheEmpty)
             .map((row) => row.locale);
