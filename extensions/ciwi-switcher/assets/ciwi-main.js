@@ -109,6 +109,41 @@ function detectRuntimeLanguage(ciwiBlock, availableLanguages) {
   return "";
 }
 
+function isShopifyThemePreviewContext() {
+  const currentUrl = new URL(window.location.href);
+  const params = currentUrl.searchParams;
+  const referrer = String(document.referrer || "");
+
+  if (document.documentElement.classList.contains("shopify-design-mode")) {
+    return true;
+  }
+
+  if (window.Shopify?.designMode === true) {
+    return true;
+  }
+
+  // 主题预览链接通常会带 preview_theme_id；部分预览链路还会附带 _ab/_fd/pb。
+  if (params.has("preview_theme_id") || params.has("preview_token")) {
+    return true;
+  }
+
+  // Shopify Admin 主题编辑器里，店铺预览通常运行在 iframe 中，
+  // 当前 storefront URL 可能不带 preview_theme_id，但 referrer 会是 editor 地址。
+  if (
+    referrer.includes("admin.shopify.com/store/") &&
+    referrer.includes("/themes/") &&
+    referrer.includes("/editor")
+  ) {
+    return true;
+  }
+
+  return (
+    params.has("_ab") &&
+    params.has("_fd") &&
+    params.has("pb")
+  );
+}
+
 async function ciwiOnload() {
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
@@ -216,9 +251,14 @@ async function ciwiOnload() {
 
   let detectedCountry = preferredCountry || countryValue;
   let detectedLanguage = preferredLanguage || browserLanguage;
+  const isInThemePreview = isShopifyThemePreviewContext();
+  const shouldRunAutoLocalization =
+    !isInThemePreview &&
+    configData?.ipOpen &&
+    !hasUserLocalizationData;
 
   // IP 定位：每次进入都重新请求，不使用 localStorage 缓存
-  if (configData?.ipOpen && !hasUserLocalizationData) {
+  if (shouldRunAutoLocalization) {
     const iptokenValue = ciwiBlock.querySelector(
       'input[name="iptoken"]',
     )?.value;
@@ -247,7 +287,7 @@ async function ciwiOnload() {
   );
 
   //不在主题编辑器内
-  if (!isInThemeEditor && configData?.ipOpen && !hasUserLocalizationData) {
+  if (!isInThemeEditor && shouldRunAutoLocalization) {
     //需要定位逻辑
     if (
       detectedCountry &&
