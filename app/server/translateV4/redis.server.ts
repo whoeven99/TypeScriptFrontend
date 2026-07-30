@@ -1,40 +1,49 @@
 import Redis from "ioredis";
 import { isProductionNodeEnv } from "~/config/nodeEnv.server";
+import {
+  getRenderKvUrl,
+  isRenderKvSoleClientMode,
+  warnIfMigrationEnvIncomplete,
+  wrapRedisPair,
+} from "./redisDualClient.server";
 
 /**
- * TsFrontend 专用 Redis 客户端，与 Spark worker 连同一个 Azure Cache 实例。
+ * TsFrontend 专用 Redis 客户端。
  *
- * 环境变量统一带 `_V4` 后缀，与 TSF 既有配置隔离：
- *   REDIS_URL_V4                 （优先；形如 rediss://:password@host:port/0）
- *   REDIS_URL                    （未设 REDIS_URL_V4 时的回退；prod 须与 worker 同一实例）
- *   REDIS_HOSTNAME_V4 + REDIS_PASSWORD_V4 [+ REDIS_PORT_V4 + REDIS_TLS_V4]
- *   REDIS_CONNECTION_NAME        （可选；默认 tsf-web-prod / tsf-web-test，Azure CLIENT LIST 可识别）
+ * Sole mode（`REDIS_DUAL_WRITE` off + `REDIS_CUTOVER=all`）:
+ *   只连 `RENDER_KV`，不读 `REDIS_URL*`（可删 Azure Redis）。
+ *
+ * 迁移期双端:
+ *   Primary = `REDIS_URL_V4` / `REDIS_URL` / host+password
+ *   Secondary = `RENDER_KV`
+ *   `REDIS_DUAL_WRITE` / `REDIS_CUTOVER` 见 redisDualClient.server.ts
  */
 let singleton: Redis | undefined;
 
-function resolveRedisConnectionName(): string {
+function resolveRedisConnectionName(kind: "primary" | "secondary"): string {
   const override = process.env.REDIS_CONNECTION_NAME?.trim();
-  if (override) return override;
-  return isProductionNodeEnv() ? "tsf-web-prod" : "tsf-web-test";
+  const base = override
+    ? override
+    : isProductionNodeEnv()
+      ? "tsf-web-prod"
+      : "tsf-web-test";
+  return kind === "secondary" ? `${base}-render-kv` : base;
 }
 
-function redisClientOptions() {
+function redisClientOptions(kind: "primary" | "secondary" = "primary") {
   return {
     maxRetriesPerRequest: 2,
     connectTimeout: 10_000,
-    connectionName: resolveRedisConnectionName(),
+    connectionName: resolveRedisConnectionName(kind),
   } as const;
 }
 
-export function getTranslateV4RedisClient(): Redis {
-  if (singleton) return singleton;
-
+function createPrimaryRedis(): Redis {
   const url =
     process.env.REDIS_URL_V4?.trim() ||
     process.env.REDIS_URL?.trim();
   if (url) {
-    singleton = new Redis(url, redisClientOptions());
-    return singleton;
+    return new Redis(url, redisClientOptions("primary"));
   }
 
   const host = process.env.REDIS_HOSTNAME_V4?.trim();
@@ -49,13 +58,41 @@ export function getTranslateV4RedisClient(): Redis {
   const port = Number(process.env.REDIS_PORT_V4?.trim() || "6380");
   const useTls = process.env.REDIS_TLS_V4 !== "false";
 
-  singleton = new Redis({
+  return new Redis({
     host,
     port,
     password,
     tls: useTls ? {} : undefined,
-    ...redisClientOptions(),
+    ...redisClientOptions("primary"),
   });
+}
+
+export function getTranslateV4RedisClient(): Redis {
+  if (singleton) return singleton;
+
+  warnIfMigrationEnvIncomplete();
+
+  if (isRenderKvSoleClientMode()) {
+    const kvUrl = getRenderKvUrl();
+    if (!kvUrl) {
+      throw new Error(
+        "Redis sole mode (REDIS_CUTOVER=all, REDIS_DUAL_WRITE off) requires RENDER_KV",
+      );
+    }
+    console.info("[redis] sole client mode: RENDER_KV only (skip REDIS_URL*)");
+    singleton = new Redis(kvUrl, redisClientOptions("secondary"));
+    return singleton;
+  }
+
+  const primary = createPrimaryRedis();
+  const secondaryUrl = getRenderKvUrl();
+  if (!secondaryUrl) {
+    singleton = primary;
+    return singleton;
+  }
+
+  const secondary = new Redis(secondaryUrl, redisClientOptions("secondary"));
+  singleton = wrapRedisPair(primary, secondary);
   return singleton;
 }
 
