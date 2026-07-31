@@ -14,8 +14,12 @@ import {
   resolveStorefrontProductId,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
-import { persistManualLocalizationPreference } from "./ciwi-utils.js";
-import { isLikelyMoneyText, transformPrices } from "./ciwi-utils.js";
+import {
+  CIWI_MONEY_SELECTOR,
+  persistManualLocalizationPreference,
+  shouldTrackMoneyNode,
+  transformPrices,
+} from "./ciwi-utils.js";
 
 /**
  * Skip hidden nodes during translation without forcing style recalc on every walker step.
@@ -54,6 +58,84 @@ const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
 let activePriceObserver = null;
+
+function isTruthyPreviewFlag(value) {
+  return value === true || value === "true" || value === "1" || value === 1;
+}
+
+function hasShopifyVisualPreviewParams(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    const source = url.searchParams.get("source");
+    return (
+      source === "visualPreview" ||
+      source === "visualPreviewInitialLoad" ||
+      url.searchParams.has("oseid") ||
+      url.searchParams.has("osectx")
+    );
+  } catch {
+    return (
+      raw.includes("source=visualPreview") ||
+      raw.includes("source=visualPreviewInitialLoad") ||
+      raw.includes("oseid=") ||
+      raw.includes("osectx=")
+    );
+  }
+}
+
+function isThemePreviewDisabledForCiwi(ciwiBlock) {
+  const params = new URL(window.location.href).searchParams;
+  const referrer = String(document.referrer || "");
+  const requestDesignMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_design_mode"]',
+  )?.value;
+  const requestVisualPreviewMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_visual_preview_mode"]',
+  )?.value;
+
+  if (
+    isTruthyPreviewFlag(requestDesignMode) ||
+    isTruthyPreviewFlag(requestVisualPreviewMode)
+  ) {
+    return true;
+  }
+
+  if (document.documentElement.classList.contains("shopify-design-mode")) {
+    return true;
+  }
+
+  if (window.Shopify?.designMode === true) {
+    return true;
+  }
+
+  if (window.Shopify?.visualPreviewMode === true) {
+    return true;
+  }
+
+  if (
+    hasShopifyVisualPreviewParams(window.location.href) ||
+    hasShopifyVisualPreviewParams(referrer)
+  ) {
+    return true;
+  }
+
+  if (params.has("preview_theme_id") || params.has("preview_token")) {
+    return true;
+  }
+
+  if (
+    referrer.includes("admin.shopify.com/store/") &&
+    referrer.includes("/themes/") &&
+    referrer.includes("/editor")
+  ) {
+    return true;
+  }
+
+  return params.has("_ab") && params.has("_fd") && params.has("pb");
+}
 
 function measureTextWidth(referenceElement, text) {
   if (!referenceElement || !text) return 0;
@@ -252,6 +334,38 @@ async function refreshSelectedCurrency({ blockId, shop, ciwiBlock }) {
   await initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
 }
 
+function syncCurrencySelectionState({
+  ciwiBlock,
+  currencySelect,
+  selectedCurrencyCode,
+  persist = true,
+}) {
+  const nextCode = String(selectedCurrencyCode || "").trim();
+  const currencyInput = ciwiBlock?.querySelector('input[name="currency_code"]');
+  if (currencySelect && nextCode && currencySelect.value !== nextCode) {
+    currencySelect.value = nextCode;
+  }
+  if (currencyInput && currencyInput.value !== nextCode) {
+    currencyInput.value = nextCode;
+    currencyInput.setAttribute("value", nextCode);
+  }
+  if (persist && typeof localStorage !== "undefined" && nextCode) {
+    localStorage.setItem("ciwi_selected_currency", nextCode);
+  }
+
+  const languageSelectorContainer = ciwiBlock?.querySelector(
+    "#language-switcher-container",
+  );
+  const currencySelectorContainer = ciwiBlock?.querySelector(
+    "#currency-switcher-container",
+  );
+  updateDisplayText(
+    languageSelectorContainer?.style.display === "block",
+    currencySelectorContainer?.style.display === "block",
+    ciwiBlock,
+  );
+}
+
 /**
  * 初始化货币选择器
  */
@@ -311,9 +425,11 @@ export async function initializeCurrency({
     fallbackCurrencyCode: pageCurrencyCode,
   });
 
-  if (currencySelect && effectiveSelectedCurrencyCode) {
-    currencySelect.value = effectiveSelectedCurrencyCode;
-  }
+  syncCurrencySelectionState({
+    ciwiBlock,
+    currencySelect,
+    selectedCurrencyCode: effectiveSelectedCurrencyCode,
+  });
 
   if (activePriceObserver) {
     activePriceObserver.disconnect();
@@ -324,6 +440,11 @@ export async function initializeCurrency({
     !selectedCurrency ||
     effectiveSelectedCurrencyCode === baseCurrencyCode
   ) {
+    syncCurrencySelectionState({
+      ciwiBlock,
+      currencySelect,
+      selectedCurrencyCode: baseCurrencyCode,
+    });
     transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
     return;
   }
@@ -353,6 +474,14 @@ export async function initializeCurrency({
       if (typeof autoRate == "number") {
         rate = autoRate;
       } else {
+        syncCurrencySelectionState({
+          ciwiBlock,
+          currencySelect,
+          selectedCurrencyCode: baseCurrencyCode,
+        });
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem("ciwi_selected_currency_rate");
+        }
         transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
         return;
       }
@@ -370,6 +499,14 @@ export async function initializeCurrency({
   } else {
     rate = Number(selectedCurrency.exchangeRate);
     if (!Number.isFinite(rate)) {
+      syncCurrencySelectionState({
+        ciwiBlock,
+        currencySelect,
+        selectedCurrencyCode: baseCurrencyCode,
+      });
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("ciwi_selected_currency_rate");
+      }
       transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
       return;
     }
@@ -383,8 +520,7 @@ export async function initializeCurrency({
  * 观察 DOM 变化，动态处理新价格
  */
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
-  const moneySelector =
-    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price";
+  const moneySelector = CIWI_MONEY_SELECTOR;
   if (activePriceObserver) {
     activePriceObserver.disconnect();
   }
@@ -399,7 +535,7 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
         const add = (el) => {
           if (!(el instanceof Element)) return;
           if (!el.classList.contains("ciwi-money")) {
-            if (!isLikelyMoneyText(el.textContent || el.innerText || "")) return;
+            if (!shouldTrackMoneyNode(el)) return;
             el.classList.add("ciwi-money");
           }
           pending.add(el);
@@ -1297,6 +1433,13 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     );
 
     const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root))
+    ) {
+      nodes.push(root);
+    }
     while (walker.nextNode()) nodes.push(walker.currentNode);
 
     const replacements = [];
@@ -1552,6 +1695,181 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     });
   };
 
+  const textLikeAttributeNames = new Set([
+    "alt",
+    "aria-label",
+    "caption",
+    "header-text",
+    "label",
+    "placeholder",
+    "subtitle",
+    "text",
+    "title",
+  ]);
+
+  const blockedAttributeNames = new Set([
+    "class",
+    "content",
+    "href",
+    "id",
+    "name",
+    "rel",
+    "role",
+    "src",
+    "srcset",
+    "style",
+    "target",
+    "value",
+  ]);
+
+  const isTranslatableAttribute = (node, attribute) => {
+    if (!node || !attribute) return false;
+    const attrName = String(attribute.name || "").trim().toLowerCase();
+    if (!attrName || blockedAttributeNames.has(attrName)) return false;
+    if (attrName.startsWith("on")) return false;
+    if (!String(attribute.value ?? "").trim()) return false;
+    if (textLikeAttributeNames.has(attrName) || attrName.startsWith("aria-")) {
+      return true;
+    }
+
+    // 允许 web component 上常见的 *-text / *-title / *-label 这类展示属性。
+    return Boolean(
+      node.tagName?.includes("-") &&
+        /(?:text|title|label|caption|subtitle)$/i.test(attrName),
+    );
+  };
+
+  const replaceAttributeEntriesFast = (
+    exactEntryList,
+    fuzzyEntryList,
+    root = document.body,
+  ) => {
+    if (!root?.isConnected) return;
+
+    const exactMap = new Map();
+    exactEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
+        ? normalizeCollapsedText(trimmedBefore)
+        : normalizeText(trimmedBefore);
+      exactMap.set(key, { replacement: afterRaw });
+    });
+
+    const fuzzyPreparedEntries = [];
+    fuzzyEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
+      fuzzyPreparedEntries.push({
+        trimmedBefore,
+        afterRaw,
+        flexibleWhitespace,
+        collapsedBefore: flexibleWhitespace
+          ? normalizeCollapsedText(trimmedBefore)
+          : null,
+        re: new RegExp(
+          flexibleWhitespace
+            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
+            : escapeRegExp(trimmedBefore),
+          "g",
+        ),
+      });
+    });
+
+    if (exactMap.size === 0 && fuzzyPreparedEntries.length === 0) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          const tag = node?.nodeName;
+          if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+          if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root))
+    ) {
+      nodes.push(root);
+    }
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      if (isElementHiddenForTranslation(node)) return;
+
+      Array.from(node.attributes || []).forEach((attribute) => {
+        if (!isTranslatableAttribute(node, attribute)) return;
+
+        const original = attribute.value;
+        const strictKey = normalizeText(original);
+        const collapsedKey = normalizeCollapsedText(original);
+        const exactEntry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
+        if (exactEntry) {
+          const replacement = preserveBoundaryWhitespace(
+            original,
+            exactEntry.replacement,
+          );
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(replacement, 200),
+            });
+          }
+          node.setAttribute(attribute.name, replacement);
+          return;
+        }
+
+        let nextValue = original;
+        let normalized = normalizeText(nextValue);
+        let collapsed = null;
+
+        for (const entry of fuzzyPreparedEntries) {
+          if (entry.flexibleWhitespace && collapsed === null) {
+            collapsed = normalizeCollapsedText(normalized);
+          }
+          const matches = entry.flexibleWhitespace
+            ? collapsed.includes(entry.collapsedBefore)
+            : normalized.includes(entry.trimmedBefore);
+          if (!matches) continue;
+
+          nextValue = preserveBoundaryWhitespace(
+            nextValue,
+            nextValue.replace(entry.re, () => entry.afterRaw),
+          );
+          normalized = normalizeText(nextValue);
+          collapsed = null;
+        }
+
+        if (nextValue !== original) {
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(nextValue, 200),
+            });
+          }
+          node.setAttribute(attribute.name, nextValue);
+        }
+      });
+    });
+  };
+
   const hasHtmlEntries = (entryList) =>
     entryList.some(
       ({ before, after }) => looksLikeHtml(before) || looksLikeHtml(after),
@@ -1567,6 +1885,13 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const collectMutationRoots = (mutations) => {
     const roots = [];
     for (const mutation of mutations) {
+      if (mutation.type === "attributes") {
+        const target = mutation.target;
+        if (target?.nodeType === Node.ELEMENT_NODE && !shouldSkipTranslationRoot(target)) {
+          roots.push(target);
+        }
+        continue;
+      }
       if (mutation.type !== "childList") continue;
       for (const node of mutation.addedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -1596,11 +1921,45 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     );
     if (targets.length === 0) return;
 
+    const scopes = [];
+    const seenScopes = new Set();
+    const pushScope = (scope) => {
+      if (!scope?.isConnected || seenScopes.has(scope)) return;
+      seenScopes.add(scope);
+      scopes.push(scope);
+    };
+
     for (const root of targets) {
+      pushScope(root);
+      if (root instanceof Element && root.shadowRoot) {
+        pushScope(root.shadowRoot);
+      }
+      const shadowWalker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_ELEMENT,
+        {
+          acceptNode(node) {
+            const tag = node?.nodeName;
+            if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+            if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        },
+      );
+
+      while (shadowWalker.nextNode()) {
+        if (shadowWalker.currentNode.shadowRoot) {
+          pushScope(shadowWalker.currentNode.shadowRoot);
+        }
+      }
+    }
+
+    for (const root of scopes) {
       if (hasHtmlEntries(exactEntries) || hasHtmlEntries(fuzzyEntries)) {
         replaceHtmlExactEntries(exactEntries, root);
         replaceHtmlExactEntries(fuzzyEntries, root);
       }
+      replaceAttributeEntriesFast(exactEntries, fuzzyEntries, root);
       replaceExactEntriesFast(exactEntries, root);
       replaceFuzzyEntriesFast(fuzzyEntries, root);
     }
@@ -1647,7 +2006,22 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         scheduleIncrementalRun();
       });
 
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          "alt",
+          "aria-label",
+          "caption",
+          "header-text",
+          "label",
+          "placeholder",
+          "subtitle",
+          "text",
+          "title",
+        ],
+      });
       window[observerKey] = observer;
 
       setTimeout(() => {
@@ -1796,6 +2170,41 @@ export class CiwiswitcherForm extends HTMLElement {
     // 第二个 <ciwiswitcher-form> 只含隐藏国家列表、没有 block_id，
     // 解析不到 ciwiBlock，无需绑定任何交互（否则会白挂一个全局 click 监听）。
     if (!ciwiBlock) return;
+    if (isThemePreviewDisabledForCiwi(ciwiBlock)) {
+      const ciwiContainer = this.querySelector("#ciwi-container");
+      const mainBox = this.querySelector("#main-box");
+      const translateFloatBtnText = this.querySelector("#translate-float-btn-text");
+      const selectorBackdrop = this.querySelector("#selector-backdrop");
+      const languageSelect = this.querySelector(".language_selector_header");
+      const currencySelect = this.querySelector(".currency_selector_header");
+      if (ciwiContainer) {
+        ciwiContainer.dataset.ciwiPreviewDisabled = "1";
+      }
+      if (mainBox) {
+        mainBox.style.pointerEvents = "none";
+        mainBox.style.cursor = "default";
+      }
+      if (translateFloatBtnText) {
+        translateFloatBtnText.style.pointerEvents = "none";
+        translateFloatBtnText.style.cursor = "default";
+      }
+      if (selectorBackdrop) {
+        selectorBackdrop.style.display = "none";
+      }
+      if (languageSelect) {
+        languageSelect.tabIndex = -1;
+        languageSelect.setAttribute("aria-disabled", "true");
+        languageSelect.style.pointerEvents = "none";
+        languageSelect.style.cursor = "default";
+      }
+      if (currencySelect) {
+        currencySelect.tabIndex = -1;
+        currencySelect.setAttribute("aria-disabled", "true");
+        currencySelect.style.pointerEvents = "none";
+        currencySelect.style.cursor = "default";
+      }
+      return;
+    }
 
     this.elements = {
       ciwiBlock,

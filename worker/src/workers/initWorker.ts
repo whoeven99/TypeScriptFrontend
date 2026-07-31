@@ -5,7 +5,6 @@ import {
   heartbeat,
   getJob,
   withStageTiming,
-  prefersStoredToken,
   countShopInitializingJobs,
   findInitQueuedJobsForShop,
   TSF_AUTO_TASK_SOURCE,
@@ -15,9 +14,8 @@ import { pushHint, setProgress, type HintPayload } from "../services/redisV4.js"
 import { claimNextJobWithFairScheduling } from "../services/fairStageClaim.js";
 import { blobWrite } from "../services/blobV4.js";
 import { purgeAutoJob } from "../services/autoJobCleanup.js";
-import { fetchTranslatableResources } from "../services/shopifyFetch.js";
+import { runBulkInitModules } from "../services/shopifyBulkFetch.js";
 import { countFieldUnits } from "../services/llmTranslate.js";
-import { getShopifyCap, runShopifyAdaptive } from "../services/shopifyConcurrency.js";
 import {
   stagePoolKindForJob,
   stageSlots,
@@ -32,15 +30,9 @@ import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
  */
 const WORKER_ID = `init-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
 
-const CHUNK_SIZE = 50;
+/** Retained for bulk init chunking signature; chunking is byte-sized only. */
+const CHUNK_SIZE = 0;
 const HEARTBEAT_THROTTLE_MS = 30_000;
-
-/**
- * Init 阶段 module 并行上限（实际上限 = min(此值, getShopifyCap)）。
- * 实际并发随 Shopify bucket 自适应升降，见 runShopifyAdaptive。
- * Override with INIT_MODULE_CONCURRENCY env var.
- */
-const MODULE_CONCURRENCY = Math.max(1, Number(process.env.INIT_MODULE_CONCURRENCY) || 3);
 
 const INIT_MAX_REQUEUE = Math.max(0, Number(process.env.INIT_MAX_REQUEUE) || 5);
 
@@ -91,7 +83,7 @@ function isRecoverableInitError(error: unknown): boolean {
   const text = collectInitErrorStrings(error).join("\n");
   return (
     /THROTTLED|429|rate limit/i.test(text) ||
-    /HTTP.*502|HTTP.*503|HTTP.*504|SERVER_ERROR/i.test(text) ||
+    /HTTP.*502|HTTP.*503|HTTP.*504|HTTP.*522|SERVER_ERROR/i.test(text) ||
     /ETIMEDOUT|ECONNRESET/i.test(text)
   );
 }
@@ -99,7 +91,7 @@ function isRecoverableInitError(error: unknown): boolean {
 function initRequeueLabel(error: unknown): string {
   const text = collectInitErrorStrings(error).join("\n");
   if (/THROTTLED|429|rate limit/i.test(text)) return "限流";
-  if (/HTTP.*502|HTTP.*503|HTTP.*504|SERVER_ERROR/i.test(text)) return "Shopify 暂时不可用";
+  if (/HTTP.*502|HTTP.*503|HTTP.*504|HTTP.*522|SERVER_ERROR/i.test(text)) return "Shopify 暂时不可用";
   if (/ETIMEDOUT|ECONNRESET/i.test(text)) return "网络超时";
   return "暂时失败";
 }
@@ -168,6 +160,10 @@ async function completeEmptyInitJob(
     writebackDone: 0,
     verifyTotal: 0,
     verifyDone: 0,
+    initModulesTotal: job.modules.length,
+    initModulesDone: job.modules.length,
+    initActiveModules: "[]",
+    initPhase: "",
   });
 
   await recordJobUsageSnapshot(
@@ -337,6 +333,64 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
   let totalItems = 0;
   let totalUnits = 0;
   let lastHeartbeatAt = 0;
+  const initModulesTotal = job.modules.length;
+  let initModulesDone = 0;
+  const activeModules = new Map<string, "querying" | "saving">();
+  const completedModules: Array<{ module: string; items: number }> = [];
+  const completedSet = new Set<string>();
+
+  const flushInitActivity = async (
+    extra: Record<string, string | number> = {},
+  ) => {
+    await setProgress(jobId, {
+      initModulesTotal,
+      initModulesDone,
+      initActiveModules: JSON.stringify(
+        [...activeModules.entries()].map(([module, phase]) => ({
+          module,
+          phase,
+        })),
+      ),
+      initCompletedModules: JSON.stringify(completedModules),
+      initDone: totalItems,
+      ...extra,
+    });
+  };
+
+  const setModulePhase = async (
+    module: string,
+    phase: "querying" | "saving",
+  ) => {
+    if (completedSet.has(module)) return;
+    activeModules.set(module, phase);
+    await flushInitActivity({ currentModule: module });
+  };
+
+  const completeModule = async (
+    module: string,
+    moduleItemCount: number,
+    moduleChunkCount: number,
+    moduleUnits: number,
+  ) => {
+    if (completedSet.has(module)) return;
+    // Accumulate into shared totals. These += happen synchronously (no await
+    // between read and write) so they are safe despite interleaved async work.
+    if (moduleItemCount > 0 || moduleChunkCount > 0) {
+      manifest[module] = {
+        totalItems: moduleItemCount,
+        chunks: moduleChunkCount,
+      };
+    }
+    totalItems += moduleItemCount;
+    totalUnits += moduleUnits;
+    activeModules.delete(module);
+    completedSet.add(module);
+    initModulesDone += 1;
+    completedModules.push({ module, items: moduleItemCount });
+    await flushInitActivity({ currentModule: module, initPhase: "" });
+    await throttledHeartbeat();
+  };
+
   const throttledHeartbeat = async () => {
     const now = Date.now();
     // Synchronous guard update before the async heartbeat call prevents
@@ -347,75 +401,67 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
     }
   };
 
+  await flushInitActivity({ initPhase: "" });
+
   try {
-    // ── Adaptive parallel module fetching ───────────────────────────────────
-    // 并发上限 MODULE_CONCURRENCY；实际上限随 getShopifyCap(shop) 动态降低。
-    // shopifyGraphql() 仍负责单次请求的 proactive wait 与 429/THROTTLED 重试。
     console.log(
-      `[init] job=${jobId} modules=${job.modules.length} concurrency=${getShopifyCap(shopDomain)}(adaptive, max=${MODULE_CONCURRENCY})`,
+      `[init] job=${jobId} fetch=bulk modules=${job.modules.length} shop=${shopDomain}`,
     );
-    await runShopifyAdaptive(
+    const bulkUnitsByModule = new Map<string, number>();
+    await runBulkInitModules({
       shopDomain,
-      job.modules,
-      async (module) => {
-        if (isShuttingDown()) {
-          throw new Error("shutdown: init yielding for deploy");
-        }
-        await throttledHeartbeat();
-
-        console.log(`[init] fetching module=${module} job=${jobId}`);
-        const chunks = await fetchTranslatableResources(
-          shopDomain,
-          job.shopifyAccessToken,
-          module,
-          job.limitPerType,
-          CHUNK_SIZE,
-          {
-            targetLocale: job.target,
-            isCover: job.isCover,
-            isHandle: job.isHandle,
-            onPage: throttledHeartbeat,
-            preferLegacyToken: prefersStoredToken(job),
-          },
-        );
-
-        if (chunks.length === 0) {
-          console.log(`[init] module=${module} 0 items, skipping`);
-          return;
-        }
-
-        // Upload all chunks for this module in parallel — each blob path is
-        // unique so concurrent writes are safe.
-        await Promise.all(
-          chunks.map((chunk, i) =>
-            blobWrite(
-              `${blobPrefix}/init/${module}/chunk-${String(i).padStart(2, "0")}.json`,
-              chunk,
-            ),
-          ),
-        );
-
-        // Compute per-module stats
-        const moduleItemCount = chunks.reduce((sum, c) => sum + c.length, 0);
-        let moduleUnits = 0;
-        for (const chunk of chunks) {
-          for (const r of chunk) {
-            for (const f of r.fields) moduleUnits += countFieldUnits(f.key, f.value, f.shopifyType);
+      modules: job.modules,
+      limitPerType: job.limitPerType,
+      chunkSize: CHUNK_SIZE,
+      options: {
+        targetLocale: job.target,
+        isCover: job.isCover,
+        isHandle: job.isHandle,
+      },
+      onHeartbeat: throttledHeartbeat,
+      isShutdown: isShuttingDown,
+      writeChunk: async (module, chunkIndex, chunk) => {
+        let units = bulkUnitsByModule.get(module) ?? 0;
+        for (const r of chunk) {
+          for (const f of r.fields) {
+            units += countFieldUnits(f.key, f.value, f.shopifyType);
           }
         }
-
-        // Accumulate into shared totals.  These +=  happen synchronously (no
-        // await between read and write) so they are safe despite interleaved
-        // async callbacks in JS's single-threaded event loop.
-        manifest[module] = { totalItems: moduleItemCount, chunks: chunks.length };
-        totalItems += moduleItemCount;
-        totalUnits += moduleUnits;
-
-        await setProgress(jobId, { initDone: totalItems, currentModule: module });
-        await throttledHeartbeat();
+        bulkUnitsByModule.set(module, units);
+        await blobWrite(
+          `${blobPrefix}/init/${module}/chunk-${String(chunkIndex).padStart(5, "0")}.json`,
+          chunk,
+        );
       },
-      { maxConcurrency: MODULE_CONCURRENCY, propagateErrors: true },
-    );
+      onModuleStart: async (module) => {
+        await setModulePhase(module, "querying");
+      },
+      onModulePhase: async (module, phase) => {
+        await setModulePhase(module, phase);
+      },
+      onModuleComplete: async ({ module, totalItems: moduleItemCount, chunks }) => {
+        if (moduleItemCount === 0) {
+          console.log(`[init] module=${module} 0 items, skipping`);
+          await completeModule(module, 0, 0, 0);
+          return;
+        }
+        console.log(
+          `[init] module=${module} items=${moduleItemCount} chunks=${chunks} fetch=bulk`,
+        );
+        const moduleUnits = bulkUnitsByModule.get(module) ?? 0;
+        await completeModule(module, moduleItemCount, chunks, moduleUnits);
+      },
+    });
+
+    // Ensure every selected module counts toward x/N even if a path skipped it.
+    for (const module of job.modules) {
+      if (!completedSet.has(module)) {
+        await completeModule(module, 0, 0, 0);
+      }
+    }
+
+    activeModules.clear();
+    await flushInitActivity({ initPhase: "writing_manifest" });
 
     // ── Write manifest and advance status ────────────────────────────────────
     await blobWrite(`${blobPrefix}/manifest.json`, {
@@ -454,6 +500,11 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
       initTotal: totalItems,
       initDone: totalItems,
       translateUnitTotal: totalUnits,
+      initModulesTotal,
+      initModulesDone: initModulesTotal,
+      initActiveModules: "[]",
+      initCompletedModules: JSON.stringify(completedModules),
+      initPhase: "",
     });
 
     await pushHint(

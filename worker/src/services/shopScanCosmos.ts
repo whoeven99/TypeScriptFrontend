@@ -13,20 +13,8 @@ import { pushShopScanHint } from "./redisV4.js";
  *   COSMOS_SHOP_SCAN_CONTAINER           （默认 "shop_scan_jobs"）
  */
 
-export type ShopScanTrigger = "install" | "scheduled" | "manual";
-export type ShopScanMode = "full" | "data_only" | "ai_only";
-export type ShopScanTask =
-  | "content_size"
-  | "coverage"
-  | "profile_material"
-  | "profile_identity"
-  | "market_locale"
-  | "catalog_material"
-  | "editorial_material"
-  | "style_material"
-  | "profile_ai"
-  | "glossary_samples"
-  | "glossary_ai";
+/** admin：Spark Admin「现算覆盖率」，只跑 coverage 写 Turso（对齐语言页刷新统计）。 */
+export type ShopScanTrigger = "install" | "scheduled" | "manual" | "admin";
 
 export type ShopScanStatus =
   | "CREATED"
@@ -34,7 +22,6 @@ export type ShopScanStatus =
   | "SCANNING"
   | "COMPLETED"
   | "PARTIAL"
-  | "SKIPPED"
   | "FAILED";
 
 export type ShopScanStageState = "PENDING" | "DONE" | "SKIPPED" | "FAILED";
@@ -60,10 +47,11 @@ export type ShopScanProfileStrategy = {
   brandTerms: string[];
   doNotTranslateTerms: string[];
   preferredTerms: Array<{ source: string; note: string | null }>;
-  regionalStyleGuidance: string[];
+  seoTerms: string[];
   moduleHints: Array<{
     module: string;
     tonePolicy: string | null;
+    keywordPolicy: string | null;
     literalVsAdaptive: string | null;
   }>;
 };
@@ -88,11 +76,9 @@ export type ShopScanJob = {
   id: string; // scanId，唯一（partition 内主键）
   shopName: string; // 分区键
   trigger: ShopScanTrigger;
-  mode: ShopScanMode;
-  task: ShopScanTask;
   status: ShopScanStatus;
   stages: ShopScanStages;
-  blobPrefix: string; // "shop-scan/{shop}/{scanId}"
+  blobPrefix: string; // 稳定产物前缀：`shop-profile/{shop}`（历史为 `shop-scan/{shop}/{scanId}`）
   summary: ShopScanSummary;
   claimedBy: string | null;
   claimedAt: string | null;
@@ -130,7 +116,6 @@ export const PENDING_SHOP_SCAN_STATUSES: ShopScanStatus[] = ["CREATED", "QUEUED"
 export const TERMINAL_SHOP_SCAN_STATUSES: ShopScanStatus[] = [
   "COMPLETED",
   "PARTIAL",
-  "SKIPPED",
   "FAILED",
 ];
 
@@ -427,23 +412,17 @@ export async function createShopScanJob(input: {
   scanId: string;
   shopName: string;
   trigger: ShopScanTrigger;
-  mode: ShopScanMode;
-  task: ShopScanTask;
   blobPrefix: string;
-  summary?: ShopScanSummary;
-  stages?: Partial<ShopScanStages>;
 }): Promise<ShopScanJob> {
   const now = new Date().toISOString();
   const doc: ShopScanJob = {
     id: input.scanId,
     shopName: input.shopName,
     trigger: input.trigger,
-    mode: input.mode,
-    task: input.task,
     status: "CREATED",
-    stages: { ...EMPTY_SHOP_SCAN_STAGES, ...(input.stages ?? {}) },
+    stages: { ...EMPTY_SHOP_SCAN_STAGES },
     blobPrefix: input.blobPrefix,
-    summary: input.summary ?? {},
+    summary: {},
     claimedBy: null,
     claimedAt: null,
     lastHeartbeat: null,
@@ -487,6 +466,73 @@ export async function resetStaleShopScanJobs(): Promise<number> {
   return reset;
 }
 
+/** 终态任务中最新一条的 id（COMPLETED/PARTIAL）；无则 null。 */
+export async function getLatestTerminalShopScanId(
+  shopName: string,
+): Promise<string | null> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<{ id: string }>(
+        {
+          query: `SELECT TOP 1 c.id FROM c WHERE c.shopName = @shopName AND c.status IN ('COMPLETED', 'PARTIAL') ORDER BY c.createdAt DESC`,
+          parameters: [{ name: "@shopName", value: shopName }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type ShopScanCleanupCandidate = {
+  id: string;
+  shopName: string;
+  blobPrefix: string;
+  createdAt: string;
+  status: ShopScanStatus;
+};
+
+/**
+ * 超过 cutoff 的终态扫描（旧→新），供保留期清理。
+ * 调用方负责「每店保留最新 COMPLETED/PARTIAL」。
+ */
+export async function findOldShopScanJobsForCleanup(
+  cutoffIso: string,
+  limit: number,
+): Promise<ShopScanCleanupCandidate[]> {
+  const take = Math.max(1, Math.min(200, Math.floor(limit)));
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanCleanupCandidate>({
+        query: `SELECT c.id, c.shopName, c.blobPrefix, c.createdAt, c.status
+FROM c
+WHERE c.createdAt < @cutoff
+  AND c.status IN ('COMPLETED', 'PARTIAL', 'FAILED')
+ORDER BY c.createdAt ASC
+OFFSET 0 LIMIT @limit`,
+        parameters: [
+          { name: "@cutoff", value: cutoffIso },
+          { name: "@limit", value: take },
+        ],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (e) {
+    console.warn("[shopScanCosmos] findOldShopScanJobsForCleanup failed", e);
+    return [];
+  }
+}
+
+/** 删除一条 shop_scan_jobs 文档（不删 Blob）。 */
+export async function deleteShopScanJob(
+  shopName: string,
+  scanId: string,
+): Promise<void> {
+  await getContainer().item(scanId, shopName).delete();
+}
+
 /** 部署重启后：给所有 CREATED/QUEUED 扫描补 push hint，新进程立即接管。 */
 export async function wakeQueuedShopScanJobsAfterDeploy(): Promise<number> {
   let woken = 0;
@@ -501,28 +547,4 @@ export async function wakeQueuedShopScanJobsAfterDeploy(): Promise<number> {
   }
   if (woken > 0) console.log(`[shopScanCosmos] re-hinted ${woken} pending scan(s) after deploy`);
   return woken;
-}
-
-export async function getLatestShopScanJobByTask(
-  shopName: string,
-  task: ShopScanTask,
-): Promise<ShopScanJob | null> {
-  try {
-    const { resources } = await getContainer()
-      .items.query<ShopScanJob>(
-        {
-          query:
-            "SELECT * FROM c WHERE c.shopName = @shopName AND c.task = @task ORDER BY c.createdAt DESC OFFSET 0 LIMIT 1",
-          parameters: [
-            { name: "@shopName", value: shopName },
-            { name: "@task", value: task },
-          ],
-        },
-        { partitionKey: shopName },
-      )
-      .fetchAll();
-    return resources[0] ?? null;
-  } catch {
-    return null;
-  }
 }

@@ -165,9 +165,13 @@ export function clampTitleFieldValue(
   return slice;
 }
 
-/** 按字段 key 应用长度约束（当前仅 title）。 */
-export function enforceFieldTranslationLimits(key: string, value: string): string {
+/**
+ * 按字段 key 应用长度约束（当前仅 title）。
+ * EMAIL_TEMPLATE 的 title 不受 255 字符限制（Shopify 对该资源类型无此约束）。
+ */
+export function enforceFieldTranslationLimits(key: string, value: string, module?: string): string {
   if (!isTitleFieldKey(key)) return value;
+  if (module === "EMAIL_TEMPLATE") return value;
   return clampTitleFieldValue(value);
 }
 
@@ -178,8 +182,11 @@ export type LimitedTranslateResult = {
   status: "translated" | "fallback" | "skipped";
 };
 
-export function enforceTranslateResultLimits<T extends LimitedTranslateResult>(result: T): T {
-  const clamped = enforceFieldTranslationLimits(result.key, result.translatedValue);
+export function enforceTranslateResultLimits<T extends LimitedTranslateResult>(
+  result: T,
+  module?: string,
+): T {
+  const clamped = enforceFieldTranslationLimits(result.key, result.translatedValue, module);
   if (clamped === result.translatedValue) return result;
   return { ...result, translatedValue: clamped };
 }

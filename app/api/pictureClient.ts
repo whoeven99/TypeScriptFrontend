@@ -128,6 +128,77 @@ export const GetProductImageData = async ({
   }
 };
 
+/**
+ * 手动上传替换图。必须用 fetch（App Bridge 会注入 session token）；
+ * Ant Design Upload 默认 XHR 不会带鉴权，线上会 302。
+ */
+export const UploadProductImage = async ({
+  shopName,
+  productId,
+  imageUrl,
+  languageCode,
+  file,
+  altBeforeTranslation = "",
+  altAfterTranslation = "",
+}: {
+  shopName: string;
+  productId: string;
+  imageUrl: string;
+  languageCode: string;
+  file: Blob;
+  altBeforeTranslation?: string;
+  altAfterTranslation?: string;
+}) => {
+  try {
+    const form = new FormData();
+    form.append("shopName", shopName);
+    form.append(
+      "userPicturesDoJson",
+      JSON.stringify({
+        shopName,
+        imageId: productId,
+        imageBeforeUrl: imageUrl,
+        altBeforeTranslation,
+        altAfterTranslation,
+        languageCode,
+      }),
+    );
+    form.append("file", file);
+    const res = await fetch("/api/picture/upload", {
+      method: "POST",
+      body: form,
+      redirect: "manual",
+    });
+    if (res.status >= 300 && res.status < 400) {
+      console.error(`UploadProductImage redirected status=${res.status}`);
+      return {
+        success: false,
+        errorCode: res.status,
+        errorMsg: "AUTH_REDIRECT",
+        response: undefined,
+      };
+    }
+    if (!res.ok) {
+      console.error(`UploadProductImage status=${res.status}`);
+      return {
+        success: false,
+        errorCode: res.status,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error UploadProductImage:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
 export const TranslateImage = async ({
   shop,
   imageUrl,

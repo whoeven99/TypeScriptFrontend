@@ -62,9 +62,8 @@ function resolveTotalCreditsLabel(
 
 async function resolveRecipient(
   shop: string,
-  accessToken?: string | null,
 ): Promise<{ email: string; userName: string } | null> {
-  const contact = await fetchShopContact(shop, accessToken);
+  const contact = await fetchShopContact(shop);
   if (!contact.email) {
     console.warn(`${LOG} no shop email shop=${shop}`);
     return null;
@@ -82,9 +81,8 @@ async function resolveRecipient(
 export async function sendTsfPurchaseSuccessEmail(params: {
   shop: string;
   plan: PlanRecord;
-  accessToken?: string | null;
 }): Promise<boolean> {
-  const recipient = await resolveRecipient(params.shop, params.accessToken);
+  const recipient = await resolveRecipient(params.shop);
   if (!recipient) return false;
 
   const quota = await getAccountQuota(params.shop);
@@ -120,9 +118,8 @@ export async function sendTsfSubscribeSuccessEmail(params: {
   trialEndsAt?: Date | null;
   trialStartsAt?: Date | null;
   effectiveAt?: Date | null;
-  accessToken?: string | null;
 }): Promise<boolean> {
-  const recipient = await resolveRecipient(params.shop, params.accessToken);
+  const recipient = await resolveRecipient(params.shop);
   if (!recipient) return false;
 
   const planName =
@@ -204,9 +201,8 @@ export function shouldSendTsfSubscriptionRenewalEmail(params: {
 export async function sendTsfSubscriptionRenewalEmail(params: {
   shop: string;
   plan: PlanRecord;
-  accessToken?: string | null;
 }): Promise<boolean> {
-  const recipient = await resolveRecipient(params.shop, params.accessToken);
+  const recipient = await resolveRecipient(params.shop);
   if (!recipient) return false;
 
   const quota = await getAccountQuota(params.shop);

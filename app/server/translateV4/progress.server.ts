@@ -26,6 +26,19 @@ import {
 /** Human-readable unit label for field / HTML fragment counts. */
 const TRANSLATION_V4_UNIT_LABEL = "Items";
 
+/** Init worker coarse phase for a single in-flight module (Redis activity). */
+export type V4InitModulePhase = "querying" | "saving";
+
+export type V4InitActiveModule = {
+  module: string;
+  phase: V4InitModulePhase;
+};
+
+export type V4InitCompletedModule = {
+  module: string;
+  items: number;
+};
+
 export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   currentModule: string | null;
   translateStartedAt: string | null;
@@ -37,7 +50,58 @@ export type TranslationV4MergedMetrics = TranslationV4Metrics & {
   controlAction: V4ControlAction | null;
   /** API 写入 pausePending 的时间戳（ms） */
   pauseRequestedAt: string | null;
+  /** Selected module count for init x/N progress (Redis). */
+  initModulesTotal: number;
+  /** Fully finished init modules (Redis). */
+  initModulesDone: number;
+  /** In-flight init modules with coarse phase (Redis JSON). */
+  initActiveModules: V4InitActiveModule[];
+  /** Completed init modules with item counts (Redis JSON). */
+  initCompletedModules: V4InitCompletedModule[];
+  /** Job-level init phase, e.g. writing_manifest (Redis). */
+  initPhase: string | null;
 };
+
+function parseInitActiveModules(raw: string | undefined): V4InitActiveModule[] {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const out: V4InitActiveModule[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const module = String((item as { module?: unknown }).module ?? "").trim();
+      const phase = String((item as { phase?: unknown }).phase ?? "").trim();
+      if (!module) continue;
+      if (phase !== "querying" && phase !== "saving") continue;
+      out.push({ module, phase });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function parseInitCompletedModules(
+  raw: string | undefined,
+): V4InitCompletedModule[] {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const out: V4InitCompletedModule[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const module = String((item as { module?: unknown }).module ?? "").trim();
+      const items = Number((item as { items?: unknown }).items) || 0;
+      if (!module) continue;
+      out.push({ module, items });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 /** 合并 Cosmos 持久化 metrics 与 worker 实时写入 Redis 的进度。 */
 export function mergeV4JobMetrics(
@@ -84,6 +148,13 @@ export function mergeV4JobMetrics(
     pauseReason: redisProgress.pauseReason?.trim() || null,
     controlAction,
     pauseRequestedAt: redisProgress.pauseRequestedAt ?? null,
+    initModulesTotal: Number(redisProgress.initModulesTotal) || 0,
+    initModulesDone: Number(redisProgress.initModulesDone) || 0,
+    initActiveModules: parseInitActiveModules(redisProgress.initActiveModules),
+    initCompletedModules: parseInitCompletedModules(
+      redisProgress.initCompletedModules,
+    ),
+    initPhase: redisProgress.initPhase?.trim() || null,
   };
 }
 
@@ -192,6 +263,17 @@ export function computeTranslationV4ProgressPercent(
     status === "INIT_DONE" ||
     status === "CREATED"
   ) {
+    const modulesTotal =
+      "initModulesTotal" in metrics
+        ? Number((metrics as TranslationV4MergedMetrics).initModulesTotal) || 0
+        : 0;
+    const modulesDone =
+      "initModulesDone" in metrics
+        ? Number((metrics as TranslationV4MergedMetrics).initModulesDone) || 0
+        : 0;
+    if (modulesTotal > 0) {
+      return ratioPercent(modulesDone, modulesTotal);
+    }
     return ratioPercent(metrics.initDone, metrics.initTotal);
   }
 
@@ -353,6 +435,11 @@ export type TranslationJobProgressSummary = {
     verifyTotal: number;
     verifyFailed: number;
     currentModule: string | null;
+    initModulesDone: number;
+    initModulesTotal: number;
+    initActiveModules: V4InitActiveModule[];
+    initCompletedModules: V4InitCompletedModule[];
+    initPhase: string | null;
   };
 };
 
@@ -454,6 +541,11 @@ function toProgressSummary(
       verifyTotal: metrics.verifyTotal,
       verifyFailed: metrics.verifyFailed,
       currentModule: metrics.currentModule,
+      initModulesDone: metrics.initModulesDone,
+      initModulesTotal: metrics.initModulesTotal,
+      initActiveModules: metrics.initActiveModules,
+      initCompletedModules: metrics.initCompletedModules,
+      initPhase: metrics.initPhase,
     },
   };
 }

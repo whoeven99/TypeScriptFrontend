@@ -3,13 +3,20 @@ import { sameTranslationLocale } from "./locale";
 import { ensureShopV4Settings } from "./migration.server";
 
 /**
- * 语言页「按语言自动翻译开关」的 TSF Prisma 读写（迁移后的店用）。
+ * 语言页「按语言自动翻译开关」+ 覆盖率汇总的 TSF Prisma 读写。
  * 每店每目标语言一行；worker 据此精确按语言建自动任务。
  */
 export type TargetLocaleRow = {
   locale: string;
   autoTranslate: boolean;
   status: number;
+  coverageTranslated: number;
+  coverageTotal: number;
+  /** 0–100；null=尚未统计 */
+  coveragePercent: number | null;
+  /** ISO；null=尚未统计 */
+  coverageUpdatedAt: string | null;
+  coverageSource: string | null;
 };
 
 export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]> {
@@ -19,6 +26,14 @@ export async function listTargetLocales(shop: string): Promise<TargetLocaleRow[]
     locale: r.locale,
     autoTranslate: r.autoTranslate,
     status: 1,
+    coverageTranslated: r.coverageTranslated ?? 0,
+    coverageTotal: r.coverageTotal ?? 0,
+    coveragePercent:
+      typeof r.coveragePercent === "number" ? r.coveragePercent : null,
+    coverageUpdatedAt: r.coverageUpdatedAt
+      ? r.coverageUpdatedAt.toISOString()
+      : null,
+    coverageSource: r.coverageSource ?? null,
   }));
 }
 

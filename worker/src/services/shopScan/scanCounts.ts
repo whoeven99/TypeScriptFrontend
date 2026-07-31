@@ -9,6 +9,8 @@ import { shopScanGraphql } from "./graphql.js";
  *   - total：shouldIncludeFieldV2(isCover:true) 判定的应翻字段（不受现有译文影响）
  *   - translated：上述字段中已有当前译文（outdated !== true 且非空）的数量
  *   - chars：应翻字段源文长度之和（用于评估翻译规模/耗时）
+ *
+ * 默认路径见 `bulkScanCounts.ts`（Shopify bulk JSONL）；本文件保留分页实现作 fallback。
  */
 
 const QUERY = `
@@ -33,20 +35,32 @@ const PAGE_SIZE = 250;
 
 export type ModuleScanCount = { total: number; translated: number; chars: number };
 
-type Node = {
-  translations?: Array<{ key: string; value?: string | null; outdated?: boolean | null }> | null;
-  translatableContent?: Array<{ key: string; value: string; type?: string | null }> | null;
+export type ScanCountContentField = {
+  key: string;
+  value: string;
+  type?: string | null;
+};
+
+export type ScanCountTranslation = {
+  key: string;
+  value?: string | null;
+  outdated?: boolean | null;
+};
+
+export type ScanCountNode = {
+  translations?: ScanCountTranslation[] | null;
+  translatableContent?: ScanCountContentField[] | null;
 };
 
 type CountResponse = {
   translatableResources: {
-    edges: Array<{ node: Node }>;
+    edges: Array<{ node: ScanCountNode }>;
     pageInfo: { hasNextPage: boolean; endCursor: string | null };
   };
 };
 
 function hasCurrentTranslation(
-  translations: Node["translations"],
+  translations: ScanCountNode["translations"],
   key: string,
 ): boolean {
   const row = (translations ?? []).find((t) => t.key === key);
@@ -55,6 +69,31 @@ function hasCurrentTranslation(
   return !isBlankValue(row.value);
 }
 
+/** 将单个资源节点累加进计数（bulk JSONL / 分页共用）。 */
+export function accumulateScanCountNode(
+  acc: ModuleScanCount,
+  module: string,
+  node: ScanCountNode,
+): void {
+  const translations = node.translations ?? [];
+  for (const content of node.translatableContent ?? []) {
+    const includable = shouldIncludeFieldV2(
+      { key: content.key, value: content.value, type: content.type },
+      undefined,
+      { module, isCover: true, isHandle: false },
+    );
+    if (!includable) continue;
+    acc.total++;
+    acc.chars += content.value?.length ?? 0;
+    if (hasCurrentTranslation(translations, content.key)) acc.translated++;
+  }
+}
+
+export function emptyModuleScanCount(): ModuleScanCount {
+  return { total: 0, translated: 0, chars: 0 };
+}
+
+/** 分页拉取（bulk 失败时的 fallback）。 */
 export async function countModuleScan(
   shop: string,
   accessToken: string,
@@ -62,9 +101,7 @@ export async function countModuleScan(
   locale: string,
   onPage?: () => Promise<void>,
 ): Promise<ModuleScanCount> {
-  let total = 0;
-  let translated = 0;
-  let chars = 0;
+  const acc = emptyModuleScanCount();
   let after: string | null = null;
 
   for (;;) {
@@ -83,18 +120,7 @@ export async function countModuleScan(
     const conn = data?.translatableResources;
     const edges = conn?.edges ?? [];
     for (const { node } of edges) {
-      const translations = node.translations ?? [];
-      for (const content of node.translatableContent ?? []) {
-        const includable = shouldIncludeFieldV2(
-          { key: content.key, value: content.value, type: content.type },
-          undefined,
-          { module, isCover: true, isHandle: false },
-        );
-        if (!includable) continue;
-        total++;
-        chars += content.value?.length ?? 0;
-        if (hasCurrentTranslation(translations, content.key)) translated++;
-      }
+      accumulateScanCountNode(acc, module, node);
     }
 
     if (onPage) await onPage();
@@ -103,5 +129,5 @@ export async function countModuleScan(
     if (!after) break;
   }
 
-  return { total, translated, chars };
+  return acc;
 }

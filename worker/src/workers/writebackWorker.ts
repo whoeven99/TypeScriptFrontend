@@ -5,7 +5,6 @@ import {
   heartbeat,
   getJob,
   withStageTiming,
-  prefersStoredToken,
   countShopWritingBackJobs,
   findWritebackQueuedJobsForShop,
   type TranslationV4Job,
@@ -272,7 +271,7 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
 
       await maybeHeartbeat();
 
-      const translations: TranslationInput[] = filterWritebackFields(resource.translations)
+      const translations: TranslationInput[] = filterWritebackFields(resource.translations, module)
         .map((t) => ({
           locale: target,
           key: t.key,
@@ -295,10 +294,8 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
 
       const result = await registerTranslations(
         shopDomain,
-        job.shopifyAccessToken,
         resource.resourceId,
         translations,
-        prefersStoredToken(job),
       );
 
       if (result.success) {

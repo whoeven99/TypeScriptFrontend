@@ -1,5 +1,5 @@
 {
-  "name": "transform-lancy-app",
+  "name": "ciwi-translate",
   "private": true,
   "scripts": {
     "core:build": "npm run build --prefix packages/translation-core",

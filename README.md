@@ -1,4 +1,4 @@
-# TypeScriptFrontend
+# ciwi-translate
 
 Shopify embedded app for Ciwi Translator.
 

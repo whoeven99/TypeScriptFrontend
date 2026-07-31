@@ -1,4 +1,3 @@
-import { getShopAccessToken, invalidateShopAccessTokenCache } from "./shopAccessToken.js";
 import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
 import { getOfflineAccessTokenFromTsf } from "./tsfDb.js";
 import { maskEmail } from "./workerEmail.js";
@@ -36,12 +35,6 @@ export function parseFirstNameFromShopOwnerName(shopOwnerName: string): string |
   return spaceIndex > 0 ? trimmed.slice(0, spaceIndex) : trimmed;
 }
 
-export type FetchShopEmailOptions = {
-  legacyToken?: string;
-  /** 外部来源任务（TsFrontend / 自动任务）：直接用 job 快照 token */
-  preferLegacyToken?: boolean;
-};
-
 function pickShopEmail(shop: {
   email?: string | null;
   contactEmail?: string | null;
@@ -74,15 +67,12 @@ function pickFirstNameFromShop(shop: {
 
 async function resolveAccessToken(
   shop: string,
-  options: FetchShopEmailOptions,
 ): Promise<string> {
-  if (options.preferLegacyToken) {
-    const tsfToken = await getOfflineAccessTokenFromTsf(shop);
-    if (tsfToken) return tsfToken;
-    const legacy = options.legacyToken?.trim();
-    if (legacy) return legacy;
+  const token = await getOfflineAccessTokenFromTsf(shop);
+  if (!token) {
+    throw new Error(`${LOG} Turso Session 中缺少 offline token shop=${shop}`);
   }
-  return getShopAccessToken(shop, options.legacyToken, options.preferLegacyToken ?? false);
+  return token;
 }
 
 /**
@@ -91,7 +81,6 @@ async function resolveAccessToken(
  */
 export async function fetchShopContact(
   shop: string,
-  options: FetchShopEmailOptions = {},
 ): Promise<ShopContact> {
   const normalizedShop = shop.trim();
   if (!normalizedShop) {
@@ -112,8 +101,6 @@ export async function fetchShopContact(
 
   logDetail("fetch-start", {
     shop: normalizedShop,
-    preferLegacyToken: options.preferLegacyToken ?? false,
-    hasLegacyToken: Boolean(options.legacyToken?.trim()),
   });
 
   let email: string | null = null;
@@ -123,7 +110,7 @@ export async function fetchShopContact(
   try {
     let tokenRetried = false;
     while (true) {
-      const accessToken = await resolveAccessToken(normalizedShop, options);
+      const accessToken = await resolveAccessToken(normalizedShop);
       logDetail("graphql-request", {
         shop: normalizedShop,
         tokenRetried,
@@ -133,7 +120,6 @@ export async function fetchShopContact(
 
       if (resp.status === 401 && !tokenRetried) {
         logDetail("graphql-401-retry", { shop: normalizedShop });
-        invalidateShopAccessTokenCache(normalizedShop);
         tokenRetried = true;
         continue;
       }
@@ -208,9 +194,8 @@ export async function fetchShopContact(
  */
 export async function fetchShopEmail(
   shop: string,
-  options: FetchShopEmailOptions = {},
 ): Promise<string | null> {
-  const contact = await fetchShopContact(shop, options);
+  const contact = await fetchShopContact(shop);
   return contact.email;
 }
 

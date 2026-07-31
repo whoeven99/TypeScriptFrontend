@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { tmGet, tmGetByValue, tmSet, tmSetByValue } from "./translationMemory.js";
 import { loadGlossaryLines } from "./glossary.js";
 import {
@@ -28,12 +27,10 @@ import {
   effectiveTranslation,
   hasHtmlPlaceholderLeak,
   htmlNodePartsOf,
-  htmlNodeTextParts,
   restoreBrPlaceholders,
   restoreHtmlTextNodes,
   roundtripHtmlForTest,
   sanitizeHtmlTextTranslation,
-  flattenHtmlNodeTranslations,
 } from "./htmlTranslate.js";
 import { enforceTranslateResultLimits } from "./translationFieldLimits.js";
 import {
@@ -42,11 +39,6 @@ import {
   protectedLiteralsPreserved,
   restoreMaskedPlaceholders,
 } from "./placeholderMask.js";
-import {
-  buildPromptContextBlock,
-  buildResolvedPromptContext,
-  type TranslationPromptContextInput,
-} from "./promptContextBuilder.js";
 import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
 
@@ -368,9 +360,46 @@ function resolveDeepSeekChatCompletionsUrl(baseURL: string): string {
 type ChatCompletionInvokeResult = {
   content: string;
   tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  requestId?: string;
   response: Response;
   limitHints: string[];
 };
+
+type LlmUsageTokens = {
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+};
+
+function usageFromApi(usage?: {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}): LlmUsageTokens {
+  const inputTokens =
+    typeof usage?.prompt_tokens === "number" && usage.prompt_tokens >= 0
+      ? usage.prompt_tokens
+      : undefined;
+  const outputTokens =
+    typeof usage?.completion_tokens === "number" && usage.completion_tokens >= 0
+      ? usage.completion_tokens
+      : undefined;
+  const total =
+    typeof usage?.total_tokens === "number" && usage.total_tokens >= 0
+      ? usage.total_tokens
+      : (inputTokens ?? 0) + (outputTokens ?? 0);
+  return { tokens: total, inputTokens, outputTokens };
+}
+
+function requestIdFromHeaders(headers: Headers): string | undefined {
+  for (const name of ["x-request-id", "x-ms-request-id", "request-id"]) {
+    const v = headers.get(name)?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
 
 /**
  * Pull a JSON string field's value out of a raw JSON line WITHOUT parsing the
@@ -498,12 +527,21 @@ async function fetchDeepSeekChatCompletion(
     let scanFrom = 0; // resume \n search here — avoids O(n²) buffer.slice per line
     let content = "";
     let tokens = 0;
+    let inputTokens: number | undefined;
+    let outputTokens: number | undefined;
+    let requestId: string | undefined;
     let apiErrorMsg: string | undefined;
 
     const handleLine = (line: string): void => {
       if (!line.startsWith("data:")) return;
       const data = line.slice(5).trim();
       if (data === "" || data === "[DONE]") return;
+
+      // Completion id appears on most SSE chunks; capture once for batch correlation.
+      if (!requestId) {
+        const id = extractJsonStringField(data, "id");
+        if (id) requestId = id;
+      }
 
       // Fast path: extract delta.content without JSON.parse-ing the whole event.
       // Runs once per token — the dominant CPU cost under concurrency. A content
@@ -521,16 +559,30 @@ async function fetchDeepSeekChatCompletion(
       // Slow path (rare): usage tally (final event) / error / role-only delta.
       if (
         data.includes('"total_tokens"') ||
+        data.includes('"prompt_tokens"') ||
         data.includes('"usage"') ||
         data.includes('"error"')
       ) {
         try {
           const evt = JSON.parse(data) as {
-            usage?: { total_tokens?: number };
+            id?: string;
+            usage?: {
+              prompt_tokens?: number;
+              completion_tokens?: number;
+              total_tokens?: number;
+            };
             error?: { message?: string };
           };
           if (evt.error?.message) apiErrorMsg = evt.error.message;
-          if (evt.usage?.total_tokens) tokens = evt.usage.total_tokens;
+          if (!requestId && typeof evt.id === "string" && evt.id.trim()) {
+            requestId = evt.id.trim();
+          }
+          if (evt.usage) {
+            const u = usageFromApi(evt.usage);
+            if (u.tokens > 0) tokens = u.tokens;
+            if (u.inputTokens !== undefined) inputTokens = u.inputTokens;
+            if (u.outputTokens !== undefined) outputTokens = u.outputTokens;
+          }
         } catch {
           // partial/keepalive line — wait for more bytes
         }
@@ -562,6 +614,9 @@ async function fetchDeepSeekChatCompletion(
     return {
       content: content || "{}",
       tokens,
+      inputTokens,
+      outputTokens,
+      requestId: requestId || requestIdFromHeaders(resp.headers),
       response: resp,
       limitHints: [], // body hints unavailable when streaming; headers still logged separately
     };
@@ -644,7 +699,13 @@ async function callAzureOpenAIChat(
   model: string,
   messages: ChatMessage[],
   itemCount: number,
-): Promise<{ raw: string; tokens: number }> {
+): Promise<{
+  raw: string;
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  requestId?: string;
+}> {
   const key = gptApiKey();
   if (!key) throw new Error("Gpt_ApiKey 未配置");
   const url = `${GPT_ENDPOINT}/openai/deployments/${encodeURIComponent(model)}/chat/completions?api-version=${GPT_API_VERSION}`;
@@ -685,12 +746,22 @@ async function callAzureOpenAIChat(
           throw new Error(`LLM HTTP ${resp.status}: ${body}`);
         }
         const j = (await resp.json()) as {
+          id?: string;
           choices?: Array<{ message?: { content?: string | null } }>;
-          usage?: { total_tokens?: number };
+          usage?: {
+            prompt_tokens?: number;
+            completion_tokens?: number;
+            total_tokens?: number;
+          };
         };
+        const u = usageFromApi(j.usage);
         return {
           raw: j.choices?.[0]?.message?.content || "{}",
-          tokens: j.usage?.total_tokens ?? 0,
+          tokens: u.tokens,
+          inputTokens: u.inputTokens,
+          outputTokens: u.outputTokens,
+          requestId:
+            (typeof j.id === "string" && j.id.trim()) || requestIdFromHeaders(resp.headers) || undefined,
         };
       } catch (e) {
         if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
@@ -1541,7 +1612,9 @@ export function setShopQuotaCap(shop: string, cap: number): void {
 // ─── Engine router ──────────────────────────────────────────────────────────────
 //
 // Two engine *families*: "llm" (DeepSeek) and "google" (Google Translate).
-// Cost-tiered routing applies unless the job requests google-translate only.
+// Short plain fields pack into JSON batches (LLM first, Google fallback) unless
+// the job forces google-translate only. Set TRANSLATE_SHORT_PACK_LLM_FIRST=false
+// to restore the old Google-first order for short plain.
 
 type Engine = "llm" | "google";
 
@@ -1554,6 +1627,13 @@ function llmConfigured(): boolean {
     process.env.DEEPSEEK_API_KEY?.trim() ||
       process.env.DEEPSEEK_API_KEYS?.trim(),
   );
+}
+
+/** Short plain JSON-pack path uses LLM first by default (rollback via env). */
+function shortPackLlmFirst(): boolean {
+  const v = process.env.TRANSLATE_SHORT_PACK_LLM_FIRST;
+  if (v === undefined || v.trim() === "") return true;
+  return /^(1|true|yes)$/i.test(v);
 }
 
 /** A single forced engine family, or null when auto-routing should apply. */
@@ -1576,19 +1656,38 @@ function fieldTier(
   return value.length >= SHORT_PLAIN_THRESHOLD ? "rich" : "trivial";
 }
 
-function poolSignature(order: Engine[], isHandle: boolean): string {
+type PoolSigOpts = { isHandle?: boolean; isShort?: boolean };
+
+function poolSignature(order: Engine[], opts: boolean | PoolSigOpts = false): string {
+  // Legacy callers passed `isHandle` as a boolean.
+  const { isHandle, isShort } =
+    typeof opts === "boolean" ? { isHandle: opts, isShort: false } : opts;
   const base = order.join(",");
-  return isHandle ? `${HANDLE_POOL_PREFIX}${base}` : base;
+  if (isHandle) return `${HANDLE_POOL_PREFIX}${base}`;
+  if (isShort) return `${SHORT_POOL_PREFIX}${base}`;
+  return base;
 }
 
-function parsePoolSignature(sig: string): { order: Engine[]; isHandle: boolean } {
+function parsePoolSignature(sig: string): {
+  order: Engine[];
+  isHandle: boolean;
+  isShort: boolean;
+} {
   if (sig.startsWith(HANDLE_POOL_PREFIX)) {
     return {
       isHandle: true,
+      isShort: false,
       order: sig.slice(HANDLE_POOL_PREFIX.length).split(",") as Engine[],
     };
   }
-  return { isHandle: false, order: sig.split(",") as Engine[] };
+  if (sig.startsWith(SHORT_POOL_PREFIX)) {
+    return {
+      isHandle: false,
+      isShort: true,
+      order: sig.slice(SHORT_POOL_PREFIX.length).split(",") as Engine[],
+    };
+  }
+  return { isHandle: false, isShort: false, order: sig.split(",") as Engine[] };
 }
 
 /** Ordered engine candidates for a tier (primary first, then fallback). */
@@ -1599,12 +1698,14 @@ function engineOrderFor(tier: "trivial" | "rich", aiModel?: string): Engine[] {
   const g = googleConfigured();
   const l = llmConfigured();
   const order: Engine[] = [];
-  if (tier === "trivial") {
-    if (g) order.push("google");
+  // Short plain: LLM JSON-pack first (default); rich always LLM first.
+  const llmFirst = tier === "rich" || shortPackLlmFirst();
+  if (llmFirst) {
     if (l) order.push("llm");
+    if (g) order.push("google");
   } else {
-    if (l) order.push("llm");
     if (g) order.push("google");
+    if (l) order.push("llm");
   }
   // Always have at least one candidate.
   if (order.length === 0) order.push(l ? "llm" : "google");
@@ -1639,22 +1740,145 @@ export type TranslateItem = {
   shopifyType?: string;
 };
 
+/** One LLM/Google HTTP call's cost metadata (shared by all fields in the same batch). */
+export type TranslationCallCost = {
+  provider: "llm" | "google";
+  model?: string;
+  /** LLM only: correlates fields translated in the same request. */
+  requestId?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  /** Google: source char count for this text. */
+  chars?: number;
+  /** LLM only: how many items were sent in this request. */
+  batchSize?: number;
+};
+
+/**
+ * Per-field cost persisted on translate blob / Admin content viewer.
+ * Multi-leaf fields (HTML/JSON) may aggregate into `calls` + totals.
+ */
+export type TranslationFieldCost =
+  | TranslationCallCost
+  | { provider: "cache" | "skip" }
+  | {
+      provider: "mixed" | "llm";
+      calls: TranslationCallCost[];
+      inputTokens?: number;
+      outputTokens?: number;
+      chars?: number;
+    };
+
 export type TranslateResult = {
   key: string;
   translatedValue: string;
   digest: string;
-  /**
-   * "translated" = translated output was resolved successfully
-   * "fallback" = translation failed and original text was returned
-   * "skipped" = original text was intentionally kept without invoking translation
-   */
-  status: "translated" | "fallback" | "skipped";
+  /** "translated" = produced by the engine; "fallback" = engine failed, original text returned. */
+  status: "translated" | "fallback";
+  /** Optional cost metadata for Admin / blob inspection. */
+  cost?: TranslationFieldCost;
 };
+
+function isTranslationCallCost(c: TranslationFieldCost): c is TranslationCallCost {
+  return (c.provider === "llm" || c.provider === "google") && !("calls" in c);
+}
+
+/** Merge leaf-level costs onto a Shopify field (dedupe LLM by requestId; sum Google chars). */
+export function mergeLeafCosts(
+  costs: Array<TranslationFieldCost | undefined>,
+): TranslationFieldCost | undefined {
+  const items = costs.filter((c): c is TranslationFieldCost => c != null);
+  if (items.length === 0) return undefined;
+  if (items.length === 1) return items[0];
+
+  const llmByKey = new Map<string, TranslationCallCost>();
+  let googleChars = 0;
+  let googleCount = 0;
+  let cacheCount = 0;
+  let skipCount = 0;
+
+  const addLlm = (call: TranslationCallCost) => {
+    const key =
+      call.requestId?.trim() ||
+      `anon:${call.model ?? ""}:${call.inputTokens ?? ""}:${call.outputTokens ?? ""}:${call.totalTokens ?? ""}:${call.batchSize ?? ""}`;
+    if (!llmByKey.has(key)) llmByKey.set(key, call);
+  };
+
+  for (const c of items) {
+    if (c.provider === "cache") {
+      cacheCount++;
+      continue;
+    }
+    if (c.provider === "skip") {
+      skipCount++;
+      continue;
+    }
+    if (isTranslationCallCost(c)) {
+      if (c.provider === "google") {
+        googleCount++;
+        googleChars += c.chars ?? 0;
+      } else {
+        addLlm(c);
+      }
+      continue;
+    }
+    // Aggregated multi-leaf shape (`provider: "llm" | "mixed"` + calls).
+    if ("calls" in c) {
+      for (const call of c.calls) {
+        if (call.provider === "llm") addLlm(call);
+        else if (call.provider === "google") {
+          googleCount++;
+          googleChars += call.chars ?? 0;
+        }
+      }
+      if (typeof c.chars === "number" && c.chars > 0) {
+        googleCount++;
+        googleChars += c.chars;
+      }
+    }
+  }
+
+  const llmCalls = [...llmByKey.values()];
+  const hasLlm = llmCalls.length > 0;
+  const hasGoogle = googleCount > 0;
+
+  if (!hasLlm && !hasGoogle) {
+    if (cacheCount > 0) return { provider: "cache" };
+    if (skipCount > 0) return { provider: "skip" };
+    return undefined;
+  }
+  if (hasLlm && !hasGoogle && llmCalls.length === 1 && cacheCount === 0 && skipCount === 0) {
+    return llmCalls[0]!;
+  }
+  if (hasGoogle && !hasLlm && cacheCount === 0 && skipCount === 0) {
+    return { provider: "google", model: "google-translate", chars: googleChars };
+  }
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const c of llmCalls) {
+    inputTokens += c.inputTokens ?? 0;
+    outputTokens += c.outputTokens ?? 0;
+  }
+  if (!hasLlm && hasGoogle) {
+    return { provider: "google", model: "google-translate", chars: googleChars };
+  }
+  return {
+    provider: hasGoogle ? "mixed" : "llm",
+    calls: llmCalls,
+    inputTokens: inputTokens > 0 ? inputTokens : undefined,
+    outputTokens: outputTokens > 0 ? outputTokens : undefined,
+    chars: googleChars > 0 ? googleChars : undefined,
+  };
+}
 
 // ─── Field classification ──────────────────────────────────────────────────────
 
 /** Pool signature prefix for handle/slug texts (hyphen→space preprocessed). */
 const HANDLE_POOL_PREFIX = "@handle@";
+/** Pool signature prefix for short plain JSON-pack batches (keeps limits separate from rich). */
+const SHORT_POOL_PREFIX = "@short@";
 
 export function isHandleFieldKey(key: string): boolean {
   return key.trim().toLowerCase() === "handle";
@@ -1670,11 +1894,9 @@ export function prepareHandleSourceText(value: string): string {
  * meaning it does not need translation.
  *
  * Strategy:
- *  - For English target: only when source is a distinctive non-Latin script
- *    language AND the text contains English-looking Latin words while
- *    containing no source-script characters do we skip. This avoids treating
- *    Latin-family content such as German/French/Spanish as "already English".
- *    (A zh-CN store's product titled "Standard" is English and can be skipped.)
+ *  - For English target: if source is a non-Latin script language AND the text
+ *    contains no source-script characters, it is almost certainly already in
+ *    English → skip.  (A zh-CN store's product titled "Standard" is English.)
  *  - For other targets with a distinctive script (zh, ja, ko, ar, ru, pl, de …):
  *    skip only when the text has ≥2 target-script chars after stripping
  *    punctuation/whitespace and their share of meaningful content exceeds 70%.
@@ -1786,38 +2008,15 @@ function hasTargetScriptChars(text: string, targetLang: string): boolean {
   return meetsScriptThreshold(text, ...patterns);
 }
 
-function canInferEnglishFromMissingSourceScript(source: string): boolean {
-  switch (langPrefix(source)) {
-    case "zh":
-    case "ja":
-    case "ko":
-    case "ar":
-    case "ru":
-    case "uk":
-    case "bg":
-    case "th":
-    case "hi":
-    case "mr":
-    case "ne":
-      return true;
-    default:
-      return false;
-  }
-}
-
 export function alreadyInTarget(text: string, source: string, target: string): boolean {
   const tl = langPrefix(target);
   const sl = langPrefix(source);
 
   // ── English target ──────────────────────────────────────────────────────────
-  // Only infer "already English" from missing source script for distinctive
-  // non-Latin source locales; Latin-family languages can still be untranslated.
+  // If source is a CJK / non-Latin language and text has no source-script chars,
+  // the content is already in a Latin-script language (overwhelmingly English).
   if (tl === "en") {
-    return (
-      canInferEnglishFromMissingSourceScript(source) &&
-      hasLatinWords(text) &&
-      !containsSourceScript(text, source)
-    );
+    return !containsSourceScript(text, source);
   }
 
   // Mixed target-script + Latin (e.g. "测试：Home Work: A Memoir…") is NOT done.
@@ -1893,7 +2092,7 @@ function countJsonRuleUnits(value: string): number {
   let units = 0;
   for (const slot of slots) {
     if (slot.isHtml) {
-      units += htmlNodeTextParts(htmlNodePartsOf(slot.text)).length;
+      units += htmlNodePartsOf(slot.text).nodeParts.reduce((n, parts) => n + parts.length, 0);
     } else {
       units += 1;
     }
@@ -1909,7 +2108,7 @@ function countListUnits(value: string): number {
     for (const el of list) {
       if (!el) continue;
       if (isHtml(el)) {
-        units += htmlNodeTextParts(htmlNodePartsOf(el)).length;
+        units += htmlNodePartsOf(el).nodeParts.reduce((n, parts) => n + parts.length, 0);
       } else {
         units += 1;
       }
@@ -1928,9 +2127,10 @@ function countListUnits(value: string): number {
 export function countFieldUnits(key: string, value: string, shopifyType?: string): number {
   const klass = classifyField(key, value, shopifyType);
   if (klass === "skip") return 0;
-  if (klass === "html") return htmlNodeTextParts(htmlNodePartsOf(value)).length;
+  if (klass === "html")
+    return htmlNodePartsOf(value).nodeParts.reduce((n, parts) => n + parts.length, 0);
   if (klass === "liquid_html")
-    return htmlNodeTextParts(liquidHtmlNodePartsOf(value).plan).length;
+    return liquidHtmlNodePartsOf(value).plan.nodeParts.reduce((n, parts) => n + parts.length, 0);
   if (klass === "json") {
     const units = countJsonRuleUnits(value);
     if (units > 0) return units;
@@ -1969,12 +2169,33 @@ const RICH_MAX_ITEMS_PER_BATCH = Math.max(
   1,
   Number(process.env.TRANSLATE_RICH_MAX_ITEMS_PER_BATCH) || 8,
 );
+/** Short plain JSON-pack pools: more items per request (many tiny titles/labels). */
+const SHORT_JSON_MAX_CHARS_PER_BATCH = Math.max(
+  500,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_CHARS) || 3_000,
+);
+const SHORT_JSON_MAX_ITEMS_PER_BATCH = Math.max(
+  1,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_ITEMS) || 40,
+);
 
-/** LLM-first engine order ⇒ rich tier (HTML/JSON/long plain). Google-first ⇒ trivial. */
-export function resolveBatchLimits(order: Engine[]): {
+/**
+ * Batch size for a pool. Short plain JSON packs use dedicated higher item caps;
+ * rich LLM-first pools stay small; legacy Google-first uses the general cap.
+ */
+export function resolveBatchLimits(
+  order: Engine[],
+  opts?: { isShort?: boolean },
+): {
   maxChars: number;
   maxItems: number;
 } {
+  if (opts?.isShort) {
+    return {
+      maxChars: SHORT_JSON_MAX_CHARS_PER_BATCH,
+      maxItems: SHORT_JSON_MAX_ITEMS_PER_BATCH,
+    };
+  }
   if (order[0] === "llm") {
     return { maxChars: RICH_MAX_CHARS_PER_BATCH, maxItems: RICH_MAX_ITEMS_PER_BATCH };
   }
@@ -2202,16 +2423,10 @@ async function callGoogleTranslate(
  */
 type RoutedResult = {
   value: string;
-  status: "translated" | "fallback" | "skipped";
+  status: "translated" | "fallback";
   engine: Engine | null;
   tokens: number;
-};
-
-type PoolEntry = {
-  occ: Map<string, number>;
-  order: Engine[];
-  isHandle: boolean;
-  profileBlock: string;
+  cost?: TranslationFieldCost;
 };
 
 async function translateItemsRouted(
@@ -2229,20 +2444,19 @@ async function translateItemsRouted(
 ): Promise<{ results: Map<string, RoutedResult>; llmTokens: number }> {
   // placeholdersByKey: variable tokens (string[]) extracted from each item's value.
   const placeholdersByKey = new Map<string, string[]>();
-  const collected = new Map<string, string>(); // masked translations
-  const masked = items.flatMap((it) => {
-    if (shouldShortCircuitTranslationValue(it.value)) {
-      collected.set(it.key, it.value);
-      return [];
-    }
+  const masked = items.map((it) => {
     const { masked: m, tokens } = maskPlaceholders(it.value);
     placeholdersByKey.set(it.key, tokens);
-    return [{ key: it.key, value: m, digest: it.digest }];
+    return { key: it.key, value: m, digest: it.digest };
   });
+
+  const collected = new Map<string, string>(); // masked translations
   const engineByKey = new Map<string, Engine>(); // which engine resolved each key
-  const llmTokensByKey = new Map<string, number>(); // LLM API tokens charged per key
+  const llmTokensByKey = new Map<string, number>(); // LLM API tokens charged per key (EngineUsage)
+  const costByKey = new Map<string, TranslationFieldCost>();
   let systemPrompt: string | null = null;
   const tokenAccum = { value: 0 }; // accumulates LLM token usage across all retries
+  let tokenAccumBaseline = 0; // tokens already attributed before current LLM engine pass
 
   for (const engine of order) {
     const missing = masked.filter((i) => !collected.has(i.key));
@@ -2254,8 +2468,8 @@ async function translateItemsRouted(
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt, masked)
-            : buildSystemPrompt(target, glossary, profileBlock, customPrompt, masked);
+            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt)
+            : buildSystemPrompt(target, glossary, profileBlock, customPrompt);
         if (logSingleTranslate) {
           console.log("[single] prompt", {
             shopName,
@@ -2268,6 +2482,7 @@ async function translateItemsRouted(
           });
         }
       }
+      tokenAccumBaseline = tokenAccum.value;
       try {
         await gatherTranslations(
           missing,
@@ -2275,6 +2490,7 @@ async function translateItemsRouted(
           systemPrompt,
           collected,
           tokenAccum,
+          costByKey,
           shopName,
           FIRST_TOKEN_DRAIN_RETRIES,
           logSingleTranslate,
@@ -2282,9 +2498,11 @@ async function translateItemsRouted(
       } catch (e) {
         console.warn(`[route] llm engine error`, e);
       }
-      // Attribute newly-resolved keys to the LLM; distribute tokens evenly across keys.
+      // Attribute newly-resolved keys to the LLM; distribute tokens evenly across keys
+      // for EngineUsage tally (billing still uses whole-batch llmTokens via onProgress).
       const newlyResolved = missing.filter((i) => collected.has(i.key) && !engineByKey.has(i.key));
-      const tokensEach = newlyResolved.length > 0 ? Math.ceil(tokenAccum.value / newlyResolved.length) : 0;
+      const passTokens = Math.max(0, tokenAccum.value - tokenAccumBaseline);
+      const tokensEach = newlyResolved.length > 0 ? Math.ceil(passTokens / newlyResolved.length) : 0;
       for (const i of newlyResolved) {
         engineByKey.set(i.key, "llm");
         llmTokensByKey.set(i.key, tokensEach);
@@ -2296,8 +2514,13 @@ async function translateItemsRouted(
           const out = await callGoogleTranslate(batch.map((b) => b.value), target, "text");
           batch.forEach((b, i) => {
             if (out[i] != null && !collected.has(b.key)) {
-              collected.set(b.key, out[i]);
+              collected.set(b.key, out[i]!);
               engineByKey.set(b.key, "google");
+              costByKey.set(b.key, {
+                provider: "google",
+                model: "google-translate",
+                chars: b.value.length,
+              });
             }
           });
         } catch (e) {
@@ -2314,10 +2537,6 @@ async function translateItemsRouted(
     const placeholders = placeholdersByKey.get(it.key) ?? [];
     if (raw === undefined || (it.value.trim() !== "" && raw.trim() === "")) {
       result.set(it.key, { value: it.value, status: "fallback", engine: null, tokens: 0 });
-      continue;
-    }
-    if (shouldShortCircuitTranslationValue(it.value)) {
-      result.set(it.key, { value: it.value, status: "skipped", engine: null, tokens: 0 });
       continue;
     }
     const decoded = decodeQuoteEntities(raw);
@@ -2359,6 +2578,7 @@ async function translateItemsRouted(
       status: "translated",
       engine: engineByKey.get(it.key) ?? null,
       tokens: llmTokensByKey.get(it.key) ?? 0,
+      cost: costByKey.get(it.key),
     });
   }
   return { results: result, llmTokens: tokenAccum.value };
@@ -2367,7 +2587,7 @@ async function translateItemsRouted(
 /** Re-translate pool units that fell back or echoed source, one item per request. */
 async function retryPoolFallbacks(
   translated: Map<string, Map<string, RoutedResult>>,
-  pools: Map<string, PoolEntry>,
+  pools: Map<string, Map<string, number>>,
   source: string,
   target: string,
   aiModel: string,
@@ -2379,11 +2599,10 @@ async function retryPoolFallbacks(
   logSingleTranslate = false,
 ): Promise<number> {
   let retried = 0;
-  for (const [, pool] of pools) {
-    const { occ, order, isHandle, profileBlock } = pool;
-          const poolPrimaryModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
-    const poolKey = buildPoolKey(order, isHandle, profileBlock);
-    const tmap = translated.get(poolKey)!;
+  for (const [sig, occ] of pools) {
+    const { order } = parsePoolSignature(sig);
+    const poolPrimaryModel = engineModel(order[0]!, aiModel);
+    const tmap = translated.get(sig)!;
     const needsRetry: string[] = [];
     for (const text of occ.keys()) {
       const r = tmap.get(text);
@@ -2397,13 +2616,14 @@ async function retryPoolFallbacks(
     }
     for (const text of needsRetry) {
       if (await shouldAbort()) break;
+      const { isHandle, order: poolOrder } = parsePoolSignature(sig);
       const { results: m } = await translateItemsRouted(
         [{ key: "0", value: text, digest: "" }],
         source,
         target,
         aiModel,
         shopName,
-        order,
+        poolOrder,
         isHandle ? "handle" : "default",
         profileBlock,
         customPrompt,
@@ -2482,7 +2702,6 @@ function buildSystemPrompt(
   glossaryLines: string[],
   profileBlock = "",
   userInstruction = "",
-  items: Array<Pick<TranslateItem, "value">> = [],
 ): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
@@ -2492,18 +2711,23 @@ function buildSystemPrompt(
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
-  const dynamicRules = buildDynamicSystemPromptRules(items, profileBlock);
-  const dynamicRulesBlock =
-    dynamicRules.length > 0 ? `${dynamicRules.map((line) => `- ${line}`).join("\n")}\n` : "";
   return `You are a professional e-commerce translator.${shopContextBlock}
-Translate the content into "${target}".
+Detect the input language automatically and translate the content into "${target}".
 Rules:
 - Be accurate and natural for e-commerce
+- Translate ALL content into "${target}", no matter what language the input is in (English, Chinese, Spanish, etc.)
 - If a value is already entirely in "${target}", return it unchanged
 - translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
+- Each value is a plain-text leaf extracted from HTML: never include HTML tags (<td>, <tr>, <table>, etc.) in translatedValue
+- Keep opaque sentinel tokens (⟦0⟧, ⟦1⟧, ⟦2⟧, …) exactly unchanged; never translate, modify, reorder, or drop them
+- Sentinels may represent URLs or site paths (e.g. /blogs/news/article) — preserve them verbatim
+- Keep the literal token ⟦BR⟧ exactly as it appears (line-break placeholder)
 - Output literal characters; do NOT HTML-escape. Use ' and " directly — never &#39; or &quot;
+- Do NOT add or remove leading or trailing whitespace
+- If the value is empty, return it unchanged
+- If a field key is "title", translatedValue MUST be at most 255 characters; shorten naturally while preserving the core meaning
 - You MUST return an entry for every key in the input
-${dynamicRulesBlock}${targetLangBlock}
+${targetLangBlock}
 ${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate.
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
@@ -2515,7 +2739,6 @@ function buildHandleSystemPrompt(
   glossaryLines: string[],
   profileBlock = "",
   userInstruction = "",
-  items: Array<Pick<TranslateItem, "value">> = [],
 ): string {
   const glossaryBlock = glossaryLines.length
     ? `\nGlossary (apply consistently):\n${glossaryLines.join("\n")}\n`
@@ -2525,9 +2748,6 @@ function buildHandleSystemPrompt(
     ? `\nAdditional user instructions for this translation (apply to tone, style, and word choice; they MUST NOT override any of the output-format, JSON structure, sentinel, or placeholder rules above):\n${userInstruction.trim()}\n`
     : "";
   const targetLangBlock = buildTargetLanguageBlock(target);
-  const dynamicRules = buildDynamicSystemPromptRules(items, profileBlock);
-  const dynamicRulesBlock =
-    dynamicRules.length > 0 ? `${dynamicRules.map((line) => `- ${line}`).join("\n")}\n` : "";
   return `You are a professional e-commerce translator.${shopContextBlock}
 Detect the input language automatically and translate product URL handle/slug text into "${target}".
 Rules:
@@ -2538,52 +2758,12 @@ Rules:
 - Keep numbers, variables, and placeholders unchanged
 - Do NOT output notes, annotations, explanations, corrections, or bilingual text
 - Output literal characters; do NOT HTML-escape
+- Do NOT add or remove leading or trailing whitespace
 - You MUST return an entry for every key in the input
-${dynamicRulesBlock}${targetLangBlock}
+${targetLangBlock}
 ${glossaryBlock}${userInstructionBlock}
 The user message is a JSON array of {"key","value"} objects to translate (hyphens may appear as spaces).
 Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<text>"}]}, no markdown.`;
-}
-
-function buildDynamicSystemPromptRules(
-  items: Array<Pick<TranslateItem, "value">>,
-  profileBlock: string,
-): string[] {
-  const values = items.map((item) => item.value);
-  const hasSentinels = values.some((value) => /⟦[^⟧]+⟧/.test(value));
-  const hasBrPlaceholder = values.some((value) => value.includes("⟦BR⟧"));
-  const hasLeadingTrailingWhitespace = values.some((value) => value !== value.trim());
-  const enforcePlainTextLeaf =
-    profileBlock.includes("Preserve HTML structure") ||
-    profileBlock.includes("Preserve JSON structure") ||
-    values.some((value) => value.includes("⟦HTML_SEG_"));
-
-  const rules: string[] = [];
-  if (enforcePlainTextLeaf) {
-    rules.push("Return plain text for each value; never add HTML tags or wrapper markup");
-  }
-  if (hasSentinels) {
-    rules.push("Keep every sentinel token written like ⟦...⟧ exactly unchanged; never translate, modify, reorder, or drop it");
-  }
-  if (hasBrPlaceholder) {
-    rules.push("Keep the literal token ⟦BR⟧ exactly as it appears");
-  }
-  if (hasLeadingTrailingWhitespace) {
-    rules.push("Do NOT add or remove leading or trailing whitespace");
-  }
-  return rules;
-}
-
-function shouldShortCircuitTranslationValue(value: string): boolean {
-  return value.trim().length === 0;
-}
-
-function combineTranslationStatuses(
-  statuses: Array<"translated" | "fallback" | "skipped">,
-): "translated" | "fallback" | "skipped" {
-  if (statuses.some((status) => status === "fallback")) return "fallback";
-  if (statuses.every((status) => status === "skipped")) return "skipped";
-  return "translated";
 }
 
 /**
@@ -2600,12 +2780,39 @@ function combineTranslationStatuses(
  * On 429 the slot is throttled, the semaphore cap drops, and
  * gatherTranslations' retry loop picks a fresh slot automatically.
  */
+type LlmOnceResult = {
+  map: Map<string, string>;
+  tokens: number;
+  cost: TranslationCallCost;
+};
+
+function buildLlmCallCost(args: {
+  model: string;
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  requestId?: string;
+  batchSize: number;
+}): TranslationCallCost {
+  const cost: TranslationCallCost = {
+    provider: "llm",
+    model: args.model,
+    batchSize: args.batchSize,
+    totalTokens: args.tokens > 0 ? args.tokens : undefined,
+  };
+  if (args.requestId) cost.requestId = args.requestId;
+  if (args.inputTokens !== undefined) cost.inputTokens = args.inputTokens;
+  if (args.outputTokens !== undefined) cost.outputTokens = args.outputTokens;
+  return cost;
+}
+
 /** 解析 LLM 返回的 {translations:[{key,translatedValue}]} → 原 key → 译文 map。 */
 function parseTranslationResult(
   raw: string,
-  tokens: number,
   idToKey: Map<string, string>,
-): { map: Map<string, string>; tokens: number } {
+  cost: TranslationCallCost,
+  tokens: number,
+): LlmOnceResult {
   const obj = JSON.parse(extractJsonObject(raw)) as { translations?: unknown };
   const parsed = Array.isArray(obj.translations)
     ? (obj.translations as Array<{ key?: unknown; translatedValue?: unknown }>)
@@ -2617,7 +2824,7 @@ function parseTranslationResult(
       if (origKey !== undefined) map.set(origKey, r.translatedValue);
     }
   }
-  return { map, tokens };
+  return { map, tokens, cost };
 }
 
 async function callLLMOnce(
@@ -2626,7 +2833,7 @@ async function callLLMOnce(
   systemPrompt: string,
   shopName?: string,
   logSingleTranslate = false,
-): Promise<{ map: Map<string, string>; tokens: number }> {
+): Promise<LlmOnceResult> {
   // Opaque IDs prevent the model from confusing semantic key names with content.
   const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
   const payload  = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
@@ -2640,7 +2847,7 @@ async function callLLMOnce(
     { role: "user", content: JSON.stringify(payload) },
   ];
 
-  const logLlmReturn = (model: string, raw: string, tokens: number) => {
+  const logLlmReturn = (model: string, raw: string, tokens: number, requestId?: string) => {
     if (!logSingleTranslate) return;
     // 管理页单条：完整打印原文、prompt、LLM raw（不截断）。
     console.log("[single-llm] return", {
@@ -2650,6 +2857,7 @@ async function callLLMOnce(
       prompt: messages,
       raw,
       tokens,
+      requestId,
     });
   };
 
@@ -2657,13 +2865,25 @@ async function callLLMOnce(
   if (isGptModel(aiModel)) {
     try {
       const model = resolveGptModel(aiModel);
-      const { raw, tokens } = await callAzureOpenAIChat(
+      const { raw, tokens, inputTokens, outputTokens, requestId } = await callAzureOpenAIChat(
         model,
         messages,
         items.length,
       );
-      logLlmReturn(model, raw, tokens);
-      return parseTranslationResult(raw, tokens, idToKey);
+      logLlmReturn(model, raw, tokens, requestId);
+      return parseTranslationResult(
+        raw,
+        idToKey,
+        buildLlmCallCost({
+          model,
+          tokens,
+          inputTokens,
+          outputTokens,
+          requestId,
+          batchSize: items.length,
+        }),
+        tokens,
+      );
     } finally {
       if (quotaGate) quotaGate.release();
     }
@@ -2679,7 +2899,15 @@ async function callLLMOnce(
       acq.transport.kind === "deepseek-fetch" && shopName
         ? sanitizeDeepSeekUserId(shopName)
         : undefined;
-    const { content: raw, tokens, response, limitHints } = await invokeChatCompletion(
+    const {
+      content: raw,
+      tokens,
+      inputTokens,
+      outputTokens,
+      requestId,
+      response,
+      limitHints,
+    } = await invokeChatCompletion(
       acq.transport,
       model,
       messages,
@@ -2690,22 +2918,21 @@ async function callLLMOnce(
 
     const rawHeaders = responseHeadersToRecord(response);
     acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
-    logLlmReturn(model, raw, tokens);
+    logLlmReturn(model, raw, tokens, requestId);
 
-    // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
-    const obj    = JSON.parse(extractJsonObject(raw)) as { translations?: unknown };
-    const parsed = Array.isArray(obj.translations)
-      ? (obj.translations as Array<{ key?: unknown; translatedValue?: unknown }>)
-      : [];
-
-    const map = new Map<string, string>();
-    for (const r of parsed) {
-      if (typeof r?.key === "string" && typeof r?.translatedValue === "string") {
-        const origKey = idToKey.get(r.key);
-        if (origKey !== undefined) map.set(origKey, r.translatedValue);
-      }
-    }
-    return { map, tokens };
+    return parseTranslationResult(
+      raw,
+      idToKey,
+      buildLlmCallCost({
+        model,
+        tokens,
+        inputTokens,
+        outputTokens,
+        requestId,
+        batchSize: items.length,
+      }),
+      tokens,
+    );
   } catch (e: unknown) {
     if (e instanceof LlmRateLimitError) {
       acq.onThrottle(retryAfterMsFromResponse(e.response));
@@ -2733,12 +2960,26 @@ async function gatherTranslations(
   systemPrompt: string,
   collected: Map<string, string>,
   tokenAccum: { value: number },
+  costByKey: Map<string, TranslationFieldCost>,
   shopName?: string,
   firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES,
   logSingleTranslate = false,
 ): Promise<void> {
   const pend = items.filter((i) => !collected.has(i.key));
   if (pend.length === 0) return;
+
+  const applyLlmResult = (map: Map<string, string>, tokens: number, cost: TranslationCallCost) => {
+    tokenAccum.value += tokens;
+    let progressed = false;
+    for (const [k, v] of map) {
+      if (!collected.has(k)) {
+        collected.set(k, v);
+        costByKey.set(k, cost);
+        progressed = true;
+      }
+    }
+    return progressed;
+  };
 
   // Proactively split before calling the API — avoids burning a full timeout on 80+ keys.
   if (pend.length > MAX_ITEMS_PER_BATCH) {
@@ -2747,34 +2988,27 @@ async function gatherTranslations(
       `[llm] batch of ${pend.length} items exceeds cap ${MAX_ITEMS_PER_BATCH}; splitting proactively`,
     );
     await gatherTranslations(
-      pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+      pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
       FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
     );
     await gatherTranslations(
-      pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+      pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
       FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
     );
     return;
   }
 
   try {
-    const { map, tokens } = await callLLMOnce(
+    const { map, tokens, cost } = await callLLMOnce(
       pend, aiModel, systemPrompt, shopName, logSingleTranslate,
     );
-    tokenAccum.value += tokens;
-    let progressed = false;
-    for (const [k, v] of map) {
-      if (!collected.has(k)) {
-        collected.set(k, v);
-        progressed = true;
-      }
-    }
+    const progressed = applyLlmResult(map, tokens, cost);
     const missing = pend.filter((i) => !collected.has(i.key));
     // Model parsed OK but dropped some keys → retry just those, but only while
     // making progress (avoids looping on a key the model refuses to return).
     if (missing.length > 0 && progressed && missing.length < pend.length) {
       await gatherTranslations(
-        missing, aiModel, systemPrompt, collected, tokenAccum, shopName,
+        missing, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
     }
@@ -2796,6 +3030,7 @@ async function gatherTranslations(
           systemPrompt,
           collected,
           tokenAccum,
+          costByKey,
           shopName,
         );
       } else {
@@ -2822,7 +3057,7 @@ async function gatherTranslations(
           await new Promise((res) => setTimeout(res, FIRST_TOKEN_DRAIN_MS));
         }
         await gatherTranslations(
-          pend, aiModel, systemPrompt, collected, tokenAccum, shopName,
+          pend, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
           firstTokenRetriesLeft - 1, logSingleTranslate,
         );
         return;
@@ -2836,7 +3071,7 @@ async function gatherTranslations(
         );
         for (const chunk of chunkArray(pend, TIMEOUT_RESPLIT_SIZE)) {
           await gatherTranslations(
-            chunk, aiModel, systemPrompt, collected, tokenAccum, shopName,
+            chunk, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
             FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
           );
         }
@@ -2847,11 +3082,11 @@ async function gatherTranslations(
         `[llm] batch of ${pend.length} ${isTimeout ? "timed out" : "unparseable"} (${msg}); splitting`,
       );
       await gatherTranslations(
-        pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+        pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
       await gatherTranslations(
-        pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+        pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
       return;
@@ -2862,12 +3097,11 @@ async function gatherTranslations(
         await new Promise((res) => setTimeout(res, LEAF_RETRY_BACKOFF_MS * (r + 1)));
       }
       try {
-        const { map, tokens } = await callLLMOnce(
+        const { map, tokens, cost } = await callLLMOnce(
           pend, aiModel, systemPrompt, shopName, logSingleTranslate,
         );
-        tokenAccum.value += tokens;
-        for (const [k, v] of map) if (!collected.has(k)) collected.set(k, v);
-        if (collected.has(pend[0].key)) return;
+        applyLlmResult(map, tokens, cost);
+        if (collected.has(pend[0]!.key)) return;
       } catch {
         // keep retrying up to the cap
       }
@@ -2876,13 +3110,13 @@ async function gatherTranslations(
     // Recorded separately from per-attempt errors so telemetry can tell
     // "wasted attempts that recovered" from "user-visible fallbacks".
     getPool().recordTerminalFallback(1);
-    console.warn(`[llm] item ${pend[0].key} failed after retries (${msg}); using original`);
+    console.warn(`[llm] item ${pend[0]!.key} failed after retries (${msg}); using original`);
   }
 }
 
 // ─── Main exported functions ────────────────────────────────────────────────────
 
-export type ResourceInput = { resourceId: string; fields: TranslateItem[] };
+export type ResourceInput = { resourceId: string; fields: TranslateItem[]; module?: string };
 export type ResourceResult = { resourceId: string; results: TranslateResult[] };
 /** Per-engine-model tally of how much content each engine translated. */
 export type EngineUsage = Record<string, { units: number; chars: number; tokens: number }>;
@@ -2897,12 +3131,14 @@ export function mergeEngineUsage(into: EngineUsage, from: EngineUsage): void {
   }
 }
 
-type JsonSlotPlan = JsonTextSlot & { htmlPlan?: ReturnType<typeof htmlNodePartsOf> };
+type JsonSlotPlan = JsonTextSlot & {
+  htmlPlan?: { template: string; nodeParts: string[][] };
+};
 
 type ListElementPlan = {
   index: number;
   text: string;
-  htmlPlan?: ReturnType<typeof htmlNodePartsOf>;
+  htmlPlan?: { template: string; nodeParts: string[][] };
 };
 
 // Reconstruction plan for a field whose translation spans one or more text units.
@@ -2915,8 +3151,8 @@ type FieldPlan = {
   cacheModel: string;
 } & (
   | { kind: "plain"; parts: string[]; isHandle?: boolean }
-  | ({ kind: "html" } & ReturnType<typeof htmlNodePartsOf>)
-  | { kind: "liquid_html"; liquidPlan: LiquidHtmlNodePlan }
+  | { kind: "html"; template: string; nodeParts: string[][] }
+  | { kind: "liquid_html"; template: string; nodeParts: string[][]; liquidTokens: string[] }
   | { kind: "json"; originalValue: string; root: JsonValue; slotPlans: JsonSlotPlan[] }
   | { kind: "list"; originalValue: string; elements: ListElementPlan[] }
 );
@@ -2924,7 +3160,7 @@ type FieldPlan = {
 function jsonPlanTexts(plan: Extract<FieldPlan, { kind: "json" }>): string[] {
   const texts: string[] = [];
   for (const slot of plan.slotPlans) {
-    if (slot.htmlPlan) texts.push(...htmlNodeTextParts(slot.htmlPlan));
+    if (slot.htmlPlan) texts.push(...slot.htmlPlan.nodeParts.flat());
     else texts.push(slot.text);
   }
   return texts;
@@ -2933,7 +3169,7 @@ function jsonPlanTexts(plan: Extract<FieldPlan, { kind: "json" }>): string[] {
 function listPlanTexts(plan: Extract<FieldPlan, { kind: "list" }>): string[] {
   const texts: string[] = [];
   for (const el of plan.elements) {
-    if (el.htmlPlan) texts.push(...htmlNodeTextParts(el.htmlPlan));
+    if (el.htmlPlan) texts.push(...el.htmlPlan.nodeParts.flat());
     else texts.push(el.text);
   }
   return texts;
@@ -2945,14 +3181,24 @@ function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
   const texts =
     plan.kind === "plain"
       ? plan.parts
-      : plan.kind === "html"
-        ? htmlNodeTextParts(plan)
-      : plan.kind === "liquid_html"
-        ? htmlNodeTextParts(plan.liquidPlan.plan)
+      : plan.kind === "html" || plan.kind === "liquid_html"
+        ? plan.nodeParts.flat()
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
           : listPlanTexts(plan);
   return texts.every((t) => lookup(plan.poolSig, t) !== undefined);
+}
+
+function collectPlanLeafCosts(plan: FieldPlan, lookup: LookupFn): Array<TranslationFieldCost | undefined> {
+  const texts =
+    plan.kind === "plain"
+      ? plan.parts
+      : plan.kind === "html" || plan.kind === "liquid_html"
+        ? plan.nodeParts.flat()
+        : plan.kind === "json"
+          ? jsonPlanTexts(plan)
+          : listPlanTexts(plan);
+  return texts.map((t) => lookup(plan.poolSig, t)?.cost);
 }
 
 function reconstructPlan(
@@ -2965,12 +3211,20 @@ function reconstructPlan(
   source: string,
   skipCacheWrite = false,
 ): void {
+  const fieldCost = () => mergeLeafCosts(collectPlanLeafCosts(plan, lookup));
+
   if (plan.kind === "plain") {
     const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
     const value = pieces.map((p) => p.value).join("");
-    const status = combineTranslationStatuses(pieces.map((p) => p.status));
+    const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
     // Plain: field digest TM + value TM (digest if present, else CRC-32).
     if (status === "translated" && !skipCacheWrite) {
       tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
@@ -2978,23 +3232,29 @@ function reconstructPlan(
     }
   } else if (plan.kind === "html") {
     let anyFallback = false;
-    const out = flattenHtmlNodeTranslations(plan, (part) => {
-      const r = lookup(plan.poolSig, part);
-      if (!r || r.status === "fallback") {
-        anyFallback = true;
-        return part;
-      }
-      if (
-        looksLikeWrongScriptLeak(part, r.value, target) ||
-        looksLikeEmptySourceHallucination(part, r.value) ||
-        hasPromptSentinelLeakage(r.value)
-      ) {
-        anyFallback = true;
-        return part;
-      }
-      return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
+    // Each marker = its parts joined back. A single oversized node was split into
+    // several parts; rejoin them (preserving inner boundaries) for that marker.
+    const out = plan.nodeParts.map((parts) => {
+      const pieces = parts.map((p) => {
+        const r = lookup(plan.poolSig, p);
+        if (!r || r.status === "fallback") {
+          anyFallback = true;
+          return p;
+        }
+        if (
+          looksLikeWrongScriptLeak(p, r.value, target) ||
+          looksLikeEmptySourceHallucination(p, r.value) ||
+          hasPromptSentinelLeakage(r.value)
+        ) {
+          anyFallback = true;
+          return p;
+        }
+        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
+      });
+      const joined = pieces.join("");
+      return effectiveTranslation(parts.join(""), joined.trim());
     });
-    const originalOut = [...plan.texts];
+    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
     let value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, out));
     if (hasHtmlPlaceholderLeak(value)) {
       anyFallback = true;
@@ -3005,71 +3265,79 @@ function reconstructPlan(
       value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
     }
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "liquid_html") {
     let anyFallback = false;
-    const out = flattenHtmlNodeTranslations(plan.liquidPlan.plan, (part) => {
-      const r = lookup(plan.poolSig, part);
-      if (!r || r.status === "fallback") {
-        anyFallback = true;
-        return part;
-      }
-      if (
-        looksLikeWrongScriptLeak(part, r.value, target) ||
-        looksLikeEmptySourceHallucination(part, r.value) ||
-        hasPromptSentinelLeakage(r.value)
-      ) {
-        anyFallback = true;
-        return part;
-      }
-      return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
+    const out = plan.nodeParts.map((parts) => {
+      const pieces = parts.map((p) => {
+        const r = lookup(plan.poolSig, p);
+        if (!r || r.status === "fallback") {
+          anyFallback = true;
+          return p;
+        }
+        if (
+          looksLikeWrongScriptLeak(p, r.value, target) ||
+          looksLikeEmptySourceHallucination(p, r.value) ||
+          hasPromptSentinelLeakage(r.value)
+        ) {
+          anyFallback = true;
+          return p;
+        }
+        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
+      });
+      const joined = pieces.join("");
+      return effectiveTranslation(parts.join(""), joined.trim());
     });
-    const originalOut = [...plan.liquidPlan.plan.texts];
-    let value = reassembleLiquidHtmlTranslation(
-      plan.liquidPlan.plan.template,
-      out,
-      plan.liquidPlan.liquidTokens,
-    );
+    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
+    let value = reassembleLiquidHtmlTranslation(plan.template, out, plan.liquidTokens);
     if (hasHtmlPlaceholderLeak(value)) {
       anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(
-        plan.liquidPlan.plan.template,
-        originalOut,
-        plan.liquidPlan.liquidTokens,
-      );
+      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
     }
     if (hasPromptSentinelLeakage(value)) {
       anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(
-        plan.liquidPlan.plan.template,
-        originalOut,
-        plan.liquidPlan.liquidTokens,
-      );
+      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
     }
     const liquidStatus = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status: liquidStatus });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status: liquidStatus,
+      cost: fieldCost(),
+    });
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
     for (let i = 0; i < plan.slotPlans.length; i++) {
       const slot = plan.slotPlans[i]!;
       if (slot.htmlPlan) {
-        const out = flattenHtmlNodeTranslations(slot.htmlPlan, (part) => {
-          const r = lookup(plan.poolSig, part);
-          if (!r || r.status === "fallback") {
-            anyFallback = true;
-            return part;
-          }
-          if (
-            looksLikeWrongScriptLeak(part, r.value, target) ||
-            looksLikeEmptySourceHallucination(part, r.value) ||
-            hasPromptSentinelLeakage(r.value)
-          ) {
-            anyFallback = true;
-            return part;
-          }
-          return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
+        const out = slot.htmlPlan.nodeParts.map((parts) => {
+          const pieces = parts.map((p) => {
+            const r = lookup(plan.poolSig, p);
+            if (!r || r.status === "fallback") {
+              anyFallback = true;
+              return p;
+            }
+            if (
+              looksLikeWrongScriptLeak(p, r.value, target) ||
+              looksLikeEmptySourceHallucination(p, r.value) ||
+              hasPromptSentinelLeakage(r.value)
+            ) {
+              anyFallback = true;
+              return p;
+            }
+            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
+          });
+          const joined = pieces.join("");
+          return effectiveTranslation(parts.join(""), joined.trim());
         });
         let slotHtml = restoreBrPlaceholders(restoreHtmlTextNodes(slot.htmlPlan.template, out));
         if (hasHtmlPlaceholderLeak(slotHtml)) {
@@ -3101,20 +3369,30 @@ function reconstructPlan(
     applyJsonSlotTranslations(plan.slotPlans, translatedSlots);
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
   } else {
     let anyFallback = false;
     const list = JSON.parse(plan.originalValue) as Array<string | null>;
     const result = [...list];
     for (const el of plan.elements) {
       if (el.htmlPlan) {
-        const out = flattenHtmlNodeTranslations(el.htmlPlan, (part) => {
-          const r = lookup(plan.poolSig, part);
-          if (!r || r.status === "fallback") {
-            anyFallback = true;
-            return part;
-          }
-          return effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value));
+        const out = el.htmlPlan.nodeParts.map((parts) => {
+          const pieces = parts.map((p) => {
+            const r = lookup(plan.poolSig, p);
+            if (!r || r.status === "fallback") {
+              anyFallback = true;
+              return p;
+            }
+            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
+          });
+          const joined = pieces.join("");
+          return effectiveTranslation(parts.join(""), joined.trim());
         });
         let elHtml = restoreBrPlaceholders(restoreHtmlTextNodes(el.htmlPlan.template, out));
         if (hasHtmlPlaceholderLeak(elHtml)) {
@@ -3134,7 +3412,13 @@ function reconstructPlan(
     }
     const value = JSON.stringify(result);
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
   }
 }
 
@@ -3147,9 +3431,12 @@ function reconstructPlan(
  *  - Dedup: each unique (engine-order, text) is translated once and reused
  *    everywhere it occurs in the chunk.
  *
- * Engine selection: cost-tiered routing (Google for short/simple, DeepSeek for rich)
- * with cross-engine fallback, unless the job sets aiModel=google-translate.
+ * Engine selection: short plain packs into JSON batches (LLM first, Google
+ * fallback); rich (HTML/JSON/long plain) stays LLM-first. Forced
+ * aiModel=google-translate skips packing and uses Google only.
  * Placeholders are masked across all engines; TM cache keyed by tier model.
+ * Pipeline for short plain: field/value TM → chunk dedupe → size-capped JSON
+ * packs → translate → reconstruct.
  */
 export type TranslatedResourceOutput = {
   resourceId: string;
@@ -3175,8 +3462,6 @@ export type TranslateResourcesOptions = {
    * 批量 worker 路径不要开启。
    */
   logSingleTranslate?: boolean;
-  /** 扫描/调用链注入的结构化翻译上下文。 */
-  promptContext?: TranslationPromptContextInput;
 };
 
 function logSingleTranslatePath(
@@ -3226,22 +3511,17 @@ export async function translateResources(
 
   const resultMaps = new Map<string, Map<string, TranslateResult>>();
   const plans: FieldPlan[] = [];
-  // poolKey → grouped unique text counts for a single prompt profile/context.
-  const pools = new Map<string, PoolEntry>();
+  // orderSig → (unique text → occurrence count across the chunk).
+  const pools = new Map<string, Map<string, number>>();
   const addUnit = (
     order: Engine[],
     text: string,
-    isHandle = false,
-    profileBlock = "",
+    opts: PoolSigOpts = {},
   ) => {
     if (!isTranslatableLeafText(text)) return;
-    const poolKey = buildPoolKey(order, isHandle, profileBlock);
-    let entry = pools.get(poolKey);
-    if (!entry) {
-      entry = { occ: new Map(), order, isHandle, profileBlock };
-      pools.set(poolKey, entry);
-    }
-    entry.occ.set(text, (entry.occ.get(text) ?? 0) + 1);
+    const sig = poolSignature(order, opts);
+    const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
+    occ.set(text, (occ.get(text) ?? 0) + 1);
   };
 
   // Units resolved without hitting an engine (cache hits) — credited immediately.
@@ -3263,10 +3543,9 @@ export async function translateResources(
     resourceId: string;
     f: TranslateItem;
     klass: "html" | "liquid_html" | "json" | "list" | "plain";
+    tier: "trivial" | "rich";
     order: Engine[];
     cacheModel: string;
-    profileBlock: string;
-    poolKey: string;
   };
   const fieldWorks: FieldWork[] = [];
 
@@ -3279,7 +3558,13 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       const klass = classifyField(f.key, f.value, f.shopifyType);
@@ -3289,35 +3574,19 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
-      const order = engineOrderFor(fieldTier(f.key, f.value, klass), aiModel);
-      const promptContentClass = klass === "liquid_html" ? "html" : klass;
-      const promptContext = buildResolvedPromptContext({
-        module: options?.promptContext?.module,
-        resourceId: res.resourceId,
-        key: f.key,
-        contentClass: promptContentClass,
-        shopifyType: f.shopifyType,
-        base: options?.promptContext,
-      });
-      const profileBlock =
-        buildPromptContextBlock(promptContext, {
-          sourceText: f.value,
-          targetLocale: target,
-        }) ?? "";
-      const cacheModel = buildCacheModelKey(engineModel(order[0], aiModel), profileBlock);
-      const poolKey = buildPoolKey(order, false, profileBlock);
-      fieldWorks.push({
-        resourceId: res.resourceId,
-        f,
-        klass,
-        order,
-        cacheModel,
-        profileBlock,
-        poolKey,
-      });
+      const tier = fieldTier(f.key, f.value, klass);
+      const order = engineOrderFor(tier, aiModel);
+      const cacheModel = engineModel(order[0], aiModel);
+      fieldWorks.push({ resourceId: res.resourceId, f, klass, tier, order, cacheModel });
     }
   }
 
@@ -3334,14 +3603,20 @@ export async function translateResources(
 
   // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
-    const { resourceId, f, klass, order, cacheModel, profileBlock, poolKey } = fieldWorks[wi];
+    const { resourceId, f, klass, tier, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
       logSingleTranslatePath(logSingleTranslate, "skip", {
         reason: "empty_value",
         fieldKey: f.key,
       });
-      rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+      rm.set(f.key, {
+        key: f.key,
+        translatedValue: f.value,
+        digest: f.digest,
+        status: "translated",
+        cost: { provider: "skip" },
+      });
       continue;
     }
     const cached = cacheHits[wi];
@@ -3353,7 +3628,13 @@ export async function translateResources(
         translated: cached,
         cacheModel,
       });
-      rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
+      rm.set(f.key, {
+        key: f.key,
+        translatedValue: cached,
+        digest: f.digest,
+        status: "translated",
+        cost: { provider: "cache" },
+      });
       cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
       continue;
     }
@@ -3376,7 +3657,13 @@ export async function translateResources(
           translated: cachedByValue,
           cacheModel,
         });
-        rm.set(f.key, { key: f.key, translatedValue: cachedByValue, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: cachedByValue,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "cache" },
+        });
         tmWrites.push(tmSet(shopName, target, cacheModel, f.digest, cachedByValue));
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
@@ -3403,79 +3690,106 @@ export async function translateResources(
           target,
         });
       } else {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
       }
     }
 
     if (klass === "html") {
-      const htmlPlan = htmlNodePartsOf(f.value);
-      if (htmlPlan.nodeGroups.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+      const { template, nodeParts } = htmlNodePartsOf(f.value);
+      if (nodeParts.length === 0) {
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
-      htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
       plans.push({
         kind: "html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolKey,
+        poolSig: poolSignature(order),
         cacheModel,
-        ...htmlPlan,
+        template,
+        nodeParts,
       });
     } else if (klass === "liquid_html") {
-      const liquidPlan = liquidHtmlNodePartsOf(f.value);
-      if (liquidPlan.plan.nodeGroups.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+      const { plan: { template, nodeParts }, liquidTokens } = liquidHtmlNodePartsOf(f.value);
+      if (nodeParts.length === 0) {
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
-      htmlNodeTextParts(liquidPlan.plan).forEach((part) => addUnit(order, part, false, profileBlock));
+      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
       plans.push({
         kind: "liquid_html",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolKey,
+        poolSig: poolSignature(order),
         cacheModel,
-        liquidPlan,
+        template,
+        nodeParts,
+        liquidTokens,
       });
     } else if (klass === "json") {
       const root = tryParseJsonContainer(f.value);
       if (root === undefined) {
         const parts = splitPlainText(f.value);
-        parts.forEach((p) => addUnit(order, p, false, profileBlock));
+        parts.forEach((p) => addUnit(order, p));
         plans.push({
           kind: "plain",
           resourceId,
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolKey,
+          poolSig: poolSignature(order),
           cacheModel,
           parts,
         });
       } else {
         const slots = extractJsonTextSlots(root);
         if (slots.length === 0) {
-          rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+          rm.set(f.key, {
+            key: f.key,
+            translatedValue: f.value,
+            digest: f.digest,
+            status: "translated",
+            cost: { provider: "skip" },
+          });
           continue;
         }
         const slotPlans: JsonSlotPlan[] = [];
         for (const slot of slots) {
           if (slot.isHtml) {
-            const htmlPlan = htmlNodePartsOf(slot.text);
-            if (htmlPlan.nodeGroups.length === 0) {
+            const { template, nodeParts } = htmlNodePartsOf(slot.text);
+            if (nodeParts.length === 0) {
               slotPlans.push({ ...slot });
               continue;
             }
-            htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
-            slotPlans.push({ ...slot, htmlPlan });
+            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+            slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
           } else {
-            addUnit(order, slot.text, false, profileBlock);
+            addUnit(order, slot.text);
             slotPlans.push({ ...slot });
           }
         }
@@ -3485,7 +3799,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolKey,
+          poolSig: poolSignature(order),
           cacheModel,
           originalValue: f.value,
           root,
@@ -3499,17 +3813,23 @@ export async function translateResources(
         const el = list[i];
         if (!el) continue;
         if (isHtml(el)) {
-          const htmlPlan = htmlNodePartsOf(el);
-          if (htmlPlan.nodeGroups.length === 0) continue;
-          htmlNodeTextParts(htmlPlan).forEach((part) => addUnit(order, part, false, profileBlock));
-          elements.push({ index: i, text: el, htmlPlan });
+          const { template, nodeParts } = htmlNodePartsOf(el);
+          if (nodeParts.length === 0) continue;
+          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+          elements.push({ index: i, text: el, htmlPlan: { template, nodeParts } });
         } else {
-          addUnit(order, el, false, profileBlock);
+          addUnit(order, el);
           elements.push({ index: i, text: el });
         }
       }
       if (elements.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "skipped" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       plans.push({
@@ -3518,24 +3838,27 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolKey,
+        poolSig: poolSignature(order),
         cacheModel,
         originalValue: f.value,
         elements,
       });
     } else {
       const isHandle = isHandleFieldKey(f.key);
+      // Short plain (trivial) shares a dedicated pool so JSON-pack limits stay separate from rich.
+      const isShort = !isHandle && tier === "trivial";
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const handlePoolKey = buildPoolKey(order, isHandle, profileBlock);
-      parts.forEach((p) => addUnit(order, p, isHandle, profileBlock));
+      const poolOpts: PoolSigOpts = { isHandle, isShort };
+      const poolSig = poolSignature(order, poolOpts);
+      parts.forEach((p) => addUnit(order, p, poolOpts));
       plans.push({
         kind: "plain",
         resourceId,
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: handlePoolKey,
+        poolSig,
         cacheModel,
         parts,
         isHandle,
@@ -3602,13 +3925,13 @@ export async function translateResources(
   //    Hits go into translated map; misses go to batch. AdaptiveSemaphore throttles.
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
-  for (const [poolKey, pool] of pools) {
-    const { occ, order, isHandle, profileBlock } = pool;
-    const cacheModel = buildCacheModelKey(engineModel(order[0]!, aiModel), profileBlock);
+  for (const [sig, occ] of pools) {
+    const { order, isHandle, isShort } = parsePoolSignature(sig);
+    const cacheModel = engineModel(order[0]!, aiModel);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
 
-    // 2a. Value-TM prefilter for every unique leaf in this pool.
+    // 2a. Value-TM prefilter for every unique leaf in this pool (before JSON pack).
     if (!skipCacheRead) {
       const leafHits = await Promise.all(
         allTexts.map((text) => tmGetByValue(text, source, target, cacheModel)),
@@ -3623,27 +3946,34 @@ export async function translateResources(
           original: text,
           translated: hit,
           cacheModel,
-          poolSig: poolKey,
+          poolSig: sig,
         });
-        tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
+        tmap.set(text, {
+          value: hit,
+          status: "translated",
+          engine: null,
+          tokens: 0,
+          cost: { provider: "cache" },
+        });
         leafCacheUnits += occ.get(text) ?? 1;
       }
       if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
       if (tmap.size > 0) {
-        translated.set(poolKey, tmap);
+        translated.set(sig, tmap);
         const lookupHit: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
         await finishReadyResources(lookupHit);
       }
     }
 
+    // Cache misses only: deduped unique texts → size-capped JSON packs.
     const texts = allTexts.filter((t) => !tmap.has(t));
     if (texts.length === 0) {
-      translated.set(poolKey, tmap);
+      translated.set(sig, tmap);
       continue;
     }
 
     const items: TranslateItem[] = texts.map((t, i) => ({ key: String(i), value: t, digest: "" }));
-    const { maxChars, maxItems } = resolveBatchLimits(order);
+    const { maxChars, maxItems } = resolveBatchLimits(order, { isShort });
     const batches = batchByChars(items, maxChars, maxItems);
     await Promise.all(batches.map(async (batch) => {
       if (await abortRequested()) return;
@@ -3677,12 +4007,12 @@ export async function translateResources(
           }
         }
       }
-      translated.set(poolKey, tmap);
+      translated.set(sig, tmap);
       if (onProgress) await onProgress(batchUnits, llmTokens);
       const lookup: LookupFn = (poolSig, text) => translated.get(poolSig)?.get(text);
       await finishReadyResources(lookup);
     }));
-    translated.set(poolKey, tmap);
+    translated.set(sig, tmap);
   }
 
   const retried = await retryPoolFallbacks(
@@ -3724,26 +4054,12 @@ export async function translateResources(
             digest: f.digest,
             status: "fallback" as const,
           },
+          res.module,
         ),
       ),
     };
   });
   return { resources: out, usage };
-}
-
-function buildPoolKey(order: Engine[], isHandle: boolean, profileBlock: string): string {
-  const base = poolSignature(order, isHandle);
-  return `${base}|ctx:${buildPromptContextScope(profileBlock)}`;
-}
-
-function buildPromptContextScope(profileBlock: string): string {
-  if (!profileBlock) return "none";
-  return createHash("sha1").update(profileBlock).digest("hex").slice(0, 12);
-}
-
-function buildCacheModelKey(model: string, profileBlock: string): string {
-  const scope = buildPromptContextScope(profileBlock);
-  return scope === "none" ? model : `${model}|ctx:${scope}`;
 }
 
 /**

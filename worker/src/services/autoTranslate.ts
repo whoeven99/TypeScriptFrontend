@@ -154,7 +154,7 @@ export async function runAutoTranslateScan(
     }
 
     try {
-      const livePrimary = await fetchShopPrimaryLocale(shop, token, true);
+      const livePrimary = await fetchShopPrimaryLocale(shop);
       if (livePrimary) {
         await syncShopPrimaryLocaleInTsf(shop, livePrimary);
         source = livePrimary;
@@ -185,7 +185,6 @@ export async function runAutoTranslateScan(
         await createJob({
           id: jobId,
           shopName: shop,
-          shopifyAccessToken: token,
           source,
           target,
           modules: AUTO_MODULES,

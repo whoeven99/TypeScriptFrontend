@@ -1343,7 +1343,7 @@ async function sendRenewalEmailForShop(
       sql: "SELECT creditsPerPeriod FROM AppSubscription WHERE shop = ? AND status = 'ACTIVE' LIMIT 1",
       args: [shop],
     }),
-    fetchShopContact(shop, { preferLegacyToken: true }).catch(() => null),
+    fetchShopContact(shop).catch(() => null),
     getTsfAccountRemaining(shop),
   ]);
 

@@ -1,4 +1,3 @@
-import { blobWrite } from "../blobV4.js";
 import { shopScanAiConfigured, SHOP_SCAN_AI_MODEL } from "./ai.js";
 import {
   fetchShopMarkets,
@@ -16,6 +15,7 @@ import { sampleThemeTexts } from "./translationSamples.js";
 import { buildThemeSceneProfile } from "./themeKeyIntelligence.js";
 import { buildTranslationContextProfile } from "./translationContextProfile.js";
 import { upsertShopProfile } from "./tsfWrite.js";
+import { upsertShopProfileLatestScan } from "./shopProfileArtifact.js";
 
 /**
  * 阶段2：采集店铺素材 → 信号提取 → AI 两步归纳（理解 + 术语策略）→
@@ -50,10 +50,12 @@ export async function runProfileStage(args: {
   primaryLocale: string;
   locales: ShopLocaleRow[];
   scanId: string;
-  blobPrefix: string;
+  trigger?: string;
+  /** @deprecated 稳定产物写 shop-profile/{shop}/latest-scan.json。 */
+  blobPrefix?: string;
   heartbeat: () => Promise<void>;
 }): Promise<ProfileStageResult> {
-  const { shop, accessToken, primaryLocale, locales, scanId, blobPrefix, heartbeat } = args;
+  const { shop, accessToken, primaryLocale, locales, scanId, trigger, heartbeat } = args;
 
   const [facts, markets, themeTexts] = await Promise.all([
     fetchShopProfileFacts(shop, accessToken),
@@ -71,33 +73,30 @@ export async function runProfileStage(args: {
   const scannedAt = new Date().toISOString();
 
   if (!shopScanAiConfigured() || !hasMaterial) {
-    await blobWrite(`${blobPrefix}/profile-facts.json`, {
-      stage: "profile",
-      shop,
-      facts,
+    const translationContext = buildTranslationContextProfile({
+      publishedLocales,
       markets,
-      themeTexts,
-      signals,
-      induction: null,
-      scannedAt,
-    });
-    await blobWrite(`${blobPrefix}/theme-key-profile.json`, {
-      stage: "themeKeyIntelligence",
-      shop,
+      understanding: null,
+      strategy: null,
       themeSceneProfile,
-      scannedAt,
+      generatedAt: scannedAt,
     });
-    await blobWrite(
-      `${blobPrefix}/translation-context-profile.json`,
-      buildTranslationContextProfile({
-        publishedLocales,
+    await upsertShopProfileLatestScan(shop, {
+      scanId,
+      trigger,
+      profile: {
+        stage: "profile",
+        shop,
+        facts,
         markets,
-        understanding: null,
-        strategy: null,
+        themeTexts,
+        signals,
         themeSceneProfile,
-        generatedAt: scannedAt,
-      }),
-    );
+        translationContext,
+        induction: null,
+        scannedAt,
+      },
+    });
     return {
       status: "skipped",
       reason: !shopScanAiConfigured() ? "ai_not_configured" : "no_material",
@@ -112,52 +111,61 @@ export async function runProfileStage(args: {
   });
   await heartbeat();
 
-  await blobWrite(`${blobPrefix}/profile-facts.json`, {
-    stage: "profile",
-    shop,
-    facts,
-    markets,
-    themeTexts,
-    signals,
-    themeSceneProfile,
-    induction,
-    scannedAt,
-  });
-  await blobWrite(`${blobPrefix}/theme-key-profile.json`, {
-    stage: "themeKeyIntelligence",
-    shop,
-    themeSceneProfile,
-    scannedAt,
-  });
-
   if (!induction.understanding) {
-    await blobWrite(
-      `${blobPrefix}/translation-context-profile.json`,
-      buildTranslationContextProfile({
-        publishedLocales,
+    const translationContext = buildTranslationContextProfile({
+      publishedLocales,
+      markets,
+      understanding: null,
+      strategy: induction.strategy,
+      themeSceneProfile,
+      generatedAt: scannedAt,
+    });
+    await upsertShopProfileLatestScan(shop, {
+      scanId,
+      trigger,
+      profile: {
+        stage: "profile",
+        shop,
+        facts,
         markets,
-        understanding: null,
-        strategy: induction.strategy,
+        themeTexts,
+        signals,
         themeSceneProfile,
-        generatedAt: scannedAt,
-      }),
-    );
+        translationContext,
+        induction,
+        scannedAt,
+      },
+    });
     return { status: "skipped", reason: "ai_understanding_failed" };
   }
 
   const { understanding, strategy } = induction;
 
-  await blobWrite(
-    `${blobPrefix}/translation-context-profile.json`,
-    buildTranslationContextProfile({
-      publishedLocales,
+  const translationContext = buildTranslationContextProfile({
+    publishedLocales,
+    markets,
+    understanding,
+    strategy,
+    themeSceneProfile,
+    generatedAt: scannedAt,
+  });
+
+  await upsertShopProfileLatestScan(shop, {
+    scanId,
+    trigger,
+    profile: {
+      stage: "profile",
+      shop,
+      facts,
       markets,
-      understanding,
-      strategy,
+      themeTexts,
+      signals,
       themeSceneProfile,
-      generatedAt: scannedAt,
-    }),
-  );
+      translationContext,
+      induction,
+      scannedAt,
+    },
+  });
 
   await upsertShopProfile({
     shop,
