@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { Modal, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { v4CardStyle, v4Colors } from "../v4Styles";
 import {
@@ -16,8 +15,6 @@ import {
 } from "../useCreateTaskEstimate";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import Button from "~/ui/components/AppButton";
-
-const { Paragraph, Text, Title } = Typography;
 
 type Props = {
   open: boolean;
@@ -57,9 +54,30 @@ export function CreateTaskConfirmModal({
   const modalBlocked = quotaGateMode !== null;
 
   useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !creating) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, creating, onClose]);
+
+  useEffect(() => {
     if (!planFetcher.data?.success) return;
     const confirmationUrl = planFetcher.data.response?.confirmationUrl;
-    if (confirmationUrl) openUrl(confirmationUrl);
+    if (confirmationUrl) {
+      window.open(confirmationUrl, "_top");
+    }
   }, [planFetcher.data]);
 
   const selectedTargets = useMemo(
@@ -84,9 +102,7 @@ export function CreateTaskConfirmModal({
     [modules, t],
   );
 
-  const aiModelLabel = AI_MODEL_OPTIONS.some(
-    (option) => option.value === aiModel,
-  )
+  const aiModelLabel = AI_MODEL_OPTIONS.some((option) => option.value === aiModel)
     ? getV4AiModelLabel(aiModel, t)
     : aiModel;
   const optionLabels = [
@@ -151,112 +167,60 @@ export function CreateTaskConfirmModal({
     onConfirmCreate();
   };
 
+  if (!open) return null;
+
   return (
-    <Modal
-      open={open}
-      onCancel={creating ? undefined : onClose}
-      footer={null}
-      centered
-      width={720}
-      zIndex={2147483100}
-      destroyOnHidden
-      maskClosable={!creating}
-      keyboard={!creating}
-      closeIcon={
-        <span
-          aria-hidden
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 24,
-            height: 24,
-            fontSize: 18,
-            color: v4Colors.textMuted,
-            lineHeight: 1,
-          }}
-        >
-          ×
-        </span>
-      }
-      styles={{
-        content: {
-          padding: 0,
-          overflow: "hidden",
-          borderRadius: 20,
-          border: `1px solid ${v4Colors.cardBorder}`,
-          background: v4Colors.cardBg,
-          boxShadow: "var(--app-shadow-card-strong)",
-        },
-        body: {
-          padding: 0,
-          maxHeight: "min(720px, calc(100vh - 96px))",
-          overflowY: "auto",
-        },
+    <div
+      aria-modal="true"
+      role="dialog"
+      style={overlayStyle}
+      onClick={() => {
+        if (!creating) onClose();
       }}
     >
-      <div style={{ padding: "24px 24px 20px" }}>
-        <div
-          style={{
-            paddingBottom: 20,
-            marginBottom: 20,
-            borderBottom: `1px solid ${v4Colors.divider}`,
-          }}
-        >
-          <Title level={3} style={{ margin: 0, lineHeight: 1.25, color: v4Colors.text }}>
-            {title}
-          </Title>
-          <Paragraph
-            style={{
-              marginTop: 12,
-              marginBottom: 0,
-              color: v4Colors.textMuted,
-              fontSize: 14,
-              lineHeight: "22px",
-              maxWidth: 560,
-            }}
+      <div
+        style={panelStyle}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={titleStyle}>{title}</div>
+            <div style={descriptionStyle}>{description}</div>
+          </div>
+          <button
+            type="button"
+            aria-label={t("Close")}
+            onClick={onClose}
+            disabled={creating}
+            style={closeButtonStyle}
           >
-            {description}
-          </Paragraph>
+            ×
+          </button>
         </div>
 
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 14,
-            }}
-          >
+        <div style={bodyStyle}>
+          <div style={gridStyle}>
             <SummaryCard title={t("v4.createTask.targetLanguages")}>
               <TokenList
                 items={selectedTargets.map((item) => `${item.regionCode} ${item.label}`)}
               />
             </SummaryCard>
-
             <SummaryCard title={t("v4.createTask.content")}>
               <TokenList items={selectedModules.map((item) => item.label)} />
             </SummaryCard>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 14,
-            }}
-          >
+          <div style={gridStyle}>
             <SummaryCard title={t("v4.createTask.aiModel")}>
               <TokenList items={[aiModelLabel]} />
             </SummaryCard>
-
             <SummaryCard title={t("v4.createTask.translationOptions")}>
               {optionLabels.length > 0 ? (
                 <TokenList items={optionLabels} />
               ) : (
-                <Text style={{ color: v4Colors.textMuted }}>
+                <div style={mutedTextStyle}>
                   {t("v4.createTask.confirmDefaultOptions")}
-                </Text>
+                </div>
               )}
             </SummaryCard>
           </div>
@@ -266,101 +230,48 @@ export function CreateTaskConfirmModal({
               ...v4CardStyle,
               borderRadius: 16,
               padding: "16px 18px",
-              background: modalBlocked
+              background: modalBlocked || estimate?.needsMoreCredits
                 ? "var(--app-accent-utility-soft)"
-                : estimate?.needsMoreCredits
-                  ? "var(--app-accent-utility-soft)"
-                  : v4Colors.summaryBg,
+                : v4Colors.summaryBg,
             }}
           >
-            <Text
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 600,
-                color: v4Colors.textMuted,
-                marginBottom: 8,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              {t("v4.createTask.confirmEstimateTitle")}
-            </Text>
-            <Text
-              strong
-              style={{
-                display: "block",
-                fontSize: 18,
-                color: v4Colors.text,
-                lineHeight: 1.35,
-              }}
-            >
-              {estimateTitle}
-            </Text>
+            <div style={eyebrowStyle}>{t("v4.createTask.confirmEstimateTitle")}</div>
+            <div style={estimateTitleStyle}>{estimateTitle}</div>
             {remainingLabel ? (
-              <Text
-                style={{
-                  display: "block",
-                  marginTop: 6,
-                  color: v4Colors.textMuted,
-                  lineHeight: "22px",
-                }}
-              >
-                {remainingLabel}
-              </Text>
+              <div style={remainingStyle}>{remainingLabel}</div>
             ) : null}
             {estimate?.needsMoreCredits ? (
-              <Text
-                style={{
-                  display: "block",
-                  marginTop: 10,
-                  color: "var(--p-color-text-caution)",
-                  lineHeight: "22px",
-                }}
-              >
-                {t("v4.createTask.estimateShort")}
-              </Text>
+              <div style={warningStyle}>{t("v4.createTask.estimateShort")}</div>
             ) : null}
           </div>
+        </div>
 
-          <div
+        <div style={footerStyle}>
+          <Button
+            onClick={onClose}
+            disabled={creating}
+            style={{ minWidth: 108, borderColor: v4Colors.cardBorder }}
+          >
+            {t("Cancel")}
+          </Button>
+          <Button
+            type={modalBlocked ? "default" : "primary"}
+            onClick={handlePrimaryAction}
+            loading={creating || planFetcher.state === "submitting"}
             style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 12,
-              flexWrap: "wrap",
-              paddingTop: 4,
+              minWidth: quotaGateMode === "trial" ? 160 : 140,
+              borderColor: modalBlocked ? v4Colors.cardBorder : undefined,
             }}
           >
-            <Button
-              onClick={onClose}
-              disabled={creating}
-              style={{
-                minWidth: 108,
-                borderColor: v4Colors.cardBorder,
-              }}
-            >
-              {t("Cancel")}
-            </Button>
-            <Button
-              type={modalBlocked ? "default" : "primary"}
-              onClick={handlePrimaryAction}
-              loading={creating || planFetcher.state === "submitting"}
-              style={{
-                minWidth: quotaGateMode === "trial" ? 160 : 140,
-                borderColor: modalBlocked ? v4Colors.cardBorder : undefined,
-              }}
-            >
-              {quotaGateMode === "trial"
-                ? t("Free trial")
-                : quotaGateMode === "pricing"
-                  ? t("v4.createTask.confirmViewPlans")
-                  : t("v4.createTask.confirmAction")}
-            </Button>
-          </div>
-        </Space>
+            {quotaGateMode === "trial"
+              ? t("Free trial")
+              : quotaGateMode === "pricing"
+                ? t("v4.createTask.confirmViewPlans")
+                : t("v4.createTask.confirmAction")}
+          </Button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 
@@ -380,19 +291,7 @@ function SummaryCard({
         background: v4Colors.cardSubdued,
       }}
     >
-      <Text
-        style={{
-          display: "block",
-          fontSize: 12,
-          fontWeight: 600,
-          color: v4Colors.textMuted,
-          marginBottom: 10,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-        }}
-      >
-        {title}
-      </Text>
+      <div style={eyebrowStyle}>{title}</div>
       {children}
     </div>
   );
@@ -402,20 +301,7 @@ function TokenList({ items }: { items: string[] }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {items.map((item) => (
-        <span
-          key={item}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: v4Colors.cardBg,
-            border: `1px solid ${v4Colors.cardBorder}`,
-            color: v4Colors.text,
-            fontSize: 12,
-            lineHeight: 1.35,
-          }}
-        >
+        <span key={item} style={tokenStyle}>
           {item}
         </span>
       ))}
@@ -423,6 +309,134 @@ function TokenList({ items }: { items: string[] }) {
   );
 }
 
-function openUrl(url: string) {
-  open(url, "_top");
-}
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2147483100,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 24,
+  background: "rgba(15, 23, 42, 0.32)",
+} as const;
+
+const panelStyle = {
+  width: "min(720px, calc(100vw - 32px))",
+  maxHeight: "min(720px, calc(100vh - 32px))",
+  overflow: "hidden",
+  borderRadius: 20,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  background: v4Colors.cardBg,
+  boxShadow: "var(--app-shadow-card-strong)",
+  display: "flex",
+  flexDirection: "column",
+} as const;
+
+const headerStyle = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "24px 24px 20px",
+  borderBottom: `1px solid ${v4Colors.divider}`,
+} as const;
+
+const bodyStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+  padding: "20px 24px",
+  overflowY: "auto",
+} as const;
+
+const footerStyle = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 12,
+  flexWrap: "wrap",
+  padding: "0 24px 24px",
+} as const;
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 14,
+} as const;
+
+const titleStyle = {
+  margin: 0,
+  fontSize: 24,
+  fontWeight: 700,
+  lineHeight: 1.25,
+  color: v4Colors.text,
+} as const;
+
+const descriptionStyle = {
+  marginTop: 12,
+  color: v4Colors.textMuted,
+  fontSize: 14,
+  lineHeight: "22px",
+  maxWidth: 560,
+} as const;
+
+const closeButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 32,
+  height: 32,
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  color: v4Colors.textMuted,
+  fontSize: 22,
+  lineHeight: 1,
+  cursor: "pointer",
+  flexShrink: 0,
+} as const;
+
+const eyebrowStyle = {
+  display: "block",
+  marginBottom: 10,
+  fontSize: 12,
+  fontWeight: 600,
+  color: v4Colors.textMuted,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+} as const;
+
+const estimateTitleStyle = {
+  fontSize: 18,
+  fontWeight: 600,
+  color: v4Colors.text,
+  lineHeight: 1.35,
+} as const;
+
+const remainingStyle = {
+  marginTop: 6,
+  color: v4Colors.textMuted,
+  lineHeight: "22px",
+} as const;
+
+const warningStyle = {
+  marginTop: 10,
+  color: "var(--p-color-text-caution)",
+  lineHeight: "22px",
+} as const;
+
+const mutedTextStyle = {
+  color: v4Colors.textMuted,
+  lineHeight: "22px",
+} as const;
+
+const tokenStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  background: v4Colors.cardBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  color: v4Colors.text,
+  fontSize: 12,
+  lineHeight: 1.35,
+} as const;
