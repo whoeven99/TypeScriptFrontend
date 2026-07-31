@@ -1,13 +1,16 @@
 /**
  * 把「指定 shop」重置为可重新看到首次翻译新手引导（onboarding）的状态。
  *
- * 作用范围（默认，最小侵入）：
- *   1) Turso  ShopOnboarding        —— 删除该店行（status 回到 not_started）
- *   2) Cosmos translation_v4_jobs   —— 删除该店全部 v4 任务（否则入口判定为老用户）
- *   3) Turso  TranslateV4JobUsage   —— 删除该店任务用量快照
+ * 作用范围（默认）：
+ *   1) Turso  ShopOnboarding           —— 删除该店行（status 回到 not_started）
+ *   2) Cosmos translation_v4_jobs      —— 删除该店全部 v4 任务（否则入口判定为老用户）
+ *   3) Turso  TranslateV4JobUsage      —— 删除该店任务用量快照
+ *   4) Turso  ShopTargetLocale         —— 删除该店全部语言行（覆盖率 + 自动翻译开关）
+ *   5) Turso  ShopTranslationSettings  —— 删除该店翻译配置（源语言 / targets / 总开关）
+ *   6) Redis  tsf:items_count:{shop}:* —— 删除覆盖率明细缓存（仅 RENDER_KV）
  *
  * 附加（--billing，更彻底，让 isNew=true / 恢复试用资格）：
- *   4) Turso  AccountPeriodUsage / BillingLog / AppSubscription / Account
+ *   7) Turso  AccountPeriodUsage / BillingLog / AppSubscription / Account
  *
  * 安全设计：
  *   - 默认 dry-run，只打印将删除的条数，不落库；加 --write 才真正执行。
@@ -20,12 +23,13 @@
  *   node scripts/reset-onboarding.mjs --shop=xxx --env=.env.test --write --billing
  *   node scripts/reset-onboarding.mjs --shop=xxx --target=prod --write        （谨慎！）
  *
- * 依赖：@libsql/client、@azure/cosmos（仓库已装）。
+ * 依赖：@libsql/client、@azure/cosmos、ioredis（仓库已装）。
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient } from "@libsql/client";
 import { CosmosClient } from "@azure/cosmos";
+import Redis from "ioredis";
 
 // ---------- 参数解析 ----------
 function parseArgs(argv) {
@@ -149,6 +153,18 @@ if (cosmosEndpoint && cosmosKey) {
     .container(cosmosContainerId);
 }
 
+// ---------- Redis（覆盖率明细：仅 RENDER_KV；不再连 REDIS_URL / REDIS_URL_V4）----------
+function redisLabel(url, key) {
+  if (!url) return null;
+  return { key, host: maskHost(url) };
+}
+
+const redisTargets = [];
+const renderKvUrl = (process.env.RENDER_KV || "").trim();
+if (renderKvUrl) {
+  redisTargets.push({ key: "RENDER_KV", url: renderKvUrl });
+}
+
 // ---------- 执行 ----------
 const MODE = write ? "WRITE" : "DRY-RUN";
 console.log("===== reset-onboarding =====");
@@ -164,6 +180,9 @@ console.log(
       cosmos: cosmosContainer
         ? `${cosmosDbId}/${cosmosContainerId}`
         : "(未配置 COSMOS_*_V4，跳过任务删除)",
+      redis: redisTargets.length
+        ? redisTargets.map((r) => redisLabel(r.url, r.key))
+        : "(未配置 RENDER_KV，跳过 items_count)",
       includeBilling,
     },
     null,
@@ -238,16 +257,100 @@ async function deleteCosmosJobs() {
   console.log(`  [ok ] Cosmos v4 jobs: 已删除 ${done}/${jobs.length} 个任务`);
 }
 
+/** SCAN + DEL `tsf:items_count:{shop}:*`，对每个已配置 Redis 端各跑一遍。 */
+async function deleteRedisItemsCount() {
+  if (redisTargets.length === 0) {
+    console.log("  [skip] 未配置 RENDER_KV，跳过 items_count");
+    return;
+  }
+
+  const pattern = `tsf:items_count:${shop}:*`;
+
+  for (const redisTarget of redisTargets) {
+    const client = new Redis(redisTarget.url, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 12_000,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      enableReadyCheck: true,
+    });
+    // 避免 Azure TLS 断开时刷 Unhandled error event
+    client.on("error", () => {});
+    try {
+      await client.connect();
+      const keys = [];
+      let cursor = "0";
+      do {
+        const [next, batch] = await client.scan(
+          cursor,
+          "MATCH",
+          pattern,
+          "COUNT",
+          200,
+        );
+        cursor = next;
+        for (const k of batch) keys.push(k);
+      } while (cursor !== "0");
+
+      if (!write) {
+        console.log(
+          `  [dry] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 将删除 ${keys.length} 个 key`,
+        );
+        for (const k of keys.slice(0, 10)) console.log(`        - ${k}`);
+        if (keys.length > 10) {
+          console.log(`        …以及另外 ${keys.length - 10} 个`);
+        }
+      } else if (keys.length === 0) {
+        console.log(
+          `  [ok ] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 无需删除（0 key）`,
+        );
+      } else {
+        // 分批 DEL，避免单次参数过长
+        let deleted = 0;
+        const chunk = 100;
+        for (let i = 0; i < keys.length; i += chunk) {
+          const part = keys.slice(i, i + chunk);
+          deleted += await client.del(...part);
+        }
+        console.log(
+          `  [ok ] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 已删除 ${deleted}/${keys.length} 个 key`,
+        );
+      }
+    } catch (err) {
+      console.error(
+        `  [err] Redis ${redisTarget.key} items_count 失败：${err?.message || err}`,
+      );
+    } finally {
+      try {
+        await client.quit();
+      } catch {
+        try {
+          client.disconnect(false);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+}
+
 async function main() {
-  console.log("\n-- 步骤 1/3：重置 onboarding 状态 --");
+  console.log("\n-- 步骤 1/5：重置 onboarding 状态 --");
   await tursoDelete("ShopOnboarding");
 
-  console.log("\n-- 步骤 2/3：删除该店 v4 任务 --");
+  console.log("\n-- 步骤 2/5：删除该店 v4 任务 --");
   await deleteCosmosJobs();
   await tursoDelete("TranslateV4JobUsage");
 
+  console.log("\n-- 步骤 3/5：删除语言相关（ShopTargetLocale / ShopTranslationSettings）--");
+  await tursoDelete("ShopTargetLocale");
+  await tursoDelete("ShopTranslationSettings");
+
+  console.log("\n-- 步骤 4/5：删除 Redis 覆盖率缓存 items_count --");
+  await deleteRedisItemsCount();
+
   if (includeBilling) {
-    console.log("\n-- 步骤 3/3：清空账单（isNew=true / 恢复试用资格）--");
+    console.log("\n-- 步骤 5/5：清空账单（isNew=true / 恢复试用资格）--");
     // 子表 → 主表顺序删除
     await tursoDelete("AccountPeriodUsage");
     await tursoDelete("BillingLog");
@@ -255,14 +358,14 @@ async function main() {
     await tursoDelete("Account");
   } else {
     console.log(
-      "\n-- 步骤 3/3：跳过账单（未加 --billing）。若主 CTA 想显示「开试用」，请加 --billing --",
+      "\n-- 步骤 5/5：跳过账单（未加 --billing）。若主 CTA 想显示「开试用」，请加 --billing --",
     );
   }
 
   console.log(
     `\n===== 完成（${MODE}）=====` +
       (write
-        ? "\n下一步：在测试店重新打开 /app（或强制刷新），应重定向到 /app/onboarding。"
+        ? "\n下一步：在测试店重新打开 /app（或强制刷新），应重定向到 /app/onboarding。\n覆盖率应显示「正在计算」空状态（Shopify 侧语言本身不会被本脚本删除）。"
         : "\n这是 dry-run，未改动任何数据。确认无误后加 --write 执行。"),
   );
 }

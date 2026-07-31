@@ -226,6 +226,8 @@ real `route.tsx` or route module is added.
   passes locales it already loaded). Cache reads use one Redis `HGETALL` per
   locale; language page force-refreshes a locale only when that hash is empty
   (`cacheEmpty`, same as v4「刷新统计」`refresh=1&locales=`).
+- `/api/onboarding/fast-coverage`: `app/routes/api.onboarding.fast-coverage.ts`
+  （Preparing 真进度：逐 label 现算最重要 1 语 × 5 模块，写 Redis 不写 Turso）。
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
@@ -492,9 +494,8 @@ Important env names only:
 Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
 `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
-- Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
-  Migration to Render KV: `RENDER_KV`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
-  (see Operations → Redis).
+- Redis: **仅** `RENDER_KV`（Render Key Value / Valkey）。不要再配或连接
+  `REDIS_URL` / `REDIS_URL_V4`（Azure 已弃用，见 Operations → Redis）。
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
@@ -769,8 +770,14 @@ Core files:
   （`shouldRedirectToOnboarding` / `markOnboardingEntered` / `markOnboardingSkipped`
   / `markOnboardingCompleted` / `markOnboardingTrialStarted` /
   `saveOnboardingRecommendation` / `buildOnboardingSummary`）。
+- 快扫覆盖率: `app/server/onboarding/fastCoverage.server.ts` +
+  `app/routes/api.onboarding.fast-coverage.ts`（Preparing 真进度：最重要 1 语 ×
+  Products/Collection/Navigation/Pages/Shop 五个模块，逐 label POST；只写 Redis
+  module 明细，**不**写 Turso 语言级汇总，避免污染权威覆盖率）。
 - 入口重定向: `app/routes/app._index/route.tsx` 调 `shouldRedirectToOnboarding`
-  决定跳 `/app/onboarding` 还是默认 `/app/translate-v4`。
+  决定跳 `/app/onboarding` 还是默认 `/app/translate-v4`；并在重定向前
+  `enqueueShopScan(install)`（幂等，尽早入队）。onboarding loader / `app.tsx` 也会
+  再入队一次（幂等）。
 - Model: `ShopOnboarding`（每店一行，独立于 `Account.isNew`）。
 
 Data reuse（不重复建设）:
@@ -778,7 +785,9 @@ Data reuse（不重复建设）:
 - bootstrap（plan/trial/credits/isNew）: `getTsfBootstrapData` + `getShopCreditQuota`。
 - locales: `loadShopLocalesForTranslation`（source + 非主语言 targets；推荐语言三层兜底：
   已发布 → 全部已配置 → 无则空）。
-- coverage: `getCoverageSummaryFromCache`（只读缓存、非阻塞；未统计降级为 null 比例）。
+- coverage 快路径: Preparing 调 `/api/onboarding/fast-coverage` 现算 1 语 × 5 模块；
+  推荐页展示该样本覆盖率，并提示全店仍在后台 install scan。
+- coverage 缓存: loader 仍读 `getCoverageSummaryFromCache`（有则展示全量缓存）。
 - estimate: `estimateCreateTaskCredits`（增量口径，展示上限；耗时为纯展示粗估）。
 - 建首个任务: 客户端 `createTranslateV4Tasks`（同翻译页），成功后 action `complete`。
 - 试用/升级: 记录 `startedTrialFromOnboarding` 后跳 `/app/pricing`（试用=带 trialDays 的
@@ -791,6 +800,7 @@ Common edits:
 
 - 改入口判断: `shouldRedirectToOnboarding`（skipped/completed 或已有任意 v4 任务→不打扰）。
 - 改推荐模块: `ONBOARDING_RECOMMENDED_MODULE_KEYS`（v2 module key，对齐 moduleCatalog）。
+- 改快扫模块: `ONBOARDING_FAST_COVERAGE_LABELS`（itemsCount 卡片 label）。
 - 改文案: `onboarding.*` 键，`public/locales/{en,zh-CN}/translation.json`。
 - 埋点: `reportClientLog`（`onboarding_viewed` / `_recommendation_viewed` /
   `_trial_clicked` / `_task_created` / `_skipped` / `_upgrade_clicked`）。
@@ -1049,11 +1059,13 @@ Operational root scripts:
 
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/reset-onboarding.mjs`: 把「指定 shop」重置为可重新看到首次翻译新手引导的状态
- （删 Turso `ShopOnboarding` + Cosmos 该店 v4 任务 + `TranslateV4JobUsage`；可选
+ （删 Turso `ShopOnboarding` + Cosmos 该店 v4 任务 + `TranslateV4JobUsage` +
+ `ShopTargetLocale` + `ShopTranslationSettings` + Redis `tsf:items_count:{shop}:*`；可选
  `--billing` 连带清 `Account/AppSubscription/BillingLog/AccountPeriodUsage` 让 `isNew=true`）。
  默认 dry-run，`--write` 才落库；必须 `--shop=`；`--env=`（默认 `.env`）；Turso 目标按
- `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据，
- 只打印脱敏 host。示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
+ `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据；
+ Redis **只连** `RENDER_KV` 做 SCAN/DEL；只打印脱敏 host。
+ 示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
 - `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
@@ -1062,10 +1074,9 @@ recent 72-hour window.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
 - `scripts/backfill-locale-coverage-from-redis.mjs`: Redis `items_count` →
   Turso `ShopTargetLocale.coverage*`（默认 dry-run；`--write` 写线上；
-  支持 `--shop=` / `--only-missing`；MOVED 重连重试）。
-- `scripts/migrate-redis-azure-to-render.mjs`: Azure → Render KV SCAN 回填
-  （`--env=.env.test --prefixes=tm,items_count`；默认 dry-run；`--write` 写入；
-  token 同 `REDIS_CUTOVER`）。
+  支持 `--shop=` / `--only-missing`；MOVED 重连重试；Redis 源用 `RENDER_KV`）。
+- `scripts/migrate-redis-azure-to-render.mjs`: **历史** Azure → Render KV 回填脚本
+  （迁移已完成；日常运维不要再依赖 `REDIS_URL*`）。
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -1221,34 +1232,21 @@ node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
 Redis holds real-time progress counters, hint queues, control flags, and
 translation memory cache.
 
-**Connection sources (do not print URL/password values):**
+**唯一连接：`RENDER_KV`（Render Key Value / Valkey 8，Redis 兼容）。**
 
-| Audience | Env / URL | Notes |
-| --- | --- | --- |
-| Render Key Value (live / sole) | `RENDER_KV` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
-| Azure Cache (migration primary only) | `REDIS_URL` / `REDIS_URL_V4` | Needed only while dual-write or partial cutover; drop when sole mode |
-| One-off CLI | Dashboard **Valkey CLI Command** | External URL wrapped for `redis-cli` / `valkey-cli` |
+- App、Worker、运维脚本、Agent 诊断：**只连** `RENDER_KV`。
+- **不要**再使用 `REDIS_URL` / `REDIS_URL_V4`（Azure Cache 已弃用；本地 `.env*` 里若仍残留可忽略或删除）。
+- 不要打印 URL/密码；只打印脱敏 host。
+- Render 服务内用 **Internal** URL（通常 `redis://…`）；本机 / Agent `.env*` 用 **External**
+  `rediss://…`（需 Dashboard 放行 Inbound IP）。
+- 交互 CLI：Dashboard **Valkey CLI Command**，或服务同区 Shell 里
+  `redis-cli -u "$RENDER_KV"`。
 
-**Azure → Render KV migration switches** (code: `redisDualClient` in App + Worker):
+历史说明：曾用 `REDIS_DUAL_WRITE` / `REDIS_CUTOVER` + Azure `REDIS_URL*` 做双写切流；
+迁移已完成。代码里若仍有 `redisDualClient` 兼容分支，运行时应处于 sole
+（`RENDER_KV` 已设、不再创建 Azure client）。新脚本与文档一律按 sole / 仅 `RENDER_KV` 写。
 
-| Env | Meaning |
-| --- | --- |
-| `RENDER_KV` | Render KV URL（sole 模式下是唯一 Redis） |
-| `REDIS_DUAL_WRITE=true` | Dual-write **cache** String/Hash to both; **never** dual-write hint/shop_scan lists |
-| `REDIS_CUTOVER` | Comma tokens for read/write source = Render: `tm`, `items_count`, `progress`, `control`, `auto_scan`, `hints`, `shop_scan`, `keystat`, or `all`. Empty = all traffic still on Azure |
-
-**Sole-client mode**（可删测试 Azure Redis）: `REDIS_DUAL_WRITE=false`（或未设）+ `REDIS_CUTOVER=all` + `RENDER_KV` 已设 → App/Worker **不再创建** `REDIS_URL*` client。此时可去掉 `REDIS_URL` / `REDIS_URL_V4` 并删除 Azure 实例。
-
-Backfill (dry-run default):
-
-```ps1
-node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm,items_count
-node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm --write
-```
-
-Gray test: deploy with `REDIS_DUAL_WRITE=true` and empty `REDIS_CUTOVER` → backfill a token → set the same `REDIS_CUTOVER` on **Web + Worker** → exercise that feature → clear cutover to roll back. Migrate `hints` / `shop_scan` last (lists are never dual-written).
-
-**Ping Render Key Value from local `.env` / `.env.test` (masks host only; never echo secrets):**
+**Ping Render KV from local `.env` / `.env.test` (masks host only; never echo secrets):**
 
 ```ps1
 # From repo root; reads RENDER_KV from the named file
@@ -1267,10 +1265,9 @@ r.ping().then(async (pong)=>{
 " .env.test
 ```
 
-**Hint queue inspection (Azure / current primary via `.env.prod`):**
+**Hint queue inspection（读 `.env*` 的 `RENDER_KV`）:**
 
 ```ps1
-# Prod hint queues (reads .env.prod REDIS_URL)
 node worker/scripts/probe-hint-queues.mjs
 ```
 
@@ -1296,35 +1293,20 @@ node worker/scripts/probe-hint-queues.mjs
 Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
 `packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
 
-
-**Manual query — Azure / live primary (`REDIS_URL_V4` or `REDIS_URL`):**
-
-```ps1
-node -e "
-  const Redis = require('ioredis');
-  const r = new Redis(process.env.REDIS_URL_V4 || process.env.REDIS_URL);
-  r.hgetall('translate:v4:progress:<jobId>').then(d => {
-    console.log(JSON.stringify(d, null, 2));
-    r.quit();
-  });
-"
-```
-
-**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value); instances run **Valkey 8**, Redis-compatible):
+**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value)):
 
 | How | When | Notes |
 | --- | --- | --- |
-| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). Docs: enable external connections first. |
-| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). Install CLI locally first. |
-| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`); `redis-cli` is available in the service environment. |
-| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | Prefer this in-repo; never print the URL/password. |
+| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). |
+| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). |
+| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`). |
+| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | **唯一** in-repo 连接方式；never print the URL/password. |
 
 Dashboard / CLI (do not commit the pasted command; it contains secrets):
 
 ```bash
 # After enabling external access, Dashboard → Key Value → External Access
 # shows a copy-pasteable redis-cli line (includes --tls).
-# Then, examples (Redis protocol):
 PING
 DBSIZE
 GET translate:v4:auto_scan:last_at
@@ -1337,11 +1319,11 @@ Same-region service Shell (Internal URL, usually no TLS):
 
 ```bash
 # On Ciwi Translate Test / Worker Test Shell (same region as KV):
-redis-cli -u "$RENDER_KV"   # or the Internal connectionString
+redis-cli -u "$RENDER_KV"
 # then: PING / DBSIZE / GET …
 ```
 
-Node (local / agent; reads `.env.test`, never echo secrets):
+Node（本地 / Agent；读 `.env.test` 的 `RENDER_KV`，不 echo 密钥）:
 
 ```ps1
 $line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KV=' })

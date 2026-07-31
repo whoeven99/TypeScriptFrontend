@@ -7,15 +7,15 @@ import { reportClientLog } from "~/utils/clientLog";
 import { createTranslateV4Tasks } from "~/lib/createTranslateV4Tasks";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { DEFAULT_AI_MODEL } from "~/routes/app.translate-v4/constants";
-import type { OnboardingSummary } from "../types";
-import { PreparingStep } from "./PreparingStep";
+import type {
+  OnboardingFastCoverageSnapshot,
+  OnboardingSummary,
+} from "../types";
+import { PreparingStep, type PreparingPhase } from "./PreparingStep";
 import { RecommendationStep } from "./RecommendationStep";
 import { ActionFooter, type PrimaryCtaKind } from "./ActionFooter";
 
 type Step = "preparing" | "recommendation";
-
-/** Preparing 页最短停留（方案 8.1：1.5~2.5s 的仪式感，不拖慢开始）。 */
-const PREPARING_MIN_MS = 2200;
 
 function resolvePrimaryCta(summary: OnboardingSummary): PrimaryCtaKind {
   const hasTargets = summary.locales.suggestedTargets.length > 0;
@@ -24,7 +24,6 @@ function resolvePrimaryCta(summary: OnboardingSummary): PrimaryCtaKind {
     summary.estimate?.needsMoreCredits ??
     summary.bootstrap.remainingCredits <= 0;
   if (!needsMore) return "create";
-  // 有试用资格（从未激活过订阅）→ 开启试用；否则升级订阅。
   return summary.bootstrap.isNew === true ? "trial" : "upgrade";
 }
 
@@ -33,10 +32,17 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
   const navigate = useNavigate();
   const fetcher = useFetcher();
   const [step, setStep] = useState<Step>("preparing");
+  const [phase, setPhase] = useState<PreparingPhase>("boot");
   const [creating, setCreating] = useState(false);
+  const [fastCoverage, setFastCoverage] =
+    useState<OnboardingFastCoverageSnapshot | null>(null);
+  const [coverageDone, setCoverageDone] = useState(0);
+  const [activeLabel, setActiveLabel] = useState<string | null>(null);
   const viewedRef = useRef(false);
+  const prepareStartedRef = useRef(false);
 
   const primaryCta = useMemo(() => resolvePrimaryCta(summary), [summary]);
+  const plan = summary.fastCoveragePlan;
 
   const track = useCallback(
     (event: string, context?: Record<string, unknown>) => {
@@ -56,26 +62,100 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
     [summary.shop],
   );
 
-  // onboarding_viewed（仅一次）
   useEffect(() => {
     if (viewedRef.current) return;
     viewedRef.current = true;
     track("onboarding_viewed", { primaryCta });
   }, [track, primaryCta]);
 
-  // Preparing → Recommendation 自动推进
-  useEffect(() => {
-    if (step !== "preparing") return;
-    const timer = window.setTimeout(() => {
+  const goRecommendation = useCallback(
+    (snapshot: OnboardingFastCoverageSnapshot | null) => {
+      setPhase("done");
       setStep("recommendation");
-      track("onboarding_preparing_completed");
+      track("onboarding_preparing_completed", {
+        fastCoverageComplete: snapshot?.complete ?? false,
+        fastCoveragePercent: snapshot?.percent ?? null,
+        locale: snapshot?.locale ?? plan?.locale ?? null,
+      });
       track("onboarding_recommendation_viewed", {
         suggestedTargets: summary.locales.suggestedTargets,
         primaryCta,
       });
-    }, PREPARING_MIN_MS);
-    return () => window.clearTimeout(timer);
-  }, [step, track, summary.locales.suggestedTargets, primaryCta]);
+    },
+    [track, plan?.locale, summary.locales.suggestedTargets, primaryCta],
+  );
+
+  // Preparing：loader 数据就绪 → 快扫 1 语 × 5 模块（真进度）→ 推荐页
+  useEffect(() => {
+    if (step !== "preparing" || prepareStartedRef.current) return;
+    prepareStartedRef.current = true;
+
+    let cancelled = false;
+
+    void (async () => {
+      setPhase("locales");
+      // 让首屏勾选有一帧可见
+      await new Promise((r) => window.setTimeout(r, 280));
+      if (cancelled) return;
+
+      if (!plan || plan.labels.length === 0) {
+        setPhase("recommendation");
+        await new Promise((r) => window.setTimeout(r, 200));
+        if (!cancelled) goRecommendation(null);
+        return;
+      }
+
+      setPhase("coverage");
+      const doneLabels: Array<{
+        label: string;
+        translated: number;
+        total: number;
+      }> = [];
+      let latest: OnboardingFastCoverageSnapshot | null = null;
+
+      for (const label of plan.labels) {
+        if (cancelled) return;
+        setActiveLabel(label);
+        try {
+          const res = await fetch("/api/onboarding/fast-coverage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              locale: plan.locale,
+              localeLabel: plan.localeLabel,
+              label,
+              doneLabels,
+            }),
+          });
+          const data = (await res.json().catch(() => null)) as {
+            ok?: boolean;
+            justDone?: { label: string; translated: number; total: number };
+            snapshot?: OnboardingFastCoverageSnapshot;
+          } | null;
+          if (data?.ok && data.justDone) {
+            doneLabels.push(data.justDone);
+            if (data.snapshot) {
+              latest = data.snapshot;
+              setFastCoverage(data.snapshot);
+            }
+          }
+        } catch (err) {
+          console.warn("[onboarding] fast-coverage label failed:", label, err);
+        }
+        setCoverageDone(doneLabels.length);
+      }
+
+      if (cancelled) return;
+      setActiveLabel(null);
+      setPhase("recommendation");
+      await new Promise((r) => window.setTimeout(r, 200));
+      if (!cancelled) goRecommendation(latest);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, plan, goRecommendation]);
 
   const postIntent = useCallback(
     (intent: "skip" | "complete" | "trial") => {
@@ -169,16 +249,31 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
       default:
         return;
     }
-  }, [primaryCta, handleCreateTask, handleTrialOrUpgrade, handleConfigureLanguages]);
+  }, [
+    primaryCta,
+    handleCreateTask,
+    handleTrialOrUpgrade,
+    handleConfigureLanguages,
+  ]);
 
   return (
     <Page narrowWidth title={t("onboarding.pageTitle")}>
       <BlockStack gap="500">
         {step === "preparing" ? (
-          <PreparingStep summary={summary} />
+          <PreparingStep
+            summary={summary}
+            phase={phase}
+            coverageDone={coverageDone}
+            coverageTotal={plan?.labels.length ?? 0}
+            activeLabel={activeLabel}
+            coverageLocaleLabel={plan?.localeLabel ?? null}
+          />
         ) : (
           <>
-            <RecommendationStep summary={summary} />
+            <RecommendationStep
+              summary={summary}
+              fastCoverage={fastCoverage}
+            />
             <ActionFooter
               primaryCta={primaryCta}
               creating={creating}

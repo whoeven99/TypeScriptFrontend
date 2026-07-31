@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Card,
   BlockStack,
@@ -12,29 +11,62 @@ import { CheckIcon } from "@shopify/polaris-icons";
 import { useTranslation } from "react-i18next";
 import type { OnboardingSummary } from "../types";
 
-/** Preparing 页进度项（方案 8.1 建议展示项）。 */
-const PROGRESS_ITEM_KEYS = [
-  "onboarding.preparing.step.structure",
-  "onboarding.preparing.step.data",
-  "onboarding.preparing.step.market",
-  "onboarding.preparing.step.coverage",
-  "onboarding.preparing.step.recommendation",
-] as const;
+export type PreparingPhase =
+  | "boot"
+  | "locales"
+  | "coverage"
+  | "recommendation"
+  | "done";
 
-export function PreparingStep({ summary }: { summary: OnboardingSummary }) {
+const PHASE_ORDER: PreparingPhase[] = [
+  "boot",
+  "locales",
+  "coverage",
+  "recommendation",
+  "done",
+];
+
+/** 每行在 phase 达到该下标时勾选完成（coverage 行在进入 recommendation 后才勾）。 */
+const PHASE_ROWS: Array<{ key: string; doneAt: PreparingPhase }> = [
+  { key: "onboarding.preparing.step.structure", doneAt: "locales" },
+  { key: "onboarding.preparing.step.data", doneAt: "locales" },
+  { key: "onboarding.preparing.step.market", doneAt: "coverage" },
+  { key: "onboarding.preparing.step.coverage", doneAt: "recommendation" },
+  { key: "onboarding.preparing.step.recommendation", doneAt: "done" },
+];
+
+function phaseReached(current: PreparingPhase, target: PreparingPhase): boolean {
+  return PHASE_ORDER.indexOf(current) >= PHASE_ORDER.indexOf(target);
+}
+
+export function PreparingStep({
+  summary,
+  phase,
+  coverageDone,
+  coverageTotal,
+  activeLabel,
+  coverageLocaleLabel,
+}: {
+  summary: OnboardingSummary;
+  phase: PreparingPhase;
+  coverageDone: number;
+  coverageTotal: number;
+  activeLabel: string | null;
+  coverageLocaleLabel: string | null;
+}) {
   const { t } = useTranslation();
-  const [doneCount, setDoneCount] = useState(0);
 
-  // 逐项点亮，绑定“正在准备”的过程感（约 2s 内走完）。
-  useEffect(() => {
-    if (doneCount >= PROGRESS_ITEM_KEYS.length) return;
-    const timer = window.setTimeout(() => {
-      setDoneCount((c) => Math.min(PROGRESS_ITEM_KEYS.length, c + 1));
-    }, 380);
-    return () => window.clearTimeout(timer);
-  }, [doneCount]);
-
-  const progress = Math.round((doneCount / PROGRESS_ITEM_KEYS.length) * 100);
+  const doneCount = PHASE_ROWS.filter((row) =>
+    phaseReached(phase, row.doneAt),
+  ).length;
+  let progress = Math.round((doneCount / PHASE_ROWS.length) * 100);
+  if (phase === "coverage" && coverageTotal > 0) {
+    progress = Math.min(
+      90,
+      60 + Math.round((coverageDone / coverageTotal) * 30),
+    );
+  }
+  if (phase === "done") progress = 100;
 
   return (
     <Card>
@@ -51,10 +83,13 @@ export function PreparingStep({ summary }: { summary: OnboardingSummary }) {
         <ProgressBar progress={progress} size="small" tone="primary" />
 
         <BlockStack gap="200">
-          {PROGRESS_ITEM_KEYS.map((key, index) => {
-            const done = index < doneCount;
+          {PHASE_ROWS.map((row) => {
+            const done = phaseReached(phase, row.doneAt);
+            const isCoverageRow =
+              row.key === "onboarding.preparing.step.coverage";
+            const active = phase === "coverage" && isCoverageRow;
             return (
-              <InlineStack key={key} gap="200" blockAlign="center">
+              <InlineStack key={row.key} gap="200" blockAlign="center">
                 <Box minWidth="20px">
                   {done ? (
                     <Icon source={CheckIcon} tone="success" />
@@ -64,9 +99,25 @@ export function PreparingStep({ summary }: { summary: OnboardingSummary }) {
                     </Text>
                   )}
                 </Box>
-                <Text as="span" tone={done ? "base" : "subdued"}>
-                  {t(key)}
-                </Text>
+                <BlockStack gap="100">
+                  <Text as="span" tone={done || active ? "base" : "subdued"}>
+                    {t(row.key)}
+                  </Text>
+                  {active && coverageLocaleLabel ? (
+                    <Text as="span" tone="subdued" variant="bodySm">
+                      {t("onboarding.preparing.coverageProgress", {
+                        locale: coverageLocaleLabel,
+                        done: coverageDone,
+                        total: coverageTotal,
+                        module: activeLabel
+                          ? t(`onboarding.fastModule.${activeLabel}`, {
+                              defaultValue: activeLabel,
+                            })
+                          : "…",
+                      })}
+                    </Text>
+                  ) : null}
+                </BlockStack>
               </InlineStack>
             );
           })}

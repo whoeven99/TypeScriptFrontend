@@ -25,6 +25,10 @@ import type {
   OnboardingSummary,
   SerializedOnboardingState,
 } from "~/routes/app.onboarding/types";
+import {
+  ONBOARDING_FAST_COVERAGE_LABELS,
+  pickOnboardingFastCoverageLocale,
+} from "~/server/onboarding/fastCoverage.server";
 
 export type {
   OnboardingLocaleOption,
@@ -399,12 +403,25 @@ export async function buildOnboardingSummary(args: {
     console.error("[onboarding] estimate failed:", err);
   }
 
+  const picked = pickOnboardingFastCoverageLocale({
+    suggestedTargets,
+    availableTargets,
+  });
+  const fastCoveragePlan = picked
+    ? {
+        locale: picked.locale,
+        localeLabel: picked.localeLabel,
+        labels: [...ONBOARDING_FAST_COVERAGE_LABELS],
+      }
+    : null;
+
   return {
     shop,
     onboardingState: args.state ?? null,
     bootstrap,
     locales: { source, availableTargets, suggestedTargets },
     coverage,
+    fastCoveragePlan,
     recommendation,
     estimate,
   };

@@ -14,6 +14,7 @@ import {
   markOnboardingTrialStarted,
   saveOnboardingRecommendation,
 } from "~/server/onboarding/onboarding.server";
+import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { OnboardingFlow } from "./components/OnboardingFlow";
 
 /**
@@ -24,6 +25,11 @@ import { OnboardingFlow } from "./components/OnboardingFlow";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+
+  // 再次确保 install 扫描已入队（幂等；直接打开 /app/onboarding 时也能触发）。
+  void enqueueShopScan({ shop, trigger: "install" }).catch((err) => {
+    console.error("[onboarding] install scan enqueue failed:", err);
+  });
 
   // 进入即把 not_started 推进为 preparing（幂等），记录首次进入时间。
   const state =

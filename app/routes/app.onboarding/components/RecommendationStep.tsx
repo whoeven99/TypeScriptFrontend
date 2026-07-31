@@ -10,7 +10,10 @@ import {
   ProgressBar,
 } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
-import type { OnboardingSummary } from "../types";
+import type {
+  OnboardingFastCoverageSnapshot,
+  OnboardingSummary,
+} from "../types";
 import { CREATE_TASK_MODULE_LABELS } from "~/routes/app.translate-v4/constants";
 import { formatEstimateCredits } from "~/routes/app.translate-v4/useCreateTaskEstimate";
 
@@ -68,49 +71,108 @@ function RecommendedLanguages({ summary }: { summary: OnboardingSummary }) {
   );
 }
 
-/** B. 店铺翻译健康度 */
-function TranslationHealth({ summary }: { summary: OnboardingSummary }) {
+/** B. 店铺翻译健康度 —— 优先展示快扫结果，否则 loader 缓存 / 计算中 */
+function TranslationHealth({
+  summary,
+  fastCoverage,
+}: {
+  summary: OnboardingSummary;
+  fastCoverage: OnboardingFastCoverageSnapshot | null;
+}) {
   const { t } = useTranslation();
-  const coverage = summary.coverage;
+  const cached = summary.coverage;
 
-  if (!coverage || coverage.overallPercent == null) {
+  if (fastCoverage && (fastCoverage.complete || fastCoverage.total > 0)) {
+    const percent = fastCoverage.percent ?? 0;
     return (
       <LabeledCard title={t("onboarding.health.title")}>
-        <Text as="p" tone="subdued">
-          {t("onboarding.health.computing")}
-        </Text>
+        <BlockStack gap="300">
+          <InlineStack gap="200" blockAlign="center" wrap>
+            <Text as="span" variant="headingLg">
+              {percent}%
+            </Text>
+            <Text as="span" tone="subdued">
+              {t("onboarding.health.fastLocale", {
+                locale: fastCoverage.localeLabel,
+              })}
+            </Text>
+            <Badge tone="info">{t("onboarding.health.partialBadge")}</Badge>
+          </InlineStack>
+          <ProgressBar progress={percent} size="small" tone="primary" />
+          <Text as="p" tone="subdued" variant="bodySm">
+            {t("onboarding.health.fastHint", {
+              done: fastCoverage.doneCount,
+              total: fastCoverage.totalCount,
+              translated: fastCoverage.translated,
+              items: fastCoverage.total,
+            })}
+          </Text>
+          <InlineStack gap="200" wrap>
+            {fastCoverage.labels.map((row) => {
+              const pct =
+                row.total > 0
+                  ? Math.min(100, Math.round((row.translated / row.total) * 100))
+                  : null;
+              return (
+                <Badge key={row.label} tone={pct === 100 ? "success" : "attention"}>
+                  {`${t(`onboarding.fastModule.${row.label}`, {
+                    defaultValue: row.label,
+                  })}${pct == null ? "" : ` ${pct}%`}`}
+                </Badge>
+              );
+            })}
+          </InlineStack>
+          <Text as="p" tone="subdued" variant="bodySm">
+            {t("onboarding.health.fullScanPending")}
+          </Text>
+        </BlockStack>
       </LabeledCard>
     );
   }
 
-  const percent = coverage.overallPercent;
+  if (cached?.overallPercent != null) {
+    const percent = cached.overallPercent;
+    return (
+      <LabeledCard title={t("onboarding.health.title")}>
+        <BlockStack gap="300">
+          <InlineStack gap="200" blockAlign="center">
+            <Text as="span" variant="headingLg">
+              {percent}%
+            </Text>
+            <Text as="span" tone="subdued">
+              {t("onboarding.health.overall")}
+            </Text>
+          </InlineStack>
+          <ProgressBar progress={percent} size="small" tone="primary" />
+          <Text as="p">{t("onboarding.health.partial")}</Text>
+          {cached.topGaps.length > 0 ? (
+            <Box>
+              <Text as="p" tone="subdued" variant="bodySm">
+                {t("onboarding.health.topGaps")}
+              </Text>
+              <InlineStack gap="200" wrap>
+                {cached.topGaps.map((gap) => (
+                  <Badge key={gap} tone="attention">
+                    {gap}
+                  </Badge>
+                ))}
+              </InlineStack>
+            </Box>
+          ) : null}
+        </BlockStack>
+      </LabeledCard>
+    );
+  }
+
   return (
     <LabeledCard title={t("onboarding.health.title")}>
-      <BlockStack gap="300">
-        <InlineStack gap="200" blockAlign="center">
-          <Text as="span" variant="headingLg">
-            {percent}%
-          </Text>
-          <Text as="span" tone="subdued">
-            {t("onboarding.health.overall")}
-          </Text>
-        </InlineStack>
-        <ProgressBar progress={percent} size="small" tone="primary" />
-        <Text as="p">{t("onboarding.health.partial")}</Text>
-        {coverage.topGaps.length > 0 ? (
-          <Box>
-            <Text as="p" tone="subdued" variant="bodySm">
-              {t("onboarding.health.topGaps")}
-            </Text>
-            <InlineStack gap="200" wrap>
-              {coverage.topGaps.map((gap) => (
-                <Badge key={gap} tone="attention">
-                  {gap}
-                </Badge>
-              ))}
-            </InlineStack>
-          </Box>
-        ) : null}
+      <BlockStack gap="200">
+        <Text as="p" tone="subdued">
+          {t("onboarding.health.computing")}
+        </Text>
+        <Text as="p" tone="subdued" variant="bodySm">
+          {t("onboarding.health.fullScanPending")}
+        </Text>
       </BlockStack>
     </LabeledCard>
   );
@@ -121,7 +183,12 @@ function EstimatedCost({ summary }: { summary: OnboardingSummary }) {
   const { t } = useTranslation();
   const estimate = summary.estimate;
   const moduleLabels = summary.recommendation.suggestedModuleKeys
-    .map((key) => CREATE_TASK_MODULE_LABELS[key as keyof typeof CREATE_TASK_MODULE_LABELS] ?? key)
+    .map(
+      (key) =>
+        CREATE_TASK_MODULE_LABELS[
+          key as keyof typeof CREATE_TASK_MODULE_LABELS
+        ] ?? key,
+    )
     .join(" · ");
 
   return (
@@ -172,7 +239,13 @@ function EstimatedCost({ summary }: { summary: OnboardingSummary }) {
   );
 }
 
-export function RecommendationStep({ summary }: { summary: OnboardingSummary }) {
+export function RecommendationStep({
+  summary,
+  fastCoverage,
+}: {
+  summary: OnboardingSummary;
+  fastCoverage: OnboardingFastCoverageSnapshot | null;
+}) {
   const { t } = useTranslation();
   return (
     <BlockStack gap="400">
@@ -185,7 +258,7 @@ export function RecommendationStep({ summary }: { summary: OnboardingSummary }) 
         </Text>
       </BlockStack>
       <RecommendedLanguages summary={summary} />
-      <TranslationHealth summary={summary} />
+      <TranslationHealth summary={summary} fastCoverage={fastCoverage} />
       <EstimatedCost summary={summary} />
     </BlockStack>
   );
