@@ -202,6 +202,8 @@ and embedded `/app` redirect/landing behavior.
 - `/app/glossary`: `app/routes/app.glossary/route.tsx`.
 - `/app/pricing`: `app/routes/app.pricing/route.tsx`.
 - `/app/shop-profile`: `app/routes/app.shop-profile/route.tsx`; nav is hidden in production.
+- `/app/onboarding`: `app/routes/app.onboarding/route.tsx`; 首次翻译新手引导（无导航入口，
+由 `/app` 条件重定向进入）。
 - Treat an `app/routes/app.*` directory without a route file as inactive until a
 real `route.tsx` or route module is added.
 
@@ -748,6 +750,53 @@ throttle status.
 
 
 
+### Onboarding (First-time Translation Guide)
+
+首次安装用户的前置引导层：把 shop scan / locales / coverage / estimate / trial /
+create-task 编排成一条「店铺理解 → 推荐 → 试用/建首个任务」路径。全部数据复用现有
+能力，任一数据源失败都降级，不阻塞继续；可跳过，跳过/完成后不再打断。
+
+Core files:
+
+- Route (loader 聚合 + action 状态流转): `app/routes/app.onboarding/route.tsx`。
+  loader 用方案 A 一次性返回聚合 `OnboardingSummary`（不在前端并发拼接口）。
+  action 只写状态并返回 json（skip / complete / trial），客户端负责跳转，避免嵌入式
+  服务端重定向问题。
+- UI: `app/routes/app.onboarding/components/*`（`OnboardingFlow` 编排 Preparing→
+  Recommendation 两步 + `ActionFooter` CTA；`PreparingStep` / `RecommendationStep`）。
+- 展示层类型（无服务端依赖，可被组件 import）: `app/routes/app.onboarding/types.ts`。
+- Server 聚合与状态: `app/server/onboarding/onboarding.server.ts`
+  （`shouldRedirectToOnboarding` / `markOnboardingEntered` / `markOnboardingSkipped`
+  / `markOnboardingCompleted` / `markOnboardingTrialStarted` /
+  `saveOnboardingRecommendation` / `buildOnboardingSummary`）。
+- 入口重定向: `app/routes/app._index/route.tsx` 调 `shouldRedirectToOnboarding`
+  决定跳 `/app/onboarding` 还是默认 `/app/translate-v4`。
+- Model: `ShopOnboarding`（每店一行，独立于 `Account.isNew`）。
+
+Data reuse（不重复建设）:
+
+- bootstrap（plan/trial/credits/isNew）: `getTsfBootstrapData` + `getShopCreditQuota`。
+- locales: `loadShopLocalesForTranslation`（source + 非主语言 targets；推荐语言三层兜底：
+  已发布 → 全部已配置 → 无则空）。
+- coverage: `getCoverageSummaryFromCache`（只读缓存、非阻塞；未统计降级为 null 比例）。
+- estimate: `estimateCreateTaskCredits`（增量口径，展示上限；耗时为纯展示粗估）。
+- 建首个任务: 客户端 `createTranslateV4Tasks`（同翻译页），成功后 action `complete`。
+- 试用/升级: 记录 `startedTrialFromOnboarding` 后跳 `/app/pricing`（试用=带 trialDays 的
+  订阅确认流，无独立发放额度）。
+
+CTA 决策（`resolvePrimaryCta`）: 无目标语言→引导去 `/app/language`；额度足够→建任务；
+额度不足且 `isNew`（从未订阅，有试用资格）→开试用；否则→升级。
+
+Common edits:
+
+- 改入口判断: `shouldRedirectToOnboarding`（skipped/completed 或已有任意 v4 任务→不打扰）。
+- 改推荐模块: `ONBOARDING_RECOMMENDED_MODULE_KEYS`（v2 module key，对齐 moduleCatalog）。
+- 改文案: `onboarding.*` 键，`public/locales/{en,zh-CN}/translation.json`。
+- 埋点: `reportClientLog`（`onboarding_viewed` / `_recommendation_viewed` /
+  `_trial_clicked` / `_task_created` / `_skipped` / `_upgrade_clicked`）。
+
+
+
 ### Language, Glossary, Shop Profile, Support
 
 Language:
@@ -883,6 +932,8 @@ Current models:
 - `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
 units, source chars); written by Worker at job terminal states.
 - `SupportConversation`, `SupportMessage`: support chat.
+- `ShopOnboarding`: 首次翻译新手引导状态（status/skipped/completed/试用/建首任务来源、
+ 推荐语言与模块快照、积分与耗时预估、来源 scan id）；独立于 `Account.isNew`。
 - `UserPicture`: product/shop image translation metadata and translated image
 URLs used by admin pages and storefront App Proxy reads.
 
@@ -975,6 +1026,7 @@ For "合入PR然后发布测试环境", the script will:
 | Glossary                         | `app/routes/app.glossary/route.tsx`                   | `glossary.server.ts`, Worker `tsfDb.loadGlossaryRowsFromTsf` via `translationCoreRuntime.ts`            |
 | Shop profile / AI profile        | `app/routes/app.shop-profile/route.tsx`               | `server/shopScan/*`, `shopProfileContext.server.ts` / `shopProfilePrompt.server.ts`, worker shop scan   |
 | Support chat / notifications     | `app/components/SupportChatWidget.tsx`                | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers                                         |
+| First-time onboarding            | `app/routes/app.onboarding/route.tsx`                 | `app/server/onboarding/onboarding.server.ts`, `app/routes/app._index/route.tsx`, `ShopOnboarding`      |
 | Auto translate                   | `worker/src/services/autoTranslate.ts`                | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog                                               |
 | Scheduled shop scan              | `worker/src/services/scheduledShopScan.ts`            | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts`                                         |
 | Public storefront locale audit   | `scripts/storefront-locale-audit.mjs`                 | Cursor browser locale discovery; local tree under `scripts/tmp/storefront-audit/`                       |
@@ -996,6 +1048,12 @@ Package-backed root scripts:
 Operational root scripts:
 
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
+- `scripts/reset-onboarding.mjs`: 把「指定 shop」重置为可重新看到首次翻译新手引导的状态
+ （删 Turso `ShopOnboarding` + Cosmos 该店 v4 任务 + `TranslateV4JobUsage`；可选
+ `--billing` 连带清 `Account/AppSubscription/BillingLog/AccountPeriodUsage` 让 `isNew=true`）。
+ 默认 dry-run，`--write` 才落库；必须 `--shop=`；`--env=`（默认 `.env`）；Turso 目标按
+ `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据，
+ 只打印脱敏 host。示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
 - `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
