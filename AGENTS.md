@@ -1060,11 +1060,12 @@ Operational root scripts:
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
 - `scripts/reset-onboarding.mjs`: 把「指定 shop」重置为可重新看到首次翻译新手引导的状态
  （删 Turso `ShopOnboarding` + Cosmos 该店 v4 任务 + `TranslateV4JobUsage` +
- `ShopTargetLocale` + `ShopTranslationSettings` + Redis `tsf:items_count:{shop}:*`；可选
+ `ShopTargetLocale` + `ShopTranslationSettings` + Redis `tsf:items_count:{shop}:*` +
+ Cosmos `shop_scan_jobs`（避免 install 因历史 COMPLETED 被 `skipped_existing`）；可选
  `--billing` 连带清 `Account/AppSubscription/BillingLog/AccountPeriodUsage` 让 `isNew=true`）。
  默认 dry-run，`--write` 才落库；必须 `--shop=`；`--env=`（默认 `.env`）；Turso 目标按
  `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据；
- Redis **只连** `RENDER_KV` 做 SCAN/DEL；只打印脱敏 host。
+ Redis **只连** `RENDER_KV` 做 SCAN/DEL；不删 Blob `latest-scan.json`；只打印脱敏 host。
  示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.

@@ -8,14 +8,17 @@
  *   4) Turso  ShopTargetLocale         —— 删除该店全部语言行（覆盖率 + 自动翻译开关）
  *   5) Turso  ShopTranslationSettings  —— 删除该店翻译配置（源语言 / targets / 总开关）
  *   6) Redis  tsf:items_count:{shop}:* —— 删除覆盖率明细缓存（仅 RENDER_KV）
+ *   7) Cosmos shop_scan_jobs           —— 删除该店全部 shop scan（否则 install 因
+ *      hasActiveOrCompletedShopScan 命中历史 COMPLETED 被 skipped_existing，覆盖率不会重扫）
  *
  * 附加（--billing，更彻底，让 isNew=true / 恢复试用资格）：
- *   7) Turso  AccountPeriodUsage / BillingLog / AppSubscription / Account
+ *   8) Turso  AccountPeriodUsage / BillingLog / AppSubscription / Account
  *
  * 安全设计：
  *   - 默认 dry-run，只打印将删除的条数，不落库；加 --write 才真正执行。
  *   - 必须显式 --shop，且所有操作都 WHERE shop = <shop> / partitionKey=<shop>。
  *   - 不打印任何密钥；只打印脱敏 host。
+ *   - 不删 Blob `shop-profile/{shop}/latest-scan.json`（install 重扫会覆写计量段）。
  *
  * 用法：
  *   node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com               （dry-run，读 .env）
@@ -138,19 +141,26 @@ if (!tursoUrl || !tursoToken) {
 
 const turso = createClient({ url: tursoUrl, authToken: tursoToken });
 
-// ---------- Cosmos v4 jobs ----------
+// ---------- Cosmos（v4 jobs + shop_scan_jobs，同 endpoint/key/db）----------
 const cosmosEndpoint = (process.env.COSMOS_ENDPOINT_V4 || "").trim();
 const cosmosKey = (process.env.COSMOS_KEY_V4 || "").trim();
 const cosmosDbId = (process.env.COSMOS_TRANSLATION_DATABASE_ID_V4 || "translation").trim();
-const cosmosContainerId = (
+const cosmosJobsContainerId = (
   process.env.COSMOS_TRANSLATION_V4_JOBS_CONTAINER_V4 || "translation_v4_jobs"
 ).trim();
+const cosmosShopScanContainerId = (
+  process.env.COSMOS_SHOP_SCAN_CONTAINER || "shop_scan_jobs"
+).trim();
 
-let cosmosContainer = null;
+let cosmosJobsContainer = null;
+let cosmosShopScanContainer = null;
 if (cosmosEndpoint && cosmosKey) {
-  cosmosContainer = new CosmosClient({ endpoint: cosmosEndpoint, key: cosmosKey })
-    .database(cosmosDbId)
-    .container(cosmosContainerId);
+  const cosmosDb = new CosmosClient({
+    endpoint: cosmosEndpoint,
+    key: cosmosKey,
+  }).database(cosmosDbId);
+  cosmosJobsContainer = cosmosDb.container(cosmosJobsContainerId);
+  cosmosShopScanContainer = cosmosDb.container(cosmosShopScanContainerId);
 }
 
 // ---------- Redis（覆盖率明细：仅 RENDER_KV；不再连 REDIS_URL / REDIS_URL_V4）----------
@@ -177,9 +187,12 @@ console.log(
       tursoTarget: target,
       tursoKey: usedUrlKey,
       tursoHost: maskHost(tursoUrl),
-      cosmos: cosmosContainer
-        ? `${cosmosDbId}/${cosmosContainerId}`
-        : "(未配置 COSMOS_*_V4，跳过任务删除)",
+      cosmosJobs: cosmosJobsContainer
+        ? `${cosmosDbId}/${cosmosJobsContainerId}`
+        : "(未配置 COSMOS_*_V4，跳过 v4 任务删除)",
+      cosmosShopScan: cosmosShopScanContainer
+        ? `${cosmosDbId}/${cosmosShopScanContainerId}`
+        : "(未配置 COSMOS_*_V4，跳过 shop_scan 删除)",
       redis: redisTargets.length
         ? redisTargets.map((r) => redisLabel(r.url, r.key))
         : "(未配置 RENDER_KV，跳过 items_count)",
@@ -220,41 +233,59 @@ async function tursoDelete(table) {
   }
 }
 
-async function deleteCosmosJobs() {
-  if (!cosmosContainer) return;
-  let jobs = [];
+/** 按 shopName 分区删除 Cosmos 容器中的文档。 */
+async function deleteCosmosByShop(container, label) {
+  if (!container) {
+    console.log(`  [skip] 未配置 Cosmos，跳过 ${label}`);
+    return;
+  }
+  let docs = [];
   try {
-    const { resources } = await cosmosContainer.items
+    const { resources } = await container.items
       .query({
-        query: "SELECT c.id, c.status FROM c WHERE c.shopName = @shop",
+        query:
+          "SELECT c.id, c.status, c.trigger FROM c WHERE c.shopName = @shop",
         parameters: [{ name: "@shop", value: shop }],
       })
       .fetchAll();
-    jobs = resources;
+    docs = resources;
   } catch (err) {
-    console.error(`  [err] Cosmos 查询任务失败：${err?.message || err}`);
+    console.error(`  [err] Cosmos 查询 ${label} 失败：${err?.message || err}`);
     return;
   }
 
   if (!write) {
-    console.log(`  [dry] Cosmos v4 jobs: 将删除 ${jobs.length} 个任务`);
-    for (const j of jobs.slice(0, 10)) {
-      console.log(`        - ${j.id} (${j.status})`);
+    console.log(`  [dry] Cosmos ${label}: 将删除 ${docs.length} 个文档`);
+    for (const d of docs.slice(0, 10)) {
+      const extra = d.trigger ? ` trigger=${d.trigger}` : "";
+      console.log(`        - ${d.id} (${d.status}${extra})`);
     }
-    if (jobs.length > 10) console.log(`        …以及另外 ${jobs.length - 10} 个`);
+    if (docs.length > 10) {
+      console.log(`        …以及另外 ${docs.length - 10} 个`);
+    }
     return;
   }
 
   let done = 0;
-  for (const j of jobs) {
+  for (const d of docs) {
     try {
-      await cosmosContainer.item(j.id, shop).delete();
+      await container.item(d.id, shop).delete();
       done += 1;
     } catch (err) {
-      console.error(`  [err] 删除任务 ${j.id} 失败：${err?.message || err}`);
+      console.error(
+        `  [err] 删除 ${label} ${d.id} 失败：${err?.message || err}`,
+      );
     }
   }
-  console.log(`  [ok ] Cosmos v4 jobs: 已删除 ${done}/${jobs.length} 个任务`);
+  console.log(`  [ok ] Cosmos ${label}: 已删除 ${done}/${docs.length} 个文档`);
+}
+
+async function deleteCosmosJobs() {
+  await deleteCosmosByShop(cosmosJobsContainer, "v4 jobs");
+}
+
+async function deleteCosmosShopScans() {
+  await deleteCosmosByShop(cosmosShopScanContainer, "shop_scan_jobs");
 }
 
 /** SCAN + DEL `tsf:items_count:{shop}:*`，对每个已配置 Redis 端各跑一遍。 */
@@ -335,22 +366,27 @@ async function deleteRedisItemsCount() {
 }
 
 async function main() {
-  console.log("\n-- 步骤 1/5：重置 onboarding 状态 --");
+  console.log("\n-- 步骤 1/6：重置 onboarding 状态 --");
   await tursoDelete("ShopOnboarding");
 
-  console.log("\n-- 步骤 2/5：删除该店 v4 任务 --");
+  console.log("\n-- 步骤 2/6：删除该店 v4 任务 --");
   await deleteCosmosJobs();
   await tursoDelete("TranslateV4JobUsage");
 
-  console.log("\n-- 步骤 3/5：删除语言相关（ShopTargetLocale / ShopTranslationSettings）--");
+  console.log("\n-- 步骤 3/6：删除语言相关（ShopTargetLocale / ShopTranslationSettings）--");
   await tursoDelete("ShopTargetLocale");
   await tursoDelete("ShopTranslationSettings");
 
-  console.log("\n-- 步骤 4/5：删除 Redis 覆盖率缓存 items_count --");
+  console.log("\n-- 步骤 4/6：删除 Redis 覆盖率缓存 items_count --");
   await deleteRedisItemsCount();
 
+  console.log(
+    "\n-- 步骤 5/6：删除 Cosmos shop_scan_jobs（否则 install 扫描会被 skipped_existing）--",
+  );
+  await deleteCosmosShopScans();
+
   if (includeBilling) {
-    console.log("\n-- 步骤 5/5：清空账单（isNew=true / 恢复试用资格）--");
+    console.log("\n-- 步骤 6/6：清空账单（isNew=true / 恢复试用资格）--");
     // 子表 → 主表顺序删除
     await tursoDelete("AccountPeriodUsage");
     await tursoDelete("BillingLog");
@@ -358,14 +394,14 @@ async function main() {
     await tursoDelete("Account");
   } else {
     console.log(
-      "\n-- 步骤 5/5：跳过账单（未加 --billing）。若主 CTA 想显示「开试用」，请加 --billing --",
+      "\n-- 步骤 6/6：跳过账单（未加 --billing）。若主 CTA 想显示「开试用」，请加 --billing --",
     );
   }
 
   console.log(
     `\n===== 完成（${MODE}）=====` +
       (write
-        ? "\n下一步：在测试店重新打开 /app（或强制刷新），应重定向到 /app/onboarding。\n覆盖率应显示「正在计算」空状态（Shopify 侧语言本身不会被本脚本删除）。"
+        ? "\n下一步：在测试店重新打开 /app（或强制刷新），应重定向到 /app/onboarding。\ninstall shop scan 应能重新入队并后台重算全语言覆盖率（Shopify 侧语言本身不会被本脚本删除）。"
         : "\n这是 dry-run，未改动任何数据。确认无误后加 --write 执行。"),
   );
 }
