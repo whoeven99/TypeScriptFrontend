@@ -862,6 +862,94 @@ export async function findJobsNeedingEmail(limit = 20): Promise<TranslationV4Job
   }
 }
 
+/** 手动任务：taskSource 非 TsFrontend-Auto（含未定义的旧任务）。 */
+function manualEmailTaskSourceFilter(): string {
+  return "(NOT IS_DEFINED(c.taskSource) OR c.taskSource != @autoSource)";
+}
+
+/** 有待发邮件的手动翻译店（跨分区 DISTINCT shopName）。 */
+export async function findShopsWithPendingManualEmail(): Promise<string[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<string>({
+        query: `
+          SELECT DISTINCT VALUE c.shopName FROM c
+          WHERE ${manualEmailTaskSourceFilter()}
+            AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+            AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
+        `,
+        parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
+      })
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findShopsWithPendingManualEmail failed:", err);
+    return [];
+  }
+}
+
+/**
+ * 某店全部待发邮件的手动翻译任务。
+ * 发信前应用此查询聚合，避免同店多语言拆成多封邮件。
+ */
+export async function findManualJobsNeedingEmailForShop(
+  shopName: string,
+): Promise<TranslationV4Job[]> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<TranslationV4Job>(
+        {
+          query: `
+            SELECT * FROM c
+            WHERE ${manualEmailTaskSourceFilter()}
+              AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+              AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
+            ORDER BY c.updatedAt ASC
+          `,
+          parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findManualJobsNeedingEmailForShop failed:", err);
+    return [];
+  }
+}
+
+/** 检查某店是否仍有进行中的手动翻译任务（全部终态后再汇总发邮件）。 */
+export async function hasActiveManualJobsForShop(shopName: string): Promise<boolean> {
+  const activeStatuses: TranslationV4Status[] = [
+    "CREATED", "INIT_QUEUED", "INITIALIZING", "INIT_DONE",
+    "TRANSLATE_QUEUED", "TRANSLATING", "TRANSLATE_DONE",
+    "WRITEBACK_QUEUED", "WRITING_BACK", "VERIFY_QUEUED", "VERIFYING",
+  ];
+  try {
+    const { resources } = await getContainer()
+      .items.query<number>(
+        {
+          query: `
+            SELECT VALUE COUNT(1) FROM c
+            WHERE c.shopName = @shopName
+              AND ${manualEmailTaskSourceFilter()}
+              AND ARRAY_CONTAINS(@statuses, c.status)
+          `,
+          parameters: [
+            { name: "@shopName", value: shopName },
+            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+            { name: "@statuses", value: activeStatuses },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return (resources[0] ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** 有待发邮件的自动翻译店（跨分区 DISTINCT shopName）。 */
 export async function findShopsWithPendingAutoEmail(): Promise<string[]> {
   try {

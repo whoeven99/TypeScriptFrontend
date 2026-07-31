@@ -3,13 +3,12 @@
  * worker 进程独立运行，不能 import app/ 代码，因此此处直接调用腾讯云 SDK。
  *
  * 三个业务场景（对齐 Spring TencentEmailService）：
- *   - sendManualTranslationSuccessEmail  手动翻译成功（模板 137353）
+ *   - sendManualTranslationSuccessEmail  手动翻译成功（模板 210764，同店多语言合并）
  *   - sendAutoTranslationSuccessEmail    自动翻译成功（模板 140352）
  *   - sendTranslationPartialEmail        翻译部分完成/额度暂停（模板 159297）
  */
 
 import { ses } from "tencentcloud-sdk-nodejs-ses";
-import { getTsfRemainingForEmail } from "./tsfQuota.js";
 
 const LOG = "[workerEmail]";
 
@@ -29,7 +28,7 @@ function logDetail(phase: string, payload: Record<string, unknown>): void {
 }
 
 // ─── 模板 ID（对齐 Spring MailChimpConstants + Spark emailTemplates.server.ts）───
-const TEMPLATE_MANUAL_SUCCESS = 137353;
+const TEMPLATE_MANUAL_SUCCESS = 210764;
 const TEMPLATE_AUTO_SUCCESS = 140352;
 const TEMPLATE_PARTIAL = 159297;
 
@@ -76,12 +75,6 @@ function parseShopName(shopName: string): string {
 /** 数字格式化为千分位（对齐 Java NumberFormat.getNumberInstance(Locale.US)）。 */
 function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
-}
-
-/** 对齐 Java TencentEmailService.sendSuccessEmail：查不到额度时保留占位符。 */
-function formatRemainingCredits(remaining: number | null): string {
-  if (remaining == null) return "—";
-  return formatNumber(remaining < 0 ? 0 : remaining);
 }
 
 async function doSend(
@@ -192,41 +185,59 @@ export function hasPartialEmailProgress(job: TranslationJobSummary): boolean {
   return (job.translateDone ?? 0) > 0 || (job.completionPercent ?? 0) > 0;
 }
 
+function buildTranslationSuccessHtmlData(jobs: TranslationJobSummary[]): string {
+  return jobs
+    .filter((j) => j.usedTokens > 0)
+    .map(
+      (j) =>
+        `<div class="language-block">` +
+        `<h4>${j.target}</h4>` +
+        `<ul>` +
+        `<li><span>Credits Used:</span> ${formatNumber(j.usedTokens)} credits used</li>` +
+        `<li><span>Translation Time:</span> ${j.elapsedMinutes} minutes</li>` +
+        `</ul>` +
+        `</div>`,
+    )
+    .join("");
+}
+
 /**
- * 手动翻译成功邮件（模板 137353）。
- * 对齐 TencentEmailService.sendSuccessEmail。
+ * 手动翻译成功邮件（模板 210764）。
+ * 同店多语言合并为一封；模板变量 user + html_data（对齐自动翻译 140352 结构）。
  */
 export async function sendManualTranslationSuccessEmail(
   shopName: string,
   to: string,
   userName: string,
-  job: TranslationJobSummary,
+  jobs: TranslationJobSummary[],
 ): Promise<boolean> {
-  const shortName = parseShopName(shopName);
-  const remaining = await getTsfRemainingForEmail(shopName);
-  const remainingCredits = formatRemainingCredits(remaining);
   logDetail("send-manual-success-start", {
     shopName,
-    shortName,
     userName,
     to: maskEmail(to),
-    target: job.target,
-    usedTokens: job.usedTokens,
-    elapsedMinutes: job.elapsedMinutes,
-    remainingCredits,
-    remainingCreditsSource: remaining == null ? "unavailable" : "quota_query",
+    jobCount: jobs.length,
+    targets: jobs.map((j) => j.target),
+    usedTokens: jobs.map((j) => j.usedTokens),
     templateId: TEMPLATE_MANUAL_SUCCESS,
   });
+
+  const htmlParts = buildTranslationSuccessHtmlData(jobs);
+  if (!htmlParts) {
+    logDetail("send-manual-success-skipped", {
+      reason: "all_used_tokens_zero",
+      shopName,
+      to: maskEmail(to),
+      jobCount: jobs.length,
+    });
+    return true;
+  }
+
   return doSend(
     TEMPLATE_MANUAL_SUCCESS,
     SUBJECT_MANUAL_SUCCESS,
     {
       user: userName,
-      shop_name: shortName,
-      language: job.target,
-      time: `${job.elapsedMinutes} minutes`,
-      credit_count: formatNumber(job.usedTokens),
-      remaining_credits: remainingCredits,
+      html_data: htmlParts,
     },
     to,
   );
@@ -256,20 +267,7 @@ export async function sendAutoTranslationSuccessEmail(
     templateId: TEMPLATE_AUTO_SUCCESS,
   });
 
-  const htmlParts = jobs
-    .filter((j) => j.usedTokens > 0)
-    .map(
-      (j) =>
-        `<div class="language-block">` +
-        `<h4>${j.target}</h4>` +
-        `<ul>` +
-        `<li><span>Credits Used:</span> ${formatNumber(j.usedTokens)} credits used</li>` +
-        `<li><span>Translation Time:</span> ${j.elapsedMinutes} minutes</li>` +
-        `</ul>` +
-        `</div>`,
-    )
-    .join("");
-
+  const htmlParts = buildTranslationSuccessHtmlData(jobs);
   if (!htmlParts) {
     logDetail("send-auto-success-skipped", {
       reason: "all_used_tokens_zero",
