@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { BlockStack, Checkbox, Select } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
@@ -232,14 +232,18 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.targetLanguages")} />
+        <SectionHeader
+          title={t("v4.createTask.targetLanguages")}
+          action={
+            <CheckboxInlineAction
+              label={t("Check all")}
+              selected={allTargetsSelected}
+              indeterminate={someTargetsSelected}
+              onToggle={toggleAllTargets}
+            />
+          }
+        />
         <div style={checkboxGridStyle}>
-          <CheckboxOptionCard
-            label={t("Check all")}
-            selected={allTargetsSelected}
-            indeterminate={someTargetsSelected}
-            onToggle={toggleAllTargets}
-          />
           {localeChips.map((locale) => {
             const selected = targets.includes(locale.value);
             return (
@@ -256,14 +260,18 @@ export function CreateTaskCard({
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.content")} />
+        <SectionHeader
+          title={t("v4.createTask.content")}
+          action={
+            <CheckboxInlineAction
+              label={t("Check all")}
+              selected={allModulesSelected}
+              indeterminate={someModulesSelected}
+              onToggle={toggleAllModules}
+            />
+          }
+        />
         <div style={checkboxGridStyle}>
-          <CheckboxOptionCard
-            label={t("Check all")}
-            selected={allModulesSelected}
-            indeterminate={someModulesSelected}
-            onToggle={toggleAllModules}
-          />
           {moduleChips.map((mod) => {
             const selected = modules.includes(mod.value);
             return (
@@ -477,14 +485,35 @@ const estimateInlineMutedStyle: CSSProperties = {
 
 function SectionHeader({
   title,
+  action,
 }: {
   title: string;
+  action?: ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+    <div
+      style={{
+        marginBottom: 12,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: v4Colors.text,
+          lineHeight: 1.35,
+          overflowWrap: "anywhere",
+          minWidth: 0,
+        }}
+      >
         {title}
       </div>
+      {action}
     </div>
   );
 }
@@ -544,6 +573,52 @@ function CheckboxOptionCard({
         ) : null}
         <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{label}</span>
       </span>
+    </label>
+  );
+}
+
+function CheckboxInlineAction({
+  label,
+  selected,
+  indeterminate = false,
+  onToggle,
+}: {
+  label: string;
+  selected: boolean;
+  indeterminate?: boolean;
+  onToggle: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: 500,
+        color: v4Colors.textMuted,
+        lineHeight: 1.35,
+        userSelect: "none",
+        flexShrink: 0,
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        style={checkboxInputStyle}
+      />
+      <span>{label}</span>
     </label>
   );
 }

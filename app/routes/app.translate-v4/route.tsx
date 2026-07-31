@@ -36,7 +36,7 @@ import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
-import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
+import { CreateTaskConfirmModal } from "./components/CreateTaskConfirmModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
@@ -220,9 +220,7 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [quotaGateMode, setQuotaGateMode] = useState<
-    "trial" | "pricing" | null
-  >(null);
+  const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
   const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>(() => {
     const state = location.state as
       | { spotlightTaskIds?: string[] }
@@ -478,8 +476,45 @@ export default function AppTranslateV4() {
     },
     [shop, refreshList, refreshQuota, t],
   );
+  const remainingCredits = normalizedQuota?.remaining ?? null;
 
-  const handleCreate = useCallback(async () => {
+  const normalizedPlanType = planType?.trim().toLowerCase() || "";
+  const hasPaidPlan =
+    normalizedPlanType !== "" && normalizedPlanType !== "free";
+  const createShouldGateByCredits = shouldBlockCreateTaskByCredits({
+    remainingCredits,
+    strictQuotaGate,
+    hasPaidPlan,
+    isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
+  });
+  const createQuotaGatePending = createShouldGateByCredits && isNew === null;
+  const createQuotaGateMode: "trial" | "pricing" | null =
+    createShouldGateByCredits && isNew !== null
+      ? isNew
+        ? "trial"
+        : "pricing"
+      : null;
+
+  const handleCreateRequest = useCallback(() => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    setCreateConfirmOpen(true);
+  }, [createQuotaGatePending, t]);
+
+  const handleCreateConfirm = useCallback(async () => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    if (createQuotaGateMode !== null) return;
+
+    setCreateConfirmOpen(false);
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
@@ -496,13 +531,6 @@ export default function AppTranslateV4() {
     });
 
     if (shouldGateByCredits) {
-      if (isNew === null) {
-        message.info(
-          t("Checking your trial eligibility. Please try again in a moment."),
-        );
-        return;
-      }
-      setQuotaGateMode(isNew ? "trial" : "pricing");
       return;
     }
 
@@ -602,14 +630,16 @@ export default function AppTranslateV4() {
     isCover,
     isHandle,
     targetOptions,
+      shop,
     refreshList,
     refreshQuota,
     plan,
     planType,
     normalizedQuota,
     strictQuotaGate,
-    isNew,
     t,
+    createQuotaGateMode,
+    createQuotaGatePending,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -677,7 +707,6 @@ export default function AppTranslateV4() {
     [jobs],
   );
 
-  const remainingCredits = normalizedQuota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -796,7 +825,7 @@ export default function AppTranslateV4() {
                 creating={creating}
                 createDisabled={normalizedQuota == null}
                 disabledMessage={createDisabledMessage}
-                onCreate={handleCreate}
+                onCreate={handleCreateRequest}
                 aiModel={aiModel}
                 onAiModelChange={setAiModel}
                 isCover={isCover}
@@ -828,10 +857,19 @@ export default function AppTranslateV4() {
         </div>
       </Profiler>
 
-      <CreateTaskQuotaGateModal
-        open={quotaGateMode !== null}
-        mode={quotaGateMode ?? "pricing"}
-        onClose={() => setQuotaGateMode(null)}
+      <CreateTaskConfirmModal
+        open={createConfirmOpen}
+        creating={creating}
+        targetOptions={targetOptions}
+        targets={targets}
+        modules={moduleKeys}
+        aiModel={aiModel}
+        isCover={isCover}
+        isHandle={isHandle}
+        estimate={taskEstimate}
+        quotaGateMode={createQuotaGateMode}
+        onClose={() => setCreateConfirmOpen(false)}
+        onConfirmCreate={handleCreateConfirm}
       />
       {showPaymentModal ? (
         <Suspense fallback={null}>
