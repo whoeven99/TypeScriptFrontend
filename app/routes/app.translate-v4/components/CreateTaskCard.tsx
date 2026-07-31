@@ -57,7 +57,7 @@ export function CreateTaskCard({
   onIsCoverChange,
   isHandle,
   onIsHandleChange,
-  advancedDefaultOpen = false,
+  advancedDefaultOpen = true,
   submitPlacement = "header",
   createDisabled = false,
   disabledMessage = null,
@@ -131,11 +131,7 @@ export function CreateTaskCard({
         paddingInline: 24,
       }}
     >
-      {creating
-        ? t("v4.createTask.creating")
-        : targets.length > 1
-          ? t("v4.createTask.createMultiple", { count: targets.length })
-          : t("v4.createTask.createOne")}
+      {creating ? t("v4.createTask.creating") : "Translate Now"}
     </Button>
   );
 
@@ -221,30 +217,17 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={checkboxGridStyle}>
           {localeChips.map((locale) => {
             const selected = targets.includes(locale.value);
             return (
-              <button
+              <CheckboxOptionCard
                 key={locale.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => toggleTarget(locale.value)}
-                style={moduleChipStyle(selected)}
-              >
-                <span
-                  style={{
-                    opacity: selected ? 0.85 : 0.7,
-                    marginRight: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {locale.regionCode}
-                </span>
-                {locale.label}
-              </button>
+                label={locale.label}
+                selected={selected}
+                onToggle={() => toggleTarget(locale.value)}
+                prefix={locale.regionCode}
+              />
             );
           })}
         </div>
@@ -252,19 +235,16 @@ export function CreateTaskCard({
 
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.content")} />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={checkboxGridStyle}>
           {moduleChips.map((mod) => {
             const selected = modules.includes(mod.value);
             return (
-              <button
+              <CheckboxOptionCard
                 key={mod.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => toggleModule(mod.value)}
-                style={moduleChipStyle(selected)}
-              >
-                {mod.label}
-              </button>
+                label={mod.label}
+                selected={selected}
+                onToggle={() => toggleModule(mod.value)}
+              />
             );
           })}
         </div>
@@ -489,24 +469,77 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-/** 内联多选 chip：选中 primary-soft，未选中中性灰；语言/模块共用。 */
-function moduleChipStyle(selected: boolean): CSSProperties {
+function CheckboxOptionCard({
+  label,
+  selected,
+  onToggle,
+  prefix,
+}: {
+  label: string;
+  selected: boolean;
+  onToggle: () => void;
+  prefix?: string;
+}) {
+  return (
+    <label style={checkboxCardStyle(selected)}>
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        style={checkboxInputStyle}
+      />
+      <span style={{ minWidth: 0, display: "inline-flex", alignItems: "center", gap: 6 }}>
+        {prefix ? (
+          <span
+            style={{
+              opacity: selected ? 0.9 : 0.7,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+              flexShrink: 0,
+            }}
+          >
+            {prefix}
+          </span>
+        ) : null}
+        <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{label}</span>
+      </span>
+    </label>
+  );
+}
+
+const checkboxGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 10,
+};
+
+function checkboxCardStyle(selected: boolean): CSSProperties {
   return {
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px solid transparent",
-    background: selected ? v4Colors.primarySoft : v4Colors.cardSubdued,
-    color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+    gap: 10,
+    minHeight: 44,
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: `1px solid ${selected ? v4Colors.primary : v4Colors.cardBorder}`,
+    background: selected ? v4Colors.primarySoft : v4Colors.cardBg,
+    color: selected ? v4Colors.text : v4Colors.textMuted,
     fontSize: 13,
     fontWeight: 600,
     lineHeight: 1.35,
-    whiteSpace: "normal",
-    textAlign: "left",
-    overflowWrap: "anywhere",
     cursor: "pointer",
-    transition: "background 0.15s, color 0.15s",
+    transition: "background 0.15s, color 0.15s, border-color 0.15s",
     fontFamily: "inherit",
+    userSelect: "none",
   };
 }
+
+const checkboxInputStyle: CSSProperties = {
+  margin: 0,
+  width: 16,
+  height: 16,
+  flexShrink: 0,
+  accentColor: v4Colors.primary,
+};
