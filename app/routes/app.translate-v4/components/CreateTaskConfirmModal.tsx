@@ -108,6 +108,18 @@ export function CreateTaskConfirmModal({
     isCover ? t("v4.createTask.overwriteExisting") : null,
     isHandle ? t("v4.createTask.translateHandle") : null,
   ].filter(Boolean) as string[];
+  const targetSummary = summarizeCompactLine(
+    selectedTargets.map((item) => `${item.regionCode} ${item.label}`),
+    t,
+  );
+  const moduleSummary = summarizeCompactLine(
+    selectedModules.map((item) => item.label),
+    t,
+  );
+  const optionSummary =
+    optionLabels.length > 0
+      ? summarizeCompactLine(optionLabels, t)
+      : t("v4.createTask.confirmDefaultOptions");
 
   const estimatedCreditsLabel =
     estimate?.estimatedCredits != null
@@ -215,28 +227,25 @@ export function CreateTaskConfirmModal({
 
         <div style={bodyStyle}>
           <SummaryRow title={t("v4.createTask.targetLanguages")}>
-            <PlainList
-              items={selectedTargets.map((item) => `${item.regionCode} ${item.label}`)}
-              columns={2}
-            />
+            <div style={compactSummaryStyle}>{targetSummary}</div>
           </SummaryRow>
 
           <SummaryRow title={t("v4.createTask.content")}>
-            <PlainList items={selectedModules.map((item) => item.label)} columns={2} />
+            <div style={compactSummaryStyle}>{moduleSummary}</div>
           </SummaryRow>
 
           <SummaryRow title={t("v4.createTask.aiModel")}>
-            <div style={valueTextStyle}>{aiModelLabel}</div>
+            <div style={compactSummaryStyle}>{aiModelLabel}</div>
           </SummaryRow>
 
           <SummaryRow title={t("v4.createTask.translationOptions")}>
-            {optionLabels.length > 0 ? (
-              <PlainList items={optionLabels} />
-            ) : (
-              <div style={mutedTextStyle}>
-                {t("v4.createTask.confirmDefaultOptions")}
-              </div>
-            )}
+            <div
+              style={
+                optionLabels.length > 0 ? compactSummaryStyle : compactSummaryMutedStyle
+              }
+            >
+              {optionSummary}
+            </div>
           </SummaryRow>
 
           <SummaryRow
@@ -384,38 +393,35 @@ function SummaryRow({
   );
 }
 
-function PlainList({
-  items,
-  columns = 1,
-}: {
-  items: string[];
-  columns?: 1 | 2;
-}) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          columns === 2 ? "repeat(auto-fit, minmax(180px, 1fr))" : "minmax(0, 1fr)",
-        gap: "8px 18px",
-      }}
-    >
-      {items.map((item) => (
-        <div key={item} style={listItemStyle}>
-          <span style={listBulletStyle} aria-hidden>
-            ✓
-          </span>
-          <span>{item}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function formatCreditsFull(value: number): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function summarizeCompactLine(
+  items: string[],
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  if (items.length === 0) {
+    return t("v4.createTask.confirmCompactListEmpty");
+  }
+
+  const visibleItems = items.slice(0, 3).join(", ");
+  const hiddenCount = Math.max(items.length - 3, 0);
+
+  if (hiddenCount > 0) {
+    return t("v4.createTask.confirmCompactListMore", {
+      count: items.length,
+      items: visibleItems,
+      more: hiddenCount,
+    });
+  }
+
+  return t("v4.createTask.confirmCompactList", {
+    count: items.length,
+    items: visibleItems,
+  });
 }
 
 const overlayStyle = {
@@ -454,7 +460,7 @@ const bodyStyle = {
   display: "flex",
   flexDirection: "column",
   gap: 0,
-  padding: "8px 32px 0",
+  padding: "4px 32px 0",
   overflowY: "auto",
 } as const;
 
@@ -506,7 +512,7 @@ const rowStyle = {
   gridTemplateColumns: "220px minmax(0, 1fr)",
   gap: 24,
   alignItems: "start",
-  padding: "18px 0",
+  padding: "14px 0",
   borderBottom: `1px solid ${v4Colors.divider}`,
 } as const;
 
@@ -600,31 +606,16 @@ const warningStyle = {
   lineHeight: "22px",
 } as const;
 
-const valueTextStyle = {
+const compactSummaryStyle = {
   color: v4Colors.text,
   fontSize: 15,
   lineHeight: "24px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 } as const;
 
-const mutedTextStyle = {
+const compactSummaryMutedStyle = {
+  ...compactSummaryStyle,
   color: v4Colors.textMuted,
-  fontSize: 15,
-  lineHeight: "24px",
-} as const;
-
-const listItemStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  color: v4Colors.text,
-  fontSize: 15,
-  lineHeight: "24px",
-  minWidth: 0,
-} as const;
-
-const listBulletStyle = {
-  color: v4Colors.primary,
-  fontSize: 13,
-  lineHeight: 1,
-  flexShrink: 0,
 } as const;
