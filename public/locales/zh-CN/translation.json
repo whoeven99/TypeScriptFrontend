@@ -266,7 +266,16 @@
     "current_plan": "当前方案",
     "try_free": "免费试用",
     "get_start": "开始使用",
-    "for_large_teams": "适用于大型团队"
+    "for_large_teams": "适用于大型团队",
+    "checkout_title": "完成订阅",
+    "checkout_desc": "将在新标签页打开 {{plan}} 套餐的 Shopify 安全结账页面，完成支付后本页面将自动刷新。",
+    "checkout_open": "打开结账页面",
+    "checkout_done": "我已支付完成",
+    "checkout_later": "稍后处理",
+    "checkout_success": "订阅成功，正在刷新…",
+    "checkout_blocked": "浏览器拦截了弹窗，请点击“打开结账页面”继续。",
+    "checkout_syncing": "支付已确认，正在同步套餐，本页面将自动刷新…",
+    "checkout_not_detected": "尚未检测到新订阅，请确认已完成支付后再试。"
   },
   "Collection": "收藏夹",
   "Article": "文章",

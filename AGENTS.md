@@ -1065,7 +1065,8 @@ Operational root scripts:
  `--billing` 连带清 `Account/AppSubscription/BillingLog/AccountPeriodUsage` 让 `isNew=true`）。
  默认 dry-run，`--write` 才落库；必须 `--shop=`；`--env=`（默认 `.env`）；Turso 目标按
  `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据；
- Redis **只连** `RENDER_KV` 做 SCAN/DEL；不删 Blob `latest-scan.json`；只打印脱敏 host。
+ Redis **只连** `RENDER_KV`，按该店 locale **精确 DEL**（不用 KEYS/SCAN）；不删 Blob
+ `latest-scan.json`；只打印脱敏 host。
  示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.

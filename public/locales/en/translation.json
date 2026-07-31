@@ -343,7 +343,16 @@
     "current_plan": "In Use",
     "try_free": "Try for free",
     "get_start": "Get started",
-    "for_large_teams": "For large teams"
+    "for_large_teams": "For large teams",
+    "checkout_title": "Complete your subscription",
+    "checkout_desc": "Shopify's secure checkout for the {{plan}} plan will open in a new tab. After you complete the payment there, this page will refresh automatically.",
+    "checkout_open": "Open checkout",
+    "checkout_done": "I've completed payment",
+    "checkout_later": "Later",
+    "checkout_success": "Subscription successful, refreshing…",
+    "checkout_blocked": "Your browser blocked the popup. Click “Open checkout” to continue.",
+    "checkout_syncing": "Payment confirmed. Syncing your plan, this page will refresh automatically…",
+    "checkout_not_detected": "We haven't detected the new subscription yet. Please make sure you completed the payment, then check again."
   },
   "Selector type configuration:": "Switcher Type",
   "Selector style configuration:": "Switcher Style",

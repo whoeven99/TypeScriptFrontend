@@ -7,7 +7,8 @@
  *   3) Turso  TranslateV4JobUsage      —— 删除该店任务用量快照
  *   4) Turso  ShopTargetLocale         —— 删除该店全部语言行（覆盖率 + 自动翻译开关）
  *   5) Turso  ShopTranslationSettings  —— 删除该店翻译配置（源语言 / targets / 总开关）
- *   6) Redis  tsf:items_count:{shop}:* —— 删除覆盖率明细缓存（仅 RENDER_KV）
+ *   6) Redis  tsf:items_count:{shop}:{locale} —— 按 Turso 该店 locale 列表直接 DEL
+ *      （仅 RENDER_KV；不用 KEYS/SCAN 全库扫）
  *   7) Cosmos shop_scan_jobs           —— 删除该店全部 shop scan（否则 install 因
  *      hasActiveOrCompletedShopScan 命中历史 COMPLETED 被 skipped_existing，覆盖率不会重扫）
  *
@@ -233,6 +234,47 @@ async function tursoDelete(table) {
   }
 }
 
+/** 在删表前收集该店 locale，供 Redis 按 key 精确 DEL（避免 SCAN 全库）。 */
+async function listLocalesForItemsCount() {
+  const locales = new Set();
+  try {
+    const rs = await turso.execute({
+      sql: `SELECT locale FROM "ShopTargetLocale" WHERE shop = ?`,
+      args: [shop],
+    });
+    for (const row of rs.rows ?? []) {
+      const loc = String(row.locale ?? "").trim();
+      if (loc) locales.add(loc);
+    }
+  } catch (err) {
+    console.warn(
+      `  [warn] 读取 ShopTargetLocale.locale 失败：${err?.message || err}`,
+    );
+  }
+  try {
+    const rs = await turso.execute({
+      sql: `SELECT targets FROM "ShopTranslationSettings" WHERE shop = ?`,
+      args: [shop],
+    });
+    const raw = rs.rows?.[0]?.targets;
+    if (raw != null) {
+      const parsed =
+        typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const loc = String(item ?? "").trim();
+          if (loc) locales.add(loc);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(
+      `  [warn] 读取 ShopTranslationSettings.targets 失败：${err?.message || err}`,
+    );
+  }
+  return [...locales].sort();
+}
+
 /** 按 shopName 分区删除 Cosmos 容器中的文档。 */
 async function deleteCosmosByShop(container, label) {
   if (!container) {
@@ -288,14 +330,34 @@ async function deleteCosmosShopScans() {
   await deleteCosmosByShop(cosmosShopScanContainer, "shop_scan_jobs");
 }
 
-/** SCAN + DEL `tsf:items_count:{shop}:*`，对每个已配置 Redis 端各跑一遍。 */
-async function deleteRedisItemsCount() {
+/** 仅当没有已知 locale 时兜底：SCAN 该店 prefix（不用 KEYS）。 */
+async function scanItemsCountKeys(client) {
+  const pattern = `tsf:items_count:${shop}:*`;
+  const keys = [];
+  let cursor = "0";
+  do {
+    const [next, batch] = await client.scan(
+      cursor,
+      "MATCH",
+      pattern,
+      "COUNT",
+      500,
+    );
+    cursor = next;
+    for (const k of batch) keys.push(k);
+  } while (cursor !== "0");
+  return keys;
+}
+
+/**
+ * 按已知 locale 直接 DEL `tsf:items_count:{shop}:{locale}`（主路径，无全库 SCAN）。
+ * locales 须在删除 ShopTargetLocale 之前收集；为空时才 SCAN 该店 prefix 兜底。
+ */
+async function deleteRedisItemsCount(locales) {
   if (redisTargets.length === 0) {
     console.log("  [skip] 未配置 RENDER_KV，跳过 items_count");
     return;
   }
-
-  const pattern = `tsf:items_count:${shop}:*`;
 
   for (const redisTarget of redisTargets) {
     const client = new Redis(redisTarget.url, {
@@ -304,47 +366,59 @@ async function deleteRedisItemsCount() {
       lazyConnect: true,
       enableOfflineQueue: false,
       enableReadyCheck: true,
+      commandTimeout: 15_000,
     });
-    // 避免 Azure TLS 断开时刷 Unhandled error event
     client.on("error", () => {});
     try {
       await client.connect();
-      const keys = [];
-      let cursor = "0";
-      do {
-        const [next, batch] = await client.scan(
-          cursor,
-          "MATCH",
-          pattern,
-          "COUNT",
-          200,
-        );
-        cursor = next;
-        for (const k of batch) keys.push(k);
-      } while (cursor !== "0");
 
-      if (!write) {
+      let keys = locales.map((locale) => `tsf:items_count:${shop}:${locale}`);
+      let mode = "exact";
+      if (keys.length === 0) {
         console.log(
-          `  [dry] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 将删除 ${keys.length} 个 key`,
+          "  [info] 无已知 locale，回退 SCAN 该店 prefix（可能较慢）…",
         );
-        for (const k of keys.slice(0, 10)) console.log(`        - ${k}`);
-        if (keys.length > 10) {
-          console.log(`        …以及另外 ${keys.length - 10} 个`);
-        }
-      } else if (keys.length === 0) {
+        keys = await scanItemsCountKeys(client);
+        mode = "scan-fallback";
+      }
+
+      if (keys.length === 0) {
         console.log(
           `  [ok ] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 无需删除（0 key）`,
         );
-      } else {
-        // 分批 DEL，避免单次参数过长
-        let deleted = 0;
-        const chunk = 100;
-        for (let i = 0; i < keys.length; i += chunk) {
-          const part = keys.slice(i, i + chunk);
-          deleted += await client.del(...part);
+        continue;
+      }
+
+      if (!write) {
+        if (mode === "exact") {
+          const pipeline = client.pipeline();
+          for (const k of keys) pipeline.exists(k);
+          const results = await pipeline.exec();
+          const existing = [];
+          results?.forEach((entry, i) => {
+            const [err, n] = entry ?? [];
+            if (!err && Number(n) > 0) existing.push(keys[i]);
+          });
+          console.log(
+            `  [dry] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 精确候选 ${keys.length}，已存在 ${existing.length}`,
+          );
+          for (const k of existing.slice(0, 10)) console.log(`        - ${k}`);
+          if (existing.length > 10) {
+            console.log(`        …以及另外 ${existing.length - 10} 个`);
+          }
+        } else {
+          console.log(
+            `  [dry] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): SCAN 命中 ${keys.length}`,
+          );
+          for (const k of keys.slice(0, 10)) console.log(`        - ${k}`);
+          if (keys.length > 10) {
+            console.log(`        …以及另外 ${keys.length - 10} 个`);
+          }
         }
+      } else {
+        const deleted = await client.del(...keys);
         console.log(
-          `  [ok ] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): 已删除 ${deleted}/${keys.length} 个 key`,
+          `  [ok ] Redis ${redisTarget.key} (${maskHost(redisTarget.url)}): DEL ${deleted}/${keys.length}（${mode}）`,
         );
       }
     } catch (err) {
@@ -373,12 +447,20 @@ async function main() {
   await deleteCosmosJobs();
   await tursoDelete("TranslateV4JobUsage");
 
+  // 先收集 locale，再删表，供 Redis 精确 DEL
   console.log("\n-- 步骤 3/6：删除语言相关（ShopTargetLocale / ShopTranslationSettings）--");
+  const localesForRedis = await listLocalesForItemsCount();
+  console.log(
+    `  [info] 将用于 Redis DEL 的 locale 数=${localesForRedis.length}` +
+      (localesForRedis.length
+        ? ` (${localesForRedis.slice(0, 8).join(", ")}${localesForRedis.length > 8 ? ", …" : ""})`
+        : ""),
+  );
   await tursoDelete("ShopTargetLocale");
   await tursoDelete("ShopTranslationSettings");
 
-  console.log("\n-- 步骤 4/6：删除 Redis 覆盖率缓存 items_count --");
-  await deleteRedisItemsCount();
+  console.log("\n-- 步骤 4/6：删除 Redis 覆盖率缓存 items_count（按 locale 精确 DEL）--");
+  await deleteRedisItemsCount(localesForRedis);
 
   console.log(
     "\n-- 步骤 5/6：删除 Cosmos shop_scan_jobs（否则 install 扫描会被 skipped_existing）--",
