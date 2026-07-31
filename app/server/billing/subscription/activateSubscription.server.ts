@@ -1,4 +1,4 @@
-import type { Prisma } from "../../../generated/prisma";
+import type { AppSubscription, Prisma } from "../../../generated/prisma";
 import prisma from "../../../db.server";
 import { ensureAccount } from "../account/ensureAccount.server";
 import { appendBillingLog } from "../billingLog.server";
@@ -19,6 +19,13 @@ export type ApplyActiveSubscriptionParams = {
   trialEndsAt?: Date | null;
   period: SubscriptionPeriodSnapshot;
   rawPayload?: Record<string, unknown>;
+  /** 调用方已查过的本地订阅，避免 webhook 热路径重复读。 */
+  existingSubscription?: AppSubscription | null;
+};
+
+export type ApplyActiveSubscriptionResult = {
+  /** renewed=续费入账；activated=首次激活入账；updated=幂等重放/无额度变更。 */
+  outcome: "renewed" | "activated" | "updated";
 };
 
 /**
@@ -27,7 +34,7 @@ export type ApplyActiveSubscriptionParams = {
  */
 export async function applyActiveSubscription(
   params: ApplyActiveSubscriptionParams,
-): Promise<void> {
+): Promise<ApplyActiveSubscriptionResult> {
   const {
     shop,
     shopifySubscriptionId,
@@ -37,12 +44,15 @@ export async function applyActiveSubscription(
     trialEndsAt,
     period,
     rawPayload,
+    existingSubscription,
   } = params;
 
-  await ensureAccount(shop);
+  const account = await ensureAccount(shop);
 
-  const existing = await prisma.appSubscription.findUnique({ where: { shop } });
-  const account = await prisma.account.findUniqueOrThrow({ where: { shop } });
+  const existing =
+    existingSubscription !== undefined
+      ? existingSubscription
+      : await prisma.appSubscription.findUnique({ where: { shop } });
 
   if (
     existing &&
@@ -55,7 +65,7 @@ export async function applyActiveSubscription(
       account,
       next: { ...period, planKey, creditsPerPeriod },
     });
-    return;
+    return { outcome: "renewed" };
   }
 
   const wasPending =
@@ -110,5 +120,8 @@ export async function applyActiveSubscription(
         grantKind: "shopify_period",
       },
     });
+    return { outcome: "activated" };
   }
+
+  return { outcome: "updated" };
 }

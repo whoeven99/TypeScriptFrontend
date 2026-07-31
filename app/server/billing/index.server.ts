@@ -12,6 +12,7 @@ export {
 export {
   applyActiveSubscription,
   type ApplyActiveSubscriptionParams,
+  type ApplyActiveSubscriptionResult,
 } from "./subscription/activateSubscription.server";
 export {
   archivePeriodAndRenew,

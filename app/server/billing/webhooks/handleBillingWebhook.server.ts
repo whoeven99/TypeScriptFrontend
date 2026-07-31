@@ -14,7 +14,6 @@ import {
   findPackPlanByName,
   findSubscriptionPlan,
 } from "../plans/planCatalog.server";
-import { isSubscriptionRenewal } from "../subscription/renewal.server";
 import {
   APP_SUBSCRIPTION_STATUS,
   BILLING_INTERVAL,
@@ -53,6 +52,9 @@ type SubscriptionDetail = {
  * 查 Shopify 订阅详情补齐 webhook payload 缺失字段（currentPeriodEnd / trialDays / interval）。
  * 失败返回 null，调用方降级用 payload/推算值。
  */
+/** Shopify Admin GraphQL 补齐字段的超时；超时后降级用 payload/本地值，避免拖垮 webhook。 */
+const SUBSCRIPTION_DETAIL_TIMEOUT_MS = 2_500;
+
 async function fetchSubscriptionDetail(
   shop: string,
   accessToken: string,
@@ -66,6 +68,7 @@ async function fetchSubscriptionDetail(
         "X-Shopify-Access-Token": accessToken,
         "Content-Type": "application/json",
       },
+      timeout: SUBSCRIPTION_DETAIL_TIMEOUT_MS,
       data: {
         query: `query AppSubscriptionById($id: ID!) {
           node(id: $id) {
@@ -188,9 +191,15 @@ export async function handleTsfSubscriptionWebhook(params: {
     return;
   }
 
-  const detail = params.accessToken
-    ? await fetchSubscriptionDetail(params.shop, params.accessToken, gid)
-    : null;
+  // Shopify GraphQL 与本地订阅并行：GraphQL 通常占响应大半时间，勿再串行读 Turso。
+  const [detail, existingSub] = await Promise.all([
+    params.accessToken
+      ? fetchSubscriptionDetail(params.shop, params.accessToken, gid)
+      : Promise.resolve(null),
+    prisma.appSubscription.findUnique({
+      where: { shop: params.shop },
+    }),
+  ]);
 
   const billingInterval =
     detail?.interval ?? mapInterval(sub?.interval) ?? BILLING_INTERVAL.MONTHLY;
@@ -206,10 +215,6 @@ export async function handleTsfSubscriptionWebhook(params: {
     return;
   }
 
-  const existingSub = await prisma.appSubscription.findUnique({
-    where: { shop: params.shop },
-  });
-
   // currentPeriodEnd 必须以 Shopify 为准；仅 Shopify 缺失时才 fallback（优先保留本地已对齐值）。
   const currentPeriodEnd =
     detail?.currentPeriodEnd ??
@@ -224,48 +229,7 @@ export async function handleTsfSubscriptionWebhook(params: {
       ? new Date(detail.createdAt.getTime() + detail.trialDays * DAY_MS)
       : null;
 
-  const isRenewal =
-    existingSub != null &&
-    existingSub.shopifySubscriptionId === gid &&
-    isSubscriptionRenewal(existingSub, currentPeriodEnd);
-  const priorActivation = isRenewal
-    ? null
-    : await prisma.billingLog.findFirst({
-        where: {
-          shop: params.shop,
-          eventType: BILLING_LOG_EVENT.SUBSCRIPTION_ACTIVATED,
-          referenceId: gid,
-        },
-      });
-
-  const priorRenewalForPeriod = isRenewal
-    ? await findRenewalLogForPeriod({
-        shop: params.shop,
-        referenceId: gid,
-        nextPeriodEnd: currentPeriodEnd,
-      })
-    : null;
-
-  const priorRenewalCount =
-    isRenewal && existingSub
-      ? await prisma.billingLog.count({
-          where: {
-            shop: params.shop,
-            eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
-            referenceId: gid,
-          },
-        })
-      : 0;
-
-  const shouldSendRenewalEmail =
-    isRenewal &&
-    existingSub != null &&
-    shouldSendTsfSubscriptionRenewalEmail({
-      hadTrial: existingSub.trialEndsAt != null,
-      priorRenewalCount,
-    });
-
-  await applyActiveSubscription({
+  const { outcome } = await applyActiveSubscription({
     shop: params.shop,
     shopifySubscriptionId: gid,
     planKey: plan.planKey,
@@ -279,9 +243,11 @@ export async function handleTsfSubscriptionWebhook(params: {
       planKey: plan.planKey,
     },
     rawPayload: (params.payload ?? undefined) as Record<string, unknown> | undefined,
+    existingSubscription: existingSub,
   });
 
-  if (!isRenewal && !priorActivation) {
+  // 邮件与 BillingLog 幂等查询全部离开 webhook 关键路径。
+  if (outcome === "activated") {
     void sendTsfSubscribeSuccessEmail({
       shop: params.shop,
       plan,
@@ -295,9 +261,28 @@ export async function handleTsfSubscriptionWebhook(params: {
         err,
       );
     });
-  } else if (shouldSendRenewalEmail && !priorRenewalForPeriod) {
+  } else if (outcome === "renewed" && existingSub) {
     // 仅当本 webhook 首次落续费账时发信；worker 已续费则由 worker 发信（BillingLog.renewalEmailSent 幂等）。
+    const hadTrial = existingSub.trialEndsAt != null;
     void (async () => {
+      // priorRenewalCount = 本次入账前次数 ≈ 当前总数 - 1（本 webhook 刚写入一条）。
+      const renewalCountAfter = await prisma.billingLog.count({
+        where: {
+          shop: params.shop,
+          eventType: BILLING_LOG_EVENT.SUBSCRIPTION_RENEWED,
+          referenceId: gid,
+        },
+      });
+      const priorRenewalCount = Math.max(0, renewalCountAfter - 1);
+      if (
+        !shouldSendTsfSubscriptionRenewalEmail({
+          hadTrial,
+          priorRenewalCount,
+        })
+      ) {
+        return;
+      }
+
       const ok = await sendTsfSubscriptionRenewalEmail({
         shop: params.shop,
         plan,
