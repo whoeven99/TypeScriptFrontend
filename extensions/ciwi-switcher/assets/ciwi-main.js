@@ -20,6 +20,25 @@ import {
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
 
+const resolveCiwiRuntimeVersionInfo = () => {
+  const scriptUrl = import.meta?.url || "";
+  const versionMatch = scriptUrl.match(/\/(ciwi-translator-\d+)\//);
+  return {
+    scriptUrl,
+    version: versionMatch?.[1] || "unknown",
+  };
+};
+
+const logCiwiRuntimeVersion = (() => {
+  let logged = false;
+  return () => {
+    if (logged) return;
+    logged = true;
+    const { version, scriptUrl } = resolveCiwiRuntimeVersionInfo();
+    console.info("[ciwi] runtime version", { version, scriptUrl });
+  };
+})();
+
 // 原 isLikelyBotByUA 逻辑（简化版）
 function isLikelyBotByUA() {
   const ua = navigator.userAgent.toLowerCase();
@@ -757,6 +776,8 @@ async function ciwiOnload() {
 const shouldDisableCiwiBootstrap = isShopifyThemeEditorAppsContext();
 
 if (!shouldDisableCiwiBootstrap) {
+  logCiwiRuntimeVersion();
+
   if (!customElements.get("ciwiswitcher-form")) {
     customElements.define("ciwiswitcher-form", CiwiswitcherForm);
   }
