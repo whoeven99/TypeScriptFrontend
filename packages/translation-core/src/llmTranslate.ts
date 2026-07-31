@@ -41,6 +41,16 @@ import {
 } from "./placeholderMask.js";
 import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
+import { estimateDeepSeekCallCost } from "./deepseekPricing.js";
+
+export {
+  estimateDeepSeekCallCost,
+  resolveDeepSeekCnyPrices,
+  isDeepSeekPeakHourBeijing,
+  DEEPSEEK_CNY_PRICES,
+  DEEPSEEK_PRICING_SOURCE,
+} from "./deepseekPricing.js";
+export type { DeepSeekCallCostEstimate, DeepSeekPriceTier } from "./deepseekPricing.js";
 
 // ─── LLM Key Pool ─────────────────────────────────────────────────────────────
 //
@@ -1817,6 +1827,12 @@ export type TranslationCallCost = {
    * Billed at cache-miss input rate.
    */
   promptCacheMissTokens?: number;
+  /** Estimated provider CNY (元) from official DeepSeek 中文价目 × usage. */
+  costCny?: number;
+  /** Peak multiplier applied (1 or 2 when DEEPSEEK_PEAK_PRICING is on). */
+  pricingPeakMultiplier?: number;
+  /** Price card id / docs URL marker for reconciliation. */
+  pricingSource?: string;
   /** Google: source char count for this text. */
   chars?: number;
   /** LLM only: how many items were sent in this request. */
@@ -1869,6 +1885,7 @@ export type TranslationFieldCost =
       outputTokens?: number;
       promptCacheHitTokens?: number;
       promptCacheMissTokens?: number;
+      costCny?: number;
       chars?: number;
     };
 
@@ -1961,11 +1978,13 @@ export function mergeLeafCosts(
   let outputTokens = 0;
   let promptCacheHitTokens = 0;
   let promptCacheMissTokens = 0;
+  let costCny = 0;
   for (const c of llmCalls) {
     inputTokens += c.inputTokens ?? 0;
     outputTokens += c.outputTokens ?? 0;
     promptCacheHitTokens += c.promptCacheHitTokens ?? 0;
     promptCacheMissTokens += c.promptCacheMissTokens ?? 0;
+    costCny += c.costCny ?? 0;
   }
   if (!hasLlm && hasGoogle) {
     return { provider: "google", model: "google-translate", chars: googleChars };
@@ -1977,6 +1996,7 @@ export function mergeLeafCosts(
     outputTokens: outputTokens > 0 ? outputTokens : undefined,
     promptCacheHitTokens: promptCacheHitTokens > 0 ? promptCacheHitTokens : undefined,
     promptCacheMissTokens: promptCacheMissTokens > 0 ? promptCacheMissTokens : undefined,
+    costCny: costCny > 0 ? Math.round(costCny * 1e8) / 1e8 : undefined,
     chars: googleChars > 0 ? googleChars : undefined,
   };
 }
@@ -3042,6 +3062,18 @@ function buildLlmCallCost(args: {
   }
   if (args.promptCacheMissTokens !== undefined) {
     cost.promptCacheMissTokens = args.promptCacheMissTokens;
+  }
+  const money = estimateDeepSeekCallCost({
+    model: args.model,
+    promptCacheHitTokens: args.promptCacheHitTokens,
+    promptCacheMissTokens: args.promptCacheMissTokens,
+    inputTokens: args.inputTokens,
+    outputTokens: args.outputTokens,
+  });
+  if (money) {
+    cost.costCny = money.costCny;
+    cost.pricingPeakMultiplier = money.peakMultiplier;
+    cost.pricingSource = money.pricingSource;
   }
   return cost;
 }
