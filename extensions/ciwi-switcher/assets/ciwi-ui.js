@@ -16,6 +16,7 @@ import {
 import { useCacheThenRefresh } from "./ciwi-storage.js";
 import {
   CIWI_MONEY_SELECTOR,
+  isPriceRelatedElement,
   persistManualLocalizationPreference,
   shouldTrackMoneyNode,
   transformPrices,
@@ -1427,6 +1428,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           const tag = node?.nodeName;
           if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
           if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         },
       },
@@ -1436,7 +1438,8 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (
       root instanceof Element &&
       !skipTags.has(root.nodeName) &&
-      !(ciwiBlock && ciwiBlock.contains(root))
+      !(ciwiBlock && ciwiBlock.contains(root)) &&
+      !isPriceRelatedElement(root)
     ) {
       nodes.push(root);
     }
@@ -1445,6 +1448,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const replacements = [];
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node)) return;
+      if (isPriceRelatedElement(node)) return;
 
       // 预筛 1：标签名。任意命中都要求 node.nodeName 等于某条 before 元素标签名。
       if (candidateTags.size > 0 && !candidateTags.has(node.nodeName)) return;
@@ -1572,6 +1576,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         acceptNode(node) {
           const parentTag = node.parentNode?.nodeName;
           if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         },
       },
@@ -1590,6 +1595,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node.parentElement)) return;
+      if (isPriceRelatedElement(node)) return;
 
       // 这些派生值只跟当前节点内容有关、与 entry 无关，因此每个节点只算一次；
       // collapsed 仅在遇到 flexibleWhitespace 的 entry 时按需计算。
@@ -1654,6 +1660,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
           if (ciwiBlock && node.parentElement && ciwiBlock.contains(node.parentElement))
             return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           const strictKey = normalizeText(node.nodeValue);
           const collapsedKey = normalizeCollapsedText(node.nodeValue);
           if (exactMap.has(strictKey)) return NodeFilter.FILTER_ACCEPT;
@@ -1677,6 +1684,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node.parentElement)) return;
+      if (isPriceRelatedElement(node)) return;
       const original = node.nodeValue;
       const strictKey = normalizeText(original);
       const collapsedKey = normalizeCollapsedText(original);
@@ -1789,6 +1797,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           const tag = node?.nodeName;
           if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
           if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         },
       },
@@ -1798,7 +1807,8 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (
       root instanceof Element &&
       !skipTags.has(root.nodeName) &&
-      !(ciwiBlock && ciwiBlock.contains(root))
+      !(ciwiBlock && ciwiBlock.contains(root)) &&
+      !isPriceRelatedElement(root)
     ) {
       nodes.push(root);
     }
@@ -1807,6 +1817,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     nodes.forEach((node) => {
       if (!(node instanceof Element)) return;
       if (isElementHiddenForTranslation(node)) return;
+      if (isPriceRelatedElement(node)) return;
 
       Array.from(node.attributes || []).forEach((attribute) => {
         if (!isTranslatableAttribute(node, attribute)) return;
@@ -1879,6 +1890,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!node?.isConnected) return true;
     if (node.nodeType === Node.ELEMENT_NODE && skipTags.has(node.nodeName)) return true;
     if (ciwiBlock && node instanceof Element && ciwiBlock.contains(node)) return true;
+    if (isPriceRelatedElement(node)) return true;
     return false;
   };
 
@@ -1942,6 +1954,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
             const tag = node?.nodeName;
             if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
             if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+            if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
             return NodeFilter.FILTER_ACCEPT;
           },
         },
@@ -2083,6 +2096,7 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     acceptNode(node) {
       const parentTag = node.parentNode?.nodeName;
       if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+      if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
       return exactMap.has(normalizeText(node.nodeValue))
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
@@ -2095,6 +2109,7 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   // ✏ 精准替换
   nodesToReplace.forEach((node) => {
     if (isElementHiddenForTranslation(node.parentElement)) return;
+    if (isPriceRelatedElement(node)) return;
     const original = node.nodeValue;
     const trimmedAfter = exactMap.get(normalizeText(original));
     if (!trimmedAfter) return;
