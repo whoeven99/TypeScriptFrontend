@@ -185,7 +185,7 @@ function stripLegacyJobSecrets(job: TranslationV4Job): TranslationV4Job {
 }
 
 /** 进行中（非终态）状态，用于创建前互斥判断。 */
-const ACTIVE_V4_STATUSES: TranslationV4Status[] = [
+export const ACTIVE_V4_STATUSES: TranslationV4Status[] = [
   "CREATED",
   "INIT_QUEUED",
   "INITIALIZING",
@@ -918,13 +918,44 @@ export async function findManualJobsNeedingEmailForShop(
   }
 }
 
+/**
+ * 近期手动任务（用于邮件批次聚合：等同批创建的任务全部终态后再发一封）。
+ */
+export async function findRecentManualJobsForShop(
+  shopName: string,
+  withinMs: number,
+): Promise<TranslationV4Job[]> {
+  const since = new Date(Date.now() - withinMs).toISOString();
+  try {
+    const { resources } = await getContainer()
+      .items.query<TranslationV4Job>(
+        {
+          query: `
+            SELECT c.id, c.shopName, c.status, c.taskSource, c.target, c.emailSent,
+                   c.createdAt, c.updatedAt, c.metrics
+            FROM c
+            WHERE ${manualEmailTaskSourceFilter()}
+              AND c.createdAt >= @since
+            ORDER BY c.createdAt ASC
+          `,
+          parameters: [
+            { name: "@autoSource", value: TSF_AUTO_TASK_SOURCE },
+            { name: "@since", value: since },
+          ],
+        },
+        { partitionKey: shopName },
+      )
+      .fetchAll();
+    return resources ?? [];
+  } catch (err) {
+    console.error("[cosmosV4] findRecentManualJobsForShop failed:", err);
+    return [];
+  }
+}
+
 /** 检查某店是否仍有进行中的手动翻译任务（全部终态后再汇总发邮件）。 */
 export async function hasActiveManualJobsForShop(shopName: string): Promise<boolean> {
-  const activeStatuses: TranslationV4Status[] = [
-    "CREATED", "INIT_QUEUED", "INITIALIZING", "INIT_DONE",
-    "TRANSLATE_QUEUED", "TRANSLATING", "TRANSLATE_DONE",
-    "WRITEBACK_QUEUED", "WRITING_BACK", "VERIFY_QUEUED", "VERIFYING",
-  ];
+  const activeStatuses: TranslationV4Status[] = ACTIVE_V4_STATUSES;
   try {
     const { resources } = await getContainer()
       .items.query<number>(
@@ -1003,11 +1034,7 @@ export async function findAutoJobsNeedingEmailForShop(
 
 /** 检查某店是否仍有进行中的自动翻译任务（用于判断自动任务是否全部完成再汇总发邮件）。 */
 export async function hasActiveAutoJobsForShop(shopName: string): Promise<boolean> {
-  const activeStatuses: TranslationV4Status[] = [
-    "CREATED", "INIT_QUEUED", "INITIALIZING", "INIT_DONE",
-    "TRANSLATE_QUEUED", "TRANSLATING", "TRANSLATE_DONE",
-    "WRITEBACK_QUEUED", "WRITING_BACK", "VERIFY_QUEUED", "VERIFYING",
-  ];
+  const activeStatuses: TranslationV4Status[] = ACTIVE_V4_STATUSES;
   try {
     const { resources } = await getContainer()
       .items.query<number>(

@@ -8,7 +8,7 @@
  *     查询该店全部待发 manual 任务并汇总发一封（对齐自动翻译合并策略）。
  *  3. 自动任务（taskSource = TsFrontend-Auto）：等同店内所有进行中自动任务结束后，
  *     查询该店全部待发 auto 任务并汇总发一封（对齐 Spring TranslateTask.sendEmail）。
- *     usedTokens=0 的语言不出现在成功邮件正文；若全部为 0 则不发信，但仍 mark emailSent。
+ *     usedTokens=0 的语言仍出现在手动成功邮件表格中；自动成功邮件仍跳过 usedTokens=0。
  *     部分完成/暂停邮件：translateDone=0 且进度 0% 时不发信（如扫描后额度为 0），仍 mark emailSent。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *
@@ -20,14 +20,20 @@
 
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
+  ACTIVE_V4_STATUSES,
   findAutoJobsNeedingEmailForShop,
   findManualJobsNeedingEmailForShop,
+  findRecentManualJobsForShop,
   findShopsWithPendingAutoEmail,
   findShopsWithPendingManualEmail,
   hasActiveAutoJobsForShop,
   hasActiveManualJobsForShop,
   updateJob,
 } from "../services/cosmosV4.js";
+import {
+  releaseEmailSendLock,
+  tryAcquireEmailSendLock,
+} from "../services/redisV4.js";
 import { fetchShopContact } from "../services/shopEmail.js";
 import {
   sendManualTranslationSuccessEmail,
@@ -39,6 +45,68 @@ import {
 } from "../services/workerEmail.js";
 
 const LOG = "[emailWorker]";
+
+/** 近期同店手动任务视为一批的窗口（默认 15 分钟）。 */
+const MANUAL_EMAIL_COHORT_MS = (() => {
+  const n = Number(process.env.MANUAL_EMAIL_COHORT_MS);
+  return Number.isFinite(n) && n > 0 ? n : 15 * 60_000;
+})();
+
+/** 批次内最后一个任务终态后，再等待一段时间聚合发信（默认 90 秒）。 */
+const MANUAL_EMAIL_SETTLE_MS = (() => {
+  const n = Number(process.env.MANUAL_EMAIL_SETTLE_MS);
+  return Number.isFinite(n) && n >= 0 ? n : 90_000;
+})();
+
+function isActiveV4Status(status: TranslationV4Job["status"]): boolean {
+  return ACTIVE_V4_STATUSES.includes(status);
+}
+
+async function shouldDeferManualEmailBatch(
+  shopName: string,
+  pendingJobs: TranslationV4Job[],
+): Promise<{ defer: boolean; reason?: string; detail?: Record<string, unknown> }> {
+  const cohort = await findRecentManualJobsForShop(shopName, MANUAL_EMAIL_COHORT_MS);
+  const activeInCohort = cohort.filter((job) => isActiveV4Status(job.status));
+  if (activeInCohort.length > 0) {
+    return {
+      defer: true,
+      reason: "cohort_has_active_jobs",
+      detail: {
+        cohortSize: cohort.length,
+        activeCount: activeInCohort.length,
+        activeTargets: activeInCohort.map((j) => j.target),
+      },
+    };
+  }
+
+  if (cohort.length <= 1 && pendingJobs.length <= 1) {
+    return { defer: false };
+  }
+
+  if (MANUAL_EMAIL_SETTLE_MS > 0) {
+    const terminalJobs = cohort.filter((job) => !isActiveV4Status(job.status));
+    const lastTerminalAt = Math.max(
+      ...terminalJobs.map((job) => new Date(job.updatedAt).getTime()),
+      0,
+    );
+    const elapsed = Date.now() - lastTerminalAt;
+    if (elapsed < MANUAL_EMAIL_SETTLE_MS) {
+      return {
+        defer: true,
+        reason: "batch_settle_wait",
+        detail: {
+          cohortSize: cohort.length,
+          pendingCount: pendingJobs.length,
+          settleMs: MANUAL_EMAIL_SETTLE_MS,
+          remainingMs: MANUAL_EMAIL_SETTLE_MS - elapsed,
+        },
+      };
+    }
+  }
+
+  return { defer: false };
+}
 
 function logDetail(phase: string, payload: Record<string, unknown>): void {
   console.info(`${LOG} ${phase} ${JSON.stringify(payload)}`);
@@ -151,96 +219,122 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
     return;
   }
 
-  logDetail("handle-manual-start", {
-    shop: shopName,
-    jobCount: jobs.length,
-    jobs: jobs.map(describeJob),
-  });
-
-  const recipient = await resolveRecipientContact(jobs[0]);
-  if (!recipient) {
+  const defer = await shouldDeferManualEmailBatch(shopName, jobs);
+  if (defer.defer) {
     logDetail("handle-manual-skipped", {
-      reason: "no_shop_email",
+      reason: defer.reason,
+      shop: shopName,
+      jobIds: jobs.map((j) => j.id),
+      targets: jobs.map((j) => j.target),
+      ...defer.detail,
+    });
+    return;
+  }
+
+  const lockAcquired = await tryAcquireEmailSendLock(shopName, "manual");
+  if (!lockAcquired) {
+    logDetail("handle-manual-skipped", {
+      reason: "email_send_lock_busy",
       shop: shopName,
       jobIds: jobs.map((j) => j.id),
     });
     return;
   }
-  const { email: to, userName } = recipient;
-  const completedJobs = jobs.filter((j) => j.status === "COMPLETED");
-  const pausedJobs = jobs.filter((j) => j.status === "PAUSED");
-  logDetail("handle-manual-split", {
-    shop: shopName,
-    to: maskEmail(to),
-    completedCount: completedJobs.length,
-    pausedCount: pausedJobs.length,
-    completedTargets: completedJobs.map((j) => j.target),
-    pausedTargets: pausedJobs.map((j) => j.target),
-  });
 
-  if (completedJobs.length > 0) {
-    const sent = await sendManualTranslationSuccessEmail(
-      shopName,
-      to,
-      userName,
-      completedJobs.map(toJobSummary),
-    );
-    logDetail("handle-manual-success-send-result", {
+  try {
+    logDetail("handle-manual-start", {
       shop: shopName,
-      to: maskEmail(to),
-      sent,
-      jobIds: completedJobs.map((j) => j.id),
-      targets: completedJobs.map((j) => j.target),
+      jobCount: jobs.length,
+      jobs: jobs.map(describeJob),
     });
-    if (sent) {
-      for (const job of completedJobs) {
-        await markEmailSent(job);
-      }
-      logDetail("handle-manual-success-done", {
-        shop: shopName,
-        langs: completedJobs.map((j) => j.target),
-        markedJobIds: completedJobs.map((j) => j.id),
-      });
-    }
-  }
 
-  if (pausedJobs.length > 0) {
-    const pausedSummaries = pausedJobs.map(toJobSummary);
-    const pausedWithProgress = pausedSummaries.filter(hasPartialEmailProgress);
-    if (pausedWithProgress.length === 0) {
-      logDetail("handle-manual-partial-skipped", {
-        reason: "all_zero_progress",
+    const recipient = await resolveRecipientContact(jobs[0]);
+    if (!recipient) {
+      logDetail("handle-manual-skipped", {
+        reason: "no_shop_email",
         shop: shopName,
-        jobIds: pausedJobs.map((j) => j.id),
-        targets: pausedJobs.map((j) => j.target),
+        jobIds: jobs.map((j) => j.id),
       });
-      await markEmailSentBatch(pausedJobs);
       return;
     }
-
-    const sent = await sendTranslationPartialEmail(
-      shopName,
-      to,
-      userName,
-      "manual translation",
-      pausedWithProgress,
-    );
-    logDetail("handle-manual-partial-send-result", {
+    const { email: to, userName } = recipient;
+    const completedJobs = jobs.filter((j) => j.status === "COMPLETED");
+    const pausedJobs = jobs.filter((j) => j.status === "PAUSED");
+    logDetail("handle-manual-split", {
       shop: shopName,
       to: maskEmail(to),
-      sent,
-      jobIds: pausedJobs.map((j) => j.id),
-      targets: pausedJobs.map((j) => j.target),
-      emailedTargets: pausedWithProgress.map((j) => j.target),
+      completedCount: completedJobs.length,
+      pausedCount: pausedJobs.length,
+      completedTargets: completedJobs.map((j) => j.target),
+      pausedTargets: pausedJobs.map((j) => j.target),
     });
-    if (sent) {
-      await markEmailSentBatch(pausedJobs);
-      logDetail("handle-manual-partial-done", {
+
+    if (completedJobs.length > 0) {
+      const sent = await sendManualTranslationSuccessEmail(
+        shopName,
+        to,
+        userName,
+        completedJobs.map(toJobSummary),
+      );
+      logDetail("handle-manual-success-send-result", {
         shop: shopName,
-        langs: pausedWithProgress.map((j) => j.target),
-        markedJobIds: pausedJobs.map((j) => j.id),
+        to: maskEmail(to),
+        sent,
+        jobIds: completedJobs.map((j) => j.id),
+        targets: completedJobs.map((j) => j.target),
       });
+      if (sent) {
+        for (const job of completedJobs) {
+          await markEmailSent(job);
+        }
+        logDetail("handle-manual-success-done", {
+          shop: shopName,
+          langs: completedJobs.map((j) => j.target),
+          markedJobIds: completedJobs.map((j) => j.id),
+        });
+      }
     }
+
+    if (pausedJobs.length > 0) {
+      const pausedSummaries = pausedJobs.map(toJobSummary);
+      const pausedWithProgress = pausedSummaries.filter(hasPartialEmailProgress);
+      if (pausedWithProgress.length === 0) {
+        logDetail("handle-manual-partial-skipped", {
+          reason: "all_zero_progress",
+          shop: shopName,
+          jobIds: pausedJobs.map((j) => j.id),
+          targets: pausedJobs.map((j) => j.target),
+        });
+        await markEmailSentBatch(pausedJobs);
+        return;
+      }
+
+      const sent = await sendTranslationPartialEmail(
+        shopName,
+        to,
+        userName,
+        "manual translation",
+        pausedWithProgress,
+      );
+      logDetail("handle-manual-partial-send-result", {
+        shop: shopName,
+        to: maskEmail(to),
+        sent,
+        jobIds: pausedJobs.map((j) => j.id),
+        targets: pausedJobs.map((j) => j.target),
+        emailedTargets: pausedWithProgress.map((j) => j.target),
+      });
+      if (sent) {
+        await markEmailSentBatch(pausedJobs);
+        logDetail("handle-manual-partial-done", {
+          shop: shopName,
+          langs: pausedWithProgress.map((j) => j.target),
+          markedJobIds: pausedJobs.map((j) => j.id),
+        });
+      }
+    }
+  } finally {
+    await releaseEmailSendLock(shopName, "manual");
   }
 }
 
@@ -261,7 +355,18 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
     return;
   }
 
-  logDetail("handle-auto-start", {
+  const lockAcquired = await tryAcquireEmailSendLock(shopName, "auto");
+  if (!lockAcquired) {
+    logDetail("handle-auto-skipped", {
+      reason: "email_send_lock_busy",
+      shop: shopName,
+      jobIds: jobs.map((j) => j.id),
+    });
+    return;
+  }
+
+  try {
+    logDetail("handle-auto-start", {
     shop: shopName,
     jobCount: jobs.length,
     jobs: jobs.map(describeJob),
@@ -353,6 +458,9 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
         markedJobIds: pausedJobs.map((j) => j.id),
       });
     }
+  }
+  } finally {
+    await releaseEmailSendLock(shopName, "auto");
   }
 }
 

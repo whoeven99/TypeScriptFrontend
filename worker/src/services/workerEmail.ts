@@ -201,9 +201,24 @@ function buildTranslationSuccessHtmlData(jobs: TranslationJobSummary[]): string 
     .join("");
 }
 
+/** 手动合并邮件 210764：模板变量 translation_rows（表格行 HTML）。 */
+function buildManualTranslationRows(jobs: TranslationJobSummary[]): string {
+  return jobs
+    .map(
+      (j) =>
+        `<tr>` +
+        `<td>${j.target}</td>` +
+        `<td>${formatNumber(j.usedTokens)} credits</td>` +
+        `<td>${j.elapsedMinutes} minutes</td>` +
+        `<td>Completed</td>` +
+        `</tr>`,
+    )
+    .join("");
+}
+
 /**
  * 手动翻译成功邮件（模板 210764）。
- * 同店多语言合并为一封；模板变量 user + html_data（对齐自动翻译 140352 结构）。
+ * 同店多语言合并为一封；模板变量 user + shop_name + translation_rows。
  */
 export async function sendManualTranslationSuccessEmail(
   shopName: string,
@@ -211,8 +226,12 @@ export async function sendManualTranslationSuccessEmail(
   userName: string,
   jobs: TranslationJobSummary[],
 ): Promise<boolean> {
+  const shortName = parseShopName(shopName);
+  const translationRows = buildManualTranslationRows(jobs);
+
   logDetail("send-manual-success-start", {
     shopName,
+    shortName,
     userName,
     to: maskEmail(to),
     jobCount: jobs.length,
@@ -221,10 +240,9 @@ export async function sendManualTranslationSuccessEmail(
     templateId: TEMPLATE_MANUAL_SUCCESS,
   });
 
-  const htmlParts = buildTranslationSuccessHtmlData(jobs);
-  if (!htmlParts) {
+  if (!translationRows) {
     logDetail("send-manual-success-skipped", {
-      reason: "all_used_tokens_zero",
+      reason: "no_job_rows",
       shopName,
       to: maskEmail(to),
       jobCount: jobs.length,
@@ -237,7 +255,8 @@ export async function sendManualTranslationSuccessEmail(
     SUBJECT_MANUAL_SUCCESS,
     {
       user: userName,
-      html_data: htmlParts,
+      shop_name: shortName,
+      translation_rows: translationRows,
     },
     to,
   );
