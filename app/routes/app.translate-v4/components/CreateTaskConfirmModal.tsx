@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
-import { v4CardStyle, v4Colors } from "../v4Styles";
+import { v4Colors } from "../v4Styles";
 import {
   AI_MODEL_OPTIONS,
   CREATE_TASK_MODULE_LABELS,
@@ -10,7 +10,6 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import {
-  formatEstimateCredits,
   type CreateTaskEstimateView,
 } from "../useCreateTaskEstimate";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
@@ -110,21 +109,37 @@ export function CreateTaskConfirmModal({
     isHandle ? t("v4.createTask.translateHandle") : null,
   ].filter(Boolean) as string[];
 
+  const estimatedCreditsLabel =
+    estimate?.estimatedCredits != null
+      ? formatCreditsFull(estimate.estimatedCredits)
+      : null;
+  const remainingCreditsLabel =
+    estimate?.remainingCredits != null
+      ? formatCreditsFull(estimate.remainingCredits)
+      : null;
+  const shortfallCredits =
+    estimate?.estimatedCredits != null && estimate?.remainingCredits != null
+      ? Math.max(estimate.estimatedCredits - estimate.remainingCredits, 0)
+      : null;
+  const shortfallCreditsLabel =
+    shortfallCredits != null && shortfallCredits > 0
+      ? formatCreditsFull(shortfallCredits)
+      : null;
   const estimateTitle = estimate?.loading
     ? t("v4.createTask.estimateLoading")
     : estimate?.estimatedCredits == null
       ? t("v4.createTask.estimateUnavailable")
       : estimate.isUpperBound
         ? t("v4.createTask.estimateUpperBound", {
-            estimated: formatEstimateCredits(estimate.estimatedCredits),
+            estimated: formatCreditsFull(estimate.estimatedCredits),
           })
         : t("v4.createTask.estimateNeed", {
-            estimated: formatEstimateCredits(estimate.estimatedCredits),
+            estimated: formatCreditsFull(estimate.estimatedCredits),
           });
   const remainingLabel =
     estimate?.remainingCredits != null
       ? t("v4.createTask.estimateRemaining", {
-          remaining: formatEstimateCredits(estimate.remainingCredits),
+          remaining: formatCreditsFull(estimate.remainingCredits),
         })
       : null;
 
@@ -199,67 +214,138 @@ export function CreateTaskConfirmModal({
         </div>
 
         <div style={bodyStyle}>
-          <div style={gridStyle}>
-            <SummaryCard title={t("v4.createTask.targetLanguages")}>
-              <TokenList
-                items={selectedTargets.map((item) => `${item.regionCode} ${item.label}`)}
-              />
-            </SummaryCard>
-            <SummaryCard title={t("v4.createTask.content")}>
-              <TokenList items={selectedModules.map((item) => item.label)} />
-            </SummaryCard>
-          </div>
+          <SummaryRow title={t("v4.createTask.targetLanguages")}>
+            <PlainList
+              items={selectedTargets.map((item) => `${item.regionCode} ${item.label}`)}
+              columns={2}
+            />
+          </SummaryRow>
 
-          <div style={gridStyle}>
-            <SummaryCard title={t("v4.createTask.aiModel")}>
-              <TokenList items={[aiModelLabel]} />
-            </SummaryCard>
-            <SummaryCard title={t("v4.createTask.translationOptions")}>
-              {optionLabels.length > 0 ? (
-                <TokenList items={optionLabels} />
-              ) : (
-                <div style={mutedTextStyle}>
-                  {t("v4.createTask.confirmDefaultOptions")}
-                </div>
-              )}
-            </SummaryCard>
-          </div>
+          <SummaryRow title={t("v4.createTask.content")}>
+            <PlainList items={selectedModules.map((item) => item.label)} columns={2} />
+          </SummaryRow>
 
-          <div
-            style={{
-              ...v4CardStyle,
-              borderRadius: 16,
-              padding: "16px 18px",
-              background: modalBlocked || estimate?.needsMoreCredits
-                ? "var(--app-accent-utility-soft)"
-                : v4Colors.summaryBg,
-            }}
+          <SummaryRow title={t("v4.createTask.aiModel")}>
+            <div style={valueTextStyle}>{aiModelLabel}</div>
+          </SummaryRow>
+
+          <SummaryRow title={t("v4.createTask.translationOptions")}>
+            {optionLabels.length > 0 ? (
+              <PlainList items={optionLabels} />
+            ) : (
+              <div style={mutedTextStyle}>
+                {t("v4.createTask.confirmDefaultOptions")}
+              </div>
+            )}
+          </SummaryRow>
+
+          <SummaryRow
+            title={t("v4.createTask.confirmEstimateTitle")}
+            emphasize={modalBlocked || Boolean(estimate?.needsMoreCredits)}
           >
-            <div style={eyebrowStyle}>{t("v4.createTask.confirmEstimateTitle")}</div>
-            <div style={estimateTitleStyle}>{estimateTitle}</div>
-            {remainingLabel ? (
+            {estimatedCreditsLabel && remainingCreditsLabel ? (
+              <>
+                <div style={creditHeadlineStyle}>
+                  <span
+                    style={{
+                      ...creditHeadlineNumberStyle,
+                      color:
+                        modalBlocked || Boolean(estimate?.needsMoreCredits)
+                          ? "var(--p-color-text-caution)"
+                          : v4Colors.text,
+                    }}
+                  >
+                    {estimatedCreditsLabel}
+                  </span>
+                  <span style={creditSlashStyle}>/</span>
+                  <span
+                    style={{
+                      ...creditHeadlineNumberStyle,
+                      color:
+                        modalBlocked || Boolean(estimate?.needsMoreCredits)
+                          ? "var(--p-color-text-caution)"
+                          : v4Colors.text,
+                    }}
+                  >
+                    {remainingCreditsLabel}
+                  </span>
+                </div>
+
+                <div style={creditMetaRowStyle}>
+                  <div style={creditMetaItemStyle}>
+                    <span style={creditMetaLabelStyle}>
+                      {t("v4.createTask.confirmEstimateNeedLabel")}
+                    </span>
+                    <span style={creditMetaValueStyle}>{estimatedCreditsLabel}</span>
+                  </div>
+                  <div style={creditMetaItemStyle}>
+                    <span style={creditMetaLabelStyle}>
+                      {t("v4.createTask.confirmEstimateLeftLabel")}
+                    </span>
+                    <span
+                      style={{
+                        ...creditMetaValueStyle,
+                        color:
+                          modalBlocked || Boolean(estimate?.needsMoreCredits)
+                            ? "var(--p-color-text-caution)"
+                            : v4Colors.text,
+                      }}
+                    >
+                      {remainingCreditsLabel}
+                    </span>
+                  </div>
+                  {shortfallCreditsLabel ? (
+                    <div style={creditMetaItemStyle}>
+                      <span style={creditMetaLabelStyle}>
+                        {t("v4.createTask.confirmEstimateShortLabel")}
+                      </span>
+                      <span
+                        style={{
+                          ...creditMetaValueStyle,
+                          color: "var(--p-color-text-caution)",
+                        }}
+                      >
+                        {shortfallCreditsLabel}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div style={estimateHintStyle}>{estimateTitle}</div>
+              </>
+            ) : (
+              <div style={estimateTitleStyle}>{estimateTitle}</div>
+            )}
+            {!estimatedCreditsLabel && remainingLabel ? (
               <div style={remainingStyle}>{remainingLabel}</div>
             ) : null}
             {estimate?.needsMoreCredits ? (
               <div style={warningStyle}>{t("v4.createTask.estimateShort")}</div>
             ) : null}
-          </div>
+          </SummaryRow>
         </div>
 
         <div style={footerStyle}>
           <Button
+            size="large"
             onClick={onClose}
             disabled={creating}
-            style={{ minWidth: 108, borderColor: v4Colors.cardBorder }}
+            style={{
+              minWidth: 116,
+              paddingInline: 18,
+              borderColor: v4Colors.cardBorder,
+            }}
           >
             {t("Cancel")}
           </Button>
           <Button
+            size="large"
             type={modalBlocked ? "default" : "primary"}
             onClick={handlePrimaryAction}
             loading={creating || planFetcher.state === "submitting"}
             style={{
-              minWidth: quotaGateMode === "trial" ? 160 : 140,
+              minWidth: quotaGateMode === "trial" ? 172 : 152,
+              paddingInline: 20,
               borderColor: modalBlocked ? v4Colors.cardBorder : undefined,
             }}
           >
@@ -275,38 +361,61 @@ export function CreateTaskConfirmModal({
   );
 }
 
-function SummaryCard({
+function SummaryRow({
   title,
   children,
+  emphasize = false,
 }: {
   title: string;
   children: ReactNode;
+  emphasize?: boolean;
 }) {
   return (
     <div
       style={{
-        ...v4CardStyle,
-        borderRadius: 16,
-        padding: "16px 18px",
-        background: v4Colors.cardSubdued,
+        ...rowStyle,
+        background: emphasize ? "var(--app-accent-utility-soft)" : "transparent",
+        borderColor: emphasize ? "rgba(200, 139, 36, 0.24)" : v4Colors.divider,
       }}
     >
-      <div style={eyebrowStyle}>{title}</div>
-      {children}
+      <div style={rowTitleStyle}>{title}</div>
+      <div style={rowContentStyle}>{children}</div>
     </div>
   );
 }
 
-function TokenList({ items }: { items: string[] }) {
+function PlainList({
+  items,
+  columns = 1,
+}: {
+  items: string[];
+  columns?: 1 | 2;
+}) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns:
+          columns === 2 ? "repeat(auto-fit, minmax(180px, 1fr))" : "minmax(0, 1fr)",
+        gap: "8px 18px",
+      }}
+    >
       {items.map((item) => (
-        <span key={item} style={tokenStyle}>
-          {item}
-        </span>
+        <div key={item} style={listItemStyle}>
+          <span style={listBulletStyle} aria-hidden>
+            ✓
+          </span>
+          <span>{item}</span>
+        </div>
       ))}
     </div>
   );
+}
+
+function formatCreditsFull(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 const overlayStyle = {
@@ -316,15 +425,15 @@ const overlayStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 24,
+  padding: 32,
   background: "rgba(15, 23, 42, 0.32)",
 } as const;
 
 const panelStyle = {
-  width: "min(720px, calc(100vw - 32px))",
-  maxHeight: "min(720px, calc(100vh - 32px))",
+  width: "min(860px, calc(100vw - 40px))",
+  maxHeight: "min(780px, calc(100vh - 40px))",
   overflow: "hidden",
-  borderRadius: 20,
+  borderRadius: 24,
   border: `1px solid ${v4Colors.cardBorder}`,
   background: v4Colors.cardBg,
   boxShadow: "var(--app-shadow-card-strong)",
@@ -337,35 +446,32 @@ const headerStyle = {
   alignItems: "flex-start",
   justifyContent: "space-between",
   gap: 16,
-  padding: "24px 24px 20px",
+  padding: "30px 32px 22px",
   borderBottom: `1px solid ${v4Colors.divider}`,
 } as const;
 
 const bodyStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 16,
-  padding: "20px 24px",
+  gap: 0,
+  padding: "8px 32px 0",
   overflowY: "auto",
 } as const;
 
 const footerStyle = {
   display: "flex",
+  alignItems: "center",
   justifyContent: "flex-end",
   gap: 12,
   flexWrap: "wrap",
-  padding: "0 24px 24px",
-} as const;
-
-const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: 14,
+  padding: "28px 32px 32px",
+  borderTop: `1px solid ${v4Colors.divider}`,
+  background: v4Colors.cardBg,
 } as const;
 
 const titleStyle = {
   margin: 0,
-  fontSize: 24,
+  fontSize: 28,
   fontWeight: 700,
   lineHeight: 1.25,
   color: v4Colors.text,
@@ -374,9 +480,9 @@ const titleStyle = {
 const descriptionStyle = {
   marginTop: 12,
   color: v4Colors.textMuted,
-  fontSize: 14,
-  lineHeight: "22px",
-  maxWidth: 560,
+  fontSize: 15,
+  lineHeight: "24px",
+  maxWidth: 680,
 } as const;
 
 const closeButtonStyle = {
@@ -395,21 +501,91 @@ const closeButtonStyle = {
   flexShrink: 0,
 } as const;
 
-const eyebrowStyle = {
-  display: "block",
-  marginBottom: 10,
+const rowStyle = {
+  display: "grid",
+  gridTemplateColumns: "220px minmax(0, 1fr)",
+  gap: 24,
+  alignItems: "start",
+  padding: "18px 0",
+  borderBottom: `1px solid ${v4Colors.divider}`,
+} as const;
+
+const rowTitleStyle = {
   fontSize: 12,
   fontWeight: 600,
   color: v4Colors.textMuted,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
+  lineHeight: 1.5,
+} as const;
+
+const rowContentStyle = {
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
 } as const;
 
 const estimateTitleStyle = {
-  fontSize: 18,
+  fontSize: 22,
   fontWeight: 600,
   color: v4Colors.text,
   lineHeight: 1.35,
+} as const;
+
+const creditHeadlineStyle = {
+  display: "flex",
+  alignItems: "baseline",
+  flexWrap: "wrap",
+  gap: 12,
+  lineHeight: 1,
+} as const;
+
+const creditHeadlineNumberStyle = {
+  fontSize: 30,
+  fontWeight: 700,
+  letterSpacing: "-0.03em",
+} as const;
+
+const creditSlashStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 24,
+  fontWeight: 500,
+} as const;
+
+const creditMetaRowStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "12px 20px",
+  marginTop: 6,
+} as const;
+
+const creditMetaItemStyle = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: 8,
+} as const;
+
+const creditMetaLabelStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+  lineHeight: 1.5,
+} as const;
+
+const creditMetaValueStyle = {
+  color: v4Colors.text,
+  fontSize: 15,
+  fontWeight: 600,
+  lineHeight: "24px",
+} as const;
+
+const estimateHintStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 13,
+  lineHeight: "22px",
 } as const;
 
 const remainingStyle = {
@@ -424,19 +600,31 @@ const warningStyle = {
   lineHeight: "22px",
 } as const;
 
-const mutedTextStyle = {
-  color: v4Colors.textMuted,
-  lineHeight: "22px",
+const valueTextStyle = {
+  color: v4Colors.text,
+  fontSize: 15,
+  lineHeight: "24px",
 } as const;
 
-const tokenStyle = {
-  display: "inline-flex",
+const mutedTextStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 15,
+  lineHeight: "24px",
+} as const;
+
+const listItemStyle = {
+  display: "flex",
   alignItems: "center",
-  padding: "6px 10px",
-  borderRadius: 999,
-  background: v4Colors.cardBg,
-  border: `1px solid ${v4Colors.cardBorder}`,
+  gap: 10,
   color: v4Colors.text,
-  fontSize: 12,
-  lineHeight: 1.35,
+  fontSize: 15,
+  lineHeight: "24px",
+  minWidth: 0,
+} as const;
+
+const listBulletStyle = {
+  color: v4Colors.primary,
+  fontSize: 13,
+  lineHeight: 1,
+  flexShrink: 0,
 } as const;
