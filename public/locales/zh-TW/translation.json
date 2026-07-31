@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "覆蓋現有譯文",
   "v4.createTask.translateHandle": "翻譯 handle",
   "v4.createTask.removeTarget": "移除 {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano（建議使用）",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash（建議使用）",
   "v4.createTask.estimateSelectFirst": "請先選擇語言與模組以預估額度",
   "v4.createTask.estimateLoading": "正在預估額度…",
   "v4.createTask.estimateUnavailable": "目前無法提供預估",

@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Skriv över befintliga översättningar",
   "v4.createTask.translateHandle": "Översätt handle",
   "v4.createTask.removeTarget": "Ta bort {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (rekommenderas)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (rekommenderas)",
   "v4.createTask.estimateSelectFirst": "Välj språk och moduler för att uppskatta krediter",
   "v4.createTask.estimateLoading": "Uppskattar krediter…",
   "v4.createTask.estimateUnavailable": "Uppskattning är inte tillgänglig just nu",

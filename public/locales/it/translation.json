@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Sovrascrivi traduzioni esistenti",
   "v4.createTask.translateHandle": "Traduci handle",
   "v4.createTask.removeTarget": "Rimuovi {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (consigliato)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (consigliato)",
   "v4.createTask.estimateSelectFirst": "Seleziona lingue e moduli per stimare i crediti",
   "v4.createTask.estimateLoading": "Stima crediti…",
   "v4.createTask.estimateUnavailable": "Stima non disponibile al momento",

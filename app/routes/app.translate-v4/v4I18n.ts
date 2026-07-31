@@ -114,7 +114,7 @@ export function getV4ModuleLabel(moduleKey: string, t: TFunction): string {
 }
 
 export function getV4AiModelLabel(value: string, t: TFunction): string {
-  if (value === "gpt-4.1-nano") return t("v4.createTask.modelRecommended");
+  if (value === "deepseek-v4-flash") return t("v4.createTask.modelRecommended");
   return value;
 }
 
