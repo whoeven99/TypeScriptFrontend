@@ -65,30 +65,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     case "APP_PURCHASES_ONE_TIME_UPDATE":
-      try {
-        await handleTsfPurchaseWebhook({
-          shop,
-          accessToken: session?.accessToken,
-          payload,
-        });
-        break;
-      } catch (error) {
+      // 先 ACK，后台入账：Shopify 看板响应时间只计到 200；账本本身幂等，失败靠 worker reconcile。
+      void handleTsfPurchaseWebhook({
+        shop,
+        accessToken: session?.accessToken,
+        payload,
+      }).catch((error) => {
         console.error("Error processing purchase:", error);
-        return new Response(null, { status: 200 });
-      }
+      });
+      return new Response(null, { status: 200 });
 
     case "APP_SUBSCRIPTIONS_UPDATE":
-      try {
-        await handleTsfSubscriptionWebhook({
-          shop,
-          accessToken: session?.accessToken,
-          payload,
-        });
-        break;
-      } catch (error) {
+      // 先 ACK，后台入账：避免同步等 Shopify GraphQL + Turso 把 p50 拖到 1s+。
+      void handleTsfSubscriptionWebhook({
+        shop,
+        accessToken: session?.accessToken,
+        payload,
+      }).catch((error) => {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
-        return new Response(null, { status: 200 });
-      }
+      });
+      return new Response(null, { status: 200 });
 
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
