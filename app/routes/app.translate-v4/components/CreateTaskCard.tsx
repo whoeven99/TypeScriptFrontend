@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { BlockStack, Checkbox, Select } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
@@ -95,6 +95,14 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+  const allTargetValues = localeChips.map((locale) => locale.value);
+  const allModuleValues = moduleChips.map((mod) => mod.value);
+  const allTargetsSelected =
+    allTargetValues.length > 0 && allTargetValues.every((value) => targets.includes(value));
+  const someTargetsSelected = targets.length > 0 && !allTargetsSelected;
+  const allModulesSelected =
+    allModuleValues.length > 0 && allModuleValues.every((value) => modules.includes(value));
+  const someModulesSelected = modules.length > 0 && !allModulesSelected;
 
   const toggleTarget = (value: string) => {
     onTargetsChange(
@@ -110,6 +118,14 @@ export function CreateTaskCard({
         ? modules.filter((m) => m !== value)
         : [...modules, value],
     );
+  };
+
+  const toggleAllTargets = () => {
+    onTargetsChange(allTargetsSelected ? [] : allTargetValues);
+  };
+
+  const toggleAllModules = () => {
+    onModulesChange(allModulesSelected ? [] : allModuleValues);
   };
 
   const submitButton = (
@@ -218,6 +234,12 @@ export function CreateTaskCard({
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.targetLanguages")} />
         <div style={checkboxGridStyle}>
+          <CheckboxOptionCard
+            label={t("Check all")}
+            selected={allTargetsSelected}
+            indeterminate={someTargetsSelected}
+            onToggle={toggleAllTargets}
+          />
           {localeChips.map((locale) => {
             const selected = targets.includes(locale.value);
             return (
@@ -236,6 +258,12 @@ export function CreateTaskCard({
       <div style={{ marginBottom: 16 }}>
         <SectionHeader title={t("v4.createTask.content")} />
         <div style={checkboxGridStyle}>
+          <CheckboxOptionCard
+            label={t("Check all")}
+            selected={allModulesSelected}
+            indeterminate={someModulesSelected}
+            onToggle={toggleAllModules}
+          />
           {moduleChips.map((mod) => {
             const selected = modules.includes(mod.value);
             return (
@@ -472,17 +500,28 @@ function SectionLabel({ children }: { children: string }) {
 function CheckboxOptionCard({
   label,
   selected,
+  indeterminate = false,
   onToggle,
   prefix,
 }: {
   label: string;
   selected: boolean;
+  indeterminate?: boolean;
   onToggle: () => void;
   prefix?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
   return (
     <label style={checkboxCardStyle(selected)}>
       <input
+        ref={inputRef}
         type="checkbox"
         checked={selected}
         onChange={onToggle}
@@ -492,11 +531,11 @@ function CheckboxOptionCard({
         {prefix ? (
           <span
             style={{
-              opacity: selected ? 0.9 : 0.7,
+              opacity: selected ? 1 : 0.72,
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "0.02em",
-              color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+              color: v4Colors.textMuted,
               flexShrink: 0,
             }}
           >
@@ -523,16 +562,17 @@ function checkboxCardStyle(selected: boolean): CSSProperties {
     minHeight: 44,
     padding: "10px 12px",
     borderRadius: 12,
-    border: `1px solid ${selected ? v4Colors.primary : v4Colors.cardBorder}`,
-    background: selected ? v4Colors.primarySoft : v4Colors.cardBg,
-    color: selected ? v4Colors.text : v4Colors.textMuted,
+    border: `1px solid ${v4Colors.cardBorder}`,
+    background: v4Colors.cardBg,
+    color: v4Colors.text,
     fontSize: 13,
     fontWeight: 600,
     lineHeight: 1.35,
     cursor: "pointer",
-    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+    transition: "color 0.15s",
     fontFamily: "inherit",
     userSelect: "none",
+    opacity: selected ? 1 : 0.92,
   };
 }
 
