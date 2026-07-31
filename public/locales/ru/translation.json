@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Перезаписать существующие переводы",
   "v4.createTask.translateHandle": "Переводить handle",
   "v4.createTask.removeTarget": "Удалить {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (рекомендуется)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (рекомендуется)",
   "v4.createTask.estimateSelectFirst": "Выберите языки и модули, чтобы оценить стоимость в кредитах",
   "v4.createTask.estimateLoading": "Оценка стоимости в кредитах…",
   "v4.createTask.estimateUnavailable": "Оценка сейчас недоступна",

@@ -64,6 +64,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | Path                                                         | Purpose                                                                                   |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | `app/root.tsx`                                               | Global Remix root, Redux provider, GTM/web-vitals, global client error reporting.         |
+| `app/entry.client.tsx` / `app/entry.server.tsx`              | Remix hydrate/SSR. Server inlines i18n boot (`app/lib/i18nBoot.ts`) so client hydrate does not await `/locales/*.json`. |
 | `app/shopify.server.ts`                                      | Shopify app config, auth exports, API version, session storage.                           |
 | `app/db.server.ts`                                           | Turso/Prisma client creation and runtime env loading.                                     |
 | `app/routes/app.tsx`                                         | Embedded app shell, auth, nav, bootstrap, install-time init, shop scan trigger.           |
@@ -324,11 +325,13 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   JSON pack in `llmTranslate.ts` — field/value TM first, then dedupe by text,
   then size-capped JSON batches (`TRANSLATE_SHORT_JSON_MAX_CHARS` /
   `TRANSLATE_SHORT_JSON_MAX_ITEMS`, defaults 3000/40) with LLM first and Google
-  fallback. Pool prefix `@short@` keeps pack limits separate from rich
-  HTML/JSON. Rollback: `TRANSLATE_SHORT_PACK_LLM_FIRST=false` restores
-  Google-first for short plain. Forced `aiModel=google-translate` still
-  Google-only. Metafield `json` FieldPlan remains single-value slot extract/
-  reassemble — it does not pack multiple Shopify fields into one JSON document.
+  last. Within LLM: `aiModel=gpt-*` tries Azure GPT first, then DeepSeek for
+  unresolved items, then Google. Non-GPT jobs use DeepSeek then Google. Pool
+  prefix `@short@` keeps pack limits separate from rich HTML/JSON. Rollback:
+  `TRANSLATE_SHORT_PACK_LLM_FIRST=false` restores Google-first for short plain.
+  Forced `aiModel=google-translate` still Google-only. Metafield `json`
+  FieldPlan remains single-value slot extract/reassemble — it does not pack
+  multiple Shopify fields into one JSON document.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.

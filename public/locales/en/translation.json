@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Overwrite existing translations",
   "v4.createTask.translateHandle": "Translate handle",
   "v4.createTask.removeTarget": "Remove {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (recommended)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (recommended)",
   "v4.createTask.estimateSelectFirst": "Select languages and modules to estimate credits",
   "v4.createTask.estimateLoading": "Estimating credits…",
   "v4.createTask.estimateUnavailable": "Estimate unavailable right now",
