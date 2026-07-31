@@ -162,16 +162,6 @@ export async function translateSingleField(
       skipCacheRead: true,
       skipCacheWrite: false,
       logSingleTranslate: true,
-      promptContext: {
-        module: args.module,
-        resourceId: args.resourceId,
-        shopContext: args.shopContext ?? null,
-        terminology: args.terminology ?? null,
-        localizationContext: args.localizationContext ?? null,
-        market: args.market ?? null,
-        themeSceneProfile: args.themeSceneProfile ?? null,
-        modulePolicy: args.modulePolicy ?? null,
-      },
     },
   );
 

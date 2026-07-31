@@ -498,16 +498,24 @@ export type HtmlNodeGroup = {
   }>;
 };
 
-export type HtmlNodePlan = { template: string; texts: string[]; nodeGroups: HtmlNodeGroup[] };
+export type HtmlNodePlan = {
+  template: string;
+  texts: string[];
+  nodeGroups: HtmlNodeGroup[];
+  /** Backward-compatible alias for older call sites that still expect nested text parts. */
+  nodeParts: string[][];
+};
 
 /** Split HTML into a structural template and translatable text-node parts. */
 export function htmlNodePartsOf(value: string): HtmlNodePlan {
   let { template, texts } = extractHtmlTextNodes(preprocessHtmlForTranslation(value));
   ({ template, texts } = coalesceBlockTextNodes(template, texts));
+  const nodeGroups = buildInlineAwareNodeGroups(template, texts);
   return {
     template,
     texts,
-    nodeGroups: buildInlineAwareNodeGroups(template, texts),
+    nodeGroups,
+    nodeParts: nodeGroups.map((group) => group.parts),
   };
 }
 

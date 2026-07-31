@@ -1,4 +1,5 @@
 import { CosmosClient, type Container } from "@azure/cosmos";
+import type { ShopScanTaskName } from "~/lib/shopScanTaskDeps";
 
 /**
  * 店铺画像扫描（Shop Profile Scan）——Remix 侧 Cosmos 访问层。
@@ -14,6 +15,8 @@ import { CosmosClient, type Container } from "@azure/cosmos";
 
 /** admin：Spark Admin「现算覆盖率」，只跑 coverage 写 Turso（对齐语言页刷新统计）。 */
 export type ShopScanTrigger = "install" | "scheduled" | "manual" | "admin";
+export type ShopScanMode = "full" | "data_only";
+export type ShopScanTask = ShopScanTaskName;
 
 export type ShopScanStatus =
   | "CREATED"
@@ -74,6 +77,8 @@ export type ShopScanJob = {
   id: string;
   shopName: string;
   trigger: ShopScanTrigger;
+  mode?: ShopScanMode | null;
+  task?: ShopScanTask | null;
   status: ShopScanStatus;
   stages: ShopScanStages;
   blobPrefix: string;
@@ -122,6 +127,8 @@ export async function createShopScanJob(input: {
   scanId: string;
   shop: string;
   trigger: ShopScanTrigger;
+  mode?: ShopScanMode | null;
+  task?: ShopScanTask | null;
   blobPrefix: string;
 }): Promise<ShopScanJob> {
   const now = new Date().toISOString();
@@ -129,6 +136,8 @@ export async function createShopScanJob(input: {
     id: input.scanId,
     shopName: input.shop,
     trigger: input.trigger,
+    mode: input.mode ?? null,
+    task: input.task ?? null,
     status: "CREATED",
     stages: { ...EMPTY_STAGES },
     blobPrefix: input.blobPrefix,
@@ -186,5 +195,33 @@ export async function getLatestShopScanJob(shop: string): Promise<ShopScanJob | 
     return resources[0] ?? null;
   } catch {
     return null;
+  }
+}
+
+/** 该店按 task 聚合的最新扫描（按 updatedAt 倒序取第一条）。 */
+export async function getLatestShopScanJobsByTask(
+  shop: string,
+): Promise<Partial<Record<ShopScanTask, ShopScanJob>>> {
+  try {
+    const { resources } = await getContainer()
+      .items.query<ShopScanJob>(
+        {
+          query:
+            "SELECT * FROM c WHERE c.shopName = @shop AND IS_DEFINED(c.task) AND c.task != null ORDER BY c.updatedAt DESC OFFSET 0 LIMIT 100",
+          parameters: [{ name: "@shop", value: shop }],
+        },
+        { partitionKey: shop },
+      )
+      .fetchAll();
+
+    const latestByTask: Partial<Record<ShopScanTask, ShopScanJob>> = {};
+    for (const job of resources) {
+      const task = job.task;
+      if (!task || latestByTask[task]) continue;
+      latestByTask[task] = job;
+    }
+    return latestByTask;
+  } catch {
+    return {};
   }
 }
