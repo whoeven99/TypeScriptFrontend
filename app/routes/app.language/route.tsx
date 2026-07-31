@@ -84,7 +84,6 @@ import {
   createTranslateV4Tasks,
   type ShopLocaleOption,
 } from "~/lib/createTranslateV4Tasks";
-import { onTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { normalizeShopQuota } from "~/lib/translationQuota";
 import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
 import type { ShopQuota } from "~/lib/translationQuota";
@@ -143,6 +142,8 @@ type LanguageCoverageRow = {
   total: number;
   percent: number | null;
   cacheMissing: boolean;
+  /** Redis HGETALL 完全无内容 */
+  cacheEmpty?: boolean;
   autoTranslate: boolean;
   isTranslating: boolean;
 };
@@ -482,9 +483,6 @@ const Index = () => {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [publishModalLanguageCode, setPublishModalLanguageCode] =
     useState<string>("");
-  const [noFirstTranslation, setNoFirstTranslation] = useState(false);
-  const [noFirstTranslationLocale, setNoFirstTranslationLocale] =
-    useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [autoTranslateAlert, setAutoTranslateAlert] = useState<string>("");
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
@@ -551,60 +549,63 @@ const Index = () => {
     }
   }, [shop]);
 
-  const refreshCoverageRows = useCallback(
-    async ({
-      baseRows,
-      forceRefresh = false,
-      locales,
-    }: {
-      baseRows?: LanguagesDataType[];
-      forceRefresh?: boolean;
-      locales?: string[];
-    }) => {
+  const applyCoverageToRows = useCallback(
+    async (baseRows: LanguagesDataType[]) => {
       if (coverageRequestRef.current) {
         await coverageRequestRef.current;
-        if (!forceRefresh) return;
+        return;
       }
+      const targets = baseRows.map((row) => row.locale).filter(Boolean);
       coverageRequestRef.current = (async () => {
         try {
-          const coverageData = await listLanguageCoverageCompat({
-            forceRefresh,
-            locales,
-          });
+          const coverageData = await listLanguageCoverageCompat({ targets });
           const coverageRows = (coverageData?.summary?.locales ??
             []) as LanguageCoverageRow[];
-          const nextRows = applyCoverageToLanguageRows(
-            baseRows ?? dataSourceRef.current,
-            coverageRows,
+          dispatch(
+            setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
           );
-          dispatch(setLanguageTableData(nextRows));
+
+          // Turso 未写入覆盖率（且 Redis 回退也空）：与「刷新统计」同效，按语言逐个 refresh=1
+          const emptyLocales = coverageRows
+            .filter((row) => row.cacheEmpty)
+            .map((row) => row.locale);
+          if (emptyLocales.length > 0) {
+            void (async () => {
+              try {
+                let latestRows = coverageRows;
+                for (const locale of emptyLocales) {
+                  const refreshed = await listLanguageCoverageCompat({
+                    targets,
+                    forceRefresh: true,
+                    refreshLocales: [locale],
+                  });
+                  latestRows = (refreshed?.summary?.locales ??
+                    latestRows) as LanguageCoverageRow[];
+                  dispatch(
+                    setLanguageTableData(
+                      applyCoverageToLanguageRows(baseRows, latestRows),
+                    ),
+                  );
+                }
+              } catch (error) {
+                console.error(
+                  "[language] background coverage refresh failed:",
+                  error,
+                );
+              }
+            })();
+          }
         } catch (error) {
-          console.error(
-            forceRefresh
-              ? "[language] refresh coverage status failed:"
-              : "[language] load coverage status failed:",
-            error,
-          );
-          if (baseRows) {
-            dispatch(setLanguageTableData(baseRows));
-          }
+          console.error("[language] load coverage status failed:", error);
+          dispatch(setLanguageTableData(baseRows));
         } finally {
-          if (baseRows) {
-            setLoading(false);
-          }
+          setLoading(false);
           coverageRequestRef.current = null;
         }
       })();
       await coverageRequestRef.current;
     },
     [dispatch],
-  );
-
-  const applyCoverageToRows = useCallback(
-    async (baseRows: LanguagesDataType[]) => {
-      await refreshCoverageRows({ baseRows });
-    },
-    [refreshCoverageRows],
   );
 
   const hydrateLanguageRows = useCallback(
@@ -616,10 +617,6 @@ const Index = () => {
     },
     [applyCoverageToRows, dispatch],
   );
-
-  useEffect(() => {
-    dataSourceRef.current = dataSource;
-  }, [dataSource]);
 
   useEffect(() => {
     if (loaderShopLanguages.length > 0) {
@@ -792,6 +789,10 @@ const Index = () => {
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
+    dataSourceRef.current = dataSource;
+  }, [dataSource]);
+
+  useEffect(() => {
     return onTranslationStatsUpdated((detail) => {
       if (
         !dataSourceRef.current.some((item) =>
@@ -833,7 +834,8 @@ const Index = () => {
       }
 
       try {
-        const coverageData = await listLanguageCoverageCompat();
+        const targets = dataSource.map((lang) => lang.locale).filter(Boolean);
+        const coverageData = await listLanguageCoverageCompat({ targets });
         const rows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
         const nextStatusSignature = dataSource
           .map((lang) => {
@@ -849,7 +851,6 @@ const Index = () => {
         lastStatusSignature = nextStatusSignature;
 
         let hasPendingStatus = false;
-        const completedLocales: string[] = [];
         const updates: LanguagesDataType[] = [];
         for (const lang of dataSource) {
           const row = rows.find((r) =>
@@ -858,9 +859,6 @@ const Index = () => {
           const nextStatus = row ? statusFromCoverage(row) : lang.status;
           const nextStatusDetail = statusDetailFromCoverage(row);
           if (nextStatus === 2) hasPendingStatus = true;
-          if (lang.status === 2 && nextStatus !== 2) {
-            completedLocales.push(lang.locale);
-          }
           if (
             lang.status !== nextStatus ||
             lang.statusDetail !== nextStatusDetail
@@ -880,7 +878,6 @@ const Index = () => {
         if (completedLocales.length > 0) {
           void refreshCoverageRows({});
         }
-
         if (pollFailureLoggedRef.current) {
           pollFailureLoggedRef.current = false;
           void reportClientLog({
@@ -937,7 +934,7 @@ const Index = () => {
       disposed = true;
       if (timer) clearTimeout(timer);
     };
-  }, [dataSource, source?.code, shop, dispatch, refreshCoverageRows]);
+  }, [dataSource, source?.code, shop, dispatch]);
 
   const columns = [
     {
@@ -1002,11 +999,7 @@ const Index = () => {
         <Switch
           checked={record.autoTranslate}
           onChange={(checked) =>
-            handleAutoUpdateTranslationChange(
-              record.locale,
-              checked,
-              record.status,
-            )
+            handleAutoUpdateTranslationChange(record.locale, checked)
           }
           loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
         />
@@ -1198,7 +1191,6 @@ const Index = () => {
   const handleAutoUpdateTranslationChange = async (
     locale: string,
     checked: boolean,
-    status: number,
   ) => {
     const trace = startClientLogTrace({
       event: "language_toggle_auto_translate",
@@ -1206,7 +1198,6 @@ const Index = () => {
       shop,
       context: {
         locale,
-        currentStatus: status,
       },
     });
     if (!plan) {
@@ -1215,16 +1206,6 @@ const Index = () => {
         status: "failure",
         message: "Plan not loaded",
       });
-      return;
-    }
-    if (status === 0) {
-      finishClientLogTrace(trace, {
-        level: "warn",
-        status: "failure",
-        message: "Auto translate requires an initial translation",
-      });
-      setNoFirstTranslationLocale(locale);
-      setNoFirstTranslation(true);
       return;
     }
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
@@ -1492,7 +1473,6 @@ const Index = () => {
                                 handleAutoUpdateTranslationChange(
                                   item.locale,
                                   checked,
-                                  item.status,
                                 )
                               }
                             />
@@ -1636,37 +1616,6 @@ const Index = () => {
         setIsModalOpen={setIsPublishModalOpen}
         publishLangaugeCode={publishModalLanguageCode}
       />
-      <Modal
-        open={noFirstTranslation}
-        onCancel={() => setNoFirstTranslation(false)}
-        footer={
-          <Space>
-            <Button onClick={() => setNoFirstTranslation(false)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setNoFirstTranslation(false);
-                openTranslateModal([noFirstTranslationLocale]);
-              }}
-            >
-              {t("Translate")}
-            </Button>
-          </Space>
-        }
-        style={{
-          top: "40%",
-          zIndex: 1001,
-        }}
-        width={700}
-      >
-        <Text>
-          {t(
-            "Please manually start a translation task first. You can then use the automatic translation function.",
-          )}
-        </Text>
-      </Modal>
       <CreateTaskQuotaGateModal
         open={translateQuotaGateMode !== null}
         mode={translateQuotaGateMode ?? "pricing"}

@@ -4,7 +4,8 @@ import { tsfExecute } from "../tsfDb.js";
  * 店铺画像扫描的 TSF Turso 写入（worker 侧走 libsql 原生 SQL，非 Prisma）。
  *
  * 只写「当前生效」的结构化产物：ShopProfile（画像）、ShopTargetLocale（目标语言同步）、
- * Glossary（AI 术语，status=0 待确认）。大块明细在 Blob，任务状态在 Cosmos。
+ * Glossary（AI 术语，status=0 待确认）。语言级覆盖率见 `localeCoverageTsf.ts`。
+ * 大块明细在 Blob，任务状态在 Cosmos。
  */
 
 export type ShopProfileWrite = {

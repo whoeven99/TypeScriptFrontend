@@ -1,15 +1,24 @@
 /**
  * 语言页状态口径：覆盖率结果 + 活跃任务中的翻译态。
+ * 覆盖率优先读 Turso ShopTargetLocale.coverage*；cacheEmpty 时后台 refresh 现算并回写。
+ * 传入 targets 时 coverage API 跳过 Shopify locales 拉取。
  */
 export async function listLanguageCoverageCompat(args?: {
+  /** 页面已有的目标语言；有则 API 不再打 Shopify */
+  targets?: string[];
+  /** true：现算 Shopify 并回写 Turso（+ Redis 明细） */
   forceRefresh?: boolean;
-  locales?: string[];
+  /** forceRefresh 时仅重算这些语言；省略则按 API 默认策略 */
+  refreshLocales?: string[];
 }) {
   const params = new URLSearchParams({ signals: "minimal" });
+  if (args?.targets?.length) {
+    params.set("targets", args.targets.join(","));
+  }
   if (args?.forceRefresh) {
     params.set("refresh", "1");
-    if (args.locales?.length) {
-      params.set("locales", args.locales.join(","));
+    if (args.refreshLocales?.length) {
+      params.set("locales", args.refreshLocales.join(","));
     }
   } else {
     params.set("cache", "1");

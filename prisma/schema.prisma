@@ -44,12 +44,23 @@ model ShopTranslationSettings {
   updatedAt     DateTime  @updatedAt
 }
 
-// 每店每目标语言一行 —— 语言页的「按语言自动翻译开关」。worker 据此精确按语言建任务。
+// 每店每目标语言一行 —— 语言页「按语言自动翻译开关」+ 覆盖率汇总。
+// worker 按 autoTranslate 建自动任务；语言页/Spark 总览读 coverage*（权威在 Turso，非 Redis）。
 model ShopTargetLocale {
   id            Int      @id @default(autoincrement())
   shop          String // myshopify 域名
   locale        String // 目标语言（Shopify locale，如 "fr"）
   autoTranslate Boolean  @default(false)
+  /// 覆盖率汇总：已译字段数（COVERAGE_COUNT_LABELS 口径加总）
+  coverageTranslated Int       @default(0)
+  /// 覆盖率汇总：可译字段总数
+  coverageTotal      Int       @default(0)
+  /// 0–100；null=尚未统计过
+  coveragePercent    Int?
+  /// 最近一次写入覆盖率汇总的时间；null=从未统计
+  coverageUpdatedAt  DateTime?
+  /// finalize | refresh | shop_scan
+  coverageSource     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

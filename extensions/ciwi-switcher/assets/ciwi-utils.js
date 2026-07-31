@@ -142,7 +142,6 @@ export function isPriceRelatedElement(node) {
         : null;
   return Boolean(element?.closest(CIWI_PRICE_RELATED_SELECTOR));
 }
-
 function collectMoneyNodes(root) {
   const scope = root || document;
   const nodes = scope.querySelectorAll(CIWI_MONEY_SELECTOR);

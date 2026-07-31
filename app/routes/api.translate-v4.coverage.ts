@@ -10,18 +10,28 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const shopName = url.searchParams.get("shopName")?.trim() || session.shop;
 
+  const targetsParam = url.searchParams
+    .get("targets")
+    ?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   let targetLocales: Array<{ value: string; label: string }> = [];
-  let primaryLocale = "en";
-  try {
-    const loaded = await loadShopLocalesForTranslation({
-      shop: session.shop,
-      accessToken: session.accessToken,
-    });
-    primaryLocale = loaded.primaryLocale ?? "en";
-    targetLocales = selectShopTargetLocales(loaded.localeOptions, primaryLocale);
-  } catch (err) {
-    console.error("[translateV4] coverage locales failed:", err);
-    return json({ ok: false, error: "failed to load locales" }, { status: 500 });
+  if (targetsParam?.length) {
+    // 调用方（语言页）已有 Shopify locales，跳过重复拉取
+    targetLocales = targetsParam.map((value) => ({ value, label: value }));
+  } else {
+    try {
+      const loaded = await loadShopLocalesForTranslation({
+        shop: session.shop,
+        accessToken: session.accessToken,
+      });
+      const primaryLocale = loaded.primaryLocale ?? "en";
+      targetLocales = selectShopTargetLocales(loaded.localeOptions, primaryLocale);
+    } catch (err) {
+      console.error("[translateV4] coverage locales failed:", err);
+      return json({ ok: false, error: "failed to load locales" }, { status: 500 });
+    }
   }
 
   try {

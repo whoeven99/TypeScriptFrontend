@@ -4,9 +4,15 @@ import {
   type TranslationV4Job,
   type StageTimings,
 } from "./cosmosV4.js";
+import {
+  COVERAGE_SUMMARY_MODULES,
+  sumCoverageSummaryModules,
+  type ModuleCount,
+} from "./coverageSummary.js";
 import { setItemsCount } from "./redisV4.js";
 import { computeModuleCount } from "./itemsCount.js";
 import { recordJobUsageSnapshot } from "./recordJobUsageSnapshot.js";
+import { upsertLocaleCoverage } from "./localeCoverageTsf.js";
 import { getOfflineAccessTokenFromTsf } from "./tsfDb.js";
 
 export type FinalizeAfterWritebackInput = {
@@ -51,7 +57,11 @@ export async function finalizeJobAfterWriteback(
         `[finalize] skip items_count job=${jobId}: Turso Session 中缺少 offline token`,
       );
     }
-    for (const module of job.modules) {
+    const moduleCounts = new Map<string, ModuleCount>();
+    const modulesToCount = [
+      ...new Set<string>([...job.modules, ...COVERAGE_SUMMARY_MODULES]),
+    ];
+    for (const module of modulesToCount) {
       if (!accessToken) break;
       try {
         const count = await computeModuleCount(
@@ -60,6 +70,7 @@ export async function finalizeJobAfterWriteback(
           module,
           job.target,
         );
+        moduleCounts.set(module, count);
         const stored = await setItemsCount(shopName, job.target, module, count);
         if (stored) {
           console.log(
@@ -72,6 +83,24 @@ export async function finalizeJobAfterWriteback(
         }
       } catch (e) {
         console.error(`[finalize] items_count job=${jobId} ${module} failed:`, e);
+      }
+    }
+
+    if (accessToken && moduleCounts.size > 0) {
+      try {
+        const summary = sumCoverageSummaryModules(moduleCounts);
+        await upsertLocaleCoverage({
+          shop: shopName,
+          locale: job.target,
+          translated: summary.translated,
+          total: summary.total,
+          source: "finalize",
+        });
+        console.log(
+          `[finalize] turso coverage job=${jobId} ${job.target} ${summary.translated}/${summary.total}`,
+        );
+      } catch (e) {
+        console.error(`[finalize] turso coverage job=${jobId} failed:`, e);
       }
     }
   }

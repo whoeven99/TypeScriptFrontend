@@ -214,6 +214,10 @@ real `route.tsx` or route module is added.
 - `/api/translate-v4/task-action`: `app/routes/api.translate-v4.task-action.ts`.
 - `/api/translate-v4/task-progress`: `app/routes/api.translate-v4.task-progress.ts`.
 - `/api/translate-v4/coverage`: `app/routes/api.translate-v4.coverage.ts`.
+  Optional `targets=locale,locale` skips Shopify locale fetch (language page
+  passes locales it already loaded). Cache reads use one Redis `HGETALL` per
+  locale; language page force-refreshes a locale only when that hash is empty
+  (`cacheEmpty`, same as v4「刷新统计」`refresh=1&locales=`).
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
@@ -456,6 +460,8 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
 `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
 - Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
+  Migration to Render KV: `RENDER_KV`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
+  (see Operations → Redis).
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
@@ -711,7 +717,17 @@ Language:
 - Client: `app/routes/app.language/languageClient.ts`.
 - Server: `app/server/translateV4/targetLocale.server.ts`,
 `shopLocales.server.ts`.
-- Models: `ShopTranslationSettings`, `ShopTargetLocale`.
+- Models: `ShopTranslationSettings`, `ShopTargetLocale`（含语言级覆盖率汇总
+  `coverageTranslated` / `coverageTotal` / `coveragePercent` /
+  `coverageUpdatedAt` / `coverageSource`；权威在 Turso，与 autoTranslate 同表）。
+- Coverage 写入：`app/server/translateV4/coverageStore.server.ts`（App refresh）、
+  `worker/src/services/localeCoverageTsf.ts`（finalize / shop_scan）；
+  口径 `COVERAGE_COUNT_LABELS` / `COVERAGE_SUMMARY_MODULES`。
+- Coverage 读取：`coverage.server.ts` / Spark `tsfLanguageCoverage.ts` 优先
+  Turso `ShopTargetLocale.coverage*`；未统计时 TSF 可回退 Redis；
+  `cacheEmpty` 触发语言页后台 refresh。
+- 线上 Redis→Turso 回填：`scripts/backfill-locale-coverage-from-redis.mjs`
+  （默认 dry-run；`--write` 写入；`--shop=` / `--only-missing`）。
 
 Glossary:
 
@@ -744,8 +760,10 @@ Job `blobPrefix` = `shop-profile/{shop}`。段：`contentSize`、轻量
 `profile` 并**保留**计量段（不再写 glossary）。读者（TSF `artifacts.server.ts` / Spark
 `tsfShopProfileArtifacts.ts`）优先读该文件，再 fallback 旧
 `shop-scan/{shop}/{scanId}/` 散文件。
-- **覆盖率双写分工**：`coverage` 阶段仍写 Redis `tsf:items_count`（线上权威，
-v4 / 语言页 / Spark 语言覆盖率读此）；Blob latest-scan 只留 locale 汇总快照。
+- **覆盖率双写分工**：语言级汇总权威在 Turso `ShopTargetLocale.coverage*`
+  （v4 / 语言页 / Spark 读此）；`coverage` 阶段仍写 Redis `tsf:items_count`
+  module 明细（管理翻译卡片）并 upsert Turso 汇总；Blob latest-scan 只留
+  locale 汇总快照。
 - **shop_scan_jobs 清理**（与 v4 job retention 独立）：每小时 :50
 （`cleanupOldShopScanJobs.ts`）；默认保留 7 天终态任务，每店保留最新一条
 COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
@@ -765,9 +783,12 @@ COMPLETED/PARTIAL；不删 `latest-scan.json`；可 best-effort 清遗留
   `(currentSlot - 1) % slots`（比同店 auto 槽延后 1 小时）。候选店 =
   有 Account + offline token（不要求开自动翻译）；整店冷却约 20h；
   已有进行中 scan 则跳过。
-  - `manual`（调试页按钮）：只跑 `profile`（AI）；`glossary` 阶段已停用（一律
-  SKIPPED）。跳过计量阶段，并从上一份 summary 合并计量字段，保证
-  `getLatestShopScanJob` 仍完整。
+  - `manual`（调试页按钮 / Admin 画像「重新扫描」）：只跑 `profile`（AI）；
+  `glossary` 阶段已停用（一律 SKIPPED）。跳过计量阶段，并从上一份 summary
+  合并计量字段，保证 `getLatestShopScanJob` 仍完整。
+  - `admin`（Spark Admin 语言覆盖率「现算」）：只跑 `coverage` → 写 Turso
+  `ShopTargetLocale.coverage*`（`source=shop_scan`），对齐语言页「刷新统计」
+  展示口径；不跑 contentSize / profile。
 - Nav / shop-profile UI 在生产仍隐藏；安装计量入队不依赖该页。
 
 Shop profile intelligence direction:
@@ -808,7 +829,9 @@ Current models:
 
 - `Session`: Shopify session storage.
 - `ShopTranslationSettings`: per-shop translation settings.
-- `ShopTargetLocale`: per-shop target locale and auto-translate flag.
+- `ShopTargetLocale`: per-shop target locale, auto-translate flag, and
+  language-level coverage summary (`coverageTranslated` / `coverageTotal` /
+  `coveragePercent` / `coverageUpdatedAt` / `coverageSource`).
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
 - `SwitcherConfiguration`: storefront switcher settings.
@@ -939,6 +962,12 @@ Operational root scripts:
 recent 72-hour window.
 - `scripts/next-auto-slot-shops.mjs`: preview shops in next auto-translate scan slot.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
+- `scripts/backfill-locale-coverage-from-redis.mjs`: Redis `items_count` →
+  Turso `ShopTargetLocale.coverage*`（默认 dry-run；`--write` 写线上；
+  支持 `--shop=` / `--only-missing`；MOVED 重连重试）。
+- `scripts/migrate-redis-azure-to-render.mjs`: Azure → Render KV SCAN 回填
+  （`--env=.env.test --prefixes=tm,items_count`；默认 dry-run；`--write` 写入；
+  token 同 `REDIS_CUTOVER`）。
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -1039,7 +1068,7 @@ node --experimental-vm-modules -e "
 | ----------------------- | ------------------------------------------------------------------- |
 | `Account`               | `findMany({ where: { shopName } })` — quota/credit state            |
 | `AppSubscription`       | `findMany({ where: { shopName }, orderBy: { createdAt: 'desc' } })` |
-| `ShopTargetLocale`      | `findMany({ where: { shopName } })` — auto-translate config         |
+| `ShopTargetLocale`      | `findMany({ where: { shop } })` — auto-translate + coverage summary |
 | `SwitcherConfiguration` | `findUnique({ where: { shopName } })` — storefront switcher         |
 | `Glossary`              | `findMany({ where: { shopName } })` — glossary entries              |
 
@@ -1094,27 +1123,83 @@ node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
 Redis holds real-time progress counters, hint queues, control flags, and
 translation memory cache.
 
-**Hint queue inspection:**
+**Connection sources (do not print URL/password values):**
+
+| Audience | Env / URL | Notes |
+| --- | --- | --- |
+| Render Key Value (live / sole) | `RENDER_KV` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
+| Azure Cache (migration primary only) | `REDIS_URL` / `REDIS_URL_V4` | Needed only while dual-write or partial cutover; drop when sole mode |
+| One-off CLI | Dashboard **Valkey CLI Command** | External URL wrapped for `redis-cli` / `valkey-cli` |
+
+**Azure → Render KV migration switches** (code: `redisDualClient` in App + Worker):
+
+| Env | Meaning |
+| --- | --- |
+| `RENDER_KV` | Render KV URL（sole 模式下是唯一 Redis） |
+| `REDIS_DUAL_WRITE=true` | Dual-write **cache** String/Hash to both; **never** dual-write hint/shop_scan lists |
+| `REDIS_CUTOVER` | Comma tokens for read/write source = Render: `tm`, `items_count`, `progress`, `control`, `auto_scan`, `hints`, `shop_scan`, `keystat`, or `all`. Empty = all traffic still on Azure |
+
+**Sole-client mode**（可删测试 Azure Redis）: `REDIS_DUAL_WRITE=false`（或未设）+ `REDIS_CUTOVER=all` + `RENDER_KV` 已设 → App/Worker **不再创建** `REDIS_URL*` client。此时可去掉 `REDIS_URL` / `REDIS_URL_V4` 并删除 Azure 实例。
+
+Backfill (dry-run default):
 
 ```ps1
-# Prod hint queues (reads .env.prod)
+node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm,items_count
+node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm --write
+```
+
+Gray test: deploy with `REDIS_DUAL_WRITE=true` and empty `REDIS_CUTOVER` → backfill a token → set the same `REDIS_CUTOVER` on **Web + Worker** → exercise that feature → clear cutover to roll back. Migrate `hints` / `shop_scan` last (lists are never dual-written).
+
+**Ping Render Key Value from local `.env` / `.env.test` (masks host only; never echo secrets):**
+
+```ps1
+# From repo root; reads RENDER_KV from the named file
+node -e "
+const fs=require('fs'); const Redis=require('ioredis');
+const file=process.argv[1]||'.env.test';
+const m=fs.readFileSync(file,'utf8').match(/^RENDER_KV=(.+)$/m);
+if(!m) throw new Error('RENDER_KV missing in '+file);
+const url=m[1].trim().replace(/^[\"']|[\"']$/g,'');
+const r=new Redis(url,{maxRetriesPerRequest:1,connectTimeout:8000});
+r.ping().then(async (pong)=>{
+  const n=await r.dbsize();
+  console.log(JSON.stringify({file, ok:pong==='PONG', pong, dbsize:n}));
+  r.quit();
+}).catch((e)=>{ console.error(file, e.message); process.exit(1); });
+" .env.test
+```
+
+**Hint queue inspection (Azure / current primary via `.env.prod`):**
+
+```ps1
+# Prod hint queues (reads .env.prod REDIS_URL)
 node worker/scripts/probe-hint-queues.mjs
 ```
 
 **Key Redis keys:**
 
 
-| Pattern                                                      | Purpose                           |
-| ------------------------------------------------------------ | --------------------------------- |
-| `translate:v4:hint:{init|translate|writeback}:{manual|auto}` | Stage hint queues                 |
-| `translate:v4:progress:<jobId>`                              | Hash: per-stage done/total        |
-| `translate:v4:control:<jobId>`                               | String: `pause` / `cancel` / null |
-| `translate:v4:progress:total:<jobId>`                        | String: total items per stage     |
-| `translate:v4:tm:<hash>`                                     | Translation memory cache          |
-| `translate:v4:auto_scan:last_at`                             | Last auto-scan timestamp          |
+| Pattern | Type / Purpose |
+| --- | --- |
+| `translate:v4:hint:{stage}:{manual\|auto}` | List: stage hint queues (`stage` = init / translate / writeback; claim prefers manual) |
+| `translate:v4:hint:{stage}` | List: legacy mixed queues (drain-only during deploy) |
+| `translate:v4:hint:verify`, `translate:v4:hint:analysis` | List: retired stages (compat / probe only; no live producers) |
+| `translate:v4:progress:<jobId>` | Hash: per-stage done/total, init module activity, pausePending (TTL 7d) |
+| `translate:v4:control:<jobId>` | String: `pause` / `cancel` (TTL 1d) |
+| `translate:v4:auto_scan:last_at` | String: last / next auto-scan schedule marker |
+| `translate:v4:auto_scan:last_success_at` | String: last successful auto-scan completion |
+| `tsf:shop_scan:hints` | List: shop-scan wake hints `{scanId,shopName}` (Cosmos poll is fallback) |
+| `tsf:items_count:{shop}:{locale}` | Hash: module → `{total,translated,updatedAt}` (TTL 7d; language summary in Turso) |
+| `tm:v5:{shop}:{target}:{model}:{digest}` | String: field-digest translation memory (TTL default 30d) |
+| `tm:v5:val:{source}:{target}:{model}:{id}` | String: value-level TM; id = digest or CRC-32 (TTL default 30d) |
+| `translate:v4:keystat:{label}` | Hash: LLM API-key snapshot (TTL 24h) |
+| `translate:v4:keystatlog:{label}` | List: LLM key throughput history (~30 min, TTL 2h) |
+
+Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
+`packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
 
 
-**Manual Redis query (if you have** `REDIS_URL_V4` **or** `REDIS_URL`**):**
+**Manual query — Azure / live primary (`REDIS_URL_V4` or `REDIS_URL`):**
 
 ```ps1
 node -e "
@@ -1125,6 +1210,56 @@ node -e "
     r.quit();
   });
 "
+```
+
+**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value); instances run **Valkey 8**, Redis-compatible):
+
+| How | When | Notes |
+| --- | --- | --- |
+| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). Docs: enable external connections first. |
+| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). Install CLI locally first. |
+| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`); `redis-cli` is available in the service environment. |
+| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | Prefer this in-repo; never print the URL/password. |
+
+Dashboard / CLI (do not commit the pasted command; it contains secrets):
+
+```bash
+# After enabling external access, Dashboard → Key Value → External Access
+# shows a copy-pasteable redis-cli line (includes --tls).
+# Then, examples (Redis protocol):
+PING
+DBSIZE
+GET translate:v4:auto_scan:last_at
+HGETALL translate:v4:progress:<jobId>
+PTTL tm:v5:val:...
+# Prefer SCAN over KEYS on prod. KEYS is OK only on small test instances.
+```
+
+Same-region service Shell (Internal URL, usually no TLS):
+
+```bash
+# On Ciwi Translate Test / Worker Test Shell (same region as KV):
+redis-cli -u "$RENDER_KV"   # or the Internal connectionString
+# then: PING / DBSIZE / GET …
+```
+
+Node (local / agent; reads `.env.test`, never echo secrets):
+
+```ps1
+$line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KV=' })
+$url = ($line -replace '^RENDER_KV=','').Trim().Trim('"').Trim("'")
+node -e "
+const Redis=require('ioredis');
+const r=new Redis(process.argv[1],{maxRetriesPerRequest:1,connectTimeout:8000});
+const key=process.argv[2]||'translate:v4:auto_scan:last_at';
+(async()=>{
+  const [pong, dbsize, t] = await Promise.all([r.ping(), r.dbsize(), r.type(key)]);
+  const out=t==='hash'?await r.hgetall(key):t==='list'?await r.lrange(key,0,20):await r.get(key);
+  const pttl=await r.pttl(key);
+  console.log(JSON.stringify({pong, dbsize, key, t, pttl, out},null,2));
+  r.quit();
+})().catch(e=>{console.error(e.message);process.exit(1)});
+" $url translate:v4:auto_scan:last_at
 ```
 
 
