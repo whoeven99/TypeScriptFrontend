@@ -468,7 +468,6 @@ const Index = () => {
   const pollFailureLoggedRef = useRef(false);
   const skipWebPresencesResyncRef = useRef(true);
   const coverageRequestRef = useRef<Promise<void> | null>(null);
-  const dataSourceRef = useRef<LanguagesDataType[]>([]);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -789,23 +788,6 @@ const Index = () => {
   }, [dataSource, deleteFetcher.data, dispatch, fetcher, shop, t]);
 
   useEffect(() => {
-    dataSourceRef.current = dataSource;
-  }, [dataSource]);
-
-  useEffect(() => {
-    return onTranslationStatsUpdated((detail) => {
-      if (
-        !dataSourceRef.current.some((item) =>
-          sameTranslationLocale(item.locale, detail.target),
-        )
-      ) {
-        return;
-      }
-      void refreshCoverageRows({});
-    });
-  }, [refreshCoverageRows]);
-
-  useEffect(() => {
     if (!dataSource?.some((item: any) => item.status === 2)) return;
     if (!source?.code) return;
 
@@ -875,9 +857,6 @@ const Index = () => {
           dispatch(updateLanguageTableData(updates));
         }
 
-        if (completedLocales.length > 0) {
-          void refreshCoverageRows({});
-        }
         if (pollFailureLoggedRef.current) {
           pollFailureLoggedRef.current = false;
           void reportClientLog({
