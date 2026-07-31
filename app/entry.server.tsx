@@ -18,6 +18,7 @@ import { renderHeadToString } from 'remix-island';
 import { Head } from './root'
 import { appAntdTheme } from "./ui/theme";
 import { resolveAppI18nCode } from "./lib/resolveAppI18nCode";
+import { i18nBootInlineScript, type CiwiI18nBoot } from "./lib/i18nBoot";
 
 export default async function handleRequest(
   request: Request,
@@ -26,6 +27,9 @@ export default async function handleRequest(
   remixContext: EntryContext,
 ) {
   const i18nCode = resolveAppI18nCode(request.headers.get("Accept-Language"));
+  const fallbackLng = "en";
+  const preloadLngs =
+    i18nCode === fallbackLng ? [i18nCode] : [i18nCode, fallbackLng];
 
   addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");
@@ -38,13 +42,16 @@ export default async function handleRequest(
     .init({
       ...i18n,
       lng: i18nCode,
+      preload: preloadLngs,
       backend: {
         loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json"),
-        requestOptions: {
-          cache: 'no-store',
-        },
       },
     });
+
+  const i18nBoot: CiwiI18nBoot = {
+    lng: instance.resolvedLanguage || i18nCode,
+    resources: instance.store.data,
+  };
 
   const cache = createCache();
 
@@ -95,8 +102,9 @@ export default async function handleRequest(
         abort: () => void,
       ) {
         const body = new PassThrough();
+        // Inline locale bundles before modules so client hydrate need not await /locales.
         body.write(
-          `<!DOCTYPE html><html lang="${i18nCode}">${head}<body><div id="root">`,
+          `<!DOCTYPE html><html lang="${i18nCode}">${head}<body>${i18nBootInlineScript(i18nBoot)}<div id="root">`,
         );
 
         const reactSink = new Writable({

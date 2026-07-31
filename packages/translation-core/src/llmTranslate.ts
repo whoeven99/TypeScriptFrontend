@@ -1611,10 +1611,11 @@ export function setShopQuotaCap(shop: string, cap: number): void {
 
 // ─── Engine router ──────────────────────────────────────────────────────────────
 //
-// Two engine *families*: "llm" (DeepSeek) and "google" (Google Translate).
-// Short plain fields pack into JSON batches (LLM first, Google fallback) unless
-// the job forces google-translate only. Set TRANSLATE_SHORT_PACK_LLM_FIRST=false
-// to restore the old Google-first order for short plain.
+// Two engine *families*: "llm" and "google" (Google Translate).
+// Within "llm": job aiModel gpt-* tries Azure GPT first; unresolved items then
+// cascade to DeepSeek (when configured) before Google. Non-GPT jobs use DeepSeek
+// only. Short plain packs LLM-first (Google last) unless
+// TRANSLATE_SHORT_PACK_LLM_FIRST=false. Forced aiModel=google-translate skips LLM.
 
 type Engine = "llm" | "google";
 
@@ -1714,7 +1715,9 @@ function engineOrderFor(tier: "trivial" | "rich", aiModel?: string): Engine[] {
 
 /** The model/label recorded for a chosen engine (used for TM cache + Cosmos). */
 function engineModel(engine: Engine, aiModel: string): string {
-  return engine === "google" ? "google-translate" : resolveModel(aiModel);
+  if (engine === "google") return "google-translate";
+  if (isGptModel(aiModel)) return resolveGptModel(aiModel);
+  return resolveModel(aiModel);
 }
 
 /**
@@ -2435,7 +2438,8 @@ function describeGoogleRouteReason(
         order,
         llmResolved,
         missingCount: opts.missingCount,
-        hint: "LLM did not resolve all items; cascading to Google",
+        hint:
+          "LLM (GPT then DeepSeek when gpt-* job) did not resolve all items; cascading to Google",
       },
     };
   }
@@ -2519,7 +2523,10 @@ async function translateItemsRouted(
     if (missing.length === 0) break;
 
     if (engine === "llm") {
-      if (!llmConfigured()) continue;
+      const useGpt = isGptModel(aiModel);
+      const useDeepSeek = llmConfigured();
+      // GPT jobs need Azure key; DeepSeek jobs need DEEPSEEK_* keys. Either is enough to enter.
+      if (!useGpt && !useDeepSeek) continue;
       llmAttempted = true;
       if (systemPrompt === null) {
         const glossary = await loadGlossaryLines(shopName, target);
@@ -2541,17 +2548,51 @@ async function translateItemsRouted(
       }
       tokenAccumBaseline = tokenAccum.value;
       try {
-        await gatherTranslations(
-          missing,
-          aiModel,
-          systemPrompt,
-          collected,
-          tokenAccum,
-          costByKey,
-          shopName,
-          FIRST_TOKEN_DRAIN_RETRIES,
-          logSingleTranslate,
-        );
+        if (useGpt) {
+          await gatherTranslations(
+            missing,
+            aiModel,
+            systemPrompt,
+            collected,
+            tokenAccum,
+            costByKey,
+            shopName,
+            FIRST_TOKEN_DRAIN_RETRIES,
+            logSingleTranslate,
+          );
+          // GPT exhausted its own retries; try DeepSeek before cascading to Google.
+          const stillMissing = missing.filter((i) => !collected.has(i.key));
+          if (stillMissing.length > 0 && useDeepSeek) {
+            const fallbackModel = resolveModel();
+            console.warn(
+              `[llm] GPT left ${stillMissing.length}/${missing.length} unresolved; ` +
+                `falling back to DeepSeek (${fallbackModel})`,
+            );
+            await gatherTranslations(
+              stillMissing,
+              fallbackModel,
+              systemPrompt,
+              collected,
+              tokenAccum,
+              costByKey,
+              shopName,
+              FIRST_TOKEN_DRAIN_RETRIES,
+              logSingleTranslate,
+            );
+          }
+        } else {
+          await gatherTranslations(
+            missing,
+            aiModel,
+            systemPrompt,
+            collected,
+            tokenAccum,
+            costByKey,
+            shopName,
+            FIRST_TOKEN_DRAIN_RETRIES,
+            logSingleTranslate,
+          );
+        }
       } catch (e) {
         console.warn(`[route] llm engine error`, e);
       }
@@ -3518,7 +3559,8 @@ function reconstructPlan(
  *    everywhere it occurs in the chunk.
  *
  * Engine selection: short plain packs into JSON batches (LLM first, Google
- * fallback); rich (HTML/JSON/long plain) stays LLM-first. Forced
+ * last); rich (HTML/JSON/long plain) stays LLM-first. GPT jobs cascade
+ * Azure → DeepSeek → Google; other jobs DeepSeek → Google. Forced
  * aiModel=google-translate skips packing and uses Google only.
  * Placeholders are masked across all engines; TM cache keyed by tier model.
  * Pipeline for short plain: field/value TM → chunk dedupe → size-capped JSON
