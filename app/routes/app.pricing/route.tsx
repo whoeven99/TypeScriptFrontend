@@ -12,9 +12,12 @@ import {
   Table,
   Collapse,
   Modal,
-  Spin,
 } from "antd";
 import Button from "~/ui/components/AppButton";
+import {
+  SubscriptionCheckoutModal,
+  type SubscriptionCheckoutInterval,
+} from "~/components/SubscriptionCheckoutModal";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
@@ -108,23 +111,6 @@ function redirectToBillingConfirmation(confirmationUrl: string) {
     }
   }
 }
-
-type CheckoutTarget = {
-  planName: string;
-  interval: "EVERY_30_DAYS" | "ANNUAL";
-};
-
-type CheckoutState = CheckoutTarget & {
-  url: string;
-  popBlocked: boolean;
-  checkingNow: boolean;
-  notDetected: boolean;
-  syncing: boolean;
-  completed: boolean;
-};
-
-const CHECKOUT_POLL_INTERVAL_MS = 3000;
-const CHECKOUT_POLL_MAX_ATTEMPTS = 200; // 约 10 分钟
 
 const { Title, Text, Link } = Typography;
 
@@ -440,18 +426,15 @@ const Index = () => {
   const payPlanSubmittingRef = useRef(false);
   const payCreditsAwaitingResponseRef = useRef(false);
   const payPlanAwaitingResponseRef = useRef(false);
-  const checkoutTargetRef = useRef<CheckoutTarget | null>(null);
-  const checkoutPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
-  const checkoutPollAttemptsRef = useRef(0);
-  const checkoutReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [checkoutState, setCheckoutState] = useState<CheckoutState | null>(
-    null,
-  );
+  const checkoutTargetRef = useRef<{
+    planName: string;
+    interval: SubscriptionCheckoutInterval;
+  } | null>(null);
+  const [checkout, setCheckout] = useState<{
+    url: string;
+    planName: string;
+    interval: SubscriptionCheckoutInterval;
+  } | null>(null);
 
   useEffect(() => {
     setIsLoading(false);
@@ -592,36 +575,18 @@ const Index = () => {
       const checkoutTarget = checkoutTargetRef.current;
       if (checkoutTarget) {
         // Shopify 结账页无法嵌入弹窗 iframe（官方托管页限制），
-        // 改为：弹窗提示 + 新标签页打开结账页，当前页面保持不跳走；
-        // 轮询 Shopify activeSubscriptions，订阅生效后自动刷新本页。
-        setCheckoutState({
-          ...checkoutTarget,
+        // 由 SubscriptionCheckoutModal 弹窗提示 + 新标签页打开结账页，
+        // 轮询订阅状态，生效后自动刷新本页。
+        setCheckout({
           url: confirmationUrl,
-          popBlocked: false,
-          checkingNow: false,
-          notDetected: false,
-          syncing: false,
-          completed: false,
+          planName: checkoutTarget.planName,
+          interval: checkoutTarget.interval,
         });
-        setCheckoutModalOpen(true);
-        openCheckoutTab(confirmationUrl);
-        startCheckoutPolling(checkoutTarget);
       } else {
         redirectToBillingConfirmation(confirmationUrl);
       }
     }
   }, [payForPlanFetcher.state, payForPlanFetcher.data]);
-
-  useEffect(
-    () => () => {
-      stopCheckoutPolling();
-      if (checkoutReloadTimerRef.current) {
-        window.clearTimeout(checkoutReloadTimerRef.current);
-        checkoutReloadTimerRef.current = null;
-      }
-    },
-    [],
-  );
 
   useEffect(() => {
     if (!planCancelFetcher.data || cancelRefreshHandledRef.current) return;
@@ -1069,151 +1034,6 @@ const Index = () => {
       });
       cancelPlanTraceRef.current = null;
     }
-  };
-
-  const stopCheckoutPolling = () => {
-    if (checkoutPollTimerRef.current) {
-      window.clearInterval(checkoutPollTimerRef.current);
-      checkoutPollTimerRef.current = null;
-    }
-  };
-
-  const startCheckoutPolling = (target: CheckoutTarget) => {
-    stopCheckoutPolling();
-    checkoutPollAttemptsRef.current = 0;
-    checkoutPollTimerRef.current = window.setInterval(() => {
-      void (async () => {
-        if (checkoutPollAttemptsRef.current >= CHECKOUT_POLL_MAX_ATTEMPTS) {
-          stopCheckoutPolling();
-          return;
-        }
-        checkoutPollAttemptsRef.current += 1;
-        try {
-          const res = await fetch(
-            `/api/billing/confirmation-status?planName=${encodeURIComponent(
-              target.planName,
-            )}&interval=${encodeURIComponent(target.interval)}`,
-          );
-          const data = (await res.json()) as {
-            ok?: boolean;
-            matched?: boolean;
-            shopifyMatched?: boolean;
-          };
-          if (data?.ok && data?.matched) {
-            stopCheckoutPolling();
-            setCheckoutState((prev) =>
-              prev ? { ...prev, completed: true, notDetected: false } : prev,
-            );
-            if (checkoutReloadTimerRef.current) {
-              window.clearTimeout(checkoutReloadTimerRef.current);
-            }
-            checkoutReloadTimerRef.current = window.setTimeout(() => {
-              window.location.reload();
-            }, 1200);
-          } else if (data?.ok && data?.shopifyMatched) {
-            // Shopify 侧已确认支付，Turso/webhook 入账可能还在路上，继续轮询。
-            setCheckoutState((prev) =>
-              prev
-                ? { ...prev, syncing: true, notDetected: false }
-                : prev,
-            );
-          } else {
-            setCheckoutState((prev) =>
-              prev ? { ...prev, syncing: false } : prev,
-            );
-          }
-        } catch {
-          // 网络抖动，继续下一轮轮询
-        }
-      })();
-    }, CHECKOUT_POLL_INTERVAL_MS);
-  };
-
-  const openCheckoutTab = (url: string) => {
-    let opened: Window | null = null;
-    try {
-      opened = window.open(url, "_blank", "noopener,noreferrer");
-    } catch {
-      opened = null;
-    }
-    setCheckoutState((prev) => (prev ? { ...prev, popBlocked: !opened } : prev));
-    return opened;
-  };
-
-  const handleCheckoutNow = async () => {
-    if (!checkoutState) return;
-    setCheckoutState((prev) =>
-      prev ? { ...prev, checkingNow: true, notDetected: false } : prev,
-    );
-    try {
-      const res = await fetch(
-        `/api/billing/confirmation-status?planName=${encodeURIComponent(
-          checkoutState.planName,
-        )}&interval=${encodeURIComponent(checkoutState.interval)}`,
-      );
-      const data = (await res.json()) as {
-        ok?: boolean;
-        matched?: boolean;
-        shopifyMatched?: boolean;
-      };
-      if (data?.ok && data?.matched) {
-        stopCheckoutPolling();
-        setCheckoutState((prev) =>
-          prev ? { ...prev, checkingNow: false, completed: true } : prev,
-        );
-        if (checkoutReloadTimerRef.current) {
-          window.clearTimeout(checkoutReloadTimerRef.current);
-        }
-        checkoutReloadTimerRef.current = window.setTimeout(() => {
-          window.location.reload();
-        }, 1200);
-      } else if (data?.ok && data?.shopifyMatched) {
-        setCheckoutState((prev) =>
-          prev
-            ? {
-                ...prev,
-                checkingNow: false,
-                syncing: true,
-                notDetected: false,
-              }
-            : prev,
-        );
-      } else {
-        setCheckoutState((prev) =>
-          prev
-            ? {
-                ...prev,
-                checkingNow: false,
-                notDetected: true,
-                syncing: false,
-              }
-            : prev,
-        );
-      }
-    } catch {
-      setCheckoutState((prev) =>
-        prev
-          ? {
-              ...prev,
-              checkingNow: false,
-              notDetected: true,
-              syncing: false,
-            }
-          : prev,
-      );
-    }
-  };
-
-  const handleCloseCheckoutModal = () => {
-    if (checkoutState?.completed) return;
-    stopCheckoutPolling();
-    if (checkoutReloadTimerRef.current) {
-      window.clearTimeout(checkoutReloadTimerRef.current);
-      checkoutReloadTimerRef.current = null;
-    }
-    setCheckoutModalOpen(false);
-    setCheckoutState(null);
-    setSelectedPayPlanOption(undefined);
   };
 
   const handleOpenAddCreditsModal = () => {
@@ -1690,80 +1510,16 @@ const Index = () => {
           )}
         </Text>
       </Modal>
-      <Modal
-        title={t("pricing.checkout_title")}
-        open={checkoutModalOpen}
-        centered
-        closable={!checkoutState?.completed}
-        maskClosable={false}
-        onCancel={handleCloseCheckoutModal}
-        footer={
-          checkoutState?.completed ? null : (
-            <Flex align="end" justify="end" gap={10}>
-              <Button onClick={handleCloseCheckoutModal}>
-                {t("pricing.checkout_later")}
-              </Button>
-              <Button
-                loading={checkoutState?.checkingNow}
-                onClick={handleCheckoutNow}
-              >
-                {t("pricing.checkout_done")}
-              </Button>
-              <Button
-                type="primary"
-                disabled={!checkoutState?.url}
-                onClick={() => {
-                  if (checkoutState?.url) {
-                    openCheckoutTab(checkoutState.url);
-                  }
-                }}
-              >
-                {t("pricing.checkout_open")}
-              </Button>
-            </Flex>
-          )
-        }
-      >
-        {checkoutState?.completed ? (
-          <Space
-            direction="vertical"
-            align="center"
-            style={{ width: "100%", padding: "24px 0" }}
-          >
-            <Spin />
-            <Text>{t("pricing.checkout_success")}</Text>
-          </Space>
-        ) : (
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <Text>
-              {t("pricing.checkout_desc", {
-                plan: checkoutState?.planName ?? "",
-              })}
-            </Text>
-            {checkoutState?.popBlocked ? (
-              <Alert
-                type="warning"
-                showIcon
-                message={t("pricing.checkout_blocked")}
-              />
-            ) : null}
-            {checkoutState?.syncing ? (
-              <Alert
-                type="success"
-                showIcon
-                message={t("pricing.checkout_syncing")}
-              />
-            ) : null}
-            {checkoutState?.notDetected ? (
-              <Alert
-                type="info"
-                showIcon
-                message={t("pricing.checkout_not_detected")}
-              />
-            ) : null}
-          </Space>
-        )}
-      </Modal>
+      <SubscriptionCheckoutModal
+        open={Boolean(checkout)}
+        confirmationUrl={checkout?.url ?? null}
+        planName={checkout?.planName ?? ""}
+        interval={checkout?.interval ?? "EVERY_30_DAYS"}
+        onClose={() => {
+          setCheckout(null);
+          setSelectedPayPlanOption(undefined);
+        }}
+      />
     </Page>
   );
 };
