@@ -350,6 +350,11 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   `prompt_cache_miss_tokens`). Merchant job `usedTokens` / credit deduct uses
   `billableLlmTokens` = miss + out when cache hit is present (hit excluded);
   Admin still shows hit for observability. Without cache fields, keep in+out.
+- DeepSeek **provider ¥** is estimated in `deepseekPricing.ts` from the official
+  **CNY** list (https://api-docs.deepseek.com/zh-cn/quick_start/pricing) ×
+  usage — API does not return money. Stored as `costCny` only (固定元价目，无
+  USD)。Optional peak 2× via `DEEPSEEK_PEAK_PRICING=true` (Beijing 09–12 /
+  14–18) when DeepSeek enables it.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
