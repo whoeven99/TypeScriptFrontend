@@ -2387,6 +2387,61 @@ function batchByChars(
 
 // ─── Google Translate engine ──────────────────────────────────────────────────
 
+const GOOGLE_LOG_TEXT_MAX = 2000;
+
+function truncateForGoogleLog(text: string): string {
+  if (text.length <= GOOGLE_LOG_TEXT_MAX) return text;
+  return `${text.slice(0, GOOGLE_LOG_TEXT_MAX)}…(${text.length} chars)`;
+}
+
+function describeGoogleRouteReason(
+  order: Engine[],
+  aiModel: string,
+  opts: { llmAttempted: boolean; totalItems: number; missingCount: number },
+): { reason: string; detail: Record<string, unknown> } {
+  const forced = forcedEngine(aiModel);
+  if (forced === "google") {
+    return {
+      reason: "forced_google_model",
+      detail: { aiModel, message: "job aiModel=google-translate" },
+    };
+  }
+  const googleIdx = order.indexOf("google");
+  const llmIdx = order.indexOf("llm");
+  if (googleIdx < 0) {
+    return { reason: "unexpected", detail: { order } };
+  }
+  if (llmIdx < 0 || !llmConfigured()) {
+    return {
+      reason: "google_only_no_llm",
+      detail: { llmConfigured: llmConfigured(), order },
+    };
+  }
+  if (googleIdx === 0) {
+    return {
+      reason: "google_first_in_order",
+      detail: {
+        order,
+        shortPackLlmFirst: shortPackLlmFirst(),
+        hint: "TRANSLATE_SHORT_PACK_LLM_FIRST=false or trivial-tier routing puts Google before LLM",
+      },
+    };
+  }
+  if (opts.llmAttempted && opts.missingCount > 0) {
+    const llmResolved = opts.totalItems - opts.missingCount;
+    return {
+      reason: "llm_fallback",
+      detail: {
+        order,
+        llmResolved,
+        missingCount: opts.missingCount,
+        hint: "LLM did not resolve all items; cascading to Google",
+      },
+    };
+  }
+  return { reason: "engine_order", detail: { order } };
+}
+
 async function callGoogleTranslate(
   texts: string[],
   target: string,
@@ -2457,6 +2512,7 @@ async function translateItemsRouted(
   let systemPrompt: string | null = null;
   const tokenAccum = { value: 0 }; // accumulates LLM token usage across all retries
   let tokenAccumBaseline = 0; // tokens already attributed before current LLM engine pass
+  let llmAttempted = false;
 
   for (const engine of order) {
     const missing = masked.filter((i) => !collected.has(i.key));
@@ -2464,6 +2520,7 @@ async function translateItemsRouted(
 
     if (engine === "llm") {
       if (!llmConfigured()) continue;
+      llmAttempted = true;
       if (systemPrompt === null) {
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
@@ -2509,7 +2566,36 @@ async function translateItemsRouted(
       }
     } else {
       if (!googleConfigured()) continue;
+      const { reason, detail } = describeGoogleRouteReason(order, aiModel, {
+        llmAttempted,
+        totalItems: items.length,
+        missingCount: missing.length,
+      });
       for (const batch of batchByChars(missing, MAX_CHARS_PER_BATCH)) {
+        console.log("[google]", {
+          shopName,
+          source,
+          target,
+          aiModel,
+          promptKind,
+          reason,
+          ...detail,
+          engineOrder: order,
+          llmAttempted,
+          totalItems: items.length,
+          missingCount: missing.length,
+          batchSize: batch.length,
+          items: batch.map((b) => {
+            const original = items.find((it) => it.key === b.key)?.value ?? b.value;
+            return {
+              key: b.key,
+              digest: b.digest,
+              chars: original.length,
+              originalText: truncateForGoogleLog(original),
+              maskedText: original !== b.value ? truncateForGoogleLog(b.value) : undefined,
+            };
+          }),
+        });
         try {
           const out = await callGoogleTranslate(batch.map((b) => b.value), target, "text");
           batch.forEach((b, i) => {
