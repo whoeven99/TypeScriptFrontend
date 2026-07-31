@@ -49,9 +49,16 @@ const skipTags = new Set([
   "TITLE",
 ]);
 
-// 去除首尾空白与成对的外层引号
+const normalizeHtmlWhitespaceEntities = (text) =>
+  String(text ?? "")
+    .replace(/&(nbsp|#160|#xa0|#xA0|#8239|#x202f);?/g, " ")
+    .replace(/[\u00A0\u202F]/g, " ");
+
+// 去除首尾空白与成对的外层引号，并统一 HTML 空白实体格式
 const normalizeText = (text) =>
-  text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+  normalizeHtmlWhitespaceEntities(text)
+    .trim()
+    .replace(/^["“”]+|["“”]+$/g, "");
 
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
@@ -1245,7 +1252,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const entries = Object.entries(translations).map(
     ([before, [after, isExact]]) => ({
       before,
-      after,
+      after: normalizeHtmlWhitespaceEntities(after),
       isExact: Boolean(isExact),
     }),
   );
@@ -1326,7 +1333,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const decodeHtmlEntities = (html) => {
     if (!html) return "";
     const textarea = document.createElement("textarea");
-    textarea.innerHTML = html;
+    textarea.innerHTML = normalizeHtmlWhitespaceEntities(html);
     return textarea.value;
   };
 
@@ -1351,6 +1358,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     return template.content.firstElementChild;
   };
 
+  const isCustomElementName = (tagName) => String(tagName || "").includes("-");
+
+  const containsCustomElements = (node) => {
+    if (!(node instanceof Element)) return false;
+    if (isCustomElementName(node.tagName)) return true;
+    return Array.from(node.querySelectorAll("*")).some((child) =>
+      isCustomElementName(child.tagName),
+    );
+  };
+
   const replaceHtmlExactEntries = (entryList, root = document.body) => {
     if (!root?.isConnected) return;
     const htmlEntries = entryList
@@ -1373,9 +1390,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           beforeClasses: beforeEl
             ? Array.from(beforeEl.classList || []).filter(Boolean)
             : [],
+          containsCustomElements:
+            containsCustomElements(beforeEl) || containsCustomElements(afterEl),
         };
       })
-      .filter((e) => e.normalizedBefore && e.normalizedAfter);
+      .filter(
+        (e) =>
+          e.normalizedBefore &&
+          e.normalizedAfter &&
+          !e.containsCustomElements,
+      );
 
     if (htmlEntries.length === 0) return;
 
@@ -1734,6 +1758,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!node || !attribute) return false;
     const attrName = String(attribute.name || "").trim().toLowerCase();
     if (!attrName || blockedAttributeNames.has(attrName)) return false;
+    if (attrName.startsWith("data-")) return false;
     if (attrName.startsWith("on")) return false;
     if (!String(attribute.value ?? "").trim()) return false;
     if (textLikeAttributeNames.has(attrName) || attrName.startsWith("aria-")) {
@@ -1743,7 +1768,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     // 允许 web component 上常见的 *-text / *-title / *-label 这类展示属性。
     return Boolean(
       node.tagName?.includes("-") &&
-        /(?:text|title|label|caption|subtitle)$/i.test(attrName),
+        /(?:^|[-_:])(text|title|label|caption|subtitle)$/i.test(attrName),
     );
   };
 
