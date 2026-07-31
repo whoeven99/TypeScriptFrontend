@@ -2092,23 +2092,37 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
 
   // normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义
 
-  // 原逻辑：文本节点的归一化内容“完全等于”某条 sourceText 时才替换
-  //（.includes 只是预筛）。这里改为先建 归一化源文本 -> 目标文本 的 Map，
-  // 然后只遍历一次整个文档，避免对每条翻译都各走一遍 DOM（原 O(条数 × 全页)）。
+  // 原逻辑只支持“整节点完全等于 sourceText”的场景。
+  // PageFly 富文本经常把多句文案塞进同一个文本节点，并夹带 <br> / &nbsp;，
+  // 因此需要支持节点内子串替换，并让普通空格能匹配 NBSP 等空白字符。
   const exactMap = new Map();
+  const preparedEntries = [];
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   translations.forEach((item) => {
     const trimmedBefore = normalizeText(item?.sourceText);
     const trimmedAfter = normalizeText(item?.targetText);
     if (!trimmedBefore || !trimmedAfter) return;
     if (!exactMap.has(trimmedBefore)) exactMap.set(trimmedBefore, trimmedAfter);
+    preparedEntries.push({
+      before: trimmedBefore,
+      after: trimmedAfter,
+      re: new RegExp(
+        escapeRegExp(trimmedBefore).replace(/\s+/g, "[\\s\\u00A0\\u202F]+"),
+        "g",
+      ),
+    });
   });
-  if (exactMap.size === 0) return;
+  if (exactMap.size === 0 || preparedEntries.length === 0) return;
 
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parentTag = node.parentNode?.nodeName;
       if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
-      return exactMap.has(normalizeText(node.nodeValue))
+      const normalizedValue = normalizeText(node.nodeValue);
+      if (exactMap.has(normalizedValue)) return NodeFilter.FILTER_ACCEPT;
+      return preparedEntries.some((entry) => normalizedValue.includes(entry.before))
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
     },
@@ -2117,14 +2131,27 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const nodesToReplace = [];
   while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
 
-  // ✏ 精准替换
+  // ✏ 精准替换 + 节点内子串替换
   nodesToReplace.forEach((node) => {
     if (isElementHiddenForTranslation(node.parentElement)) return;
     const original = node.nodeValue;
-    const trimmedAfter = exactMap.get(normalizeText(original));
-    if (!trimmedAfter) return;
-    const keepQuote = hasOuterQuote(original);
-    node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
+    const normalizedOriginal = normalizeText(original);
+    const exactAfter = exactMap.get(normalizedOriginal);
+    if (exactAfter) {
+      const keepQuote = hasOuterQuote(original);
+      node.nodeValue = keepQuote ? `"${exactAfter}"` : exactAfter;
+      return;
+    }
+
+    let updatedValue = original;
+    preparedEntries.forEach((entry) => {
+      if (!normalizeText(updatedValue).includes(entry.before)) return;
+      updatedValue = updatedValue.replace(entry.re, entry.after);
+    });
+
+    if (updatedValue !== original) {
+      node.nodeValue = updatedValue;
+    }
   });
 }
 
