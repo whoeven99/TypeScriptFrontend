@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { BlockStack, Checkbox, Select } from "@shopify/polaris";
-import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -13,10 +12,7 @@ import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import Button from "~/ui/components/AppButton";
-import {
-  formatEstimateCredits,
-  type CreateTaskEstimateView,
-} from "../useCreateTaskEstimate";
+import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 
 export type { CreateTaskEstimateView };
 
@@ -222,10 +218,6 @@ export function CreateTaskCard({
               minWidth: 0,
             }}
           >
-            <EstimateInline
-              estimate={estimate}
-              canEstimate={targets.length > 0 && modules.length > 0}
-            />
             {submitButton}
           </div>
         ) : null}
@@ -376,112 +368,12 @@ export function CreateTaskCard({
             gap: "8px 12px",
           }}
         >
-          <EstimateInline
-            estimate={estimate}
-            canEstimate={targets.length > 0 && modules.length > 0}
-          />
           {submitButton}
         </div>
       ) : null}
     </div>
   );
 }
-
-/** 创建按钮旁的上限预估（无灰盒，避免顶栏臃肿）。 */
-function EstimateInline({
-  estimate,
-  canEstimate,
-}: {
-  estimate: CreateTaskEstimateView | null;
-  canEstimate: boolean;
-}) {
-  const { t } = useTranslation();
-
-  if (!canEstimate) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateSelectFirst")}
-      </span>
-    );
-  }
-
-  if (!estimate || estimate.loading) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateLoading")}
-      </span>
-    );
-  }
-
-  if (estimate.estimatedCredits == null) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateUnavailable")}
-      </span>
-    );
-  }
-
-  const estimatedLabel = formatEstimateCredits(estimate.estimatedCredits);
-  const remainingLabel = formatEstimateCredits(estimate.remainingCredits);
-  const primary = estimate.isUpperBound
-    ? t("v4.createTask.estimateUpperBound", { estimated: estimatedLabel })
-    : t("v4.createTask.estimateNeed", { estimated: estimatedLabel });
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 2,
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "baseline",
-          justifyContent: "flex-end",
-          gap: "4px 8px",
-          fontSize: 13,
-          fontWeight: 600,
-          color: estimate.needsMoreCredits
-            ? "var(--p-color-text-caution)"
-            : v4Colors.text,
-          lineHeight: 1.35,
-        }}
-      >
-        <span>{primary}</span>
-        <span style={{ fontWeight: 500, color: v4Colors.textMuted }}>
-          {t("v4.createTask.estimateRemaining", { remaining: remainingLabel })}
-        </span>
-      </div>
-      {estimate.needsMoreCredits ? (
-        <div
-          style={{
-            fontSize: 11,
-            color: "var(--p-color-text-caution)",
-            textAlign: "right",
-          }}
-        >
-          {t("v4.createTask.estimateShort")}{" "}
-          <Link to="/app/pricing" style={{ fontWeight: 600 }}>
-            {t("v4.createTask.estimateBuyCredits")}
-          </Link>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-const estimateInlineMutedStyle: CSSProperties = {
-  fontSize: 12,
-  color: v4Colors.textMuted,
-  textAlign: "right",
-  maxWidth: 220,
-  lineHeight: 1.35,
-};
 
 function SectionHeader({
   title,

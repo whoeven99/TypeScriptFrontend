@@ -158,7 +158,27 @@ export function CreateTaskConfirmModal({
       footer={null}
       centered
       width={720}
+      zIndex={2147483100}
       destroyOnHidden
+      maskClosable={!creating}
+      keyboard={!creating}
+      closeIcon={
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 24,
+            height: 24,
+            fontSize: 18,
+            color: v4Colors.textMuted,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </span>
+      }
       styles={{
         content: {
           padding: 0,
@@ -170,6 +190,8 @@ export function CreateTaskConfirmModal({
         },
         body: {
           padding: 0,
+          maxHeight: "min(720px, calc(100vh - 96px))",
+          overflowY: "auto",
         },
       }}
     >
