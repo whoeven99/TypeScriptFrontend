@@ -72,6 +72,9 @@ export default async function handleRequest(
 
   const head = renderHeadToString({ request, remixContext, Head });
   responseHeaders.set("Content-Type", "text/html");
+  // HTML 文档不做缓存：静态资源带 immutable 一年缓存（hash 变化即换新文件），
+  // 但文档本身若被浏览器缓存，会一直引用旧 bundle，导致部署后仍看到旧页面。
+  responseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
 
   const buildStreamingResponse = (streamReadyCallback: () => void) => {
     let didError = false;
