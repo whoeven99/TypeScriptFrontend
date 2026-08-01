@@ -60,6 +60,36 @@ const normalizeText = (text) =>
     .trim()
     .replace(/^["“”]+|["“”]+$/g, "");
 
+const normalizePageFlyTranslationEntries = (response) => {
+  if (Array.isArray(response)) return response;
+  if (!response || typeof response !== "object") return [];
+
+  return Object.entries(response).flatMap(([sourceText, rawValue]) => {
+    if (!sourceText) return [];
+
+    if (typeof rawValue === "string") {
+      return [{ sourceText, targetText: rawValue }];
+    }
+
+    if (Array.isArray(rawValue)) {
+      const [targetText] = rawValue;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    if (rawValue && typeof rawValue === "object") {
+      const targetText =
+        rawValue.targetText ?? rawValue.text ?? rawValue.translation ?? rawValue.value;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    return [];
+  });
+};
+
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
 const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
@@ -1297,6 +1327,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const shouldFlexibleWhitespaceMatch = (text) =>
     /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
 
+    const buildFlexibleWhitespacePattern = (text) =>
+      escapeRegExp(text).replace(/\s+/g, "[\\s\\u00A0\\u202F]+");
+
   debugLog("init", {
     blockId,
     language,
@@ -1582,12 +1615,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         collapsedBefore: flexibleWhitespace
           ? normalizeCollapsedText(trimmedBefore)
           : null,
-        re: new RegExp(
-          flexibleWhitespace
-            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
-            : escapeRegExp(trimmedBefore),
-          "g",
-        ),
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
       });
     });
 
@@ -1803,12 +1831,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         collapsedBefore: flexibleWhitespace
           ? normalizeCollapsedText(trimmedBefore)
           : null,
-        re: new RegExp(
-          flexibleWhitespace
-            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
-            : escapeRegExp(trimmedBefore),
-          "g",
-        ),
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
       });
     });
 
@@ -2100,8 +2123,8 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     CIWI_TRANSLATION_TTL_MS,
   );
 
-  const translations = readTranslatedText?.response || [];
-  if (!Array.isArray(translations) || translations.length === 0) return;
+  const translations = normalizePageFlyTranslationEntries(readTranslatedText?.response);
+  if (translations.length === 0) return;
 
   // normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义
 
