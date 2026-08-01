@@ -10,7 +10,6 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate,
   renderLanguageFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
@@ -32,10 +31,16 @@ const resolveCiwiRuntimeVersionInfo = () => {
 const logCiwiRuntimeVersion = (() => {
   let logged = false;
   return () => {
+    const { version, scriptUrl } = resolveCiwiRuntimeVersionInfo();
+    const runtimeInfo = { version, scriptUrl };
+
+    window.__CIWI_RUNTIME__ = runtimeInfo;
+    document.documentElement.dataset.ciwiVersion = version;
+    document.documentElement.dataset.ciwiScriptUrl = scriptUrl;
+
     if (logged) return;
     logged = true;
-    const { version, scriptUrl } = resolveCiwiRuntimeVersionInfo();
-    console.info("[ciwi] runtime version", { version, scriptUrl });
+    console.log("[ciwi] runtime version", runtimeInfo);
   };
 })();
 
@@ -353,9 +358,6 @@ async function ciwiOnload() {
     const tasks = [];
     if (pageContext.isProductPage) {
       tasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
-    }
-    if (pageContext.hasPageFly) {
-      tasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
     }
     if (pageContext.isHomePage) {
       tasks.push(HomeImageTranslate(blockId));
