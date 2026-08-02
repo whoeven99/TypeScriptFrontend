@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { Empty, Popconfirm, Tabs } from "antd";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
-import Button from "~/ui/components/AppButton";
+import V4Button from "./V4Button";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { formatLocaleRoute } from "../localeDisplay";
 import { jobDisplayPercent } from "../jobStageUtils";
@@ -131,14 +130,14 @@ export function CompactJobCard({
           {!expanded ? <JobCollapsedMeta job={job} /> : null}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0, marginTop: -2 }}>
-          <Button
+          <V4Button
             type="text"
             size="small"
             onClick={onToggleExpand}
             style={detailToggleButtonStyle(expanded)}
           >
             {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
-          </Button>
+          </V4Button>
         </div>
       </div>
 
@@ -180,18 +179,15 @@ export function CompactJobCard({
                 ) : null}
               </div>
               {canDelete ? (
-                <Popconfirm
+                <DeleteConfirm
                   title={t("v4.tasks.deleteConfirmTitle")}
                   description={t("v4.tasks.deleteConfirmDesc")}
                   okText={t("Delete")}
-                  okButtonProps={{ danger: true, loading: pending === "delete" }}
                   cancelText={t("Cancel")}
+                  triggerLabel={t("v4.tasks.deleteRecord")}
+                  loading={pending === "delete"}
                   onConfirm={() => runAction("delete")}
-                >
-                  <Button type="default" size="small" danger style={deleteButtonStyle}>
-                    {t("v4.tasks.deleteRecord")}
-                  </Button>
-                </Popconfirm>
+                />
               ) : null}
             </div>
           ) : null}
@@ -293,7 +289,7 @@ function JobNoticeBar({
         </span>
       </div>
       {actionLabel && onAction ? (
-        <Button
+        <V4Button
           size="small"
           type="primary"
           onClick={onAction}
@@ -304,7 +300,7 @@ function JobNoticeBar({
           }}
         >
           {actionLabel}
-        </Button>
+        </V4Button>
       ) : null}
     </div>
   );
@@ -327,7 +323,7 @@ function ActionChip({
     danger: "default",
   };
   return (
-    <Button
+    <V4Button
       type={typeMap[kind]}
       danger={kind === "danger"}
       size="small"
@@ -358,7 +354,7 @@ function ActionChip({
       }}
     >
       {label}
-    </Button>
+    </V4Button>
   );
 }
 
@@ -384,6 +380,209 @@ const deleteButtonStyle: CSSProperties = {
   background: "var(--app-color-surface-critical)",
   borderColor: "rgba(208, 77, 95, 0.2)",
 };
+
+const confirmPopoverStyle: CSSProperties = {
+  position: "absolute",
+  bottom: "calc(100% + 8px)",
+  right: 0,
+  width: 248,
+  maxWidth: "calc(100vw - 48px)",
+  padding: "12px 14px",
+  borderRadius: 12,
+  background: v4Colors.cardBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  boxShadow: "var(--app-shadow-card-strong)",
+  zIndex: 20,
+};
+
+/** 就地删除确认（替代 antd Popconfirm）：点击触发按钮弹出确认气泡。 */
+function DeleteConfirm({
+  title,
+  description,
+  okText,
+  cancelText,
+  triggerLabel,
+  loading,
+  onConfirm,
+}: {
+  title: string;
+  description: string;
+  okText: string;
+  cancelText: string;
+  triggerLabel: string;
+  loading?: boolean;
+  onConfirm: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative", display: "inline-flex" }}>
+      <V4Button
+        type="default"
+        size="small"
+        danger
+        style={deleteButtonStyle}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {triggerLabel}
+      </V4Button>
+      {open ? (
+        <div role="dialog" aria-label={title} style={confirmPopoverStyle}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: v4Colors.text,
+              lineHeight: 1.4,
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 12,
+              color: v4Colors.textMuted,
+              lineHeight: 1.5,
+            }}
+          >
+            {description}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 12,
+            }}
+          >
+            <V4Button size="small" onClick={() => setOpen(false)}>
+              {cancelText}
+            </V4Button>
+            <V4Button
+              size="small"
+              type="primary"
+              danger
+              loading={loading}
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+            >
+              {okText}
+            </V4Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const segmentedRowStyle: CSSProperties = {
+  display: "flex",
+  gap: 18,
+  borderBottom: `1px solid ${v4Colors.divider}`,
+};
+
+/** 分段切换（替代 antd Tabs）：底部指示条对齐容器分割线。 */
+function SegTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      style={{
+        background: "none",
+        border: "none",
+        padding: "6px 2px",
+        marginBottom: -1,
+        borderBottom: `2px solid ${active ? v4Colors.primary : "transparent"}`,
+        cursor: "pointer",
+        fontFamily: "inherit",
+      }}
+    >
+      <span style={tabLabelStyle(active)}>{children}</span>
+    </button>
+  );
+}
+
+/** 空态（替代 antd Empty）。 */
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        textAlign: "center",
+      }}
+    >
+      <svg
+        width="42"
+        height="42"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden
+        style={{ marginBottom: 6, opacity: 0.6 }}
+      >
+        <path
+          d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"
+          stroke={v4Colors.textFaint}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M3 7.5V16.5l9 4.5 9-4.5V7.5"
+          stroke={v4Colors.textFaint}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path d="M12 12v9" stroke={v4Colors.textFaint} strokeWidth="1.4" />
+      </svg>
+      <span style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
+        {title}
+      </span>
+      <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
+        {description}
+      </span>
+    </div>
+  );
+}
 
 export function TaskQueueSection({
   jobs,
@@ -503,47 +702,19 @@ export function TaskQueueSection({
       ) : null}
 
       <div style={{ marginBottom: 12 }}>
-        <Tabs
-          activeKey={tab}
-          onChange={(value) => setTab(value as "current" | "history")}
-          size="small"
-          items={[
-            {
-              key: "current",
-              label: (
-                <span style={tabLabelStyle(tab === "current")}>
-                  {t("v4.tasks.currentTab", { count: currentJobs.length })}
-                </span>
-              ),
-            },
-            {
-              key: "history",
-              label: (
-                <span style={tabLabelStyle(tab === "history")}>
-                  {t("v4.tasks.historyTab", { count: historyJobs.length })}
-                </span>
-              ),
-            },
-          ]}
-          style={{ marginBottom: 0 }}
-        />
+        <div role="tablist" style={segmentedRowStyle}>
+          <SegTab active={tab === "current"} onClick={() => setTab("current")}>
+            {t("v4.tasks.currentTab", { count: currentJobs.length })}
+          </SegTab>
+          <SegTab active={tab === "history"} onClick={() => setTab("history")}>
+            {t("v4.tasks.historyTab", { count: historyJobs.length })}
+          </SegTab>
+        </div>
       </div>
 
       {displayJobs.length === 0 ? (
         <div style={{ borderRadius: 8, background: v4Colors.cardSubdued, padding: "32px 16px" }}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
-                  {emptyTitle}
-                </span>
-                <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
-                  {emptyDescription}
-                </span>
-              </div>
-            }
-          />
+          <EmptyState title={emptyTitle} description={emptyDescription} />
         </div>
       ) : (
         <>
@@ -564,7 +735,7 @@ export function TaskQueueSection({
             />
           ))}
           {tab === "history" && historyJobs.length > 6 ? (
-            <Button
+            <V4Button
               type="text"
               size="small"
               onClick={() => setHistoryExpanded((v) => !v)}
@@ -575,7 +746,7 @@ export function TaskQueueSection({
                 : t("v4.tasks.showMoreHistory", {
                     count: historyJobs.length - displayJobs.length,
                   })}
-            </Button>
+            </V4Button>
           ) : null}
         </>
       )}

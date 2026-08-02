@@ -392,6 +392,122 @@ body {
   transform: rotate(180deg);
 }
 
+/* =========================================================================
+   translate-v4 本地按钮（替代 antd Button，首屏不再加载 antd 组件包）
+   变量与 `.app-button.ant-btn*` 一致，观感保持不变。
+   ========================================================================= */
+.v4-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 15px;
+  border-radius: var(--app-radius-md);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.v4-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.v4-btn:not(:disabled):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(84, 103, 255, 0.18);
+}
+.v4-btn--sm {
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: var(--app-radius-sm);
+  font-size: 13px;
+}
+
+.v4-btn--default {
+  background: var(--app-color-surface);
+  border-color: var(--app-color-border-secondary);
+  color: var(--app-color-text);
+}
+.v4-btn--default:not(:disabled):hover,
+.v4-btn--default:not(:disabled):active {
+  border-color: var(--app-accent-primary);
+  color: var(--app-color-text);
+}
+
+.v4-btn--primary {
+  background: var(--app-accent-primary);
+  border-color: var(--app-accent-primary);
+  color: var(--app-color-brand-on-fill);
+}
+.v4-btn--primary:not(:disabled):hover,
+.v4-btn--primary:not(:disabled):active {
+  background: var(--app-accent-primary-hover);
+  border-color: var(--app-accent-primary-hover);
+  color: var(--app-color-brand-on-fill);
+}
+
+.v4-btn--text {
+  background: transparent;
+  border-color: transparent;
+  color: var(--app-color-text-secondary);
+}
+.v4-btn--text:not(:disabled):hover,
+.v4-btn--text:not(:disabled):active {
+  background: var(--app-color-surface-secondary);
+  color: var(--app-color-text);
+}
+
+.v4-btn--danger.v4-btn--default {
+  color: var(--app-accent-critical);
+  border-color: rgba(208, 77, 95, 0.2);
+}
+.v4-btn--danger.v4-btn--default:not(:disabled):hover,
+.v4-btn--danger.v4-btn--default:not(:disabled):active {
+  color: var(--app-accent-critical);
+  border-color: var(--app-accent-critical);
+  background: var(--app-color-surface-critical);
+}
+.v4-btn--danger.v4-btn--primary {
+  background: var(--app-accent-critical);
+  border-color: var(--app-accent-critical);
+  color: #fff;
+}
+.v4-btn--danger.v4-btn--text {
+  color: var(--app-accent-critical);
+}
+.v4-btn--danger.v4-btn--text:not(:disabled):hover,
+.v4-btn--danger.v4-btn--text:not(:disabled):active {
+  color: var(--app-accent-critical);
+  background: var(--app-color-surface-critical);
+}
+
+/* 按钮 loading 小转圈 */
+.v4-btn__spin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: v4-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes v4-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .v4-enter,
   .v4-row-enter,

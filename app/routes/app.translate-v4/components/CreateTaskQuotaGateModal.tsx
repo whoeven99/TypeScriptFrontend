@@ -1,11 +1,9 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { Modal, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { v4CardStyle, v4Colors } from "../v4Styles";
-import Button from "~/ui/components/AppButton";
-
-const { Paragraph, Text, Title } = Typography;
+import V4Button from "./V4Button";
+import { V4Modal } from "./V4Modal";
 
 type Props = {
   open: boolean;
@@ -89,27 +87,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
       ];
 
   return (
-    <Modal
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      centered
-      width={560}
-      destroyOnHidden
-      styles={{
-        content: {
-          padding: 0,
-          overflow: "hidden",
-          borderRadius: 20,
-          border: `1px solid ${v4Colors.cardBorder}`,
-          background: v4Colors.cardBg,
-          boxShadow: "var(--app-shadow-card-strong)",
-        },
-        body: {
-          padding: 0,
-        },
-      }}
-    >
+    <V4Modal open={open} onClose={onClose} width={560} label={title}>
       <div style={{ padding: "24px 24px 20px" }}>
         <div
           style={{
@@ -118,8 +96,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
             borderBottom: `1px solid ${v4Colors.divider}`,
           }}
         >
-          <Text
-            strong
+          <span
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -128,17 +105,26 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
               background: v4Colors.primarySoft,
               color: v4Colors.primary,
               fontSize: 12,
+              fontWeight: 600,
               lineHeight: "20px",
               marginBottom: 12,
             }}
           >
             {t("Translation credits")}
-          </Text>
-          <Title level={3} style={{ margin: 0, lineHeight: 1.25, color: v4Colors.text }}>
+          </span>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 22,
+              fontWeight: 600,
+              lineHeight: 1.25,
+              color: v4Colors.text,
+            }}
+          >
             {title}
-          </Title>
+          </h3>
           {description ? (
-            <Paragraph
+            <p
               style={{
                 marginTop: 12,
                 marginBottom: 0,
@@ -149,11 +135,11 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
               }}
             >
               {description}
-            </Paragraph>
+            </p>
           ) : null}
         </div>
 
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {isTrial ? (
             <div
               style={{
@@ -163,7 +149,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                 borderRadius: 16,
               }}
             >
-              <Space direction="vertical" size={8} style={{ width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {trialHighlights.map((item) => (
                   <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span
@@ -177,10 +163,10 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                         flexShrink: 0,
                       }}
                     />
-                    <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</Text>
+                    <span style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</span>
                   </div>
                 ))}
-              </Space>
+              </div>
             </div>
           ) : (
             <div
@@ -198,7 +184,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   borderRadius: 16,
                 }}
               >
-                <Text
+                <span
                   style={{
                     display: "block",
                     fontSize: 12,
@@ -210,22 +196,22 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   }}
                 >
                   {t("Next step")}
-                </Text>
-                <Text
-                  strong
+                </span>
+                <span
                   style={{
                     display: "block",
                     fontSize: 16,
+                    fontWeight: 600,
                     color: v4Colors.text,
                     marginBottom: 8,
                     lineHeight: 1.4,
                   }}
                 >
                   {nextStepLabel}
-                </Text>
-                <Text style={{ color: v4Colors.textMuted, lineHeight: "22px" }}>
+                </span>
+                <span style={{ color: v4Colors.textMuted, lineHeight: "22px" }}>
                   {nextStepDescription}
-                </Text>
+                </span>
               </div>
 
               <div
@@ -236,7 +222,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   borderRadius: 16,
                 }}
               >
-                <Text
+                <span
                   style={{
                     display: "block",
                     fontSize: 12,
@@ -248,8 +234,8 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   }}
                 >
                   {t("Included after upgrade")}
-                </Text>
-                <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {unlockItems.map((item) => (
                     <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                       <span
@@ -263,10 +249,10 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                           flexShrink: 0,
                         }}
                       />
-                      <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</Text>
+                      <span style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</span>
                     </div>
                   ))}
-                </Space>
+                </div>
               </div>
             </div>
           )}
@@ -281,7 +267,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
             }}
           >
             {isTrial ? (
-              <Button
+              <V4Button
                 onClick={handleTrialAction}
                 loading={pendingAction === "trial" && planFetcher.state === "submitting"}
                 style={{
@@ -299,16 +285,16 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                     lineHeight: 1.25,
                   }}
                 >
-                  <Text strong style={{ color: "inherit" }}>
+                  <span style={{ color: "inherit", fontWeight: 600 }}>
                     {t("Free trial")}
-                  </Text>
-                  <Text style={{ color: "inherit", opacity: 0.72, fontSize: 12 }}>
+                  </span>
+                  <span style={{ color: "inherit", opacity: 0.72, fontSize: 12 }}>
                     {t("Charged after 5 days")}
-                  </Text>
+                  </span>
                 </div>
-              </Button>
+              </V4Button>
             ) : (
-              <Button
+              <V4Button
                 onClick={onClose}
                 style={{
                   minWidth: 108,
@@ -316,22 +302,22 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                 }}
               >
                 {t("Maybe later")}
-              </Button>
+              </V4Button>
             )}
             {!isTrial ? (
-              <Button
+              <V4Button
                 type="primary"
                 onClick={handlePrimaryAction}
                 loading={pendingAction === "subscribe" && planFetcher.state === "submitting"}
                 style={{ minWidth: 140 }}
               >
                 {t("View Plans")}
-              </Button>
+              </V4Button>
             ) : null}
           </div>
-        </Space>
+        </div>
       </div>
-    </Modal>
+    </V4Modal>
   );
 }
 

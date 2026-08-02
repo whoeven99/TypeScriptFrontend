@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { coverageBarColor } from "./SummaryAndHeader";
+import V4Button from "./V4Button";
 import { AutoTranslateBadge } from "./AutoTranslateMarkers";
 import {
   formatV4LastAutoUpdateDisplay,
@@ -127,21 +127,21 @@ export function CoverageCard({
             </h2>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "stretch", flexShrink: 0, flexWrap: "wrap", maxWidth: "100%" }}>
-            <Button
+            <V4Button
               size="small"
               onClick={onManageLanguages}
               style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
             >
               {t("v4.coverage.manageLanguages")}
-            </Button>
-            <Button
+            </V4Button>
+            <V4Button
               size="small"
               onClick={onRefresh}
               loading={loading}
               style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
             >
               {loading ? t("v4.coverage.refreshing") : t("v4.coverage.refreshStats")}
-            </Button>
+            </V4Button>
           </div>
         </div>
 

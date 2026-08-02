@@ -12,7 +12,7 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
-import Button from "~/ui/components/AppButton";
+import V4Button from "./V4Button";
 import {
   formatEstimateCredits,
   type CreateTaskEstimateView,
@@ -113,7 +113,7 @@ export function CreateTaskCard({
   };
 
   const submitButton = (
-    <Button
+    <V4Button
       type="primary"
       className="v4-create-task-card__submit"
       disabled={!canCreate}
@@ -136,7 +136,7 @@ export function CreateTaskCard({
         : targets.length > 1
           ? t("v4.createTask.createMultiple", { count: targets.length })
           : t("v4.createTask.createOne")}
-    </Button>
+    </V4Button>
   );
 
   return (
