@@ -49,9 +49,46 @@ const skipTags = new Set([
   "TITLE",
 ]);
 
-// 去除首尾空白与成对的外层引号
+const normalizeHtmlWhitespaceEntities = (text) =>
+  String(text ?? "")
+    .replace(/&(nbsp|#160|#xa0|#xA0|#8239|#x202f);?/g, " ")
+    .replace(/[\u00A0\u202F]/g, " ");
+
+// 去除首尾空白与成对的外层引号，并统一 HTML 空白实体格式
 const normalizeText = (text) =>
-  text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+  normalizeHtmlWhitespaceEntities(text)
+    .trim()
+    .replace(/^["“”]+|["“”]+$/g, "");
+
+const normalizePageFlyTranslationEntries = (response) => {
+  if (Array.isArray(response)) return response;
+  if (!response || typeof response !== "object") return [];
+
+  return Object.entries(response).flatMap(([sourceText, rawValue]) => {
+    if (!sourceText) return [];
+
+    if (typeof rawValue === "string") {
+      return [{ sourceText, targetText: rawValue }];
+    }
+
+    if (Array.isArray(rawValue)) {
+      const [targetText] = rawValue;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    if (rawValue && typeof rawValue === "object") {
+      const targetText =
+        rawValue.targetText ?? rawValue.text ?? rawValue.translation ?? rawValue.value;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    return [];
+  });
+};
 
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
@@ -1245,7 +1282,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const entries = Object.entries(translations).map(
     ([before, [after, isExact]]) => ({
       before,
-      after,
+      after: normalizeHtmlWhitespaceEntities(after),
       isExact: Boolean(isExact),
     }),
   );
@@ -1290,6 +1327,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const shouldFlexibleWhitespaceMatch = (text) =>
     /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
 
+    const buildFlexibleWhitespacePattern = (text) =>
+      escapeRegExp(text).replace(/\s+/g, "[\\s\\u00A0\\u202F]+");
+
   debugLog("init", {
     blockId,
     language,
@@ -1326,7 +1366,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const decodeHtmlEntities = (html) => {
     if (!html) return "";
     const textarea = document.createElement("textarea");
-    textarea.innerHTML = html;
+    textarea.innerHTML = normalizeHtmlWhitespaceEntities(html);
     return textarea.value;
   };
 
@@ -1351,6 +1391,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     return template.content.firstElementChild;
   };
 
+  const isCustomElementName = (tagName) => String(tagName || "").includes("-");
+
+  const containsCustomElements = (node) => {
+    if (!(node instanceof Element)) return false;
+    if (isCustomElementName(node.tagName)) return true;
+    return Array.from(node.querySelectorAll("*")).some((child) =>
+      isCustomElementName(child.tagName),
+    );
+  };
+
   const replaceHtmlExactEntries = (entryList, root = document.body) => {
     if (!root?.isConnected) return;
     const htmlEntries = entryList
@@ -1373,9 +1423,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           beforeClasses: beforeEl
             ? Array.from(beforeEl.classList || []).filter(Boolean)
             : [],
+          containsCustomElements:
+            containsCustomElements(beforeEl) || containsCustomElements(afterEl),
         };
       })
-      .filter((e) => e.normalizedBefore && e.normalizedAfter);
+      .filter(
+        (e) =>
+          e.normalizedBefore &&
+          e.normalizedAfter &&
+          !e.containsCustomElements,
+      );
 
     if (htmlEntries.length === 0) return;
 
@@ -1558,12 +1615,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         collapsedBefore: flexibleWhitespace
           ? normalizeCollapsedText(trimmedBefore)
           : null,
-        re: new RegExp(
-          flexibleWhitespace
-            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
-            : escapeRegExp(trimmedBefore),
-          "g",
-        ),
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
       });
     });
 
@@ -1734,6 +1786,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!node || !attribute) return false;
     const attrName = String(attribute.name || "").trim().toLowerCase();
     if (!attrName || blockedAttributeNames.has(attrName)) return false;
+    if (attrName.startsWith("data-")) return false;
     if (attrName.startsWith("on")) return false;
     if (!String(attribute.value ?? "").trim()) return false;
     if (textLikeAttributeNames.has(attrName) || attrName.startsWith("aria-")) {
@@ -1743,7 +1796,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     // 允许 web component 上常见的 *-text / *-title / *-label 这类展示属性。
     return Boolean(
       node.tagName?.includes("-") &&
-        /(?:text|title|label|caption|subtitle)$/i.test(attrName),
+        /(?:^|[-_:])(text|title|label|caption|subtitle)$/i.test(attrName),
     );
   };
 
@@ -1778,12 +1831,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         collapsedBefore: flexibleWhitespace
           ? normalizeCollapsedText(trimmedBefore)
           : null,
-        re: new RegExp(
-          flexibleWhitespace
-            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
-            : escapeRegExp(trimmedBefore),
-          "g",
-        ),
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
       });
     });
 
@@ -2075,29 +2123,42 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     CIWI_TRANSLATION_TTL_MS,
   );
 
-  const translations = readTranslatedText?.response || [];
-  if (!Array.isArray(translations) || translations.length === 0) return;
+  const translations = normalizePageFlyTranslationEntries(readTranslatedText?.response);
+  if (translations.length === 0) return;
 
   // normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义
 
-  // 原逻辑：文本节点的归一化内容“完全等于”某条 sourceText 时才替换
-  //（.includes 只是预筛）。这里改为先建 归一化源文本 -> 目标文本 的 Map，
-  // 然后只遍历一次整个文档，避免对每条翻译都各走一遍 DOM（原 O(条数 × 全页)）。
+  // 原逻辑只支持“整节点完全等于 sourceText”的场景。
+  // PageFly 富文本经常把多句文案塞进同一个文本节点，并夹带 <br> / &nbsp;，
+  // 因此需要支持节点内子串替换，并让普通空格能匹配 NBSP 等空白字符。
   const exactMap = new Map();
+  const preparedEntries = [];
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   translations.forEach((item) => {
     const trimmedBefore = normalizeText(item?.sourceText);
     const trimmedAfter = normalizeText(item?.targetText);
     if (!trimmedBefore || !trimmedAfter) return;
     if (!exactMap.has(trimmedBefore)) exactMap.set(trimmedBefore, trimmedAfter);
+    preparedEntries.push({
+      before: trimmedBefore,
+      after: trimmedAfter,
+      re: new RegExp(
+        escapeRegExp(trimmedBefore).replace(/\s+/g, "[\\s\\u00A0\\u202F]+"),
+        "g",
+      ),
+    });
   });
-  if (exactMap.size === 0) return;
+  if (exactMap.size === 0 || preparedEntries.length === 0) return;
 
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parentTag = node.parentNode?.nodeName;
-      if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
-      if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
-      return exactMap.has(normalizeText(node.nodeValue))
+        if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+      const normalizedValue = normalizeText(node.nodeValue);
+      if (exactMap.has(normalizedValue)) return NodeFilter.FILTER_ACCEPT;
+      return preparedEntries.some((entry) => normalizedValue.includes(entry.before))
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
     },
@@ -2106,15 +2167,28 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const nodesToReplace = [];
   while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
 
-  // ✏ 精准替换
+  // ✏ 精准替换 + 节点内子串替换
   nodesToReplace.forEach((node) => {
     if (isElementHiddenForTranslation(node.parentElement)) return;
     if (isPriceRelatedElement(node)) return;
     const original = node.nodeValue;
-    const trimmedAfter = exactMap.get(normalizeText(original));
-    if (!trimmedAfter) return;
-    const keepQuote = hasOuterQuote(original);
-    node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
+    const normalizedOriginal = normalizeText(original);
+    const exactAfter = exactMap.get(normalizedOriginal);
+    if (exactAfter) {
+      const keepQuote = hasOuterQuote(original);
+      node.nodeValue = keepQuote ? `"${exactAfter}"` : exactAfter;
+      return;
+    }
+
+    let updatedValue = original;
+    preparedEntries.forEach((entry) => {
+      if (!normalizeText(updatedValue).includes(entry.before)) return;
+      updatedValue = updatedValue.replace(entry.re, entry.after);
+    });
+
+    if (updatedValue !== original) {
+      node.nodeValue = updatedValue;
+    }
   });
 }
 

@@ -10,7 +10,6 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate,
   renderLanguageFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
@@ -19,6 +18,31 @@ import {
   updateLocalization,
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
+
+const resolveCiwiRuntimeVersionInfo = () => {
+  const scriptUrl = import.meta?.url || "";
+  const versionMatch = scriptUrl.match(/\/(ciwi-translator-\d+)\//);
+  return {
+    scriptUrl,
+    version: versionMatch?.[1] || "unknown",
+  };
+};
+
+const logCiwiRuntimeVersion = (() => {
+  let logged = false;
+  return () => {
+    const { version, scriptUrl } = resolveCiwiRuntimeVersionInfo();
+    const runtimeInfo = { version, scriptUrl };
+
+    window.__CIWI_RUNTIME__ = runtimeInfo;
+    document.documentElement.dataset.ciwiVersion = version;
+    document.documentElement.dataset.ciwiScriptUrl = scriptUrl;
+
+    if (logged) return;
+    logged = true;
+    console.log("[ciwi] runtime version", runtimeInfo);
+  };
+})();
 
 // 原 isLikelyBotByUA 逻辑（简化版）
 function isLikelyBotByUA() {
@@ -334,9 +358,6 @@ async function ciwiOnload() {
     const tasks = [];
     if (pageContext.isProductPage) {
       tasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
-    }
-    if (pageContext.hasPageFly) {
-      tasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
     }
     if (pageContext.isHomePage) {
       tasks.push(HomeImageTranslate(blockId));
@@ -757,6 +778,8 @@ async function ciwiOnload() {
 const shouldDisableCiwiBootstrap = isShopifyThemeEditorAppsContext();
 
 if (!shouldDisableCiwiBootstrap) {
+  logCiwiRuntimeVersion();
+
   if (!customElements.get("ciwiswitcher-form")) {
     customElements.define("ciwiswitcher-form", CiwiswitcherForm);
   }
