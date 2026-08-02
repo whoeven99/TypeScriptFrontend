@@ -547,6 +547,8 @@
   "Feature-first": "Feature-first",
   "Call-to-action": "Call-to-action",
   "No Visible Switcher: ": "No Visible Switcher: ",
+  "Auto-collect third-party text: ": "Auto-collect third-party text: ",
+  "Automatically capture untranslated text from third-party apps on your storefront and translate it. This consumes translation credits.": "Automatically capture untranslated text from third-party apps on your storefront and translate it. This consumes translation credits.",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "The Private API has been limited due to your plan (Current plan: {{plan}})",
   "Upgrade to get a higher credit limit (Current plan: {{plan}})": "Upgrade to get a higher credit limit (Current plan: {{plan}})",
   "Import": "Import",

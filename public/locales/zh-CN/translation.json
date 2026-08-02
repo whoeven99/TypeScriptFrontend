@@ -502,6 +502,8 @@
   "Feature-first": "功能优先 —— 直接传达核心卖点",
   "Call-to-action": "号召行动 —— 强调点击、购买、参与",
   "No Visible Switcher: ": "不显示切换器：",
+  "Auto-collect third-party text: ": "自动采集第三方文本：",
+  "Automatically capture untranslated text from third-party apps on your storefront and translate it. This consumes translation credits.": "自动抓取店面上第三方应用的未翻译文本并翻译。该功能会消耗翻译额度。",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "由于您的计划，私有 API 已被限制（当前计划：{{plan}}）",
   "Please upgrade to a higher plan to unlock the Private API": "请升级到更高计划以解锁私有 API",
   "Import": "导入",

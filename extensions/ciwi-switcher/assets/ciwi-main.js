@@ -10,6 +10,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
+  CollectUntranslatedText,
   renderLanguageFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
@@ -388,6 +389,29 @@ async function ciwiOnload() {
     ? fetchSwitcherConfig?.response
     : null;
 
+  // 自动抓取第三方未翻译文本（opt-in；非预览）。浏览器空闲时执行，避免抢关键路径。
+  const scheduleAutoLiquidCollect = () => {
+    if (isInThemePreview || !configData?.autoLiquidCollect) return;
+    // 主语言页无需翻译：在店面直接拦截，避免把主语言的整页文本打到服务端。
+    const currentLanguage = ciwiBlock.querySelector(
+      'input[name="language_code"]',
+    )?.value;
+    const primaryLanguage = configData?.primaryLanguage;
+    if (
+      primaryLanguage &&
+      currentLanguage &&
+      normalizeLocaleCode(currentLanguage) === normalizeLocaleCode(primaryLanguage)
+    ) {
+      return;
+    }
+    const run = () => CollectUntranslatedText(shop, ciwiBlock);
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(run, { timeout: 4000 });
+    } else {
+      setTimeout(run, 2000);
+    }
+  };
+
   //获取当前语言和地区
   const languageValue = ciwiBlock.querySelector(
     'input[name="language_code"]',
@@ -731,6 +755,9 @@ async function ciwiOnload() {
       .catch(() => {});
   }
 
+  // 首次采集（当前语言）
+  scheduleAutoLiquidCollect();
+
   let lastRuntimeLanguage = detectRuntimeLanguage(ciwiBlock, availableLanguages);
 
   const syncRuntimeLanguage = () => {
@@ -761,6 +788,8 @@ async function ciwiOnload() {
       ciwiBlock,
     );
     runStorefrontTranslationTasks();
+    // 语言切换后为新目标语言采集
+    scheduleAutoLiquidCollect();
   };
 
   const languageAttrObserver = new MutationObserver(syncRuntimeLanguage);
