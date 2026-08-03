@@ -1,5 +1,6 @@
-import { Input, Modal, Select, Space, Typography } from "antd";
+import { Input, Modal, Space, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Select } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import {
   AI_MODEL_OPTIONS,
@@ -133,15 +134,12 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
           <Text type="secondary">
             {t("Add suggestions and translate again.")}
           </Text>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <Text>{t("v4.createTask.aiModel")}</Text>
-            <Select
-              value={aiModel}
-              options={aiModelOptions}
-              onChange={setAiModel}
-              style={{ width: "100%" }}
-            />
-          </div>
+          <Select
+            label={t("v4.createTask.aiModel")}
+            options={aiModelOptions}
+            value={aiModel}
+            onChange={setAiModel}
+          />
           <TextArea
             rows={4}
             maxLength={MAX_PROMPT_LENGTH}
