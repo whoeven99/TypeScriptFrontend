@@ -33,6 +33,7 @@ import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -490,6 +491,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { t } = useTranslation();
+  const { handleSingleTranslateFailure, quotaGateModal } = useSingleTranslateQuotaGate();
   const navigate = useNavigate();
   const { reportClick } = useReport();
   const languageTableData = useSelector(
@@ -934,7 +936,7 @@ const Index = () => {
         );
       }
     } else {
-      shopify.toast.show(data.errorMsg);
+      handleSingleTranslateFailure(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -1376,6 +1378,7 @@ justifyContent: "space-between",
           </>
         )}
       </Layout>
+      {quotaGateModal}
     </Page>
   );
 };
