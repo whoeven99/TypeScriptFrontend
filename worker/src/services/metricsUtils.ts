@@ -4,7 +4,43 @@ export type TranslateProgressMetrics = {
   translateTotal: number;
   translateUnitDone: number;
   translateUnitTotal: number;
+  initTotal?: number;
+  writebackDone?: number;
 };
+
+function ratioPercent(done: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.round((done / total) * 100));
+}
+
+export function taskResourceTotal(metrics: TranslateProgressMetrics): number {
+  return metrics.translateTotal || metrics.initTotal || 0;
+}
+
+/**
+ * PAUSED 任务进度百分比，对齐 app/server/translateV4/progress.server.ts
+ * computeTranslationV4ProgressPercent（TRANSLATE / WRITEBACK 分支）。
+ */
+export function computePausedJobProgressPercent(
+  metrics: TranslateProgressMetrics,
+  errorStage?: string | null,
+): number {
+  switch (errorStage) {
+    case "WRITEBACK": {
+      const total = taskResourceTotal(metrics);
+      return total > 0 ? ratioPercent(metrics.writebackDone ?? 0, total) : 0;
+    }
+    case "TRANSLATE":
+    default:
+      if (metrics.translateUnitTotal > 0) {
+        return ratioPercent(
+          capTranslateUnitsByResources(metrics),
+          metrics.translateUnitTotal,
+        );
+      }
+      return ratioPercent(metrics.translateDone, taskResourceTotal(metrics));
+  }
+}
 
 export function capTranslateUnitsByResources(
   metrics: TranslateProgressMetrics,

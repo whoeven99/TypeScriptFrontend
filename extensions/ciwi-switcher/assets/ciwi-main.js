@@ -10,7 +10,6 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate,
   CustomLiquidTextTranslate,
-  PageFlyTextTranslate,
   renderLanguageFlags,
   ensureLanguageLocaleData,
 } from "./ciwi-ui.js";
@@ -19,6 +18,31 @@ import {
   updateLocalization,
 } from "./ciwi-utils.js";
 import { getCiwiPageContext } from "./ciwi-page.js";
+
+const resolveCiwiRuntimeVersionInfo = () => {
+  const scriptUrl = import.meta?.url || "";
+  const versionMatch = scriptUrl.match(/\/(ciwi-translator-\d+)\//);
+  return {
+    scriptUrl,
+    version: versionMatch?.[1] || "unknown",
+  };
+};
+
+const logCiwiRuntimeVersion = (() => {
+  let logged = false;
+  return () => {
+    const { version, scriptUrl } = resolveCiwiRuntimeVersionInfo();
+    const runtimeInfo = { version, scriptUrl };
+
+    window.__CIWI_RUNTIME__ = runtimeInfo;
+    document.documentElement.dataset.ciwiVersion = version;
+    document.documentElement.dataset.ciwiScriptUrl = scriptUrl;
+
+    if (logged) return;
+    logged = true;
+    console.log("[ciwi] runtime version", runtimeInfo);
+  };
+})();
 
 // 原 isLikelyBotByUA 逻辑（简化版）
 function isLikelyBotByUA() {
@@ -111,7 +135,7 @@ function isTruthyPreviewFlag(value) {
   return value === true || value === "true" || value === "1" || value === 1;
 }
 
-function hasShopifyVisualPreviewParams(value) {
+function hasShopifyVisualPreviewSource(value) {
   const raw = String(value || "").trim();
   if (!raw) return false;
 
@@ -120,18 +144,37 @@ function hasShopifyVisualPreviewParams(value) {
     const source = url.searchParams.get("source");
     return (
       source === "visualPreview" ||
-      source === "visualPreviewInitialLoad" ||
-      url.searchParams.has("oseid") ||
-      url.searchParams.has("osectx")
+      source === "visualPreviewInitialLoad"
     );
   } catch {
     return (
       raw.includes("source=visualPreview") ||
-      raw.includes("source=visualPreviewInitialLoad") ||
-      raw.includes("oseid=") ||
-      raw.includes("osectx=")
+      raw.includes("source=visualPreviewInitialLoad")
     );
   }
+}
+
+function hasShopifyEditorPreviewMarkers(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.searchParams.has("oseid") || url.searchParams.has("osectx");
+  } catch {
+    return raw.includes("oseid=") || raw.includes("osectx=");
+  }
+}
+
+function isAdminThemeEditorUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  return (
+    raw.includes("admin.shopify.com/store/") &&
+    raw.includes("/themes/") &&
+    raw.includes("/editor")
+  );
 }
 
 function isShopifyThemeEditorAppsContext() {
@@ -157,9 +200,7 @@ function isShopifyThemeEditorAppsContext() {
 
   return (
     matchesEditorAppsContext(window.location.href) ||
-    matchesEditorAppsContext(document.referrer) ||
-    hasShopifyVisualPreviewParams(window.location.href) ||
-    hasShopifyVisualPreviewParams(document.referrer)
+    matchesEditorAppsContext(document.referrer)
   );
 }
 
@@ -167,6 +208,7 @@ function isShopifyThemePreviewContext(ciwiBlock) {
   const currentUrl = new URL(window.location.href);
   const params = currentUrl.searchParams;
   const referrer = String(document.referrer || "");
+  const hasAdminThemeEditorReferrer = isAdminThemeEditorUrl(referrer);
   const requestDesignMode = ciwiBlock?.querySelector(
     'input[name="ciwi_request_design_mode"]',
   )?.value;
@@ -193,7 +235,22 @@ function isShopifyThemePreviewContext(ciwiBlock) {
     return true;
   }
 
+  if (
+    hasShopifyVisualPreviewSource(window.location.href) ||
+    hasShopifyVisualPreviewSource(referrer)
+  ) {
+    return true;
+  }
+
   if (isShopifyThemeEditorAppsContext()) {
+    return true;
+  }
+
+  if (
+    hasAdminThemeEditorReferrer &&
+    (hasShopifyEditorPreviewMarkers(window.location.href) ||
+      hasShopifyEditorPreviewMarkers(referrer))
+  ) {
     return true;
   }
 
@@ -204,11 +261,7 @@ function isShopifyThemePreviewContext(ciwiBlock) {
 
   // Shopify Admin 主题编辑器里，店铺预览通常运行在 iframe 中，
   // 当前 storefront URL 可能不带 preview_theme_id，但 referrer 会是 editor 地址。
-  if (
-    referrer.includes("admin.shopify.com/store/") &&
-    referrer.includes("/themes/") &&
-    referrer.includes("/editor")
-  ) {
+  if (hasAdminThemeEditorReferrer) {
     return true;
   }
 
@@ -274,6 +327,74 @@ function renderPreviewCurrencySelector({ ciwiBlock, configData, enabled }) {
   currencySelectorHeader.appendChild(optionItem);
 }
 
+function renderStaticThemePreviewSwitcher({
+  ciwiBlock,
+  configData,
+  isLanguageSelectorTakeEffect,
+  isCurrencySelectorTakeEffect,
+}) {
+  if (!ciwiBlock || !configData) return;
+
+  const switcher = ciwiBlock.querySelector("#ciwi-container");
+  const mainBox = ciwiBlock.querySelector("#main-box");
+  const selectorBox = ciwiBlock.querySelector("#selector-box");
+  const selectorBackdrop = ciwiBlock.querySelector("#selector-backdrop");
+  const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
+  const closeButtonWrapper = ciwiBlock.querySelector(".close_button_wrapper");
+  const mainArrowIcon = ciwiBlock.querySelector("#mainbox-arrow-icon");
+
+  if (switcher) {
+    switcher.classList.remove("sidebar-widget-container", "expanded");
+    switcher.classList.remove("mobile-sidebar-widget");
+    switcher.style.visibility = "visible";
+    switcher.style.opacity = "1";
+    switcher.style.pointerEvents = "none";
+  }
+
+  if (selectorBackdrop) {
+    selectorBackdrop.classList.remove("mobile-sidebar-backdrop");
+    selectorBackdrop.style.display = "none";
+  }
+
+  if (selectorBox) {
+    selectorBox.dataset.mode = "overlay";
+    selectorBox.dataset.layout = "floating";
+    selectorBox.classList.remove(
+      "direct-select-mode",
+      "is-open",
+      "mobile-sidebar-mode",
+    );
+    selectorBox.style.display = "none";
+  }
+
+  if (translateFloatBtn) {
+    translateFloatBtn.style.display = "none";
+  }
+
+  if (closeButtonWrapper) {
+    closeButtonWrapper.style.display = "none";
+  }
+
+  if (mainBox) {
+    mainBox.style.display = "flex";
+    mainBox.style.backgroundColor = configData.backgroundColor;
+    mainBox.style.border = `1px solid ${configData.optionBorderColor}`;
+    mainBox.style.pointerEvents = "none";
+    mainBox.style.cursor = "default";
+  }
+
+  if (mainArrowIcon) {
+    mainArrowIcon.style.transform = "rotate(0deg)";
+    mainArrowIcon.style.opacity = "0.45";
+  }
+
+  updateDisplayText(
+    isLanguageSelectorTakeEffect,
+    isCurrencySelectorTakeEffect,
+    ciwiBlock,
+  );
+}
+
 function disableCiwiInteractionsInThemePreview(ciwiBlock) {
   if (!ciwiBlock) return;
 
@@ -313,6 +434,9 @@ function disableCiwiInteractionsInThemePreview(ciwiBlock) {
 }
 
 async function ciwiOnload() {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("ciwi_selected_language");
+  }
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
@@ -334,9 +458,6 @@ async function ciwiOnload() {
     const tasks = [];
     if (pageContext.isProductPage) {
       tasks.push(ProductImgTranslate(blockId, shop, ciwiBlock));
-    }
-    if (pageContext.hasPageFly) {
-      tasks.push(PageFlyTextTranslate(blockId, shop, ciwiBlock));
     }
     if (pageContext.isHomePage) {
       tasks.push(HomeImageTranslate(blockId));
@@ -543,16 +664,19 @@ async function ciwiOnload() {
     !configData.languageSelector && !configData.currencySelector;
   const isDirectSelectorMode = activeSelectorCount === 1 && !shouldUseSidebarWidget;
   const isTransparentMode = Boolean(configData?.isTransparent);
+  const shouldHideForTransparentMode = isTransparentMode && !isInThemePreview;
 
   if (switcher) {
-    switcher.style.visibility = isTransparentMode ? "hidden" : "visible";
-    switcher.style.opacity = isTransparentMode ? "0" : "1";
+    switcher.style.visibility = shouldHideForTransparentMode
+      ? "hidden"
+      : "visible";
+    switcher.style.opacity = shouldHideForTransparentMode ? "0" : "1";
     switcher.style.pointerEvents = isTransparentMode ? "none" : "auto";
     if (selectorBackdrop) {
       selectorBackdrop.style.display = "none";
     }
 
-    if (!configData?.isTransparent) {
+    if (!shouldHideForTransparentMode) {
       const translateFloatBtnText = ciwiBlock.querySelector(
         "#translate-float-btn-text",
       );
@@ -638,7 +762,14 @@ async function ciwiOnload() {
         closeButtonWrapper.style.display = isDirectSelectorMode ? "none" : "flex";
       }
 
-      if (isDirectSelectorMode) {
+      if (isInThemePreview) {
+        renderStaticThemePreviewSwitcher({
+          ciwiBlock,
+          configData,
+          isLanguageSelectorTakeEffect,
+          isCurrencySelectorTakeEffect,
+        });
+      } else if (isDirectSelectorMode) {
         selectorBox.style.removeProperty("width");
         selectorBox.style.border = "none";
         selectorBox.style.backgroundColor = "transparent";
@@ -754,19 +885,17 @@ async function ciwiOnload() {
 
 }
 
-const shouldDisableCiwiBootstrap = isShopifyThemeEditorAppsContext();
+logCiwiRuntimeVersion();
 
-if (!shouldDisableCiwiBootstrap) {
-  if (!customElements.get("ciwiswitcher-form")) {
-    customElements.define("ciwiswitcher-form", CiwiswitcherForm);
-  }
+if (!customElements.get("ciwiswitcher-form")) {
+  customElements.define("ciwiswitcher-form", CiwiswitcherForm);
+}
 
-  // 尽早初始化：DOM 就绪即可运行，无需等待整页所有图片/字体等资源（原 window load）。
-  // 三个数据脚本在 liquid 中改用 defer，保证在 DOMContentLoaded 前按序加载完，
-  // 因此此处运行时 window.countryCurMap 等已就绪。
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ciwiOnload);
-  } else {
-    ciwiOnload();
-  }
+// 尽早初始化：DOM 就绪即可运行，无需等待整页所有图片/字体等资源（原 window load）。
+// 三个数据脚本在 liquid 中改用 defer，保证在 DOMContentLoaded 前按序加载完，
+// 因此此处运行时 window.countryCurMap 等已就绪。
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", ciwiOnload);
+} else {
+  ciwiOnload();
 }

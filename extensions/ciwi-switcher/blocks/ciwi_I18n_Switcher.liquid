@@ -42,6 +42,8 @@
                 id="language-selector-flag"
                 class="selector-language-flag"
                 alt=""
+                width="18"
+                height="13"
                 hidden
                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                 onerror="this.style.display='none'"
@@ -194,14 +196,12 @@
     不在此处 eager 加载，由 ciwi-main 在浏览器空闲或用户首次接触切换器时
     通过 #ciwiLocaleDataUrl 动态注入，避免每页关键路径都下载它。
   {% endcomment %}
-  {% unless ciwi_is_theme_preview %}
-    <script src="{{ 'currency-format-config.js' | asset_url }}" defer></script>
-    <script src="{{ 'country-cur-map.js' | asset_url }}" defer></script>
-    <script type="module" src="{{ 'ciwi-main.js' | asset_url }}"></script>
-    <script>
-      window.__JS_EXECUTED__ = true;
-    </script>
-  {% endunless %}
+  <script src="{{ 'currency-format-config.js' | asset_url }}" defer></script>
+  <script src="{{ 'country-cur-map.js' | asset_url }}" defer></script>
+  <script type="module" src="{{ 'ciwi-main.js' | asset_url }}"></script>
+  <script>
+    window.__JS_EXECUTED__ = true;
+  </script>
 </div>
 
 {% schema %}
