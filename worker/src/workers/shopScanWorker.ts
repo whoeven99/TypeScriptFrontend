@@ -25,20 +25,32 @@ import { isRecoverableScanError } from "../services/shopScan/graphql.js";
 import { runContentSizeStage } from "../services/shopScan/stageContentSize.js";
 import { runProfileStage } from "../services/shopScan/stageProfile.js";
 import { runCoverageStage } from "../services/shopScan/stageCoverage.js";
-import { runGlossaryStage } from "../services/shopScan/stageGlossary.js";
 import { touchShopProfileScan } from "../services/shopScan/tsfWrite.js";
+import {
+  getShopScanDrainMax,
+  getShopScanInterShopDelayMs,
+} from "../services/shopScan/scanPace.js";
+import { sleep } from "../services/shopifyBulkShared.js";
 import { isShuttingDown } from "../shutdown.js";
 
 const WORKER_ID = `shopscan-${process.env.HOSTNAME ?? hostname()}-${process.pid}`;
 
-/** 每 tick 最多处理的扫描数（扫描较重，保守串行）。 */
-const DRAIN_MAX = Math.max(1, Number(process.env.SHOP_SCAN_DRAIN_MAX) || 3);
 const HEARTBEAT_THROTTLE_MS = 20_000;
+
+/**
+ * Prevent overlapping setInterval ticks from stacking concurrent scans
+ * (safeRun does not await). One in-flight runScanWorker at a time.
+ */
+let shopScanTickInFlight = false;
 
 /** 计量阶段：安装/定时默认跑。 */
 const METRICS_STAGES: readonly ShopScanStageName[] = ["contentSize", "coverage"];
-/** AI 阶段：仅手动触发。 */
-const AI_STAGES: readonly ShopScanStageName[] = ["profile", "glossary"];
+/** AI 阶段：仅手动触发；不再跑 glossary。 */
+const AI_STAGES: readonly ShopScanStageName[] = ["profile"];
+/** 已停用阶段：Cosmos 字段保留，一律 SKIPPED。 */
+const RETIRED_STAGES: readonly ShopScanStageName[] = ["glossary"];
+/** Admin 现算：只跑 coverage（对齐语言页「刷新统计」写 Turso）。 */
+const ADMIN_COVERAGE_STAGES: readonly ShopScanStageName[] = ["coverage"];
 
 /** shop_scan Cosmos 是否配置（未配置则整个 worker 空跑）。 */
 function cosmosConfigured(): boolean {
@@ -48,47 +60,85 @@ function cosmosConfigured(): boolean {
 /** 抛出以请求「整任务重新入队」（可恢复错误 + 仍有重试次数）。 */
 class RequeueSignal extends Error {}
 
-function isMetricsTrigger(trigger: ShopScanTrigger): boolean {
-  return trigger === "install" || trigger === "scheduled";
-}
-
 function stagesForTrigger(trigger: ShopScanTrigger): {
   run: readonly ShopScanStageName[];
   skip: readonly ShopScanStageName[];
 } {
-  if (isMetricsTrigger(trigger)) {
-    return { run: METRICS_STAGES, skip: AI_STAGES };
+  switch (trigger) {
+    case "install":
+    case "scheduled":
+      return { run: METRICS_STAGES, skip: [...AI_STAGES, ...RETIRED_STAGES] };
+    case "manual":
+      return { run: AI_STAGES, skip: [...METRICS_STAGES, ...RETIRED_STAGES] };
+    case "admin":
+      return {
+        run: ADMIN_COVERAGE_STAGES,
+        skip: ["contentSize", "profile", ...RETIRED_STAGES],
+      };
+    default: {
+      const _exhaustive: never = trigger;
+      return _exhaustive;
+    }
   }
-  // manual（及其它）：只跑 AI
-  return { run: AI_STAGES, skip: METRICS_STAGES };
 }
 
 export async function runShopScanWorker(): Promise<void> {
   if (isShuttingDown()) return;
   if (!cosmosConfigured() || !hasTsfDbCredentials()) return;
+  if (shopScanTickInFlight) return;
+  shopScanTickInFlight = true;
 
+  const drainMax = getShopScanDrainMax();
+  const interShopDelayMs = getShopScanInterShopDelayMs();
   let processed = 0;
 
-  // 1. 优先消费 hint（立即唤醒）
-  for (let i = 0; i < DRAIN_MAX && !isShuttingDown(); i++) {
-    const hint = await popShopScanHint();
-    if (!hint) break;
-    const ran = await tryProcessScan(hint.shopName, hint.scanId);
-    if (ran === "busy") {
-      // 已被别的进程领走或状态不符，尾插回队列避免热轮询同一条
-      await requeueShopScanHintTail(hint);
-    } else if (ran === "ok") {
-      processed++;
+  try {
+    // 1. 优先消费 hint（立即唤醒）
+    for (let i = 0; i < drainMax && !isShuttingDown(); i++) {
+      const hint = await popShopScanHint();
+      if (!hint) break;
+      const ran = await tryProcessScan(hint.shopName, hint.scanId);
+      if (ran === "busy") {
+        // 已被别的进程领走或状态不符，尾插回队列避免热轮询同一条
+        await requeueShopScanHintTail(hint);
+      } else if (ran === "ok") {
+        processed++;
+        if (
+          interShopDelayMs > 0 &&
+          processed < drainMax &&
+          !isShuttingDown()
+        ) {
+          await sleep(interShopDelayMs);
+        }
+      }
     }
-  }
 
-  // 2. 兜底：轮询 Cosmos 里 CREATED/QUEUED 的扫描（hint 丢失/部署重启后自愈）
-  if (processed < DRAIN_MAX && !isShuttingDown()) {
-    const refs = await findPendingShopScanJobs(DRAIN_MAX - processed);
-    for (const ref of refs) {
-      if (isShuttingDown()) break;
-      await tryProcessScan(ref.shopName, ref.id);
+    // 2. 兜底：轮询 Cosmos 里 CREATED/QUEUED 的扫描（hint 丢失/部署重启后自愈）
+    if (processed < drainMax && !isShuttingDown()) {
+      const refs = await findPendingShopScanJobs(drainMax - processed);
+      for (const ref of refs) {
+        if (isShuttingDown()) break;
+        const ran = await tryProcessScan(ref.shopName, ref.id);
+        if (ran === "ok") {
+          processed++;
+          if (
+            interShopDelayMs > 0 &&
+            processed < drainMax &&
+            !isShuttingDown()
+          ) {
+            await sleep(interShopDelayMs);
+          }
+        }
+      }
     }
+
+    // Hold the mutex briefly after work so the next poll tick cannot
+    // immediately start another heavy shop (flattens :30 bursts).
+    if (processed > 0 && interShopDelayMs > 0 && !isShuttingDown()) {
+      await sleep(interShopDelayMs);
+    }
+  } finally {
+    shopScanTickInFlight = false;
   }
 }
 
@@ -265,8 +315,10 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         shop,
         accessToken,
         primaryLocale,
-        blobPrefix: job.blobPrefix,
+        scanId,
+        trigger: job.trigger,
         heartbeat,
+        isShutdown: isShuttingDown,
       });
       return {
         state: "DONE",
@@ -284,8 +336,10 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         accessToken,
         primaryLocale,
         locales,
-        blobPrefix: job.blobPrefix,
+        scanId,
+        trigger: job.trigger,
         heartbeat,
+        isShutdown: isShuttingDown,
       });
       return { state: r.status === "done" ? "DONE" : "SKIPPED", summary: { coverage: r.coverage } };
     });
@@ -297,30 +351,12 @@ async function runScanStages(job: ShopScanJob): Promise<void> {
         primaryLocale,
         locales,
         scanId,
-        blobPrefix: job.blobPrefix,
+        trigger: job.trigger,
         heartbeat,
       });
       return r.status === "done"
         ? { state: "DONE", summary: { profileStrategy: r.profileStrategy } }
         : "SKIPPED";
-    });
-
-    await runStage("glossary", async () => {
-      const r = await runGlossaryStage({
-        shop,
-        accessToken,
-        primaryLocale,
-        locales,
-        blobPrefix: job.blobPrefix,
-        heartbeat,
-      });
-      return {
-        state: r.status === "done" ? "DONE" : "SKIPPED",
-        summary: {
-          glossaryCount: r.glossaryCount,
-          glossarySuggestions: r.glossarySuggestions,
-        },
-      };
     });
   } catch (signal) {
     if (signal instanceof RequeueSignal) {

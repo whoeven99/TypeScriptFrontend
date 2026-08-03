@@ -24,7 +24,11 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
-import { DeleteProductImageData, GetProductImageData } from "~/api/pictureClient";
+import {
+  DeleteProductImageData,
+  GetProductImageData,
+  UploadProductImage,
+} from "~/api/pictureClient";
 import { sameShopifyImageUrl } from "~/utils/shopifyImageUrl";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
@@ -904,7 +908,24 @@ const Index = () => {
               maxCount={1}
               accept="image/*"
               name="file"
-              action="/api/picture/upload"
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const result = await UploadProductImage({
+                    shopName: globalStore?.shop ?? "",
+                    productId: record?.productId,
+                    imageUrl: record?.imageUrl,
+                    languageCode: selectedLanguage,
+                    file: file as Blob,
+                  });
+                  if (!result?.success) {
+                    onError?.(new Error(result?.errorMsg || "Upload Failed"));
+                    return;
+                  }
+                  onSuccess?.(result);
+                } catch (err) {
+                  onError?.(err as Error);
+                }
+              }}
               beforeUpload={(file) => {
                 const isImage = file.type.startsWith("image/");
                 const isLt20M = file.size / 1024 / 1024 < 20;
@@ -960,20 +981,6 @@ const Index = () => {
                   };
                   img.src = URL.createObjectURL(file);
                 });
-              }}
-              data={(file) => {
-                return {
-                  shopName: globalStore?.shop,
-                  file: file,
-                  userPicturesDoJson: JSON.stringify({
-                    shopName: globalStore?.shop,
-                    imageId: record?.productId,
-                    imageBeforeUrl: record?.imageUrl,
-                    altBeforeTranslation: "",
-                    altAfterTranslation: "",
-                    languageCode: selectedLanguage,
-                  }),
-                };
               }}
               onChange={(info) => {
                 if (info.file.status !== "uploading") {
@@ -1213,7 +1220,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 154px)",
+          minHeight: "70vh",
         }}
       >
         {isLoading ? (
@@ -1249,8 +1256,9 @@ const Index = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    height: "100%",
-                    justifyContent: "space-between",
+                    flex: 1,
+minHeight: 0,
+justifyContent: "space-between",
                   }}
                 >
                   <Menu
@@ -1281,7 +1289,6 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
-                height: "calc(100% - 25px)",
                 minHeight: "70vh",
                 display: "flex",
                 flexDirection: "column",
@@ -1364,7 +1371,32 @@ const Index = () => {
                                   maxCount={1}
                                   accept="image/*"
                                   name="file"
-                                  action="/api/picture/upload"
+                                  customRequest={async ({
+                                    file,
+                                    onSuccess,
+                                    onError,
+                                  }) => {
+                                    try {
+                                      const result = await UploadProductImage({
+                                        shopName: globalStore?.shop ?? "",
+                                        productId: item?.productId,
+                                        imageUrl: item?.imageUrl,
+                                        languageCode: selectedLanguage,
+                                        file: file as Blob,
+                                      });
+                                      if (!result?.success) {
+                                        onError?.(
+                                          new Error(
+                                            result?.errorMsg || "Upload Failed",
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      onSuccess?.(result);
+                                    } catch (err) {
+                                      onError?.(err as Error);
+                                    }
+                                  }}
                                   beforeUpload={(file) => {
                                     const isImage =
                                       file.type.startsWith("image/");
@@ -1432,20 +1464,6 @@ const Index = () => {
                                       };
                                       img.src = URL.createObjectURL(file);
                                     });
-                                  }}
-                                  data={(file) => {
-                                    return {
-                                      shopName: globalStore?.shop,
-                                      file: file,
-                                      userPicturesDoJson: JSON.stringify({
-                                        shopName: globalStore?.shop,
-                                        imageId: item?.productId,
-                                        imageBeforeUrl: item?.imageUrl,
-                                        altBeforeTranslation: "",
-                                        altAfterTranslation: "",
-                                        languageCode: selectedLanguage,
-                                      }),
-                                    };
                                   }}
                                   onChange={(info) => {
                                     if (info.file.status !== "uploading") {

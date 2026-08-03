@@ -142,6 +142,8 @@ type LanguageCoverageRow = {
   total: number;
   percent: number | null;
   cacheMissing: boolean;
+  /** Redis HGETALL 完全无内容 */
+  cacheEmpty?: boolean;
   autoTranslate: boolean;
   isTranslating: boolean;
 };
@@ -480,9 +482,6 @@ const Index = () => {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [publishModalLanguageCode, setPublishModalLanguageCode] =
     useState<string>("");
-  const [noFirstTranslation, setNoFirstTranslation] = useState(false);
-  const [noFirstTranslationLocale, setNoFirstTranslationLocale] =
-    useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [autoTranslateAlert, setAutoTranslateAlert] = useState<string>("");
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
@@ -555,14 +554,46 @@ const Index = () => {
         await coverageRequestRef.current;
         return;
       }
+      const targets = baseRows.map((row) => row.locale).filter(Boolean);
       coverageRequestRef.current = (async () => {
         try {
-          const coverageData = await listLanguageCoverageCompat();
+          const coverageData = await listLanguageCoverageCompat({ targets });
           const coverageRows = (coverageData?.summary?.locales ??
             []) as LanguageCoverageRow[];
           dispatch(
             setLanguageTableData(applyCoverageToLanguageRows(baseRows, coverageRows)),
           );
+
+          // Turso 未写入覆盖率（且 Redis 回退也空）：与「刷新统计」同效，按语言逐个 refresh=1
+          const emptyLocales = coverageRows
+            .filter((row) => row.cacheEmpty)
+            .map((row) => row.locale);
+          if (emptyLocales.length > 0) {
+            void (async () => {
+              try {
+                let latestRows = coverageRows;
+                for (const locale of emptyLocales) {
+                  const refreshed = await listLanguageCoverageCompat({
+                    targets,
+                    forceRefresh: true,
+                    refreshLocales: [locale],
+                  });
+                  latestRows = (refreshed?.summary?.locales ??
+                    latestRows) as LanguageCoverageRow[];
+                  dispatch(
+                    setLanguageTableData(
+                      applyCoverageToLanguageRows(baseRows, latestRows),
+                    ),
+                  );
+                }
+              } catch (error) {
+                console.error(
+                  "[language] background coverage refresh failed:",
+                  error,
+                );
+              }
+            })();
+          }
         } catch (error) {
           console.error("[language] load coverage status failed:", error);
           dispatch(setLanguageTableData(baseRows));
@@ -785,7 +816,8 @@ const Index = () => {
       }
 
       try {
-        const coverageData = await listLanguageCoverageCompat();
+        const targets = dataSource.map((lang) => lang.locale).filter(Boolean);
+        const coverageData = await listLanguageCoverageCompat({ targets });
         const rows = (coverageData?.summary?.locales ?? []) as LanguageCoverageRow[];
         const nextStatusSignature = dataSource
           .map((lang) => {
@@ -946,11 +978,7 @@ const Index = () => {
         <Switch
           checked={record.autoTranslate}
           onChange={(checked) =>
-            handleAutoUpdateTranslationChange(
-              record.locale,
-              checked,
-              record.status,
-            )
+            handleAutoUpdateTranslationChange(record.locale, checked)
           }
           loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
         />
@@ -1142,7 +1170,6 @@ const Index = () => {
   const handleAutoUpdateTranslationChange = async (
     locale: string,
     checked: boolean,
-    status: number,
   ) => {
     const trace = startClientLogTrace({
       event: "language_toggle_auto_translate",
@@ -1150,7 +1177,6 @@ const Index = () => {
       shop,
       context: {
         locale,
-        currentStatus: status,
       },
     });
     if (!plan) {
@@ -1159,16 +1185,6 @@ const Index = () => {
         status: "failure",
         message: "Plan not loaded",
       });
-      return;
-    }
-    if (status === 0) {
-      finishClientLogTrace(trace, {
-        level: "warn",
-        status: "failure",
-        message: "Auto translate requires an initial translation",
-      });
-      setNoFirstTranslationLocale(locale);
-      setNoFirstTranslation(true);
       return;
     }
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
@@ -1436,7 +1452,6 @@ const Index = () => {
                                 handleAutoUpdateTranslationChange(
                                   item.locale,
                                   checked,
-                                  item.status,
                                 )
                               }
                             />
@@ -1580,37 +1595,6 @@ const Index = () => {
         setIsModalOpen={setIsPublishModalOpen}
         publishLangaugeCode={publishModalLanguageCode}
       />
-      <Modal
-        open={noFirstTranslation}
-        onCancel={() => setNoFirstTranslation(false)}
-        footer={
-          <Space>
-            <Button onClick={() => setNoFirstTranslation(false)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setNoFirstTranslation(false);
-                openTranslateModal([noFirstTranslationLocale]);
-              }}
-            >
-              {t("Translate")}
-            </Button>
-          </Space>
-        }
-        style={{
-          top: "40%",
-          zIndex: 1001,
-        }}
-        width={700}
-      >
-        <Text>
-          {t(
-            "Please manually start a translation task first. You can then use the automatic translation function.",
-          )}
-        </Text>
-      </Modal>
       <CreateTaskQuotaGateModal
         open={translateQuotaGateMode !== null}
         mode={translateQuotaGateMode ?? "pricing"}

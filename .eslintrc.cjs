@@ -8,6 +8,27 @@ module.exports = {
     "prettier",
   ],
   globals: {
-    shopify: "readonly"
+    shopify: "readonly",
   },
+  overrides: [
+    {
+      // translate-v4 创建任务等表面：禁止 Ant Select（嵌入页 + 自定义 CSS 易拆布局）
+      files: ["app/routes/app.translate-v4/**/*.{ts,tsx}"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "antd",
+                importNames: ["Select"],
+                message:
+                  "Use Polaris Select / chips / Combobox on translate-v4. Ant Select + card CSS has broken dropdown layout before.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
 };

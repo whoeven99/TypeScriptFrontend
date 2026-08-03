@@ -1,4 +1,8 @@
 {% assign language_iso = localization.language.iso_code %}
+{% assign ciwi_is_theme_preview = false %}
+{% if request.design_mode or request.visual_preview_mode %}
+  {% assign ciwi_is_theme_preview = true %}
+{% endif %}
 <link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
 <div dir="{% if language_iso == 'ar' or language_iso == 'fa' or language_iso == 'ur' or language_iso == 'he' %}rtl{% else %}ltr{% endif %}">
@@ -38,6 +42,8 @@
                 id="language-selector-flag"
                 class="selector-language-flag"
                 alt=""
+                width="18"
+                height="13"
                 hidden
                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                 onerror="this.style.display='none'"
@@ -81,7 +87,7 @@
         <div
           id="main-box"
           class="ciwi_main_box"
-          style="display: none;"
+          style="{% if ciwi_is_theme_preview %}display: flex; pointer-events: none; cursor: default;{% else %}display: none;{% endif %}"
         >
           <img
             id="main-language-flag"
@@ -151,6 +157,8 @@
       <input type="hidden" name="page_type" value="{{ request.page_type }}">
       <input type="hidden" name="template_name" value="{{ template.name }}">
       <input type="hidden" name="block_id" value="{{ block.id }}">
+      <input type="hidden" name="ciwi_request_design_mode" value="{% if request.design_mode %}1{% else %}0{% endif %}">
+      <input type="hidden" name="ciwi_request_visual_preview_mode" value="{% if request.visual_preview_mode %}1{% else %}0{% endif %}">
       <input type="hidden" id="ciwiLocaleDataUrl" value="{{ 'language-locale-data.js' | asset_url }}">
     {% endform %}
   </ciwiswitcher-form>

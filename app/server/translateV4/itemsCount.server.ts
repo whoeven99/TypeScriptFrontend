@@ -8,10 +8,12 @@
  * 数据源仍是 Shopify（与 Java 一样需翻页拉取），本模块不提速，只保证去 Java + 口径一致。
  *
  * 覆盖范围（见 LOCAL_COUNT_SPEC + COVERAGE_COUNT_LABELS）：与管理翻译汇总页
- * 各卡片累加口径一致（不含 Policies）；id-based 类型亦用 translatableResources 枚举。
+ * 各卡片累加口径一致；Product / Shop 会并入其关联子模块，避免任务完成后
+ * 语言覆盖率仍停留在 0 的错觉。
  */
 import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { isBlankValue } from "@ciwi/translation-core/translation-filter/v3Base";
+import { upsertLocaleCoverage } from "./coverageStore.server";
 import { getTranslateV4RedisClient } from "./redis.server";
 
 /**
@@ -54,7 +56,10 @@ export type ItemsCountRow = {
  * Navigation 由 MENU + LINK 合并，组件按 type "LINK" 读取（对齐 Java 既有行为）。
  */
 const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
-  Products: { type: "PRODUCT", modules: ["PRODUCT"] },
+  Products: {
+    type: "PRODUCT",
+    modules: ["PRODUCT", "PRODUCT_OPTION", "PRODUCT_OPTION_VALUE"],
+  },
   Collections: { type: "COLLECTION", modules: ["COLLECTION"] },
   /** 与管理翻译页 ITEMS_COUNT 的 `Collection` label 对齐。 */
   Collection: { type: "COLLECTION", modules: ["COLLECTION"] },
@@ -67,7 +72,10 @@ const LOCAL_COUNT_SPEC: Record<string, { type: string; modules: string[] }> = {
   Metaobjects: { type: "METAOBJECT", modules: ["METAOBJECT"] },
   "Store metadata": { type: "METAFIELD", modules: ["METAFIELD"] },
   Delivery: { type: "DELIVERY_METHOD_DEFINITION", modules: ["DELIVERY_METHOD_DEFINITION"] },
-  Shop: { type: "SHOP", modules: ["SHOP"] },
+  Shop: {
+    type: "SHOP",
+    modules: ["SHOP", "PAYMENT_GATEWAY", "SELLING_PLAN", "SELLING_PLAN_GROUP"],
+  },
   Navigation: { type: "LINK", modules: ["MENU", "LINK"] },
   Notifications: { type: "EMAIL_TEMPLATE", modules: ["EMAIL_TEMPLATE"] },
   Policies: { type: "SHOP_POLICY", modules: ["SHOP_POLICY"] },
@@ -595,7 +603,19 @@ export async function sumItemsCountByLabelsFromCache(
   shop: string,
   locale: string,
   labels: readonly string[] = COVERAGE_COUNT_LABELS,
-): Promise<{ translated: number; total: number; cacheMissing: boolean }> {
+): Promise<{
+  translated: number;
+  total: number;
+  cacheMissing: boolean;
+  /** Redis HGETALL 无任何 field（key 不存在或空 hash） */
+  cacheEmpty: boolean;
+}> {
+  // 一次 HGETALL，避免每 module 串行 HGET（语言页 N 语言 × ~20 module）
+  const moduleMap = await readAllModuleCountsFromCache(shop, locale);
+  if (moduleMap.size === 0) {
+    return { translated: 0, total: 0, cacheMissing: true, cacheEmpty: true };
+  }
+
   let translated = 0;
   let total = 0;
   let cacheMissing = false;
@@ -607,7 +627,7 @@ export async function sumItemsCountByLabelsFromCache(
       continue;
     }
     for (const module of spec.modules) {
-      const cached = await readStoredModuleCount(shop, locale, module);
+      const cached = moduleMap.get(module);
       if (!cached) {
         cacheMissing = true;
         continue;
@@ -617,7 +637,7 @@ export async function sumItemsCountByLabelsFromCache(
     }
   }
 
-  return { translated, total, cacheMissing };
+  return { translated, total, cacheMissing, cacheEmpty: false };
 }
 
 /** 现算 Shopify 并累加多个汇总卡片（与管理翻译汇总页同口径）。 */
@@ -658,6 +678,7 @@ export async function sumItemsCountByLabels({
 /**
  * 强制刷新某一语言的统计缓存（现算 Shopify + 写 Redis，不先 invalidate —— 避免翻译进行中清空 worker 写入）。
  * 管理翻译/v4 覆盖率共用同一 Redis key；`labels` 决定刷新哪些卡片/module。
+ * 同时按 COVERAGE_COUNT_LABELS 口径把语言级汇总写入 Turso（权威源）。
  */
 export async function refreshItemsCountForLocale({
   admin,
@@ -670,13 +691,43 @@ export async function refreshItemsCountForLocale({
   locale: string;
   labels?: readonly string[];
 }): Promise<{ translated: number; total: number }> {
-  return sumItemsCountByLabels({
+  const result = await sumItemsCountByLabels({
     admin,
     shop,
     target: locale,
     labels,
     skipCache: true,
   });
+
+  try {
+    const coverageLabelsAreSame =
+      labels.length === COVERAGE_COUNT_LABELS.length &&
+      COVERAGE_COUNT_LABELS.every((l) => labels.includes(l));
+    const coverage = coverageLabelsAreSame
+      ? result
+      : await sumItemsCountByLabels({
+          admin,
+          shop,
+          target: locale,
+          labels: COVERAGE_COUNT_LABELS,
+          // Redis 刚被上面写过；MOVED 失败时会现算 Shopify
+          skipCache: false,
+        });
+    await upsertLocaleCoverage({
+      shop,
+      locale,
+      translated: coverage.translated,
+      total: coverage.total,
+      source: "refresh",
+    });
+  } catch (err) {
+    console.error(
+      `[itemsCount] turso coverage upsert failed shop=${shop} locale=${locale}:`,
+      err,
+    );
+  }
+
+  return result;
 }
 
 /** 强制刷新后返回最新汇总与各行明细（单请求）。 */

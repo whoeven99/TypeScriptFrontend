@@ -1,5 +1,5 @@
 /** Maps our module names to Shopify's TranslatableResourceType enum values */
-import { getShopAccessToken, invalidateShopAccessTokenCache } from "./shopAccessToken.js";
+import { getShopAccessToken } from "./shopAccessToken.js";
 import { shouldIncludeFieldV2 } from "@ciwi/translation-core/translation-filter";
 import { noteShopifyThrottle } from "./shopifyConcurrency.js";
 import { buildShopifyAdminGraphqlUrl } from "./shopifyAdminApiVersion.js";
@@ -64,8 +64,6 @@ export type FetchTranslatableOptions = {
   isHandle: boolean;
   /** Called after each paginated API response — use to keep heartbeat alive on long fetches */
   onPage?: () => Promise<void>;
-  /** 外部来源任务（如 TsFrontend）：直接用 job token */
-  preferLegacyToken?: boolean;
   /**
    * 若提供，跳过全店枚举，直接按这些 GID 拉取（试译单商品等）。
    * 仅对 ID-based module（如 PRODUCT）生效。
@@ -73,7 +71,7 @@ export type FetchTranslatableOptions = {
   resourceIds?: string[];
 };
 
-type TranslatableNode = {
+export type TranslatableNode = {
   resourceId: string;
   translations: Array<{ key: string; value?: string | null; outdated?: boolean | null }>;
   translatableContent: Array<{
@@ -89,9 +87,15 @@ const FETCH_PAGE_SIZE = 50;
 const ID_FETCH_PAGE_SIZE = 250;
 const TRANSLATABLE_RESOURCES_BY_IDS_BATCH = 250;
 
-// Cap a chunk's total translatable text so a chunk blob / in-memory batch never
-// gets huge (a single resource is still kept whole, even if it exceeds this).
-const MAX_CHUNK_CHARS = Number(process.env.TRANSLATION_MAX_CHUNK_CHARS?.trim()) || 50_000;
+/**
+ * Max serialized init-chunk JSON size (matches blobWrite compact JSON).
+ * Default 2 MiB — sweet spot for Azure Blob vs too-many tiny files.
+ * Override with TRANSLATION_MAX_CHUNK_BYTES.
+ */
+const MAX_CHUNK_BYTES = Math.max(
+  64 * 1024,
+  Number(process.env.TRANSLATION_MAX_CHUNK_BYTES?.trim()) || 2 * 1024 * 1024,
+);
 
 /**
  * Minimum remaining Shopify GraphQL bucket points before we proactively wait
@@ -242,8 +246,8 @@ const MODULE_ID_QUERY: Record<string, { gql: string; connectionKey: string }> = 
   COLLECTION: { gql: COLLECTIONS_IDS_QUERY, connectionKey: "collections" },
 };
 
-/** Transient Shopify gateway errors — retry with short back-off before failing. */
-const SHOPIFY_5XX_RETRY_STATUSES = new Set([502, 503, 504]);
+/** Transient Shopify/Cloudflare gateway errors — retry with short back-off before failing. */
+const SHOPIFY_5XX_RETRY_STATUSES = new Set([502, 503, 504, 522]);
 const SHOPIFY_5XX_MAX_RETRIES = Math.max(
   0,
   Number(process.env.SHOPIFY_5XX_MAX_RETRIES?.trim()) || 2,
@@ -256,7 +260,7 @@ const SHOPIFY_5XX_MAX_RETRIES = Math.max(
  *  - 429 retry: respects the Retry-After header, up to MAX_RETRIES attempts.
  *    Multiple concurrent workers for the same shop share the same rate-limit
  *    bucket; back-off prevents thundering-herd amplification.
- *  - 502/503/504 retry: short exponential back-off (default 2 attempts).
+ *  - 502/503/504/522 retry: short exponential back-off (default 2 attempts).
  *  - Proactive throttle: reads extensions.cost.throttleStatus from every
  *    response and inserts a calculated sleep whenever the remaining bucket
  *    points drop below SHOPIFY_BUCKET_FLOOR.  This keeps parallel module
@@ -304,28 +308,22 @@ export function resetShopifyCallStats(shopDomain: string): void {
 
 type ShopifyGraphqlOpts = {
   retries?: number;
-  /** Remaining 502/503/504 retries for this request chain. */
+  /** Remaining 502/503/504/522 retries for this request chain. */
   retries5xx?: number;
   /** 401 后已用同一 token 重试过一次 */
   tokenRetried?: boolean;
-  /** 外部来源任务（如 TsFrontend）：优先 job / TSF token */
-  preferLegacyToken?: boolean;
 };
 
-async function shopifyGraphql(
+/** Shared Admin GraphQL entry for init/writeback/bulk helpers. */
+export async function shopifyGraphql(
   shopDomain: string,
-  legacyAccessToken: string,
   query: string,
   variables: Record<string, unknown>,
   opts: ShopifyGraphqlOpts = {},
 ): Promise<unknown> {
   const retries = opts.retries ?? 4;
   const retries5xx = opts.retries5xx ?? SHOPIFY_5XX_MAX_RETRIES;
-  const accessToken = await getShopAccessToken(
-    shopDomain,
-    legacyAccessToken,
-    opts.preferLegacyToken ?? false,
-  );
+  const accessToken = await getShopAccessToken(shopDomain);
   const url = buildShopifyAdminGraphqlUrl(shopDomain);
   const resp = await fetch(url, {
     method: "POST",
@@ -349,7 +347,7 @@ async function shopifyGraphql(
       `[shopifyFetch] 429 on ${shopDomain} — waiting ${waitMs}ms (retries left: ${retries - 1})`,
     );
     await new Promise((r) => setTimeout(r, waitMs));
-    return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+    return shopifyGraphql(shopDomain, query, variables, {
       ...opts,
       retries: retries - 1,
     });
@@ -358,9 +356,10 @@ async function shopifyGraphql(
   if (resp.status === 401) {
     const body = await resp.text();
     if (!opts.tokenRetried) {
-      invalidateShopAccessTokenCache(shopDomain);
-      console.warn(`[shopifyFetch] 401 on ${shopDomain} — retrying with same token`);
-      return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+      console.warn(
+        `[shopifyFetch] 401 on ${shopDomain} — reloading offline token from Turso Session`,
+      );
+      return shopifyGraphql(shopDomain, query, variables, {
         ...opts,
         tokenRetried: true,
       });
@@ -370,7 +369,7 @@ async function shopifyGraphql(
     );
   }
 
-  // ── 502/503/504: transient Shopify gateway errors ─────────────────────────
+  // ── 502/503/504/522: transient Shopify/Cloudflare gateway errors ───────────
   if (SHOPIFY_5XX_RETRY_STATUSES.has(resp.status)) {
     const body = await resp.text();
     if (retries5xx <= 0) {
@@ -385,7 +384,7 @@ async function shopifyGraphql(
       `[shopifyFetch] ${resp.status} on ${shopDomain} — waiting ${waitMs}ms (5xx retries left: ${retries5xx - 1})`,
     );
     await new Promise((r) => setTimeout(r, waitMs));
-    return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+    return shopifyGraphql(shopDomain, query, variables, {
       ...opts,
       retries5xx: retries5xx - 1,
     });
@@ -423,7 +422,7 @@ async function shopifyGraphql(
           `[shopifyFetch] THROTTLED on ${shopDomain} — waiting ${waitMs}ms (retries left: ${retries - 1})`,
         );
         await new Promise((r) => setTimeout(r, waitMs));
-        return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+        return shopifyGraphql(shopDomain, query, variables, {
           ...opts,
           retries: retries - 1,
         });
@@ -443,7 +442,7 @@ async function shopifyGraphql(
         `[shopifyFetch] SERVER_ERROR on ${shopDomain} — waiting ${waitMs}ms (5xx retries left: ${retries5xx - 1})`,
       );
       await new Promise((r) => setTimeout(r, waitMs));
-      return shopifyGraphql(shopDomain, legacyAccessToken, query, variables, {
+      return shopifyGraphql(shopDomain, query, variables, {
         ...opts,
         retries5xx: retries5xx - 1,
       });
@@ -490,7 +489,7 @@ function buildResourceQueryFilter(
   return query || null;
 }
 
-function mapNodeToResource(
+export function mapNodeToResource(
   node: TranslatableNode,
   module: string,
   options: FetchTranslatableOptions,
@@ -520,33 +519,57 @@ function mapNodeToResource(
   return { resourceId: node.resourceId, fields };
 }
 
-function resourceChars(r: TranslatableResource): number {
+export function resourceChars(r: TranslatableResource): number {
   return r.fields.reduce((sum, f) => sum + (f.value?.length ?? 0), 0);
 }
 
+/** UTF-8 byte length of one resource as compact JSON (same encoding as blobWrite). */
+export function resourceBlobBytes(r: TranslatableResource): number {
+  return Buffer.byteLength(JSON.stringify(r), "utf8");
+}
+
+/** Exact UTF-8 byte length of a chunk blob body (same encoding as blobWrite). */
+export function chunkBlobBytes(resources: TranslatableResource[]): number {
+  return Buffer.byteLength(JSON.stringify(resources), "utf8");
+}
+
+/** Default max init chunk file size in bytes (overridable via TRANSLATION_MAX_CHUNK_BYTES). */
+export function getMaxChunkBytes(): number {
+  return MAX_CHUNK_BYTES;
+}
+
 /**
- * Pack resources into chunks bounded by BOTH a max count (`chunkSize`) and a max
- * total char count (`MAX_CHUNK_CHARS`), whichever is hit first. Each resource is
- * kept whole; a single oversized resource gets its own chunk.
+ * Pack resources into chunks capped by serialized JSON file size only
+ * (no per-chunk resource-count limit). Each resource is kept whole; a single
+ * oversized resource gets its own chunk even if it exceeds the max.
+ *
+ * `chunkSize` is retained for call-site compatibility and ignored.
+ *
+ * Size uses the same compact JSON as blobWrite. Per-resource sums plus commas
+ * approximate an array; confirm with exact stringify only when near the limit.
  */
-function chunkResources(
+export function chunkResources(
   resources: TranslatableResource[],
-  chunkSize: number,
-  maxChars: number = MAX_CHUNK_CHARS,
+  _chunkSize?: number,
+  maxBytes: number = MAX_CHUNK_BYTES,
 ): TranslatableResource[][] {
   const chunks: TranslatableResource[][] = [];
   let current: TranslatableResource[] = [];
-  let currentChars = 0;
+  let sumResourceBytes = 0;
 
   for (const r of resources) {
-    const size = resourceChars(r);
-    if (current.length > 0 && (current.length >= chunkSize || currentChars + size > maxChars)) {
-      chunks.push(current);
-      current = [];
-      currentChars = 0;
+    const rBytes = resourceBlobBytes(r);
+    if (current.length > 0) {
+      // Compact array ≈ "[" + items.join(",") + "]"
+      const estimate = sumResourceBytes + rBytes + current.length + 2;
+      if (estimate > maxBytes && chunkBlobBytes(current.concat(r)) > maxBytes) {
+        chunks.push(current);
+        current = [];
+        sumResourceBytes = 0;
+      }
     }
     current.push(r);
-    currentChars += size;
+    sumResourceBytes += rBytes;
   }
 
   if (current.length > 0) chunks.push(current);
@@ -556,12 +579,10 @@ function chunkResources(
 /** 按 config query 分页拉取资源 GID，最多 limit 条。 */
 export async function fetchResourceIdsByQuery(
   shopDomain: string,
-  accessToken: string,
   module: string,
   limit: number,
   updatedAtAfter?: string,
   onPage?: () => Promise<void>,
-  preferLegacyToken = false,
 ): Promise<string[]> {
   const spec = MODULE_ID_QUERY[module];
   if (!spec) return [];
@@ -580,10 +601,8 @@ export async function fetchResourceIdsByQuery(
 
     const data = (await shopifyGraphql(
       shopDomain,
-      accessToken,
       spec.gql,
       variables,
-      { preferLegacyToken },
     )) as Record<
       string,
       {
@@ -610,7 +629,6 @@ export async function fetchResourceIdsByQuery(
 
 async function fetchTranslatableResourcesByType(
   shopDomain: string,
-  accessToken: string,
   module: string,
   shopifyType: string,
   limitPerType: number,
@@ -632,10 +650,8 @@ async function fetchTranslatableResourcesByType(
 
     const data = (await shopifyGraphql(
       shopDomain,
-      accessToken,
       TRANSLATABLE_RESOURCES_QUERY,
       variables,
-      { preferLegacyToken: options.preferLegacyToken ?? false },
     )) as {
       translatableResources: {
         edges: Array<{ node: TranslatableNode }>;
@@ -660,7 +676,6 @@ async function fetchTranslatableResourcesByType(
 
 async function fetchTranslatableResourcesByIds(
   shopDomain: string,
-  accessToken: string,
   module: string,
   resourceIds: string[],
   limitPerType: number,
@@ -683,10 +698,8 @@ async function fetchTranslatableResourcesByIds(
 
       const data = (await shopifyGraphql(
         shopDomain,
-        accessToken,
         TRANSLATABLE_RESOURCES_BY_IDS_QUERY,
         variables,
-        { preferLegacyToken: options.preferLegacyToken ?? false },
       )) as {
         translatableResourcesByIds: {
           nodes: TranslatableNode[];
@@ -719,7 +732,6 @@ async function fetchTranslatableResourcesByIds(
 /** Fetch translatable resources for a module, filtered by isCover/isHandle rules. Returns chunked arrays. */
 export async function fetchTranslatableResources(
   shopDomain: string,
-  accessToken: string,
   module: string,
   limitPerType: number,
   chunkSize: number,
@@ -740,18 +752,15 @@ export async function fetchTranslatableResources(
         ? options.resourceIds
         : await fetchResourceIdsByQuery(
             shopDomain,
-            accessToken,
             module,
             limitPerType,
             updatedAtAfter,
             options.onPage,
-            options.preferLegacyToken ?? false,
           );
     if (resourceIds.length === 0) return [];
 
     allResources = await fetchTranslatableResourcesByIds(
       shopDomain,
-      accessToken,
       module,
       resourceIds,
       limitPerType,
@@ -760,7 +769,6 @@ export async function fetchTranslatableResources(
   } else {
     allResources = await fetchTranslatableResourcesByType(
       shopDomain,
-      accessToken,
       module,
       shopifyType,
       limitPerType,
@@ -791,17 +799,13 @@ export function translationValuesMatch(expected: string, actual: string): boolea
 
 async function registerTranslationsBatch(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken = false,
 ): Promise<TranslationRegisterResult> {
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     TRANSLATIONS_REGISTER_MUTATION,
     { resourceId, translations },
-    { preferLegacyToken },
   )) as {
     translationsRegister: {
       translations: Array<{ key: string; value: string }>;
@@ -844,10 +848,8 @@ function mergeTranslationRegisterResults(
  */
 async function registerTranslationsChunkWithSplit(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken: boolean,
 ): Promise<TranslationRegisterResult> {
   if (translations.length === 0) {
     return { success: true, userErrors: [], registeredKeys: [] };
@@ -855,10 +857,8 @@ async function registerTranslationsChunkWithSplit(
 
   const result = await registerTranslationsBatch(
     shopDomain,
-    accessToken,
     resourceId,
     translations,
-    preferLegacyToken,
   );
 
   if (result.success) return result;
@@ -874,17 +874,13 @@ async function registerTranslationsChunkWithSplit(
 
   const left = await registerTranslationsChunkWithSplit(
     shopDomain,
-    accessToken,
     resourceId,
     translations.slice(0, mid),
-    preferLegacyToken,
   );
   const right = await registerTranslationsChunkWithSplit(
     shopDomain,
-    accessToken,
     resourceId,
     translations.slice(mid),
-    preferLegacyToken,
   );
   return mergeTranslationRegisterResults(left, right);
 }
@@ -895,10 +891,8 @@ async function registerTranslationsChunkWithSplit(
  */
 export async function registerTranslations(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   translations: TranslationInput[],
-  preferLegacyToken = false,
 ): Promise<TranslationRegisterResult> {
   if (translations.length === 0) {
     return { success: true, userErrors: [], registeredKeys: [] };
@@ -912,10 +906,8 @@ export async function registerTranslations(
       const batch = translations.slice(i, i + WRITEBACK_TRANSLATIONS_BATCH);
       const result = await registerTranslationsChunkWithSplit(
         shopDomain,
-        accessToken,
         resourceId,
         batch,
-        preferLegacyToken,
       );
       allErrors.push(...result.userErrors);
       allRegisteredKeys.push(...result.registeredKeys);
@@ -956,17 +948,13 @@ export type StoredTranslation = {
 /** Read back translations already stored on Shopify for one resource + locale. */
 export async function fetchResourceTranslations(
   shopDomain: string,
-  accessToken: string,
   resourceId: string,
   locale: string,
-  preferLegacyToken = false,
 ): Promise<StoredTranslation[]> {
   const data = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     TRANSLATABLE_RESOURCE_BY_ID_QUERY,
     { resourceId, locale },
-    { preferLegacyToken },
   )) as {
     translatableResource: {
       translations: Array<{ key: string; value: string; outdated?: boolean | null }>;
@@ -1000,15 +988,11 @@ const SHOP_PRIMARY_LOCALE_QUERY = `#graphql
 /** 读取店铺当前默认语言（Shopify 实时为准）。 */
 export async function fetchShopPrimaryLocale(
   shopDomain: string,
-  accessToken: string,
-  preferLegacyToken = true,
 ): Promise<string | null> {
   const payload = (await shopifyGraphql(
     shopDomain,
-    accessToken,
     SHOP_PRIMARY_LOCALE_QUERY,
     {},
-    { preferLegacyToken },
   )) as {
     data?: { shopLocales?: Array<{ locale: string; primary: boolean }> | null };
   };
@@ -1060,11 +1044,11 @@ export function isIdBasedModuleForTest(module: string): boolean {
   return (ID_BASED_MODULES as readonly string[]).includes(module);
 }
 
-/** @internal Vitest 用：size-aware chunk 切分 */
+/** @internal Vitest 用：size-aware chunk 切分（按 Blob 字节，忽略 resource count） */
 export function chunkResourcesForTest(
   resources: TranslatableResource[],
-  chunkSize: number,
-  maxChars: number,
+  chunkSize?: number,
+  maxBytes?: number,
 ): TranslatableResource[][] {
-  return chunkResources(resources, chunkSize, maxChars);
+  return chunkResources(resources, chunkSize, maxBytes);
 }

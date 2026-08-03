@@ -83,6 +83,35 @@ function formatWithSpaceAndPeriod(integerPart, decimalPart) {
 
 const CURRENCY_SYMBOL_RE = /[$€£¥₹₩₽₺₫₴₦₱₪₡₲₵]/;
 const CURRENCY_CODE_RE = /\b[A-Z]{3}\b/;
+const MONEY_FRAGMENT_RE =
+  /(?:\b[A-Z]{3}\b\s*)?[$€£¥₹₩₽₺₫₴₦₱₪₡₲₵]?\s*\d[\d\s,.'’]*(?:[.,]\d+)?(?:\s*\b[A-Z]{3}\b)?/g;
+
+const CIWI_MONEY_SELECTOR_PARTS = [
+  ".ciwi-money",
+  ".money",
+  ".price",
+  ".price-item",
+  ".price__current",
+  ".price__sale",
+  ".price__regular",
+  ".product-price",
+  ".product__price",
+  "[data-money]",
+  "[data-price]",
+  "[data-product-price]",
+  "[data-regular-price]",
+  "[data-sale-price]",
+  "span.price",
+  "sale-price",
+  "compare-at-price",
+  "unit-price",
+];
+
+export const CIWI_MONEY_SELECTOR = CIWI_MONEY_SELECTOR_PARTS.join(", ");
+export const CIWI_PRICE_RELATED_SELECTOR = [
+  ...CIWI_MONEY_SELECTOR_PARTS,
+  "price-list",
+].join(", ");
 
 export function isLikelyMoneyText(text) {
   const value = String(text || "").replace(/\s+/g, " ").trim();
@@ -92,11 +121,30 @@ export function isLikelyMoneyText(text) {
   return CURRENCY_SYMBOL_RE.test(value) || CURRENCY_CODE_RE.test(value);
 }
 
+export function shouldTrackMoneyNode(node) {
+  if (!(node instanceof Element)) return false;
+  if (!isLikelyMoneyText(node.textContent || node.innerText || "")) return false;
+
+  const nestedCandidate = node.querySelector(CIWI_MONEY_SELECTOR);
+  if (!nestedCandidate) return true;
+
+  return !isLikelyMoneyText(
+    nestedCandidate.textContent || nestedCandidate.innerText || "",
+  );
+}
+
+export function isPriceRelatedElement(node) {
+  const element =
+    node instanceof Element
+      ? node
+      : node instanceof Node
+        ? node.parentElement
+        : null;
+  return Boolean(element?.closest(CIWI_PRICE_RELATED_SELECTOR));
+}
 function collectMoneyNodes(root) {
   const scope = root || document;
-  const nodes = scope.querySelectorAll(
-    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price",
-  );
+  const nodes = scope.querySelectorAll(CIWI_MONEY_SELECTOR);
   const list = [];
   nodes.forEach((node) => {
     if (!(node instanceof Element)) return;
@@ -104,11 +152,94 @@ function collectMoneyNodes(root) {
       list.push(node);
       return;
     }
-    if (!isLikelyMoneyText(node.textContent || node.innerText || "")) return;
+    if (!shouldTrackMoneyNode(node)) return;
     node.classList.add("ciwi-money");
     list.push(node);
   });
   return list;
+}
+
+function normalizeMoneySourceText(text) {
+  return String(text || "")
+    .replace(/[\u00A0\u202F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractMoneyFragment(text) {
+  const normalized = normalizeMoneySourceText(text);
+  if (!normalized) return "";
+
+  const matches = normalized.match(MONEY_FRAGMENT_RE) || [];
+  return (
+    matches.find(
+      (match) =>
+        /\d/.test(match) &&
+        (CURRENCY_SYMBOL_RE.test(match) || CURRENCY_CODE_RE.test(match)),
+    ) || ""
+  );
+}
+
+function escapeRegExp(text) {
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildConvertedPriceText(detectedPrice, selectedCurrency) {
+  const currencyConfig = window.currencyFormatConfig
+    ? window.currencyFormatConfig[selectedCurrency.currencyCode]
+    : null;
+  const symbol = selectedCurrency.symbol || "";
+  const symbolPosition = currencyConfig
+    ? currencyConfig.symbol_position
+    : "front";
+
+  if (symbolPosition === "back") {
+    return `${detectedPrice}${symbol} ${selectedCurrency.currencyCode}`.trim();
+  }
+
+  return `${symbol}${detectedPrice} ${selectedCurrency.currencyCode}`.trim();
+}
+
+function replaceMoneyFragmentInOriginalHtml(node, originalHtml, originalText, nextText) {
+  const moneyFragment = extractMoneyFragment(originalText);
+  if (!moneyFragment) {
+    node.textContent = nextText;
+    return;
+  }
+
+  const template = document.createElement("template");
+  template.innerHTML = originalHtml;
+  const walker = document.createTreeWalker(
+    template.content,
+    NodeFilter.SHOW_TEXT,
+  );
+
+  let replaced = false;
+  while (walker.nextNode()) {
+    const textNode = walker.currentNode;
+    const textValue = textNode.nodeValue || "";
+    if (!extractMoneyFragment(textValue)) continue;
+
+    const replacementRegex = new RegExp(escapeRegExp(moneyFragment).replace(/\s+/g, "\\s*"));
+    if (!replacementRegex.test(normalizeMoneySourceText(textValue))) continue;
+
+    textNode.nodeValue = normalizeMoneySourceText(textValue).replace(
+      replacementRegex,
+      nextText,
+    );
+    replaced = true;
+    break;
+  }
+
+  if (replaced) {
+    node.innerHTML = template.innerHTML;
+    return;
+  }
+
+  node.textContent = normalizeMoneySourceText(originalText).replace(
+    new RegExp(escapeRegExp(moneyFragment).replace(/\s+/g, "\\s*")),
+    nextText,
+  );
 }
 
 export function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
@@ -185,7 +316,11 @@ export function transformSinglePriceNode(
   }
 
   const priceText = node.dataset.ciwiOriginalPriceText || node.innerText;
-  const formatted = priceText.replace(/[^0-9,. ]/g, "").trim();
+  const moneyFragment = extractMoneyFragment(priceText);
+  const formatted = moneyFragment
+    .replace(/[^\d,.\s'’]/g, "")
+    .replace(/’/g, "'")
+    .trim();
   if (!formatted || rate === "Auto") return;
   if (
     node.dataset.ciwiCurrencyCode === selectedCurrency.currencyCode &&
@@ -201,18 +336,14 @@ export function transformSinglePriceNode(
     transformedPrice,
     selectedCurrency.rounding,
   );
-  const currencyConfig = window.currencyFormatConfig
-    ? window.currencyFormatConfig[selectedCurrency.currencyCode]
-    : null;
-  const symbol = selectedCurrency.symbol || "";
-  const symbolPosition = currencyConfig
-    ? currencyConfig.symbol_position
-    : "front";
-  if (symbolPosition === "back") {
-    node.innerHTML = `${detected}${symbol} <span class="currency-code">${selectedCurrency.currencyCode}</span>`;
-  } else {
-    node.innerHTML = `${symbol}${detected} <span class="currency-code">${selectedCurrency.currencyCode}</span>`;
-  }
+  const nextText = buildConvertedPriceText(detected, selectedCurrency);
+
+  replaceMoneyFragmentInOriginalHtml(
+    node,
+    node.dataset.ciwiOriginalPriceHtml || node.innerHTML,
+    priceText,
+    nextText,
+  );
   node.dataset.ciwiCurrencyCode = selectedCurrency.currencyCode;
   node.dataset.ciwiAppliedRate = String(rate);
 }
@@ -241,11 +372,16 @@ export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) 
  */
 export function updateLocalization({ country, language }) {
   const formId = crypto.randomUUID();
+  const returnTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : "/";
   const formHtml = `
     <form id="${formId}" action="/localization" method="POST" hidden>
       <input name="_method" value="PUT">
       <input name="country_code" value="${country}">
       <input name="language_code" value="${language}">
+      <input name="return_to" value="${returnTo}">
     </form>
   `;
   document.body.insertAdjacentHTML("beforeend", formHtml);

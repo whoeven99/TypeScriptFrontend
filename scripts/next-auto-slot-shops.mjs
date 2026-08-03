@@ -7,7 +7,7 @@
  *   - 可选 --check-cooldown：Cosmos 查最近 TsFrontend-Auto 批次，排除仍在冷却的店
  *   - 可选 --require-token：要求 Session 有 offline accessToken
  *
- * 用法（TypeScriptFrontend 根目录，凭据 .env.prod）：
+ * 用法（ciwi-translate 根目录，凭据 .env.prod）：
  *   npm run migration:next-auto-slot
  *   node scripts/next-auto-slot-shops.mjs --check-cooldown
  *   node scripts/next-auto-slot-shops.mjs --scan-at=2026-07-07T08:00:00.000Z   # 指定某次扫描时刻试算

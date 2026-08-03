@@ -1,4 +1,10 @@
 import IORedis from "ioredis";
+import {
+  getRenderKvUrl,
+  isRenderKvSoleClientMode,
+  warnIfMigrationEnvIncomplete,
+  wrapRedisPair,
+} from "./redisDualClient.js";
 
 let _redis: IORedis | undefined;
 let _lastRedisErrorLogAt = 0;
@@ -22,10 +28,14 @@ function isProductionNodeEnv(): boolean {
 }
 
 /** 默认 tsf-worker-prod / tsf-worker-test；可用 REDIS_CONNECTION_NAME 覆盖。 */
-function resolveRedisConnectionName(): string {
+function resolveRedisConnectionName(kind: "primary" | "secondary" = "primary"): string {
   const override = process.env.REDIS_CONNECTION_NAME?.trim();
-  if (override) return override;
-  return isProductionNodeEnv() ? "tsf-worker-prod" : "tsf-worker-test";
+  const base = override
+    ? override
+    : isProductionNodeEnv()
+      ? "tsf-worker-prod"
+      : "tsf-worker-test";
+  return kind === "secondary" ? `${base}-render-kv` : base;
 }
 
 const REDIS_COMMON_OPTIONS = {
@@ -34,44 +44,42 @@ const REDIS_COMMON_OPTIONS = {
   retryStrategy: (times: number) => Math.min(times * 500, 5_000),
 } as const;
 
-function redisClientOptions() {
-  const connectionName = resolveRedisConnectionName();
-  _redisConnectionName = connectionName;
+function redisClientOptions(kind: "primary" | "secondary" = "primary") {
+  const connectionName = resolveRedisConnectionName(kind);
+  if (kind === "primary") _redisConnectionName = connectionName;
   return {
     ...REDIS_COMMON_OPTIONS,
     connectionName,
   };
 }
 
-function attachRedisListeners(redis: IORedis): void {
+function attachRedisListeners(redis: IORedis, label: string): void {
   redis.on("error", (err: Error) => {
     const now = Date.now();
     if (now - _lastRedisErrorLogAt < 60_000) return;
     _lastRedisErrorLogAt = now;
-    console.error(`[redisV4] connection error: ${err.message}`);
+    console.error(`[redisV4] ${label} connection error: ${err.message}`);
   });
   redis.on("connect", () => {
-    const name = _redisConnectionName ?? resolveRedisConnectionName();
-    console.info(`[redisV4] connected (${name})`);
+    const kind = label === "secondary" ? "secondary" : "primary";
+    console.info(`[redisV4] ${label} connected (${resolveRedisConnectionName(kind)})`);
   });
   redis.on("reconnecting", () => {
     const now = Date.now();
     if (now - _lastRedisErrorLogAt < 60_000) return;
     _lastRedisErrorLogAt = now;
-    console.warn("[redisV4] reconnecting…");
+    console.warn(`[redisV4] ${label} reconnecting…`);
   });
 }
 
-export function getRedis(): IORedis {
-  if (_redis) return _redis;
-
+function createPrimaryRedis(): IORedis {
   const url =
     process.env.REDIS_URL?.trim() ||
     process.env.REDIS_URL_V4?.trim();
   if (url) {
-    _redis = new IORedis(url, redisClientOptions());
-    attachRedisListeners(_redis);
-    return _redis;
+    const redis = new IORedis(url, redisClientOptions("primary"));
+    attachRedisListeners(redis, "primary");
+    return redis;
   }
 
   const host =
@@ -89,14 +97,50 @@ export function getRedis(): IORedis {
   const port = Number(process.env.REDIS_PORT?.trim() || "6380");
   const useTls = process.env.REDIS_TLS !== "false";
 
-  _redis = new IORedis({
+  const redis = new IORedis({
     host,
     port,
     password,
     tls: useTls ? {} : undefined,
-    ...redisClientOptions(),
+    ...redisClientOptions("primary"),
   });
-  attachRedisListeners(_redis);
+  attachRedisListeners(redis, "primary");
+  return redis;
+}
+
+/**
+ * Sole mode（REDIS_DUAL_WRITE off + REDIS_CUTOVER=all）→ 只连 RENDER_KV。
+ * 否则 Primary = REDIS_URL*；Secondary = RENDER_KV。见 redisDualClient.ts。
+ */
+export function getRedis(): IORedis {
+  if (_redis) return _redis;
+
+  warnIfMigrationEnvIncomplete();
+
+  if (isRenderKvSoleClientMode()) {
+    const kvUrl = getRenderKvUrl();
+    if (!kvUrl) {
+      throw new Error(
+        "Redis sole mode (REDIS_CUTOVER=all, REDIS_DUAL_WRITE off) requires RENDER_KV",
+      );
+    }
+    console.info("[redisV4] sole client mode: RENDER_KV only (skip REDIS_URL*)");
+    const redis = new IORedis(kvUrl, redisClientOptions("secondary"));
+    attachRedisListeners(redis, "render-kv");
+    _redis = redis;
+    return _redis;
+  }
+
+  const primary = createPrimaryRedis();
+  const secondaryUrl = getRenderKvUrl();
+  if (!secondaryUrl) {
+    _redis = primary;
+    return _redis;
+  }
+
+  const secondary = new IORedis(secondaryUrl, redisClientOptions("secondary"));
+  attachRedisListeners(secondary, "secondary");
+  _redis = wrapRedisPair(primary, secondary);
   return _redis;
 }
 
@@ -398,5 +442,43 @@ export async function setItemsCount(
     return true;
   } catch {
     return false;
+  }
+}
+
+const EMAIL_SEND_LOCK_TTL_SEC = 120;
+
+function emailSendLockKey(shopName: string, pool: "manual" | "auto"): string {
+  return `translate:v4:email:send-lock:${pool}:${shopName}`;
+}
+
+/** 发信前短锁，避免部署/多实例下同一店重复发成功/部分完成邮件。 */
+export async function tryAcquireEmailSendLock(
+  shopName: string,
+  pool: "manual" | "auto",
+): Promise<boolean> {
+  try {
+    const redis = getRedis();
+    const result = await redis.set(
+      emailSendLockKey(shopName, pool),
+      String(Date.now()),
+      "EX",
+      EMAIL_SEND_LOCK_TTL_SEC,
+      "NX",
+    );
+    return result === "OK";
+  } catch {
+    return true;
+  }
+}
+
+export async function releaseEmailSendLock(
+  shopName: string,
+  pool: "manual" | "auto",
+): Promise<void> {
+  try {
+    const redis = getRedis();
+    await redis.del(emailSendLockKey(shopName, pool));
+  } catch {
+    // ignore
   }
 }

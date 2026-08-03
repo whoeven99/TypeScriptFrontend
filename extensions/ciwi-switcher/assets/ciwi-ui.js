@@ -14,8 +14,13 @@ import {
   resolveStorefrontProductId,
 } from "./ciwi-page.js";
 import { useCacheThenRefresh } from "./ciwi-storage.js";
-import { persistManualLocalizationPreference } from "./ciwi-utils.js";
-import { isLikelyMoneyText, transformPrices } from "./ciwi-utils.js";
+import {
+  CIWI_MONEY_SELECTOR,
+  isPriceRelatedElement,
+  persistManualLocalizationPreference,
+  shouldTrackMoneyNode,
+  transformPrices,
+} from "./ciwi-utils.js";
 
 /**
  * Skip hidden nodes during translation without forcing style recalc on every walker step.
@@ -44,9 +49,46 @@ const skipTags = new Set([
   "TITLE",
 ]);
 
-// 去除首尾空白与成对的外层引号
+const normalizeHtmlWhitespaceEntities = (text) =>
+  String(text ?? "")
+    .replace(/&(nbsp|#160|#xa0|#xA0|#8239|#x202f);?/g, " ")
+    .replace(/[\u00A0\u202F]/g, " ");
+
+// 去除首尾空白与成对的外层引号，并统一 HTML 空白实体格式
 const normalizeText = (text) =>
-  text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+  normalizeHtmlWhitespaceEntities(text)
+    .trim()
+    .replace(/^["“”]+|["“”]+$/g, "");
+
+const normalizePageFlyTranslationEntries = (response) => {
+  if (Array.isArray(response)) return response;
+  if (!response || typeof response !== "object") return [];
+
+  return Object.entries(response).flatMap(([sourceText, rawValue]) => {
+    if (!sourceText) return [];
+
+    if (typeof rawValue === "string") {
+      return [{ sourceText, targetText: rawValue }];
+    }
+
+    if (Array.isArray(rawValue)) {
+      const [targetText] = rawValue;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    if (rawValue && typeof rawValue === "object") {
+      const targetText =
+        rawValue.targetText ?? rawValue.text ?? rawValue.translation ?? rawValue.value;
+      return typeof targetText === "string" && targetText
+        ? [{ sourceText, targetText }]
+        : [];
+    }
+
+    return [];
+  });
+};
 
 // 文本是否被一对外层引号包裹
 const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
@@ -54,6 +96,108 @@ const CIWI_MANUAL_LOCALIZATION_QUERY_KEY = "ciwi_manual_localization";
 
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
 let activePriceObserver = null;
+
+function isTruthyPreviewFlag(value) {
+  return value === true || value === "true" || value === "1" || value === 1;
+}
+
+function hasShopifyVisualPreviewSource(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    const source = url.searchParams.get("source");
+    return (
+      source === "visualPreview" ||
+      source === "visualPreviewInitialLoad"
+    );
+  } catch {
+    return (
+      raw.includes("source=visualPreview") ||
+      raw.includes("source=visualPreviewInitialLoad")
+    );
+  }
+}
+
+function hasShopifyEditorPreviewMarkers(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.searchParams.has("oseid") || url.searchParams.has("osectx");
+  } catch {
+    return raw.includes("oseid=") || raw.includes("osectx=");
+  }
+}
+
+function isAdminThemeEditorUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  return (
+    raw.includes("admin.shopify.com/store/") &&
+    raw.includes("/themes/") &&
+    raw.includes("/editor")
+  );
+}
+
+function isThemePreviewDisabledForCiwi(ciwiBlock) {
+  const params = new URL(window.location.href).searchParams;
+  const referrer = String(document.referrer || "");
+  const hasAdminThemeEditorReferrer = isAdminThemeEditorUrl(referrer);
+  const requestDesignMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_design_mode"]',
+  )?.value;
+  const requestVisualPreviewMode = ciwiBlock?.querySelector(
+    'input[name="ciwi_request_visual_preview_mode"]',
+  )?.value;
+
+  if (
+    isTruthyPreviewFlag(requestDesignMode) ||
+    isTruthyPreviewFlag(requestVisualPreviewMode)
+  ) {
+    return true;
+  }
+
+  if (document.documentElement.classList.contains("shopify-design-mode")) {
+    return true;
+  }
+
+  if (window.Shopify?.designMode === true) {
+    return true;
+  }
+
+  if (window.Shopify?.visualPreviewMode === true) {
+    return true;
+  }
+
+  if (
+    hasShopifyVisualPreviewSource(window.location.href) ||
+    hasShopifyVisualPreviewSource(referrer)
+  ) {
+    return true;
+  }
+
+  if (
+    hasAdminThemeEditorReferrer &&
+    (hasShopifyEditorPreviewMarkers(window.location.href) ||
+      hasShopifyEditorPreviewMarkers(referrer))
+  ) {
+    return true;
+  }
+
+  if (params.has("preview_theme_id") || params.has("preview_token")) {
+    return true;
+  }
+
+  if (hasAdminThemeEditorReferrer) {
+    return true;
+  }
+
+  return params.has("_ab") && params.has("_fd") && params.has("pb");
+}
 
 function measureTextWidth(referenceElement, text) {
   if (!referenceElement || !text) return 0;
@@ -192,11 +336,29 @@ export function renderCurrencyOptions({
   currencySelect,
   currencyData,
   selectedCurrencyCode,
+  fallbackCurrencyCode,
 }) {
   if (!currencySelect) return;
 
+  const normalizedOptions = Array.isArray(currencyData) ? [...currencyData] : [];
+  const knownCurrencyCodes = new Set(
+    normalizedOptions
+      .map((currency) => currency?.currencyCode)
+      .filter(Boolean),
+  );
+  const fallbackCode = fallbackCurrencyCode || selectedCurrencyCode || "";
+
+  if (fallbackCode && !knownCurrencyCodes.has(fallbackCode)) {
+    normalizedOptions.unshift({
+      currencyCode: fallbackCode,
+      symbol: "",
+      exchangeRate: null,
+      primaryStatus: false,
+    });
+  }
+
   currencySelect.innerHTML = "";
-  currencyData.forEach((currency) => {
+  normalizedOptions.forEach((currency) => {
     const optionItem = document.createElement("option");
     optionItem.value = currency?.currencyCode || "";
     optionItem.textContent = currency?.symbol
@@ -234,6 +396,38 @@ async function refreshSelectedCurrency({ blockId, shop, ciwiBlock }) {
   await initializeCurrency({ blockId, currencyData, shop, ciwiBlock });
 }
 
+function syncCurrencySelectionState({
+  ciwiBlock,
+  currencySelect,
+  selectedCurrencyCode,
+  persist = true,
+}) {
+  const nextCode = String(selectedCurrencyCode || "").trim();
+  const currencyInput = ciwiBlock?.querySelector('input[name="currency_code"]');
+  if (currencySelect && nextCode && currencySelect.value !== nextCode) {
+    currencySelect.value = nextCode;
+  }
+  if (currencyInput && currencyInput.value !== nextCode) {
+    currencyInput.value = nextCode;
+    currencyInput.setAttribute("value", nextCode);
+  }
+  if (persist && typeof localStorage !== "undefined" && nextCode) {
+    localStorage.setItem("ciwi_selected_currency", nextCode);
+  }
+
+  const languageSelectorContainer = ciwiBlock?.querySelector(
+    "#language-switcher-container",
+  );
+  const currencySelectorContainer = ciwiBlock?.querySelector(
+    "#currency-switcher-container",
+  );
+  updateDisplayText(
+    languageSelectorContainer?.style.display === "block",
+    currencySelectorContainer?.style.display === "block",
+    ciwiBlock,
+  );
+}
+
 /**
  * 初始化货币选择器
  */
@@ -268,7 +462,18 @@ export async function initializeCurrency({
     );
   }
   const effectiveSelectedCurrencyCode =
-    selectedCurrency?.currencyCode || selectedCurrencyCode || pageCurrencyCode;
+    selectedCurrency?.currencyCode || pageCurrencyCode || selectedCurrencyCode;
+
+  if (
+    !selectedCurrency &&
+    persistedCurrencyCode &&
+    pageCurrencyCode &&
+    persistedCurrencyCode !== pageCurrencyCode &&
+    typeof localStorage !== "undefined"
+  ) {
+    localStorage.setItem("ciwi_selected_currency", pageCurrencyCode);
+    localStorage.removeItem("ciwi_selected_currency_rate");
+  }
   // 获取新的选择器元素
   const customSelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
@@ -279,11 +484,14 @@ export async function initializeCurrency({
     currencySelect,
     currencyData,
     selectedCurrencyCode: effectiveSelectedCurrencyCode,
+    fallbackCurrencyCode: pageCurrencyCode,
   });
 
-  if (currencySelect && effectiveSelectedCurrencyCode) {
-    currencySelect.value = effectiveSelectedCurrencyCode;
-  }
+  syncCurrencySelectionState({
+    ciwiBlock,
+    currencySelect,
+    selectedCurrencyCode: effectiveSelectedCurrencyCode,
+  });
 
   if (activePriceObserver) {
     activePriceObserver.disconnect();
@@ -294,6 +502,11 @@ export async function initializeCurrency({
     !selectedCurrency ||
     effectiveSelectedCurrencyCode === baseCurrencyCode
   ) {
+    syncCurrencySelectionState({
+      ciwiBlock,
+      currencySelect,
+      selectedCurrencyCode: baseCurrencyCode,
+    });
     transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
     return;
   }
@@ -323,6 +536,14 @@ export async function initializeCurrency({
       if (typeof autoRate == "number") {
         rate = autoRate;
       } else {
+        syncCurrencySelectionState({
+          ciwiBlock,
+          currencySelect,
+          selectedCurrencyCode: baseCurrencyCode,
+        });
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem("ciwi_selected_currency_rate");
+        }
         transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
         return;
       }
@@ -340,6 +561,14 @@ export async function initializeCurrency({
   } else {
     rate = Number(selectedCurrency.exchangeRate);
     if (!Number.isFinite(rate)) {
+      syncCurrencySelectionState({
+        ciwiBlock,
+        currencySelect,
+        selectedCurrencyCode: baseCurrencyCode,
+      });
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("ciwi_selected_currency_rate");
+      }
       transformPrices({ rate: 1, moneyFormat, selectedCurrency: null });
       return;
     }
@@ -353,8 +582,7 @@ export async function initializeCurrency({
  * 观察 DOM 变化，动态处理新价格
  */
 export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
-  const moneySelector =
-    ".ciwi-money, .money, .price-item, [data-money], [data-price], span.price";
+  const moneySelector = CIWI_MONEY_SELECTOR;
   if (activePriceObserver) {
     activePriceObserver.disconnect();
   }
@@ -369,7 +597,7 @@ export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
         const add = (el) => {
           if (!(el instanceof Element)) return;
           if (!el.classList.contains("ciwi-money")) {
-            if (!isLikelyMoneyText(el.textContent || el.innerText || "")) return;
+            if (!shouldTrackMoneyNode(el)) return;
             el.classList.add("ciwi-money");
           }
           pending.add(el);
@@ -1078,7 +1306,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const entries = Object.entries(translations).map(
     ([before, [after, isExact]]) => ({
       before,
-      after,
+      after: normalizeHtmlWhitespaceEntities(after),
       isExact: Boolean(isExact),
     }),
   );
@@ -1123,6 +1351,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const shouldFlexibleWhitespaceMatch = (text) =>
     /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
 
+    const buildFlexibleWhitespacePattern = (text) =>
+      escapeRegExp(text).replace(/\s+/g, "[\\s\\u00A0\\u202F]+");
+
   debugLog("init", {
     blockId,
     language,
@@ -1159,7 +1390,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const decodeHtmlEntities = (html) => {
     if (!html) return "";
     const textarea = document.createElement("textarea");
-    textarea.innerHTML = html;
+    textarea.innerHTML = normalizeHtmlWhitespaceEntities(html);
     return textarea.value;
   };
 
@@ -1184,6 +1415,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     return template.content.firstElementChild;
   };
 
+  const isCustomElementName = (tagName) => String(tagName || "").includes("-");
+
+  const containsCustomElements = (node) => {
+    if (!(node instanceof Element)) return false;
+    if (isCustomElementName(node.tagName)) return true;
+    return Array.from(node.querySelectorAll("*")).some((child) =>
+      isCustomElementName(child.tagName),
+    );
+  };
+
   const replaceHtmlExactEntries = (entryList, root = document.body) => {
     if (!root?.isConnected) return;
     const htmlEntries = entryList
@@ -1206,9 +1447,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           beforeClasses: beforeEl
             ? Array.from(beforeEl.classList || []).filter(Boolean)
             : [],
+          containsCustomElements:
+            containsCustomElements(beforeEl) || containsCustomElements(afterEl),
         };
       })
-      .filter((e) => e.normalizedBefore && e.normalizedAfter);
+      .filter(
+        (e) =>
+          e.normalizedBefore &&
+          e.normalizedAfter &&
+          !e.containsCustomElements,
+      );
 
     if (htmlEntries.length === 0) return;
 
@@ -1261,17 +1509,27 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           const tag = node?.nodeName;
           if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
           if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         },
       },
     );
 
     const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root)) &&
+      !isPriceRelatedElement(root)
+    ) {
+      nodes.push(root);
+    }
     while (walker.nextNode()) nodes.push(walker.currentNode);
 
     const replacements = [];
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node)) return;
+      if (isPriceRelatedElement(node)) return;
 
       // 预筛 1：标签名。任意命中都要求 node.nodeName 等于某条 before 元素标签名。
       if (candidateTags.size > 0 && !candidateTags.has(node.nodeName)) return;
@@ -1381,12 +1639,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         collapsedBefore: flexibleWhitespace
           ? normalizeCollapsedText(trimmedBefore)
           : null,
-        re: new RegExp(
-          flexibleWhitespace
-            ? escapeRegExp(trimmedBefore).replace(/\s+/g, "\\s+")
-            : escapeRegExp(trimmedBefore),
-          "g",
-        ),
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
       });
     });
 
@@ -1399,6 +1652,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         acceptNode(node) {
           const parentTag = node.parentNode?.nodeName;
           if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         },
       },
@@ -1417,6 +1671,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node.parentElement)) return;
+      if (isPriceRelatedElement(node)) return;
 
       // 这些派生值只跟当前节点内容有关、与 entry 无关，因此每个节点只算一次；
       // collapsed 仅在遇到 flexibleWhitespace 的 entry 时按需计算。
@@ -1481,6 +1736,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
           if (ciwiBlock && node.parentElement && ciwiBlock.contains(node.parentElement))
             return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
           const strictKey = normalizeText(node.nodeValue);
           const collapsedKey = normalizeCollapsedText(node.nodeValue);
           if (exactMap.has(strictKey)) return NodeFilter.FILTER_ACCEPT;
@@ -1504,6 +1760,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     nodes.forEach((node) => {
       if (isElementHiddenForTranslation(node.parentElement)) return;
+      if (isPriceRelatedElement(node)) return;
       const original = node.nodeValue;
       const strictKey = normalizeText(original);
       const collapsedKey = normalizeCollapsedText(original);
@@ -1522,6 +1779,180 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     });
   };
 
+  const textLikeAttributeNames = new Set([
+    "alt",
+    "aria-label",
+    "caption",
+    "header-text",
+    "label",
+    "placeholder",
+    "subtitle",
+    "text",
+    "title",
+  ]);
+
+  const blockedAttributeNames = new Set([
+    "class",
+    "content",
+    "href",
+    "id",
+    "name",
+    "rel",
+    "role",
+    "src",
+    "srcset",
+    "style",
+    "target",
+    "value",
+  ]);
+
+  const isTranslatableAttribute = (node, attribute) => {
+    if (!node || !attribute) return false;
+    const attrName = String(attribute.name || "").trim().toLowerCase();
+    if (!attrName || blockedAttributeNames.has(attrName)) return false;
+    if (attrName.startsWith("data-")) return false;
+    if (attrName.startsWith("on")) return false;
+    if (!String(attribute.value ?? "").trim()) return false;
+    if (textLikeAttributeNames.has(attrName) || attrName.startsWith("aria-")) {
+      return true;
+    }
+
+    // 允许 web component 上常见的 *-text / *-title / *-label 这类展示属性。
+    return Boolean(
+      node.tagName?.includes("-") &&
+        /(?:^|[-_:])(text|title|label|caption|subtitle)$/i.test(attrName),
+    );
+  };
+
+  const replaceAttributeEntriesFast = (
+    exactEntryList,
+    fuzzyEntryList,
+    root = document.body,
+  ) => {
+    if (!root?.isConnected) return;
+
+    const exactMap = new Map();
+    exactEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
+        ? normalizeCollapsedText(trimmedBefore)
+        : normalizeText(trimmedBefore);
+      exactMap.set(key, { replacement: afterRaw });
+    });
+
+    const fuzzyPreparedEntries = [];
+    fuzzyEntryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const afterRaw = String(after ?? "");
+      if (!trimmedBefore || afterRaw.trim() === "") return;
+      const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
+      fuzzyPreparedEntries.push({
+        trimmedBefore,
+        afterRaw,
+        flexibleWhitespace,
+        collapsedBefore: flexibleWhitespace
+          ? normalizeCollapsedText(trimmedBefore)
+          : null,
+          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
+      });
+    });
+
+    if (exactMap.size === 0 && fuzzyPreparedEntries.length === 0) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          const tag = node?.nodeName;
+          if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+          if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+          if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    const nodes = [];
+    if (
+      root instanceof Element &&
+      !skipTags.has(root.nodeName) &&
+      !(ciwiBlock && ciwiBlock.contains(root)) &&
+      !isPriceRelatedElement(root)
+    ) {
+      nodes.push(root);
+    }
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      if (isElementHiddenForTranslation(node)) return;
+      if (isPriceRelatedElement(node)) return;
+
+      Array.from(node.attributes || []).forEach((attribute) => {
+        if (!isTranslatableAttribute(node, attribute)) return;
+
+        const original = attribute.value;
+        const strictKey = normalizeText(original);
+        const collapsedKey = normalizeCollapsedText(original);
+        const exactEntry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
+        if (exactEntry) {
+          const replacement = preserveBoundaryWhitespace(
+            original,
+            exactEntry.replacement,
+          );
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(replacement, 200),
+            });
+          }
+          node.setAttribute(attribute.name, replacement);
+          return;
+        }
+
+        let nextValue = original;
+        let normalized = normalizeText(nextValue);
+        let collapsed = null;
+
+        for (const entry of fuzzyPreparedEntries) {
+          if (entry.flexibleWhitespace && collapsed === null) {
+            collapsed = normalizeCollapsedText(normalized);
+          }
+          const matches = entry.flexibleWhitespace
+            ? collapsed.includes(entry.collapsedBefore)
+            : normalized.includes(entry.trimmedBefore);
+          if (!matches) continue;
+
+          nextValue = preserveBoundaryWhitespace(
+            nextValue,
+            nextValue.replace(entry.re, () => entry.afterRaw),
+          );
+          normalized = normalizeText(nextValue);
+          collapsed = null;
+        }
+
+        if (nextValue !== original) {
+          if (debugLiquidTranslate && debugReplaceTextCount < 20) {
+            debugReplaceTextCount += 1;
+            debugLog("replace:attribute", {
+              tag: node.nodeName,
+              attr: attribute.name,
+              before: summarize(original, 200),
+              after: summarize(nextValue, 200),
+            });
+          }
+          node.setAttribute(attribute.name, nextValue);
+        }
+      });
+    });
+  };
+
   const hasHtmlEntries = (entryList) =>
     entryList.some(
       ({ before, after }) => looksLikeHtml(before) || looksLikeHtml(after),
@@ -1531,12 +1962,20 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!node?.isConnected) return true;
     if (node.nodeType === Node.ELEMENT_NODE && skipTags.has(node.nodeName)) return true;
     if (ciwiBlock && node instanceof Element && ciwiBlock.contains(node)) return true;
+    if (isPriceRelatedElement(node)) return true;
     return false;
   };
 
   const collectMutationRoots = (mutations) => {
     const roots = [];
     for (const mutation of mutations) {
+      if (mutation.type === "attributes") {
+        const target = mutation.target;
+        if (target?.nodeType === Node.ELEMENT_NODE && !shouldSkipTranslationRoot(target)) {
+          roots.push(target);
+        }
+        continue;
+      }
       if (mutation.type !== "childList") continue;
       for (const node of mutation.addedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -1566,11 +2005,46 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     );
     if (targets.length === 0) return;
 
+    const scopes = [];
+    const seenScopes = new Set();
+    const pushScope = (scope) => {
+      if (!scope?.isConnected || seenScopes.has(scope)) return;
+      seenScopes.add(scope);
+      scopes.push(scope);
+    };
+
     for (const root of targets) {
+      pushScope(root);
+      if (root instanceof Element && root.shadowRoot) {
+        pushScope(root.shadowRoot);
+      }
+      const shadowWalker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_ELEMENT,
+        {
+          acceptNode(node) {
+            const tag = node?.nodeName;
+            if (skipTags.has(tag)) return NodeFilter.FILTER_REJECT;
+            if (ciwiBlock && ciwiBlock.contains(node)) return NodeFilter.FILTER_REJECT;
+            if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        },
+      );
+
+      while (shadowWalker.nextNode()) {
+        if (shadowWalker.currentNode.shadowRoot) {
+          pushScope(shadowWalker.currentNode.shadowRoot);
+        }
+      }
+    }
+
+    for (const root of scopes) {
       if (hasHtmlEntries(exactEntries) || hasHtmlEntries(fuzzyEntries)) {
         replaceHtmlExactEntries(exactEntries, root);
         replaceHtmlExactEntries(fuzzyEntries, root);
       }
+      replaceAttributeEntriesFast(exactEntries, fuzzyEntries, root);
       replaceExactEntriesFast(exactEntries, root);
       replaceFuzzyEntriesFast(fuzzyEntries, root);
     }
@@ -1617,7 +2091,22 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         scheduleIncrementalRun();
       });
 
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          "alt",
+          "aria-label",
+          "caption",
+          "header-text",
+          "label",
+          "placeholder",
+          "subtitle",
+          "text",
+          "title",
+        ],
+      });
       window[observerKey] = observer;
 
       setTimeout(() => {
@@ -1658,28 +2147,42 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     CIWI_TRANSLATION_TTL_MS,
   );
 
-  const translations = readTranslatedText?.response || [];
-  if (!Array.isArray(translations) || translations.length === 0) return;
+  const translations = normalizePageFlyTranslationEntries(readTranslatedText?.response);
+  if (translations.length === 0) return;
 
   // normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义
 
-  // 原逻辑：文本节点的归一化内容“完全等于”某条 sourceText 时才替换
-  //（.includes 只是预筛）。这里改为先建 归一化源文本 -> 目标文本 的 Map，
-  // 然后只遍历一次整个文档，避免对每条翻译都各走一遍 DOM（原 O(条数 × 全页)）。
+  // 原逻辑只支持“整节点完全等于 sourceText”的场景。
+  // PageFly 富文本经常把多句文案塞进同一个文本节点，并夹带 <br> / &nbsp;，
+  // 因此需要支持节点内子串替换，并让普通空格能匹配 NBSP 等空白字符。
   const exactMap = new Map();
+  const preparedEntries = [];
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   translations.forEach((item) => {
     const trimmedBefore = normalizeText(item?.sourceText);
     const trimmedAfter = normalizeText(item?.targetText);
     if (!trimmedBefore || !trimmedAfter) return;
     if (!exactMap.has(trimmedBefore)) exactMap.set(trimmedBefore, trimmedAfter);
+    preparedEntries.push({
+      before: trimmedBefore,
+      after: trimmedAfter,
+      re: new RegExp(
+        escapeRegExp(trimmedBefore).replace(/\s+/g, "[\\s\\u00A0\\u202F]+"),
+        "g",
+      ),
+    });
   });
-  if (exactMap.size === 0) return;
+  if (exactMap.size === 0 || preparedEntries.length === 0) return;
 
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parentTag = node.parentNode?.nodeName;
       if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
-      return exactMap.has(normalizeText(node.nodeValue))
+      const normalizedValue = normalizeText(node.nodeValue);
+      if (exactMap.has(normalizedValue)) return NodeFilter.FILTER_ACCEPT;
+      return preparedEntries.some((entry) => normalizedValue.includes(entry.before))
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
     },
@@ -1688,14 +2191,28 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   const nodesToReplace = [];
   while (walker.nextNode()) nodesToReplace.push(walker.currentNode);
 
-  // ✏ 精准替换
+  // ✏ 精准替换 + 节点内子串替换
   nodesToReplace.forEach((node) => {
     if (isElementHiddenForTranslation(node.parentElement)) return;
+    if (isPriceRelatedElement(node)) return;
     const original = node.nodeValue;
-    const trimmedAfter = exactMap.get(normalizeText(original));
-    if (!trimmedAfter) return;
-    const keepQuote = hasOuterQuote(original);
-    node.nodeValue = keepQuote ? `"${trimmedAfter}"` : trimmedAfter;
+    const normalizedOriginal = normalizeText(original);
+    const exactAfter = exactMap.get(normalizedOriginal);
+    if (exactAfter) {
+      const keepQuote = hasOuterQuote(original);
+      node.nodeValue = keepQuote ? `"${exactAfter}"` : exactAfter;
+      return;
+    }
+
+    let updatedValue = original;
+    preparedEntries.forEach((entry) => {
+      if (!normalizeText(updatedValue).includes(entry.before)) return;
+      updatedValue = updatedValue.replace(entry.re, entry.after);
+    });
+
+    if (updatedValue !== original) {
+      node.nodeValue = updatedValue;
+    }
   });
 }
 
@@ -1766,6 +2283,41 @@ export class CiwiswitcherForm extends HTMLElement {
     // 第二个 <ciwiswitcher-form> 只含隐藏国家列表、没有 block_id，
     // 解析不到 ciwiBlock，无需绑定任何交互（否则会白挂一个全局 click 监听）。
     if (!ciwiBlock) return;
+    if (isThemePreviewDisabledForCiwi(ciwiBlock)) {
+      const ciwiContainer = this.querySelector("#ciwi-container");
+      const mainBox = this.querySelector("#main-box");
+      const translateFloatBtnText = this.querySelector("#translate-float-btn-text");
+      const selectorBackdrop = this.querySelector("#selector-backdrop");
+      const languageSelect = this.querySelector(".language_selector_header");
+      const currencySelect = this.querySelector(".currency_selector_header");
+      if (ciwiContainer) {
+        ciwiContainer.dataset.ciwiPreviewDisabled = "1";
+      }
+      if (mainBox) {
+        mainBox.style.pointerEvents = "none";
+        mainBox.style.cursor = "default";
+      }
+      if (translateFloatBtnText) {
+        translateFloatBtnText.style.pointerEvents = "none";
+        translateFloatBtnText.style.cursor = "default";
+      }
+      if (selectorBackdrop) {
+        selectorBackdrop.style.display = "none";
+      }
+      if (languageSelect) {
+        languageSelect.tabIndex = -1;
+        languageSelect.setAttribute("aria-disabled", "true");
+        languageSelect.style.pointerEvents = "none";
+        languageSelect.style.cursor = "default";
+      }
+      if (currencySelect) {
+        currencySelect.tabIndex = -1;
+        currencySelect.setAttribute("aria-disabled", "true");
+        currencySelect.style.pointerEvents = "none";
+        currencySelect.style.cursor = "default";
+      }
+      return;
+    }
 
     this.elements = {
       ciwiBlock,
@@ -1949,7 +2501,6 @@ export class CiwiswitcherForm extends HTMLElement {
     if (selectorType === "language") {
       if (!value || this.elements.languageInput.value == value) return;
       this.elements.languageInput.value = value;
-      localStorage.setItem("ciwi_selected_language", value);
       const flag = languageLocaleData?.[value]?.countries?.[0];
       updateLanguageSelectorFlag(this.elements.ciwiBlock, flag);
       const mainBoxFlag = this.querySelector("#main-language-flag");

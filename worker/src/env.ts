@@ -49,7 +49,19 @@ type ServiceCheck = {
 };
 
 function redisConfigured(): boolean {
-  if (process.env.REDIS_URL?.trim()) return true;
+  // Sole mode: REDIS_CUTOVER=all + dual-write off → only RENDER_KV
+  const dual = (process.env.REDIS_DUAL_WRITE?.trim() || "").toLowerCase();
+  const dualOn = dual === "1" || dual === "true" || dual === "yes";
+  const cutover = (process.env.REDIS_CUTOVER?.trim() || "").toLowerCase();
+  const cutoverAll =
+    cutover === "all" ||
+    cutover === "*" ||
+    cutover.split(",").some((t) => t.trim() === "all" || t.trim() === "*");
+  if (!dualOn && cutoverAll && process.env.RENDER_KV?.trim()) return true;
+
+  if (process.env.REDIS_URL?.trim() || process.env.REDIS_URL_V4?.trim()) {
+    return true;
+  }
   const host =
     process.env.REDIS_HOSTNAME?.trim() ||
     process.env.REDIS_HOST?.trim() ||
@@ -88,7 +100,7 @@ function collectChecks(): ServiceCheck[] {
     {
       label: "Redis",
       ok: redisConfigured(),
-      hint: "REDIS_URL 或 REDIS_HOSTNAME+REDIS_PASSWORD",
+      hint: "RENDER_KV（sole: CUTOVER=all + DUAL_WRITE off）或 REDIS_URL / REDIS_HOSTNAME+REDIS_PASSWORD",
     },
     {
       label: "Blob",
@@ -134,6 +146,18 @@ export function ensureWorkerEnv(): void {
   const failed = checks.filter((c) => !c.ok);
   for (const c of failed) {
     console.warn(`${LOG} ${c.label} 未就绪 → 需要 ${c.hint}`);
+  }
+
+  const renderKv = Boolean(process.env.RENDER_KV?.trim());
+  const dual = (process.env.REDIS_DUAL_WRITE?.trim() || "").toLowerCase();
+  const cutover = process.env.REDIS_CUTOVER?.trim() || "(empty)";
+  if (renderKv || dual === "true" || dual === "1" || dual === "yes" || process.env.REDIS_CUTOVER?.trim()) {
+    const sole =
+      !(dual === "true" || dual === "1" || dual === "yes") &&
+      (cutover === "all" || cutover === "*");
+    console.info(
+      `${LOG} redis migrate: RENDER_KV=${renderKv ? "set" : "missing"} dualWrite=${dual || "false"} cutover=${cutover}${sole ? " soleClient=true" : ""}`,
+    );
   }
 
   const cosmosOk = checks.find((c) => c.label === "Cosmos")?.ok;

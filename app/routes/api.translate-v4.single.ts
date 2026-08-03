@@ -1,6 +1,7 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
 import { evaluateCreateTaskQuotaGuard } from "~/server/billing/quota/createTaskQuotaGuard.server";
+import { resolveShopPrimaryLocale } from "~/server/translateV4/shopLocales.server";
 import {
   translateSingleText,
   deductQuota,
@@ -17,6 +18,7 @@ import {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+  const FALLBACK_SOURCE_LOCALE = "en";
 
   const body = (await request.json().catch(() => ({}))) as {
     source?: string;
@@ -31,14 +33,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
-  const source = (body.source ?? "en").trim() || "en";
+  let source = body.source?.trim() || "";
   const fieldKey = body.key?.trim() || "value";
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
   // 上限保护：自定义提示词最多 500 字，超出截断，避免撑爆 system prompt。
   const customPrompt = (body.customPrompt ?? "").trim().slice(0, 500);
   const aiModel = body.aiModel?.trim() || undefined;
+  const requestSummary = {
+    shop,
+    source,
+    target,
+    resourceType: body.resourceType?.trim() || null,
+    fieldKey,
+    shopifyType: shopifyType || null,
+    resourceId: body.resourceId ?? null,
+    textLength: text.length,
+    hasCustomPrompt: customPrompt.length > 0,
+  };
 
   try {
+    if (!source) {
+      source =
+        (await resolveShopPrimaryLocale({
+          shop,
+          accessToken: session.accessToken,
+        })) ?? "";
+    }
+
+    if (!source) {
+      source = FALLBACK_SOURCE_LOCALE;
+      console.warn("[single] source locale fallback applied", {
+        shop,
+        fallbackSource: source,
+      });
+    }
+
     if (!target) {
       const appError = buildTranslateV4Error(
         TRANSLATE_V4_ERROR_KEYS.SINGLE_TARGET_REQUIRED,
@@ -56,6 +85,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const quotaGuard = await evaluateCreateTaskQuotaGuard(shop);
     if (!quotaGuard.ok) {
+      console.warn("[single] quota guard blocked request", {
+        ...requestSummary,
+        quotaError: quotaGuard.error,
+        quotaStatus: quotaGuard.status,
+      });
       return json(
         {
           success: false,
@@ -67,31 +101,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    console.log("[single] api", {
-      shop,
-      source,
-      target,
-      fieldKey,
-      shopifyType,
-      original: text,
-      customPrompt,
-      aiModel,
-    });
+    let translatedText = "";
+    let usedTokens = 0;
+    try {
+      const result = await translateSingleText({
+        shop,
+        target,
+        text,
+        source,
+        fieldKey,
+        shopifyType,
+        aiModel,
+        customPrompt,
+      });
+      translatedText = result.translatedText;
+      usedTokens = result.usedTokens;
+    } catch (err) {
+      console.error("[single] translate stage failed", requestSummary, err);
+      throw err;
+    }
 
-    const { translatedText, usedTokens } = await translateSingleText({
-      shop,
-      target,
-      text,
-      source,
-      fieldKey,
-      shopifyType,
-      aiModel,
-      customPrompt,
-    });
-    await deductQuota(shop, usedTokens);
+    try {
+      await deductQuota(shop, usedTokens);
+    } catch (err) {
+      console.error(
+        "[single] quota deduction failed",
+        { ...requestSummary, usedTokens },
+        err,
+      );
+      throw err;
+    }
+
     return json({ success: true, response: translatedText });
   } catch (err) {
-    console.error(`[single] ${shop} failed:`, err);
+    console.error(`[single] ${shop} failed`, requestSummary, err);
     const appError = buildTranslateV4Error(
       TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
     );

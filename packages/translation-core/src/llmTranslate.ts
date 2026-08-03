@@ -41,6 +41,16 @@ import {
 } from "./placeholderMask.js";
 import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
+import { estimateDeepSeekCallCost } from "./deepseekPricing.js";
+
+export {
+  estimateDeepSeekCallCost,
+  resolveDeepSeekCnyPrices,
+  isDeepSeekPeakHourBeijing,
+  DEEPSEEK_CNY_PRICES,
+  DEEPSEEK_PRICING_SOURCE,
+} from "./deepseekPricing.js";
+export type { DeepSeekCallCostEstimate, DeepSeekPriceTier } from "./deepseekPricing.js";
 
 // ─── LLM Key Pool ─────────────────────────────────────────────────────────────
 //
@@ -360,9 +370,92 @@ function resolveDeepSeekChatCompletionsUrl(baseURL: string): string {
 type ChatCompletionInvokeResult = {
   content: string;
   tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  /** DeepSeek: usage.prompt_cache_hit_tokens (billed at cache-hit rate). */
+  promptCacheHitTokens?: number;
+  /** DeepSeek: usage.prompt_cache_miss_tokens (billed at cache-miss rate). */
+  promptCacheMissTokens?: number;
+  requestId?: string;
   response: Response;
   limitHints: string[];
 };
+
+type LlmUsageTokens = {
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptCacheHitTokens?: number;
+  promptCacheMissTokens?: number;
+};
+
+/** Provider usage object — DeepSeek adds prompt_cache_* ; OpenAI-style may use prompt_tokens_details. */
+type ApiUsageShape = {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  prompt_cache_hit_tokens?: number;
+  prompt_cache_miss_tokens?: number;
+  prompt_tokens_details?: { cached_tokens?: number };
+};
+
+function usageFromApi(usage?: ApiUsageShape): LlmUsageTokens {
+  const inputTokens =
+    typeof usage?.prompt_tokens === "number" && usage.prompt_tokens >= 0
+      ? usage.prompt_tokens
+      : undefined;
+  const outputTokens =
+    typeof usage?.completion_tokens === "number" && usage.completion_tokens >= 0
+      ? usage.completion_tokens
+      : undefined;
+  const total =
+    typeof usage?.total_tokens === "number" && usage.total_tokens >= 0
+      ? usage.total_tokens
+      : (inputTokens ?? 0) + (outputTokens ?? 0);
+
+  let promptCacheHitTokens: number | undefined;
+  let promptCacheMissTokens: number | undefined;
+  if (
+    typeof usage?.prompt_cache_hit_tokens === "number" &&
+    usage.prompt_cache_hit_tokens >= 0
+  ) {
+    promptCacheHitTokens = usage.prompt_cache_hit_tokens;
+  } else if (
+    typeof usage?.prompt_tokens_details?.cached_tokens === "number" &&
+    usage.prompt_tokens_details.cached_tokens >= 0
+  ) {
+    // OpenAI / Azure-style cached input breakdown.
+    promptCacheHitTokens = usage.prompt_tokens_details.cached_tokens;
+  }
+  if (
+    typeof usage?.prompt_cache_miss_tokens === "number" &&
+    usage.prompt_cache_miss_tokens >= 0
+  ) {
+    promptCacheMissTokens = usage.prompt_cache_miss_tokens;
+  } else if (
+    promptCacheHitTokens !== undefined &&
+    inputTokens !== undefined &&
+    inputTokens >= promptCacheHitTokens
+  ) {
+    promptCacheMissTokens = inputTokens - promptCacheHitTokens;
+  }
+
+  return {
+    tokens: total,
+    inputTokens,
+    outputTokens,
+    promptCacheHitTokens,
+    promptCacheMissTokens,
+  };
+}
+
+function requestIdFromHeaders(headers: Headers): string | undefined {
+  for (const name of ["x-request-id", "x-ms-request-id", "request-id"]) {
+    const v = headers.get(name)?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
 
 /**
  * Pull a JSON string field's value out of a raw JSON line WITHOUT parsing the
@@ -490,12 +583,23 @@ async function fetchDeepSeekChatCompletion(
     let scanFrom = 0; // resume \n search here — avoids O(n²) buffer.slice per line
     let content = "";
     let tokens = 0;
+    let inputTokens: number | undefined;
+    let outputTokens: number | undefined;
+    let promptCacheHitTokens: number | undefined;
+    let promptCacheMissTokens: number | undefined;
+    let requestId: string | undefined;
     let apiErrorMsg: string | undefined;
 
     const handleLine = (line: string): void => {
       if (!line.startsWith("data:")) return;
       const data = line.slice(5).trim();
       if (data === "" || data === "[DONE]") return;
+
+      // Completion id appears on most SSE chunks; capture once for batch correlation.
+      if (!requestId) {
+        const id = extractJsonStringField(data, "id");
+        if (id) requestId = id;
+      }
 
       // Fast path: extract delta.content without JSON.parse-ing the whole event.
       // Runs once per token — the dominant CPU cost under concurrency. A content
@@ -513,16 +617,33 @@ async function fetchDeepSeekChatCompletion(
       // Slow path (rare): usage tally (final event) / error / role-only delta.
       if (
         data.includes('"total_tokens"') ||
+        data.includes('"prompt_tokens"') ||
+        data.includes('"prompt_cache_') ||
         data.includes('"usage"') ||
         data.includes('"error"')
       ) {
         try {
           const evt = JSON.parse(data) as {
-            usage?: { total_tokens?: number };
+            id?: string;
+            usage?: ApiUsageShape;
             error?: { message?: string };
           };
           if (evt.error?.message) apiErrorMsg = evt.error.message;
-          if (evt.usage?.total_tokens) tokens = evt.usage.total_tokens;
+          if (!requestId && typeof evt.id === "string" && evt.id.trim()) {
+            requestId = evt.id.trim();
+          }
+          if (evt.usage) {
+            const u = usageFromApi(evt.usage);
+            if (u.tokens > 0) tokens = u.tokens;
+            if (u.inputTokens !== undefined) inputTokens = u.inputTokens;
+            if (u.outputTokens !== undefined) outputTokens = u.outputTokens;
+            if (u.promptCacheHitTokens !== undefined) {
+              promptCacheHitTokens = u.promptCacheHitTokens;
+            }
+            if (u.promptCacheMissTokens !== undefined) {
+              promptCacheMissTokens = u.promptCacheMissTokens;
+            }
+          }
         } catch {
           // partial/keepalive line — wait for more bytes
         }
@@ -554,6 +675,11 @@ async function fetchDeepSeekChatCompletion(
     return {
       content: content || "{}",
       tokens,
+      inputTokens,
+      outputTokens,
+      promptCacheHitTokens,
+      promptCacheMissTokens,
+      requestId: requestId || requestIdFromHeaders(resp.headers),
       response: resp,
       limitHints: [], // body hints unavailable when streaming; headers still logged separately
     };
@@ -636,7 +762,15 @@ async function callAzureOpenAIChat(
   model: string,
   messages: ChatMessage[],
   itemCount: number,
-): Promise<{ raw: string; tokens: number }> {
+): Promise<{
+  raw: string;
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptCacheHitTokens?: number;
+  promptCacheMissTokens?: number;
+  requestId?: string;
+}> {
   const key = gptApiKey();
   if (!key) throw new Error("Gpt_ApiKey 未配置");
   const url = `${GPT_ENDPOINT}/openai/deployments/${encodeURIComponent(model)}/chat/completions?api-version=${GPT_API_VERSION}`;
@@ -677,12 +811,20 @@ async function callAzureOpenAIChat(
           throw new Error(`LLM HTTP ${resp.status}: ${body}`);
         }
         const j = (await resp.json()) as {
+          id?: string;
           choices?: Array<{ message?: { content?: string | null } }>;
-          usage?: { total_tokens?: number };
+          usage?: ApiUsageShape;
         };
+        const u = usageFromApi(j.usage);
         return {
           raw: j.choices?.[0]?.message?.content || "{}",
-          tokens: j.usage?.total_tokens ?? 0,
+          tokens: u.tokens,
+          inputTokens: u.inputTokens,
+          outputTokens: u.outputTokens,
+          promptCacheHitTokens: u.promptCacheHitTokens,
+          promptCacheMissTokens: u.promptCacheMissTokens,
+          requestId:
+            (typeof j.id === "string" && j.id.trim()) || requestIdFromHeaders(resp.headers) || undefined,
         };
       } catch (e) {
         if (controller.signal.aborted && controller.signal.reason instanceof LlmTimeoutError) {
@@ -1532,8 +1674,11 @@ export function setShopQuotaCap(shop: string, cap: number): void {
 
 // ─── Engine router ──────────────────────────────────────────────────────────────
 //
-// Two engine *families*: "llm" (DeepSeek) and "google" (Google Translate).
-// Cost-tiered routing applies unless the job requests google-translate only.
+// Two engine *families*: "llm" and "google" (Google Translate).
+// Within "llm": job aiModel gpt-* tries Azure GPT first; unresolved items then
+// cascade to DeepSeek (when configured) before Google. Non-GPT jobs use DeepSeek
+// only. Short plain packs LLM-first (Google last) unless
+// TRANSLATE_SHORT_PACK_LLM_FIRST=false. Forced aiModel=google-translate skips LLM.
 
 type Engine = "llm" | "google";
 
@@ -1546,6 +1691,13 @@ function llmConfigured(): boolean {
     process.env.DEEPSEEK_API_KEY?.trim() ||
       process.env.DEEPSEEK_API_KEYS?.trim(),
   );
+}
+
+/** Short plain JSON-pack path uses LLM first by default (rollback via env). */
+function shortPackLlmFirst(): boolean {
+  const v = process.env.TRANSLATE_SHORT_PACK_LLM_FIRST;
+  if (v === undefined || v.trim() === "") return true;
+  return /^(1|true|yes)$/i.test(v);
 }
 
 /** A single forced engine family, or null when auto-routing should apply. */
@@ -1568,19 +1720,38 @@ function fieldTier(
   return value.length >= SHORT_PLAIN_THRESHOLD ? "rich" : "trivial";
 }
 
-function poolSignature(order: Engine[], isHandle: boolean): string {
+type PoolSigOpts = { isHandle?: boolean; isShort?: boolean };
+
+function poolSignature(order: Engine[], opts: boolean | PoolSigOpts = false): string {
+  // Legacy callers passed `isHandle` as a boolean.
+  const { isHandle, isShort } =
+    typeof opts === "boolean" ? { isHandle: opts, isShort: false } : opts;
   const base = order.join(",");
-  return isHandle ? `${HANDLE_POOL_PREFIX}${base}` : base;
+  if (isHandle) return `${HANDLE_POOL_PREFIX}${base}`;
+  if (isShort) return `${SHORT_POOL_PREFIX}${base}`;
+  return base;
 }
 
-function parsePoolSignature(sig: string): { order: Engine[]; isHandle: boolean } {
+function parsePoolSignature(sig: string): {
+  order: Engine[];
+  isHandle: boolean;
+  isShort: boolean;
+} {
   if (sig.startsWith(HANDLE_POOL_PREFIX)) {
     return {
       isHandle: true,
+      isShort: false,
       order: sig.slice(HANDLE_POOL_PREFIX.length).split(",") as Engine[],
     };
   }
-  return { isHandle: false, order: sig.split(",") as Engine[] };
+  if (sig.startsWith(SHORT_POOL_PREFIX)) {
+    return {
+      isHandle: false,
+      isShort: true,
+      order: sig.slice(SHORT_POOL_PREFIX.length).split(",") as Engine[],
+    };
+  }
+  return { isHandle: false, isShort: false, order: sig.split(",") as Engine[] };
 }
 
 /** Ordered engine candidates for a tier (primary first, then fallback). */
@@ -1591,12 +1762,14 @@ function engineOrderFor(tier: "trivial" | "rich", aiModel?: string): Engine[] {
   const g = googleConfigured();
   const l = llmConfigured();
   const order: Engine[] = [];
-  if (tier === "trivial") {
-    if (g) order.push("google");
+  // Short plain: LLM JSON-pack first (default); rich always LLM first.
+  const llmFirst = tier === "rich" || shortPackLlmFirst();
+  if (llmFirst) {
     if (l) order.push("llm");
+    if (g) order.push("google");
   } else {
-    if (l) order.push("llm");
     if (g) order.push("google");
+    if (l) order.push("llm");
   }
   // Always have at least one candidate.
   if (order.length === 0) order.push(l ? "llm" : "google");
@@ -1605,7 +1778,9 @@ function engineOrderFor(tier: "trivial" | "rich", aiModel?: string): Engine[] {
 
 /** The model/label recorded for a chosen engine (used for TM cache + Cosmos). */
 function engineModel(engine: Engine, aiModel: string): string {
-  return engine === "google" ? "google-translate" : resolveModel(aiModel);
+  if (engine === "google") return "google-translate";
+  if (isGptModel(aiModel)) return resolveGptModel(aiModel);
+  return resolveModel(aiModel);
 }
 
 /**
@@ -1631,18 +1806,207 @@ export type TranslateItem = {
   shopifyType?: string;
 };
 
+/** One LLM/Google HTTP call's cost metadata (shared by all fields in the same batch). */
+export type TranslationCallCost = {
+  provider: "llm" | "google";
+  model?: string;
+  /** LLM only: correlates fields translated in the same request. */
+  requestId?: string;
+  /** Full prompt_tokens from the provider (includes cache hits). */
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  /**
+   * DeepSeek `prompt_cache_hit_tokens` (or OpenAI-style cached_tokens).
+   * Billed at cache-hit input rate — do not treat as full-price input.
+   * Excluded from merchant usedTokens / credit deduction.
+   */
+  promptCacheHitTokens?: number;
+  /**
+   * DeepSeek `prompt_cache_miss_tokens` (or prompt_tokens − hit when derived).
+   * Billed at cache-miss input rate.
+   */
+  promptCacheMissTokens?: number;
+  /** Estimated provider CNY (元) from official DeepSeek 中文价目 × usage. */
+  costCny?: number;
+  /** Peak multiplier applied (1 or 2 when DEEPSEEK_PEAK_PRICING is on). */
+  pricingPeakMultiplier?: number;
+  /** Price card id / docs URL marker for reconciliation. */
+  pricingSource?: string;
+  /** Google: source char count for this text. */
+  chars?: number;
+  /** LLM only: how many items were sent in this request. */
+  batchSize?: number;
+};
+
+/**
+ * Tokens charged to the merchant (job usedTokens / credit deduct).
+ * When DeepSeek reports cache hits, exclude them: miss + out only.
+ * Without cache breakdown, keep provider total (in + out).
+ */
+export function billableLlmTokens(usage: {
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptCacheHitTokens?: number;
+  promptCacheMissTokens?: number;
+}): number {
+  const hit = usage.promptCacheHitTokens;
+  if (typeof hit === "number" && hit > 0) {
+    const miss =
+      typeof usage.promptCacheMissTokens === "number" && usage.promptCacheMissTokens >= 0
+        ? usage.promptCacheMissTokens
+        : typeof usage.inputTokens === "number"
+          ? Math.max(0, usage.inputTokens - hit)
+          : 0;
+    const out =
+      typeof usage.outputTokens === "number" && usage.outputTokens >= 0
+        ? usage.outputTokens
+        : 0;
+    return Math.max(0, miss + out);
+  }
+  if (typeof usage.totalTokens === "number" && usage.totalTokens > 0) {
+    return usage.totalTokens;
+  }
+  return Math.max(0, (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0));
+}
+
+/**
+ * Per-field cost persisted on translate blob / Admin content viewer.
+ * Multi-leaf fields (HTML/JSON) may aggregate into `calls` + totals.
+ */
+export type TranslationFieldCost =
+  | TranslationCallCost
+  | { provider: "cache" | "skip" }
+  | {
+      provider: "mixed" | "llm";
+      calls: TranslationCallCost[];
+      inputTokens?: number;
+      outputTokens?: number;
+      promptCacheHitTokens?: number;
+      promptCacheMissTokens?: number;
+      costCny?: number;
+      chars?: number;
+    };
+
 export type TranslateResult = {
   key: string;
   translatedValue: string;
   digest: string;
   /** "translated" = produced by the engine; "fallback" = engine failed, original text returned. */
   status: "translated" | "fallback";
+  /** Optional cost metadata for Admin / blob inspection. */
+  cost?: TranslationFieldCost;
 };
+
+function isTranslationCallCost(c: TranslationFieldCost): c is TranslationCallCost {
+  return (c.provider === "llm" || c.provider === "google") && !("calls" in c);
+}
+
+/** Merge leaf-level costs onto a Shopify field (dedupe LLM by requestId; sum Google chars). */
+export function mergeLeafCosts(
+  costs: Array<TranslationFieldCost | undefined>,
+): TranslationFieldCost | undefined {
+  const items = costs.filter((c): c is TranslationFieldCost => c != null);
+  if (items.length === 0) return undefined;
+  if (items.length === 1) return items[0];
+
+  const llmByKey = new Map<string, TranslationCallCost>();
+  let googleChars = 0;
+  let googleCount = 0;
+  let cacheCount = 0;
+  let skipCount = 0;
+
+  const addLlm = (call: TranslationCallCost) => {
+    const key =
+      call.requestId?.trim() ||
+      `anon:${call.model ?? ""}:${call.inputTokens ?? ""}:${call.outputTokens ?? ""}:${call.totalTokens ?? ""}:${call.batchSize ?? ""}`;
+    if (!llmByKey.has(key)) llmByKey.set(key, call);
+  };
+
+  for (const c of items) {
+    if (c.provider === "cache") {
+      cacheCount++;
+      continue;
+    }
+    if (c.provider === "skip") {
+      skipCount++;
+      continue;
+    }
+    if (isTranslationCallCost(c)) {
+      if (c.provider === "google") {
+        googleCount++;
+        googleChars += c.chars ?? 0;
+      } else {
+        addLlm(c);
+      }
+      continue;
+    }
+    // Aggregated multi-leaf shape (`provider: "llm" | "mixed"` + calls).
+    if ("calls" in c) {
+      for (const call of c.calls) {
+        if (call.provider === "llm") addLlm(call);
+        else if (call.provider === "google") {
+          googleCount++;
+          googleChars += call.chars ?? 0;
+        }
+      }
+      if (typeof c.chars === "number" && c.chars > 0) {
+        googleCount++;
+        googleChars += c.chars;
+      }
+    }
+  }
+
+  const llmCalls = [...llmByKey.values()];
+  const hasLlm = llmCalls.length > 0;
+  const hasGoogle = googleCount > 0;
+
+  if (!hasLlm && !hasGoogle) {
+    if (cacheCount > 0) return { provider: "cache" };
+    if (skipCount > 0) return { provider: "skip" };
+    return undefined;
+  }
+  if (hasLlm && !hasGoogle && llmCalls.length === 1 && cacheCount === 0 && skipCount === 0) {
+    return llmCalls[0]!;
+  }
+  if (hasGoogle && !hasLlm && cacheCount === 0 && skipCount === 0) {
+    return { provider: "google", model: "google-translate", chars: googleChars };
+  }
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let promptCacheHitTokens = 0;
+  let promptCacheMissTokens = 0;
+  let costCny = 0;
+  for (const c of llmCalls) {
+    inputTokens += c.inputTokens ?? 0;
+    outputTokens += c.outputTokens ?? 0;
+    promptCacheHitTokens += c.promptCacheHitTokens ?? 0;
+    promptCacheMissTokens += c.promptCacheMissTokens ?? 0;
+    costCny += c.costCny ?? 0;
+  }
+  if (!hasLlm && hasGoogle) {
+    return { provider: "google", model: "google-translate", chars: googleChars };
+  }
+  return {
+    provider: hasGoogle ? "mixed" : "llm",
+    calls: llmCalls,
+    inputTokens: inputTokens > 0 ? inputTokens : undefined,
+    outputTokens: outputTokens > 0 ? outputTokens : undefined,
+    promptCacheHitTokens: promptCacheHitTokens > 0 ? promptCacheHitTokens : undefined,
+    promptCacheMissTokens: promptCacheMissTokens > 0 ? promptCacheMissTokens : undefined,
+    costCny: costCny > 0 ? Math.round(costCny * 1e8) / 1e8 : undefined,
+    chars: googleChars > 0 ? googleChars : undefined,
+  };
+}
 
 // ─── Field classification ──────────────────────────────────────────────────────
 
 /** Pool signature prefix for handle/slug texts (hyphen→space preprocessed). */
 const HANDLE_POOL_PREFIX = "@handle@";
+/** Pool signature prefix for short plain JSON-pack batches (keeps limits separate from rich). */
+const SHORT_POOL_PREFIX = "@short@";
 
 export function isHandleFieldKey(key: string): boolean {
   return key.trim().toLowerCase() === "handle";
@@ -1933,12 +2297,33 @@ const RICH_MAX_ITEMS_PER_BATCH = Math.max(
   1,
   Number(process.env.TRANSLATE_RICH_MAX_ITEMS_PER_BATCH) || 8,
 );
+/** Short plain JSON-pack pools: more items per request (many tiny titles/labels). */
+const SHORT_JSON_MAX_CHARS_PER_BATCH = Math.max(
+  500,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_CHARS) || 3_000,
+);
+const SHORT_JSON_MAX_ITEMS_PER_BATCH = Math.max(
+  1,
+  Number(process.env.TRANSLATE_SHORT_JSON_MAX_ITEMS) || 40,
+);
 
-/** LLM-first engine order ⇒ rich tier (HTML/JSON/long plain). Google-first ⇒ trivial. */
-export function resolveBatchLimits(order: Engine[]): {
+/**
+ * Batch size for a pool. Short plain JSON packs use dedicated higher item caps;
+ * rich LLM-first pools stay small; legacy Google-first uses the general cap.
+ */
+export function resolveBatchLimits(
+  order: Engine[],
+  opts?: { isShort?: boolean },
+): {
   maxChars: number;
   maxItems: number;
 } {
+  if (opts?.isShort) {
+    return {
+      maxChars: SHORT_JSON_MAX_CHARS_PER_BATCH,
+      maxItems: SHORT_JSON_MAX_ITEMS_PER_BATCH,
+    };
+  }
   if (order[0] === "llm") {
     return { maxChars: RICH_MAX_CHARS_PER_BATCH, maxItems: RICH_MAX_ITEMS_PER_BATCH };
   }
@@ -2130,6 +2515,62 @@ function batchByChars(
 
 // ─── Google Translate engine ──────────────────────────────────────────────────
 
+const GOOGLE_LOG_TEXT_MAX = 2000;
+
+function truncateForGoogleLog(text: string): string {
+  if (text.length <= GOOGLE_LOG_TEXT_MAX) return text;
+  return `${text.slice(0, GOOGLE_LOG_TEXT_MAX)}…(${text.length} chars)`;
+}
+
+function describeGoogleRouteReason(
+  order: Engine[],
+  aiModel: string,
+  opts: { llmAttempted: boolean; totalItems: number; missingCount: number },
+): { reason: string; detail: Record<string, unknown> } {
+  const forced = forcedEngine(aiModel);
+  if (forced === "google") {
+    return {
+      reason: "forced_google_model",
+      detail: { aiModel, message: "job aiModel=google-translate" },
+    };
+  }
+  const googleIdx = order.indexOf("google");
+  const llmIdx = order.indexOf("llm");
+  if (googleIdx < 0) {
+    return { reason: "unexpected", detail: { order } };
+  }
+  if (llmIdx < 0 || !llmConfigured()) {
+    return {
+      reason: "google_only_no_llm",
+      detail: { llmConfigured: llmConfigured(), order },
+    };
+  }
+  if (googleIdx === 0) {
+    return {
+      reason: "google_first_in_order",
+      detail: {
+        order,
+        shortPackLlmFirst: shortPackLlmFirst(),
+        hint: "TRANSLATE_SHORT_PACK_LLM_FIRST=false or trivial-tier routing puts Google before LLM",
+      },
+    };
+  }
+  if (opts.llmAttempted && opts.missingCount > 0) {
+    const llmResolved = opts.totalItems - opts.missingCount;
+    return {
+      reason: "llm_fallback",
+      detail: {
+        order,
+        llmResolved,
+        missingCount: opts.missingCount,
+        hint:
+          "LLM (GPT then DeepSeek when gpt-* job) did not resolve all items; cascading to Google",
+      },
+    };
+  }
+  return { reason: "engine_order", detail: { order } };
+}
+
 async function callGoogleTranslate(
   texts: string[],
   target: string,
@@ -2164,7 +2605,13 @@ async function callGoogleTranslate(
  * protection applies to every engine (LLM and Google alike). Returns a map of
  * key → { value, status }; items unresolved by all engines get status "fallback".
  */
-type RoutedResult = { value: string; status: "translated" | "fallback"; engine: Engine | null; tokens: number };
+type RoutedResult = {
+  value: string;
+  status: "translated" | "fallback";
+  engine: Engine | null;
+  tokens: number;
+  cost?: TranslationFieldCost;
+};
 
 async function translateItemsRouted(
   items: TranslateItem[],
@@ -2174,6 +2621,7 @@ async function translateItemsRouted(
   shopName: string,
   order: Engine[],
   promptKind: "default" | "handle" = "default",
+  profileBlock = "",
   customPrompt = "",
   /** 仅管理页单条翻译：把 LLM 原始返回打到日志。 */
   logSingleTranslate = false,
@@ -2188,63 +2636,143 @@ async function translateItemsRouted(
 
   const collected = new Map<string, string>(); // masked translations
   const engineByKey = new Map<string, Engine>(); // which engine resolved each key
-  const llmTokensByKey = new Map<string, number>(); // LLM API tokens charged per key
+  const llmTokensByKey = new Map<string, number>(); // LLM API tokens charged per key (EngineUsage)
+  const costByKey = new Map<string, TranslationFieldCost>();
   let systemPrompt: string | null = null;
   const tokenAccum = { value: 0 }; // accumulates LLM token usage across all retries
+  let tokenAccumBaseline = 0; // tokens already attributed before current LLM engine pass
+  let llmAttempted = false;
 
   for (const engine of order) {
     const missing = masked.filter((i) => !collected.has(i.key));
     if (missing.length === 0) break;
 
     if (engine === "llm") {
-      if (!llmConfigured()) continue;
+      const useGpt = isGptModel(aiModel);
+      const useDeepSeek = llmConfigured();
+      // GPT jobs need Azure key; DeepSeek jobs need DEEPSEEK_* keys. Either is enough to enter.
+      if (!useGpt && !useDeepSeek) continue;
+      llmAttempted = true;
       if (systemPrompt === null) {
         const glossary = await loadGlossaryLines(shopName, target);
         systemPrompt =
           promptKind === "handle"
-            ? buildHandleSystemPrompt(target, glossary, "", customPrompt)
-            : buildSystemPrompt(target, glossary, "", customPrompt);
+            ? buildHandleSystemPrompt(target, glossary, profileBlock, customPrompt)
+            : buildSystemPrompt(target, glossary, profileBlock, customPrompt);
         if (logSingleTranslate) {
           console.log("[single] prompt", {
             shopName,
             source,
             target,
             promptKind,
+            hasProfileBlock: profileBlock.length > 0,
             customPrompt,
             prompt: systemPrompt,
           });
         }
       }
+      tokenAccumBaseline = tokenAccum.value;
       try {
-        await gatherTranslations(
-          missing,
-          aiModel,
-          systemPrompt,
-          collected,
-          tokenAccum,
-          shopName,
-          FIRST_TOKEN_DRAIN_RETRIES,
-          logSingleTranslate,
-        );
+        if (useGpt) {
+          await gatherTranslations(
+            missing,
+            aiModel,
+            systemPrompt,
+            collected,
+            tokenAccum,
+            costByKey,
+            shopName,
+            FIRST_TOKEN_DRAIN_RETRIES,
+            logSingleTranslate,
+          );
+          // GPT exhausted its own retries; try DeepSeek before cascading to Google.
+          const stillMissing = missing.filter((i) => !collected.has(i.key));
+          if (stillMissing.length > 0 && useDeepSeek) {
+            const fallbackModel = resolveModel();
+            console.warn(
+              `[llm] GPT left ${stillMissing.length}/${missing.length} unresolved; ` +
+                `falling back to DeepSeek (${fallbackModel})`,
+            );
+            await gatherTranslations(
+              stillMissing,
+              fallbackModel,
+              systemPrompt,
+              collected,
+              tokenAccum,
+              costByKey,
+              shopName,
+              FIRST_TOKEN_DRAIN_RETRIES,
+              logSingleTranslate,
+            );
+          }
+        } else {
+          await gatherTranslations(
+            missing,
+            aiModel,
+            systemPrompt,
+            collected,
+            tokenAccum,
+            costByKey,
+            shopName,
+            FIRST_TOKEN_DRAIN_RETRIES,
+            logSingleTranslate,
+          );
+        }
       } catch (e) {
         console.warn(`[route] llm engine error`, e);
       }
-      // Attribute newly-resolved keys to the LLM; distribute tokens evenly across keys.
+      // Attribute newly-resolved keys to the LLM; distribute tokens evenly across keys
+      // for EngineUsage tally (billing still uses whole-batch llmTokens via onProgress).
       const newlyResolved = missing.filter((i) => collected.has(i.key) && !engineByKey.has(i.key));
-      const tokensEach = newlyResolved.length > 0 ? Math.ceil(tokenAccum.value / newlyResolved.length) : 0;
+      const passTokens = Math.max(0, tokenAccum.value - tokenAccumBaseline);
+      const tokensEach = newlyResolved.length > 0 ? Math.ceil(passTokens / newlyResolved.length) : 0;
       for (const i of newlyResolved) {
         engineByKey.set(i.key, "llm");
         llmTokensByKey.set(i.key, tokensEach);
       }
     } else {
       if (!googleConfigured()) continue;
+      const { reason, detail } = describeGoogleRouteReason(order, aiModel, {
+        llmAttempted,
+        totalItems: items.length,
+        missingCount: missing.length,
+      });
       for (const batch of batchByChars(missing, MAX_CHARS_PER_BATCH)) {
+        console.log("[google]", {
+          shopName,
+          source,
+          target,
+          aiModel,
+          promptKind,
+          reason,
+          ...detail,
+          engineOrder: order,
+          llmAttempted,
+          totalItems: items.length,
+          missingCount: missing.length,
+          batchSize: batch.length,
+          items: batch.map((b) => {
+            const original = items.find((it) => it.key === b.key)?.value ?? b.value;
+            return {
+              key: b.key,
+              digest: b.digest,
+              chars: original.length,
+              originalText: truncateForGoogleLog(original),
+              maskedText: original !== b.value ? truncateForGoogleLog(b.value) : undefined,
+            };
+          }),
+        });
         try {
           const out = await callGoogleTranslate(batch.map((b) => b.value), target, "text");
           batch.forEach((b, i) => {
             if (out[i] != null && !collected.has(b.key)) {
-              collected.set(b.key, out[i]);
+              collected.set(b.key, out[i]!);
               engineByKey.set(b.key, "google");
+              costByKey.set(b.key, {
+                provider: "google",
+                model: "google-translate",
+                chars: b.value.length,
+              });
             }
           });
         } catch (e) {
@@ -2302,6 +2830,7 @@ async function translateItemsRouted(
       status: "translated",
       engine: engineByKey.get(it.key) ?? null,
       tokens: llmTokensByKey.get(it.key) ?? 0,
+      cost: costByKey.get(it.key),
     });
   }
   return { results: result, llmTokens: tokenAccum.value };
@@ -2316,6 +2845,7 @@ async function retryPoolFallbacks(
   aiModel: string,
   shopName: string,
   shouldAbort: () => boolean | Promise<boolean>,
+  profileBlock = "",
   customPrompt = "",
   onLeafTranslated?: (text: string, result: RoutedResult, poolPrimaryModel: string) => void,
   logSingleTranslate = false,
@@ -2347,6 +2877,7 @@ async function retryPoolFallbacks(
         shopName,
         poolOrder,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
         logSingleTranslate,
       );
@@ -2501,12 +3032,59 @@ Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<te
  * On 429 the slot is throttled, the semaphore cap drops, and
  * gatherTranslations' retry loop picks a fresh slot automatically.
  */
+type LlmOnceResult = {
+  map: Map<string, string>;
+  tokens: number;
+  cost: TranslationCallCost;
+};
+
+function buildLlmCallCost(args: {
+  model: string;
+  tokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptCacheHitTokens?: number;
+  promptCacheMissTokens?: number;
+  requestId?: string;
+  batchSize: number;
+}): TranslationCallCost {
+  const cost: TranslationCallCost = {
+    provider: "llm",
+    model: args.model,
+    batchSize: args.batchSize,
+    totalTokens: args.tokens > 0 ? args.tokens : undefined,
+  };
+  if (args.requestId) cost.requestId = args.requestId;
+  if (args.inputTokens !== undefined) cost.inputTokens = args.inputTokens;
+  if (args.outputTokens !== undefined) cost.outputTokens = args.outputTokens;
+  if (args.promptCacheHitTokens !== undefined) {
+    cost.promptCacheHitTokens = args.promptCacheHitTokens;
+  }
+  if (args.promptCacheMissTokens !== undefined) {
+    cost.promptCacheMissTokens = args.promptCacheMissTokens;
+  }
+  const money = estimateDeepSeekCallCost({
+    model: args.model,
+    promptCacheHitTokens: args.promptCacheHitTokens,
+    promptCacheMissTokens: args.promptCacheMissTokens,
+    inputTokens: args.inputTokens,
+    outputTokens: args.outputTokens,
+  });
+  if (money) {
+    cost.costCny = money.costCny;
+    cost.pricingPeakMultiplier = money.peakMultiplier;
+    cost.pricingSource = money.pricingSource;
+  }
+  return cost;
+}
+
 /** 解析 LLM 返回的 {translations:[{key,translatedValue}]} → 原 key → 译文 map。 */
 function parseTranslationResult(
   raw: string,
-  tokens: number,
   idToKey: Map<string, string>,
-): { map: Map<string, string>; tokens: number } {
+  cost: TranslationCallCost,
+  tokens: number,
+): LlmOnceResult {
   const obj = JSON.parse(extractJsonObject(raw)) as { translations?: unknown };
   const parsed = Array.isArray(obj.translations)
     ? (obj.translations as Array<{ key?: unknown; translatedValue?: unknown }>)
@@ -2518,7 +3096,7 @@ function parseTranslationResult(
       if (origKey !== undefined) map.set(origKey, r.translatedValue);
     }
   }
-  return { map, tokens };
+  return { map, tokens, cost };
 }
 
 async function callLLMOnce(
@@ -2527,7 +3105,7 @@ async function callLLMOnce(
   systemPrompt: string,
   shopName?: string,
   logSingleTranslate = false,
-): Promise<{ map: Map<string, string>; tokens: number }> {
+): Promise<LlmOnceResult> {
   // Opaque IDs prevent the model from confusing semantic key names with content.
   const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
   const payload  = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
@@ -2541,7 +3119,7 @@ async function callLLMOnce(
     { role: "user", content: JSON.stringify(payload) },
   ];
 
-  const logLlmReturn = (model: string, raw: string, tokens: number) => {
+  const logLlmReturn = (model: string, raw: string, tokens: number, requestId?: string) => {
     if (!logSingleTranslate) return;
     // 管理页单条：完整打印原文、prompt、LLM raw（不截断）。
     console.log("[single-llm] return", {
@@ -2551,6 +3129,7 @@ async function callLLMOnce(
       prompt: messages,
       raw,
       tokens,
+      requestId,
     });
   };
 
@@ -2558,13 +3137,28 @@ async function callLLMOnce(
   if (isGptModel(aiModel)) {
     try {
       const model = resolveGptModel(aiModel);
-      const { raw, tokens } = await callAzureOpenAIChat(
+      const {
+        raw,
+        tokens,
+        inputTokens,
+        outputTokens,
+        promptCacheHitTokens,
+        promptCacheMissTokens,
+        requestId,
+      } = await callAzureOpenAIChat(model, messages, items.length);
+      logLlmReturn(model, raw, tokens, requestId);
+      const cost = buildLlmCallCost({
         model,
-        messages,
-        items.length,
-      );
-      logLlmReturn(model, raw, tokens);
-      return parseTranslationResult(raw, tokens, idToKey);
+        tokens,
+        inputTokens,
+        outputTokens,
+        promptCacheHitTokens,
+        promptCacheMissTokens,
+        requestId,
+        batchSize: items.length,
+      });
+      // Merchant quota: exclude cache-hit input when the provider reports it.
+      return parseTranslationResult(raw, idToKey, cost, billableLlmTokens(cost));
     } finally {
       if (quotaGate) quotaGate.release();
     }
@@ -2580,7 +3174,17 @@ async function callLLMOnce(
       acq.transport.kind === "deepseek-fetch" && shopName
         ? sanitizeDeepSeekUserId(shopName)
         : undefined;
-    const { content: raw, tokens, response, limitHints } = await invokeChatCompletion(
+    const {
+      content: raw,
+      tokens,
+      inputTokens,
+      outputTokens,
+      promptCacheHitTokens,
+      promptCacheMissTokens,
+      requestId,
+      response,
+      limitHints,
+    } = await invokeChatCompletion(
       acq.transport,
       model,
       messages,
@@ -2590,23 +3194,22 @@ async function callLLMOnce(
     );
 
     const rawHeaders = responseHeadersToRecord(response);
+    // Pool telemetry uses raw provider totals (including cache hits).
     acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
-    logLlmReturn(model, raw, tokens);
+    logLlmReturn(model, raw, tokens, requestId);
 
-    // JSON.parse throws on malformed output → propagated to caller for retry/splitting.
-    const obj    = JSON.parse(extractJsonObject(raw)) as { translations?: unknown };
-    const parsed = Array.isArray(obj.translations)
-      ? (obj.translations as Array<{ key?: unknown; translatedValue?: unknown }>)
-      : [];
-
-    const map = new Map<string, string>();
-    for (const r of parsed) {
-      if (typeof r?.key === "string" && typeof r?.translatedValue === "string") {
-        const origKey = idToKey.get(r.key);
-        if (origKey !== undefined) map.set(origKey, r.translatedValue);
-      }
-    }
-    return { map, tokens };
+    const cost = buildLlmCallCost({
+      model,
+      tokens,
+      inputTokens,
+      outputTokens,
+      promptCacheHitTokens,
+      promptCacheMissTokens,
+      requestId,
+      batchSize: items.length,
+    });
+    // usedTokens / credit deduct: miss + out only when cache hit is reported.
+    return parseTranslationResult(raw, idToKey, cost, billableLlmTokens(cost));
   } catch (e: unknown) {
     if (e instanceof LlmRateLimitError) {
       acq.onThrottle(retryAfterMsFromResponse(e.response));
@@ -2634,12 +3237,26 @@ async function gatherTranslations(
   systemPrompt: string,
   collected: Map<string, string>,
   tokenAccum: { value: number },
+  costByKey: Map<string, TranslationFieldCost>,
   shopName?: string,
   firstTokenRetriesLeft = FIRST_TOKEN_DRAIN_RETRIES,
   logSingleTranslate = false,
 ): Promise<void> {
   const pend = items.filter((i) => !collected.has(i.key));
   if (pend.length === 0) return;
+
+  const applyLlmResult = (map: Map<string, string>, tokens: number, cost: TranslationCallCost) => {
+    tokenAccum.value += tokens;
+    let progressed = false;
+    for (const [k, v] of map) {
+      if (!collected.has(k)) {
+        collected.set(k, v);
+        costByKey.set(k, cost);
+        progressed = true;
+      }
+    }
+    return progressed;
+  };
 
   // Proactively split before calling the API — avoids burning a full timeout on 80+ keys.
   if (pend.length > MAX_ITEMS_PER_BATCH) {
@@ -2648,34 +3265,27 @@ async function gatherTranslations(
       `[llm] batch of ${pend.length} items exceeds cap ${MAX_ITEMS_PER_BATCH}; splitting proactively`,
     );
     await gatherTranslations(
-      pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+      pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
       FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
     );
     await gatherTranslations(
-      pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+      pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
       FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
     );
     return;
   }
 
   try {
-    const { map, tokens } = await callLLMOnce(
+    const { map, tokens, cost } = await callLLMOnce(
       pend, aiModel, systemPrompt, shopName, logSingleTranslate,
     );
-    tokenAccum.value += tokens;
-    let progressed = false;
-    for (const [k, v] of map) {
-      if (!collected.has(k)) {
-        collected.set(k, v);
-        progressed = true;
-      }
-    }
+    const progressed = applyLlmResult(map, tokens, cost);
     const missing = pend.filter((i) => !collected.has(i.key));
     // Model parsed OK but dropped some keys → retry just those, but only while
     // making progress (avoids looping on a key the model refuses to return).
     if (missing.length > 0 && progressed && missing.length < pend.length) {
       await gatherTranslations(
-        missing, aiModel, systemPrompt, collected, tokenAccum, shopName,
+        missing, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
     }
@@ -2697,6 +3307,7 @@ async function gatherTranslations(
           systemPrompt,
           collected,
           tokenAccum,
+          costByKey,
           shopName,
         );
       } else {
@@ -2723,7 +3334,7 @@ async function gatherTranslations(
           await new Promise((res) => setTimeout(res, FIRST_TOKEN_DRAIN_MS));
         }
         await gatherTranslations(
-          pend, aiModel, systemPrompt, collected, tokenAccum, shopName,
+          pend, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
           firstTokenRetriesLeft - 1, logSingleTranslate,
         );
         return;
@@ -2737,7 +3348,7 @@ async function gatherTranslations(
         );
         for (const chunk of chunkArray(pend, TIMEOUT_RESPLIT_SIZE)) {
           await gatherTranslations(
-            chunk, aiModel, systemPrompt, collected, tokenAccum, shopName,
+            chunk, aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
             FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
           );
         }
@@ -2748,11 +3359,11 @@ async function gatherTranslations(
         `[llm] batch of ${pend.length} ${isTimeout ? "timed out" : "unparseable"} (${msg}); splitting`,
       );
       await gatherTranslations(
-        pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+        pend.slice(0, mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
       await gatherTranslations(
-        pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, shopName,
+        pend.slice(mid), aiModel, systemPrompt, collected, tokenAccum, costByKey, shopName,
         FIRST_TOKEN_DRAIN_RETRIES, logSingleTranslate,
       );
       return;
@@ -2763,12 +3374,11 @@ async function gatherTranslations(
         await new Promise((res) => setTimeout(res, LEAF_RETRY_BACKOFF_MS * (r + 1)));
       }
       try {
-        const { map, tokens } = await callLLMOnce(
+        const { map, tokens, cost } = await callLLMOnce(
           pend, aiModel, systemPrompt, shopName, logSingleTranslate,
         );
-        tokenAccum.value += tokens;
-        for (const [k, v] of map) if (!collected.has(k)) collected.set(k, v);
-        if (collected.has(pend[0].key)) return;
+        applyLlmResult(map, tokens, cost);
+        if (collected.has(pend[0]!.key)) return;
       } catch {
         // keep retrying up to the cap
       }
@@ -2777,13 +3387,13 @@ async function gatherTranslations(
     // Recorded separately from per-attempt errors so telemetry can tell
     // "wasted attempts that recovered" from "user-visible fallbacks".
     getPool().recordTerminalFallback(1);
-    console.warn(`[llm] item ${pend[0].key} failed after retries (${msg}); using original`);
+    console.warn(`[llm] item ${pend[0]!.key} failed after retries (${msg}); using original`);
   }
 }
 
 // ─── Main exported functions ────────────────────────────────────────────────────
 
-export type ResourceInput = { resourceId: string; fields: TranslateItem[] };
+export type ResourceInput = { resourceId: string; fields: TranslateItem[]; module?: string };
 export type ResourceResult = { resourceId: string; results: TranslateResult[] };
 /** Per-engine-model tally of how much content each engine translated. */
 export type EngineUsage = Record<string, { units: number; chars: number; tokens: number }>;
@@ -2856,6 +3466,18 @@ function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
   return texts.every((t) => lookup(plan.poolSig, t) !== undefined);
 }
 
+function collectPlanLeafCosts(plan: FieldPlan, lookup: LookupFn): Array<TranslationFieldCost | undefined> {
+  const texts =
+    plan.kind === "plain"
+      ? plan.parts
+      : plan.kind === "html" || plan.kind === "liquid_html"
+        ? plan.nodeParts.flat()
+        : plan.kind === "json"
+          ? jsonPlanTexts(plan)
+          : listPlanTexts(plan);
+  return texts.map((t) => lookup(plan.poolSig, t)?.cost);
+}
+
 function reconstructPlan(
   plan: FieldPlan,
   rm: Map<string, TranslateResult>,
@@ -2866,12 +3488,20 @@ function reconstructPlan(
   source: string,
   skipCacheWrite = false,
 ): void {
+  const fieldCost = () => mergeLeafCosts(collectPlanLeafCosts(plan, lookup));
+
   if (plan.kind === "plain") {
     const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
     const value = pieces.map((p) => p.value).join("");
     const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
     // Plain: field digest TM + value TM (digest if present, else CRC-32).
     if (status === "translated" && !skipCacheWrite) {
       tmWrites.push(tmSet(shopName, target, plan.cacheModel, plan.digest, value));
@@ -2912,7 +3542,13 @@ function reconstructPlan(
       value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
     }
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "liquid_html") {
     let anyFallback = false;
@@ -2947,7 +3583,13 @@ function reconstructPlan(
       value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
     }
     const liquidStatus = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status: liquidStatus });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status: liquidStatus,
+      cost: fieldCost(),
+    });
   } else if (plan.kind === "json") {
     let anyFallback = false;
     const translatedSlots: string[] = [];
@@ -3004,7 +3646,13 @@ function reconstructPlan(
     applyJsonSlotTranslations(plan.slotPlans, translatedSlots);
     const value = JSON.stringify(plan.root);
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
   } else {
     let anyFallback = false;
     const list = JSON.parse(plan.originalValue) as Array<string | null>;
@@ -3041,7 +3689,13 @@ function reconstructPlan(
     }
     const value = JSON.stringify(result);
     const status = anyFallback ? "fallback" : "translated";
-    rm.set(plan.key, { key: plan.key, translatedValue: value, digest: plan.digest, status });
+    rm.set(plan.key, {
+      key: plan.key,
+      translatedValue: value,
+      digest: plan.digest,
+      status,
+      cost: fieldCost(),
+    });
   }
 }
 
@@ -3054,9 +3708,13 @@ function reconstructPlan(
  *  - Dedup: each unique (engine-order, text) is translated once and reused
  *    everywhere it occurs in the chunk.
  *
- * Engine selection: cost-tiered routing (Google for short/simple, DeepSeek for rich)
- * with cross-engine fallback, unless the job sets aiModel=google-translate.
+ * Engine selection: short plain packs into JSON batches (LLM first, Google
+ * last); rich (HTML/JSON/long plain) stays LLM-first. GPT jobs cascade
+ * Azure → DeepSeek → Google; other jobs DeepSeek → Google. Forced
+ * aiModel=google-translate skips packing and uses Google only.
  * Placeholders are masked across all engines; TM cache keyed by tier model.
+ * Pipeline for short plain: field/value TM → chunk dedupe → size-capped JSON
+ * packs → translate → reconstruct.
  */
 export type TranslatedResourceOutput = {
   resourceId: string;
@@ -3064,6 +3722,8 @@ export type TranslatedResourceOutput = {
 };
 
 export type TranslateResourcesOptions = {
+  /** 店铺画像上下文：注入 system prompt，仅用于引导风格/术语。 */
+  profileBlock?: string;
   /** 与 TSF `isHandle` 对齐：`false` 时 handle 原样跳过；默认 `true`（INIT 已过滤时 blob 里本就不含 handle）。 */
   translateHandle?: boolean;
   /**
@@ -3105,6 +3765,7 @@ export async function translateResources(
   const abortRequested = async (): Promise<boolean> =>
     shouldAbort ? Boolean(await shouldAbort()) : false;
   const translateHandle = options?.translateHandle !== false;
+  const profileBlock = options?.profileBlock?.trim() ?? "";
   const customPrompt = options?.customPrompt?.trim() ?? "";
   const hasCustomPrompt = customPrompt.length > 0;
   // 带自定义提示词时默认禁用 TM 读写；手动翻译可显式 skipCacheRead 且仍写回缓存。
@@ -3117,6 +3778,7 @@ export async function translateResources(
       shopName,
       source,
       target,
+      hasProfileBlock: profileBlock.length > 0,
       skipCacheRead,
       skipCacheWrite,
       customPrompt,
@@ -3129,9 +3791,13 @@ export async function translateResources(
   const plans: FieldPlan[] = [];
   // orderSig → (unique text → occurrence count across the chunk).
   const pools = new Map<string, Map<string, number>>();
-  const addUnit = (order: Engine[], text: string, isHandle = false) => {
+  const addUnit = (
+    order: Engine[],
+    text: string,
+    opts: PoolSigOpts = {},
+  ) => {
     if (!isTranslatableLeafText(text)) return;
-    const sig = poolSignature(order, isHandle);
+    const sig = poolSignature(order, opts);
     const occ = pools.get(sig) ?? pools.set(sig, new Map()).get(sig)!;
     occ.set(text, (occ.get(text) ?? 0) + 1);
   };
@@ -3155,6 +3821,7 @@ export async function translateResources(
     resourceId: string;
     f: TranslateItem;
     klass: "html" | "liquid_html" | "json" | "list" | "plain";
+    tier: "trivial" | "rich";
     order: Engine[];
     cacheModel: string;
   };
@@ -3169,7 +3836,13 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       const klass = classifyField(f.key, f.value, f.shopifyType);
@@ -3179,12 +3852,19 @@ export async function translateResources(
           fieldKey: f.key,
           original: f.value,
         });
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
-      const order = engineOrderFor(fieldTier(f.key, f.value, klass), aiModel);
+      const tier = fieldTier(f.key, f.value, klass);
+      const order = engineOrderFor(tier, aiModel);
       const cacheModel = engineModel(order[0], aiModel);
-      fieldWorks.push({ resourceId: res.resourceId, f, klass, order, cacheModel });
+      fieldWorks.push({ resourceId: res.resourceId, f, klass, tier, order, cacheModel });
     }
   }
 
@@ -3201,14 +3881,20 @@ export async function translateResources(
 
   // 1c. Process results: plain digest/value hit → credit; else plan + pool units.
   for (let wi = 0; wi < fieldWorks.length; wi++) {
-    const { resourceId, f, klass, order, cacheModel } = fieldWorks[wi];
+    const { resourceId, f, klass, tier, order, cacheModel } = fieldWorks[wi];
     const rm = resultMaps.get(resourceId)!;
     if (!f.value.trim()) {
       logSingleTranslatePath(logSingleTranslate, "skip", {
         reason: "empty_value",
         fieldKey: f.key,
       });
-      rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+      rm.set(f.key, {
+        key: f.key,
+        translatedValue: f.value,
+        digest: f.digest,
+        status: "translated",
+        cost: { provider: "skip" },
+      });
       continue;
     }
     const cached = cacheHits[wi];
@@ -3220,7 +3906,13 @@ export async function translateResources(
         translated: cached,
         cacheModel,
       });
-      rm.set(f.key, { key: f.key, translatedValue: cached, digest: f.digest, status: "translated" });
+      rm.set(f.key, {
+        key: f.key,
+        translatedValue: cached,
+        digest: f.digest,
+        status: "translated",
+        cost: { provider: "cache" },
+      });
       cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
       continue;
     }
@@ -3243,7 +3935,13 @@ export async function translateResources(
           translated: cachedByValue,
           cacheModel,
         });
-        rm.set(f.key, { key: f.key, translatedValue: cachedByValue, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: cachedByValue,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "cache" },
+        });
         tmWrites.push(tmSet(shopName, target, cacheModel, f.digest, cachedByValue));
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
@@ -3270,7 +3968,13 @@ export async function translateResources(
           target,
         });
       } else {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         cacheUnits += countFieldUnits(f.key, f.value, f.shopifyType);
         continue;
       }
@@ -3279,7 +3983,13 @@ export async function translateResources(
     if (klass === "html") {
       const { template, nodeParts } = htmlNodePartsOf(f.value);
       if (nodeParts.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
@@ -3289,7 +3999,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         template,
         nodeParts,
@@ -3297,7 +4007,13 @@ export async function translateResources(
     } else if (klass === "liquid_html") {
       const { plan: { template, nodeParts }, liquidTokens } = liquidHtmlNodePartsOf(f.value);
       if (nodeParts.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
@@ -3307,7 +4023,7 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         template,
         nodeParts,
@@ -3324,14 +4040,20 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order),
           cacheModel,
           parts,
         });
       } else {
         const slots = extractJsonTextSlots(root);
         if (slots.length === 0) {
-          rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+          rm.set(f.key, {
+            key: f.key,
+            translatedValue: f.value,
+            digest: f.digest,
+            status: "translated",
+            cost: { provider: "skip" },
+          });
           continue;
         }
         const slotPlans: JsonSlotPlan[] = [];
@@ -3355,7 +4077,7 @@ export async function translateResources(
           key: f.key,
           digest: f.digest,
           order,
-          poolSig: poolSignature(order, false),
+          poolSig: poolSignature(order),
           cacheModel,
           originalValue: f.value,
           root,
@@ -3379,7 +4101,13 @@ export async function translateResources(
         }
       }
       if (elements.length === 0) {
-        rm.set(f.key, { key: f.key, translatedValue: f.value, digest: f.digest, status: "translated" });
+        rm.set(f.key, {
+          key: f.key,
+          translatedValue: f.value,
+          digest: f.digest,
+          status: "translated",
+          cost: { provider: "skip" },
+        });
         continue;
       }
       plans.push({
@@ -3388,17 +4116,20 @@ export async function translateResources(
         key: f.key,
         digest: f.digest,
         order,
-        poolSig: poolSignature(order, false),
+        poolSig: poolSignature(order),
         cacheModel,
         originalValue: f.value,
         elements,
       });
     } else {
       const isHandle = isHandleFieldKey(f.key);
+      // Short plain (trivial) shares a dedicated pool so JSON-pack limits stay separate from rich.
+      const isShort = !isHandle && tier === "trivial";
       const sourceText = isHandle ? prepareHandleSourceText(f.value) : f.value;
       const parts = splitPlainText(sourceText);
-      const poolSig = poolSignature(order, isHandle);
-      parts.forEach((p) => addUnit(order, p, isHandle));
+      const poolOpts: PoolSigOpts = { isHandle, isShort };
+      const poolSig = poolSignature(order, poolOpts);
+      parts.forEach((p) => addUnit(order, p, poolOpts));
       plans.push({
         kind: "plain",
         resourceId,
@@ -3473,12 +4204,12 @@ export async function translateResources(
   const usage: EngineUsage = {};
   const translated = new Map<string, Map<string, RoutedResult>>();
   for (const [sig, occ] of pools) {
-    const { order, isHandle } = parsePoolSignature(sig);
+    const { order, isHandle, isShort } = parsePoolSignature(sig);
     const cacheModel = engineModel(order[0]!, aiModel);
     const allTexts = [...occ.keys()];
     const tmap = new Map<string, RoutedResult>();
 
-    // 2a. Value-TM prefilter for every unique leaf in this pool.
+    // 2a. Value-TM prefilter for every unique leaf in this pool (before JSON pack).
     if (!skipCacheRead) {
       const leafHits = await Promise.all(
         allTexts.map((text) => tmGetByValue(text, source, target, cacheModel)),
@@ -3495,7 +4226,13 @@ export async function translateResources(
           cacheModel,
           poolSig: sig,
         });
-        tmap.set(text, { value: hit, status: "translated", engine: null, tokens: 0 });
+        tmap.set(text, {
+          value: hit,
+          status: "translated",
+          engine: null,
+          tokens: 0,
+          cost: { provider: "cache" },
+        });
         leafCacheUnits += occ.get(text) ?? 1;
       }
       if (leafCacheUnits > 0 && onProgress) await onProgress(leafCacheUnits, 0);
@@ -3506,6 +4243,7 @@ export async function translateResources(
       }
     }
 
+    // Cache misses only: deduped unique texts → size-capped JSON packs.
     const texts = allTexts.filter((t) => !tmap.has(t));
     if (texts.length === 0) {
       translated.set(sig, tmap);
@@ -3513,7 +4251,7 @@ export async function translateResources(
     }
 
     const items: TranslateItem[] = texts.map((t, i) => ({ key: String(i), value: t, digest: "" }));
-    const { maxChars, maxItems } = resolveBatchLimits(order);
+    const { maxChars, maxItems } = resolveBatchLimits(order, { isShort });
     const batches = batchByChars(items, maxChars, maxItems);
     await Promise.all(batches.map(async (batch) => {
       if (await abortRequested()) return;
@@ -3525,6 +4263,7 @@ export async function translateResources(
         shopName,
         order,
         isHandle ? "handle" : "default",
+        profileBlock,
         customPrompt,
         logSingleTranslate,
       );
@@ -3562,6 +4301,7 @@ export async function translateResources(
     aiModel,
     shopName,
     abortRequested,
+    profileBlock,
     customPrompt,
     skipCacheWrite
       ? undefined
@@ -3592,6 +4332,7 @@ export async function translateResources(
             digest: f.digest,
             status: "fallback" as const,
           },
+          res.module,
         ),
       ),
     };

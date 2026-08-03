@@ -117,9 +117,10 @@ export const EMPTY_V4_METRICS: TranslationV4Metrics = {
 export type TranslationV4Job = {
   id: string;
   shopName: string;
-  shopifyAccessToken: string;
   source: string;
   target: string;
+  /** 手动任务创建时固化的店铺画像 prompt block；供 worker 翻译阶段直接消费。 */
+  profileBlock?: string | null;
   modules: TranslationV4Module[];
   aiModel: string;
   aiModelUsed: string | null;

@@ -2,7 +2,7 @@
 name: ciwi-app-release-regression
 description: >-
   Run release regression for the Ciwi.ai Shopify translation/localization app
-  (TypeScriptFrontend). Use when deploying to test/prod, preparing a release,
+  (ciwi-translate). Use when deploying to test/prod, preparing a release,
   or when the user asks for full-app QA, smoke test, or go-live checklist.
   Covers Admin embedded app, Java backend, translate v4, and storefront
   extension. Reads test-config.md; delegates Switcher E2E to
@@ -11,7 +11,7 @@ description: >-
 
 # Ciwi.ai Shopify App 上线回归
 
-**TypeScriptFrontend** 是 Ciwi.ai 的 Shopify **翻译与本地化 App**：在 Admin 内配置语言/货币/词汇表、批量翻译 Shopify 资源、手动管理译文，并通过 Theme Extension 在前台提供语言/货币切换与 IP 定位。
+**ciwi-translate** 是 Ciwi.ai 的 Shopify **翻译与本地化 App**：在 Admin 内配置语言/货币/词汇表、批量翻译 Shopify 资源、手动管理译文，并通过 Theme Extension 在前台提供语言/货币切换与 IP 定位。
 
 ## 核心功能（测什么 = 测这些是否仍可用）
 
