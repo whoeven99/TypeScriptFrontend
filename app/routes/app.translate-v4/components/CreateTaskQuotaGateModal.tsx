@@ -62,31 +62,29 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
   };
 
   const isTrial = mode === "trial";
+  const trialHighlightKeys = [
+    "v4.quotaGate.trialHighlight1",
+    "v4.quotaGate.trialHighlight2",
+    "v4.quotaGate.trialHighlight3",
+    "v4.quotaGate.trialHighlight4",
+  ] as const;
+  const trialUnlockKeys = [
+    "v4.quotaGate.trialUnlock1",
+    "v4.quotaGate.trialUnlock2",
+    "v4.quotaGate.trialUnlock3",
+  ] as const;
+  const pricingUnlockKeys = [
+    "v4.quotaGate.pricingUnlock1",
+    "v4.quotaGate.pricingUnlock2",
+    "v4.quotaGate.pricingUnlock3",
+  ] as const;
   const title = isTrial
-    ? t("No credits left. Start your 5 days free trial")
-    : t("Your credits are empty. Upgrade to keep translations moving");
-  const description = isTrial
-    ? null
-    : t("Your free trial has already been used. Subscribe to a paid plan to restore monthly credits and continue creating translation tasks.");
-  const nextStepLabel = t("Upgrade plan");
-  const nextStepDescription = t("Move to a paid plan to get fresh monthly credits for new tasks.");
-  const trialHighlights = [
-    t("Get 1,500,000 credits immediately, a $9.99 value"),
-    t("Launch this translation task right away"),
-    t("Translate products, pages, and more with trial credits"),
-    t("Cancel within 5 days for no charge"),
-  ];
-  const unlockItems = isTrial
-    ? [
-        t("Launch this translation task immediately"),
-        t("Translate products, pages, and more with your trial credits"),
-        t("Use glossary and advanced translation workflow features during the trial"),
-      ]
-    : [
-        t("Translation access for products, pages, and more"),
-        t("Glossary and advanced translation workflow support"),
-        t("Monthly plan credits so your team can keep shipping multilingual content"),
-      ];
+    ? t("v4.quotaGate.trialTitle")
+    : t("v4.quotaGate.pricingTitle");
+  const description = isTrial ? null : t("v4.quotaGate.pricingDescription");
+  const nextStepLabel = t("v4.quotaGate.upgradePlan");
+  const nextStepDescription = t("v4.quotaGate.upgradePlanDescription");
+  const unlockKeys = isTrial ? trialUnlockKeys : pricingUnlockKeys;
 
   return (
     <Modal
@@ -132,7 +130,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
               marginBottom: 12,
             }}
           >
-            {t("Translation credits")}
+            {t("v4.quotaGate.badge")}
           </Text>
           <Title level={3} style={{ margin: 0, lineHeight: 1.25, color: v4Colors.text }}>
             {title}
@@ -164,8 +162,8 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
               }}
             >
               <Space direction="vertical" size={8} style={{ width: "100%" }}>
-                {trialHighlights.map((item) => (
-                  <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                {trialHighlightKeys.map((key) => (
+                  <div key={key} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span
                       aria-hidden
                       style={{
@@ -177,7 +175,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                         flexShrink: 0,
                       }}
                     />
-                    <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</Text>
+                    <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{t(key)}</Text>
                   </div>
                 ))}
               </Space>
@@ -209,7 +207,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  {t("Next step")}
+                  {t("v4.quotaGate.nextStep")}
                 </Text>
                 <Text
                   strong
@@ -247,11 +245,11 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  {t("Included after upgrade")}
+                  {t("v4.quotaGate.includedAfterUpgrade")}
                 </Text>
                 <Space direction="vertical" size={8} style={{ width: "100%" }}>
-                  {unlockItems.map((item) => (
-                    <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  {unlockKeys.map((key) => (
+                    <div key={key} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                       <span
                         aria-hidden
                         style={{
@@ -263,7 +261,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                           flexShrink: 0,
                         }}
                       />
-                      <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{item}</Text>
+                      <Text style={{ color: v4Colors.text, lineHeight: "22px" }}>{t(key)}</Text>
                     </div>
                   ))}
                 </Space>
@@ -300,10 +298,10 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   }}
                 >
                   <Text strong style={{ color: "inherit" }}>
-                    {t("Free trial")}
+                    {t("v4.quotaGate.freeTrial")}
                   </Text>
                   <Text style={{ color: "inherit", opacity: 0.72, fontSize: 12 }}>
-                    {t("Charged after 5 days")}
+                    {t("v4.quotaGate.chargedAfter5Days")}
                   </Text>
                 </div>
               </Button>
@@ -315,7 +313,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                   borderColor: v4Colors.cardBorder,
                 }}
               >
-                {t("Maybe later")}
+                {t("v4.quotaGate.maybeLater")}
               </Button>
             )}
             {!isTrial ? (
@@ -325,7 +323,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                 loading={pendingAction === "subscribe" && planFetcher.state === "submitting"}
                 style={{ minWidth: 140 }}
               >
-                {t("View Plans")}
+                {t("v4.quotaGate.viewPlans")}
               </Button>
             ) : null}
           </div>
