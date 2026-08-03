@@ -3,7 +3,7 @@
  * worker 进程独立运行，不能 import app/ 代码，因此此处直接调用腾讯云 SDK。
  *
  * 三个业务场景（对齐 Spring TencentEmailService）：
- *   - sendManualTranslationSuccessEmail  手动翻译汇总（模板 210764，COMPLETED + PAUSED 同表）
+ *   - sendManualTranslationSuccessEmail  手动翻译汇总（模板 210764，COMPLETED + 全部 PAUSED 同表）
  *   - sendAutoTranslationSuccessEmail    自动翻译成功（模板 140352）
  *   - sendTranslationPartialEmail        自动翻译部分完成/额度暂停（模板 159297）
  */
@@ -205,7 +205,7 @@ function buildTranslationSuccessHtmlData(jobs: TranslationJobSummary[]): string 
 
 function formatManualRowStatus(job: TranslationJobSummary): string {
   if (job.terminalStatus === "PAUSED") {
-    const pct = (job.completionPercent ?? 0).toFixed(2);
+    const pct = job.completionPercent ?? 0;
     return `Partially Completed (${pct}%)`;
   }
   return "Completed";
@@ -228,7 +228,7 @@ function buildManualTranslationRows(jobs: TranslationJobSummary[]): string {
 
 /**
  * 手动翻译汇总邮件（模板 210764）。
- * 同店多语言合并为一封；COMPLETED 与有进度的 PAUSED 同表展示。
+ * 同店多语言合并为一封；COMPLETED 与全部 PAUSED 同表展示。
  * 模板变量 user + shop_name + translation_rows。
  */
 export async function sendManualTranslationSuccessEmail(

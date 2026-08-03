@@ -9,12 +9,12 @@
  *  3. 自动任务（taskSource = TsFrontend-Auto）：等同店内所有进行中自动任务结束后，
  *     查询该店全部待发 auto 任务并汇总发一封（对齐 Spring TranslateTask.sendEmail）。
  *     usedTokens=0 的语言仍出现在手动成功邮件表格中；自动成功邮件仍跳过 usedTokens=0。
- *     手动 PAUSED（有进度）与 COMPLETED 合并入 210764，Status 列区分 Completed / Partially Completed。
- *     进度 0% 的 PAUSED 不发信（如扫描后额度为 0），仍 mark emailSent。
+ *     手动 COMPLETED + 全部 PAUSED 合并入 210764；Status 列区分 Completed / Partially Completed。
+ *     PAUSED 进度百分比对齐任务列表（translateUnitTotal 口径）。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *
  * 任务类型对应模板（对齐 Spring TencentEmailService）：
- *   manual + COMPLETED/PAUSED（有进度）→ 210764 手动翻译汇总（同店多语言合并，Status 列区分 Completed / Partially Completed）
+ *   manual + COMPLETED/PAUSED → 210764 手动翻译汇总（同店多语言合并，Status 列区分 Completed / Partially Completed）
  *   auto   + COMPLETED → 140352 自动翻译成功（同店多语言合并）
  *   auto   + PAUSED → 159297 翻译部分完成（额度不足）
  */
@@ -35,6 +35,7 @@ import {
   releaseEmailSendLock,
   tryAcquireEmailSendLock,
 } from "../services/redisV4.js";
+import { computePausedJobProgressPercent } from "../services/metricsUtils.js";
 import { fetchShopContact } from "../services/shopEmail.js";
 import {
   sendManualTranslationSuccessEmail,
@@ -138,11 +139,17 @@ function calcElapsedMinutes(job: TranslationV4Job): number {
   return Math.max(1, Math.round(ms / 60_000));
 }
 
-/** 从任务 metrics 计算翻译完成百分比（PAUSED 时用）。 */
+/** 邮件 Status 列用的完成百分比；PAUSED 与任务列表 progressPercent 同一算法。 */
 function calcCompletionPercent(job: TranslationV4Job): number {
-  const { translateTotal, translateDone } = job.metrics;
-  if (!translateTotal || translateTotal <= 0) return 0;
-  return Math.min(100, (translateDone / translateTotal) * 100);
+  if (job.status === "PAUSED") {
+    return computePausedJobProgressPercent(job.metrics, job.errorStage);
+  }
+  const total = job.metrics.translateTotal || job.metrics.initTotal || 0;
+  if (total <= 0) return 0;
+  return Math.min(
+    100,
+    Math.round((job.metrics.translateDone / total) * 100),
+  );
 }
 
 function toJobSummary(job: TranslationV4Job): TranslationJobSummary {
@@ -264,15 +271,9 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
     const { email: to, userName } = recipient;
     const completedJobs = jobs.filter((j) => j.status === "COMPLETED");
     const pausedJobs = jobs.filter((j) => j.status === "PAUSED");
-    const pausedWithProgressJobs = pausedJobs.filter((j) =>
-      hasPartialEmailProgress(toJobSummary(j)),
-    );
-    const pausedZeroProgress = pausedJobs.filter(
-      (j) => !hasPartialEmailProgress(toJobSummary(j)),
-    );
     const jobsToEmail: TranslationJobSummary[] = [
       ...completedJobs.map(toJobSummary),
-      ...pausedWithProgressJobs.map(toJobSummary),
+      ...pausedJobs.map(toJobSummary),
     ];
 
     logDetail("handle-manual-split", {
@@ -280,25 +281,10 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
       to: maskEmail(to),
       completedCount: completedJobs.length,
       pausedCount: pausedJobs.length,
-      pausedWithProgressCount: pausedWithProgressJobs.length,
-      pausedZeroProgressCount: pausedZeroProgress.length,
       completedTargets: completedJobs.map((j) => j.target),
       pausedTargets: pausedJobs.map((j) => j.target),
       emailedTargets: jobsToEmail.map((j) => j.target),
     });
-
-    if (jobsToEmail.length === 0) {
-      if (pausedZeroProgress.length > 0) {
-        logDetail("handle-manual-skipped", {
-          reason: "all_zero_progress",
-          shop: shopName,
-          jobIds: pausedZeroProgress.map((j) => j.id),
-          targets: pausedZeroProgress.map((j) => j.target),
-        });
-        await markEmailSentBatch(pausedZeroProgress);
-      }
-      return;
-    }
 
     const sent = await sendManualTranslationSuccessEmail(
       shopName,
@@ -310,7 +296,7 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
       shop: shopName,
       to: maskEmail(to),
       sent,
-      jobIds: [...completedJobs, ...pausedWithProgressJobs].map((j) => j.id),
+      jobIds: jobs.map((j) => j.id),
       targets: jobsToEmail.map((j) => j.target),
     });
     if (sent) {
