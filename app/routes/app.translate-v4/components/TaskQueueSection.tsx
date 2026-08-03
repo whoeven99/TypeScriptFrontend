@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Empty, Popconfirm, Tabs } from "antd";
+import { Button, InlineStack, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import type { CSSProperties } from "react";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import { canPauseV4Job, isAutoV4TaskSource } from "~/server/translateV4/types";
-import Button from "~/ui/components/AppButton";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import { formatLocaleRoute } from "../localeDisplay";
 import { jobDisplayPercent } from "../jobStageUtils";
@@ -41,6 +40,7 @@ export function CompactJobCard({
 }: Props) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<null | "pause" | "resume" | "cancel" | "delete">(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const displayStatusLabel = getV4JobStatusLabel(job, t, translateSlotBusy);
   const notice = getV4JobNotice(job.errorMessage, t);
@@ -77,6 +77,12 @@ export function CompactJobCard({
       setPending(null);
     }
   }, [pending, canResume, canPause, canCancel, isCancelledLike]);
+
+  useEffect(() => {
+    if (!canDelete) {
+      setDeleteConfirmOpen(false);
+    }
+  }, [canDelete]);
 
   const runAction = (action: "pause" | "resume" | "cancel" | "delete") => {
     setPending(action);
@@ -131,14 +137,15 @@ export function CompactJobCard({
           {!expanded ? <JobCollapsedMeta job={job} /> : null}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0, marginTop: -2 }}>
-          <Button
-            type="text"
-            size="small"
-            onClick={onToggleExpand}
-            style={detailToggleButtonStyle(expanded)}
-          >
-            {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
-          </Button>
+          <div style={detailToggleButtonWrapStyle}>
+            <Button
+              variant={expanded ? "secondary" : "plain"}
+              size="slim"
+              onClick={onToggleExpand}
+            >
+              {expanded ? t("v4.tasks.collapse") : t("v4.tasks.view")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -180,19 +187,48 @@ export function CompactJobCard({
                 ) : null}
               </div>
               {canDelete ? (
-                <Popconfirm
-                  title={t("v4.tasks.deleteConfirmTitle")}
-                  description={t("v4.tasks.deleteConfirmDesc")}
-                  okText={t("Delete")}
-                  okButtonProps={{ danger: true, loading: pending === "delete" }}
-                  cancelText={t("Cancel")}
-                  onConfirm={() => runAction("delete")}
-                >
-                  <Button type="default" size="small" danger style={deleteButtonStyle}>
+                <div style={deleteActionWrapStyle}>
+                  <Button
+                    tone="critical"
+                    variant="secondary"
+                    size="slim"
+                    onClick={() => setDeleteConfirmOpen((value) => !value)}
+                  >
                     {t("v4.tasks.deleteRecord")}
                   </Button>
-                </Popconfirm>
+                </div>
               ) : null}
+            </div>
+          ) : null}
+
+          {deleteConfirmOpen ? (
+            <div style={deleteConfirmBarStyle}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={deleteConfirmTitleStyle}>
+                  {t("v4.tasks.deleteConfirmTitle")}
+                </div>
+                <div style={deleteConfirmDescStyle}>
+                  {t("v4.tasks.deleteConfirmDesc")}
+                </div>
+              </div>
+              <InlineStack gap="200" align="end">
+                <Button
+                  variant="secondary"
+                  size="slim"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  tone="critical"
+                  variant="primary"
+                  size="slim"
+                  loading={pending === "delete"}
+                  onClick={() => runAction("delete")}
+                >
+                  {t("Delete")}
+                </Button>
+              </InlineStack>
             </div>
           ) : null}
 
@@ -293,18 +329,11 @@ function JobNoticeBar({
         </span>
       </div>
       {actionLabel && onAction ? (
-        <Button
-          size="small"
-          type="primary"
-          onClick={onAction}
-          style={{
-            flexShrink: 0,
-            borderRadius: 8,
-            boxShadow: "none",
-          }}
-        >
-          {actionLabel}
-        </Button>
+        <div style={{ flexShrink: 0 }}>
+          <Button variant="primary" size="slim" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -321,69 +350,20 @@ function ActionChip({
   loading?: boolean;
   kind: "primary" | "ghost" | "danger";
 }) {
-  const typeMap: Record<"primary" | "ghost" | "danger", "primary" | "default" | "default"> = {
-    primary: "primary",
-    ghost: "default",
-    danger: "default",
-  };
   return (
-    <Button
-      type={typeMap[kind]}
-      danger={kind === "danger"}
-      size="small"
-      loading={loading}
-      onClick={onClick}
-      style={{
-        fontWeight: 600,
-        borderRadius: 8,
-        whiteSpace: "normal",
-        textAlign: "center",
-        height: "auto",
-        lineHeight: 1.35,
-        padding: kind === "danger" ? "4px 6px" : "4px 10px",
-        ...(kind === "primary"
-          ? {
-              boxShadow: "none",
-            }
-          : kind === "ghost"
-            ? {
-                background: v4Colors.cardBg,
-                borderColor: v4Colors.cardBorder,
-                color: v4Colors.text,
-              }
-            : {
-                background: "var(--app-color-surface-critical)",
-                borderColor: "rgba(208, 77, 95, 0.2)",
-              }),
-      }}
-    >
-      {label}
-    </Button>
+    <div style={actionChipWrapStyle}>
+      <Button
+        variant={kind === "primary" ? "primary" : "secondary"}
+        tone={kind === "danger" ? "critical" : undefined}
+        size="slim"
+        loading={loading}
+        onClick={onClick}
+      >
+        {label}
+      </Button>
+    </div>
   );
 }
-
-function detailToggleButtonStyle(expanded: boolean): CSSProperties {
-  return {
-    color: expanded ? v4Colors.primary : v4Colors.textMuted,
-    fontWeight: 600,
-    borderRadius: 8,
-    background: expanded ? v4Colors.primarySoft : "transparent",
-    border: `1px solid ${expanded ? "#bfdbff" : "transparent"}`,
-    whiteSpace: "normal",
-    textAlign: "center",
-    height: "auto",
-    lineHeight: 1.35,
-    padding: "4px 8px",
-  };
-}
-
-const deleteButtonStyle: CSSProperties = {
-  padding: "4px 10px",
-  fontWeight: 600,
-  borderRadius: 8,
-  background: "var(--app-color-surface-critical)",
-  borderColor: "rgba(208, 77, 95, 0.2)",
-};
 
 export function TaskQueueSection({
   jobs,
@@ -503,47 +483,39 @@ export function TaskQueueSection({
       ) : null}
 
       <div style={{ marginBottom: 12 }}>
-        <Tabs
-          activeKey={tab}
-          onChange={(value) => setTab(value as "current" | "history")}
-          size="small"
-          items={[
-            {
-              key: "current",
-              label: (
-                <span style={tabLabelStyle(tab === "current")}>
-                  {t("v4.tasks.currentTab", { count: currentJobs.length })}
-                </span>
-              ),
-            },
-            {
-              key: "history",
-              label: (
-                <span style={tabLabelStyle(tab === "history")}>
-                  {t("v4.tasks.historyTab", { count: historyJobs.length })}
-                </span>
-              ),
-            },
-          ]}
-          style={{ marginBottom: 0 }}
-        />
+        <div style={tabsWrapStyle}>
+          <button
+            type="button"
+            onClick={() => setTab("current")}
+            style={tabButtonStyle(tab === "current")}
+          >
+            {t("v4.tasks.currentTab", { count: currentJobs.length })}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("history")}
+            style={tabButtonStyle(tab === "history")}
+          >
+            {t("v4.tasks.historyTab", { count: historyJobs.length })}
+          </button>
+        </div>
       </div>
 
       {displayJobs.length === 0 ? (
         <div style={{ borderRadius: 8, background: v4Colors.cardSubdued, padding: "32px 16px" }}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
-                  {emptyTitle}
-                </span>
-                <span style={{ fontSize: 13, color: v4Colors.textMuted }}>
-                  {emptyDescription}
-                </span>
-              </div>
-            }
-          />
+          <div style={emptyStateStyle}>
+            <div style={emptyStateIconStyle} aria-hidden>
+              <span style={emptyStateLineStyle} />
+              <span style={emptyStateLineStyle} />
+              <span style={{ ...emptyStateLineStyle, width: 20 }} />
+            </div>
+            <Text as="p" variant="bodyMd" fontWeight="semibold">
+              {emptyTitle}
+            </Text>
+            <Text as="p" variant="bodyMd" tone="subdued">
+              {emptyDescription}
+            </Text>
+          </div>
         </div>
       ) : (
         <>
@@ -564,18 +536,19 @@ export function TaskQueueSection({
             />
           ))}
           {tab === "history" && historyJobs.length > 6 ? (
-            <Button
-              type="text"
-              size="small"
-              onClick={() => setHistoryExpanded((v) => !v)}
-              style={historyToggleStyle}
-            >
-              {historyExpanded
-                ? t("v4.tasks.collapseHistory")
-                : t("v4.tasks.showMoreHistory", {
-                    count: historyJobs.length - displayJobs.length,
-                  })}
-            </Button>
+            <div style={historyToggleWrapStyle}>
+              <Button
+                variant="plain"
+                size="slim"
+                onClick={() => setHistoryExpanded((v) => !v)}
+              >
+                {historyExpanded
+                  ? t("v4.tasks.collapseHistory")
+                  : t("v4.tasks.showMoreHistory", {
+                      count: historyJobs.length - displayJobs.length,
+                    })}
+              </Button>
+            </div>
           ) : null}
         </>
       )}
@@ -583,22 +556,17 @@ export function TaskQueueSection({
   );
 }
 
-const historyToggleStyle: CSSProperties = {
-  padding: "4px 8px",
-  fontWeight: 600,
-  marginTop: 4,
-  whiteSpace: "normal",
-  textAlign: "left",
-  height: "auto",
-  lineHeight: 1.35,
-  borderRadius: 8,
-  color: v4Colors.textMuted,
-};
-
-function tabLabelStyle(active: boolean): CSSProperties {
+function tabButtonStyle(active: boolean): CSSProperties {
   return {
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     maxWidth: "100%",
+    minHeight: 32,
+    padding: "6px 12px",
+    borderRadius: 999,
+    border: "none",
+    background: active ? v4Colors.primarySoft : "transparent",
     color: active ? v4Colors.primary : v4Colors.textMuted,
     fontSize: 13,
     fontWeight: active ? 600 : 500,
@@ -607,5 +575,93 @@ function tabLabelStyle(active: boolean): CSSProperties {
     whiteSpace: "normal",
     overflowWrap: "anywhere",
     transition: "color 0.2s ease",
+    cursor: "pointer",
+    fontFamily: "inherit",
   };
 }
+
+const detailToggleButtonWrapStyle: CSSProperties = {
+  borderRadius: 8,
+  overflow: "hidden",
+};
+
+const actionChipWrapStyle: CSSProperties = {
+  borderRadius: 8,
+  overflow: "hidden",
+};
+
+const deleteActionWrapStyle: CSSProperties = {
+  borderRadius: 8,
+  overflow: "hidden",
+};
+
+const deleteConfirmBarStyle: CSSProperties = {
+  marginTop: 12,
+  padding: "12px 14px",
+  borderRadius: 10,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  background: v4Colors.cardBg,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 12,
+  flexWrap: "wrap",
+};
+
+const deleteConfirmTitleStyle: CSSProperties = {
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: "20px",
+  color: v4Colors.text,
+  marginBottom: 4,
+};
+
+const deleteConfirmDescStyle: CSSProperties = {
+  fontSize: 12,
+  lineHeight: "18px",
+  color: v4Colors.textMuted,
+};
+
+const tabsWrapStyle: CSSProperties = {
+  display: "inline-flex",
+  flexWrap: "wrap",
+  gap: 8,
+  padding: 4,
+  borderRadius: 999,
+  background: v4Colors.cardSubdued,
+};
+
+const emptyStateStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 6,
+  textAlign: "center",
+};
+
+const emptyStateIconStyle: CSSProperties = {
+  width: 40,
+  height: 40,
+  borderRadius: 12,
+  background: v4Colors.cardBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: 4,
+  marginBottom: 2,
+};
+
+const emptyStateLineStyle: CSSProperties = {
+  width: 16,
+  height: 2,
+  borderRadius: 999,
+  background: v4Colors.textFaint,
+};
+
+const historyToggleWrapStyle: CSSProperties = {
+  marginTop: 4,
+  borderRadius: 8,
+  overflow: "hidden",
+};

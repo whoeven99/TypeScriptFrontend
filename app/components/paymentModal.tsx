@@ -1,9 +1,9 @@
 import {
-  Divider,
-  Modal,
-  Space,
-  Typography,
-} from "antd";
+  Button as PolarisButton,
+  InlineStack,
+  Link as PolarisLink,
+  Text as PolarisText,
+} from "@shopify/polaris";
 import { useEffect, useMemo, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import { useFetcher } from "@remix-run/react";
@@ -13,27 +13,15 @@ import { useSelector } from "react-redux";
 import useReport from "../../scripts/eventReport";
 import "./styles.css";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
-import Button from "~/ui/components/AppButton";
-
-const { Title, Text, Link } = Typography;
+import { V4ModalShell } from "~/components/V4ModalShell";
+import { LegacyPaymentModal } from "./LegacyPaymentModal";
+import type { OptionType } from "./paymentModal.shared";
 
 interface PaymentModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   variant?: "default" | "v4";
 }
-
-export interface OptionType {
-  key: string;
-  name: string;
-  Credits: number;
-  price: {
-    currentPrice: number;
-    comparedPrice: number;
-    currencyCode: string;
-  };
-}
-
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, variant = "default" }) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
@@ -233,25 +221,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
 
   if (isV4) {
     return (
-      <Modal
-        open={visible}
-        onCancel={onCancel}
-        width={960}
-        footer={null}
-        styles={{
-          content: {
-            padding: 0,
-            overflow: "hidden",
-            borderRadius: 20,
-            border: `1px solid ${v4Colors.cardBorder}`,
-            background: v4Colors.cardBg,
-            boxShadow: "var(--app-shadow-card-strong)",
-          },
-          body: {
-            padding: 0,
-          },
-        }}
-      >
+      <V4ModalShell open={visible} onClose={onCancel} width={960}>
         <div style={{ padding: "24px 24px 20px" }}>
           <div
             style={{
@@ -261,21 +231,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
             }}
           >
             <div style={{ minWidth: 0, flex: 1 }}>
-                <Title level={3} style={{ margin: 0, lineHeight: 1.25, color: v4Colors.text }}>
-                  {t("Buy credits")}
-                </Title>
-                <Text
-                  style={{
-                    display: "block",
-                    marginTop: 10,
-                    color: v4Colors.textMuted,
-                    fontSize: 14,
-                    lineHeight: "22px",
-                    maxWidth: 480,
-                  }}
-                >
+              <PolarisText as="h2" variant="headingLg" fontWeight="bold">
+                {t("Buy credits")}
+              </PolarisText>
+              <div
+                style={{
+                  marginTop: 10,
+                  maxWidth: 480,
+                }}
+              >
+                <PolarisText as="p" variant="bodyMd" tone="subdued">
                   {t("Choose a pack for this task.")}
-                </Text>
+                </PolarisText>
+              </div>
             </div>
           </div>
 
@@ -307,26 +275,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
               flexWrap: "wrap",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                color: v4Colors.textMuted,
-              }}
-            >
-              <Text style={{ color: "inherit" }}>{t("Need help?")}</Text>
-              <Link
+            <InlineStack gap="100" align="center">
+              <PolarisText as="span" variant="bodyMd" tone="subdued">
+                {t("Need help?")}
+              </PolarisText>
+              <PolarisLink
                 onClick={handleContactSupport}
-                style={{
-                  color: v4Colors.primary,
-                  fontWeight: 600,
-                  lineHeight: "22px",
-                }}
               >
                 {t("Contact us")}
-              </Link>
-            </div>
+              </PolarisLink>
+            </InlineStack>
             <div
               style={{
                 display: "flex",
@@ -335,178 +293,43 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
                 flexWrap: "wrap",
               }}
             >
-              <Button
-                size="large"
-                onClick={onCancel}
-                style={{
-                  minWidth: 124,
-                  borderColor: v4Colors.cardBorder,
-                  paddingInline: 18,
-                }}
-              >
-                {t("Maybe later")}
-              </Button>
-              <Button
-                size="large"
-                type="primary"
-                onClick={onClick}
-                disabled={buyButtonLoading || !selectedKey}
-                loading={buyButtonLoading}
-                style={{
-                  minWidth: 180,
-                  paddingInline: 20,
-                }}
-              >
-                {t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}
-              </Button>
+              <div style={{ minWidth: 124 }}>
+                <PolarisButton fullWidth size="large" variant="secondary" onClick={onCancel}>
+                  {t("Maybe later")}
+                </PolarisButton>
+              </div>
+              <div style={{ minWidth: 180 }}>
+                <PolarisButton
+                  fullWidth
+                  size="large"
+                  variant="primary"
+                  onClick={onClick}
+                  disabled={buyButtonLoading || !selectedKey}
+                  loading={buyButtonLoading}
+                >
+                  {t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}
+                </PolarisButton>
+              </div>
             </div>
           </div>
         </div>
-      </Modal>
+      </V4ModalShell>
     );
   }
 
   return (
-    <Modal
-      open={visible}
+    <LegacyPaymentModal
+      visible={visible}
       onCancel={onCancel}
-      width={1000}
-      footer={[
-        <div
-          key="footer-container"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-          }}
-        >
-          <div key="support-section">
-            <Text strong key="cost-question">
-              {t("Cost questions: ")}
-            </Text>
-            <Button
-              key="contact-support"
-              type="link"
-              onClick={handleContactSupport}
-              style={{ marginLeft: "-15px" }}
-            >
-              {t("Contact support")}
-            </Button>
-          </div>
-          <Button
-            key="buy-now"
-            type="primary"
-            onClick={onClick}
-            disabled={buyButtonLoading || !selectedKey}
-            loading={buyButtonLoading}
-            style={{
-              height: "auto",
-              paddingTop: "4px",
-              paddingBottom: "4px",
-            }}
-          >
-            <div
-              key="button-content"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <Text key="price" strong style={{ color: "inherit" }}>
-                ${selectedOption?.price.currentPrice ?? 0}
-              </Text>
-              <Text key="buy-text" style={{ color: "inherit" }}>
-                {t("Buy now")}
-              </Text>
-            </div>
-          </Button>
-        </div>,
-      ]}
-    >
-      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>
-        {t("Not enough translation credits. Purchase more to continue")}
-      </Title>
-      {/* <Card>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <Title level={5}>{t("Translation tasks")}</Title>
-          <Title level={5} style={{ marginTop: "0px" }}>{t("Credits to be consumed")}</Title>
-        </div>
-        <Divider style={{ margin: "10px 0" }} />
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <Text strong>{t("Estimated number of words to translate: ")}</Text>
-            {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{credits.toLocaleString()} {t("words")}</Text> : <Text strong>{t("Calculation failed")}</Text>}
-          </div>
-          {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{credits.toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <Text strong>{t("Translate files: ")}</Text>
-            <Text strong>{source.toUpperCase()} {t("translate to")} {target.toUpperCase()}</Text>
-          </div>
-          <Text strong>*{multiple1}</Text>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <Text strong>{t("Translate modal: ")}</Text>
-            <Text strong>{model.label}</Text>
-          </div>
-          <Text strong>*{multiple2}</Text>
-        </div>
-        <Divider style={{ margin: "10px 0" }} />
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <Text strong>{t("Total: ")}</Text>
-          </div>
-          <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
-        </div>
-      </Card> */}
-
-      <Divider />
-      <Title level={5}>{t("Buy credits")}</Title>
-      <div className="options_wrapper">
-        <Space direction="vertical">
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap", // 允许自动换行
-              gap: "16px",
-              width: "100%",
-            }}
-          >
-            {options.map((option: any) => (
-              <div
-                key={option.name}
-                style={{
-                  flex: "0 1 auto", // 允许缩小但不放大
-                  // minWidth: '200px',  // 设置最小宽度
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <PaymentOptionSelect
-                  option={option}
-                  selectedOption={selectedOption}
-                  onChange={(e) => setSelectedKey(e.key)}
-                />
-              </div>
-            ))}
-          </div>
-        </Space>
-      </div>
-      <Divider />
-      <div className="total_payment">
-        <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
-        <Text strong>
-          $
-          {selectedOption?.price.currentPrice
-            ? selectedOption?.price.currentPrice
-            : 0}
-        </Text>
-      </div>
-    </Modal>
+      options={options}
+      selectedKey={selectedKey}
+      selectedOption={selectedOption}
+      buyButtonLoading={buyButtonLoading}
+      onSelectOption={(option) => setSelectedKey(option.key)}
+      onBuy={onClick}
+    />
   );
 };
 
 export default PaymentModal;
+export type { OptionType } from "./paymentModal.shared";

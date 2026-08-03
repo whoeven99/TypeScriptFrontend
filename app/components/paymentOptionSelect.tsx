@@ -1,10 +1,7 @@
 import React from "react";
-import type { OptionType } from "./paymentModal";
-import { Typography } from "antd";
+import type { OptionType } from "./paymentModal.shared";
 import { useTranslation } from "react-i18next";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
-
-const { Text } = Typography;
 
 interface PaymentOptionSelectProps {
   option: OptionType;
@@ -69,7 +66,7 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
             >
               {selected ? "✓" : ""}
             </div>
-            <Text
+            <div
               style={{
                 display: "block",
                 fontSize: 12,
@@ -81,26 +78,26 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
               }}
             >
               {t("Credits")}
-            </Text>
-            <Text
-              strong
+            </div>
+            <div
               style={{
                 display: "block",
                 fontSize: 22,
                 lineHeight: 1.1,
                 color: v4Colors.text,
+                fontWeight: 700,
                 letterSpacing: "-0.03em",
                 marginBottom: 8,
               }}
             >
               {option.name}
-            </Text>
-            <Text style={{ display: "block", color: v4Colors.textMuted, marginBottom: 16 }}>
+            </div>
+            <div style={{ display: "block", color: v4Colors.textMuted, marginBottom: 16 }}>
               {Number(option.Credits).toLocaleString()} {t("credits")}
-            </Text>
-            <Text strong style={{ display: "block", fontSize: 20, lineHeight: 1, color: v4Colors.text }}>
+            </div>
+            <div style={{ display: "block", fontSize: 20, lineHeight: 1, color: v4Colors.text, fontWeight: 700 }}>
               ${option.price.currentPrice}
-            </Text>
+            </div>
           </>
         ) : (
           <>
@@ -112,12 +109,12 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
               readOnly
             />
             <div style={{ whiteSpace: "nowrap" }}>
-              <Text>{Number(option.Credits).toLocaleString()} </Text>
-              <Text>{t("Credits")}</Text>
+              <span>{Number(option.Credits).toLocaleString()} </span>
+              <span>{t("Credits")}</span>
             </div>
-            <Text strong>
+            <strong>
               ${option.price.currentPrice}
-            </Text>
+            </strong>
           </>
         )}
       </div>

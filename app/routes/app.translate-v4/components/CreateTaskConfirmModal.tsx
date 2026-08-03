@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
+import { Button } from "@shopify/polaris";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { v4Colors } from "../v4Styles";
@@ -11,7 +12,6 @@ import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
-import Button from "~/ui/components/AppButton";
 
 type CreateTaskConfirmScenario =
   | "ready"
@@ -344,24 +344,29 @@ export function CreateTaskConfirmModal({
         </div>
 
         <div style={footerStyle}>
-          <Button
-            size="large"
-            type="primary"
-            onClick={handlePrimaryAction}
-            loading={creating || planFetcher.state === "submitting"}
-            style={primaryButtonStyle}
-          >
-            {primaryActionLabel}
-          </Button>
-          {secondaryActionLabel ? (
+          <div style={primaryButtonStyle}>
             <Button
+              fullWidth
               size="large"
-              onClick={handleSecondaryAction}
-              disabled={creating}
-              style={secondaryButtonStyle}
+              variant="primary"
+              onClick={handlePrimaryAction}
+              loading={creating || planFetcher.state === "submitting"}
             >
-              {secondaryActionLabel}
+              {primaryActionLabel}
             </Button>
+          </div>
+          {secondaryActionLabel ? (
+            <div style={secondaryButtonStyle}>
+              <Button
+                fullWidth
+                size="large"
+                variant="secondary"
+                onClick={handleSecondaryAction}
+                disabled={creating}
+              >
+                {secondaryActionLabel}
+              </Button>
+            </div>
           ) : null}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { BlockStack, Checkbox, Select } from "@shopify/polaris";
+import { BlockStack, Button, Checkbox, Select } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -11,7 +11,6 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
-import Button from "~/ui/components/AppButton";
 import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 
 export type { CreateTaskEstimateView };
@@ -125,26 +124,23 @@ export function CreateTaskCard({
   };
 
   const submitButton = (
-    <Button
-      type="primary"
-      className="v4-create-task-card__submit"
-      disabled={!canCreate}
-      loading={creating}
-      onClick={onCreate}
+    <div
       style={{
         maxWidth: "100%",
         minWidth: submitPlacement === "footer-center" ? 220 : undefined,
-        height: "auto",
-        minHeight: 36,
-        whiteSpace: "normal",
-        textAlign: "center",
-        lineHeight: 1.35,
-        paddingBlock: 8,
-        paddingInline: 24,
       }}
     >
-      {creating ? t("v4.createTask.creating") : "Translate Now"}
-    </Button>
+      <Button
+        fullWidth={submitPlacement === "footer-center"}
+        size="large"
+        variant="primary"
+        disabled={!canCreate}
+        loading={creating}
+        onClick={onCreate}
+      >
+        {creating ? t("v4.createTask.creating") : "Translate Now"}
+      </Button>
+    </div>
   );
 
   return (
