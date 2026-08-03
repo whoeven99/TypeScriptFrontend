@@ -165,6 +165,20 @@ export function CreateTaskConfirmModal({
   const shortfallCreditsLabel =
     shortfallCredits > 0 ? formatCreditsFull(shortfallCredits) : "0";
   const coverageLabel = `${coveragePercent}%`;
+  const estimateSummaryItems = [
+    {
+      label: t("v4.createTask.confirmCreditsRequired"),
+      value: estimate?.loading
+        ? t("v4.createTask.estimateLoading")
+        : estimatedCreditsLabel,
+    },
+    {
+      label: t("v4.createTask.confirmCreditsAvailable"),
+      value: estimate?.loading
+        ? t("v4.createTask.estimateLoading")
+        : remainingCreditsLabel,
+    },
+  ];
 
   const scenarioMeta = getScenarioMeta(t, scenario);
   const isReady = scenario === "ready";
@@ -270,37 +284,18 @@ export function CreateTaskConfirmModal({
         </div>
 
         <div style={bodyStyle}>
-          <InfoCard title={t("v4.createTask.confirmEstimatePanelTitle")} highlighted>
-            <div style={summaryMetricsGridStyle}>
-              <MetricCard
-                label={
-                  isReady
-                    ? t("v4.createTask.confirmCoverageLabel")
-                    : t("v4.createTask.confirmCreditsShortfall")
-                }
-                value={isReady ? coverageLabel : shortfallCreditsLabel}
-                emphasized
-                accentColor={scenarioMeta.accent}
-                accentBackground={scenarioMeta.metricBg}
-              />
-              <MetricCard
-                label={t("v4.createTask.confirmCreditsRequired")}
-                value={
-                  estimate?.loading
-                    ? t("v4.createTask.estimateLoading")
-                    : estimatedCreditsLabel
-                }
-              />
-              <MetricCard
-                label={t("v4.createTask.confirmCreditsAvailable")}
-                value={
-                  estimate?.loading
-                    ? t("v4.createTask.estimateLoading")
-                    : remainingCreditsLabel
-                }
-              />
+          <section style={estimateSectionStyle}>
+            <div style={estimateSectionTitleStyle}>
+              {t("v4.createTask.confirmEstimatePanelTitle")}
             </div>
-
+            <div style={summaryStatsRowStyle}>
+              {estimateSummaryItems.map((item) => (
+                <div key={item.label} style={summaryStatStyle}>
+                  <div style={summaryStatLabelStyle}>{item.label}</div>
+                  <div style={summaryStatValueStyle}>{item.value}</div>
+                </div>
+              ))}
+            </div>
             <div style={progressSectionStyle}>
               <div style={progressHeaderStyle}>
                 <span style={progressLabelStyle}>
@@ -325,7 +320,7 @@ export function CreateTaskConfirmModal({
                 />
               </div>
             </div>
-          </InfoCard>
+          </section>
 
           <InfoCard title={t("v4.createTask.confirmTaskDetailTitle")}>
             <div style={detailListStyle}>
@@ -350,7 +345,6 @@ export function CreateTaskConfirmModal({
 
         <div style={footerStyle}>
           <Button
-            block
             size="large"
             type="primary"
             onClick={handlePrimaryAction}
@@ -361,7 +355,6 @@ export function CreateTaskConfirmModal({
           </Button>
           {secondaryActionLabel ? (
             <Button
-              block
               size="large"
               onClick={handleSecondaryAction}
               disabled={creating}
@@ -408,44 +401,6 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  emphasized = false,
-  accentColor,
-  accentBackground,
-}: {
-  label: string;
-  value: string;
-  emphasized?: boolean;
-  accentColor?: string;
-  accentBackground?: string;
-}) {
-  return (
-    <div
-      style={{
-        ...metricCardStyle,
-        background: emphasized ? accentBackground : v4Colors.cardBg,
-        borderColor: emphasized
-          ? accentBackground || "rgba(15, 23, 42, 0.08)"
-          : v4Colors.cardBorder,
-      }}
-    >
-      <div style={metricCardLabelStyle}>{label}</div>
-      <div
-        style={{
-          ...metricCardValueStyle,
-          color: emphasized && accentColor ? accentColor : v4Colors.text,
-          fontSize: emphasized ? 34 : 28,
-          lineHeight: emphasized ? "38px" : "32px",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
 function getScenarioMeta(
   t: TranslateFn,
   scenario: CreateTaskConfirmScenario,
@@ -455,7 +410,6 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmReadyTitle"),
       accent: "#0a934c",
       headlineBg: "rgba(10, 147, 76, 0.1)",
-      metricBg: "rgba(10, 147, 76, 0.08)",
       progressBar: "linear-gradient(90deg, #0a934c 0%, #2180ff 100%)",
     };
   }
@@ -465,7 +419,6 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmPartialTitle"),
       accent: "#df5a00",
       headlineBg: "rgba(223, 90, 0, 0.1)",
-      metricBg: "rgba(223, 90, 0, 0.08)",
       progressBar: "linear-gradient(90deg, #ffb84d 0%, #df5a00 100%)",
     };
   }
@@ -475,7 +428,6 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmTrialTitle"),
       accent: "#2180ff",
       headlineBg: "rgba(33, 128, 255, 0.1)",
-      metricBg: "rgba(33, 128, 255, 0.08)",
       progressBar: "linear-gradient(90deg, #8dc5ff 0%, #2180ff 100%)",
     };
   }
@@ -484,7 +436,6 @@ function getScenarioMeta(
     title: t("v4.createTask.confirmPricingTitle"),
     accent: "#7a3cff",
     headlineBg: "rgba(122, 60, 255, 0.1)",
-    metricBg: "rgba(122, 60, 255, 0.08)",
     progressBar: "linear-gradient(90deg, #c6a4ff 0%, #7a3cff 100%)",
   };
 }
@@ -592,11 +543,11 @@ const bodyStyle = {
 
 const footerStyle = {
   display: "flex",
-  flexDirection: "column",
-  alignItems: "stretch",
+  justifyContent: "flex-end",
   gap: 12,
   padding: "22px 28px 28px",
   background: v4Colors.cardBg,
+  flexWrap: "wrap",
 } as const;
 
 const titleStyle = {
@@ -677,25 +628,31 @@ const detailValueStyle = {
   wordBreak: "break-word",
 } as const;
 
-const summaryMetricsGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: 14,
-  alignItems: "stretch",
+const estimateSectionStyle = {
+  padding: "2px 0 4px",
 } as const;
 
-const metricCardStyle = {
-  minHeight: 104,
-  padding: "16px",
-  borderRadius: 16,
-  border: `1px solid ${v4Colors.cardBorder}`,
+const estimateSectionTitleStyle = {
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: "20px",
+  color: v4Colors.text,
+  marginBottom: 14,
+} as const;
+
+const summaryStatsRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 20,
+} as const;
+
+const summaryStatStyle = {
   display: "flex",
   flexDirection: "column",
-  justifyContent: "space-between",
-  gap: 8,
+  gap: 6,
 } as const;
 
-const metricCardLabelStyle = {
+const summaryStatLabelStyle = {
   color: v4Colors.textMuted,
   fontSize: 12,
   fontWeight: 700,
@@ -704,11 +661,11 @@ const metricCardLabelStyle = {
   letterSpacing: "0.04em",
 } as const;
 
-const metricCardValueStyle = {
+const summaryStatValueStyle = {
   color: v4Colors.text,
-  fontSize: 28,
+  fontSize: 30,
   fontWeight: 700,
-  lineHeight: "32px",
+  lineHeight: "34px",
   wordBreak: "break-word",
 } as const;
 
@@ -716,7 +673,7 @@ const progressSectionStyle = {
   display: "flex",
   flexDirection: "column",
   gap: 10,
-  marginTop: 16,
+  marginTop: 18,
 } as const;
 
 const progressHeaderStyle = {
@@ -776,18 +733,14 @@ const offerFeatureItemStyle = {
 } as const;
 
 const primaryButtonStyle = {
-  width: "100%",
-  height: "auto",
-  minHeight: 52,
-  paddingInline: 28,
-  paddingBlock: 10,
+  minWidth: 184,
+  minHeight: 48,
+  paddingInline: 18,
 } as const;
 
 const secondaryButtonStyle = {
-  width: "100%",
-  height: "auto",
-  minHeight: 52,
-  paddingInline: 24,
-  paddingBlock: 10,
+  minWidth: 184,
+  minHeight: 48,
+  paddingInline: 18,
   borderColor: v4Colors.cardBorder,
 } as const;

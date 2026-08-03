@@ -46,13 +46,6 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
             : undefined
         }
       >
-        <input
-          type="radio"
-          name="customRadio"
-          value={option.price.currentPrice}
-          checked={selected}
-          readOnly
-        />
         {isV4 ? (
           <>
             <div
@@ -111,6 +104,13 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           </>
         ) : (
           <>
+            <input
+              type="radio"
+              name="customRadio"
+              value={option.price.currentPrice}
+              checked={selected}
+              readOnly
+            />
             <div style={{ whiteSpace: "nowrap" }}>
               <Text>{Number(option.Credits).toLocaleString()} </Text>
               <Text>{t("Credits")}</Text>

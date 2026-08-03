@@ -15,7 +15,7 @@ import "./styles.css";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import Button from "~/ui/components/AppButton";
 
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
 interface PaymentModalProps {
   visible: boolean;
@@ -316,18 +316,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
               }}
             >
               <Text style={{ color: "inherit" }}>{t("Need help?")}</Text>
-              <Button
-                type="link"
+              <Link
                 onClick={handleContactSupport}
                 style={{
-                  padding: 0,
-                  height: "auto",
                   color: v4Colors.primary,
                   fontWeight: 600,
+                  lineHeight: "22px",
                 }}
               >
                 {t("Contact us")}
-              </Button>
+              </Link>
             </div>
             <div
               style={{
