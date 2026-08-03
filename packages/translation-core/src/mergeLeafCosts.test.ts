@@ -27,6 +27,8 @@ describe("mergeLeafCosts", () => {
       requestId: "req-1",
       inputTokens: 100,
       outputTokens: 40,
+      promptCacheHitTokens: 80,
+      promptCacheMissTokens: 20,
       batchSize: 5,
     };
     const b: TranslationFieldCost = {
@@ -35,6 +37,8 @@ describe("mergeLeafCosts", () => {
       requestId: "req-1",
       inputTokens: 100,
       outputTokens: 40,
+      promptCacheHitTokens: 80,
+      promptCacheMissTokens: 20,
       batchSize: 5,
     };
     const c: TranslationFieldCost = {
@@ -43,6 +47,8 @@ describe("mergeLeafCosts", () => {
       requestId: "req-2",
       inputTokens: 20,
       outputTokens: 8,
+      promptCacheHitTokens: 0,
+      promptCacheMissTokens: 20,
       batchSize: 2,
     };
     const merged = mergeLeafCosts([a, b, c]);
@@ -51,6 +57,8 @@ describe("mergeLeafCosts", () => {
     assert.equal(merged.calls?.length, 2);
     assert.equal(merged.inputTokens, 120);
     assert.equal(merged.outputTokens, 48);
+    assert.equal(merged.promptCacheHitTokens, 80);
+    assert.equal(merged.promptCacheMissTokens, 40);
   });
 
   it("sums Google chars without requestId", () => {

@@ -51,9 +51,9 @@ export type AutoTranslateScanOptions = {
   scanAt?: Date;
 };
 
-/** v4 自动翻译任务固定使用 GPT-4.1 nano（与 TSF 手动任务默认模型一致）。 */
+/** v4 自动翻译默认模型（与 TSF 手动任务 DEFAULT_AI_MODEL 一致；失败级联 Google）。 */
 function autoAiModel(): string {
-  return "gpt-4.1-nano";
+  return process.env.AUTO_TRANSLATE_AI_MODEL?.trim() || "deepseek-v4-flash";
 }
 
 function logPrefix(mode: AutoTranslateScanMode): string {

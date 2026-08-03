@@ -852,7 +852,7 @@
   "v4.createTask.overwriteExisting": "覆盖已有译文",
   "v4.createTask.translateHandle": "翻译 handle",
   "v4.createTask.removeTarget": "移除 {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano（推荐）",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash（推荐）",
   "v4.createTask.estimateSelectFirst": "请先选择语言和模块以估算额度",
   "v4.createTask.estimateLoading": "正在估算额度…",
   "v4.createTask.estimateUnavailable": "暂时无法预估",

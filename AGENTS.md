@@ -64,6 +64,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | Path                                                         | Purpose                                                                                   |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | `app/root.tsx`                                               | Global Remix root, Redux provider, GTM/web-vitals, global client error reporting.         |
+| `app/entry.client.tsx` / `app/entry.server.tsx`              | Remix hydrate/SSR. Server inlines i18n boot (`app/lib/i18nBoot.ts`) so client hydrate does not await `/locales/*.json`. |
 | `app/shopify.server.ts`                                      | Shopify app config, auth exports, API version, session storage.                           |
 | `app/db.server.ts`                                           | Turso/Prisma client creation and runtime env loading.                                     |
 | `app/routes/app.tsx`                                         | Embedded app shell, auth, nav, bootstrap, install-time init, shop scan trigger.           |
@@ -174,6 +175,11 @@ logic use TSF billing exclusively. `APP_UNINSTALLED` / `SHOP_REDACT` call
 `cancelSubscription`) before Account soft-delete and Session delete.
 `APP_UNINSTALLED` snapshots subscription/quota/size via
 `uninstallSnapshot.server.ts` before cleanup, then sends that text to Feishu.
+Billing webhooks ACK first and process in the background
+(`APP_PURCHASES_ONE_TIME_UPDATE` / `APP_SUBSCRIPTIONS_UPDATE` are fire-and-forget
+with `.catch`; ledger writes are idempotent and failures are recovered by worker
+`billingSubscriptionReconcile.ts`). Every `APP_UNINSTALLED` step is best-effort
+try/catch and never blocks the `200`.
 - `app/routes/currencyInit.tsx`: currency initialization route.
 - `app/routes/web-vitals-metrics.tsx`: web vitals receiver.
 - `app/routes/log.tsx`: structured client log receiver plus legacy form payload
@@ -263,6 +269,13 @@ persist/pass `profileBlock` on the Cosmos job / sync call.
 - Blob helpers: `app/server/translateV4/blob.server.ts`.
 - Types/status rules: `app/server/translateV4/types.ts`.
 - Resume rules: `app/server/translateV4/resumeStatus.ts`.
+- App-side helpers kept aligned with worker: `languageStatus.server.ts`
+(language page status 0..4, consumed by `/api/translate-v4/target-locale`),
+`autoScanSchedule.server.ts` (interval 1h / shop cooldown 3h / `Asia/Shanghai`
+:00 defaults), `quotaMultiplier.server.ts` (`QUOTA_TOKEN_MULTIPLIER` default
+1.5), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
+called from `progress.server.ts`), `userFacingMessages.server.ts` (merchant-facing
+pause-reason sanitization), and `migration.server.ts` (`ensureShopV4Settings`).
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
 `worker/src/services/moduleCatalog.ts`.
 - Single-field translation: `app/routes/api.translate-v4.single.ts` ->
@@ -324,11 +337,24 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   JSON pack in `llmTranslate.ts` — field/value TM first, then dedupe by text,
   then size-capped JSON batches (`TRANSLATE_SHORT_JSON_MAX_CHARS` /
   `TRANSLATE_SHORT_JSON_MAX_ITEMS`, defaults 3000/40) with LLM first and Google
-  fallback. Pool prefix `@short@` keeps pack limits separate from rich
-  HTML/JSON. Rollback: `TRANSLATE_SHORT_PACK_LLM_FIRST=false` restores
-  Google-first for short plain. Forced `aiModel=google-translate` still
-  Google-only. Metafield `json` FieldPlan remains single-value slot extract/
-  reassemble — it does not pack multiple Shopify fields into one JSON document.
+  last. Within LLM: `aiModel=gpt-*` tries Azure GPT first, then DeepSeek for
+  unresolved items, then Google. Non-GPT jobs use DeepSeek then Google. Pool
+  prefix `@short@` keeps pack limits separate from rich HTML/JSON. Rollback:
+  `TRANSLATE_SHORT_PACK_LLM_FIRST=false` restores Google-first for short plain.
+  Forced `aiModel=google-translate` still Google-only. Metafield `json`
+  FieldPlan remains single-value slot extract/reassemble — it does not pack
+  multiple Shopify fields into one JSON document.
+- DeepSeek usage on each LLM call is persisted from the API `usage` object onto
+  blob field `cost`: `inputTokens` / `outputTokens` / `totalTokens`, plus
+  `promptCacheHitTokens` / `promptCacheMissTokens` (`prompt_cache_hit_tokens` /
+  `prompt_cache_miss_tokens`). Merchant job `usedTokens` / credit deduct uses
+  `billableLlmTokens` = miss + out when cache hit is present (hit excluded);
+  Admin still shows hit for observability. Without cache fields, keep in+out.
+- DeepSeek **provider ¥** is estimated in `deepseekPricing.ts` from the official
+  **CNY** list (https://api-docs.deepseek.com/zh-cn/quick_start/pricing) ×
+  usage — API does not return money. Stored as `costCny` only (固定元价目，无
+  USD)。Optional peak 2× via `DEEPSEEK_PEAK_PRICING=true` (Beijing 09–12 /
+  14–18) when DeepSeek enables it.
 
 Do not restore App/Worker/Spark copies of these rules. Change the core package,
 then run `npm run core:build`, `npm run worker:build`, and `npm run build`.
@@ -426,6 +452,11 @@ selection and Redis `items_count` refresh for completed jobs.
 - `worker/src/services/recordJobUsageSnapshot.ts`: task-terminal usage snapshot
 into Turso `TranslateV4JobUsage` (time / tokens / units / chars; survives Cosmos
 job retention cleanup).
+- `worker/src/services/coverageSummary.ts`: language-level coverage module set
+(`COVERAGE_SUMMARY_MODULES`, excludes Policies; aligned with App
+`COVERAGE_COUNT_LABELS`).
+- `worker/src/services/workerEmail.ts`, `shopEmail.ts`: email sending; shop
+contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
 - `worker/src/services/translationReport.ts` and
 `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
 for translated blob entries.
@@ -465,7 +496,12 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
-`GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey`.
+`DEEPSEEK_MODEL` (default `deepseek-chat`; known id whitelist includes
+`deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-reasoner`),
+`GOOGLE_TRANSLATE_API_KEY`, `Gpt_ApiKey` / `Gpt_Model` (Azure OpenAI, default
+`gpt-4.1-nano`); DeepSeek pool concurrency overrides:
+`DEEPSEEK_CONCURRENCY_LIMIT` / `DEEPSEEK_CONCURRENCY_UTIL` /
+`DEEPSEEK_INITIAL_CONCURRENCY`.
 - Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
 `TRANSLATE_QUOTA_FLUSH_CHARGE`.
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
@@ -636,6 +672,9 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - Server: `app/server/storefront/switcherAdmin.server.ts`,
 `switcherConfig.server.ts`, `switcherData.server.ts`, `auth.server.ts`,
 `response.server.ts`.
+- Storefront Liquid / PageFly branches: `app/server/storefront/liquid.server.ts`
+(`LiquidMap` shape aligned with legacy `parseLiquidDataByShopNameAndLanguage`),
+`pagefly.server.ts` (PageFly translation reads via Prisma).
 - App Proxy: `app/routes/api.storefront.$.ts`.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
 `extensions/ciwi-switcher/assets/ciwi-*.js`.
@@ -716,7 +755,8 @@ Language:
 - Page: `app/routes/app.language/route.tsx`.
 - Client: `app/routes/app.language/languageClient.ts`.
 - Server: `app/server/translateV4/targetLocale.server.ts`,
-`shopLocales.server.ts`.
+`shopLocales.server.ts`, `languageStatus.server.ts`（语言页 status 0..4，
+由 `/api/translate-v4/target-locale` 调用）。
 - Models: `ShopTranslationSettings`, `ShopTargetLocale`（含语言级覆盖率汇总
   `coverageTranslated` / `coverageTotal` / `coveragePercent` /
   `coverageUpdatedAt` / `coverageSource`；权威在 Turso，与 autoTranslate 同表）。

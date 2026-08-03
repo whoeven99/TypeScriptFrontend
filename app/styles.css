@@ -274,13 +274,17 @@ body {
    智能翻译首页 —— UI 润色：进场 / 悬浮 / 点击 / 展开 动画
    ========================================================================= */
 
+/*
+ * 注意：LCP 优化 —— 不要在此加 `opacity: 0`。
+ * 首屏主卡片（概览/覆盖率/创建任务/任务列表）都套 `.v4-enter`，
+ * Chrome 不会把 opacity:0 的元素计入 LCP 候选，透明度淡入会把 LCP
+ * 直接推迟约 0.6~0.7s。这里只做位移上移，元素首帧即可见。
+ */
 @keyframes v4-rise {
   from {
-    opacity: 0;
     transform: translateY(14px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

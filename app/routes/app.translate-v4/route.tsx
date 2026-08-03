@@ -102,10 +102,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
   const localeMs = Date.now() - localeStart;
 
-  const settingsStart = Date.now();
-  await ensureShopV4Settings(session.shop, primaryLocale);
-  const settingsMs = Date.now() - settingsStart;
-
   // 同步店铺语言到 TSF 是纯写操作，返回值不参与渲染 —— 移出关键路径，
   // 后台执行，避免 N 个串行 upsert 阻塞首屏。
   void syncShopTargetLocalesFromShopify(
@@ -120,8 +116,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   // 关键内容（任务列表 + 覆盖率）在 loader 阻塞等待；quota / planType 由客户端拉取，
   // 避免阻塞首屏，且不使用 defer（自定义 entry.server 的 renderToString 不支持 defer 流式）。
+  // ensureShopV4Settings（Turso 写，返回值不参与渲染，且 jobs/coverage 不依赖该行）
+  // 并入 Promise.all 与 jobs/coverage 并行，省去一次串行 Turso 往返。
   const keyDataStart = Date.now();
-  const [jobs, coverage] = await Promise.all([
+  const [, jobs, coverage] = await Promise.all([
+    ensureShopV4Settings(session.shop, primaryLocale),
     listV4JobSummaries(session.shop, { escalateStuck: false }),
     getCoverageSummaryFromCache({
       shop: session.shop,
@@ -137,7 +136,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         shop: session.shop,
         authMs,
         localeMs,
-        settingsMs,
         keyDataMs,
         totalMs: Date.now() - reqStart,
         jobsCount: jobs.length,

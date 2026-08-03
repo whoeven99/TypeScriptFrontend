@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Mevcut çevirilerin üzerine yaz",
   "v4.createTask.translateHandle": "Handle'ı çevir",
   "v4.createTask.removeTarget": "{{name}} öğesini kaldır",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (önerilir)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (önerilir)",
   "v4.createTask.estimateSelectFirst": "Kredileri tahmin etmek için dilleri ve modülleri seçin",
   "v4.createTask.estimateLoading": "Krediler tahmin ediliyor…",
   "v4.createTask.estimateUnavailable": "Tahmin şu anda kullanılamıyor",

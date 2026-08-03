@@ -86,7 +86,7 @@ const CURRENCY_CODE_RE = /\b[A-Z]{3}\b/;
 const MONEY_FRAGMENT_RE =
   /(?:\b[A-Z]{3}\b\s*)?[$€£¥₹₩₽₺₫₴₦₱₪₡₲₵]?\s*\d[\d\s,.'’]*(?:[.,]\d+)?(?:\s*\b[A-Z]{3}\b)?/g;
 
-export const CIWI_MONEY_SELECTOR = [
+const CIWI_MONEY_SELECTOR_PARTS = [
   ".ciwi-money",
   ".money",
   ".price",
@@ -105,6 +105,12 @@ export const CIWI_MONEY_SELECTOR = [
   "sale-price",
   "compare-at-price",
   "unit-price",
+];
+
+export const CIWI_MONEY_SELECTOR = CIWI_MONEY_SELECTOR_PARTS.join(", ");
+export const CIWI_PRICE_RELATED_SELECTOR = [
+  ...CIWI_MONEY_SELECTOR_PARTS,
+  "price-list",
 ].join(", ");
 
 export function isLikelyMoneyText(text) {
@@ -127,6 +133,15 @@ export function shouldTrackMoneyNode(node) {
   );
 }
 
+export function isPriceRelatedElement(node) {
+  const element =
+    node instanceof Element
+      ? node
+      : node instanceof Node
+        ? node.parentElement
+        : null;
+  return Boolean(element?.closest(CIWI_PRICE_RELATED_SELECTOR));
+}
 function collectMoneyNodes(root) {
   const scope = root || document;
   const nodes = scope.querySelectorAll(CIWI_MONEY_SELECTOR);

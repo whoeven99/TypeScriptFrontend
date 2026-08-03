@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Перезаписати наявні переклади",
   "v4.createTask.translateHandle": "Перекладати handle",
   "v4.createTask.removeTarget": "Видалити {{name}}",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (рекомендовано)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (рекомендовано)",
   "v4.createTask.estimateSelectFirst": "Виберіть мови та модулі, щоб оцінити кредити",
   "v4.createTask.estimateLoading": "Оцінювання кредитів…",
   "v4.createTask.estimateUnavailable": "Оцінка зараз недоступна",

@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "既存の翻訳を上書き",
   "v4.createTask.translateHandle": "ハンドルを翻訳",
   "v4.createTask.removeTarget": "{{name}}を削除",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano（推奨）",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash（推奨）",
   "v4.createTask.estimateSelectFirst": "クレジットを見積もるには、言語とモジュールを選択してください",
   "v4.createTask.estimateLoading": "クレジットを見積もり中…",
   "v4.createTask.estimateUnavailable": "現在見積もりを利用できません",

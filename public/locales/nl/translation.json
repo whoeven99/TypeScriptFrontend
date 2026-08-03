@@ -849,7 +849,7 @@
   "v4.createTask.overwriteExisting": "Bestaande vertalingen overschrijven",
   "v4.createTask.translateHandle": "Handle vertalen",
   "v4.createTask.removeTarget": "{{name}} verwijderen",
-  "v4.createTask.modelRecommended": "GPT-4.1 nano (aanbevolen)",
+  "v4.createTask.modelRecommended": "deepseek-v4-flash (aanbevolen)",
   "v4.createTask.estimateSelectFirst": "Selecteer talen en modules om credits te schatten",
   "v4.createTask.estimateLoading": "Credits worden geschat…",
   "v4.createTask.estimateUnavailable": "Schatting momenteel niet beschikbaar",
