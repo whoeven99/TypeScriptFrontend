@@ -492,7 +492,6 @@ export default function AppTranslateV4() {
         ? "trial"
         : "pricing"
       : null;
-
   const handleCreateRequest = useCallback(() => {
     if (createQuotaGatePending) {
       message.info(
@@ -719,6 +718,18 @@ export default function AppTranslateV4() {
     untranslatedRatioByLocale,
     remainingCredits,
   });
+  const createConfirmScenario:
+    | "ready"
+    | "insufficient_paid"
+    | "insufficient_trial"
+    | "insufficient_pricing" =
+    taskEstimate.needsMoreCredits
+      ? hasPaidPlan
+        ? "insufficient_paid"
+        : createQuotaGateMode === "trial"
+          ? "insufficient_trial"
+          : "insufficient_pricing"
+      : "ready";
 
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
@@ -865,15 +876,20 @@ export default function AppTranslateV4() {
         isCover={isCover}
         isHandle={isHandle}
         estimate={taskEstimate}
-        quotaGateMode={createQuotaGateMode}
+          scenario={createConfirmScenario}
         onClose={() => setCreateConfirmOpen(false)}
         onConfirmCreate={handleCreateConfirm}
+          onBuyCredits={() => {
+            setCreateConfirmOpen(false);
+            setShowPaymentModal(true);
+          }}
       />
       {showPaymentModal ? (
         <Suspense fallback={null}>
           <PaymentModal
             visible={showPaymentModal}
             setVisible={setShowPaymentModal}
+              variant="v4"
           />
         </Suspense>
       ) : null}

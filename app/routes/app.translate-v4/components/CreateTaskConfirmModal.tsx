@@ -9,11 +9,15 @@ import {
 } from "../constants";
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
-import {
-  type CreateTaskEstimateView,
-} from "../useCreateTaskEstimate";
+import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import Button from "~/ui/components/AppButton";
+
+type CreateTaskConfirmScenario =
+  | "ready"
+  | "insufficient_paid"
+  | "insufficient_trial"
+  | "insufficient_pricing";
 
 type Props = {
   open: boolean;
@@ -25,10 +29,16 @@ type Props = {
   isCover: boolean;
   isHandle: boolean;
   estimate: CreateTaskEstimateView | null;
-  quotaGateMode: "trial" | "pricing" | null;
+  scenario: CreateTaskConfirmScenario;
   onClose: () => void;
   onConfirmCreate: () => void;
+  onBuyCredits: () => void;
 };
+
+type TranslateFn = (
+  key: string,
+  options?: Record<string, unknown>,
+) => string;
 
 export function CreateTaskConfirmModal({
   open,
@@ -40,9 +50,10 @@ export function CreateTaskConfirmModal({
   isCover,
   isHandle,
   estimate,
-  quotaGateMode,
+  scenario,
   onClose,
   onConfirmCreate,
+  onBuyCredits,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -50,7 +61,6 @@ export function CreateTaskConfirmModal({
     success?: boolean;
     response?: { confirmationUrl?: string };
   }>();
-  const modalBlocked = quotaGateMode !== null;
 
   useEffect(() => {
     if (!open) return;
@@ -104,67 +114,77 @@ export function CreateTaskConfirmModal({
   const aiModelLabel = AI_MODEL_OPTIONS.some((option) => option.value === aiModel)
     ? getV4AiModelLabel(aiModel, t)
     : aiModel;
-  const optionLabels = [
-    isCover ? t("v4.createTask.overwriteExisting") : null,
-    isHandle ? t("v4.createTask.translateHandle") : null,
-  ].filter(Boolean) as string[];
-  const targetSummary = summarizeCompactLine(
-    selectedTargets.map((item) => `${item.regionCode} ${item.label}`),
-    t,
-  );
-  const moduleSummary = summarizeCompactLine(
-    selectedModules.map((item) => item.label),
-    t,
-  );
-  const optionSummary =
-    optionLabels.length > 0
-      ? summarizeCompactLine(optionLabels, t)
-      : t("v4.createTask.confirmDefaultOptions");
+
+  const estimatedCredits = estimate?.estimatedCredits ?? null;
+  const remainingCredits = estimate?.remainingCredits ?? null;
+  const shortfallCredits =
+    estimatedCredits != null && remainingCredits != null
+      ? Math.max(estimatedCredits - remainingCredits, 0)
+      : 0;
+  const progressPercent =
+    estimatedCredits != null && estimatedCredits > 0 && remainingCredits != null
+      ? Math.max(0, Math.min(100, (remainingCredits / estimatedCredits) * 100))
+      : scenario === "ready"
+        ? 100
+        : 0;
+  const coveragePercent = Math.round(progressPercent);
+
+  const detailItems = [
+    {
+      label: t("v4.createTask.targetLanguages"),
+      value: summarizeCompactLine(
+        selectedTargets.map((item) => `${item.regionCode} ${item.label}`),
+        t,
+      ),
+    },
+    {
+      label: t("v4.createTask.content"),
+      value: summarizeCompactLine(
+        selectedModules.map((item) => item.label),
+        t,
+      ),
+    },
+    {
+      label: t("v4.createTask.aiModel"),
+      value: aiModelLabel,
+    },
+    {
+      label: t("v4.createTask.overwriteExisting"),
+      value: isCover ? t("Yes") : t("No"),
+    },
+    {
+      label: t("v4.createTask.translateHandle"),
+      value: isHandle ? t("Yes") : t("No"),
+    },
+  ];
 
   const estimatedCreditsLabel =
-    estimate?.estimatedCredits != null
-      ? formatCreditsFull(estimate.estimatedCredits)
-      : null;
+    estimatedCredits != null ? formatCreditsFull(estimatedCredits) : "--";
   const remainingCreditsLabel =
-    estimate?.remainingCredits != null
-      ? formatCreditsFull(estimate.remainingCredits)
-      : null;
-  const shortfallCredits =
-    estimate?.estimatedCredits != null && estimate?.remainingCredits != null
-      ? Math.max(estimate.estimatedCredits - estimate.remainingCredits, 0)
-      : null;
+    remainingCredits != null ? formatCreditsFull(remainingCredits) : "--";
   const shortfallCreditsLabel =
-    shortfallCredits != null && shortfallCredits > 0
-      ? formatCreditsFull(shortfallCredits)
-      : null;
-  const estimateTitle = estimate?.loading
-    ? t("v4.createTask.estimateLoading")
-    : estimate?.estimatedCredits == null
-      ? t("v4.createTask.estimateUnavailable")
-      : estimate.isUpperBound
-        ? t("v4.createTask.estimateUpperBound", {
-            estimated: formatCreditsFull(estimate.estimatedCredits),
-          })
-        : t("v4.createTask.estimateNeed", {
-            estimated: formatCreditsFull(estimate.estimatedCredits),
-          });
-  const remainingLabel =
-    estimate?.remainingCredits != null
-      ? t("v4.createTask.estimateRemaining", {
-          remaining: formatCreditsFull(estimate.remainingCredits),
-        })
-      : null;
+    shortfallCredits > 0 ? formatCreditsFull(shortfallCredits) : "0";
+  const coverageLabel = `${coveragePercent}%`;
 
-  const title = modalBlocked
-    ? quotaGateMode === "trial"
-      ? t("v4.createTask.confirmBlockedTrialTitle")
-      : t("v4.createTask.confirmBlockedPricingTitle")
-    : t("v4.createTask.confirmTitle");
-  const description = modalBlocked
-    ? quotaGateMode === "trial"
-      ? t("v4.createTask.confirmBlockedTrialDesc")
-      : t("v4.createTask.confirmBlockedPricingDesc")
-    : t("v4.createTask.confirmDescription");
+  const scenarioMeta = getScenarioMeta(t, scenario, coveragePercent, shortfallCredits);
+  const isReady = scenario === "ready";
+  const isInsufficientPaid = scenario === "insufficient_paid";
+  const isTrialOffer = scenario === "insufficient_trial";
+
+  const primaryActionLabel = isReady
+    ? t("v4.createTask.confirmStartNow")
+    : isInsufficientPaid
+      ? t("v4.createTask.confirmBuyCreditsAndStart")
+      : isTrialOffer
+        ? t("v4.createTask.confirmTrialAndStart")
+        : t("v4.createTask.confirmSubscribeAndStart");
+  const secondaryActionLabel = isReady
+    ? null
+    : isInsufficientPaid
+      ? t("v4.createTask.confirmStartPartial")
+      : isTrialOffer
+        ? t("v4.createTask.confirmBuyCreditsSecondary")
+        : t("v4.createTask.confirmBuyCreditsOnly");
 
   const handleTrialAction = () => {
     planFetcher.submit(
@@ -182,16 +202,28 @@ export function CreateTaskConfirmModal({
   };
 
   const handlePrimaryAction = () => {
-    if (quotaGateMode === "trial") {
+    if (isReady) {
+      onConfirmCreate();
+      return;
+    }
+    if (isInsufficientPaid) {
+      onBuyCredits();
+      return;
+    }
+    if (isTrialOffer) {
       handleTrialAction();
       return;
     }
-    if (quotaGateMode === "pricing") {
-      onClose();
-      navigate("/app/pricing");
+    onClose();
+    navigate("/app/pricing");
+  };
+
+  const handleSecondaryAction = () => {
+    if (isInsufficientPaid) {
+      onConfirmCreate();
       return;
     }
-    onConfirmCreate();
+    onBuyCredits();
   };
 
   if (!open) return null;
@@ -210,9 +242,26 @@ export function CreateTaskConfirmModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div style={headerStyle}>
-          <div style={{ minWidth: 0 }}>
-            <div style={titleStyle}>{title}</div>
-            <div style={descriptionStyle}>{description}</div>
+          <div style={headerCopyStyle}>
+            <div
+              style={{
+                ...statusBadgeStyle,
+                color: scenarioMeta.accent,
+                background: scenarioMeta.badgeBg,
+                borderColor: scenarioMeta.badgeBorder,
+              }}
+            >
+              {scenarioMeta.badge}
+            </div>
+            <div style={titleStyle}>{scenarioMeta.title}</div>
+            <div style={descriptionStyle}>{scenarioMeta.description}</div>
+            {shortfallCredits > 0 ? (
+              <div style={headlineStyle}>
+                {t("v4.createTask.confirmShortfallHeadline", {
+                  credits: shortfallCreditsLabel,
+                })}
+              </div>
+            ) : null}
           </div>
           <button
             type="button"
@@ -226,143 +275,132 @@ export function CreateTaskConfirmModal({
         </div>
 
         <div style={bodyStyle}>
-          <SummaryRow title={t("v4.createTask.targetLanguages")}>
-            <div style={compactSummaryStyle}>{targetSummary}</div>
-          </SummaryRow>
-
-          <SummaryRow title={t("v4.createTask.content")}>
-            <div style={compactSummaryStyle}>{moduleSummary}</div>
-          </SummaryRow>
-
-          <SummaryRow title={t("v4.createTask.aiModel")}>
-            <div style={compactSummaryStyle}>{aiModelLabel}</div>
-          </SummaryRow>
-
-          <SummaryRow title={t("v4.createTask.translationOptions")}>
-            <div
-              style={
-                optionLabels.length > 0 ? compactSummaryStyle : compactSummaryMutedStyle
-              }
-            >
-              {optionSummary}
-            </div>
-          </SummaryRow>
-
-          <SummaryRow
-            title={t("v4.createTask.confirmEstimateTitle")}
-            emphasize={modalBlocked || Boolean(estimate?.needsMoreCredits)}
+          <div
+            style={{
+              ...scenarioBannerStyle,
+              background: scenarioMeta.bannerBg,
+              borderColor: scenarioMeta.bannerBorder,
+            }}
           >
-            {estimatedCreditsLabel && remainingCreditsLabel ? (
-              <>
-                <div style={creditHeadlineStyle}>
-                  <span
-                    style={{
-                      ...creditHeadlineNumberStyle,
-                      color:
-                        modalBlocked || Boolean(estimate?.needsMoreCredits)
-                          ? "var(--p-color-text-caution)"
-                          : v4Colors.text,
-                    }}
-                  >
-                    {estimatedCreditsLabel}
+            <div style={scenarioBannerLabelStyle}>
+              {t("v4.createTask.confirmEstimatePanelTitle")}
+            </div>
+            <div style={scenarioBannerSummaryStyle}>{scenarioMeta.summary}</div>
+            <div style={scenarioBannerFootnoteStyle}>{scenarioMeta.progressHint}</div>
+          </div>
+
+          <div style={contentGridStyle}>
+            <InfoCard title={t("v4.createTask.confirmTaskDetailTitle")}>
+              <div style={detailListStyle}>
+                {detailItems.map((item) => (
+                  <DetailLine key={item.label} label={item.label} value={item.value} />
+                ))}
+              </div>
+            </InfoCard>
+
+            <InfoCard
+              title={t("v4.createTask.confirmEstimatePanelTitle")}
+              highlighted={!isReady}
+            >
+              <div style={metricsGridStyle}>
+                <MetricTile
+                  label={t("v4.createTask.confirmCreditsRequired")}
+                  value={estimate?.loading ? t("v4.createTask.estimateLoading") : estimatedCreditsLabel}
+                  tone="default"
+                />
+                <MetricTile
+                  label={t("v4.createTask.confirmCreditsAvailable")}
+                  value={estimate?.loading ? t("v4.createTask.estimateLoading") : remainingCreditsLabel}
+                  tone={isReady ? "positive" : "default"}
+                />
+                <MetricTile
+                  label={
+                    isReady
+                      ? t("v4.createTask.confirmCoverageLabel")
+                      : t("v4.createTask.confirmCreditsShortfall")
+                  }
+                  value={
+                    estimate?.loading
+                      ? t("v4.createTask.estimateLoading")
+                      : isReady
+                        ? coverageLabel
+                        : shortfallCreditsLabel
+                  }
+                  tone={isReady ? "positive" : "warning"}
+                />
+              </div>
+
+              <div style={progressSectionStyle}>
+                <div style={progressHeaderStyle}>
+                  <span style={progressLabelStyle}>
+                    {t("v4.createTask.confirmCoverageLabel")}
                   </span>
-                  <span style={creditSlashStyle}>/</span>
                   <span
                     style={{
-                      ...creditHeadlineNumberStyle,
-                      color:
-                        modalBlocked || Boolean(estimate?.needsMoreCredits)
-                          ? "var(--p-color-text-caution)"
-                          : v4Colors.text,
+                      ...progressValueStyle,
+                      color: scenarioMeta.accent,
                     }}
                   >
-                    {remainingCreditsLabel}
+                    {coverageLabel}
                   </span>
                 </div>
+                <div style={progressTrackStyle}>
+                  <div
+                    style={{
+                      ...progressFillStyle,
+                      width: `${progressPercent}%`,
+                      background: scenarioMeta.progressBar,
+                    }}
+                  />
+                </div>
+                <div style={estimateHintStyle}>
+                  {estimate?.loading
+                    ? t("v4.createTask.estimateLoading")
+                    : estimate?.isUpperBound
+                      ? t("v4.createTask.estimateFootnote")
+                      : scenarioMeta.progressHint}
+                </div>
+              </div>
+            </InfoCard>
+          </div>
 
-                <div style={creditMetaRowStyle}>
-                  <div style={creditMetaItemStyle}>
-                    <span style={creditMetaLabelStyle}>
-                      {t("v4.createTask.confirmEstimateNeedLabel")}
-                    </span>
-                    <span style={creditMetaValueStyle}>{estimatedCreditsLabel}</span>
-                  </div>
-                  <div style={creditMetaItemStyle}>
-                    <span style={creditMetaLabelStyle}>
-                      {t("v4.createTask.confirmEstimateLeftLabel")}
-                    </span>
-                    <span
-                      style={{
-                        ...creditMetaValueStyle,
-                        color:
-                          modalBlocked || Boolean(estimate?.needsMoreCredits)
-                            ? "var(--p-color-text-caution)"
-                            : v4Colors.text,
-                      }}
-                    >
-                      {remainingCreditsLabel}
-                    </span>
-                  </div>
-                  {shortfallCreditsLabel ? (
-                    <div style={creditMetaItemStyle}>
-                      <span style={creditMetaLabelStyle}>
-                        {t("v4.createTask.confirmEstimateShortLabel")}
-                      </span>
-                      <span
-                        style={{
-                          ...creditMetaValueStyle,
-                          color: "var(--p-color-text-caution)",
-                        }}
-                      >
-                        {shortfallCreditsLabel}
-                      </span>
+          {!isReady ? (
+            <InfoCard title={offerTitle(t, scenario)} highlighted={scenario !== "insufficient_paid"}>
+              <div style={offerDescriptionStyle}>
+                {offerDescription(t, scenario)}
+              </div>
+              {scenario !== "insufficient_paid" ? (
+                <div style={offerFeatureGridStyle}>
+                  {offerFeatures(t, scenario).map((feature) => (
+                    <div key={feature} style={offerFeatureItemStyle}>
+                      {feature}
                     </div>
-                  ) : null}
+                  ))}
                 </div>
-
-                <div style={estimateHintStyle}>{estimateTitle}</div>
-              </>
-            ) : (
-              <div style={estimateTitleStyle}>{estimateTitle}</div>
-            )}
-            {!estimatedCreditsLabel && remainingLabel ? (
-              <div style={remainingStyle}>{remainingLabel}</div>
-            ) : null}
-            {estimate?.needsMoreCredits ? (
-              <div style={warningStyle}>{t("v4.createTask.estimateShort")}</div>
-            ) : null}
-          </SummaryRow>
+              ) : null}
+            </InfoCard>
+          ) : null}
         </div>
 
         <div style={footerStyle}>
+          {secondaryActionLabel ? (
+            <Button
+              size="large"
+              onClick={handleSecondaryAction}
+              disabled={creating}
+              style={secondaryButtonStyle}
+            >
+              {secondaryActionLabel}
+            </Button>
+          ) : null}
           <Button
             size="large"
-            onClick={onClose}
-            disabled={creating}
-            style={{
-              minWidth: 116,
-              paddingInline: 18,
-              borderColor: v4Colors.cardBorder,
-            }}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            size="large"
-            type={modalBlocked ? "default" : "primary"}
+            type="primary"
             onClick={handlePrimaryAction}
             loading={creating || planFetcher.state === "submitting"}
-            style={{
-              minWidth: quotaGateMode === "trial" ? 172 : 152,
-              paddingInline: 20,
-              borderColor: modalBlocked ? v4Colors.cardBorder : undefined,
-            }}
+            style={primaryButtonStyle}
           >
-            {quotaGateMode === "trial"
-              ? t("Free trial")
-              : quotaGateMode === "pricing"
-                ? t("v4.createTask.confirmViewPlans")
-                : t("v4.createTask.confirmAction")}
+            {primaryActionLabel}
           </Button>
         </div>
       </div>
@@ -370,27 +408,182 @@ export function CreateTaskConfirmModal({
   );
 }
 
-function SummaryRow({
+function InfoCard({
   title,
+  highlighted = false,
   children,
-  emphasize = false,
 }: {
   title: string;
+  highlighted?: boolean;
   children: ReactNode;
-  emphasize?: boolean;
 }) {
   return (
     <div
       style={{
-        ...rowStyle,
-        background: emphasize ? "var(--app-accent-utility-soft)" : "transparent",
-        borderColor: emphasize ? "rgba(200, 139, 36, 0.24)" : v4Colors.divider,
+        ...cardStyle,
+        borderColor: highlighted ? "rgba(33, 128, 255, 0.22)" : v4Colors.cardBorder,
+        boxShadow: highlighted ? "0 8px 30px rgba(33, 128, 255, 0.08)" : "none",
       }}
     >
-      <div style={rowTitleStyle}>{title}</div>
-      <div style={rowContentStyle}>{children}</div>
+      <div style={cardTitleStyle}>{title}</div>
+      {children}
     </div>
   );
+}
+
+function DetailLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={detailLineStyle}>
+      <span style={detailLabelStyle}>{label}</span>
+      <span style={detailValueStyle}>{value}</span>
+    </div>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "default" | "positive" | "warning";
+}) {
+  return (
+    <div
+      style={{
+        ...metricTileStyle,
+        background:
+          tone === "positive"
+            ? "rgba(10, 147, 76, 0.08)"
+            : tone === "warning"
+              ? "rgba(223, 90, 0, 0.08)"
+              : "rgba(15, 23, 42, 0.03)",
+        borderColor:
+          tone === "positive"
+            ? "rgba(10, 147, 76, 0.18)"
+            : tone === "warning"
+              ? "rgba(223, 90, 0, 0.18)"
+              : "rgba(15, 23, 42, 0.08)",
+      }}
+    >
+      <div style={metricLabelStyle}>{label}</div>
+      <div style={metricValueStyle}>{value}</div>
+    </div>
+  );
+}
+
+function getScenarioMeta(
+  t: TranslateFn,
+  scenario: CreateTaskConfirmScenario,
+  coveragePercent: number,
+  shortfallCredits: number,
+) {
+  if (scenario === "ready") {
+    return {
+      badge: t("v4.createTask.confirmStatusReady"),
+      title: t("v4.createTask.confirmReadyTitle"),
+      description: t("v4.createTask.confirmReadySummary"),
+      summary: t("v4.createTask.confirmReadySummary"),
+      progressHint: t("v4.createTask.confirmCoverageHintReady"),
+      accent: "#0a934c",
+      badgeBg: "rgba(10, 147, 76, 0.1)",
+      badgeBorder: "rgba(10, 147, 76, 0.18)",
+      bannerBg: "linear-gradient(135deg, rgba(10, 147, 76, 0.12) 0%, rgba(33, 128, 255, 0.08) 100%)",
+      bannerBorder: "rgba(10, 147, 76, 0.16)",
+      progressBar: "linear-gradient(90deg, #0a934c 0%, #2180ff 100%)",
+    };
+  }
+
+  if (scenario === "insufficient_paid") {
+    return {
+      badge: t("v4.createTask.confirmStatusPartial"),
+      title: t("v4.createTask.confirmPartialTitle"),
+      description: t("v4.createTask.confirmPartialSummary"),
+      summary: t("v4.createTask.confirmPartialSummary"),
+      progressHint: t("v4.createTask.confirmCoverageHintPartial", {
+        percent: coveragePercent,
+      }),
+      accent: "#df5a00",
+      badgeBg: "rgba(223, 90, 0, 0.1)",
+      badgeBorder: "rgba(223, 90, 0, 0.18)",
+      bannerBg: "linear-gradient(135deg, rgba(255, 184, 77, 0.18) 0%, rgba(255, 236, 209, 0.42) 100%)",
+      bannerBorder: "rgba(223, 90, 0, 0.16)",
+      progressBar: "linear-gradient(90deg, #ffb84d 0%, #df5a00 100%)",
+    };
+  }
+
+  if (scenario === "insufficient_trial") {
+    return {
+      badge: t("v4.createTask.confirmStatusTrial"),
+      title: t("v4.createTask.confirmNoCreditsTitle"),
+      description: t("v4.createTask.confirmTrialSummary"),
+      summary: t("v4.createTask.confirmTrialSummary"),
+      progressHint: t("v4.createTask.confirmCoverageHintTrial", {
+        percent: coveragePercent,
+      }),
+      accent: "#2180ff",
+      badgeBg: "rgba(33, 128, 255, 0.1)",
+      badgeBorder: "rgba(33, 128, 255, 0.18)",
+      bannerBg: "linear-gradient(135deg, rgba(33, 128, 255, 0.14) 0%, rgba(172, 215, 255, 0.34) 100%)",
+      bannerBorder: "rgba(33, 128, 255, 0.16)",
+      progressBar: "linear-gradient(90deg, #8dc5ff 0%, #2180ff 100%)",
+    };
+  }
+
+  return {
+    badge: t("v4.createTask.confirmStatusPricing"),
+    title: t("v4.createTask.confirmNoCreditsTitle"),
+    description: t("v4.createTask.confirmPricingSummary"),
+    summary: t("v4.createTask.confirmPricingSummary"),
+    progressHint: t("v4.createTask.confirmCoverageHintPricing", {
+      credits: formatCreditsFull(shortfallCredits),
+    }),
+    accent: "#7a3cff",
+    badgeBg: "rgba(122, 60, 255, 0.1)",
+    badgeBorder: "rgba(122, 60, 255, 0.18)",
+    bannerBg: "linear-gradient(135deg, rgba(122, 60, 255, 0.12) 0%, rgba(225, 213, 255, 0.44) 100%)",
+    bannerBorder: "rgba(122, 60, 255, 0.16)",
+    progressBar: "linear-gradient(90deg, #c6a4ff 0%, #7a3cff 100%)",
+  };
+}
+
+function offerTitle(t: TranslateFn, scenario: CreateTaskConfirmScenario): string {
+  if (scenario === "insufficient_paid") {
+    return t("v4.createTask.confirmPaidOfferTitle");
+  }
+  return scenario === "insufficient_trial"
+    ? t("v4.createTask.confirmTrialOfferTitle")
+    : t("v4.createTask.confirmPricingOfferTitle");
+}
+
+function offerDescription(
+  t: TranslateFn,
+  scenario: CreateTaskConfirmScenario,
+): string {
+  if (scenario === "insufficient_paid") {
+    return t("v4.createTask.confirmPaidOfferDesc");
+  }
+  return scenario === "insufficient_trial"
+    ? t("v4.createTask.confirmTrialOfferDesc")
+    : t("v4.createTask.confirmPricingOfferDesc");
+}
+
+function offerFeatures(
+  t: TranslateFn,
+  scenario: CreateTaskConfirmScenario,
+): string[] {
+  return scenario === "insufficient_trial"
+    ? [
+        t("v4.createTask.confirmTrialFeatureCredits"),
+        t("v4.createTask.confirmTrialFeatureModel"),
+        t("v4.createTask.confirmTrialFeatureSpeed"),
+      ]
+    : [
+        t("v4.createTask.confirmPricingFeatureCredits"),
+        t("v4.createTask.confirmPricingFeatureModel"),
+        t("v4.createTask.confirmPricingFeatureSpeed"),
+      ];
 }
 
 function formatCreditsFull(value: number): string {
@@ -399,10 +592,7 @@ function formatCreditsFull(value: number): string {
   }).format(value);
 }
 
-function summarizeCompactLine(
-  items: string[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
+function summarizeCompactLine(items: string[], t: TranslateFn): string {
   if (items.length === 0) {
     return t("v4.createTask.confirmCompactListEmpty");
   }
@@ -431,18 +621,19 @@ const overlayStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 32,
-  background: "rgba(15, 23, 42, 0.32)",
+  padding: 28,
+  background: "rgba(15, 23, 42, 0.36)",
+  backdropFilter: "blur(8px)",
 } as const;
 
 const panelStyle = {
-  width: "min(860px, calc(100vw - 40px))",
-  maxHeight: "min(780px, calc(100vh - 40px))",
+  width: "min(820px, calc(100vw - 32px))",
+  maxHeight: "min(820px, calc(100vh - 32px))",
   overflow: "hidden",
-  borderRadius: 24,
+  borderRadius: 28,
   border: `1px solid ${v4Colors.cardBorder}`,
   background: v4Colors.cardBg,
-  boxShadow: "var(--app-shadow-card-strong)",
+  boxShadow: "0 24px 80px rgba(15, 23, 42, 0.18)",
   display: "flex",
   flexDirection: "column",
 } as const;
@@ -452,15 +643,21 @@ const headerStyle = {
   alignItems: "flex-start",
   justifyContent: "space-between",
   gap: 16,
-  padding: "30px 32px 22px",
-  borderBottom: `1px solid ${v4Colors.divider}`,
+  padding: "28px 28px 10px",
+} as const;
+
+const headerCopyStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  minWidth: 0,
 } as const;
 
 const bodyStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 0,
-  padding: "4px 32px 0",
+  gap: 16,
+  padding: "0 28px",
   overflowY: "auto",
 } as const;
 
@@ -470,36 +667,60 @@ const footerStyle = {
   justifyContent: "flex-end",
   gap: 12,
   flexWrap: "wrap",
-  padding: "28px 32px 32px",
-  borderTop: `1px solid ${v4Colors.divider}`,
+  padding: "22px 28px 28px",
   background: v4Colors.cardBg,
+} as const;
+
+const statusBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  width: "fit-content",
+  minHeight: 32,
+  padding: "6px 12px",
+  borderRadius: 999,
+  border: "1px solid transparent",
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: "20px",
 } as const;
 
 const titleStyle = {
   margin: 0,
   fontSize: 28,
   fontWeight: 700,
-  lineHeight: 1.25,
+  lineHeight: 1.15,
   color: v4Colors.text,
 } as const;
 
 const descriptionStyle = {
-  marginTop: 12,
   color: v4Colors.textMuted,
   fontSize: 15,
   lineHeight: "24px",
-  maxWidth: 680,
+  maxWidth: 620,
+} as const;
+
+const headlineStyle = {
+  display: "inline-flex",
+  width: "fit-content",
+  padding: "8px 12px",
+  borderRadius: 12,
+  background: "rgba(223, 90, 0, 0.1)",
+  color: "#df5a00",
+  fontSize: 15,
+  fontWeight: 700,
+  lineHeight: "22px",
 } as const;
 
 const closeButtonStyle = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 32,
-  height: 32,
+  width: 36,
+  height: 36,
   padding: 0,
   border: "none",
-  background: "transparent",
+  borderRadius: 999,
+  background: "rgba(15, 23, 42, 0.04)",
   color: v4Colors.textMuted,
   fontSize: 22,
   lineHeight: 1,
@@ -507,84 +728,140 @@ const closeButtonStyle = {
   flexShrink: 0,
 } as const;
 
-const rowStyle = {
-  display: "grid",
-  gridTemplateColumns: "220px minmax(0, 1fr)",
-  gap: 24,
-  alignItems: "start",
-  padding: "14px 0",
-  borderBottom: `1px solid ${v4Colors.divider}`,
-} as const;
-
-const rowTitleStyle = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: v4Colors.textMuted,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  lineHeight: 1.5,
-} as const;
-
-const rowContentStyle = {
-  minWidth: 0,
+const scenarioBannerStyle = {
+  borderRadius: 20,
+  border: "1px solid transparent",
+  padding: "18px 18px 16px",
   display: "flex",
   flexDirection: "column",
-  gap: 8,
+  gap: 6,
 } as const;
 
-const estimateTitleStyle = {
-  fontSize: 22,
-  fontWeight: 600,
-  color: v4Colors.text,
-  lineHeight: 1.35,
-} as const;
-
-const creditHeadlineStyle = {
-  display: "flex",
-  alignItems: "baseline",
-  flexWrap: "wrap",
-  gap: 12,
-  lineHeight: 1,
-} as const;
-
-const creditHeadlineNumberStyle = {
-  fontSize: 30,
+const scenarioBannerLabelStyle = {
+  fontSize: 12,
   fontWeight: 700,
-  letterSpacing: "-0.03em",
-} as const;
-
-const creditSlashStyle = {
+  lineHeight: "18px",
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
   color: v4Colors.textMuted,
-  fontSize: 24,
-  fontWeight: 500,
 } as const;
 
-const creditMetaRowStyle = {
+const scenarioBannerSummaryStyle = {
+  color: v4Colors.text,
+  fontSize: 18,
+  lineHeight: "28px",
+  fontWeight: 700,
+} as const;
+
+const scenarioBannerFootnoteStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 14,
+  lineHeight: "22px",
+} as const;
+
+const contentGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+  gap: 16,
+} as const;
+
+const cardStyle = {
+  borderRadius: 20,
+  background: v4Colors.summaryBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  padding: "20px 18px",
+} as const;
+
+const cardTitleStyle = {
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: "20px",
+  color: v4Colors.text,
+  marginBottom: 14,
+} as const;
+
+const detailListStyle = {
   display: "flex",
-  flexWrap: "wrap",
-  gap: "12px 20px",
-  marginTop: 6,
+  flexDirection: "column",
+  gap: 10,
 } as const;
 
-const creditMetaItemStyle = {
+const detailLineStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(116px, 140px) minmax(0, 1fr)",
+  gap: 12,
+  alignItems: "start",
+  fontSize: 14,
+  lineHeight: "22px",
+} as const;
+
+const detailLabelStyle = {
+  color: v4Colors.textMuted,
+  fontWeight: 600,
+} as const;
+
+const detailValueStyle = {
+  color: v4Colors.text,
+  fontWeight: 600,
+  wordBreak: "break-word",
+} as const;
+
+const metricsGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: 12,
+} as const;
+
+const metricTileStyle = {
+  borderRadius: 16,
+  border: "1px solid transparent",
+  padding: "14px 14px 12px",
   display: "flex",
-  alignItems: "baseline",
-  gap: 8,
+  flexDirection: "column",
+  gap: 6,
 } as const;
 
-const creditMetaLabelStyle = {
+const metricLabelStyle = {
   color: v4Colors.textMuted,
   fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: "0.03em",
+  fontWeight: 700,
+  lineHeight: "18px",
+  letterSpacing: "0.04em",
   textTransform: "uppercase",
-  lineHeight: 1.5,
 } as const;
 
-const creditMetaValueStyle = {
+const metricValueStyle = {
   color: v4Colors.text,
-  fontSize: 15,
+  fontSize: 24,
+  fontWeight: 700,
+  lineHeight: "30px",
+  wordBreak: "break-word",
+} as const;
+
+const progressSectionStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  marginTop: 16,
+} as const;
+
+const progressHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+} as const;
+
+const progressLabelStyle = {
+  color: v4Colors.text,
+  fontSize: 14,
   fontWeight: 600,
+  lineHeight: "22px",
+} as const;
+
+const progressValueStyle = {
+  fontSize: 16,
+  fontWeight: 700,
   lineHeight: "24px",
 } as const;
 
@@ -594,28 +871,62 @@ const estimateHintStyle = {
   lineHeight: "22px",
 } as const;
 
-const remainingStyle = {
-  marginTop: 6,
+const progressTrackStyle = {
+  width: "100%",
+  height: 12,
+  borderRadius: 999,
+  overflow: "hidden",
+  background: "rgba(15, 23, 42, 0.08)",
+} as const;
+
+const progressFillStyle = {
+  height: "100%",
+  borderRadius: 999,
+} as const;
+
+const offerDescriptionStyle = {
   color: v4Colors.textMuted,
+  fontSize: 14,
   lineHeight: "22px",
+  marginBottom: 14,
 } as const;
 
-const warningStyle = {
-  marginTop: 10,
-  color: "var(--p-color-text-caution)",
-  lineHeight: "22px",
+const offerFeatureGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+  gap: 12,
 } as const;
 
-const compactSummaryStyle = {
+const offerFeatureItemStyle = {
+  minHeight: 88,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "14px 12px",
+  borderRadius: 16,
+  border: `1px solid ${v4Colors.cardBorder}`,
+  background: v4Colors.cardBg,
   color: v4Colors.text,
   fontSize: 15,
+  fontWeight: 600,
   lineHeight: "24px",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  whiteSpace: "pre-line",
 } as const;
 
-const compactSummaryMutedStyle = {
-  ...compactSummaryStyle,
-  color: v4Colors.textMuted,
+const primaryButtonStyle = {
+  minWidth: 280,
+  height: "auto",
+  minHeight: 52,
+  paddingInline: 28,
+  paddingBlock: 10,
+} as const;
+
+const secondaryButtonStyle = {
+  minWidth: 220,
+  height: "auto",
+  minHeight: 52,
+  paddingInline: 24,
+  paddingBlock: 10,
+  borderColor: v4Colors.cardBorder,
 } as const;
