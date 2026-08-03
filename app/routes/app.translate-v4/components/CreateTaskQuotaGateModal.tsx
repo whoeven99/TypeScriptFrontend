@@ -93,7 +93,9 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
       footer={null}
       centered
       width={560}
-      destroyOnHidden
+      destroyOnClose
+      zIndex={10001}
+      getContainer={() => document.body}
       styles={{
         content: {
           padding: 0,

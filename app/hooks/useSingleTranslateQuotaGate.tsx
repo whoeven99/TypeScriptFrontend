@@ -21,28 +21,32 @@ export function useSingleTranslateQuotaGate() {
 
   const handleSingleTranslateFailure = useCallback(
     (errorMsg?: string | null) => {
+      if (errorMsg && isSingleTranslateQuotaError(errorMsg)) {
+        const mode = resolveSingleTranslateQuotaGateMode(errorMsg, isNew);
+        if (mode) {
+          setQuotaGateMode(mode);
+          return;
+        }
+      }
+
       const message = resolveSingleTranslateErrorMessage(
         t,
         errorMsg,
         TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
       );
       shopify.toast.show(message);
-
-      if (!errorMsg || !isSingleTranslateQuotaError(errorMsg)) return;
-
-      const mode = resolveSingleTranslateQuotaGateMode(errorMsg, isNew);
-      if (mode) setQuotaGateMode(mode);
     },
     [isNew, t],
   );
 
-  const quotaGateModal = (
-    <CreateTaskQuotaGateModal
-      open={quotaGateMode !== null}
-      mode={quotaGateMode ?? "pricing"}
-      onClose={() => setQuotaGateMode(null)}
-    />
-  );
+  const quotaGateModal =
+    quotaGateMode !== null ? (
+      <CreateTaskQuotaGateModal
+        open
+        mode={quotaGateMode}
+        onClose={() => setQuotaGateMode(null)}
+      />
+    ) : null;
 
   return {
     handleSingleTranslateFailure,
