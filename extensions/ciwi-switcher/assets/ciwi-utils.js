@@ -357,11 +357,16 @@ export function transformPrices({ rate, moneyFormat, selectedCurrency, nodes }) 
  */
 export function updateLocalization({ country, language }) {
   const formId = crypto.randomUUID();
+  const returnTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : "/";
   const formHtml = `
     <form id="${formId}" action="/localization" method="POST" hidden>
       <input name="_method" value="PUT">
       <input name="country_code" value="${country}">
       <input name="language_code" value="${language}">
+      <input name="return_to" value="${returnTo}">
     </form>
   `;
   document.body.insertAdjacentHTML("beforeend", formHtml);

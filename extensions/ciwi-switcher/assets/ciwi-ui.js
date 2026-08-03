@@ -100,7 +100,7 @@ function isTruthyPreviewFlag(value) {
   return value === true || value === "true" || value === "1" || value === 1;
 }
 
-function hasShopifyVisualPreviewParams(value) {
+function hasShopifyVisualPreviewSource(value) {
   const raw = String(value || "").trim();
   if (!raw) return false;
 
@@ -109,23 +109,43 @@ function hasShopifyVisualPreviewParams(value) {
     const source = url.searchParams.get("source");
     return (
       source === "visualPreview" ||
-      source === "visualPreviewInitialLoad" ||
-      url.searchParams.has("oseid") ||
-      url.searchParams.has("osectx")
+      source === "visualPreviewInitialLoad"
     );
   } catch {
     return (
       raw.includes("source=visualPreview") ||
-      raw.includes("source=visualPreviewInitialLoad") ||
-      raw.includes("oseid=") ||
-      raw.includes("osectx=")
+      raw.includes("source=visualPreviewInitialLoad")
     );
   }
+}
+
+function hasShopifyEditorPreviewMarkers(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.searchParams.has("oseid") || url.searchParams.has("osectx");
+  } catch {
+    return raw.includes("oseid=") || raw.includes("osectx=");
+  }
+}
+
+function isAdminThemeEditorUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+
+  return (
+    raw.includes("admin.shopify.com/store/") &&
+    raw.includes("/themes/") &&
+    raw.includes("/editor")
+  );
 }
 
 function isThemePreviewDisabledForCiwi(ciwiBlock) {
   const params = new URL(window.location.href).searchParams;
   const referrer = String(document.referrer || "");
+  const hasAdminThemeEditorReferrer = isAdminThemeEditorUrl(referrer);
   const requestDesignMode = ciwiBlock?.querySelector(
     'input[name="ciwi_request_design_mode"]',
   )?.value;
@@ -153,8 +173,16 @@ function isThemePreviewDisabledForCiwi(ciwiBlock) {
   }
 
   if (
-    hasShopifyVisualPreviewParams(window.location.href) ||
-    hasShopifyVisualPreviewParams(referrer)
+    hasShopifyVisualPreviewSource(window.location.href) ||
+    hasShopifyVisualPreviewSource(referrer)
+  ) {
+    return true;
+  }
+
+  if (
+    hasAdminThemeEditorReferrer &&
+    (hasShopifyEditorPreviewMarkers(window.location.href) ||
+      hasShopifyEditorPreviewMarkers(referrer))
   ) {
     return true;
   }
@@ -163,11 +191,7 @@ function isThemePreviewDisabledForCiwi(ciwiBlock) {
     return true;
   }
 
-  if (
-    referrer.includes("admin.shopify.com/store/") &&
-    referrer.includes("/themes/") &&
-    referrer.includes("/editor")
-  ) {
+  if (hasAdminThemeEditorReferrer) {
     return true;
   }
 
@@ -2463,7 +2487,6 @@ export class CiwiswitcherForm extends HTMLElement {
     if (selectorType === "language") {
       if (!value || this.elements.languageInput.value == value) return;
       this.elements.languageInput.value = value;
-      localStorage.setItem("ciwi_selected_language", value);
       const flag = languageLocaleData?.[value]?.countries?.[0];
       updateLanguageSelectorFlag(this.elements.ciwiBlock, flag);
       const mainBoxFlag = this.querySelector("#main-language-flag");
