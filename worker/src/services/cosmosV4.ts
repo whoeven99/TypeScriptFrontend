@@ -872,6 +872,38 @@ function manualEmailTaskSourceFilter(): string {
   return "(NOT IS_DEFINED(c.taskSource) OR c.taskSource != @autoSource)";
 }
 
+/**
+ * 手动邮件最早任务创建时间（含）。此前创建的手动任务不发邮件。
+ * 默认 2026-08-03 北京时间 0 点；设为空 / false / 0 关闭过滤。
+ */
+export function resolveManualEmailMinCreatedAt(): string | null {
+  const raw = process.env.MANUAL_EMAIL_MIN_CREATED_AT;
+  if (raw === undefined) return "2026-08-03T00:00:00+08:00";
+  const value = raw.trim();
+  if (!value || value === "0" || value.toLowerCase() === "false") return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00:00+08:00`;
+  return value;
+}
+
+const MANUAL_EMAIL_MIN_CREATED_AT = resolveManualEmailMinCreatedAt();
+
+function manualEmailCreatedAtFilter(): string {
+  return MANUAL_EMAIL_MIN_CREATED_AT
+    ? "AND c.createdAt >= @manualEmailMinCreatedAt"
+    : "";
+}
+
+function manualEmailQueryParameters(): Array<{ name: string; value: string }> {
+  const parameters = [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }];
+  if (MANUAL_EMAIL_MIN_CREATED_AT) {
+    parameters.push({
+      name: "@manualEmailMinCreatedAt",
+      value: MANUAL_EMAIL_MIN_CREATED_AT,
+    });
+  }
+  return parameters;
+}
+
 /** 有待发邮件的手动翻译店（跨分区 DISTINCT shopName）。 */
 export async function findShopsWithPendingManualEmail(): Promise<string[]> {
   try {
@@ -882,8 +914,9 @@ export async function findShopsWithPendingManualEmail(): Promise<string[]> {
           WHERE ${manualEmailTaskSourceFilter()}
             AND ${emailNotifyStatusFilter()}
             AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
+            ${manualEmailCreatedAtFilter()}
         `,
-        parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
+        parameters: manualEmailQueryParameters(),
       })
       .fetchAll();
     return resources ?? [];
@@ -909,9 +942,10 @@ export async function findManualJobsNeedingEmailForShop(
             WHERE ${manualEmailTaskSourceFilter()}
               AND ${emailNotifyStatusFilter()}
               AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
+              ${manualEmailCreatedAtFilter()}
             ORDER BY c.updatedAt ASC
           `,
-          parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
+          parameters: manualEmailQueryParameters(),
         },
         { partitionKey: shopName },
       )

@@ -12,6 +12,8 @@
  *     手动 COMPLETED + 全部 PAUSED 合并入 210764；Status 列区分 Completed / Partially Completed。
  *     PAUSED 进度百分比对齐任务列表（translateUnitTotal 口径）。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
+ *  5. 手动任务默认仅对 2026-08-03（北京时间）及之后创建的任务发信；
+ *     可用 MANUAL_EMAIL_MIN_CREATED_AT 调整或关闭（false / 0 / 空）。
  *
  * 任务类型对应模板（对齐 Spring TencentEmailService）：
  *   manual + COMPLETED/PAUSED/CANCELLED → 210764 手动翻译汇总（Status：Completed / Paused / Canceled）
