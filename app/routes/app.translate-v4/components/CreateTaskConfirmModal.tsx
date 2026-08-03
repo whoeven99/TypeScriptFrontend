@@ -166,7 +166,7 @@ export function CreateTaskConfirmModal({
     shortfallCredits > 0 ? formatCreditsFull(shortfallCredits) : "0";
   const coverageLabel = `${coveragePercent}%`;
 
-  const scenarioMeta = getScenarioMeta(t, scenario, coveragePercent, shortfallCredits);
+  const scenarioMeta = getScenarioMeta(t, scenario);
   const isReady = scenario === "ready";
   const isInsufficientPaid = scenario === "insufficient_paid";
   const isTrialOffer = scenario === "insufficient_trial";
@@ -243,20 +243,15 @@ export function CreateTaskConfirmModal({
       >
         <div style={headerStyle}>
           <div style={headerCopyStyle}>
-            <div
-              style={{
-                ...statusBadgeStyle,
-                color: scenarioMeta.accent,
-                background: scenarioMeta.badgeBg,
-                borderColor: scenarioMeta.badgeBorder,
-              }}
-            >
-              {scenarioMeta.badge}
-            </div>
             <div style={titleStyle}>{scenarioMeta.title}</div>
-            <div style={descriptionStyle}>{scenarioMeta.description}</div>
             {shortfallCredits > 0 ? (
-              <div style={headlineStyle}>
+              <div
+                style={{
+                  ...headlineStyle,
+                  color: scenarioMeta.accent,
+                  background: scenarioMeta.headlineBg,
+                }}
+              >
                 {t("v4.createTask.confirmShortfallHeadline", {
                   credits: shortfallCreditsLabel,
                 })}
@@ -275,114 +270,100 @@ export function CreateTaskConfirmModal({
         </div>
 
         <div style={bodyStyle}>
-          <div
-            style={{
-              ...scenarioBannerStyle,
-              background: scenarioMeta.bannerBg,
-              borderColor: scenarioMeta.bannerBorder,
-            }}
-          >
-            <div style={scenarioBannerLabelStyle}>
-              {t("v4.createTask.confirmEstimatePanelTitle")}
-            </div>
-            <div style={scenarioBannerSummaryStyle}>{scenarioMeta.summary}</div>
-            <div style={scenarioBannerFootnoteStyle}>{scenarioMeta.progressHint}</div>
-          </div>
-
-          <div style={contentGridStyle}>
-            <InfoCard title={t("v4.createTask.confirmTaskDetailTitle")}>
-              <div style={detailListStyle}>
-                {detailItems.map((item) => (
-                  <DetailLine key={item.label} label={item.label} value={item.value} />
-                ))}
+          <InfoCard title={t("v4.createTask.confirmEstimatePanelTitle")} highlighted>
+            <div style={summaryTopRowStyle}>
+              <div style={summaryMainValueBlockStyle}>
+                <div style={summaryMainValueLabelStyle}>
+                  {isReady
+                    ? t("v4.createTask.confirmCoverageLabel")
+                    : t("v4.createTask.confirmCreditsShortfall")}
+                </div>
+                <div
+                  style={{
+                    ...summaryMainValueStyle,
+                    color: scenarioMeta.accent,
+                  }}
+                >
+                  {isReady ? coverageLabel : shortfallCreditsLabel}
+                </div>
               </div>
-            </InfoCard>
-
-            <InfoCard
-              title={t("v4.createTask.confirmEstimatePanelTitle")}
-              highlighted={!isReady}
-            >
-              <div style={metricsGridStyle}>
-                <MetricTile
+              <div style={summarySideStatsStyle}>
+                <CompactStat
                   label={t("v4.createTask.confirmCreditsRequired")}
-                  value={estimate?.loading ? t("v4.createTask.estimateLoading") : estimatedCreditsLabel}
-                  tone="default"
-                />
-                <MetricTile
-                  label={t("v4.createTask.confirmCreditsAvailable")}
-                  value={estimate?.loading ? t("v4.createTask.estimateLoading") : remainingCreditsLabel}
-                  tone={isReady ? "positive" : "default"}
-                />
-                <MetricTile
-                  label={
-                    isReady
-                      ? t("v4.createTask.confirmCoverageLabel")
-                      : t("v4.createTask.confirmCreditsShortfall")
-                  }
                   value={
                     estimate?.loading
                       ? t("v4.createTask.estimateLoading")
-                      : isReady
-                        ? coverageLabel
-                        : shortfallCreditsLabel
+                      : estimatedCreditsLabel
                   }
-                  tone={isReady ? "positive" : "warning"}
+                />
+                <CompactStat
+                  label={t("v4.createTask.confirmCreditsAvailable")}
+                  value={
+                    estimate?.loading
+                      ? t("v4.createTask.estimateLoading")
+                      : remainingCreditsLabel
+                  }
                 />
               </div>
+            </div>
 
-              <div style={progressSectionStyle}>
-                <div style={progressHeaderStyle}>
-                  <span style={progressLabelStyle}>
-                    {t("v4.createTask.confirmCoverageLabel")}
-                  </span>
-                  <span
-                    style={{
-                      ...progressValueStyle,
-                      color: scenarioMeta.accent,
-                    }}
-                  >
-                    {coverageLabel}
-                  </span>
-                </div>
-                <div style={progressTrackStyle}>
-                  <div
-                    style={{
-                      ...progressFillStyle,
-                      width: `${progressPercent}%`,
-                      background: scenarioMeta.progressBar,
-                    }}
-                  />
-                </div>
-                <div style={estimateHintStyle}>
-                  {estimate?.loading
-                    ? t("v4.createTask.estimateLoading")
-                    : estimate?.isUpperBound
-                      ? t("v4.createTask.estimateFootnote")
-                      : scenarioMeta.progressHint}
-                </div>
+            <div style={progressSectionStyle}>
+              <div style={progressHeaderStyle}>
+                <span style={progressLabelStyle}>
+                  {t("v4.createTask.confirmCoverageLabel")}
+                </span>
+                <span
+                  style={{
+                    ...progressValueStyle,
+                    color: scenarioMeta.accent,
+                  }}
+                >
+                  {coverageLabel}
+                </span>
               </div>
-            </InfoCard>
-          </div>
+              <div style={progressTrackStyle}>
+                <div
+                  style={{
+                    ...progressFillStyle,
+                    width: `${progressPercent}%`,
+                    background: scenarioMeta.progressBar,
+                  }}
+                />
+              </div>
+            </div>
+          </InfoCard>
 
-          {!isReady ? (
-            <InfoCard title={offerTitle(t, scenario)} highlighted={scenario !== "insufficient_paid"}>
-              <div style={offerDescriptionStyle}>
-                {offerDescription(t, scenario)}
+          <InfoCard title={t("v4.createTask.confirmTaskDetailTitle")}>
+            <div style={detailListStyle}>
+              {detailItems.map((item) => (
+                <DetailLine key={item.label} label={item.label} value={item.value} />
+              ))}
+            </div>
+          </InfoCard>
+
+          {!isReady && scenario !== "insufficient_paid" ? (
+            <InfoCard title={offerTitle(t, scenario)} highlighted>
+              <div style={offerFeatureGridStyle}>
+                {offerFeatures(t, scenario).map((feature) => (
+                  <div key={feature} style={offerFeatureItemStyle}>
+                    {feature}
+                  </div>
+                ))}
               </div>
-              {scenario !== "insufficient_paid" ? (
-                <div style={offerFeatureGridStyle}>
-                  {offerFeatures(t, scenario).map((feature) => (
-                    <div key={feature} style={offerFeatureItemStyle}>
-                      {feature}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
             </InfoCard>
           ) : null}
         </div>
 
         <div style={footerStyle}>
+          <Button
+            size="large"
+            type="primary"
+            onClick={handlePrimaryAction}
+            loading={creating || planFetcher.state === "submitting"}
+            style={primaryButtonStyle}
+          >
+            {primaryActionLabel}
+          </Button>
           {secondaryActionLabel ? (
             <Button
               size="large"
@@ -393,15 +374,6 @@ export function CreateTaskConfirmModal({
               {secondaryActionLabel}
             </Button>
           ) : null}
-          <Button
-            size="large"
-            type="primary"
-            onClick={handlePrimaryAction}
-            loading={creating || planFetcher.state === "submitting"}
-            style={primaryButtonStyle}
-          >
-            {primaryActionLabel}
-          </Button>
         </div>
       </div>
     </div>
@@ -440,35 +412,15 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetricTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "default" | "positive" | "warning";
-}) {
+function CompactStat({ label, value }: { label: string; value: string }) {
   return (
     <div
       style={{
-        ...metricTileStyle,
-        background:
-          tone === "positive"
-            ? "rgba(10, 147, 76, 0.08)"
-            : tone === "warning"
-              ? "rgba(223, 90, 0, 0.08)"
-              : "rgba(15, 23, 42, 0.03)",
-        borderColor:
-          tone === "positive"
-            ? "rgba(10, 147, 76, 0.18)"
-            : tone === "warning"
-              ? "rgba(223, 90, 0, 0.18)"
-              : "rgba(15, 23, 42, 0.08)",
+        ...compactStatStyle,
       }}
     >
-      <div style={metricLabelStyle}>{label}</div>
-      <div style={metricValueStyle}>{value}</div>
+      <div style={compactStatLabelStyle}>{label}</div>
+      <div style={compactStatValueStyle}>{value}</div>
     </div>
   );
 }
@@ -476,74 +428,38 @@ function MetricTile({
 function getScenarioMeta(
   t: TranslateFn,
   scenario: CreateTaskConfirmScenario,
-  coveragePercent: number,
-  shortfallCredits: number,
 ) {
   if (scenario === "ready") {
     return {
-      badge: t("v4.createTask.confirmStatusReady"),
       title: t("v4.createTask.confirmReadyTitle"),
-      description: t("v4.createTask.confirmReadySummary"),
-      summary: t("v4.createTask.confirmReadySummary"),
-      progressHint: t("v4.createTask.confirmCoverageHintReady"),
       accent: "#0a934c",
-      badgeBg: "rgba(10, 147, 76, 0.1)",
-      badgeBorder: "rgba(10, 147, 76, 0.18)",
-      bannerBg: "linear-gradient(135deg, rgba(10, 147, 76, 0.12) 0%, rgba(33, 128, 255, 0.08) 100%)",
-      bannerBorder: "rgba(10, 147, 76, 0.16)",
+      headlineBg: "rgba(10, 147, 76, 0.1)",
       progressBar: "linear-gradient(90deg, #0a934c 0%, #2180ff 100%)",
     };
   }
 
   if (scenario === "insufficient_paid") {
     return {
-      badge: t("v4.createTask.confirmStatusPartial"),
       title: t("v4.createTask.confirmPartialTitle"),
-      description: t("v4.createTask.confirmPartialSummary"),
-      summary: t("v4.createTask.confirmPartialSummary"),
-      progressHint: t("v4.createTask.confirmCoverageHintPartial", {
-        percent: coveragePercent,
-      }),
       accent: "#df5a00",
-      badgeBg: "rgba(223, 90, 0, 0.1)",
-      badgeBorder: "rgba(223, 90, 0, 0.18)",
-      bannerBg: "linear-gradient(135deg, rgba(255, 184, 77, 0.18) 0%, rgba(255, 236, 209, 0.42) 100%)",
-      bannerBorder: "rgba(223, 90, 0, 0.16)",
+      headlineBg: "rgba(223, 90, 0, 0.1)",
       progressBar: "linear-gradient(90deg, #ffb84d 0%, #df5a00 100%)",
     };
   }
 
   if (scenario === "insufficient_trial") {
     return {
-      badge: t("v4.createTask.confirmStatusTrial"),
-      title: t("v4.createTask.confirmNoCreditsTitle"),
-      description: t("v4.createTask.confirmTrialSummary"),
-      summary: t("v4.createTask.confirmTrialSummary"),
-      progressHint: t("v4.createTask.confirmCoverageHintTrial", {
-        percent: coveragePercent,
-      }),
+      title: t("v4.createTask.confirmTrialTitle"),
       accent: "#2180ff",
-      badgeBg: "rgba(33, 128, 255, 0.1)",
-      badgeBorder: "rgba(33, 128, 255, 0.18)",
-      bannerBg: "linear-gradient(135deg, rgba(33, 128, 255, 0.14) 0%, rgba(172, 215, 255, 0.34) 100%)",
-      bannerBorder: "rgba(33, 128, 255, 0.16)",
+      headlineBg: "rgba(33, 128, 255, 0.1)",
       progressBar: "linear-gradient(90deg, #8dc5ff 0%, #2180ff 100%)",
     };
   }
 
   return {
-    badge: t("v4.createTask.confirmStatusPricing"),
-    title: t("v4.createTask.confirmNoCreditsTitle"),
-    description: t("v4.createTask.confirmPricingSummary"),
-    summary: t("v4.createTask.confirmPricingSummary"),
-    progressHint: t("v4.createTask.confirmCoverageHintPricing", {
-      credits: formatCreditsFull(shortfallCredits),
-    }),
+    title: t("v4.createTask.confirmPricingTitle"),
     accent: "#7a3cff",
-    badgeBg: "rgba(122, 60, 255, 0.1)",
-    badgeBorder: "rgba(122, 60, 255, 0.18)",
-    bannerBg: "linear-gradient(135deg, rgba(122, 60, 255, 0.12) 0%, rgba(225, 213, 255, 0.44) 100%)",
-    bannerBorder: "rgba(122, 60, 255, 0.16)",
+    headlineBg: "rgba(122, 60, 255, 0.1)",
     progressBar: "linear-gradient(90deg, #c6a4ff 0%, #7a3cff 100%)",
   };
 }
@@ -555,18 +471,6 @@ function offerTitle(t: TranslateFn, scenario: CreateTaskConfirmScenario): string
   return scenario === "insufficient_trial"
     ? t("v4.createTask.confirmTrialOfferTitle")
     : t("v4.createTask.confirmPricingOfferTitle");
-}
-
-function offerDescription(
-  t: TranslateFn,
-  scenario: CreateTaskConfirmScenario,
-): string {
-  if (scenario === "insufficient_paid") {
-    return t("v4.createTask.confirmPaidOfferDesc");
-  }
-  return scenario === "insufficient_trial"
-    ? t("v4.createTask.confirmTrialOfferDesc")
-    : t("v4.createTask.confirmPricingOfferDesc");
 }
 
 function offerFeatures(
@@ -663,25 +567,11 @@ const bodyStyle = {
 
 const footerStyle = {
   display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
+  flexDirection: "column",
+  alignItems: "stretch",
   gap: 12,
-  flexWrap: "wrap",
   padding: "22px 28px 28px",
   background: v4Colors.cardBg,
-} as const;
-
-const statusBadgeStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  width: "fit-content",
-  minHeight: 32,
-  padding: "6px 12px",
-  borderRadius: 999,
-  border: "1px solid transparent",
-  fontSize: 13,
-  fontWeight: 700,
-  lineHeight: "20px",
 } as const;
 
 const titleStyle = {
@@ -690,13 +580,6 @@ const titleStyle = {
   fontWeight: 700,
   lineHeight: 1.15,
   color: v4Colors.text,
-} as const;
-
-const descriptionStyle = {
-  color: v4Colors.textMuted,
-  fontSize: 15,
-  lineHeight: "24px",
-  maxWidth: 620,
 } as const;
 
 const headlineStyle = {
@@ -726,43 +609,6 @@ const closeButtonStyle = {
   lineHeight: 1,
   cursor: "pointer",
   flexShrink: 0,
-} as const;
-
-const scenarioBannerStyle = {
-  borderRadius: 20,
-  border: "1px solid transparent",
-  padding: "18px 18px 16px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-} as const;
-
-const scenarioBannerLabelStyle = {
-  fontSize: 12,
-  fontWeight: 700,
-  lineHeight: "18px",
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-  color: v4Colors.textMuted,
-} as const;
-
-const scenarioBannerSummaryStyle = {
-  color: v4Colors.text,
-  fontSize: 18,
-  lineHeight: "28px",
-  fontWeight: 700,
-} as const;
-
-const scenarioBannerFootnoteStyle = {
-  color: v4Colors.textMuted,
-  fontSize: 14,
-  lineHeight: "22px",
-} as const;
-
-const contentGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-  gap: 16,
 } as const;
 
 const cardStyle = {
@@ -806,35 +652,68 @@ const detailValueStyle = {
   wordBreak: "break-word",
 } as const;
 
-const metricsGridStyle = {
+const summaryTopRowStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gridTemplateColumns: "minmax(0, 1.1fr) minmax(220px, 0.9fr)",
+  gap: 14,
+  alignItems: "stretch",
+} as const;
+
+const summaryMainValueBlockStyle = {
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  gap: 6,
+  minHeight: 124,
+  padding: "18px 18px 16px",
+  borderRadius: 18,
+  background: v4Colors.cardBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
+} as const;
+
+const summaryMainValueLabelStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: "20px",
+} as const;
+
+const summaryMainValueStyle = {
+  fontSize: 40,
+  fontWeight: 700,
+  lineHeight: 1,
+} as const;
+
+const summarySideStatsStyle = {
+  display: "flex",
+  flexDirection: "column",
   gap: 12,
 } as const;
 
-const metricTileStyle = {
+const compactStatStyle = {
+  minHeight: 56,
+  padding: "12px 14px",
   borderRadius: 16,
-  border: "1px solid transparent",
-  padding: "14px 14px 12px",
+  background: v4Colors.cardBg,
+  border: `1px solid ${v4Colors.cardBorder}`,
   display: "flex",
   flexDirection: "column",
-  gap: 6,
+  justifyContent: "center",
+  gap: 4,
 } as const;
 
-const metricLabelStyle = {
+const compactStatLabelStyle = {
   color: v4Colors.textMuted,
   fontSize: 12,
   fontWeight: 700,
   lineHeight: "18px",
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
 } as const;
 
-const metricValueStyle = {
+const compactStatValueStyle = {
   color: v4Colors.text,
-  fontSize: 24,
+  fontSize: 20,
   fontWeight: 700,
-  lineHeight: "30px",
+  lineHeight: "24px",
   wordBreak: "break-word",
 } as const;
 
@@ -865,12 +744,6 @@ const progressValueStyle = {
   lineHeight: "24px",
 } as const;
 
-const estimateHintStyle = {
-  color: v4Colors.textMuted,
-  fontSize: 13,
-  lineHeight: "22px",
-} as const;
-
 const progressTrackStyle = {
   width: "100%",
   height: 12,
@@ -882,13 +755,6 @@ const progressTrackStyle = {
 const progressFillStyle = {
   height: "100%",
   borderRadius: 999,
-} as const;
-
-const offerDescriptionStyle = {
-  color: v4Colors.textMuted,
-  fontSize: 14,
-  lineHeight: "22px",
-  marginBottom: 14,
 } as const;
 
 const offerFeatureGridStyle = {
@@ -915,7 +781,7 @@ const offerFeatureItemStyle = {
 } as const;
 
 const primaryButtonStyle = {
-  minWidth: 280,
+  width: "100%",
   height: "auto",
   minHeight: 52,
   paddingInline: 28,
@@ -923,7 +789,7 @@ const primaryButtonStyle = {
 } as const;
 
 const secondaryButtonStyle = {
-  minWidth: 220,
+  width: "100%",
   height: "auto",
   minHeight: 52,
   paddingInline: 24,
