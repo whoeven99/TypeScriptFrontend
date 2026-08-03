@@ -117,10 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       };
     } catch (error) {
-      logManageTranslationGraphQLErrorDetail(
-        "Error refreshing current page",
-        error,
-      );
+      logManageTranslationGraphQLErrorDetail("Error refreshing current page", error);
       return buildManageActionErrorResponse(error, { response: undefined });
     }
   }
@@ -158,7 +155,8 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
-  const { consume: consumeConfirmResponse } = useConsumableFetcherData<any>();
+  const { consume: consumeConfirmResponse } =
+    useConsumableFetcherData<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 

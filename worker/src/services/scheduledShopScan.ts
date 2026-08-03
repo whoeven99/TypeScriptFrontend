@@ -79,8 +79,6 @@ async function enqueueScheduledShopScan(shop: string): Promise<string> {
     scanId,
     shopName: shop,
     trigger: "scheduled",
-    mode: "data_only",
-    task: "content_size",
     blobPrefix,
   });
   await pushShopScanHint({ scanId, shopName: shop });

@@ -32,14 +32,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
-  const requestedSource = body.source?.trim();
+  let source = body.source?.trim() || "";
   const fieldKey = body.key?.trim() || "value";
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
   // 上限保护：自定义提示词最多 500 字，超出截断，避免撑爆 system prompt。
   const customPrompt = (body.customPrompt ?? "").trim().slice(0, 500);
-  let source = requestedSource || "";
   const requestSummary = {
     shop,
+    source,
     target,
     resourceType: body.resourceType?.trim() || null,
     fieldKey,
@@ -85,7 +85,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!quotaGuard.ok) {
       console.warn("[single] quota guard blocked request", {
         ...requestSummary,
-        source,
         quotaError: quotaGuard.error,
         quotaStatus: quotaGuard.status,
       });
@@ -100,15 +99,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    console.log("[single] api", {
-      shop,
-      source,
-      target,
-      fieldKey,
-      shopifyType,
-      original: text,
-      customPrompt,
-    });
     let translatedText = "";
     let usedTokens = 0;
     try {
@@ -118,8 +108,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         text,
         source,
         fieldKey,
-        module: body.resourceType?.trim() || undefined,
-        resourceId: body.resourceId,
         shopifyType,
         customPrompt,
       });
@@ -129,19 +117,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error("[single] translate stage failed", requestSummary, err);
       throw err;
     }
+
     try {
       await deductQuota(shop, usedTokens);
     } catch (err) {
       console.error(
         "[single] quota deduction failed",
-        { ...requestSummary, source, usedTokens },
+        { ...requestSummary, usedTokens },
         err,
       );
       throw err;
     }
+
     return json({ success: true, response: translatedText });
   } catch (err) {
-    console.error(`[single] ${shop} failed`, { ...requestSummary, source }, err);
+    console.error(`[single] ${shop} failed`, requestSummary, err);
     const appError = buildTranslateV4Error(
       TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
     );

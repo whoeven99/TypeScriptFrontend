@@ -114,7 +114,9 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
           }}
         >
           <Text type="secondary">
-            {t("Add suggestions and translate again.")}
+            {t(
+              "Add suggestions and translate again.",
+            )}
           </Text>
           <TextArea
             rows={4}
