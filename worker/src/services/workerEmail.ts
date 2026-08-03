@@ -178,8 +178,8 @@ export type TranslationJobSummary = {
   elapsedMinutes: number;
   /** 翻译完成百分比（0–100），用于部分翻译邮件 */
   completionPercent?: number;
-  /** 终态：COMPLETED 表格 Status=Completed；PAUSED=Partially Completed (xx%) */
-  terminalStatus?: "COMPLETED" | "PAUSED";
+  /** 终态：COMPLETED / PAUSED / CANCELLED → 表格 Status 列文案 */
+  terminalStatus?: "COMPLETED" | "PAUSED" | "CANCELLED";
 };
 
 /** 部分完成/额度暂停邮件：进度为 0 时不通知（如扫描后额度为 0 即暂停）。 */
@@ -204,9 +204,12 @@ function buildTranslationSuccessHtmlData(jobs: TranslationJobSummary[]): string 
 }
 
 function formatManualRowStatus(job: TranslationJobSummary): string {
+  if (job.terminalStatus === "CANCELLED") {
+    return "Canceled";
+  }
   if (job.terminalStatus === "PAUSED") {
     const pct = job.completionPercent ?? 0;
-    return `Partially Completed (${pct}%)`;
+    return `Paused (${pct}%)`;
   }
   return "Completed";
 }
@@ -228,7 +231,7 @@ function buildManualTranslationRows(jobs: TranslationJobSummary[]): string {
 
 /**
  * 手动翻译汇总邮件（模板 210764）。
- * 同店多语言合并为一封；COMPLETED 与全部 PAUSED 同表展示。
+ * 同店多语言合并为一封；COMPLETED / PAUSED / CANCELLED 同表展示。
  * 模板变量 user + shop_name + translation_rows。
  */
 export async function sendManualTranslationSuccessEmail(

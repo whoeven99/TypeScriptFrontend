@@ -14,7 +14,7 @@
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *
  * 任务类型对应模板（对齐 Spring TencentEmailService）：
- *   manual + COMPLETED/PAUSED → 210764 手动翻译汇总（同店多语言合并，Status 列区分 Completed / Partially Completed）
+ *   manual + COMPLETED/PAUSED/CANCELLED → 210764 手动翻译汇总（Status：Completed / Paused / Canceled）
  *   auto   + COMPLETED → 140352 自动翻译成功（同店多语言合并）
  *   auto   + PAUSED → 159297 翻译部分完成（额度不足）
  */
@@ -154,7 +154,11 @@ function calcCompletionPercent(job: TranslationV4Job): number {
 
 function toJobSummary(job: TranslationV4Job): TranslationJobSummary {
   const terminalStatus: TranslationJobSummary["terminalStatus"] =
-    job.status === "PAUSED" ? "PAUSED" : "COMPLETED";
+    job.status === "PAUSED"
+      ? "PAUSED"
+      : job.status === "CANCELLED"
+        ? "CANCELLED"
+        : "COMPLETED";
   return {
     target: job.target,
     usedTokens: job.metrics.usedTokens ?? 0,
@@ -271,18 +275,18 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
     const { email: to, userName } = recipient;
     const completedJobs = jobs.filter((j) => j.status === "COMPLETED");
     const pausedJobs = jobs.filter((j) => j.status === "PAUSED");
-    const jobsToEmail: TranslationJobSummary[] = [
-      ...completedJobs.map(toJobSummary),
-      ...pausedJobs.map(toJobSummary),
-    ];
+    const cancelledJobs = jobs.filter((j) => j.status === "CANCELLED");
+    const jobsToEmail: TranslationJobSummary[] = jobs.map(toJobSummary);
 
     logDetail("handle-manual-split", {
       shop: shopName,
       to: maskEmail(to),
       completedCount: completedJobs.length,
       pausedCount: pausedJobs.length,
+      cancelledCount: cancelledJobs.length,
       completedTargets: completedJobs.map((j) => j.target),
       pausedTargets: pausedJobs.map((j) => j.target),
+      cancelledTargets: cancelledJobs.map((j) => j.target),
       emailedTargets: jobsToEmail.map((j) => j.target),
     });
 
@@ -300,11 +304,11 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
       targets: jobsToEmail.map((j) => j.target),
     });
     if (sent) {
-      await markEmailSentBatch([...completedJobs, ...pausedJobs]);
+      await markEmailSentBatch(jobs);
       logDetail("handle-manual-done", {
         shop: shopName,
         langs: jobsToEmail.map((j) => j.target),
-        markedJobIds: [...completedJobs, ...pausedJobs].map((j) => j.id),
+        markedJobIds: jobs.map((j) => j.id),
       });
     }
   } finally {
@@ -406,10 +410,8 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
         targets: pausedJobs.map((j) => j.target),
       });
       await markEmailSentBatch(pausedJobs);
-      return;
-    }
-
-    const sent = await sendTranslationPartialEmail(
+    } else {
+      const sent = await sendTranslationPartialEmail(
       shopName,
       to,
       userName,
@@ -424,14 +426,25 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
       targets: pausedJobs.map((j) => j.target),
       emailedTargets: pausedWithProgress.map((j) => j.target),
     });
-    if (sent) {
-      await markEmailSentBatch(pausedJobs);
-      logDetail("handle-auto-partial-done", {
-        shop: shopName,
-        langs: pausedWithProgress.map((j) => j.target),
-        markedJobIds: pausedJobs.map((j) => j.id),
-      });
+      if (sent) {
+        await markEmailSentBatch(pausedJobs);
+        logDetail("handle-auto-partial-done", {
+          shop: shopName,
+          langs: pausedWithProgress.map((j) => j.target),
+          markedJobIds: pausedJobs.map((j) => j.id),
+        });
+      }
     }
+  }
+
+  const cancelledJobs = jobs.filter((j) => j.status === "CANCELLED");
+  if (cancelledJobs.length > 0) {
+    logDetail("handle-auto-cancelled-mark", {
+      shop: shopName,
+      jobIds: cancelledJobs.map((j) => j.id),
+      targets: cancelledJobs.map((j) => j.target),
+    });
+    await markEmailSentBatch(cancelledJobs);
   }
   } finally {
     await releaseEmailSendLock(shopName, "auto");

@@ -835,9 +835,14 @@ export async function releaseJobsClaimedBySuffix(claimSuffix: string): Promise<n
   return released;
 }
 
+/** 完成通知邮件涵盖的终态（含用户取消的 CANCELLED）。 */
+function emailNotifyStatusFilter(): string {
+  return "(c.status = 'COMPLETED' OR c.status = 'PAUSED' OR c.status = 'CANCELLED')";
+}
+
 /**
  * 找出所有需要发送完成通知邮件的任务（跨分区查询）。
- * 条件：status 为 COMPLETED 或 PAUSED，且 emailSent 未置为 true。
+ * 条件：status 为 COMPLETED / PAUSED / CANCELLED，且 emailSent 未置为 true。
  * 手动/自动由 taskSource 区分（TsFrontend-Auto = 自动，其余 = 手动）。
  * 收件人邮箱由 emailWorker 发信时通过 Shopify GraphQL 实时查询。
  */
@@ -847,7 +852,7 @@ export async function findJobsNeedingEmail(limit = 20): Promise<TranslationV4Job
       .items.query<TranslationV4Job>({
         query: `
           SELECT * FROM c
-          WHERE (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+          WHERE ${emailNotifyStatusFilter()}
             AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
           ORDER BY c.updatedAt ASC
           OFFSET 0 LIMIT @limit
@@ -875,7 +880,7 @@ export async function findShopsWithPendingManualEmail(): Promise<string[]> {
         query: `
           SELECT DISTINCT VALUE c.shopName FROM c
           WHERE ${manualEmailTaskSourceFilter()}
-            AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+            AND ${emailNotifyStatusFilter()}
             AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
         `,
         parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
@@ -902,7 +907,7 @@ export async function findManualJobsNeedingEmailForShop(
           query: `
             SELECT * FROM c
             WHERE ${manualEmailTaskSourceFilter()}
-              AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+              AND ${emailNotifyStatusFilter()}
               AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
             ORDER BY c.updatedAt ASC
           `,
@@ -989,7 +994,7 @@ export async function findShopsWithPendingAutoEmail(): Promise<string[]> {
         query: `
           SELECT DISTINCT VALUE c.shopName FROM c
           WHERE c.taskSource = @autoSource
-            AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+            AND ${emailNotifyStatusFilter()}
             AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
         `,
         parameters: [{ name: "@autoSource", value: TSF_AUTO_TASK_SOURCE }],
@@ -1016,7 +1021,7 @@ export async function findAutoJobsNeedingEmailForShop(
           query: `
             SELECT * FROM c
             WHERE c.taskSource = @autoSource
-              AND (c.status = 'COMPLETED' OR c.status = 'PAUSED')
+              AND ${emailNotifyStatusFilter()}
               AND (NOT IS_DEFINED(c.emailSent) OR c.emailSent != true)
             ORDER BY c.updatedAt ASC
           `,
