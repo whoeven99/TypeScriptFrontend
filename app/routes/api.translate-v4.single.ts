@@ -29,7 +29,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     type?: string;
     resourceId?: string | null;
     customPrompt?: string;
-    aiModel?: string;
   };
   const target = (body.target ?? "").trim();
   const text = body.context ?? "";
@@ -38,7 +37,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shopifyType = body.type?.trim() || body.resourceType?.trim();
   // 上限保护：自定义提示词最多 500 字，超出截断，避免撑爆 system prompt。
   const customPrompt = (body.customPrompt ?? "").trim().slice(0, 500);
-  const aiModel = body.aiModel?.trim() || undefined;
   let source = requestedSource || "";
   const requestSummary = {
     shop,
@@ -49,7 +47,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     resourceId: body.resourceId ?? null,
     textLength: text.length,
     hasCustomPrompt: customPrompt.length > 0,
-    aiModel: aiModel ?? null,
   };
 
   try {
@@ -111,7 +108,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       shopifyType,
       original: text,
       customPrompt,
-      aiModel,
     });
     let translatedText = "";
     let usedTokens = 0;
@@ -126,7 +122,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         resourceId: body.resourceId,
         shopifyType,
         customPrompt,
-        aiModel,
       });
       translatedText = result.translatedText;
       usedTokens = result.usedTokens;

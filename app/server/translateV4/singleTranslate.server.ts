@@ -17,7 +17,6 @@ export type TranslateSingleTextArgs = {
   module?: string;
   resourceId?: string | null;
   shopifyType?: string;
-  aiModel?: string;
   /** 用户自定义提示词：描述本次翻译方向/风格，注入 system prompt。 */
   customPrompt?: string;
 };
@@ -35,7 +34,6 @@ export async function translateSingleText(
     module: args.module,
     resourceId: args.resourceId ?? undefined,
     shopifyType: args.shopifyType,
-    aiModel: args.aiModel,
     profileBlock,
     customPrompt: args.customPrompt,
   });
