@@ -1,5 +1,5 @@
 import React from "react";
-import { OptionType } from "./paymentModal";
+import type { OptionType } from "./paymentModal";
 import { Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
@@ -105,12 +105,9 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
             <Text style={{ display: "block", color: v4Colors.textMuted, marginBottom: 16 }}>
               {Number(option.Credits).toLocaleString()} {t("credits")}
             </Text>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <Text strong style={{ fontSize: 20, lineHeight: 1, color: v4Colors.text }}>
-                ${option.price.currentPrice}
-              </Text>
-              <Text style={{ color: v4Colors.textMuted }}>{t("one-time")}</Text>
-            </div>
+            <Text strong style={{ display: "block", fontSize: 20, lineHeight: 1, color: v4Colors.text }}>
+              ${option.price.currentPrice}
+            </Text>
           </>
         ) : (
           <>

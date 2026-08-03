@@ -271,40 +271,34 @@ export function CreateTaskConfirmModal({
 
         <div style={bodyStyle}>
           <InfoCard title={t("v4.createTask.confirmEstimatePanelTitle")} highlighted>
-            <div style={summaryTopRowStyle}>
-              <div style={summaryMainValueBlockStyle}>
-                <div style={summaryMainValueLabelStyle}>
-                  {isReady
+            <div style={summaryMetricsGridStyle}>
+              <MetricCard
+                label={
+                  isReady
                     ? t("v4.createTask.confirmCoverageLabel")
-                    : t("v4.createTask.confirmCreditsShortfall")}
-                </div>
-                <div
-                  style={{
-                    ...summaryMainValueStyle,
-                    color: scenarioMeta.accent,
-                  }}
-                >
-                  {isReady ? coverageLabel : shortfallCreditsLabel}
-                </div>
-              </div>
-              <div style={summarySideStatsStyle}>
-                <CompactStat
-                  label={t("v4.createTask.confirmCreditsRequired")}
-                  value={
-                    estimate?.loading
-                      ? t("v4.createTask.estimateLoading")
-                      : estimatedCreditsLabel
-                  }
-                />
-                <CompactStat
-                  label={t("v4.createTask.confirmCreditsAvailable")}
-                  value={
-                    estimate?.loading
-                      ? t("v4.createTask.estimateLoading")
-                      : remainingCreditsLabel
-                  }
-                />
-              </div>
+                    : t("v4.createTask.confirmCreditsShortfall")
+                }
+                value={isReady ? coverageLabel : shortfallCreditsLabel}
+                emphasized
+                accentColor={scenarioMeta.accent}
+                accentBackground={scenarioMeta.metricBg}
+              />
+              <MetricCard
+                label={t("v4.createTask.confirmCreditsRequired")}
+                value={
+                  estimate?.loading
+                    ? t("v4.createTask.estimateLoading")
+                    : estimatedCreditsLabel
+                }
+              />
+              <MetricCard
+                label={t("v4.createTask.confirmCreditsAvailable")}
+                value={
+                  estimate?.loading
+                    ? t("v4.createTask.estimateLoading")
+                    : remainingCreditsLabel
+                }
+              />
             </div>
 
             <div style={progressSectionStyle}>
@@ -356,6 +350,7 @@ export function CreateTaskConfirmModal({
 
         <div style={footerStyle}>
           <Button
+            block
             size="large"
             type="primary"
             onClick={handlePrimaryAction}
@@ -366,6 +361,7 @@ export function CreateTaskConfirmModal({
           </Button>
           {secondaryActionLabel ? (
             <Button
+              block
               size="large"
               onClick={handleSecondaryAction}
               disabled={creating}
@@ -412,15 +408,40 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CompactStat({ label, value }: { label: string; value: string }) {
+function MetricCard({
+  label,
+  value,
+  emphasized = false,
+  accentColor,
+  accentBackground,
+}: {
+  label: string;
+  value: string;
+  emphasized?: boolean;
+  accentColor?: string;
+  accentBackground?: string;
+}) {
   return (
     <div
       style={{
-        ...compactStatStyle,
+        ...metricCardStyle,
+        background: emphasized ? accentBackground : v4Colors.cardBg,
+        borderColor: emphasized
+          ? accentBackground || "rgba(15, 23, 42, 0.08)"
+          : v4Colors.cardBorder,
       }}
     >
-      <div style={compactStatLabelStyle}>{label}</div>
-      <div style={compactStatValueStyle}>{value}</div>
+      <div style={metricCardLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...metricCardValueStyle,
+          color: emphasized && accentColor ? accentColor : v4Colors.text,
+          fontSize: emphasized ? 34 : 28,
+          lineHeight: emphasized ? "38px" : "32px",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -434,6 +455,7 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmReadyTitle"),
       accent: "#0a934c",
       headlineBg: "rgba(10, 147, 76, 0.1)",
+      metricBg: "rgba(10, 147, 76, 0.08)",
       progressBar: "linear-gradient(90deg, #0a934c 0%, #2180ff 100%)",
     };
   }
@@ -443,6 +465,7 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmPartialTitle"),
       accent: "#df5a00",
       headlineBg: "rgba(223, 90, 0, 0.1)",
+      metricBg: "rgba(223, 90, 0, 0.08)",
       progressBar: "linear-gradient(90deg, #ffb84d 0%, #df5a00 100%)",
     };
   }
@@ -452,6 +475,7 @@ function getScenarioMeta(
       title: t("v4.createTask.confirmTrialTitle"),
       accent: "#2180ff",
       headlineBg: "rgba(33, 128, 255, 0.1)",
+      metricBg: "rgba(33, 128, 255, 0.08)",
       progressBar: "linear-gradient(90deg, #8dc5ff 0%, #2180ff 100%)",
     };
   }
@@ -460,6 +484,7 @@ function getScenarioMeta(
     title: t("v4.createTask.confirmPricingTitle"),
     accent: "#7a3cff",
     headlineBg: "rgba(122, 60, 255, 0.1)",
+    metricBg: "rgba(122, 60, 255, 0.08)",
     progressBar: "linear-gradient(90deg, #c6a4ff 0%, #7a3cff 100%)",
   };
 }
@@ -652,68 +677,38 @@ const detailValueStyle = {
   wordBreak: "break-word",
 } as const;
 
-const summaryTopRowStyle = {
+const summaryMetricsGridStyle = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.1fr) minmax(220px, 0.9fr)",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: 14,
   alignItems: "stretch",
 } as const;
 
-const summaryMainValueBlockStyle = {
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  gap: 6,
-  minHeight: 124,
-  padding: "18px 18px 16px",
-  borderRadius: 18,
-  background: v4Colors.cardBg,
-  border: `1px solid ${v4Colors.cardBorder}`,
-} as const;
-
-const summaryMainValueLabelStyle = {
-  color: v4Colors.textMuted,
-  fontSize: 13,
-  fontWeight: 700,
-  lineHeight: "20px",
-} as const;
-
-const summaryMainValueStyle = {
-  fontSize: 40,
-  fontWeight: 700,
-  lineHeight: 1,
-} as const;
-
-const summarySideStatsStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-} as const;
-
-const compactStatStyle = {
-  minHeight: 56,
-  padding: "12px 14px",
+const metricCardStyle = {
+  minHeight: 104,
+  padding: "16px",
   borderRadius: 16,
-  background: v4Colors.cardBg,
   border: `1px solid ${v4Colors.cardBorder}`,
   display: "flex",
   flexDirection: "column",
-  justifyContent: "center",
-  gap: 4,
+  justifyContent: "space-between",
+  gap: 8,
 } as const;
 
-const compactStatLabelStyle = {
+const metricCardLabelStyle = {
   color: v4Colors.textMuted,
   fontSize: 12,
   fontWeight: 700,
   lineHeight: "18px",
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
 } as const;
 
-const compactStatValueStyle = {
+const metricCardValueStyle = {
   color: v4Colors.text,
-  fontSize: 20,
+  fontSize: 28,
   fontWeight: 700,
-  lineHeight: "24px",
+  lineHeight: "32px",
   wordBreak: "break-word",
 } as const;
 
