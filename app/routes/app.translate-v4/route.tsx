@@ -17,6 +17,7 @@ import { useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
+import type { RootState } from "~/store";
 import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
@@ -36,11 +37,15 @@ import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
-import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
+import { CreateTaskConfirmModal } from "./components/CreateTaskConfirmModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
 import { formatV4CreateTasksMessage, translateV4Message } from "./v4I18n";
+import {
+  buildUntranslatedRatioByLocale,
+  useCreateTaskEstimate,
+} from "./useCreateTaskEstimate";
 import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
@@ -185,17 +190,9 @@ export default function AppTranslateV4() {
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const { plan, isNew } = useSelector(
-    (state: {
-      userConfig?: {
-        plan?: { type?: string; isInFreePlanTime?: boolean };
-        isNew?: boolean | null;
-      };
-    }) => ({
-      plan: state.userConfig?.plan,
-      isNew: state.userConfig?.isNew ?? null,
-    }),
-  );
+  const plan = useSelector((state: RootState) => state.userConfig.plan);
+  const isNew = useSelector((state: RootState) => state.userConfig.isNew);
+  const totalChars = useSelector((state: RootState) => state.userConfig.totalChars);
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
     normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
@@ -232,9 +229,7 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [quotaGateMode, setQuotaGateMode] = useState<
-    "trial" | "pricing" | null
-  >(null);
+  const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
   const [activeWorkbenchTab, setActiveWorkbenchTab] = useState<
     "create" | "tasks"
   >(() =>
@@ -494,7 +489,43 @@ export default function AppTranslateV4() {
     [shop, refreshList, refreshQuota, t],
   );
   const remainingCredits = normalizedQuota?.remaining ?? null;
-  const handleCreate = useCallback(async () => {
+
+  const normalizedPlanType = planType?.trim().toLowerCase() || "";
+  const hasPaidPlan =
+    normalizedPlanType !== "" && normalizedPlanType !== "free";
+  const createShouldGateByCredits = shouldBlockCreateTaskByCredits({
+    remainingCredits,
+    strictQuotaGate,
+    hasPaidPlan,
+    isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
+  });
+  const createQuotaGatePending = createShouldGateByCredits && isNew === null;
+  const createQuotaGateMode: "trial" | "pricing" | null =
+    createShouldGateByCredits && isNew !== null
+      ? isNew
+        ? "trial"
+        : "pricing"
+      : null;
+  const handleCreateRequest = useCallback(() => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    setCreateConfirmOpen(true);
+  }, [createQuotaGatePending, t]);
+
+  const handleCreateConfirm = useCallback(async () => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    if (createQuotaGateMode !== null) return;
+
+    setCreateConfirmOpen(false);
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
@@ -511,13 +542,6 @@ export default function AppTranslateV4() {
     });
 
     if (shouldGateByCredits) {
-      if (isNew === null) {
-        message.info(
-          t("Checking your trial eligibility. Please try again in a moment."),
-        );
-        return;
-      }
-      setQuotaGateMode(isNew ? "trial" : "pricing");
       return;
     }
 
@@ -625,8 +649,9 @@ export default function AppTranslateV4() {
     planType,
     normalizedQuota,
     strictQuotaGate,
-    isNew,
     t,
+    createQuotaGateMode,
+    createQuotaGatePending,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -696,6 +721,30 @@ export default function AppTranslateV4() {
 
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const untranslatedRatioByLocale = useMemo(
+    () => buildUntranslatedRatioByLocale(coverage.locales),
+    [coverage.locales],
+  );
+  const taskEstimate = useCreateTaskEstimate({
+    modules: moduleKeys,
+    targets,
+    isCover,
+    untranslatedRatioByLocale,
+    remainingCredits,
+  });
+  const createConfirmScenario:
+    | "ready"
+    | "insufficient_paid"
+    | "insufficient_trial"
+    | "insufficient_pricing" =
+    taskEstimate.needsMoreCredits
+      ? hasPaidPlan
+        ? "insufficient_paid"
+        : createQuotaGateMode === "trial"
+          ? "insufficient_trial"
+          : "insufficient_pricing"
+      : "ready";
 
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
@@ -845,13 +894,14 @@ export default function AppTranslateV4() {
                     creating={creating}
                     createDisabled={normalizedQuota == null}
                     disabledMessage={createDisabledMessage}
-                    onCreate={handleCreate}
+                    onCreate={handleCreateRequest}
                     aiModel={aiModel}
                     onAiModelChange={setAiModel}
                     isCover={isCover}
                     onIsCoverChange={setIsCover}
                     isHandle={isHandle}
                     onIsHandleChange={setIsHandle}
+                    estimate={taskEstimate}
                   />
                 </div>
               </div>
@@ -886,16 +936,33 @@ export default function AppTranslateV4() {
         </div>
       </Profiler>
 
-      <CreateTaskQuotaGateModal
-        open={quotaGateMode !== null}
-        mode={quotaGateMode ?? "pricing"}
-        onClose={() => setQuotaGateMode(null)}
+      <CreateTaskConfirmModal
+        open={createConfirmOpen}
+        creating={creating}
+        targetOptions={targetOptions}
+        targets={targets}
+        modules={moduleKeys}
+        aiModel={aiModel}
+        isCover={isCover}
+        isHandle={isHandle}
+        estimate={taskEstimate}
+        scenario={createConfirmScenario}
+        previousTotalChars={
+          typeof totalChars === "number" ? totalChars : undefined
+        }
+        onClose={() => setCreateConfirmOpen(false)}
+        onConfirmCreate={handleCreateConfirm}
+        onBuyCredits={() => {
+          setCreateConfirmOpen(false);
+          setShowPaymentModal(true);
+        }}
       />
       {showPaymentModal ? (
         <Suspense fallback={null}>
           <PaymentModal
             visible={showPaymentModal}
             setVisible={setShowPaymentModal}
+            variant="v4"
           />
         </Suspense>
       ) : null}

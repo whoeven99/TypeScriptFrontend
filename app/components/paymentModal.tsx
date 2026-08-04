@@ -15,6 +15,7 @@ import "./styles.css";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import { V4ModalShell } from "~/components/V4ModalShell";
 import { buildPaymentOptions, type OptionType } from "./paymentModal.shared";
+import { buildBillingReturnPath } from "~/utils/billingReturn";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -27,7 +28,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
   const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
   const { reportClick } = useReport();
-  const { plan } = useSelector((state: any) => state.userConfig);
+  const { plan, totalChars } = useSelector((state: any) => state.userConfig);
   void variant;
 
   const options: OptionType[] = useMemo(() => buildPaymentOptions(plan), [plan]);
@@ -67,6 +68,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
     };
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
+    if (typeof window !== "undefined") {
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      formData.append(
+        "returnPath",
+        buildBillingReturnPath(currentPath, {
+          kind: "credits",
+          previousTotalChars:
+            typeof totalChars === "number" ? totalChars : undefined,
+        }),
+      );
+    }
     payFetcher.submit(formData, {
       method: "post",
       action: "/app/pricing",
