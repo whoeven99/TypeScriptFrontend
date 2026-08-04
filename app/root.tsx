@@ -92,7 +92,9 @@ function isLibraryDeprecationWarningMessage(message: string | undefined): boolea
 
 function isStaleAssetUrl(url: string | undefined): boolean {
   if (!url) return false;
-  return /\/assets\/[\w.-]+\.(js|css)(\?|$)/i.test(url);
+  return /\/assets\/(route|manifest|entry\.client|root)-.*\.(js|css)(\?|$)/i.test(
+    url,
+  );
 }
 
 function isStaleChunkError(error: unknown): boolean {
@@ -104,33 +106,13 @@ function isStaleChunkError(error: unknown): boolean {
     /Failed to fetch dynamically imported module/i.test(text) ||
     /Importing a module script failed/i.test(text) ||
     /Failed to load module script/i.test(text) ||
-    /\/assets\/[\w.-]+\.js/i.test(text)
+    /\/assets\/(route|manifest|entry\.client|root)-.*\.js/i.test(text)
   );
-}
-
-function extractAssetUrl(value: unknown): string | undefined {
-  const { message, stack } = getErrorDetails(value);
-  const text = [message, stack, typeof value === "string" ? value : ""]
-    .filter(Boolean)
-    .join(" ");
-  const assetMatch = text.match(
-    /(https?:\/\/[^\s"'`)]*\/assets\/[\w.-]+\.(?:js|css)(?:\?[^\s"'`)]+)?|\/assets\/[\w.-]+\.(?:js|css)(?:\?[^\s"'`)]+)?)/i,
-  );
-  return assetMatch?.[1];
 }
 
 function reloadOnceForStaleAssets(reason: string, url?: string) {
   if (typeof window === "undefined") return false;
-  const normalizedUrl = (() => {
-    if (!url) return `route:${window.location.pathname}`;
-    try {
-      const parsed = new URL(url, window.location.origin);
-      return parsed.pathname;
-    } catch {
-      return url;
-    }
-  })();
-  const key = `ciwi:stale-assets-reloaded:${normalizedUrl}`;
+  const key = "ciwi:stale-assets-reloaded";
   const existing = window.sessionStorage.getItem(key);
   if (existing) return false;
   window.sessionStorage.setItem(
@@ -257,7 +239,6 @@ export function ErrorBoundary() {
   console.error("Root Error:", error);
   const loggedRef = useRef(false);
   const htmlErrorStatusCode = getHtmlErrorStatusCode(error);
-  const staleAssetUrl = extractAssetUrl(error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
@@ -319,11 +300,6 @@ export function ErrorBoundary() {
   };
 
   const currentError = errorMessages[errorCode] || errorMessages["500"];
-
-  useEffect(() => {
-    if (!isStaleChunkError(error) && !isStaleAssetUrl(staleAssetUrl)) return;
-    reloadOnceForStaleAssets("error_boundary", staleAssetUrl);
-  }, [error, staleAssetUrl]);
 
   useEffect(() => {
     if (loggedRef.current) return;
