@@ -33,7 +33,7 @@ export function LegacyPaymentModal({
     <Modal
       open={visible}
       onCancel={onCancel}
-      width={1000}
+      width={560}
       footer={[
         <div
           key="footer-container"

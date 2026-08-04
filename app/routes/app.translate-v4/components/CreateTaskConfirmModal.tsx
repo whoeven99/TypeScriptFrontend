@@ -567,6 +567,7 @@ const headlineStyle = {
   display: "inline-flex",
   alignItems: "center",
   width: "fit-content",
+  margin: 10,
   padding: "8px 12px",
   borderRadius: 12,
   background: "rgba(223, 90, 0, 0.1)",

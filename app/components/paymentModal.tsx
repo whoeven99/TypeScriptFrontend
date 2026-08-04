@@ -14,7 +14,6 @@ import useReport from "../../scripts/eventReport";
 import "./styles.css";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import { V4ModalShell } from "~/components/V4ModalShell";
-import { LegacyPaymentModal } from "./LegacyPaymentModal";
 import { buildPaymentOptions, type OptionType } from "./paymentModal.shared";
 import { buildBillingReturnPath } from "~/utils/billingReturn";
 
@@ -30,7 +29,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
   const payFetcher = useFetcher<any>();
   const { reportClick } = useReport();
   const { plan, totalChars } = useSelector((state: any) => state.userConfig);
-  const isV4 = variant === "v4";
+  void variant;
 
   const options: OptionType[] = useMemo(() => buildPaymentOptions(plan), [plan]);
 
@@ -92,150 +91,130 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
     // if (recommendOption) setSelectedOption(recommendOption);
   };
 
-  if (isV4) {
-    return (
-      <V4ModalShell open={visible} onClose={onCancel} width={960}>
-        <div style={{ padding: "24px 24px 20px" }}>
-          <div
-            style={{
-              paddingBottom: 20,
-              marginBottom: 20,
-              borderBottom: `1px solid ${v4Colors.divider}`,
-            }}
-          >
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <PolarisText as="h2" variant="headingLg" fontWeight="bold">
-                {t("Buy credits")}
-              </PolarisText>
-              <div
-                style={{
-                  marginTop: 10,
-                  maxWidth: 480,
-                }}
-              >
-                <PolarisText as="p" variant="bodyMd" tone="subdued">
-                  {t("Choose a pack for this task.")}
-                </PolarisText>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <PolarisSelect
-              label={t("Credit pack")}
-              labelHidden
-              options={selectOptions}
-              value={selectedKey}
-              onChange={setSelectedKey}
-            />
+  return (
+    <V4ModalShell open={visible} onClose={onCancel} width={560}>
+      <div style={{ padding: "24px 24px 20px" }}>
+        <div
+          style={{
+            paddingBottom: 20,
+            marginBottom: 20,
+            borderBottom: `1px solid ${v4Colors.divider}`,
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <PolarisText as="h2" variant="headingLg" fontWeight="bold">
+              {t("Buy credits")}
+            </PolarisText>
             <div
               style={{
-                marginTop: 14,
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: `1px solid ${v4Colors.cardBorder}`,
-                background: v4Colors.cardBg,
+                marginTop: 10,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <PolarisText as="p" variant="bodySm" tone="subdued">
-                    {t("Credits")}
-                  </PolarisText>
-                  <div style={{ marginTop: 4 }}>
-                    <PolarisText as="p" variant="headingMd" fontWeight="bold">
-                      {selectedOption?.name}
-                    </PolarisText>
-                  </div>
-                  <div style={{ marginTop: 4 }}>
-                    <PolarisText as="p" variant="bodyMd" tone="subdued">
-                      {Number(selectedOption?.Credits ?? 0).toLocaleString()} {t("credits")}
-                    </PolarisText>
-                  </div>
-                </div>
-                <div style={{ minWidth: 0, textAlign: "right" }}>
-                  <PolarisText as="p" variant="bodySm" tone="subdued">
-                    {t("Total Payment:")}
-                  </PolarisText>
-                  <div style={{ marginTop: 4 }}>
-                    <PolarisText as="p" variant="headingMd" fontWeight="bold">
-                      ${selectedOption?.price.currentPrice.toFixed(2) ?? "0.00"}
-                    </PolarisText>
-                  </div>
-                </div>
-              </div>
+              <PolarisText as="p" variant="bodyMd" tone="subdued">
+                {t("Choose a pack for this task.")}
+              </PolarisText>
             </div>
           </div>
+        </div>
 
+        <div style={{ marginBottom: 24 }}>
+          <PolarisSelect
+            label={t("Credit pack")}
+            labelHidden
+            options={selectOptions}
+            value={selectedKey}
+            onChange={setSelectedKey}
+          />
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
+              marginTop: 14,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              background: v4Colors.cardBg,
             }}
           >
-            <InlineStack gap="100" align="center">
-              <PolarisText as="span" variant="bodyMd" tone="subdued">
-                {t("Need help?")}
-              </PolarisText>
-              <PolarisLink
-                onClick={handleContactSupport}
-              >
-                {t("Contact us")}
-              </PolarisLink>
-            </InlineStack>
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: 12,
+                justifyContent: "space-between",
+                gap: 16,
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ minWidth: 124 }}>
-                <PolarisButton fullWidth size="large" variant="secondary" onClick={onCancel}>
-                  {t("Maybe later")}
-                </PolarisButton>
+              <div style={{ minWidth: 0 }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Credits")}
+                </PolarisText>
+                <div style={{ marginTop: 4 }}>
+                  <PolarisText as="p" variant="headingMd" fontWeight="bold">
+                    {selectedOption?.name}
+                  </PolarisText>
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  <PolarisText as="p" variant="bodyMd" tone="subdued">
+                    {Number(selectedOption?.Credits ?? 0).toLocaleString()} {t("credits")}
+                  </PolarisText>
+                </div>
               </div>
-              <div style={{ minWidth: 180 }}>
-                <PolarisButton
-                  fullWidth
-                  size="large"
-                  variant="primary"
-                  onClick={onClick}
-                  disabled={buyButtonLoading || !selectedKey}
-                  loading={buyButtonLoading}
-                >
-                  {t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}
-                </PolarisButton>
+              <div style={{ minWidth: 0, textAlign: "right" }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Total Payment:")}
+                </PolarisText>
+                <div style={{ marginTop: 4 }}>
+                  <PolarisText as="p" variant="headingMd" fontWeight="bold">
+                    ${selectedOption?.price.currentPrice.toFixed(2) ?? "0.00"}
+                  </PolarisText>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </V4ModalShell>
-    );
-  }
 
-  return (
-    <LegacyPaymentModal
-      visible={visible}
-      onCancel={onCancel}
-      options={options}
-      selectedKey={selectedKey}
-      selectedOption={selectedOption}
-      buyButtonLoading={buyButtonLoading}
-      onSelectOption={(option) => setSelectedKey(option.key)}
-      onBuy={onClick}
-    />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <InlineStack gap="100" align="center">
+            <PolarisText as="span" variant="bodyMd" tone="subdued">
+              {t("Need help?")}
+            </PolarisText>
+            <PolarisLink onClick={handleContactSupport}>{t("Contact us")}</PolarisLink>
+          </InlineStack>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ minWidth: 124 }}>
+              <PolarisButton fullWidth size="large" variant="secondary" onClick={onCancel}>
+                {t("Maybe later")}
+              </PolarisButton>
+            </div>
+            <div style={{ minWidth: 180 }}>
+              <PolarisButton
+                fullWidth
+                size="large"
+                variant="primary"
+                onClick={onClick}
+                disabled={buyButtonLoading || !selectedKey}
+                loading={buyButtonLoading}
+              >
+                {t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}
+              </PolarisButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </V4ModalShell>
   );
 };
 
