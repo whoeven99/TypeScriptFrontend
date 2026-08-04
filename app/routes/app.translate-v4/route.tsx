@@ -181,6 +181,14 @@ export default function AppTranslateV4() {
 
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
+  const currentJobCount = useMemo(
+    () =>
+      jobs.filter(
+        (job) =>
+          !job.isTerminal || job.status === "PAUSED" || job.status === "FAILED",
+      ).length,
+    [jobs],
+  );
   const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
@@ -867,7 +875,7 @@ export default function AppTranslateV4() {
                     activeWorkbenchTab === "tasks",
                   )}
                 >
-                  {t("v4.tasks.title", { count: jobs.length })}
+                  {t("v4.tasks.title", { count: currentJobCount })}
                 </button>
               </div>
 
