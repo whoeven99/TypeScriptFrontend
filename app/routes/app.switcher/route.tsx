@@ -1,8 +1,7 @@
 import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Page } from "@shopify/polaris";
+import { Link, Page } from "@shopify/polaris";
 import {
   Alert,
-  Space,
   Card,
   Typography,
   Switch,
@@ -10,7 +9,6 @@ import {
   ColorPicker,
   Slider,
   Popconfirm,
-  Flex,
   Modal,
 } from "antd";
 import Button from "~/ui/components/AppButton";
@@ -20,7 +18,6 @@ import {
   getTranslateV4ErrorMessage,
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
-import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
@@ -45,8 +42,41 @@ import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
 import { withEmbeddedSearch } from "~/utils/embeddedAction";
 import SwitcherSettingCard from "./components/switcherSettingCard";
+import AppPageHeader from "~/ui/components/AppPageHeader";
+import AppSectionCard from "~/ui/components/AppSectionCard";
 
 const { Text, Title } = Typography;
+
+const pageContentStackStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 16,
+};
+
+const sectionContentStackStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 16,
+};
+
+const rowBetweenStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 12,
+};
+
+const fieldColumnStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 8,
+};
+
+const helpGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 16,
+};
 
 const initialLocalization = {
   languages: [
@@ -699,6 +729,20 @@ const Index = () => {
     },
   ];
 
+  const switcherTypeValue =
+    languageSelector && currencySelector
+      ? "language_and_currency"
+      : languageSelector
+        ? "language"
+        : !languageSelector && !currencySelector
+          ? "sidebar widget"
+          : "currency";
+  const showPaidPlanHint =
+    plan?.type == "Free" || typeof plan?.type === "undefined";
+  const helpCenterUrl =
+    "https://ciwi.ai/help-center/ShopifyApp/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher";
+  const supportEmail = "support@ciwi.ai";
+
   return (
     <Page>
       <SaveBar id="switcher-save-bar">
@@ -712,12 +756,18 @@ const Index = () => {
         <button onClick={handleCancel}>{t("Cancel")}</button>
       </SaveBar>
       <TitleBar title={t("Switcher")} />
-      <ScrollNotice
-        text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
-        )}
-      />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <div style={pageContentStackStyle}>
+        <AppPageHeader
+          title={t("Switcher")}
+          description={t(
+            "Configure how the storefront language and currency switcher behaves, looks, and appears to merchants.",
+          )}
+          extra={
+            <Button onClick={() => navigate("/app/pricing")}>
+              {t("View pricing")}
+            </Button>
+          }
+        />
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
@@ -729,11 +779,7 @@ const Index = () => {
         />
         <div className={styles.switcher_container}>
           <div className={styles.switcher_editor}>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
+            <div style={sectionContentStackStyle}>
               {saveAlert ? (
                 <Alert
                   type="error"
@@ -743,56 +789,55 @@ const Index = () => {
                   onClose={() => setSaveAlert("")}
                 />
               ) : null}
-              <Card
-                loading={isLoading}
-                style={{ border: "none", boxShadow: "var(--app-shadow-card)" }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
-                  <Flex justify="space-between">
-                    <Title
-                      level={5}
-                      style={{ fontSize: 14, color: "var(--app-color-text)" }}
+              <AppSectionCard
+                title={t("Behavior")}
+                description={t(
+                  "Control how storefront visitors see or don't see the switcher before opening it.",
+                )}
+                extra={
+                  showPaidPlanHint ? (
+                    <Popconfirm
+                      title=""
+                      description={t(
+                        "This feature is available only with the paid plan.",
+                      )}
+                      trigger="hover"
+                      showCancel={false}
+                      okText={t("Upgrade")}
+                      onConfirm={() => navigate("/app/pricing")}
                     >
-                      {t("Selector Auto IP position configuration:")}
-                    </Title>
-                    {(plan?.type == "Free" ||
-                      typeof plan?.type === "undefined") && (
-                      <Popconfirm
-                        title=""
-                        description={t(
-                          "This feature is available only with the paid plan.",
+                      <Button type="text" icon={<InfoCircleOutlined />}>
+                        {t("Paid feature")}
+                      </Button>
+                    </Popconfirm>
+                  ) : null
+                }
+              >
+                <div style={sectionContentStackStyle}>
+                  <div style={rowBetweenStyle}>
+                    <div className={styles.switcher_row_label}>
+                      <Text strong>{t("Geolocation")}</Text>
+                      <Text type="secondary">
+                        {t(
+                          "Automatically place the selector for visitors based on IP when this feature is available.",
                         )}
-                        trigger="hover"
-                        showCancel={false}
-                        okText={t("Upgrade")}
-                        onConfirm={() => navigate("/app/pricing")}
-                      >
-                        <InfoCircleOutlined
-                          style={{ paddingBottom: "0.5rem" }}
-                        />
-                      </Popconfirm>
-                    )}
-                  </Flex>
-
-                  <Flex justify="space-between">
-                    <Text>{t("Geolocation: ")}</Text>
+                      </Text>
+                    </div>
                     <Switch
-                      className={
-                        plan?.type == "Free" ||
-                        typeof plan?.type === "undefined"
-                          ? defaultStyles.Switch_disable
-                          : ""
-                      }
+                      className={showPaidPlanHint ? defaultStyles.Switch_disable : ""}
                       checked={isGeoLocationEnabled}
                       onChange={handleIpOpenChange}
                     />
-                  </Flex>
-                  <Flex justify="space-between">
-                    <Text>{t("No Visible Switcher: ")}</Text>
+                  </div>
+                  <div style={rowBetweenStyle}>
+                    <div className={styles.switcher_row_label}>
+                      <Text strong>{t("Hide visible switcher")}</Text>
+                      <Text type="secondary">
+                        {t(
+                          "Keep localization active without rendering a visible selector entry point.",
+                        )}
+                      </Text>
+                    </div>
                     <Switch
                       checked={isTransparent}
                       onChange={() => {
@@ -810,65 +855,44 @@ const Index = () => {
                         );
                       }}
                     />
-                  </Flex>
-                </Space>
-              </Card>
-              <Card
-                loading={isLoading}
+                  </div>
+                </div>
+              </AppSectionCard>
+              <AppSectionCard
+                title={t("Selector type")}
+                description={t(
+                  "Choose whether the storefront entry shows language, currency, both, or a compact sidebar widget.",
+                )}
                 style={{
                   display: isTransparent ? "none" : "block",
-                  border: "none",
-                  boxShadow: "var(--app-shadow-card)",
                 }}
               >
-                <Title
-                  level={5}
-                  style={{ fontSize: 14, color: "var(--app-color-text)" }}
-                >
-                  {t("Selector type configuration:")}
-                </Title>
                 <Select
                   options={switcherOptions}
                   style={{ width: "100%" }}
-                  value={
-                    languageSelector && currencySelector
-                      ? "language_and_currency"
-                      : languageSelector
-                        ? "language"
-                        : !languageSelector && !currencySelector
-                          ? "sidebar widget"
-                          : "currency"
-                  }
+                  value={switcherTypeValue}
                   onChange={handleOptionChange}
                 />
-              </Card>
-              <Card
-                loading={isLoading}
+              </AppSectionCard>
+              <AppSectionCard
+                title={t("Style")}
+                description={t(
+                  "Adjust the switcher appearance, placement, and the way the preview renders selected values.",
+                )}
                 style={{
                   display: isTransparent ? "none" : "block",
-                  border: "none",
-                  boxShadow: "var(--app-shadow-card)",
                 }}
               >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
-                  <Title
-                    level={5}
-                    style={{ fontSize: 14, color: "var(--app-color-text)" }}
-                  >
-                    {t("Selector style configuration:")}
-                  </Title>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text>{t("Included flag:")}</Text>
+                <div style={sectionContentStackStyle}>
+                  <div style={rowBetweenStyle}>
+                    <div className={styles.switcher_row_label}>
+                      <Text strong>{t("Include flag")}</Text>
+                      <Text type="secondary">
+                        {t(
+                          "Display the selected language flag alongside the switcher label when possible.",
+                        )}
+                      </Text>
+                    </div>
                     <Switch
                       disabled={!languageSelector && currencySelector}
                       checked={isIncludedFlag}
@@ -888,21 +912,8 @@ const Index = () => {
                       }}
                     />
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 20,
-                    }}
-                  >
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                  <div className={styles.switcher_style_fields}>
+                    <div style={fieldColumnStyle}>
                       <Text>{t("Font Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -913,14 +924,7 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                    <div style={fieldColumnStyle}>
                       <Text>{t("Background Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -931,14 +935,7 @@ const Index = () => {
                         showText
                       />
                     </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                    <div style={fieldColumnStyle}>
                       <Text>{t("Option Border Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -950,7 +947,7 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div style={fieldColumnStyle}>
                     <Text style={{ display: "block" }}>
                       {t("Selector position:")}
                     </Text>
@@ -963,7 +960,7 @@ const Index = () => {
                       }
                     />
                   </div>
-                  <div>
+                  <div style={fieldColumnStyle}>
                     <Text style={{ display: "block" }}>
                       {t("Selector position data:")}
                     </Text>
@@ -974,9 +971,9 @@ const Index = () => {
                       }
                     />
                   </div>
-                </Space>
-              </Card>
-            </Space>
+                </div>
+              </AppSectionCard>
+            </div>
           </div>
           <div className={styles.switcher_preview}>
             <Card
@@ -1373,6 +1370,37 @@ const Index = () => {
             </Card>
           </div>
         </div>
+        <AppSectionCard
+          title={t("Help and support")}
+          description={t(
+            "Use these resources if you need help enabling the theme block or validating storefront behavior.",
+          )}
+        >
+          <div style={helpGridStyle}>
+            <div style={fieldColumnStyle}>
+              <Text strong>{t("Help center guide")}</Text>
+              <Text type="secondary">
+                {t(
+                  "Step-by-step instructions for enabling the switcher in the Shopify theme editor.",
+                )}
+              </Text>
+              <Link url={helpCenterUrl} target="_blank">
+                {t("Open help center")}
+              </Link>
+            </div>
+            <div style={fieldColumnStyle}>
+              <Text strong>{t("Support email")}</Text>
+              <Text type="secondary">
+                {t(
+                  "Contact the team if the storefront preview and live theme behavior do not match.",
+                )}
+              </Text>
+              <Link url={`mailto:${supportEmail}`}>
+                {supportEmail}
+              </Link>
+            </div>
+          </div>
+        </AppSectionCard>
         <Modal
           title={t("Feature Unavailable")}
           open={showWarnModal}
@@ -1387,7 +1415,7 @@ const Index = () => {
         >
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
-      </Space>
+      </div>
     </Page>
   );
 };
