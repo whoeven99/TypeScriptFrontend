@@ -32,6 +32,7 @@ import { getItemOptions } from "../app.manage_translation/route";
 import styles from "./styles.module.css";
 import { queryPageFlyThemeData } from "~/api/admin";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
 
 const { Sider, Content } = Layout;
 
@@ -200,6 +201,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { t } = useTranslation();
+  const {
+    resolveSingleTranslateErrorMessage,
+    openQuotaGateForError,
+    quotaGateModal,
+  } = useSingleTranslateQuotaGate();
   const navigate = useNavigate();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -610,13 +616,8 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      setPageAlert(
-        getTranslateV4ErrorMessage(
-          t,
-          data.errorMsg,
-          TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
-        ),
-      );
+      setPageAlert(resolveSingleTranslateErrorMessage(data.errorMsg));
+      openQuotaGateForError(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -1111,6 +1112,7 @@ justifyContent: "space-between",
           />
         )}
       </Layout>
+      {quotaGateModal}
     </Page>
   );
 };
