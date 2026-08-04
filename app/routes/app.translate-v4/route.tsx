@@ -50,6 +50,7 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { isCurrentV4Job } from "./jobFilters";
 import {
   finishClientLogTrace,
   startClientLogTrace,
@@ -182,11 +183,7 @@ export default function AppTranslateV4() {
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
   const currentJobCount = useMemo(
-    () =>
-      jobs.filter(
-        (job) =>
-          !job.isTerminal || job.status === "PAUSED" || job.status === "FAILED",
-      ).length,
+    () => jobs.filter(isCurrentV4Job).length,
     [jobs],
   );
   const [quota, setQuota] = useState<ShopQuota | null>(null);
