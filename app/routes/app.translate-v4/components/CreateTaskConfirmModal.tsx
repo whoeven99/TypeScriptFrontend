@@ -180,12 +180,12 @@ export function CreateTaskConfirmModal({
     },
   ];
 
-  const scenarioMeta = getScenarioMeta(t, scenario);
   const isReady = scenario === "ready";
   const isInsufficientPaid = scenario === "insufficient_paid";
   const isTrialOffer = scenario === "insufficient_trial";
   const canStartPartial =
     isInsufficientPaid && (remainingCredits ?? 0) > 0;
+  const scenarioMeta = getScenarioMeta(t, scenario, canStartPartial);
 
   const primaryActionLabel = isReady
     ? t("v4.createTask.confirmStartNow")
@@ -324,6 +324,9 @@ export function CreateTaskConfirmModal({
                   }}
                 />
               </div>
+              <div style={estimateHintStyle}>
+                {t("v4.createTask.confirmEstimateExactHint")}
+              </div>
             </div>
           </section>
 
@@ -414,6 +417,7 @@ function DetailLine({ label, value }: { label: string; value: string }) {
 function getScenarioMeta(
   t: TranslateFn,
   scenario: CreateTaskConfirmScenario,
+  canStartPartial: boolean,
 ) {
   if (scenario === "ready") {
     return {
@@ -426,7 +430,9 @@ function getScenarioMeta(
 
   if (scenario === "insufficient_paid") {
     return {
-      title: t("v4.createTask.confirmPartialTitle"),
+      title: canStartPartial
+        ? t("v4.createTask.confirmPartialTitle")
+        : t("v4.createTask.confirmNoCreditsTitle"),
       accent: "#df5a00",
       headlineBg: "rgba(223, 90, 0, 0.1)",
       progressBar: "linear-gradient(90deg, #ffb84d 0%, #df5a00 100%)",
@@ -719,6 +725,13 @@ const progressTrackStyle = {
 const progressFillStyle = {
   height: "100%",
   borderRadius: 999,
+} as const;
+
+const estimateHintStyle = {
+  color: v4Colors.textMuted,
+  fontSize: 12,
+  fontWeight: 500,
+  lineHeight: "18px",
 } as const;
 
 const offerFeatureGridStyle = {

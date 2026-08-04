@@ -416,7 +416,7 @@ export function TaskQueueSection({
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button
             type="button"
-            onClick={() => navigate("/app/translate-v4/history")}
+            onClick={() => navigate("/app/translate-v4-history")}
             style={historyEntryButtonStyle}
           >
             {t("v4.tasks.openHistory", { count: historyJobs.length })}

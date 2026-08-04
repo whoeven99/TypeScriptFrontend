@@ -188,18 +188,7 @@ export function CreateTaskCard({
             >
               {disabledMessage}
             </div>
-          ) : (
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 11,
-                lineHeight: "16px",
-                color: v4Colors.textMuted,
-              }}
-            >
-              {t("v4.createTask.estimateFootnote")}
-            </div>
-          )}
+          ) : null}
         </div>
         {submitPlacement === "header" ? (
           <div

@@ -13,7 +13,12 @@ import {
 } from "~/server/translateV4/progress.server";
 import { CompactJobCard } from "../app.translate-v4/components/TaskQueueSection";
 import { isHistoryV4Job } from "../app.translate-v4/jobFilters";
-import { v4CardStyle, v4Colors, v4ContentStyle, v4PageStyle } from "../app.translate-v4/v4Styles";
+import {
+  v4CardStyle,
+  v4Colors,
+  v4ContentStyle,
+  v4PageStyle,
+} from "../app.translate-v4/v4Styles";
 import { translateV4Message } from "../app.translate-v4/v4I18n";
 
 async function readJsonResponse<T = any>(res: Response): Promise<T> {
@@ -37,14 +42,10 @@ export default function AppTranslateV4History() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { shop, jobs: initialJobs } = useLoaderData<typeof loader>();
-  const [jobs, setJobs] =
-    useState<TranslationJobProgressSummary[]>(initialJobs);
+  const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
-  const historyJobs = useMemo(
-    () => jobs.filter(isHistoryV4Job),
-    [jobs],
-  );
+  const historyJobs = useMemo(() => jobs.filter(isHistoryV4Job), [jobs]);
 
   const refreshList = useCallback(async () => {
     const res = await fetch(
@@ -100,7 +101,9 @@ export default function AppTranslateV4History() {
 
   return (
     <div style={v4PageStyle}>
-      <TitleBar title={t("v4.tasks.historyPageTitle", { count: historyJobs.length })} />
+      <TitleBar
+        title={t("v4.tasks.historyPageTitle", { count: historyJobs.length })}
+      />
       <Page>
         <div style={v4ContentStyle}>
           <AppPageHeader
@@ -108,7 +111,10 @@ export default function AppTranslateV4History() {
             title={t("v4.tasks.historyPageTitle", { count: historyJobs.length })}
             description={t("v4.tasks.historyHelper")}
             extra={
-              <Button variant="plain" onClick={() => navigate("/app/translate-v4")}>
+              <Button
+                variant="plain"
+                onClick={() => navigate("/app/translate-v4")}
+              >
                 {t("v4.tasks.backToCurrent")}
               </Button>
             }
@@ -116,7 +122,13 @@ export default function AppTranslateV4History() {
 
           <div style={{ ...v4CardStyle, padding: "16px" }}>
             {historyJobs.length === 0 ? (
-              <div style={{ borderRadius: 8, background: v4Colors.cardSubdued, padding: "32px 16px" }}>
+              <div
+                style={{
+                  borderRadius: 8,
+                  background: v4Colors.cardSubdued,
+                  padding: "32px 16px",
+                }}
+              >
                 <div style={emptyStateStyle}>
                   <div style={emptyStateIconStyle} aria-hidden>
                     <span style={emptyStateLineStyle} />
