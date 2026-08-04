@@ -323,6 +323,28 @@ function buildHtmlSegmentBoundary(groupId: number, boundaryIndex: number): strin
   return `${HTML_SEG_BOUNDARY_PREFIX}${groupId}_${boundaryIndex}⟧`;
 }
 
+/** LLM 常把 ⟦⟧ 改成 []；拆段时两种格式都认。 */
+function htmlSegmentBoundaryVariants(groupId: number, boundaryIndex: number): readonly string[] {
+  const boundary = buildHtmlSegmentBoundary(groupId, boundaryIndex);
+  const ascii = boundary.replace(/\u27E6/g, "[").replace(/\u27E7/g, "]");
+  return ascii === boundary ? [boundary] : [boundary, ascii];
+}
+
+function findHtmlSegmentBoundary(
+  translated: string,
+  groupId: number,
+  boundaryIndex: number,
+  cursor: number,
+): { idx: number; length: number } | null {
+  let best: { idx: number; length: number } | null = null;
+  for (const boundary of htmlSegmentBoundaryVariants(groupId, boundaryIndex)) {
+    const idx = translated.indexOf(boundary, cursor);
+    if (idx < 0) continue;
+    if (!best || idx < best.idx) best = { idx, length: boundary.length };
+  }
+  return best;
+}
+
 function shouldInsertSpaceBetweenSegments(prev: string, next: string): boolean {
   if (!prev || !next) return false;
   if (CJK_BOUNDARY_RE.test(prev) || CJK_BOUNDARY_RE.test(next)) return false;
@@ -385,11 +407,10 @@ function splitGroupedHtmlText(
   let cursor = 0;
 
   for (let i = 0; i < segmentCount - 1; i++) {
-    const boundary = buildHtmlSegmentBoundary(groupId, i);
-    const idx = translated.indexOf(boundary, cursor);
-    if (idx < 0) return null;
-    out.push(translated.slice(cursor, idx));
-    cursor = idx + boundary.length;
+    const found = findHtmlSegmentBoundary(translated, groupId, i, cursor);
+    if (!found) return null;
+    out.push(translated.slice(cursor, found.idx));
+    cursor = found.idx + found.length;
   }
 
   out.push(translated.slice(cursor));
