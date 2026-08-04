@@ -56,6 +56,7 @@ export function CreateTaskCard({
   submitPlacement = "header",
   createDisabled = false,
   disabledMessage = null,
+  estimate = null,
 }: Props) {
   const { t } = useTranslation();
   const canCreate =
@@ -137,11 +138,7 @@ export function CreateTaskCard({
         loading={creating}
         onClick={onCreate}
       >
-        {creating
-          ? t("v4.createTask.creating")
-          : targets.length > 1
-            ? t("v4.createTask.createMultiple", { count: targets.length })
-            : t("v4.createTask.createOne")}
+        {creating ? t("v4.createTask.creating") : "Translate Now"}
       </Button>
     </div>
   );
