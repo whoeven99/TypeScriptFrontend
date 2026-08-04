@@ -18,7 +18,9 @@ import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { isManageTranslationOutdated } from "~/utils/manageTranslationState";
 import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
+
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -123,6 +125,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 translations(locale: $locale) {
                   key
                   value
+                  outdated
                 }
               }
             }
@@ -494,6 +497,8 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        isOutdated={isManageTranslationOutdated(collectionsData, record?.resourceId, record?.shopifyKey)}
+
         onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType,

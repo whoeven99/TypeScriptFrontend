@@ -31,7 +31,7 @@ export function splitManageSaveResults(response: unknown) {
 }
 
 export function applyManageFlatTranslationUpdates<
-  T extends { key?: string; translated?: string },
+  T extends { key?: string; translated?: string; outdated?: boolean },
 >(items: T[], successfulItems: ManageSaveResultItem[]) {
   const valueByKey = new Map<string, string>();
 
@@ -49,6 +49,7 @@ export function applyManageFlatTranslationUpdates<
     return {
       ...item,
       translated: valueByKey.get(key),
+      outdated: false,
     };
   });
 }
@@ -56,7 +57,7 @@ export function applyManageFlatTranslationUpdates<
 export function applyManageResourceTranslationUpdates<
   T extends {
     resourceId?: string;
-    translations?: Array<{ key?: string; value?: string }>;
+    translations?: Array<{ key?: string; value?: string; outdated?: boolean }>;
   },
 >(items: T[], successfulItems: ManageSaveResultItem[]) {
   const updatesByResourceId = new Map<
@@ -101,9 +102,13 @@ export function applyManageResourceTranslationUpdates<
         translations[index] = {
           ...translations[index],
           value: update.value,
+          outdated: false,
         };
       } else {
-        translations.push(update);
+        translations.push({
+          ...update,
+          outdated: false,
+        });
       }
     });
 

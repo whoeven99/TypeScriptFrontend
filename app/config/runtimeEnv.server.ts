@@ -10,7 +10,8 @@ export function normalizeEnvValue(value: string | undefined): string {
   let v = String(value).trim();
   if (
     (v.startsWith('"') && v.endsWith('"')) ||
-    (v.startsWith("'") && v.endsWith("'"))
+    (v.startsWith("'") && v.endsWith("'")) ||
+    (v.startsWith("`") && v.endsWith("`"))
   ) {
     v = v.slice(1, -1).trim();
   }

@@ -23,7 +23,6 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
-type MenuItem = { key: string; label: string };
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { useConsumableFetcherData } from "~/hooks/useConsumableFetcherData";
@@ -42,6 +41,8 @@ import {
   splitManageSaveResults,
 } from "~/utils/manageSave";
 import SideMenu from "~/components/sideMenu/sideMenu";
+
+type MenuItem = { key: string; label: string };
 
 const { Sider, Content } = Layout;
 
@@ -113,6 +114,7 @@ type ManageDataSourceType = {
   digest: string;
   default_language: string;
   translated: string | undefined;
+  outdated?: boolean;
 } | null;
 
 export const loader = manageTranslationLanguageLoader;
@@ -278,6 +280,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     }
                     translations(locale: "${searchTerm}") {
                       value
+                      outdated
                       key
                     }
                     options: nestedTranslatableResources(first: 20, resourceType: PRODUCT_OPTION) {
@@ -293,6 +296,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         translations(locale: "${searchTerm}") {
                           key
                           value
+                          outdated
                         }
                       }
                     }
@@ -309,6 +313,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         translations(locale: "${searchTerm}") {
                           key
                           value
+                          outdated
                         }
                       }
                     }
@@ -335,6 +340,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     }
                     translations(locale: "${searchTerm}") {
                       value
+                      outdated
                       key
                     }
                   }
@@ -395,6 +401,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       translations(locale: "${variants?.searchTerm || " "}") {
                         key
                         value
+                        outdated
                       }
                     }
                   }
@@ -428,6 +435,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   translations(locale: $locale) {
                     key
                     value
+                    outdated
                   }
                 }
               }
@@ -775,6 +783,7 @@ const Index = () => {
             translated: emptyTranslated
               ? translation?.value || ""
               : translation?.value,
+            outdated: translation?.outdated === true,
           };
         };
         setProductBaseData(
@@ -808,6 +817,7 @@ const Index = () => {
               type: option?.translatableContent[0]?.type,
               default_language: option?.translatableContent[0]?.value,
               translated: option?.translations[0]?.value,
+              outdated: option?.translations[0]?.outdated === true,
             };
           });
         if (optionsData) setOptionsData(optionsData);
@@ -824,6 +834,7 @@ const Index = () => {
                 type: metafield?.translatableContent[0]?.type,
                 default_language: metafield?.translatableContent[0]?.value,
                 translated: metafield?.translations[0]?.value,
+                outdated: metafield?.translations[0]?.outdated === true,
               };
             },
           );
@@ -904,6 +915,7 @@ const Index = () => {
                 digest: variant?.translatableContent[0]?.digest,
                 default_language: variant?.translatableContent[0]?.value,
                 translated: variant?.translations[0]?.value,
+                outdated: variant?.translations[0]?.outdated === true,
               }));
           } else {
             console.error("Request failed:", result.reason);
@@ -954,6 +966,7 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        isOutdated={record?.outdated === true}
         onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType,
