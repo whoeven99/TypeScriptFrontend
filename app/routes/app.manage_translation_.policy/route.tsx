@@ -18,7 +18,9 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { isManageTranslationOutdated } from "~/utils/manageTranslationState";
 import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
+
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
@@ -105,6 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
                 translations(locale: "${searchTerm}") {
                   value
+                  outdated
                   key
                 }
             }
@@ -143,6 +146,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 translations(locale: $locale) {
                   key
                   value
+                  outdated
                 }
               }
             }
@@ -405,6 +409,8 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        isOutdated={isManageTranslationOutdated(policyData, record?.resourceId, record?.shopifyKey)}
+
         onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType: "SHOP_POLICY",
