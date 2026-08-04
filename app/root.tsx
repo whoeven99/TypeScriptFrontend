@@ -90,10 +90,66 @@ function isLibraryDeprecationWarningMessage(message: string | undefined): boolea
   );
 }
 
+function isStaleAssetUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  return /\/assets\/[\w.-]+\.(js|css)(\?|$)/i.test(url);
+}
+
+function isStaleChunkError(error: unknown): boolean {
+  const { name, message, stack } = getErrorDetails(error);
+  const text = `${name ?? ""} ${message ?? ""} ${stack ?? ""}`;
+  return (
+    /ChunkLoadError/i.test(text) ||
+    /Loading chunk [\w-]+ failed/i.test(text) ||
+    /Failed to fetch dynamically imported module/i.test(text) ||
+    /Importing a module script failed/i.test(text) ||
+    /Failed to load module script/i.test(text) ||
+    /\/assets\/[\w.-]+\.js/i.test(text)
+  );
+}
+
+function extractAssetUrl(value: unknown): string | undefined {
+  const { message, stack } = getErrorDetails(value);
+  const text = [message, stack, typeof value === "string" ? value : ""]
+    .filter(Boolean)
+    .join(" ");
+  const assetMatch = text.match(
+    /(https?:\/\/[^\s"'`)]*\/assets\/[\w.-]+\.(?:js|css)(?:\?[^\s"'`)]+)?|\/assets\/[\w.-]+\.(?:js|css)(?:\?[^\s"'`)]+)?)/i,
+  );
+  return assetMatch?.[1];
+}
+
+function reloadOnceForStaleAssets(reason: string, url?: string) {
+  if (typeof window === "undefined") return false;
+  const normalizedUrl = (() => {
+    if (!url) return `route:${window.location.pathname}`;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      return parsed.pathname;
+    } catch {
+      return url;
+    }
+  })();
+  const key = `ciwi:stale-assets-reloaded:${normalizedUrl}`;
+  const existing = window.sessionStorage.getItem(key);
+  if (existing) return false;
+  window.sessionStorage.setItem(
+    key,
+    JSON.stringify({
+      reason,
+      url,
+      at: Date.now(),
+    }),
+  );
+  window.location.reload();
+  return true;
+}
+
 function isIgnorableClientNoiseError(error: unknown): boolean {
   const { message } = getErrorDetails(error);
   return (
     isNetworkFetchError(error) ||
+    isStaleChunkError(error) ||
     isAbortLikeError(error) ||
     isShopifyIdTokenNoise(error) ||
     isLibraryDeprecationWarningMessage(message) ||
@@ -201,6 +257,7 @@ export function ErrorBoundary() {
   console.error("Root Error:", error);
   const loggedRef = useRef(false);
   const htmlErrorStatusCode = getHtmlErrorStatusCode(error);
+  const staleAssetUrl = extractAssetUrl(error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
@@ -262,6 +319,11 @@ export function ErrorBoundary() {
   };
 
   const currentError = errorMessages[errorCode] || errorMessages["500"];
+
+  useEffect(() => {
+    if (!isStaleChunkError(error) && !isStaleAssetUrl(staleAssetUrl)) return;
+    reloadOnceForStaleAssets("error_boundary", staleAssetUrl);
+  }, [error, staleAssetUrl]);
 
   useEffect(() => {
     if (loggedRef.current) return;
@@ -397,7 +459,34 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const handleResourceError = (event: Event) => {
+      const target = event.target as
+        | HTMLScriptElement
+        | HTMLLinkElement
+        | null;
+      const resourceUrl =
+        (typeof target?.src === "string" && target.src) ||
+        (typeof target?.href === "string" && target.href) ||
+        undefined;
+      if (!isStaleAssetUrl(resourceUrl)) return;
+      if (reloadOnceForStaleAssets("resource_error", resourceUrl)) return;
+      void reportClientError("stale_asset_resource_error", resourceUrl, {
+        shop: globalStore.shop,
+        route: `${window.location.pathname}${window.location.search}`,
+      });
+    };
+
     const handleError = (event: ErrorEvent) => {
+      if (isStaleChunkError(event.error ?? event.message)) {
+        if (
+          reloadOnceForStaleAssets(
+            "window_error",
+            typeof event.filename === "string" ? event.filename : undefined,
+          )
+        ) {
+          return;
+        }
+      }
       if (isIgnorableClientNoiseError(event.error ?? event.message)) return;
       void reportClientError("window_error", event.error ?? event.message, {
         shop: globalStore.shop,
@@ -411,6 +500,9 @@ export default function App() {
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (isStaleChunkError(event.reason)) {
+        if (reloadOnceForStaleAssets("unhandled_rejection")) return;
+      }
       if (isIgnorableClientNoiseError(event.reason)) return;
       void reportClientError("unhandled_rejection", event.reason, {
         shop: globalStore.shop,
@@ -421,9 +513,11 @@ export default function App() {
       });
     };
 
+    window.addEventListener("error", handleResourceError, true);
     window.addEventListener("error", handleError);
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
     return () => {
+      window.removeEventListener("error", handleResourceError, true);
       window.removeEventListener("error", handleError);
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
@@ -482,6 +576,7 @@ export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="preconnect" href="https://cdn.shopify.com/" />
     <link
       rel="stylesheet"

@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   Profiler,
   Suspense,
   lazy,
@@ -16,6 +17,7 @@ import { useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
+import type { RootState } from "~/store";
 import { ensureShopV4Settings } from "~/server/translateV4/migration.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
@@ -35,7 +37,7 @@ import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
 import { CreateTaskCard } from "./components/CreateTaskCard";
-import { CreateTaskQuotaGateModal } from "./components/CreateTaskQuotaGateModal";
+import { CreateTaskConfirmModal } from "./components/CreateTaskConfirmModal";
 import { TaskQueueSection } from "./components/TaskQueueSection";
 import { CoverageCard } from "./components/CoverageCard";
 import { localeRegionCode } from "./localeDisplay";
@@ -48,6 +50,7 @@ import { notifyTranslationStatsUpdated } from "~/lib/translationStatsSync";
 import { selectShopTargetLocales } from "~/lib/shopTargetLocales";
 import { syncShopTargetLocalesFromShopify } from "~/server/translateV4/targetLocale.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
+import { isCurrentV4Job } from "./jobFilters";
 import {
   finishClientLogTrace,
   startClientLogTrace,
@@ -157,6 +160,10 @@ export default function AppTranslateV4() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const initialLocationState = location.state as
+    | { spotlightTaskIds?: string[] }
+    | null
+    | undefined;
   const {
     shop,
     locales,
@@ -175,21 +182,17 @@ export default function AppTranslateV4() {
 
   const [jobs, setJobs] =
     useState<TranslationJobProgressSummary[]>(initialJobs);
+  const currentJobCount = useMemo(
+    () => jobs.filter(isCurrentV4Job).length,
+    [jobs],
+  );
   const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
-  const { plan, isNew } = useSelector(
-    (state: {
-      userConfig?: {
-        plan?: { type?: string; isInFreePlanTime?: boolean };
-        isNew?: boolean | null;
-      };
-    }) => ({
-      plan: state.userConfig?.plan,
-      isNew: state.userConfig?.isNew ?? null,
-    }),
-  );
+  const plan = useSelector((state: RootState) => state.userConfig.plan);
+  const isNew = useSelector((state: RootState) => state.userConfig.isNew);
+  const totalChars = useSelector((state: RootState) => state.userConfig.totalChars);
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
     normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
@@ -226,15 +229,16 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [quotaGateMode, setQuotaGateMode] = useState<
-    "trial" | "pricing" | null
-  >(null);
+  const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
+  const [activeWorkbenchTab, setActiveWorkbenchTab] = useState<
+    "create" | "tasks"
+  >(() =>
+    (initialLocationState?.spotlightTaskIds?.length ?? 0) > 0
+      ? "tasks"
+      : "create",
+  );
   const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>(() => {
-    const state = location.state as
-      | { spotlightTaskIds?: string[] }
-      | null
-      | undefined;
-    return state?.spotlightTaskIds ?? [];
+    return initialLocationState?.spotlightTaskIds ?? [];
   });
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
@@ -484,8 +488,44 @@ export default function AppTranslateV4() {
     },
     [shop, refreshList, refreshQuota, t],
   );
+  const remainingCredits = normalizedQuota?.remaining ?? null;
 
-  const handleCreate = useCallback(async () => {
+  const normalizedPlanType = planType?.trim().toLowerCase() || "";
+  const hasPaidPlan =
+    normalizedPlanType !== "" && normalizedPlanType !== "free";
+  const createShouldGateByCredits = shouldBlockCreateTaskByCredits({
+    remainingCredits,
+    strictQuotaGate,
+    hasPaidPlan,
+    isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
+  });
+  const createQuotaGatePending = createShouldGateByCredits && isNew === null;
+  const createQuotaGateMode: "trial" | "pricing" | null =
+    createShouldGateByCredits && isNew !== null
+      ? isNew
+        ? "trial"
+        : "pricing"
+      : null;
+  const handleCreateRequest = useCallback(() => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    setCreateConfirmOpen(true);
+  }, [createQuotaGatePending, t]);
+
+  const handleCreateConfirm = useCallback(async () => {
+    if (createQuotaGatePending) {
+      message.info(
+        t("Checking your trial eligibility. Please try again in a moment."),
+      );
+      return;
+    }
+    if (createQuotaGateMode !== null) return;
+
+    setCreateConfirmOpen(false);
     const normalizedPlanType = planType?.trim().toLowerCase() || "";
     const hasPaidPlan =
       normalizedPlanType !== "" && normalizedPlanType !== "free";
@@ -502,13 +542,6 @@ export default function AppTranslateV4() {
     });
 
     if (shouldGateByCredits) {
-      if (isNew === null) {
-        message.info(
-          t("Checking your trial eligibility. Please try again in a moment."),
-        );
-        return;
-      }
-      setQuotaGateMode(isNew ? "trial" : "pricing");
       return;
     }
 
@@ -552,6 +585,7 @@ export default function AppTranslateV4() {
       if (result.created.length > 0) {
         message.success(`${summary} ${t("v4.create.createdBelow")}`);
         await Promise.all([refreshList(), refreshQuota()]);
+        setActiveWorkbenchTab("tasks");
         setSpotlightTaskIds(result.created.map((item) => item.jobId));
       } else {
         message.error(summary);
@@ -608,14 +642,16 @@ export default function AppTranslateV4() {
     isCover,
     isHandle,
     targetOptions,
+    shop,
     refreshList,
     refreshQuota,
     plan,
     planType,
     normalizedQuota,
     strictQuotaGate,
-    isNew,
     t,
+    createQuotaGateMode,
+    createQuotaGatePending,
   ]);
 
   const jobsRef = useRef(jobs);
@@ -683,7 +719,6 @@ export default function AppTranslateV4() {
     [jobs],
   );
 
-  const remainingCredits = normalizedQuota?.remaining ?? null;
   const createTaskSectionRef = useRef<HTMLDivElement | null>(null);
   const taskQueueSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -698,10 +733,23 @@ export default function AppTranslateV4() {
     untranslatedRatioByLocale,
     remainingCredits,
   });
+  const createConfirmScenario:
+    | "ready"
+    | "insufficient_paid"
+    | "insufficient_trial"
+    | "insufficient_pricing" =
+    taskEstimate.needsMoreCredits
+      ? hasPaidPlan
+        ? "insufficient_paid"
+        : createQuotaGateMode === "trial"
+          ? "insufficient_trial"
+          : "insufficient_pricing"
+      : "ready";
 
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
     if (typeof window === "undefined") return;
+    setActiveWorkbenchTab("tasks");
 
     const scrollTimer = window.setTimeout(() => {
       taskQueueSectionRef.current?.scrollIntoView({
@@ -792,61 +840,179 @@ export default function AppTranslateV4() {
               </div>
             </div>
 
-            <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
-              <CreateTaskCard
-                targetOptions={targetOptions}
-                targets={targets}
-                onTargetsChange={setTargets}
-                modules={moduleKeys}
-                onModulesChange={setModuleKeys}
-                creating={creating}
-                createDisabled={normalizedQuota == null}
-                disabledMessage={createDisabledMessage}
-                onCreate={handleCreate}
-                aiModel={aiModel}
-                onAiModelChange={setAiModel}
-                isCover={isCover}
-                onIsCoverChange={setIsCover}
-                isHandle={isHandle}
-                onIsHandleChange={setIsHandle}
-                estimate={taskEstimate}
-              />
-            </div>
-
             <div
-              ref={taskQueueSectionRef}
-              className="v4-enter v4-enter-d3"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr)",
-                gap: 16,
-              }}
+              className="v4-enter v4-enter-d2"
+              style={workbenchTabsShellStyle}
             >
-              <TaskQueueSection
-                jobs={jobs}
-                spotlightTaskIds={spotlightTaskIds}
-                translateSlotBusy={translateSlotBusy}
-                onBuyCredits={() => setShowPaymentModal(true)}
-                onAction={handleAction}
-              />
+              <div
+                role="tablist"
+                aria-label={t("v4.title")}
+                style={workbenchTabListStyle}
+              >
+                <button
+                  id="v4-workbench-tab-create"
+                  type="button"
+                  role="tab"
+                  aria-selected={activeWorkbenchTab === "create"}
+                  aria-controls="v4-workbench-panel-create"
+                  onClick={() => setActiveWorkbenchTab("create")}
+                  style={workbenchTabButtonStyle(
+                    activeWorkbenchTab === "create",
+                  )}
+                >
+                  {t("v4.createTask.title")}
+                </button>
+                <button
+                  id="v4-workbench-tab-tasks"
+                  type="button"
+                  role="tab"
+                  aria-selected={activeWorkbenchTab === "tasks"}
+                  aria-controls="v4-workbench-panel-tasks"
+                  onClick={() => setActiveWorkbenchTab("tasks")}
+                  style={workbenchTabButtonStyle(
+                    activeWorkbenchTab === "tasks",
+                  )}
+                >
+                  {t("v4.tasks.title", { count: currentJobCount })}
+                </button>
+              </div>
+
+              <div
+                id="v4-workbench-panel-create"
+                role="tabpanel"
+                aria-labelledby="v4-workbench-tab-create"
+                hidden={activeWorkbenchTab !== "create"}
+                style={workbenchPanelStyle(activeWorkbenchTab === "create")}
+              >
+                <div ref={createTaskSectionRef}>
+                  <CreateTaskCard
+                    targetOptions={targetOptions}
+                    targets={targets}
+                    onTargetsChange={setTargets}
+                    modules={moduleKeys}
+                    onModulesChange={setModuleKeys}
+                    creating={creating}
+                    createDisabled={normalizedQuota == null}
+                    disabledMessage={createDisabledMessage}
+                    onCreate={handleCreateRequest}
+                    aiModel={aiModel}
+                    onAiModelChange={setAiModel}
+                    isCover={isCover}
+                    onIsCoverChange={setIsCover}
+                    isHandle={isHandle}
+                    onIsHandleChange={setIsHandle}
+                    estimate={taskEstimate}
+                  />
+                </div>
+              </div>
+
+              <div
+                id="v4-workbench-panel-tasks"
+                role="tabpanel"
+                aria-labelledby="v4-workbench-tab-tasks"
+                hidden={activeWorkbenchTab !== "tasks"}
+                style={workbenchPanelStyle(activeWorkbenchTab === "tasks")}
+              >
+                <div
+                  ref={taskQueueSectionRef}
+                  className="v4-enter v4-enter-d3"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr)",
+                    gap: 16,
+                  }}
+                >
+                  <TaskQueueSection
+                    jobs={jobs}
+                    spotlightTaskIds={spotlightTaskIds}
+                    translateSlotBusy={translateSlotBusy}
+                    onBuyCredits={() => setShowPaymentModal(true)}
+                    onAction={handleAction}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </Profiler>
 
-      <CreateTaskQuotaGateModal
-        open={quotaGateMode !== null}
-        mode={quotaGateMode ?? "pricing"}
-        onClose={() => setQuotaGateMode(null)}
+      <CreateTaskConfirmModal
+        open={createConfirmOpen}
+        creating={creating}
+        targetOptions={targetOptions}
+        targets={targets}
+        modules={moduleKeys}
+        aiModel={aiModel}
+        isCover={isCover}
+        isHandle={isHandle}
+        estimate={taskEstimate}
+        scenario={createConfirmScenario}
+        previousTotalChars={
+          typeof totalChars === "number" ? totalChars : undefined
+        }
+        onClose={() => setCreateConfirmOpen(false)}
+        onConfirmCreate={handleCreateConfirm}
+        onBuyCredits={() => {
+          setCreateConfirmOpen(false);
+          setShowPaymentModal(true);
+        }}
       />
       {showPaymentModal ? (
         <Suspense fallback={null}>
           <PaymentModal
             visible={showPaymentModal}
             setVisible={setShowPaymentModal}
+            variant="v4"
           />
         </Suspense>
       ) : null}
     </Page>
   );
+}
+
+const workbenchTabsShellStyle: CSSProperties = {
+  display: "grid",
+  gap: 14,
+};
+
+const workbenchTabListStyle: CSSProperties = {
+  display: "inline-flex",
+  flexWrap: "wrap",
+  gap: 8,
+  padding: 4,
+  borderRadius: 999,
+  background: "var(--app-color-surface-secondary)",
+  alignSelf: "flex-start",
+};
+
+function workbenchTabButtonStyle(active: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    maxWidth: "100%",
+    minHeight: 36,
+    padding: "8px 14px",
+    borderRadius: 999,
+    border: "none",
+    background: active ? "var(--app-color-surface)" : "transparent",
+    color: active ? "var(--app-color-text)" : "var(--app-color-text-secondary)",
+    boxShadow: active ? "var(--app-shadow-card)" : "none",
+    fontSize: 13,
+    fontWeight: active ? 600 : 500,
+    lineHeight: 1.35,
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    transition: "all 0.2s ease",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+}
+
+function workbenchPanelStyle(active: boolean): CSSProperties {
+  return {
+    display: active ? "block" : "none",
+    minWidth: 0,
+  };
 }
