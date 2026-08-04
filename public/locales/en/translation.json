@@ -1003,5 +1003,11 @@
   "Your store's default language:": "Your store's default language:",
   "Your translation quota": "Your Translation Balance",
   "Youthful": "Youthful",
-  "Zara – Modern & chic (Womenswear)": "Zara – Modern & chic (Womenswear)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Modern & chic (Womenswear)",
+  "Update translation": "Update translation",
+  "Retranslate": "Retranslate",
+  "Translation quality not good enough?": "Translation quality not good enough?",
+  "Add suggestions and translate again.": "Add suggestions and translate again.",
+  "The source text changed. Add suggestions if you want to refresh the translation.": "The source text changed. Add suggestions if you want to refresh the translation.",
+  "e.g. Make the wording more natural and aligned with the brand tone": "e.g. Make the wording more natural and aligned with the brand tone"
 }

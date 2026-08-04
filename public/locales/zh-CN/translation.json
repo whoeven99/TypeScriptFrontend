@@ -1006,5 +1006,11 @@
   "Your store's default language:": "您商店的默认语言：",
   "Your translation quota": "您的翻译额度",
   "Youthful": "年轻 —— 活泼、时尚感",
-  "Zara – Modern & chic (Womenswear)": "Zara：摩登时髦（女装）"
+  "Zara – Modern & chic (Womenswear)": "Zara：摩登时髦（女装）",
+  "Update translation": "更新翻译",
+  "Retranslate": "重新翻译",
+  "Translation quality not good enough?": "对当前译文不满意？",
+  "Add suggestions and translate again.": "可以补充要求后重新翻译。",
+  "The source text changed. Add suggestions if you want to refresh the translation.": "原文已变更。你也可以补充要求后再更新翻译。",
+  "e.g. Make the wording more natural and aligned with the brand tone": "例如：让表达更自然，并贴合品牌语气"
 }
