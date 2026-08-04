@@ -20,6 +20,15 @@ import { appAntdTheme } from "./ui/theme";
 import { resolveAppI18nCode } from "./lib/resolveAppI18nCode";
 import { i18nBootInlineScript, type CiwiI18nBoot } from "./lib/i18nBoot";
 
+function setDocumentNoStoreHeaders(headers: Headers) {
+  // The HTML document embeds hashed route/module references. If an old document
+  // is reused after a deploy, the browser can request stale chunks and crash
+  // hydration before React can recover.
+  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  headers.set("Pragma", "no-cache");
+  headers.set("Expires", "0");
+}
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -32,6 +41,7 @@ export default async function handleRequest(
     i18nCode === fallbackLng ? [i18nCode] : [i18nCode, fallbackLng];
 
   addDocumentResponseHeaders(request, responseHeaders);
+  setDocumentNoStoreHeaders(responseHeaders);
   const userAgent = request.headers.get("user-agent");
   const isABot = isbot(userAgent ?? "");
 

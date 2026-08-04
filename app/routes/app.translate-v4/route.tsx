@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   Profiler,
   Suspense,
   lazy,
@@ -158,6 +159,10 @@ export default function AppTranslateV4() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const initialLocationState = location.state as
+    | { spotlightTaskIds?: string[] }
+    | null
+    | undefined;
   const {
     shop,
     locales,
@@ -219,12 +224,15 @@ export default function AppTranslateV4() {
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
+  const [activeWorkbenchTab, setActiveWorkbenchTab] = useState<
+    "create" | "tasks"
+  >(() =>
+    (initialLocationState?.spotlightTaskIds?.length ?? 0) > 0
+      ? "tasks"
+      : "create",
+  );
   const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>(() => {
-    const state = location.state as
-      | { spotlightTaskIds?: string[] }
-      | null
-      | undefined;
-    return state?.spotlightTaskIds ?? [];
+    return initialLocationState?.spotlightTaskIds ?? [];
   });
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
@@ -571,6 +579,7 @@ export default function AppTranslateV4() {
       if (result.created.length > 0) {
         message.success(`${summary} ${t("v4.create.createdBelow")}`);
         await Promise.all([refreshList(), refreshQuota()]);
+        setActiveWorkbenchTab("tasks");
         setSpotlightTaskIds(result.created.map((item) => item.jobId));
       } else {
         message.error(summary);
@@ -734,6 +743,7 @@ export default function AppTranslateV4() {
   useEffect(() => {
     if (spotlightTaskIds.length === 0) return;
     if (typeof window === "undefined") return;
+    setActiveWorkbenchTab("tasks");
 
     const scrollTimer = window.setTimeout(() => {
       taskQueueSectionRef.current?.scrollIntoView({
@@ -824,43 +834,97 @@ export default function AppTranslateV4() {
               </div>
             </div>
 
-            <div ref={createTaskSectionRef} className="v4-enter v4-enter-d2">
-              <CreateTaskCard
-                targetOptions={targetOptions}
-                targets={targets}
-                onTargetsChange={setTargets}
-                modules={moduleKeys}
-                onModulesChange={setModuleKeys}
-                creating={creating}
-                createDisabled={normalizedQuota == null}
-                disabledMessage={createDisabledMessage}
-                onCreate={handleCreateRequest}
-                aiModel={aiModel}
-                onAiModelChange={setAiModel}
-                isCover={isCover}
-                onIsCoverChange={setIsCover}
-                isHandle={isHandle}
-                onIsHandleChange={setIsHandle}
-                estimate={taskEstimate}
-              />
-            </div>
-
             <div
-              ref={taskQueueSectionRef}
-              className="v4-enter v4-enter-d3"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr)",
-                gap: 16,
-              }}
+              className="v4-enter v4-enter-d2"
+              style={workbenchTabsShellStyle}
             >
-              <TaskQueueSection
-                jobs={jobs}
-                spotlightTaskIds={spotlightTaskIds}
-                translateSlotBusy={translateSlotBusy}
-                onBuyCredits={() => setShowPaymentModal(true)}
-                onAction={handleAction}
-              />
+              <div
+                role="tablist"
+                aria-label={t("v4.title")}
+                style={workbenchTabListStyle}
+              >
+                <button
+                  id="v4-workbench-tab-create"
+                  type="button"
+                  role="tab"
+                  aria-selected={activeWorkbenchTab === "create"}
+                  aria-controls="v4-workbench-panel-create"
+                  onClick={() => setActiveWorkbenchTab("create")}
+                  style={workbenchTabButtonStyle(
+                    activeWorkbenchTab === "create",
+                  )}
+                >
+                  {t("v4.createTask.title")}
+                </button>
+                <button
+                  id="v4-workbench-tab-tasks"
+                  type="button"
+                  role="tab"
+                  aria-selected={activeWorkbenchTab === "tasks"}
+                  aria-controls="v4-workbench-panel-tasks"
+                  onClick={() => setActiveWorkbenchTab("tasks")}
+                  style={workbenchTabButtonStyle(
+                    activeWorkbenchTab === "tasks",
+                  )}
+                >
+                  {t("v4.tasks.title", { count: jobs.length })}
+                </button>
+              </div>
+
+              <div
+                id="v4-workbench-panel-create"
+                role="tabpanel"
+                aria-labelledby="v4-workbench-tab-create"
+                hidden={activeWorkbenchTab !== "create"}
+                style={workbenchPanelStyle(activeWorkbenchTab === "create")}
+              >
+                <div ref={createTaskSectionRef}>
+                  <CreateTaskCard
+                    targetOptions={targetOptions}
+                    targets={targets}
+                    onTargetsChange={setTargets}
+                    modules={moduleKeys}
+                    onModulesChange={setModuleKeys}
+                    creating={creating}
+                    createDisabled={normalizedQuota == null}
+                    disabledMessage={createDisabledMessage}
+                    onCreate={handleCreateRequest}
+                    aiModel={aiModel}
+                    onAiModelChange={setAiModel}
+                    isCover={isCover}
+                    onIsCoverChange={setIsCover}
+                    isHandle={isHandle}
+                    onIsHandleChange={setIsHandle}
+                    estimate={taskEstimate}
+                  />
+                </div>
+              </div>
+
+              <div
+                id="v4-workbench-panel-tasks"
+                role="tabpanel"
+                aria-labelledby="v4-workbench-tab-tasks"
+                hidden={activeWorkbenchTab !== "tasks"}
+                style={workbenchPanelStyle(activeWorkbenchTab === "tasks")}
+              >
+                <div
+                  ref={taskQueueSectionRef}
+                  className="v4-enter v4-enter-d3"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr)",
+                    gap: 16,
+                  }}
+                >
+                  <TaskQueueSection
+                    jobs={jobs}
+                    spotlightTaskIds={spotlightTaskIds}
+                    translateSlotBusy={translateSlotBusy}
+                    onBuyCredits={() => setShowPaymentModal(true)}
+                    onAction={handleAction}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -895,4 +959,51 @@ export default function AppTranslateV4() {
       ) : null}
     </Page>
   );
+}
+
+const workbenchTabsShellStyle: CSSProperties = {
+  display: "grid",
+  gap: 14,
+};
+
+const workbenchTabListStyle: CSSProperties = {
+  display: "inline-flex",
+  flexWrap: "wrap",
+  gap: 8,
+  padding: 4,
+  borderRadius: 999,
+  background: "var(--app-color-surface-secondary)",
+  alignSelf: "flex-start",
+};
+
+function workbenchTabButtonStyle(active: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    maxWidth: "100%",
+    minHeight: 36,
+    padding: "8px 14px",
+    borderRadius: 999,
+    border: "none",
+    background: active ? "var(--app-color-surface)" : "transparent",
+    color: active ? "var(--app-color-text)" : "var(--app-color-text-secondary)",
+    boxShadow: active ? "var(--app-shadow-card)" : "none",
+    fontSize: 13,
+    fontWeight: active ? 600 : 500,
+    lineHeight: 1.35,
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    transition: "all 0.2s ease",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+}
+
+function workbenchPanelStyle(active: boolean): CSSProperties {
+  return {
+    display: active ? "block" : "none",
+    minWidth: 0,
+  };
 }
