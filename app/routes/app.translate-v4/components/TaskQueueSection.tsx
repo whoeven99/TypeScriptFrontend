@@ -457,7 +457,7 @@ export function TaskQueueSection({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
         <div style={{ minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: v4Colors.text }}>
-            {t("v4.tasks.title", { count: jobs.length })}
+            {t("v4.tasks.title", { count: currentJobs.length })}
           </h2>
           <div style={{ marginTop: 4, fontSize: 13, color: v4Colors.textMuted, lineHeight: "20px" }}>
             {helperText}
