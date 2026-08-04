@@ -11,18 +11,20 @@ right route, server helper, worker, extension, script, or Prisma model.
 ## Required Workflow
 
 1. Read `AGENTS.md` first and identify the feature area.
-2. Run `git status --short` before editing. Do not overwrite user changes or
+2. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (Claude-style
+  collab: confirm technical choices, then plan / UI samples, then edit).
+3. Run `git status --short` before editing. Do not overwrite user changes or
   unrelated untracked files.
-3. Read the route entry, server helper, worker or extension caller, and Prisma
+4. Read the route entry, server helper, worker or extension caller, and Prisma
   model that own the behavior.
-4. Keep changes small and local to the feature boundary.
-5. Never copy, print, commit, or summarize real values from `.env*`. Mention
+5. Keep changes small and local to the feature boundary.
+6. Never copy, print, commit, or summarize real values from `.env*`. Mention
   variable names only.
-6. Some existing Chinese comments may display as mojibake in PowerShell. Do not
+7. Some existing Chinese comments may display as mojibake in PowerShell. Do not
   rewrite whole files for encoding cleanup unless explicitly asked.
-7. For Shopify, billing, quota, worker, and live-store writeback changes, verify
+8. For Shopify, billing, quota, worker, and live-store writeback changes, verify
   the smallest meaningful path and report any remaining risk.
-8. `AGENTS.md` is the current root repo index. Do not assume a separate
+9. `AGENTS.md` is the current root repo index. Do not assume a separate
   `Agent.md` exists unless it has been restored in the live checkout.
 
 
@@ -1459,11 +1461,12 @@ translation, but auto-translate still does not set it. Empty Turso
 
 ## Short Locator Flow
 
-1. `git status --short`
-2. Read the matching section in this file.
-3. `rg -n "<keyword>" app worker extensions scripts prisma`
-4. Read route entry, server helper, worker/extension caller, and data model.
-5. Apply the smallest patch.
-6. Run the validation command that matches the change.
-7. Final response should include changed files, validation result, and residual risk.
+1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md`.
+2. `git status --short`
+3. Read the matching section in this file.
+4. `rg -n "<keyword>" app worker extensions scripts prisma`
+5. Read route entry, server helper, worker/extension caller, and data model.
+6. Apply the smallest patch.
+7. Run the validation command that matches the change.
+8. Final response should include changed files, validation result, and residual risk.
 
