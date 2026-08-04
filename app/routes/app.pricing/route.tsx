@@ -14,10 +14,6 @@ import {
   Modal,
 } from "antd";
 import Button from "~/ui/components/AppButton";
-import {
-  SubscriptionCheckoutModal,
-  type SubscriptionCheckoutInterval,
-} from "~/components/SubscriptionCheckoutModal";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
@@ -143,7 +139,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const { admin, redirect: shopifyRedirect } = adminAuthResult;
 
   const formData = await request.formData();
   const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -169,16 +165,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             res?.data?.appPurchaseOneTimeCreate?.confirmationUrl;
 
           // tsf 用户入账靠 APP_PURCHASES_ONE_TIME_UPDATE → Turso，不写 Java CharsOrders
-          // 不再服务端 _top 重定向：把 confirmationUrl 返回给客户端，
-          // 由客户端在新标签页打开 Shopify 结账页，当前页面保持不跳走。
+          let orderData: {
+            success: boolean;
+            errorCode?: number;
+            errorMsg?: string;
+            response?: unknown;
+          } = { success: true, response: null };
           if (confirmationUrl) {
-            return {
-              success: true,
-              response: {
-                confirmationUrl,
-              },
-            };
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
           }
+
+          return {
+            ...orderData,
+            response: {
+              confirmationUrl,
+            },
+          };
         }
 
         return {
@@ -226,16 +228,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             res?.data?.appSubscriptionCreate?.confirmationUrl;
 
           // tsf 用户入账靠 APP_SUBSCRIPTIONS_UPDATE → Turso，不写 Java CharsOrders
-          // 不再服务端 _top 重定向：把 confirmationUrl 返回给客户端，
-          // 由客户端弹窗 + 新标签页打开 Shopify 结账页，完成后自动刷新本页。
+          let orderData: {
+            success: boolean;
+            errorCode?: number;
+            errorMsg?: string;
+            response?: unknown;
+          } = { success: true, response: null };
           if (confirmationUrl) {
-            return {
-              success: true,
-              response: {
-                confirmationUrl,
-              },
-            };
+            throw shopifyRedirect(confirmationUrl, { target: "_top" });
           }
+
+          return {
+            ...orderData,
+            response: {
+              confirmationUrl,
+            },
+          };
         }
 
         return {
@@ -426,15 +434,6 @@ const Index = () => {
   const payPlanSubmittingRef = useRef(false);
   const payCreditsAwaitingResponseRef = useRef(false);
   const payPlanAwaitingResponseRef = useRef(false);
-  const checkoutTargetRef = useRef<{
-    planName: string;
-    interval: SubscriptionCheckoutInterval;
-  } | null>(null);
-  const [checkout, setCheckout] = useState<{
-    url: string;
-    planName: string;
-    interval: SubscriptionCheckoutInterval;
-  } | null>(null);
 
   useEffect(() => {
     setIsLoading(false);
@@ -572,19 +571,7 @@ const Index = () => {
     setPayForPlanButtonLoading("");
 
     if (succeeded && confirmationUrl) {
-      const checkoutTarget = checkoutTargetRef.current;
-      if (checkoutTarget) {
-        // Shopify 结账页无法嵌入弹窗 iframe（官方托管页限制），
-        // 由 SubscriptionCheckoutModal 弹窗提示 + 新标签页打开结账页，
-        // 轮询订阅状态，生效后自动刷新本页。
-        setCheckout({
-          url: confirmationUrl,
-          planName: checkoutTarget.planName,
-          interval: checkoutTarget.interval,
-        });
-      } else {
-        redirectToBillingConfirmation(confirmationUrl);
-      }
+      redirectToBillingConfirmation(confirmationUrl);
     }
   }, [payForPlanFetcher.state, payForPlanFetcher.data]);
 
@@ -1096,10 +1083,6 @@ const Index = () => {
         trialDays,
       },
     });
-    checkoutTargetRef.current = {
-      planName: plan?.title,
-      interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
-    };
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
@@ -1510,16 +1493,6 @@ const Index = () => {
           )}
         </Text>
       </Modal>
-      <SubscriptionCheckoutModal
-        open={Boolean(checkout)}
-        confirmationUrl={checkout?.url ?? null}
-        planName={checkout?.planName ?? ""}
-        interval={checkout?.interval ?? "EVERY_30_DAYS"}
-        onClose={() => {
-          setCheckout(null);
-          setSelectedPayPlanOption(undefined);
-        }}
-      />
     </Page>
   );
 };

@@ -581,12 +581,16 @@ Models:
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
 - `TranslateV4JobUsage`: per v4 job usage snapshot (Worker writes on terminal status).
+- `CreditUsage`: per-deduction credit audit (`single` / `image` / `v4_job`);
+  units are billable credits (not cash). `BillingLog` remains income-only.
 
 Code:
 
 - `app/server/billing/index.server.ts`: billing barrel exports.
 - `app/server/billing/binding/resolveBillingBinding.server.ts`: TSF account initialization helper.
-- `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing.
+- `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing
+  (`deductShopCredits` optional audit → `CreditUsage`).
+- `app/server/billing/quota/recordCreditUsage.server.ts`: App-side `CreditUsage` writer.
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
 - `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling
@@ -617,6 +621,8 @@ helpers for annual credit-cycle math.
 `/api/translate-v4/quota`, task creation, single translation, and picture
 translation all use this TSF account path.
 - `worker/src/services/tsfQuota.ts`: worker quota adapter.
+- `worker/src/services/creditUsage.ts`: Worker `CreditUsage` writer; `translateWorker`
+  `flushQuota` records each successful credit flush (`source=v4_job`).
 
 Quota work must check:
 
@@ -941,6 +947,8 @@ Current models:
 `AccountPeriodUsage`: TSF billing/quota.
 - `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
 units, source chars); written by Worker at job terminal states.
+- `CreditUsage`: credit spend audit rows (`single` / `image` / `v4_job`);
+written on deduct (App) or quota flush (Worker).
 - `SupportConversation`, `SupportMessage`: support chat.
 - `ShopOnboarding`: 首次翻译新手引导状态（status/skipped/completed/试用/建首任务来源、
  推荐语言与模块快照、积分与耗时预估、来源 scan id）；独立于 `Account.isNew`。

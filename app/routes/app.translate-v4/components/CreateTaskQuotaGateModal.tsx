@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { v4CardStyle, v4Colors } from "../v4Styles";
 import Button from "~/ui/components/AppButton";
-import { SubscriptionCheckoutModal } from "~/components/SubscriptionCheckoutModal";
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -19,12 +18,11 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
   const navigate = useNavigate();
   const planFetcher = useFetcher<{ success?: boolean; response?: { confirmationUrl?: string } }>();
   const [pendingAction, setPendingAction] = useState<"trial" | "subscribe" | null>(null);
-  const [checkout, setCheckout] = useState<{ url: string } | null>(null);
 
   useEffect(() => {
     if (!planFetcher.data?.success) return;
     const confirmationUrl = planFetcher.data.response?.confirmationUrl;
-    if (confirmationUrl) setCheckout({ url: confirmationUrl });
+    if (confirmationUrl) openUrl(confirmationUrl);
   }, [planFetcher.data]);
 
   useEffect(() => {
@@ -91,8 +89,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
       ];
 
   return (
-    <>
-      <Modal
+    <Modal
       open={open}
       onCancel={onClose}
       footer={null}
@@ -334,14 +331,10 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
           </div>
         </Space>
       </div>
-      </Modal>
-      <SubscriptionCheckoutModal
-        open={Boolean(checkout)}
-        confirmationUrl={checkout?.url ?? null}
-        planName="Basic"
-        interval="EVERY_30_DAYS"
-        onClose={() => setCheckout(null)}
-      />
-    </>
+    </Modal>
   );
+}
+
+function openUrl(url: string) {
+  open(url, "_top");
 }

@@ -217,6 +217,7 @@ model Account {
   subscription AppSubscription?
   billingLogs  BillingLog[]
   periodUsages AccountPeriodUsage[]
+  creditUsages CreditUsage[]
 }
 
 /// 套餐目录（订阅 / 一次性加量包 / 内置试用），取代前端硬编码。
@@ -328,6 +329,26 @@ model TranslateV4JobUsage {
 
   @@index([shop, recordedAt])
   @@index([recordedAt])
+}
+
+/// 积分消费审计（计费积分 credits，非现金）。
+/// source: single | image | v4_job；与 BillingLog（充值/订阅）分离。
+model CreditUsage {
+  id          String   @id @default(cuid())
+  shop        String
+  /// single | image | v4_job
+  source      String
+  /// 本次扣减的计费积分（正数）
+  credits     Int
+  /// 幂等键（防重复写入）
+  referenceId String   @unique
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([shop, createdAt])
+  @@index([source, createdAt])
 }
 
 // ============================================================
