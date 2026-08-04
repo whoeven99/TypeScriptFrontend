@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "antd";
+import { Button } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import type { LocaleCoverageRow } from "~/server/translateV4/coverage.server";
 import { v4Colors, v4CardStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "../v4Styles";
@@ -127,21 +127,25 @@ export function CoverageCard({
             </h2>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "stretch", flexShrink: 0, flexWrap: "wrap", maxWidth: "100%" }}>
-            <Button
-              size="small"
-              onClick={onManageLanguages}
-              style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
-            >
-              {t("v4.coverage.manageLanguages")}
-            </Button>
-            <Button
-              size="small"
-              onClick={onRefresh}
-              loading={loading}
-              style={{ maxWidth: "100%", height: "auto", whiteSpace: "normal", lineHeight: 1.35 }}
-            >
-              {loading ? t("v4.coverage.refreshing") : t("v4.coverage.refreshStats")}
-            </Button>
+            <div style={{ minWidth: 0 }}>
+              <Button
+                size="slim"
+                variant="secondary"
+                onClick={onManageLanguages}
+              >
+                {t("v4.coverage.manageLanguages")}
+              </Button>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <Button
+                size="slim"
+                variant="secondary"
+                onClick={onRefresh}
+                loading={loading}
+              >
+                {loading ? t("v4.coverage.refreshing") : t("v4.coverage.refreshStats")}
+              </Button>
+            </div>
           </div>
         </div>
 
