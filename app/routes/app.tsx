@@ -26,10 +26,9 @@ import { resolveBillingBinding } from "~/server/billing/index.server";
 import { scheduleTsfWelcomeEmail } from "~/server/billing/email/welcomeEmail.server";
 import { enqueueShopScan } from "~/server/shopScan/trigger.server";
 import { loadShopLocalesForTranslation } from "~/server/translateV4/shopLocales.server";
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Profiler, Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIdleReady } from "~/hooks/useIdleReady";
-import { Profiler } from "react";
 
 import { ConfigProvider } from "antd";
 import { useDispatch } from "react-redux";
@@ -55,6 +54,7 @@ import {
   markPerfEnd,
   markPerfStart,
 } from "~/utils/perf";
+import { OPEN_CREDITS_PURCHASE_MODAL_EVENT } from "~/utils/creditsPurchaseModal";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -63,6 +63,7 @@ const LazySupportChatWidget = lazy(() =>
     default: module.SupportChatWidget,
   })),
 );
+const LazyPaymentModal = lazy(() => import("~/components/paymentModal"));
 
 type AppBootstrapLocales = {
   source: { code: string; name: string };
@@ -460,6 +461,7 @@ export default function App() {
     useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [perfDebugEnabled, setPerfDebugEnabled] = useState(perfDebug);
 
   const { t } = useTranslation();
@@ -521,6 +523,26 @@ export default function App() {
     };
   }, [bootstrap, dispatch, shop]);
 
+  useEffect(() => {
+    if (!isClient) return;
+
+    const handleOpenCreditsPurchaseModal = () => {
+      setShowPaymentModal(true);
+    };
+
+    window.addEventListener(
+      OPEN_CREDITS_PURCHASE_MODAL_EVENT,
+      handleOpenCreditsPurchaseModal,
+    );
+
+    return () => {
+      window.removeEventListener(
+        OPEN_CREDITS_PURCHASE_MODAL_EVENT,
+        handleOpenCreditsPurchaseModal,
+      );
+    };
+  }, [isClient]);
+
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
       <ConfigProvider
@@ -563,6 +585,14 @@ export default function App() {
           </NavMenu>
           <Outlet />
         </Profiler>
+        {isClient && showPaymentModal ? (
+          <Suspense fallback={null}>
+            <LazyPaymentModal
+              visible={showPaymentModal}
+              setVisible={setShowPaymentModal}
+            />
+          </Suspense>
+        ) : null}
         {isClient && supportChatReady ? (
           <Suspense fallback={null}>
             <LazySupportChatWidget />

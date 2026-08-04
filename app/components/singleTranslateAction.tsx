@@ -10,6 +10,7 @@ const MAX_PROMPT_LENGTH = 500;
 
 interface SingleTranslateActionProps {
   existingTranslation?: string | null;
+  isOutdated?: boolean;
   loading?: boolean;
   onSubmit: (customPrompt?: string) => void | Promise<void>;
   triggerProps?: AppButtonProps;
@@ -19,6 +20,7 @@ const normalizeText = (value?: string | null) => value?.trim() ?? "";
 
 const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   existingTranslation,
+  isOutdated = false,
   loading = false,
   onSubmit,
   triggerProps,
@@ -31,6 +33,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     () => normalizeText(existingTranslation).length > 0,
     [existingTranslation],
   );
+  const shouldUpdateTranslation = hasExistingTranslation && isOutdated;
 
   useEffect(() => {
     if (loading) {
@@ -43,15 +46,24 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     setPrompt("");
   }, [loading]);
 
-  const actionLabel = hasExistingTranslation
-    ? t("Retranslate")
-    : t("Translate");
-  const promptLabel = hasExistingTranslation
-    ? t("Translation quality not good enough?")
-    : t("Translation prompt");
-  const submitLabel = hasExistingTranslation
-    ? t("Retranslate")
-    : t("Start translation");
+  const actionLabel = !hasExistingTranslation
+    ? t("Translate")
+    : shouldUpdateTranslation
+      ? t("Update translation")
+      : t("Retranslate");
+  const promptLabel = !hasExistingTranslation
+    ? t("Translation prompt")
+    : shouldUpdateTranslation
+      ? t("Update translation")
+      : t("Translation quality not good enough?");
+  const submitLabel = !hasExistingTranslation
+    ? t("Start translation")
+    : shouldUpdateTranslation
+      ? t("Update translation")
+      : t("Retranslate");
+  const promptDescription = shouldUpdateTranslation
+    ? t("The source text changed. Add suggestions if you want to refresh the translation.")
+    : t("Add suggestions and translate again.");
 
   return (
     <>
@@ -114,9 +126,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
           }}
         >
           <Text type="secondary">
-            {t(
-              "Add suggestions and translate again.",
-            )}
+            {promptDescription}
           </Text>
           <TextArea
             rows={4}

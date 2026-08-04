@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
-import { BlockStack, Checkbox, Select } from "@shopify/polaris";
-import { Link } from "@remix-run/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { BlockStack, Button, Checkbox, Select } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import { v4Colors, v4CardStyle } from "../v4Styles";
 import {
@@ -12,11 +11,7 @@ import {
 import { localeRegionCode, localeShortName } from "../localeDisplay";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
-import Button from "~/ui/components/AppButton";
-import {
-  formatEstimateCredits,
-  type CreateTaskEstimateView,
-} from "../useCreateTaskEstimate";
+import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 
 export type { CreateTaskEstimateView };
 
@@ -57,7 +52,7 @@ export function CreateTaskCard({
   onIsCoverChange,
   isHandle,
   onIsHandleChange,
-  advancedDefaultOpen = false,
+  advancedDefaultOpen = true,
   submitPlacement = "header",
   createDisabled = false,
   disabledMessage = null,
@@ -95,6 +90,14 @@ export function CreateTaskCard({
     value: mod,
     label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
   }));
+  const allTargetValues = localeChips.map((locale) => locale.value);
+  const allModuleValues = moduleChips.map((mod) => mod.value);
+  const allTargetsSelected =
+    allTargetValues.length > 0 && allTargetValues.every((value) => targets.includes(value));
+  const someTargetsSelected = targets.length > 0 && !allTargetsSelected;
+  const allModulesSelected =
+    allModuleValues.length > 0 && allModuleValues.every((value) => modules.includes(value));
+  const someModulesSelected = modules.length > 0 && !allModulesSelected;
 
   const toggleTarget = (value: string) => {
     onTargetsChange(
@@ -112,31 +115,32 @@ export function CreateTaskCard({
     );
   };
 
+  const toggleAllTargets = () => {
+    onTargetsChange(allTargetsSelected ? [] : allTargetValues);
+  };
+
+  const toggleAllModules = () => {
+    onModulesChange(allModulesSelected ? [] : allModuleValues);
+  };
+
   const submitButton = (
-    <Button
-      type="primary"
-      className="v4-create-task-card__submit"
-      disabled={!canCreate}
-      loading={creating}
-      onClick={onCreate}
+    <div
       style={{
         maxWidth: "100%",
         minWidth: submitPlacement === "footer-center" ? 220 : undefined,
-        height: "auto",
-        minHeight: 36,
-        whiteSpace: "normal",
-        textAlign: "center",
-        lineHeight: 1.35,
-        paddingBlock: 8,
-        paddingInline: 24,
       }}
     >
-      {creating
-        ? t("v4.createTask.creating")
-        : targets.length > 1
-          ? t("v4.createTask.createMultiple", { count: targets.length })
-          : t("v4.createTask.createOne")}
-    </Button>
+      <Button
+        fullWidth={submitPlacement === "footer-center"}
+        size="large"
+        variant="primary"
+        disabled={!canCreate}
+        loading={creating}
+        onClick={onCreate}
+      >
+        {creating ? t("v4.createTask.creating") : "Translate Now"}
+      </Button>
+    </div>
   );
 
   return (
@@ -184,18 +188,7 @@ export function CreateTaskCard({
             >
               {disabledMessage}
             </div>
-          ) : (
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 11,
-                lineHeight: "16px",
-                color: v4Colors.textMuted,
-              }}
-            >
-              {t("v4.createTask.estimateFootnote")}
-            </div>
-          )}
+          ) : null}
         </div>
         {submitPlacement === "header" ? (
           <div
@@ -210,61 +203,61 @@ export function CreateTaskCard({
               minWidth: 0,
             }}
           >
-            <EstimateInline
-              estimate={estimate}
-              canEstimate={targets.length > 0 && modules.length > 0}
-            />
             {submitButton}
           </div>
         ) : null}
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.targetLanguages")} />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <SectionHeader
+          title={t("v4.createTask.targetLanguages")}
+          action={
+            <CheckboxInlineAction
+              label={t("Check all")}
+              selected={allTargetsSelected}
+              indeterminate={someTargetsSelected}
+              onToggle={toggleAllTargets}
+            />
+          }
+        />
+        <div style={checkboxGridStyle}>
           {localeChips.map((locale) => {
             const selected = targets.includes(locale.value);
             return (
-              <button
+              <CheckboxOptionCard
                 key={locale.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => toggleTarget(locale.value)}
-                style={moduleChipStyle(selected)}
-              >
-                <span
-                  style={{
-                    opacity: selected ? 0.85 : 0.7,
-                    marginRight: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {locale.regionCode}
-                </span>
-                {locale.label}
-              </button>
+                label={locale.label}
+                selected={selected}
+                onToggle={() => toggleTarget(locale.value)}
+                prefix={locale.regionCode}
+              />
             );
           })}
         </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionHeader title={t("v4.createTask.content")} />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <SectionHeader
+          title={t("v4.createTask.content")}
+          action={
+            <CheckboxInlineAction
+              label={t("Check all")}
+              selected={allModulesSelected}
+              indeterminate={someModulesSelected}
+              onToggle={toggleAllModules}
+            />
+          }
+        />
+        <div style={checkboxGridStyle}>
           {moduleChips.map((mod) => {
             const selected = modules.includes(mod.value);
             return (
-              <button
+              <CheckboxOptionCard
                 key={mod.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => toggleModule(mod.value)}
-                style={moduleChipStyle(selected)}
-              >
-                {mod.label}
-              </button>
+                label={mod.label}
+                selected={selected}
+                onToggle={() => toggleModule(mod.value)}
+              />
             );
           })}
         </div>
@@ -360,10 +353,6 @@ export function CreateTaskCard({
             gap: "8px 12px",
           }}
         >
-          <EstimateInline
-            estimate={estimate}
-            canEstimate={targets.length > 0 && modules.length > 0}
-          />
           {submitButton}
         </div>
       ) : null}
@@ -371,112 +360,37 @@ export function CreateTaskCard({
   );
 }
 
-/** 创建按钮旁的上限预估（无灰盒，避免顶栏臃肿）。 */
-function EstimateInline({
-  estimate,
-  canEstimate,
+function SectionHeader({
+  title,
+  action,
 }: {
-  estimate: CreateTaskEstimateView | null;
-  canEstimate: boolean;
+  title: string;
+  action?: ReactNode;
 }) {
-  const { t } = useTranslation();
-
-  if (!canEstimate) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateSelectFirst")}
-      </span>
-    );
-  }
-
-  if (!estimate || estimate.loading) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateLoading")}
-      </span>
-    );
-  }
-
-  if (estimate.estimatedCredits == null) {
-    return (
-      <span style={estimateInlineMutedStyle}>
-        {t("v4.createTask.estimateUnavailable")}
-      </span>
-    );
-  }
-
-  const estimatedLabel = formatEstimateCredits(estimate.estimatedCredits);
-  const remainingLabel = formatEstimateCredits(estimate.remainingCredits);
-  const primary = estimate.isUpperBound
-    ? t("v4.createTask.estimateUpperBound", { estimated: estimatedLabel })
-    : t("v4.createTask.estimateNeed", { estimated: estimatedLabel });
-
   return (
     <div
       style={{
+        marginBottom: 12,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 2,
-        minWidth: 0,
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
       }}
     >
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "baseline",
-          justifyContent: "flex-end",
-          gap: "4px 8px",
           fontSize: 13,
           fontWeight: 600,
-          color: estimate.needsMoreCredits
-            ? "var(--p-color-text-caution)"
-            : v4Colors.text,
+          color: v4Colors.text,
           lineHeight: 1.35,
+          overflowWrap: "anywhere",
+          minWidth: 0,
         }}
       >
-        <span>{primary}</span>
-        <span style={{ fontWeight: 500, color: v4Colors.textMuted }}>
-          {t("v4.createTask.estimateRemaining", { remaining: remainingLabel })}
-        </span>
-      </div>
-      {estimate.needsMoreCredits ? (
-        <div
-          style={{
-            fontSize: 11,
-            color: "var(--p-color-text-caution)",
-            textAlign: "right",
-          }}
-        >
-          {t("v4.createTask.estimateShort")}{" "}
-          <Link to="/app/pricing" style={{ fontWeight: 600 }}>
-            {t("v4.createTask.estimateBuyCredits")}
-          </Link>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-const estimateInlineMutedStyle: CSSProperties = {
-  fontSize: 12,
-  color: v4Colors.textMuted,
-  textAlign: "right",
-  maxWidth: 220,
-  lineHeight: 1.35,
-};
-
-function SectionHeader({
-  title,
-}: {
-  title: string;
-}) {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: v4Colors.text, lineHeight: 1.35, overflowWrap: "anywhere" }}>
         {title}
       </div>
+      {action}
     </div>
   );
 }
@@ -489,24 +403,135 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-/** 内联多选 chip：选中 primary-soft，未选中中性灰；语言/模块共用。 */
-function moduleChipStyle(selected: boolean): CSSProperties {
+function CheckboxOptionCard({
+  label,
+  selected,
+  indeterminate = false,
+  onToggle,
+  prefix,
+}: {
+  label: string;
+  selected: boolean;
+  indeterminate?: boolean;
+  onToggle: () => void;
+  prefix?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <label style={checkboxCardStyle(selected)}>
+      <input
+        ref={inputRef}
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        style={checkboxInputStyle}
+      />
+      <span style={{ minWidth: 0, display: "inline-flex", alignItems: "center", gap: 6 }}>
+        {prefix ? (
+          <span
+            style={{
+              opacity: selected ? 1 : 0.72,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: v4Colors.textMuted,
+              flexShrink: 0,
+            }}
+          >
+            {prefix}
+          </span>
+        ) : null}
+        <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{label}</span>
+      </span>
+    </label>
+  );
+}
+
+function CheckboxInlineAction({
+  label,
+  selected,
+  indeterminate = false,
+  onToggle,
+}: {
+  label: string;
+  selected: boolean;
+  indeterminate?: boolean;
+  onToggle: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: 500,
+        color: v4Colors.textMuted,
+        lineHeight: 1.35,
+        userSelect: "none",
+        flexShrink: 0,
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        style={checkboxInputStyle}
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+const checkboxGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 10,
+};
+
+function checkboxCardStyle(selected: boolean): CSSProperties {
   return {
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px solid transparent",
-    background: selected ? v4Colors.primarySoft : v4Colors.cardSubdued,
-    color: selected ? v4Colors.primaryHover : v4Colors.textMuted,
+    gap: 10,
+    minHeight: 42,
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "none",
+    background: selected ? "rgba(46, 125, 246, 0.10)" : v4Colors.cardSubdued,
+    color: selected ? v4Colors.primary : v4Colors.text,
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: selected ? 600 : 500,
     lineHeight: 1.35,
-    whiteSpace: "normal",
-    textAlign: "left",
-    overflowWrap: "anywhere",
     cursor: "pointer",
-    transition: "background 0.15s, color 0.15s",
+    transition: "background-color 0.15s, color 0.15s, opacity 0.15s",
     fontFamily: "inherit",
+    userSelect: "none",
+    opacity: 1,
   };
 }
+
+const checkboxInputStyle: CSSProperties = {
+  margin: 0,
+  width: 16,
+  height: 16,
+  flexShrink: 0,
+  accentColor: v4Colors.primary,
+};
