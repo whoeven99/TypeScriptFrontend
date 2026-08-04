@@ -2,8 +2,8 @@ import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { BlockStack, Button, InlineStack, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
-import { v4CardStyle, v4Colors } from "../v4Styles";
 import { V4ModalShell } from "~/components/V4ModalShell";
+import { v4CardStyle, v4Colors } from "../v4Styles";
 
 type Props = {
   open: boolean;
@@ -14,8 +14,13 @@ type Props = {
 export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const planFetcher = useFetcher<{ success?: boolean; response?: { confirmationUrl?: string } }>();
-  const [pendingAction, setPendingAction] = useState<"trial" | "subscribe" | null>(null);
+  const planFetcher = useFetcher<{
+    success?: boolean;
+    response?: { confirmationUrl?: string };
+  }>();
+  const [pendingAction, setPendingAction] = useState<
+    "trial" | "subscribe" | null
+  >(null);
 
   useEffect(() => {
     if (!planFetcher.data?.success) return;
@@ -29,7 +34,10 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
     }
   }, [planFetcher.state]);
 
-  const submitBasicPlan = (trialDays: number, action: "trial" | "subscribe") => {
+  const submitBasicPlan = (
+    trialDays: number,
+    action: "trial" | "subscribe",
+  ) => {
     setPendingAction(action);
     planFetcher.submit(
       {
@@ -60,31 +68,29 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
   };
 
   const isTrial = mode === "trial";
+  const trialHighlightKeys = [
+    "v4.quotaGate.trialHighlight1",
+    "v4.quotaGate.trialHighlight2",
+    "v4.quotaGate.trialHighlight3",
+    "v4.quotaGate.trialHighlight4",
+  ] as const;
+  const trialUnlockKeys = [
+    "v4.quotaGate.trialUnlock1",
+    "v4.quotaGate.trialUnlock2",
+    "v4.quotaGate.trialUnlock3",
+  ] as const;
+  const pricingUnlockKeys = [
+    "v4.quotaGate.pricingUnlock1",
+    "v4.quotaGate.pricingUnlock2",
+    "v4.quotaGate.pricingUnlock3",
+  ] as const;
   const title = isTrial
-    ? t("No credits left. Start your 5 days free trial")
-    : t("Your credits are empty. Upgrade to keep translations moving");
-  const description = isTrial
-    ? null
-    : t("Your free trial has already been used. Subscribe to a paid plan to restore monthly credits and continue creating translation tasks.");
-  const nextStepLabel = t("Upgrade plan");
-  const nextStepDescription = t("Move to a paid plan to get fresh monthly credits for new tasks.");
-  const trialHighlights = [
-    t("Get 1,500,000 credits immediately, a $9.99 value"),
-    t("Launch this translation task right away"),
-    t("Translate products, pages, and more with trial credits"),
-    t("Cancel within 5 days for no charge"),
-  ];
-  const unlockItems = isTrial
-    ? [
-        t("Launch this translation task immediately"),
-        t("Translate products, pages, and more with your trial credits"),
-        t("Use glossary and advanced translation workflow features during the trial"),
-      ]
-    : [
-        t("Translation access for products, pages, and more"),
-        t("Glossary and advanced translation workflow support"),
-        t("Monthly plan credits so your team can keep shipping multilingual content"),
-      ];
+    ? t("v4.quotaGate.trialTitle")
+    : t("v4.quotaGate.pricingTitle");
+  const description = isTrial ? null : t("v4.quotaGate.pricingDescription");
+  const nextStepLabel = t("v4.quotaGate.upgradePlan");
+  const nextStepDescription = t("v4.quotaGate.upgradePlanDescription");
+  const unlockKeys = isTrial ? trialUnlockKeys : pricingUnlockKeys;
 
   return (
     <V4ModalShell open={open} onClose={onClose} width={560}>
@@ -108,7 +114,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
             }}
           >
             <Text as="span" variant="bodySm" fontWeight="semibold">
-              {t("Translation credits")}
+              {t("v4.quotaGate.badge")}
             </Text>
           </div>
           <Text as="h2" variant="headingLg" fontWeight="bold">
@@ -140,8 +146,15 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
               }}
             >
               <BlockStack gap="200">
-                {trialHighlights.map((item) => (
-                  <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                {trialHighlightKeys.map((key) => (
+                  <div
+                    key={key}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "flex-start",
+                    }}
+                  >
                     <span
                       aria-hidden
                       style={{
@@ -154,7 +167,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                       }}
                     />
                     <Text as="span" variant="bodyMd">
-                      {item}
+                      {t(key)}
                     </Text>
                   </div>
                 ))}
@@ -187,13 +200,9 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  {t("Next step")}
+                  {t("v4.quotaGate.nextStep")}
                 </div>
-                <div
-                  style={{
-                    marginBottom: 8,
-                  }}
-                >
+                <div style={{ marginBottom: 8 }}>
                   <Text as="h3" variant="headingSm" fontWeight="semibold">
                     {nextStepLabel}
                   </Text>
@@ -222,11 +231,18 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  {t("Included after upgrade")}
+                  {t("v4.quotaGate.includedAfterUpgrade")}
                 </div>
                 <BlockStack gap="200">
-                  {unlockItems.map((item) => (
-                    <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  {unlockKeys.map((key) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                      }}
+                    >
                       <span
                         aria-hidden
                         style={{
@@ -239,7 +255,7 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
                         }}
                       />
                       <Text as="span" variant="bodyMd">
-                        {item}
+                        {t(key)}
                       </Text>
                     </div>
                   ))}
@@ -250,54 +266,66 @@ export function CreateTaskQuotaGateModal({ open, mode, onClose }: Props) {
 
           <div style={{ paddingTop: 4 }}>
             <InlineStack align="end" gap="300">
-            {isTrial ? (
-              <div style={{ minWidth: 220 }}>
-                <Button
-                  fullWidth
-                  size="large"
-                  variant="secondary"
-                  onClick={handleTrialAction}
-                  loading={pendingAction === "trial" && planFetcher.state === "submitting"}
-                >
-                  {t("Free trial")}
-                </Button>
-              </div>
-            ) : (
-              <div style={{ minWidth: 124 }}>
-                <Button
-                  fullWidth
-                  size="large"
-                  variant="secondary"
-                  onClick={onClose}
-                >
-                  {t("Maybe later")}
-                </Button>
-              </div>
-            )}
-            {!isTrial ? (
-              <div style={{ minWidth: 160 }}>
-                <Button
-                  fullWidth
-                  size="large"
-                  variant="primary"
-                  onClick={handlePrimaryAction}
-                  loading={pendingAction === "subscribe" && planFetcher.state === "submitting"}
-                >
-                  {t("View Plans")}
-                </Button>
-              </div>
-            ) : (
-              <div
-                style={{
-                  minWidth: 220,
-                  alignSelf: "center",
-                }}
-              >
-                <Text as="p" variant="bodySm" tone="subdued" alignment="center">
-                  {t("Charged after 5 days")}
-                </Text>
-              </div>
-            )}
+              {isTrial ? (
+                <>
+                  <div style={{ minWidth: 220 }}>
+                    <Button
+                      fullWidth
+                      size="large"
+                      variant="secondary"
+                      onClick={handleTrialAction}
+                      loading={
+                        pendingAction === "trial" &&
+                        planFetcher.state === "submitting"
+                      }
+                    >
+                      {t("v4.quotaGate.freeTrial")}
+                    </Button>
+                  </div>
+                  <div
+                    style={{
+                      minWidth: 220,
+                      alignSelf: "center",
+                    }}
+                  >
+                    <Text
+                      as="p"
+                      variant="bodySm"
+                      tone="subdued"
+                      alignment="center"
+                    >
+                      {t("v4.quotaGate.chargedAfter5Days")}
+                    </Text>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ minWidth: 124 }}>
+                    <Button
+                      fullWidth
+                      size="large"
+                      variant="secondary"
+                      onClick={onClose}
+                    >
+                      {t("v4.quotaGate.maybeLater")}
+                    </Button>
+                  </div>
+                  <div style={{ minWidth: 160 }}>
+                    <Button
+                      fullWidth
+                      size="large"
+                      variant="primary"
+                      onClick={handlePrimaryAction}
+                      loading={
+                        pendingAction === "subscribe" &&
+                        planFetcher.state === "submitting"
+                      }
+                    >
+                      {t("v4.quotaGate.viewPlans")}
+                    </Button>
+                  </div>
+                </>
+              )}
             </InlineStack>
           </div>
         </BlockStack>

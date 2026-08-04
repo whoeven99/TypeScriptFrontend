@@ -26,6 +26,8 @@ import { registerManageTranslations } from "~/server/shopify/translations.server
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
 import { isManageTranslationOutdated } from "~/utils/manageTranslationState";
+import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
+
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SaveBar } from "@shopify/app-bridge-react";
@@ -182,6 +184,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { t } = useTranslation();
+  const { handleSingleTranslateFailure, quotaGateModal } = useSingleTranslateQuotaGate();
   const navigate = useNavigate();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -712,8 +715,9 @@ const Index = () => {
           },
         );
       }
-    } else if (!data?.quotaBlocked) {
-      shopify.toast.show(data.errorMsg);
+    } else {
+      handleSingleTranslateFailure(data.errorMsg);
+
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -1251,6 +1255,7 @@ justifyContent: "space-between",
           />
         )}
       </Layout>
+      {quotaGateModal}
     </Page>
   );
 };

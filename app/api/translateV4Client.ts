@@ -36,13 +36,17 @@ export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
     }
 
     if (!data?.success && data?.errorMsg) {
+      const errorMsg = String(data.errorMsg).trim();
+      if (errorMsg.startsWith("v4.")) {
+        return { ...data, errorMsg };
+      }
       return {
         ...data,
         errorKey: rawErrorKey,
         quotaBlocked,
         status: res.status,
         errorMsg: getTranslateV4ErrorDefaultMessage(
-          data.errorMsg,
+          errorMsg,
           TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
         ),
       };
