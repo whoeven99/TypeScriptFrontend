@@ -27,16 +27,7 @@ import {
   mutationAppPurchaseOneTimeCreate,
   mutationAppSubscriptionCreate,
 } from "~/api/admin";
-import type { Dispatch } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setChars,
-  setIsNew,
-  setPlan,
-  setTotalChars,
-  setUpdateTime,
-} from "~/store/modules/userConfig";
-import type { AppBootstrapData } from "~/server/appBootstrap.server";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import AcountInfoCard from "./components/acountInfoCard";
@@ -48,50 +39,8 @@ import {
   reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
-
-async function refreshBillingBootstrap(
-  dispatch: Dispatch,
-  previousTotalChars?: number,
-): Promise<void> {
-  const retryDelaysMs = [0, 600, 1200, 2000, 3000];
-
-  for (const delayMs of retryDelaysMs) {
-    if (delayMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-
-    try {
-      const res = await fetch("/api/app-bootstrap");
-      const data = (await res.json()) as {
-        ok?: boolean;
-        bootstrap?: AppBootstrapData;
-      };
-      if (!data.ok || !data.bootstrap) continue;
-
-      const bootstrap = data.bootstrap;
-      dispatch(setPlan({ plan: bootstrap.plan }));
-      dispatch(setChars({ chars: bootstrap.chars }));
-      dispatch(setTotalChars({ totalChars: bootstrap.totalChars }));
-      if (bootstrap.updateTime) {
-        dispatch(setUpdateTime({ updateTime: bootstrap.updateTime }));
-      } else {
-        dispatch(setUpdateTime({ updateTime: "" }));
-      }
-      if (bootstrap.isNew !== null && bootstrap.isNew !== undefined) {
-        dispatch(setIsNew({ isNew: bootstrap.isNew }));
-      }
-
-      if (
-        previousTotalChars === undefined ||
-        bootstrap.totalChars !== previousTotalChars
-      ) {
-        return;
-      }
-    } catch {
-      // webhook 入账可能略滞后，继续重试
-    }
-  }
-}
+import { refreshBillingBootstrap } from "~/utils/billingBootstrap";
+import { sanitizeBillingReturnPath } from "~/utils/billingReturn";
 
 function redirectToBillingConfirmation(confirmationUrl: string) {
   if (typeof window === "undefined") return false;
@@ -145,11 +94,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const payInfo = JSON.parse(formData.get("payInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
+  const requestedReturnPath = sanitizeBillingReturnPath(
+    formData.get("returnPath")?.toString(),
+  );
   switch (true) {
     case !!payInfo:
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
         );
         const res = await mutationAppPurchaseOneTimeCreate({
           shop,
@@ -205,7 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!payForPlan:
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
         );
         const res = await mutationAppSubscriptionCreate({
           shop,

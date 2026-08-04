@@ -512,7 +512,7 @@ const overlayStyle = {
 } as const;
 
 const panelStyle = {
-  width: "min(820px, calc(100vw - 32px))",
+  width: "min(520px, calc(100vw - 32px))",
   maxHeight: "min(820px, calc(100vh - 32px))",
   overflow: "hidden",
   borderRadius: 28,
@@ -548,8 +548,8 @@ const bodyStyle = {
 
 const footerStyle = {
   display: "flex",
-  justifyContent: "flex-end",
-  gap: 12,
+  justifyContent: "center",
+  gap: 0,
   padding: "22px 28px 28px",
   background: v4Colors.cardBg,
   flexWrap: "wrap",
@@ -565,12 +565,13 @@ const titleStyle = {
 
 const headlineStyle = {
   display: "inline-flex",
+  alignItems: "center",
   width: "fit-content",
   padding: "8px 12px",
   borderRadius: 12,
   background: "rgba(223, 90, 0, 0.1)",
   color: "#df5a00",
-  fontSize: 15,
+  fontSize: 13,
   fontWeight: 700,
   lineHeight: "22px",
 } as const;
@@ -747,5 +748,4 @@ const secondaryButtonStyle = {
   minWidth: 184,
   minHeight: 48,
   paddingInline: 18,
-  borderColor: v4Colors.cardBorder,
 } as const;

@@ -933,7 +933,7 @@ const Index = () => {
           },
         );
       }
-    } else {
+    } else if (!data?.quotaBlocked) {
       shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));

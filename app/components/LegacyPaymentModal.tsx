@@ -1,6 +1,5 @@
-import { Divider, Modal, Space, Typography } from "antd";
+import { Divider, Modal, Select, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import PaymentOptionSelect from "./paymentOptionSelect";
 import type { OptionType } from "./paymentModal.shared";
 import Button from "~/ui/components/AppButton";
 import { handleContactSupport } from "~/utils/supportChat";
@@ -95,33 +94,20 @@ export function LegacyPaymentModal({
       <Divider />
       <Title level={5}>{t("Buy credits")}</Title>
       <div className="options_wrapper">
-        <Space direction="vertical">
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "16px",
-              width: "100%",
-            }}
-          >
-            {options.map((option) => (
-              <div
-                key={option.name}
-                style={{
-                  flex: "0 1 auto",
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <PaymentOptionSelect
-                  option={option}
-                  selectedOption={selectedOption}
-                  onChange={onSelectOption}
-                />
-              </div>
-            ))}
-          </div>
-        </Space>
+        <Select
+          value={selectedKey}
+          onChange={(value) => {
+            const nextOption = options.find((option) => option.key === value);
+            if (nextOption) {
+              onSelectOption(nextOption);
+            }
+          }}
+          style={{ width: "100%" }}
+          options={options.map((option) => ({
+            label: `${option.name} · ${Number(option.Credits).toLocaleString()} ${t("credits")} · $${option.price.currentPrice.toFixed(2)}`,
+            value: option.key,
+          }))}
+        />
       </div>
       <Divider />
       <div className="total_payment">

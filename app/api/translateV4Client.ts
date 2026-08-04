@@ -2,6 +2,9 @@ import {
   getTranslateV4ErrorDefaultMessage,
   TRANSLATE_V4_ERROR_KEYS,
 } from "~/utils/translateV4Errors";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
+
+const SINGLE_TRANSLATE_NO_CREDITS_ERROR = "v4.create.noCreditsPricing";
 
 type SingleTextTranslateArgs = {
   shopName: string;
@@ -24,16 +27,32 @@ export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {
       body: JSON.stringify({ ...args, customPrompt }),
     });
     const data = await res.json();
+    const rawErrorKey =
+      typeof data?.errorMsg === "string" ? data.errorMsg : undefined;
+    const quotaBlocked = rawErrorKey === SINGLE_TRANSLATE_NO_CREDITS_ERROR;
+
+    if (quotaBlocked) {
+      openCreditsPurchaseModal();
+    }
+
     if (!data?.success && data?.errorMsg) {
       return {
         ...data,
+        errorKey: rawErrorKey,
+        quotaBlocked,
+        status: res.status,
         errorMsg: getTranslateV4ErrorDefaultMessage(
           data.errorMsg,
           TRANSLATE_V4_ERROR_KEYS.SINGLE_TRANSLATE_FAILED,
         ),
       };
     }
-    return data;
+    return {
+      ...data,
+      errorKey: rawErrorKey,
+      quotaBlocked,
+      status: res.status,
+    };
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
     return {

@@ -609,7 +609,7 @@ const Index = () => {
         setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
       }
-    } else {
+    } else if (!data?.quotaBlocked) {
       setPageAlert(
         getTranslateV4ErrorMessage(
           t,

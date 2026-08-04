@@ -2,10 +2,10 @@ import {
   Button as PolarisButton,
   InlineStack,
   Link as PolarisLink,
+  Select as PolarisSelect,
   Text as PolarisText,
 } from "@shopify/polaris";
 import { useEffect, useMemo, useState } from "react";
-import PaymentOptionSelect from "./paymentOptionSelect";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { handleContactSupport } from "~/utils/supportChat";
@@ -15,7 +15,8 @@ import "./styles.css";
 import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import { V4ModalShell } from "~/components/V4ModalShell";
 import { LegacyPaymentModal } from "./LegacyPaymentModal";
-import type { OptionType } from "./paymentModal.shared";
+import { buildPaymentOptions, type OptionType } from "./paymentModal.shared";
+import { buildBillingReturnPath } from "~/utils/billingReturn";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -28,162 +29,23 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
   const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
   const { reportClick } = useReport();
-  const { plan } = useSelector((state: any) => state.userConfig);
+  const { plan, totalChars } = useSelector((state: any) => state.userConfig);
   const isV4 = variant === "v4";
 
-  const options: OptionType[] = useMemo(
-    () => [
-      {
-        key: "option-1",
-        name: "500K",
-        Credits: 500000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 3.99
-            : plan?.type === "Premium"
-              ? 1.99
-              : plan?.type === "Pro"
-                ? 2.99
-                : plan?.type === "Basic"
-                  ? 3.59
-                  : 3.99,
-          comparedPrice: 3.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-2",
-        name: "1M",
-        Credits: 1000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 7.99
-            : plan?.type === "Premium"
-              ? 3.99
-              : plan?.type === "Pro"
-                ? 5.99
-                : plan?.type === "Basic"
-                  ? 7.19
-                  : 7.99,
-          comparedPrice: 7.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-3",
-        name: "2M",
-        Credits: 2000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 15.99
-            : plan?.type === "Premium"
-              ? 7.99
-              : plan?.type === "Pro"
-                ? 11.99
-                : plan?.type === "Basic"
-                  ? 14.39
-                  : 15.99,
-          comparedPrice: 15.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-4",
-        name: "3M",
-        Credits: 3000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 23.99
-            : plan?.type === "Premium"
-              ? 11.99
-              : plan?.type === "Pro"
-                ? 17.99
-                : plan?.type === "Basic"
-                  ? 21.79
-                  : 23.99,
-          comparedPrice: 23.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-5",
-        name: "5M",
-        Credits: 5000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 39.99
-            : plan?.type === "Premium"
-              ? 19.99
-              : plan?.type === "Pro"
-                ? 29.99
-                : plan?.type === "Basic"
-                  ? 35.99
-                  : 39.99,
-          comparedPrice: 39.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-6",
-        name: "10M",
-        Credits: 10000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 79.99
-            : plan?.type === "Premium"
-              ? 39.99
-              : plan?.type === "Pro"
-                ? 59.99
-                : plan?.type === "Basic"
-                  ? 71.99
-                  : 79.99,
-          comparedPrice: 79.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-7",
-        name: "20M",
-        Credits: 20000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 159.99
-            : plan?.type === "Premium"
-              ? 79.99
-              : plan?.type === "Pro"
-                ? 119.99
-                : plan?.type === "Basic"
-                  ? 143.99
-                  : 159.99,
-          comparedPrice: 159.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-8",
-        name: "30M",
-        Credits: 30000000,
-        price: {
-          currentPrice: plan?.isInFreePlanTime
-            ? 239.99
-            : plan?.type === "Premium"
-              ? 119.99
-              : plan?.type === "Pro"
-                ? 179.99
-                : plan?.type === "Basic"
-                  ? 215.99
-                  : 239.99,
-          comparedPrice: 239.99,
-          currencyCode: "USD",
-        },
-      },
-    ],
-    [plan],
-  );
+  const options: OptionType[] = useMemo(() => buildPaymentOptions(plan), [plan]);
 
   const selectedOption = useMemo(() => {
     return options.find((item) => item.key == selectedKey) || options[0];
   }, [selectedKey, options]);
+
+  const selectOptions = useMemo(
+    () =>
+      options.map((option) => ({
+        label: `${option.name} · ${Number(option.Credits).toLocaleString()} ${t("credits")}`,
+        value: option.key,
+      })),
+    [options, t],
+  );
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -207,6 +69,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
     };
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
+    if (typeof window !== "undefined") {
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      formData.append(
+        "returnPath",
+        buildBillingReturnPath(currentPath, {
+          kind: "credits",
+          previousTotalChars:
+            typeof totalChars === "number" ? totalChars : undefined,
+        }),
+      );
+    }
     payFetcher.submit(formData, {
       method: "post",
       action: "/app/pricing",
@@ -247,23 +120,58 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            {options.map((option) => (
-              <PaymentOptionSelect
-                key={option.key}
-                option={option}
-                selectedOption={selectedOption}
-                onChange={(value) => setSelectedKey(value.key)}
-                variant="v4"
-              />
-            ))}
+          <div style={{ marginBottom: 24 }}>
+            <PolarisSelect
+              label={t("Credit pack")}
+              labelHidden
+              options={selectOptions}
+              value={selectedKey}
+              onChange={setSelectedKey}
+            />
+            <div
+              style={{
+                marginTop: 14,
+                padding: "14px 16px",
+                borderRadius: 14,
+                border: `1px solid ${v4Colors.cardBorder}`,
+                background: v4Colors.cardBg,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <PolarisText as="p" variant="bodySm" tone="subdued">
+                    {t("Credits")}
+                  </PolarisText>
+                  <div style={{ marginTop: 4 }}>
+                    <PolarisText as="p" variant="headingMd" fontWeight="bold">
+                      {selectedOption?.name}
+                    </PolarisText>
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <PolarisText as="p" variant="bodyMd" tone="subdued">
+                      {Number(selectedOption?.Credits ?? 0).toLocaleString()} {t("credits")}
+                    </PolarisText>
+                  </div>
+                </div>
+                <div style={{ minWidth: 0, textAlign: "right" }}>
+                  <PolarisText as="p" variant="bodySm" tone="subdued">
+                    {t("Total Payment:")}
+                  </PolarisText>
+                  <div style={{ marginTop: 4 }}>
+                    <PolarisText as="p" variant="headingMd" fontWeight="bold">
+                      ${selectedOption?.price.currentPrice.toFixed(2) ?? "0.00"}
+                    </PolarisText>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div
