@@ -348,12 +348,16 @@ export async function fetchUserCountryInfo(access_key) {
     );
 
     const json = await res.json();
+    const suggestedLanguageCode =
+      json?.detected_values?.language?.handle ||
+      json?.suggestions?.[0]?.parts?.language?.handle ||
+      "";
 
     if (json) {
       return {
         status: res.status,
         countryCode: json?.detected_values?.country?.handle,
-        languageCode: json?.detected_values?.language?.handle,
+        languageCode: suggestedLanguageCode,
       };
     } else {
       const res = await fetch(

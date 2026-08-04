@@ -19,6 +19,9 @@ import { registerManageTranslations } from "~/server/shopify/translations.server
 import { authenticate } from "~/shopify.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { isManageTranslationOutdated } from "~/utils/manageTranslationState";
+import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
+
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SaveBar } from "@shopify/app-bridge-react";
@@ -75,6 +78,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   }
                   translations(locale: "${loading?.searchTerm || searchTerm}") {
                     value
+                    outdated
                     key
                   }
                 }
@@ -114,6 +118,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   translations(locale: $locale) {
                     key
                     value
+                    outdated
                   }
                 }
               }
@@ -162,6 +167,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { t } = useTranslation();
+  const { handleSingleTranslateFailure, quotaGateModal } = useSingleTranslateQuotaGate();
   const navigate = useNavigate();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -371,6 +377,8 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        isOutdated={isManageTranslationOutdated(filteredThemesData, record?.resourceId, record?.shopifyKey)}
+
         onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType: "ONLINE_STORE_THEME_LOCALE_CONTENT",
@@ -547,7 +555,7 @@ const Index = () => {
         );
       }
     } else {
-      shopify.toast.show(data.errorMsg);
+      handleSingleTranslateFailure(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -863,6 +871,7 @@ justifyContent: "space-between",
           />
         )}
       </Layout>
+      {quotaGateModal}
     </Page>
   );
 };

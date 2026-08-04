@@ -336,6 +336,7 @@ export const queryNextTransType = async ({
           translations(locale: "${locale}") {
             key
             value
+            outdated
           }
         }
         pageInfo {
@@ -391,6 +392,7 @@ export const queryPreviousTransType = async ({
           translations(locale: "${locale}") {
             key
             value
+            outdated
           }
         }
         pageInfo {

@@ -83,7 +83,21 @@ export async function translateProductImage(args: {
   }
 
   try {
-    await deductShopCredits(args.shop, IMAGE_TRANSLATE_CREDITS);
+    let imageHost: string | null = null;
+    try {
+      imageHost = new URL(imageUrl).host;
+    } catch {
+      imageHost = null;
+    }
+    await deductShopCredits(args.shop, IMAGE_TRANSLATE_CREDITS, {
+      source: "image",
+      metadata: {
+        sourceCode,
+        targetCode,
+        imageHost,
+        creditsFixed: IMAGE_TRANSLATE_CREDITS,
+      },
+    });
   } catch (err) {
     console.error(
       `[picture.translate] deduct failed shop=${args.shop} (image already translated):`,

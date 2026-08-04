@@ -444,3 +444,41 @@ export async function setItemsCount(
     return false;
   }
 }
+
+const EMAIL_SEND_LOCK_TTL_SEC = 120;
+
+function emailSendLockKey(shopName: string, pool: "manual" | "auto"): string {
+  return `translate:v4:email:send-lock:${pool}:${shopName}`;
+}
+
+/** 发信前短锁，避免部署/多实例下同一店重复发成功/部分完成邮件。 */
+export async function tryAcquireEmailSendLock(
+  shopName: string,
+  pool: "manual" | "auto",
+): Promise<boolean> {
+  try {
+    const redis = getRedis();
+    const result = await redis.set(
+      emailSendLockKey(shopName, pool),
+      String(Date.now()),
+      "EX",
+      EMAIL_SEND_LOCK_TTL_SEC,
+      "NX",
+    );
+    return result === "OK";
+  } catch {
+    return true;
+  }
+}
+
+export async function releaseEmailSendLock(
+  shopName: string,
+  pool: "manual" | "auto",
+): Promise<void> {
+  try {
+    const redis = getRedis();
+    await redis.del(emailSendLockKey(shopName, pool));
+  } catch {
+    // ignore
+  }
+}

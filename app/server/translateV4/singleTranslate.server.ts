@@ -38,9 +38,32 @@ export async function translateSingleText(
   return { translatedText, usedTokens };
 }
 
-/** 扣额度（tokens 为 LLM 原始用量，内部 × QUOTA_TOKEN_MULTIPLIER；按 binding 分叉 tsf/Java）。 */
-export async function deductQuota(shop: string, rawLlmTokens: number): Promise<void> {
+/** 单字段扣费时附带的审计上下文（写入 CreditUsage.metadata）。 */
+export type DeductQuotaAuditMeta = {
+  target?: string;
+  sourceLocale?: string;
+  fieldKey?: string;
+  shopifyType?: string;
+  textLength?: number;
+};
+
+/** 扣额度（tokens 为 LLM 原始用量，内部 × QUOTA_TOKEN_MULTIPLIER）并写 CreditUsage。 */
+export async function deductQuota(
+  shop: string,
+  rawLlmTokens: number,
+  meta?: DeductQuotaAuditMeta,
+): Promise<void> {
   const credits = llmTokensToQuotaCredits(rawLlmTokens);
   if (credits <= 0) return;
-  await deductShopCredits(shop, credits);
+  await deductShopCredits(shop, credits, {
+    source: "single",
+    metadata: {
+      rawTokens: Math.max(0, Math.floor(rawLlmTokens)),
+      target: meta?.target ?? null,
+      sourceLocale: meta?.sourceLocale ?? null,
+      fieldKey: meta?.fieldKey ?? null,
+      shopifyType: meta?.shopifyType ?? null,
+      textLength: meta?.textLength ?? null,
+    },
+  });
 }

@@ -11,18 +11,20 @@ right route, server helper, worker, extension, script, or Prisma model.
 ## Required Workflow
 
 1. Read `AGENTS.md` first and identify the feature area.
-2. Run `git status --short` before editing. Do not overwrite user changes or
+2. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (Claude-style
+  collab: confirm technical choices, then plan / UI samples, then edit).
+3. Run `git status --short` before editing. Do not overwrite user changes or
   unrelated untracked files.
-3. Read the route entry, server helper, worker or extension caller, and Prisma
+4. Read the route entry, server helper, worker or extension caller, and Prisma
   model that own the behavior.
-4. Keep changes small and local to the feature boundary.
-5. Never copy, print, commit, or summarize real values from `.env*`. Mention
+5. Keep changes small and local to the feature boundary.
+6. Never copy, print, commit, or summarize real values from `.env*`. Mention
   variable names only.
-6. Some existing Chinese comments may display as mojibake in PowerShell. Do not
+7. Some existing Chinese comments may display as mojibake in PowerShell. Do not
   rewrite whole files for encoding cleanup unless explicitly asked.
-7. For Shopify, billing, quota, worker, and live-store writeback changes, verify
+8. For Shopify, billing, quota, worker, and live-store writeback changes, verify
   the smallest meaningful path and report any remaining risk.
-8. `AGENTS.md` is the current root repo index. Do not assume a separate
+9. `AGENTS.md` is the current root repo index. Do not assume a separate
   `Agent.md` exists unless it has been restored in the live checkout.
 
 
@@ -202,6 +204,8 @@ and embedded `/app` redirect/landing behavior.
 - `/app/glossary`: `app/routes/app.glossary/route.tsx`.
 - `/app/pricing`: `app/routes/app.pricing/route.tsx`.
 - `/app/shop-profile`: `app/routes/app.shop-profile/route.tsx`; nav is hidden in production.
+- `/app/onboarding`: `app/routes/app.onboarding/route.tsx`; 首次翻译新手引导（无导航入口，
+由 `/app` 条件重定向进入）。
 - Treat an `app/routes/app.*` directory without a route file as inactive until a
 real `route.tsx` or route module is added.
 
@@ -224,6 +228,8 @@ real `route.tsx` or route module is added.
   passes locales it already loaded). Cache reads use one Redis `HGETALL` per
   locale; language page force-refreshes a locale only when that hash is empty
   (`cacheEmpty`, same as v4「刷新统计」`refresh=1&locales=`).
+- `/api/onboarding/fast-coverage`: `app/routes/api.onboarding.fast-coverage.ts`
+  （Preparing 真进度：逐 label 现算最重要 1 语 × 5 模块，写 Redis 不写 Turso）。
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
@@ -490,9 +496,8 @@ Important env names only:
 Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `COSMOS_SHOP_PROFILE_CONTAINER`（默认 `shop_profile`）；分档
 `SHOP_SIZE_TIER_MEDIUM_BYTES` / `_LARGE_` / `_HUGE_`（默认 2/10/50 MiB）。
-- Redis: `REDIS_URL`, `REDIS_URL_V4`, or host/password/port variants.
-  Migration to Render KV: `RENDER_KV`, `REDIS_DUAL_WRITE`, `REDIS_CUTOVER`
-  (see Operations → Redis).
+- Redis: **仅** `RENDER_KV`（Render Key Value / Valkey）。不要再配或连接
+  `REDIS_URL` / `REDIS_URL_V4`（Azure 已弃用，见 Operations → Redis）。
 - Blob: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_TRANSLATION_CONTAINER`.
 - Turso: `TSF_TURSO_DATABASE_URL`, `TSF_TURSO_AUTH_TOKEN`.
 - LLM: `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEYS`, `DEEPSEEK_BASE_URL`,
@@ -578,12 +583,16 @@ Models:
 - `Account`: TSF credit pools: subscription, purchased, trial, used.
 - `PlanCatalog`, `AppSubscription`, `BillingLog`, `AccountPeriodUsage`.
 - `TranslateV4JobUsage`: per v4 job usage snapshot (Worker writes on terminal status).
+- `CreditUsage`: per-deduction credit audit (`single` / `image` / `v4_job`);
+  units are billable credits (not cash). `BillingLog` remains income-only.
 
 Code:
 
 - `app/server/billing/index.server.ts`: billing barrel exports.
 - `app/server/billing/binding/resolveBillingBinding.server.ts`: TSF account initialization helper.
-- `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing.
+- `app/server/billing/quota/quotaRouter.server.ts`: quota query/deduct routing
+  (`deductShopCredits` optional audit → `CreditUsage`).
+- `app/server/billing/quota/recordCreditUsage.server.ts`: App-side `CreditUsage` writer.
 - `app/server/billing/quota/createTaskQuotaGuard.server.ts`: create-task guard.
 - `app/server/billing/quota/deductCredits.server.ts`: TSF credit deduction.
 - `app/server/billing/webhooks/handleBillingWebhook.server.ts`: TSF webhook handling
@@ -614,6 +623,8 @@ helpers for annual credit-cycle math.
 `/api/translate-v4/quota`, task creation, single translation, and picture
 translation all use this TSF account path.
 - `worker/src/services/tsfQuota.ts`: worker quota adapter.
+- `worker/src/services/creditUsage.ts`: Worker `CreditUsage` writer; `translateWorker`
+  `flushQuota` records each successful credit flush (`source=v4_job`).
 
 Quota work must check:
 
@@ -774,6 +785,62 @@ throttle status.
 
 
 
+### Onboarding (First-time Translation Guide)
+
+首次安装用户的前置引导层：把 shop scan / locales / coverage / estimate / trial /
+create-task 编排成一条「店铺理解 → 推荐 → 试用/建首个任务」路径。全部数据复用现有
+能力，任一数据源失败都降级，不阻塞继续；可跳过，跳过/完成后不再打断。
+
+Core files:
+
+- Route (loader 聚合 + action 状态流转): `app/routes/app.onboarding/route.tsx`。
+  loader 用方案 A 一次性返回聚合 `OnboardingSummary`（不在前端并发拼接口）。
+  action 只写状态并返回 json（skip / complete / trial），客户端负责跳转，避免嵌入式
+  服务端重定向问题。
+- UI: `app/routes/app.onboarding/components/*`（`OnboardingFlow` 编排 Preparing→
+  Recommendation 两步 + `ActionFooter` CTA；`PreparingStep` / `RecommendationStep`）。
+- 展示层类型（无服务端依赖，可被组件 import）: `app/routes/app.onboarding/types.ts`。
+- Server 聚合与状态: `app/server/onboarding/onboarding.server.ts`
+  （`shouldRedirectToOnboarding` / `markOnboardingEntered` / `markOnboardingSkipped`
+  / `markOnboardingCompleted` / `markOnboardingTrialStarted` /
+  `saveOnboardingRecommendation` / `buildOnboardingSummary`）。
+- 快扫覆盖率: `app/server/onboarding/fastCoverage.server.ts` +
+  `app/routes/api.onboarding.fast-coverage.ts`（Preparing 真进度：最重要 1 语 ×
+  Products/Collection/Navigation/Pages/Shop 五个模块，逐 label POST；只写 Redis
+  module 明细，**不**写 Turso 语言级汇总，避免污染权威覆盖率）。
+- 入口重定向: `app/routes/app._index/route.tsx` 调 `shouldRedirectToOnboarding`
+  决定跳 `/app/onboarding` 还是默认 `/app/translate-v4`；并在重定向前
+  `enqueueShopScan(install)`（幂等，尽早入队）。onboarding loader / `app.tsx` 也会
+  再入队一次（幂等）。
+- Model: `ShopOnboarding`（每店一行，独立于 `Account.isNew`）。
+
+Data reuse（不重复建设）:
+
+- bootstrap（plan/trial/credits/isNew）: `getTsfBootstrapData` + `getShopCreditQuota`。
+- locales: `loadShopLocalesForTranslation`（source + 非主语言 targets；推荐语言三层兜底：
+  已发布 → 全部已配置 → 无则空）。
+- coverage 快路径: Preparing 调 `/api/onboarding/fast-coverage` 现算 1 语 × 5 模块；
+  推荐页展示该样本覆盖率，并提示全店仍在后台 install scan。
+- coverage 缓存: loader 仍读 `getCoverageSummaryFromCache`（有则展示全量缓存）。
+- estimate: `estimateCreateTaskCredits`（增量口径，展示上限；耗时为纯展示粗估）。
+- 建首个任务: 客户端 `createTranslateV4Tasks`（同翻译页），成功后 action `complete`。
+- 试用/升级: 记录 `startedTrialFromOnboarding` 后跳 `/app/pricing`（试用=带 trialDays 的
+  订阅确认流，无独立发放额度）。
+
+CTA 决策（`resolvePrimaryCta`）: 无目标语言→引导去 `/app/language`；额度足够→建任务；
+额度不足且 `isNew`（从未订阅，有试用资格）→开试用；否则→升级。
+
+Common edits:
+
+- 改入口判断: `shouldRedirectToOnboarding`（skipped/completed 或已有任意 v4 任务→不打扰）。
+- 改推荐模块: `ONBOARDING_RECOMMENDED_MODULE_KEYS`（v2 module key，对齐 moduleCatalog）。
+- 改快扫模块: `ONBOARDING_FAST_COVERAGE_LABELS`（itemsCount 卡片 label）。
+- 改文案: `onboarding.*` 键，`public/locales/{en,zh-CN}/translation.json`。
+- 埋点: `reportClientLog`（`onboarding_viewed` / `_recommendation_viewed` /
+  `_trial_clicked` / `_task_created` / `_skipped` / `_upgrade_clicked`）。
+
+
+
 ### Language, Glossary, Shop Profile, Support
 
 Language:
@@ -911,7 +978,11 @@ Current models:
 `AccountPeriodUsage`: TSF billing/quota.
 - `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
 units, source chars); written by Worker at job terminal states.
+- `CreditUsage`: credit spend audit rows (`single` / `image` / `v4_job`);
+written on deduct (App) or quota flush (Worker).
 - `SupportConversation`, `SupportMessage`: support chat.
+- `ShopOnboarding`: 首次翻译新手引导状态（status/skipped/completed/试用/建首任务来源、
+ 推荐语言与模块快照、积分与耗时预估、来源 scan id）；独立于 `Account.isNew`。
 - `UserPicture`: product/shop image translation metadata and translated image
 URLs used by admin pages and storefront App Proxy reads.
 
@@ -1004,6 +1075,7 @@ For "合入PR然后发布测试环境", the script will:
 | Glossary                         | `app/routes/app.glossary/route.tsx`                   | `glossary.server.ts`, Worker `tsfDb.loadGlossaryRowsFromTsf` via `translationCoreRuntime.ts`            |
 | Shop profile / AI profile        | `app/routes/app.shop-profile/route.tsx`               | `server/shopScan/*`, `shopProfileContext.server.ts` / `shopProfilePrompt.server.ts`, worker shop scan   |
 | Support chat / notifications     | `app/components/SupportChatWidget.tsx`                | `api.support.tsx`, `supportStore.server.ts`, Feishu/SES helpers                                         |
+| First-time onboarding            | `app/routes/app.onboarding/route.tsx`                 | `app/server/onboarding/onboarding.server.ts`, `app/routes/app._index/route.tsx`, `ShopOnboarding`      |
 | Auto translate                   | `worker/src/services/autoTranslate.ts`                | `autoScanSchedule.ts`, `ShopTargetLocale`, module catalog                                               |
 | Scheduled shop scan              | `worker/src/services/scheduledShopScan.ts`            | `autoScanSchedule.ts`, `shopScanCosmos.ts`, `shopScanWorker.ts`                                         |
 | Public storefront locale audit   | `scripts/storefront-locale-audit.mjs`                 | Cursor browser locale discovery; local tree under `scripts/tmp/storefront-audit/`                       |
@@ -1025,6 +1097,16 @@ Package-backed root scripts:
 Operational root scripts:
 
 - `scripts/inspect-v4-tasks.mjs`: inspect v4 tasks in Cosmos.
+- `scripts/reset-onboarding.mjs`: 把「指定 shop」重置为可重新看到首次翻译新手引导的状态
+ （删 Turso `ShopOnboarding` + Cosmos 该店 v4 任务 + `TranslateV4JobUsage` +
+ `ShopTargetLocale` + `ShopTranslationSettings` + Redis `tsf:items_count:{shop}:*` +
+ Cosmos `shop_scan_jobs`（避免 install 因历史 COMPLETED 被 `skipped_existing`）；可选
+ `--billing` 连带清 `Account/AppSubscription/BillingLog/AccountPeriodUsage` 让 `isNew=true`）。
+ 默认 dry-run，`--write` 才落库；必须 `--shop=`；`--env=`（默认 `.env`）；Turso 目标按
+ `--target`/`TURSO_TARGET` 解析并回退到实际存在的 `TURSO_{TEST,PROD}_*` / `TSF_TURSO_*` 凭据；
+ Redis **只连** `RENDER_KV`，按该店 locale **精确 DEL**（不用 KEYS/SCAN）；不删 Blob
+ `latest-scan.json`；只打印脱敏 host。
+ 示例：`node scripts/reset-onboarding.mjs --shop=xxx.myshopify.com --env=.env.test --write`。
 - `scripts/check-task.mjs`: inspect one task and related Redis state.
 - `scripts/diag-shop-scan.mjs`: inspect shop scan state.
 - `scripts/auto-tasks-72h-trend.mjs`: auto-translate trend report over the
@@ -1033,10 +1115,9 @@ recent 72-hour window.
 - `scripts/smoke-shop-counts.mjs`: focused shop/item count smoke check.
 - `scripts/backfill-locale-coverage-from-redis.mjs`: Redis `items_count` →
   Turso `ShopTargetLocale.coverage*`（默认 dry-run；`--write` 写线上；
-  支持 `--shop=` / `--only-missing`；MOVED 重连重试）。
-- `scripts/migrate-redis-azure-to-render.mjs`: Azure → Render KV SCAN 回填
-  （`--env=.env.test --prefixes=tm,items_count`；默认 dry-run；`--write` 写入；
-  token 同 `REDIS_CUTOVER`）。
+  支持 `--shop=` / `--only-missing`；MOVED 重连重试；Redis 源用 `RENDER_KV`）。
+- `scripts/migrate-redis-azure-to-render.mjs`: **历史** Azure → Render KV 回填脚本
+  （迁移已完成；日常运维不要再依赖 `REDIS_URL*`）。
 - `scripts/smoke-user-picture-read.mjs`, `smoke-user-picture-urls.mjs`: focused
 UserPicture read/URL checks.
 - `scripts/smoke-find-juicer.mjs`: focused storefront/shop lookup smoke check.
@@ -1192,34 +1273,21 @@ node worker/scripts/probe-job-redis.mjs <jobIdPrefix>
 Redis holds real-time progress counters, hint queues, control flags, and
 translation memory cache.
 
-**Connection sources (do not print URL/password values):**
+**唯一连接：`RENDER_KV`（Render Key Value / Valkey 8，Redis 兼容）。**
 
-| Audience | Env / URL | Notes |
-| --- | --- | --- |
-| Render Key Value (live / sole) | `RENDER_KV` | On Render services: **Internal** URL. Local/Agent `.env*`: **External** `rediss://…` |
-| Azure Cache (migration primary only) | `REDIS_URL` / `REDIS_URL_V4` | Needed only while dual-write or partial cutover; drop when sole mode |
-| One-off CLI | Dashboard **Valkey CLI Command** | External URL wrapped for `redis-cli` / `valkey-cli` |
+- App、Worker、运维脚本、Agent 诊断：**只连** `RENDER_KV`。
+- **不要**再使用 `REDIS_URL` / `REDIS_URL_V4`（Azure Cache 已弃用；本地 `.env*` 里若仍残留可忽略或删除）。
+- 不要打印 URL/密码；只打印脱敏 host。
+- Render 服务内用 **Internal** URL（通常 `redis://…`）；本机 / Agent `.env*` 用 **External**
+  `rediss://…`（需 Dashboard 放行 Inbound IP）。
+- 交互 CLI：Dashboard **Valkey CLI Command**，或服务同区 Shell 里
+  `redis-cli -u "$RENDER_KV"`。
 
-**Azure → Render KV migration switches** (code: `redisDualClient` in App + Worker):
+历史说明：曾用 `REDIS_DUAL_WRITE` / `REDIS_CUTOVER` + Azure `REDIS_URL*` 做双写切流；
+迁移已完成。代码里若仍有 `redisDualClient` 兼容分支，运行时应处于 sole
+（`RENDER_KV` 已设、不再创建 Azure client）。新脚本与文档一律按 sole / 仅 `RENDER_KV` 写。
 
-| Env | Meaning |
-| --- | --- |
-| `RENDER_KV` | Render KV URL（sole 模式下是唯一 Redis） |
-| `REDIS_DUAL_WRITE=true` | Dual-write **cache** String/Hash to both; **never** dual-write hint/shop_scan lists |
-| `REDIS_CUTOVER` | Comma tokens for read/write source = Render: `tm`, `items_count`, `progress`, `control`, `auto_scan`, `hints`, `shop_scan`, `keystat`, or `all`. Empty = all traffic still on Azure |
-
-**Sole-client mode**（可删测试 Azure Redis）: `REDIS_DUAL_WRITE=false`（或未设）+ `REDIS_CUTOVER=all` + `RENDER_KV` 已设 → App/Worker **不再创建** `REDIS_URL*` client。此时可去掉 `REDIS_URL` / `REDIS_URL_V4` 并删除 Azure 实例。
-
-Backfill (dry-run default):
-
-```ps1
-node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm,items_count
-node scripts/migrate-redis-azure-to-render.mjs --env=.env.test --prefixes=tm --write
-```
-
-Gray test: deploy with `REDIS_DUAL_WRITE=true` and empty `REDIS_CUTOVER` → backfill a token → set the same `REDIS_CUTOVER` on **Web + Worker** → exercise that feature → clear cutover to roll back. Migrate `hints` / `shop_scan` last (lists are never dual-written).
-
-**Ping Render Key Value from local `.env` / `.env.test` (masks host only; never echo secrets):**
+**Ping Render KV from local `.env` / `.env.test` (masks host only; never echo secrets):**
 
 ```ps1
 # From repo root; reads RENDER_KV from the named file
@@ -1238,10 +1306,9 @@ r.ping().then(async (pong)=>{
 " .env.test
 ```
 
-**Hint queue inspection (Azure / current primary via `.env.prod`):**
+**Hint queue inspection（读 `.env*` 的 `RENDER_KV`）:**
 
 ```ps1
-# Prod hint queues (reads .env.prod REDIS_URL)
 node worker/scripts/probe-hint-queues.mjs
 ```
 
@@ -1267,35 +1334,20 @@ node worker/scripts/probe-hint-queues.mjs
 Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
 `packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
 
-
-**Manual query — Azure / live primary (`REDIS_URL_V4` or `REDIS_URL`):**
-
-```ps1
-node -e "
-  const Redis = require('ioredis');
-  const r = new Redis(process.env.REDIS_URL_V4 || process.env.REDIS_URL);
-  r.hgetall('translate:v4:progress:<jobId>').then(d => {
-    console.log(JSON.stringify(d, null, 2));
-    r.quit();
-  });
-"
-```
-
-**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value); instances run **Valkey 8**, Redis-compatible):
+**Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value)):
 
 | How | When | Notes |
 | --- | --- | --- |
-| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). Docs: enable external connections first. |
-| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). Install CLI locally first. |
-| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`); `redis-cli` is available in the service environment. |
-| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | Prefer this in-repo; never print the URL/password. |
+| Dashboard **Valkey CLI Command** / External Access paste command | Local interactive | Needs **Inbound IP** allowlist; external URL is `rediss://` (TLS). |
+| `redis-cli` / `valkey-cli` on laptop | Local interactive | Same as Dashboard command (includes `--tls`). |
+| Render service **Shell** (same region, non-Docker) | From Web/Worker Shell | Use **Internal** URL (`redis://…`). |
+| Node `ioredis` via `RENDER_KV` in `.env*` | Agent / scripts | **唯一** in-repo 连接方式；never print the URL/password. |
 
 Dashboard / CLI (do not commit the pasted command; it contains secrets):
 
 ```bash
 # After enabling external access, Dashboard → Key Value → External Access
 # shows a copy-pasteable redis-cli line (includes --tls).
-# Then, examples (Redis protocol):
 PING
 DBSIZE
 GET translate:v4:auto_scan:last_at
@@ -1308,11 +1360,11 @@ Same-region service Shell (Internal URL, usually no TLS):
 
 ```bash
 # On Ciwi Translate Test / Worker Test Shell (same region as KV):
-redis-cli -u "$RENDER_KV"   # or the Internal connectionString
+redis-cli -u "$RENDER_KV"
 # then: PING / DBSIZE / GET …
 ```
 
-Node (local / agent; reads `.env.test`, never echo secrets):
+Node（本地 / Agent；读 `.env.test` 的 `RENDER_KV`，不 echo 密钥）:
 
 ```ps1
 $line = (Get-Content .env.test | Where-Object { $_ -match '^RENDER_KV=' })
@@ -1488,11 +1540,12 @@ translation, but auto-translate still does not set it. Empty Turso
 
 ## Short Locator Flow
 
-1. `git status --short`
-2. Read the matching section in this file.
-3. `rg -n "<keyword>" app worker extensions scripts prisma`
-4. Read route entry, server helper, worker/extension caller, and data model.
-5. Apply the smallest patch.
-6. Run the validation command that matches the change.
-7. Final response should include changed files, validation result, and residual risk.
+1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md`.
+2. `git status --short`
+3. Read the matching section in this file.
+4. `rg -n "<keyword>" app worker extensions scripts prisma`
+5. Read route entry, server helper, worker/extension caller, and data model.
+6. Apply the smallest patch.
+7. Run the validation command that matches the change.
+8. Final response should include changed files, validation result, and residual risk.
 

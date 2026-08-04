@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLocation } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
 import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
@@ -48,6 +48,10 @@ import {
   reportClientLog,
   startClientLogTrace,
 } from "~/utils/clientLog";
+import {
+  buildBillingReturnPath,
+  sanitizeBillingReturnPath,
+} from "~/utils/billingReturn";
 
 async function refreshBillingBootstrap(
   dispatch: Dispatch,
@@ -145,11 +149,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const payInfo = JSON.parse(formData.get("payInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
+  const requestedReturnPath = sanitizeBillingReturnPath(
+    formData.get("returnPath")?.toString(),
+  );
   switch (true) {
     case !!payInfo:
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
         );
         const res = await mutationAppPurchaseOneTimeCreate({
           shop,
@@ -205,7 +212,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!payForPlan:
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
         );
         const res = await mutationAppSubscriptionCreate({
           shop,
@@ -302,12 +309,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
   const { reportClick, report } = useReport();
+  const currentBillingReturnPath = useMemo(() => {
+    const requestedReturnPath = new URLSearchParams(location.search).get(
+      "returnPath",
+    );
+    if (requestedReturnPath) {
+      return sanitizeBillingReturnPath(requestedReturnPath);
+    }
+    const currentPath = `${location.pathname}${location.search}${location.hash}`;
+    return buildBillingReturnPath(currentPath, {
+      kind: "credits",
+      previousTotalChars:
+        typeof totalChars === "number" ? totalChars : undefined,
+    });
+  }, [location.hash, location.pathname, location.search, totalChars]);
 
   //价格选项数组
   const creditOptions: OptionType[] = useMemo(
@@ -1056,6 +1078,7 @@ const Index = () => {
     };
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
+    formData.append("returnPath", currentBillingReturnPath);
     payFetcher.submit(formData, {
       method: "POST",
     });
@@ -1085,7 +1108,10 @@ const Index = () => {
     });
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
-      { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
+      {
+        payForPlan: JSON.stringify({ ...plan, yearly, trialDays }),
+        returnPath: currentBillingReturnPath,
+      },
       { method: "POST" },
     );
     reportClick(trialDays !== 5 ? "pricing_plan_start" : "pricing_plan_trial");

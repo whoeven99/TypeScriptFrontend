@@ -17,6 +17,9 @@ import { SingleTextTranslate } from "~/api/translateV4Client";
 import { registerManageTranslations } from "~/server/shopify/translations.server";
 import ManageTranslationFieldRow from "~/components/manageTranslationFieldRow";
 import SingleTranslateAction from "~/components/singleTranslateAction";
+import { isManageTranslationOutdated } from "~/utils/manageTranslationState";
+import { useSingleTranslateQuotaGate } from "~/hooks/useSingleTranslateQuotaGate";
+
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -118,6 +121,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   translations(locale: $locale) {
                     key
                     value
+                    outdated
                   }
                 }
               }
@@ -166,6 +170,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { t } = useTranslation();
+  const { handleSingleTranslateFailure, quotaGateModal } = useSingleTranslateQuotaGate();
   const navigate = useNavigate();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -369,6 +374,8 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        isOutdated={isManageTranslationOutdated(metafieldsData, record?.resourceId, record?.shopifyKey)}
+
         onSubmit={(customPrompt) => {
           handleTranslate({
             resourceType: "METAFIELD",
@@ -511,7 +518,7 @@ const Index = () => {
         );
       }
     } else {
-      shopify.toast.show(data.errorMsg);
+      handleSingleTranslateFailure(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
@@ -815,6 +822,7 @@ const Index = () => {
           </button>
         </TitleBar>
       </Modal> */}
+      {quotaGateModal}
     </Page>
   );
 };
