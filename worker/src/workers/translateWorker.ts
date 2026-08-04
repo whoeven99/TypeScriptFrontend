@@ -45,6 +45,7 @@ import {
 } from "../services/userFacingMessages.js";
 import { capTranslateUnitsByResources, finalizeTranslateUnitMetricsFromBlob } from "../services/metricsUtils.js";
 import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
+import { recordCreditUsage } from "../services/creditUsage.js";
 import { runWritebackWorker } from "./writebackWorker.js";
 import {
   stagePoolKindForJob,
@@ -484,6 +485,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     Number(process.env.TRANSLATE_QUOTA_FLUSH_CHARGE) || 15_000,
   );
   let pendingQuotaCharge = 0;
+  let quotaFlushSeq = 0;
   const flushQuota = async (): Promise<void> => {
     if (!enforceQuota) return;
     let charge = 0;
@@ -498,6 +500,22 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       tripAbort("pause", "额度服务异常，已自动暂停");
       return;
     }
+    quotaFlushSeq += 1;
+    await recordCreditUsage({
+      shop: shopName,
+      source: "v4_job",
+      credits: charge,
+      referenceId: `v4:${jobId}:${quotaFlushSeq}:${Date.now()}`,
+      metadata: {
+        jobId,
+        taskSource: job.taskSource ?? null,
+        sourceLocale: job.source,
+        target: job.target,
+        flushSeq: quotaFlushSeq,
+        remaining,
+        quotaMultiplier: quotaMult,
+      },
+    });
     const cap = quotaConcurrencyCap(remaining);
     setShopQuotaCap(shopName, cap);
     if (remaining <= 0) tripAbort("pause", "额度不足，已自动暂停");
