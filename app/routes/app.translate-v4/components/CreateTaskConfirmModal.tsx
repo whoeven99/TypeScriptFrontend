@@ -184,6 +184,8 @@ export function CreateTaskConfirmModal({
   const isReady = scenario === "ready";
   const isInsufficientPaid = scenario === "insufficient_paid";
   const isTrialOffer = scenario === "insufficient_trial";
+  const canStartPartial =
+    isInsufficientPaid && (remainingCredits ?? 0) > 0;
 
   const primaryActionLabel = isReady
     ? t("v4.createTask.confirmStartNow")
@@ -195,7 +197,9 @@ export function CreateTaskConfirmModal({
   const secondaryActionLabel = isReady
     ? null
     : isInsufficientPaid
-      ? t("v4.createTask.confirmStartPartial")
+      ? canStartPartial
+        ? t("v4.createTask.confirmStartPartial")
+        : null
       : isTrialOffer
         ? t("v4.createTask.confirmBuyCreditsSecondary")
         : t("v4.createTask.confirmBuyCreditsOnly");
@@ -234,6 +238,7 @@ export function CreateTaskConfirmModal({
 
   const handleSecondaryAction = () => {
     if (isInsufficientPaid) {
+      if (!canStartPartial) return;
       onConfirmCreate();
       return;
     }
