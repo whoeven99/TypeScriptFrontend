@@ -352,9 +352,13 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   FieldPlan remains single-value slot extract/reassemble — it does not pack
   multiple Shopify fields into one JSON document.
   Azure GPT chat body sampling is per-model via `resolveGptChatSampling` /
-  `buildGptChatRequestBody` in `llmTranslate.ts`: `gpt-4.1-*` send
-  `temperature: 0.1` (+ penalty 0); `gpt-5.6-*` omit temperature/penalties
-  (Azure only allows default temperature=1; sending 0.1 returns HTTP 400).
+  `buildGptChatRequestBody` in `azureGptClient.ts` (re-exported from
+  `llmTranslate.ts`): `gpt-4.1-*` send `temperature: 0.1` (+ penalty 0);
+  `gpt-5.6-*` omit temperature/penalties (Azure only allows default
+  temperature=1; sending 0.1 returns HTTP 400).
+  Transport / pool split (orchestration stays in `llmTranslate.ts`):
+  `llmErrors.ts`, `deepseekClient.ts`, `azureGptClient.ts`,
+  `googleTranslate.ts`, `llmKeyPool.ts`, `quotaGate.ts`.
 - DeepSeek usage on each LLM call is persisted from the API `usage` object onto
   blob field `cost`: `inputTokens` / `outputTokens` / `totalTokens`, plus
   `promptCacheHitTokens` / `promptCacheMissTokens` (`prompt_cache_hit_tokens` /
@@ -1323,7 +1327,8 @@ node worker/scripts/probe-hint-queues.mjs
 | `translate:v4:keystatlog:{label}` | List: LLM key throughput history (~30 min, TTL 2h) |
 
 Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
-`packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
+`packages/translation-core/src/translationMemory.ts` (TM), `llmKeyPool.ts` /
+`llmTranslate.ts` (keystat flush).
 
 **Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value)):
 
