@@ -1,5 +1,4 @@
-import { Select } from "@shopify/polaris";
-import { Input, Modal, Space, Typography } from "antd";
+import { Input, Modal, Select, Space, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -137,57 +136,68 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
       >
         {actionLabel}
       </Button>
-      <Modal
-        title={modalTitle}
-        open={open}
-        centered
-        width={560}
-        destroyOnHidden
-        onCancel={closeModal}
-        footer={
-          <Space size="small">
-            <Button type="default" onClick={closeModal} disabled={loading}>
-              {t("Cancel")}
-            </Button>
-            <Button type="primary" onClick={handleSubmit} loading={loading}>
-              {submitLabel}
-            </Button>
-          </Space>
-        }
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            paddingTop: "8px",
-          }}
+      {open ? (
+        <Modal
+          title={modalTitle}
+          open
+          centered
+          width={560}
+          destroyOnHidden
+          onCancel={closeModal}
+          footer={
+            <Space size="small">
+              <Button type="default" onClick={closeModal} disabled={loading}>
+                {t("Cancel")}
+              </Button>
+              <Button type="primary" onClick={handleSubmit} loading={loading}>
+                {submitLabel}
+              </Button>
+            </Space>
+          }
         >
-          <Select
-            label={t("v4.createTask.aiModel")}
-            options={aiModelOptions}
-            value={aiModel}
-            onChange={setAiModel}
-          />
-          <div>
-            <Text strong style={{ display: "block", marginBottom: 4 }}>
-              {promptLabel}
-            </Text>
-            <Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
-              {promptDescription}
-            </Text>
-            <TextArea
-              rows={4}
-              maxLength={MAX_PROMPT_LENGTH}
-              value={prompt}
-              placeholder={t(
-                "e.g. Make the wording more natural and aligned with the brand tone",
-              )}
-              onChange={(event) => setPrompt(event.target.value)}
-            />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              paddingTop: "8px",
+            }}
+          >
+            <div>
+              <Text strong style={{ display: "block", marginBottom: 8 }}>
+                {t("v4.createTask.aiModel")}
+              </Text>
+              <Select
+                style={{ width: "100%" }}
+                options={aiModelOptions}
+                value={aiModel}
+                onChange={setAiModel}
+                getPopupContainer={(node) => node.parentElement ?? document.body}
+              />
+            </div>
+            <div>
+              <Text strong style={{ display: "block", marginBottom: 4 }}>
+                {promptLabel}
+              </Text>
+              <Text
+                type="secondary"
+                style={{ display: "block", marginBottom: 8 }}
+              >
+                {promptDescription}
+              </Text>
+              <TextArea
+                rows={4}
+                maxLength={MAX_PROMPT_LENGTH}
+                value={prompt}
+                placeholder={t(
+                  "e.g. Make the wording more natural and aligned with the brand tone",
+                )}
+                onChange={(event) => setPrompt(event.target.value)}
+              />
+            </div>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      ) : null}
     </>
   );
 };
