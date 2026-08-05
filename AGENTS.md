@@ -317,6 +317,10 @@ Common edits:
 separate concern.
 - Change create-task UX or request body: start in `app/lib/createTranslateV4Tasks.ts`,
 then `api.translate-v4.tasks.ts`.
+- Billing return after buy-credits / subscribe from create confirm: draft in
+  `app/utils/createTaskDraft.ts` (sessionStorage); return flag via
+  `app/utils/billingReturn.ts`; restore + reopen confirm in
+  `app/routes/app.translate-v4/route.tsx`.
 - Change pause/resume/cancel: inspect `api.translate-v4.task-action.ts`,
 `resumeStatus.ts`, `translateWorker.ts`, and `writebackWorker.ts`.
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,

@@ -1138,5 +1138,7 @@
   "v4.createTask.confirmPricingFeatureSpeed": "翻译速度\nx2",
   "v4.tasks.openHistory": "查看历史任务（{{count}}）",
   "v4.tasks.historyPageTitle": "历史任务 · {{count}}",
-  "v4.tasks.backToCurrent": "返回当前任务"
+  "v4.tasks.backToCurrent": "返回当前任务",
+  "v4.initLog.fetchingShopifyBulk": "{{modules}} · 正在从 Shopify 拉取数据",
+  "v4.create.draftRestored": "已恢复你之前的翻译选项，确认后即可创建任务。"
 }

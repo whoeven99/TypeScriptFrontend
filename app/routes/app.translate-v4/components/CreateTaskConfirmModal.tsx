@@ -35,6 +35,8 @@ type Props = {
   onClose: () => void;
   onConfirmCreate: () => void;
   onBuyCredits: () => void;
+  /** Persist create-task selections before Shopify billing redirect. */
+  onBeforeBilling?: () => void;
 };
 
 type TranslateFn = (
@@ -57,6 +59,7 @@ export function CreateTaskConfirmModal({
   onClose,
   onConfirmCreate,
   onBuyCredits,
+  onBeforeBilling,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -217,6 +220,7 @@ export function CreateTaskConfirmModal({
   };
 
   const handleTrialAction = () => {
+    onBeforeBilling?.();
     const payload: Record<string, string> = {
       payForPlan: JSON.stringify({
         title: "Basic",
@@ -239,6 +243,7 @@ export function CreateTaskConfirmModal({
       return;
     }
     if (isInsufficientPaid) {
+      onBeforeBilling?.();
       onBuyCredits();
       return;
     }
@@ -247,6 +252,7 @@ export function CreateTaskConfirmModal({
       return;
     }
 
+    onBeforeBilling?.();
     const returnPath = buildReturnPathForPlan();
     onClose();
     navigate(
@@ -260,6 +266,7 @@ export function CreateTaskConfirmModal({
       onConfirmCreate();
       return;
     }
+    onBeforeBilling?.();
     onBuyCredits();
   };
 
