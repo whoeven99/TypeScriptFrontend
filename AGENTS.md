@@ -350,6 +350,10 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   Forced `aiModel=google-translate` still Google-only. Metafield `json`
   FieldPlan remains single-value slot extract/reassemble — it does not pack
   multiple Shopify fields into one JSON document.
+  Azure GPT chat body sampling is per-model via `resolveGptChatSampling` /
+  `buildGptChatRequestBody` in `llmTranslate.ts`: `gpt-4.1-*` send
+  `temperature: 0.1` (+ penalty 0); `gpt-5.6-*` omit temperature/penalties
+  (Azure only allows default temperature=1; sending 0.1 returns HTTP 400).
 - DeepSeek usage on each LLM call is persisted from the API `usage` object onto
   blob field `cost`: `inputTokens` / `outputTokens` / `totalTokens`, plus
   `promptCacheHitTokens` / `promptCacheMissTokens` (`prompt_cache_hit_tokens` /

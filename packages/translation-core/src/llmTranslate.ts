@@ -716,14 +716,69 @@ async function invokeChatCompletion(
 }
 
 // ── GPT / Azure OpenAI 引擎 ───────────────────────────────────────────────────
-// 对齐 Java ChatGptIntegration：Azure OpenAI（api-key 头 + 部署名在 URL），默认 gpt-4.1-nano，
-// temperature 0.1。自成一路（不进 DeepSeek 池），按 job.aiModel 是否 gpt-* 选用。
+// 对齐 Java ChatGptIntegration：Azure OpenAI（api-key 头 + 部署名在 URL），默认 gpt-4.1-nano。
+// 自成一路（不进 DeepSeek 池），按 job.aiModel 是否 gpt-* 选用。
+// sampling 按模型族区分：gpt-4.1 可设 temperature=0.1；gpt-5.6 仅允许默认 temperature，
+// 传 0.1 会 HTTP 400（unsupported_value），故省略 temperature / penalty 字段。
 const GPT_ENDPOINT = (
   process.env.Gpt_Endpoint?.trim() || "https://eastus.api.cognitive.microsoft.com"
 ).replace(/\/+$/, "");
 const GPT_API_VERSION = process.env.Gpt_ApiVersion?.trim() || "2024-10-21";
 const GPT_DEFAULT_MODEL = process.env.Gpt_Model?.trim() || "gpt-4.1-nano";
 const GPT_CONCURRENCY = Math.max(1, Number(process.env.GPT_CONCURRENCY) || 8);
+
+/** Azure chat body 采样字段；`undefined` 表示不写入请求（用模型默认）。 */
+export type GptChatSampling = {
+  temperature?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+};
+
+/** 精确模型覆盖（优先于前缀规则）。 */
+const GPT_SAMPLING_BY_MODEL: Record<string, GptChatSampling> = {
+  "gpt-4.1-nano": { temperature: 0.1, frequencyPenalty: 0, presencePenalty: 0 },
+  "gpt-4.1-mini": { temperature: 0.1, frequencyPenalty: 0, presencePenalty: 0 },
+  // gpt-5.6：Azure 仅支持默认 temperature(=1)；penalty 一并省略以免 400。
+  "gpt-5.6-luna": {},
+  "gpt-5.6-sol": {},
+  "gpt-5.6-terra": {},
+};
+
+const GPT_SAMPLING_LEGACY_4X: GptChatSampling = {
+  temperature: 0.1,
+  frequencyPenalty: 0,
+  presencePenalty: 0,
+};
+
+/** 解析某 GPT deployment 的采样配置（精确名 → 前缀 → 4.x 默认）。 */
+export function resolveGptChatSampling(model: string): GptChatSampling {
+  const key = model.trim().toLowerCase();
+  if (!key) return GPT_SAMPLING_LEGACY_4X;
+  const exact = GPT_SAMPLING_BY_MODEL[key];
+  if (exact) return exact;
+  if (key.startsWith("gpt-5.6") || key.startsWith("gpt-5.")) return {};
+  return GPT_SAMPLING_LEGACY_4X;
+}
+
+/** 组装 Azure chat/completions JSON body（按模型省略不支持的采样字段）。 */
+export function buildGptChatRequestBody(
+  model: string,
+  messages: ChatMessage[],
+): Record<string, unknown> {
+  const sampling = resolveGptChatSampling(model);
+  const body: Record<string, unknown> = {
+    messages,
+    response_format: { type: "json_object" },
+  };
+  if (sampling.temperature !== undefined) body.temperature = sampling.temperature;
+  if (sampling.frequencyPenalty !== undefined) {
+    body.frequency_penalty = sampling.frequencyPenalty;
+  }
+  if (sampling.presencePenalty !== undefined) {
+    body.presence_penalty = sampling.presencePenalty;
+  }
+  return body;
+}
 
 function gptApiKey(): string | null {
   return process.env.Gpt_ApiKey?.trim() || null;
@@ -788,13 +843,7 @@ async function callAzureOpenAIChat(
         const resp = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json", "api-key": key },
-          body: JSON.stringify({
-            messages,
-            temperature: 0.1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-            response_format: { type: "json_object" },
-          }),
+          body: JSON.stringify(buildGptChatRequestBody(model, messages)),
           signal: controller.signal,
         });
         if (resp.status === 429) {
