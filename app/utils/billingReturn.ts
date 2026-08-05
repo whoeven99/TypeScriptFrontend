@@ -34,10 +34,7 @@ export function buildBillingReturnPath(
     previousTotalChars?: number;
   },
 ) {
-  const url = new URL(
-    stripBillingReturnParams(path),
-    "https://ciwi.local",
-  );
+  const url = new URL(stripBillingReturnParams(path), "https://ciwi.local");
   url.searchParams.set(BILLING_RETURN_PARAM, "1");
   url.searchParams.set(BILLING_RETURN_KIND_PARAM, options?.kind ?? "credits");
   if (typeof options?.previousTotalChars === "number") {

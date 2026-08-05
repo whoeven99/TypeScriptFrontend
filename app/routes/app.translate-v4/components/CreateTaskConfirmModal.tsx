@@ -12,6 +12,7 @@ import { localeRegionCode, localeShortName } from "../localeDisplay";
 import { getV4AiModelLabel, getV4ModuleLabel } from "../v4I18n";
 import type { CreateTaskEstimateView } from "../useCreateTaskEstimate";
 import type { ShopLocaleOption } from "~/lib/createTranslateV4Tasks";
+import { buildBillingReturnPath } from "~/utils/billingReturn";
 
 type CreateTaskConfirmScenario =
   | "ready"
@@ -30,6 +31,7 @@ type Props = {
   isHandle: boolean;
   estimate: CreateTaskEstimateView | null;
   scenario: CreateTaskConfirmScenario;
+  previousTotalChars?: number;
   onClose: () => void;
   onConfirmCreate: () => void;
   onBuyCredits: () => void;
@@ -51,6 +53,7 @@ export function CreateTaskConfirmModal({
   isHandle,
   estimate,
   scenario,
+  previousTotalChars,
   onClose,
   onConfirmCreate,
   onBuyCredits,
@@ -106,7 +109,8 @@ export function CreateTaskConfirmModal({
     () =>
       modules.map((mod) => ({
         value: mod,
-        label: getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
+        label:
+          getV4ModuleLabel(mod, t) || CREATE_TASK_MODULE_LABELS[mod] || mod,
       })),
     [modules, t],
   );
@@ -183,8 +187,7 @@ export function CreateTaskConfirmModal({
   const isReady = scenario === "ready";
   const isInsufficientPaid = scenario === "insufficient_paid";
   const isTrialOffer = scenario === "insufficient_trial";
-  const canStartPartial =
-    isInsufficientPaid && (remainingCredits ?? 0) > 0;
+  const canStartPartial = isInsufficientPaid && (remainingCredits ?? 0) > 0;
   const scenarioMeta = getScenarioMeta(t, scenario, canStartPartial);
 
   const primaryActionLabel = isReady
@@ -204,19 +207,30 @@ export function CreateTaskConfirmModal({
         ? t("v4.createTask.confirmBuyCreditsSecondary")
         : t("v4.createTask.confirmBuyCreditsOnly");
 
+  const buildReturnPathForPlan = () => {
+    if (typeof window === "undefined") return undefined;
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return buildBillingReturnPath(currentPath, {
+      kind: "plan",
+      previousTotalChars,
+    });
+  };
+
   const handleTrialAction = () => {
-    planFetcher.submit(
-      {
-        payForPlan: JSON.stringify({
-          title: "Basic",
-          monthlyPrice: 7.99,
-          yearlyPrice: 6.39,
-          yearly: false,
-          trialDays: 5,
-        }),
-      },
-      { method: "POST", action: "/app/pricing" },
-    );
+    const payload: Record<string, string> = {
+      payForPlan: JSON.stringify({
+        title: "Basic",
+        monthlyPrice: 7.99,
+        yearlyPrice: 6.39,
+        yearly: false,
+        trialDays: 5,
+      }),
+    };
+    const returnPath = buildReturnPathForPlan();
+    if (returnPath) {
+      payload.returnPath = returnPath;
+    }
+    planFetcher.submit(payload, { method: "POST", action: "/app/pricing" });
   };
 
   const handlePrimaryAction = () => {
@@ -232,8 +246,11 @@ export function CreateTaskConfirmModal({
       handleTrialAction();
       return;
     }
+    const returnPath = buildReturnPathForPlan();
     onClose();
-    navigate("/app/pricing");
+    navigate(
+      returnPath ? `/app/pricing?returnPath=${encodeURIComponent(returnPath)}` : "/app/pricing",
+    );
   };
 
   const handleSecondaryAction = () => {
@@ -256,10 +273,7 @@ export function CreateTaskConfirmModal({
         if (!creating) onClose();
       }}
     >
-      <div
-        style={panelStyle}
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div style={panelStyle} onClick={(event) => event.stopPropagation()}>
         <div style={headerStyle}>
           <div style={headerCopyStyle}>
             <div style={titleStyle}>{scenarioMeta.title}</div>
@@ -333,7 +347,11 @@ export function CreateTaskConfirmModal({
           <InfoCard title={t("v4.createTask.confirmTaskDetailTitle")}>
             <div style={detailListStyle}>
               {detailItems.map((item) => (
-                <DetailLine key={item.label} label={item.label} value={item.value} />
+                <DetailLine
+                  key={item.label}
+                  label={item.label}
+                  value={item.value}
+                />
               ))}
             </div>
           </InfoCard>
@@ -395,7 +413,9 @@ function InfoCard({
     <div
       style={{
         ...cardStyle,
-        borderColor: highlighted ? "rgba(33, 128, 255, 0.22)" : v4Colors.cardBorder,
+        borderColor: highlighted
+          ? "rgba(33, 128, 255, 0.22)"
+          : v4Colors.cardBorder,
         boxShadow: highlighted ? "0 8px 30px rgba(33, 128, 255, 0.08)" : "none",
       }}
     >

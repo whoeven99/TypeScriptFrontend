@@ -192,6 +192,7 @@ export default function AppTranslateV4() {
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const plan = useSelector((state: RootState) => state.userConfig.plan);
   const isNew = useSelector((state: RootState) => state.userConfig.isNew);
+  const totalChars = useSelector((state: RootState) => state.userConfig.totalChars);
   const planType = plan?.type?.trim() || null;
   const createDisabledMessage =
     normalizedQuota == null ? t("v4.create.quotaUnavailable") : null;
@@ -641,7 +642,7 @@ export default function AppTranslateV4() {
     isCover,
     isHandle,
     targetOptions,
-      shop,
+    shop,
     refreshList,
     refreshQuota,
     plan,
@@ -945,20 +946,23 @@ export default function AppTranslateV4() {
         isCover={isCover}
         isHandle={isHandle}
         estimate={taskEstimate}
-          scenario={createConfirmScenario}
+        scenario={createConfirmScenario}
+        previousTotalChars={
+          typeof totalChars === "number" ? totalChars : undefined
+        }
         onClose={() => setCreateConfirmOpen(false)}
         onConfirmCreate={handleCreateConfirm}
-          onBuyCredits={() => {
-            setCreateConfirmOpen(false);
-            setShowPaymentModal(true);
-          }}
+        onBuyCredits={() => {
+          setCreateConfirmOpen(false);
+          setShowPaymentModal(true);
+        }}
       />
       {showPaymentModal ? (
         <Suspense fallback={null}>
           <PaymentModal
             visible={showPaymentModal}
             setVisible={setShowPaymentModal}
-              variant="v4"
+            variant="v4"
           />
         </Suspense>
       ) : null}

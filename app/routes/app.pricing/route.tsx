@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CollapseProps } from "antd";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "~/shopify.server";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLocation } from "@remix-run/react";
 import type { OptionType } from "~/components/paymentModal";
 import { CheckOutlined } from "@ant-design/icons";
 import "./style.css";
@@ -40,7 +40,10 @@ import {
   startClientLogTrace,
 } from "~/utils/clientLog";
 import { refreshBillingBootstrap } from "~/utils/billingBootstrap";
-import { sanitizeBillingReturnPath } from "~/utils/billingReturn";
+import {
+  buildBillingReturnPath,
+  sanitizeBillingReturnPath,
+} from "~/utils/billingReturn";
 
 function redirectToBillingConfirmation(confirmationUrl: string) {
   if (typeof window === "undefined") return false;
@@ -254,12 +257,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
 
   const { reportClick, report } = useReport();
+  const currentBillingReturnPath = useMemo(() => {
+    const requestedReturnPath = new URLSearchParams(location.search).get(
+      "returnPath",
+    );
+    if (requestedReturnPath) {
+      return sanitizeBillingReturnPath(requestedReturnPath);
+    }
+    const currentPath = `${location.pathname}${location.search}${location.hash}`;
+    return buildBillingReturnPath(currentPath, {
+      kind: "credits",
+      previousTotalChars:
+        typeof totalChars === "number" ? totalChars : undefined,
+    });
+  }, [location.hash, location.pathname, location.search, totalChars]);
 
   //价格选项数组
   const creditOptions: OptionType[] = useMemo(
@@ -1008,6 +1026,7 @@ const Index = () => {
     };
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
+    formData.append("returnPath", currentBillingReturnPath);
     payFetcher.submit(formData, {
       method: "POST",
     });
@@ -1037,7 +1056,10 @@ const Index = () => {
     });
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
-      { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
+      {
+        payForPlan: JSON.stringify({ ...plan, yearly, trialDays }),
+        returnPath: currentBillingReturnPath,
+      },
       { method: "POST" },
     );
     reportClick(trialDays !== 5 ? "pricing_plan_start" : "pricing_plan_trial");

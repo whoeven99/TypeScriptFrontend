@@ -32,9 +32,25 @@ const MAX_PAGES = 10;
 const PAGE_LIMIT = 100;
 const TOP_ERRORS = 8;
 const MESSAGE_PREVIEW_LEN = 160;
+/** Prisma/Turso 多行栈拼合后的展示上限（飞书单条仍受整报 3900 限制）。 */
+const DB_ERROR_PREVIEW_LEN = 420;
+/** 残缺 Prisma error 行回拉邻近日志的时间窗（ms）。 */
+const PRISMA_CONTEXT_WINDOW_MS = 1_500;
+/** 每个 digest 窗口最多回拉几次邻近日志，避免 Render API 限流。 */
+const MAX_PRISMA_CONTEXT_ENRICH = 8;
 
 /** 已知噪音，不计入汇总。 */
 const IGNORE_MESSAGE_PATTERNS: RegExp[] = [/AbortError/i];
+
+/**
+ * Render 常把多行 Prisma/LibSQL 栈拆成多条日志，且只有中间那行
+ * 「Error occurred during query execution:」带 level=error，
+ * SqliteError.message 落在相邻非 error 行——需要回拉拼合。
+ */
+const INCOMPLETE_QUERY_EXECUTION_RE =
+  /^Error occurred during query execution:?\s*$/i;
+const PRISMA_STACK_HINT_RE =
+  /PrismaClient\w*Error|Invalid `prisma\.|ConnectorError\(|SQLITE_[A-Z_]+/i;
 
 type RenderLogEntry = {
   id?: string;
@@ -115,7 +131,11 @@ function labelValue(
 }
 
 function normalizeErrorMessage(message: string): string {
-  return message
+  const sqlite = extractSqliteErrorMessage(message);
+  const base = sqlite
+    ? `${sqlite} ${message}`
+    : message;
+  return base
     .replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z/g, "<ts>")
     .replace(/[0-9a-f]{8}-[0-9a-f-]{27}/gi, "<uuid>")
     .replace(/\s+/g, " ")
@@ -125,6 +145,74 @@ function normalizeErrorMessage(message: string): string {
 
 function shouldIgnoreMessage(message: string): boolean {
   return IGNORE_MESSAGE_PATTERNS.some((re) => re.test(message));
+}
+
+/** 从 Prisma/LibSQL 多行文本中抽出 SqliteError.message（含 capacity exceeded）。 */
+export function extractSqliteErrorMessage(text: string): string | null {
+  const someMsg = text.match(/message:\s*Some\("((?:\\.|[^"\\])*)"\)/);
+  if (someMsg?.[1]) {
+    return someMsg[1].replace(/\\"/g, '"').trim();
+  }
+  const sqliteLine = text.match(/SQLITE_[A-Z_]+:\s*[^\n)"']+/);
+  if (sqliteLine?.[0]) return sqliteLine[0].trim();
+  const capacity = text.match(
+    /Server database capacity temporarily exceeded[^"\n]*/i,
+  );
+  if (capacity?.[0]) return capacity[0].trim();
+  return null;
+}
+
+function needsPrismaContextEnrichment(message: string): boolean {
+  if (INCOMPLETE_QUERY_EXECUTION_RE.test(message.trim())) return true;
+  if (extractSqliteErrorMessage(message)) return false;
+  // 只有 Prisma 头、没有 SqliteError 正文时也回拉
+  return (
+    /PrismaClient\w*Error/i.test(message) ||
+    /Invalid `prisma\./i.test(message)
+  ) && message.length < 280;
+}
+
+function formatDbErrorSample(stitched: string): string {
+  const sqlite = extractSqliteErrorMessage(stitched);
+  const compact = stitched.replace(/\s+/g, " ").trim();
+  if (!sqlite) return compact.slice(0, DB_ERROR_PREVIEW_LEN);
+
+  // 优先保留业务前缀（如 [storefront] liquid parse failed shop=...）+ SqliteError 全文
+  const headMatch = compact.match(
+    /^(\[[^\]]+\][^.]*?(?:failed|error)[^:]*:?\s*[^.]*?)(?:PrismaClient|Invalid `prisma\.|Error occurred|ConnectorError)/i,
+  );
+  const head = headMatch?.[1]?.trim();
+  const sample = head ? `${head} ${sqlite}` : `${sqlite} | ${compact}`;
+  return sample.slice(0, DB_ERROR_PREVIEW_LEN);
+}
+
+function stitchNearbyMessages(
+  nearby: RenderLogEntry[],
+  resourceId: string,
+  centerMs: number,
+): string | null {
+  const parts: Array<{ t: number; text: string }> = [];
+  for (const entry of nearby) {
+    const rid = labelValue(entry, "resource");
+    if (rid && rid !== resourceId) continue;
+    const text = entry.message?.trim();
+    if (!text) continue;
+    const t = entry.timestamp ? Date.parse(entry.timestamp) : NaN;
+    if (!Number.isFinite(t)) continue;
+    if (Math.abs(t - centerMs) > PRISMA_CONTEXT_WINDOW_MS) continue;
+    if (
+      !PRISMA_STACK_HINT_RE.test(text) &&
+      !INCOMPLETE_QUERY_EXECUTION_RE.test(text) &&
+      !/\[storefront\].*(?:failed|error)/i.test(text) &&
+      !/liquid parse failed/i.test(text)
+    ) {
+      continue;
+    }
+    parts.push({ t, text });
+  }
+  if (parts.length === 0) return null;
+  parts.sort((a, b) => a.t - b.t);
+  return parts.map((p) => p.text).join("\n");
 }
 
 function formatDigestTimeRange(start: Date, end: Date): string {
@@ -152,31 +240,38 @@ function buildLogsUrl(params: Record<string, string | string[]>): string {
   return `https://api.render.com/v1/logs?${search.toString()}`;
 }
 
-async function fetchRenderErrorLogs(
-  apiKey: string,
-  ownerId: string,
-  resourceIds: string[],
-  startTime: string,
-  endTime: string,
-): Promise<RenderLogEntry[]> {
+async function fetchRenderLogsPage(params: {
+  apiKey: string;
+  ownerId: string;
+  resourceIds: string[];
+  startTime: string;
+  endTime: string;
+  level?: string;
+  direction?: "backward" | "forward";
+  maxPages?: number;
+  limit?: number;
+}): Promise<RenderLogEntry[]> {
   const collected: RenderLogEntry[] = [];
-  let cursorStart = startTime;
-  let cursorEnd = endTime;
+  let cursorStart = params.startTime;
+  let cursorEnd = params.endTime;
+  const maxPages = params.maxPages ?? MAX_PAGES;
+  const limit = params.limit ?? PAGE_LIMIT;
+  const direction = params.direction ?? "backward";
 
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const url = buildLogsUrl({
-      ownerId,
-      resource: resourceIds,
+      ownerId: params.ownerId,
+      resource: params.resourceIds,
       startTime: cursorStart,
       endTime: cursorEnd,
-      level: "error",
+      ...(params.level ? { level: params.level } : {}),
       type: "app",
-      direction: "backward",
-      limit: String(PAGE_LIMIT),
+      direction,
+      limit: String(limit),
     });
 
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { Authorization: `Bearer ${params.apiKey}` },
     });
     if (!res.ok) {
       const body = (await res.text()).slice(0, 400);
@@ -196,6 +291,86 @@ async function fetchRenderErrorLogs(
   return collected;
 }
 
+async function fetchRenderErrorLogs(
+  apiKey: string,
+  ownerId: string,
+  resourceIds: string[],
+  startTime: string,
+  endTime: string,
+): Promise<RenderLogEntry[]> {
+  return fetchRenderLogsPage({
+    apiKey,
+    ownerId,
+    resourceIds,
+    startTime,
+    endTime,
+    level: "error",
+  });
+}
+
+/**
+ * 对残缺的 Prisma「query execution」error 行，回拉同资源邻近日志，
+ * 把 SqliteError.message（如 capacity temporarily exceeded）拼进 message。
+ */
+async function enrichIncompletePrismaErrors(
+  apiKey: string,
+  ownerId: string,
+  logs: RenderLogEntry[],
+): Promise<RenderLogEntry[]> {
+  const out = logs.slice();
+  const seenWindows = new Set<string>();
+  let enrichCount = 0;
+
+  for (let i = 0; i < logs.length; i++) {
+    const entry = logs[i];
+    const message = entry.message?.trim() ?? "";
+    if (!needsPrismaContextEnrichment(message)) continue;
+
+    const resourceId = labelValue(entry, "resource");
+    const ts = entry.timestamp;
+    if (!resourceId || !ts) continue;
+
+    const centerMs = Date.parse(ts);
+    if (!Number.isFinite(centerMs)) continue;
+
+    const windowKey = `${resourceId}::${new Date(centerMs).toISOString().slice(0, 19)}`;
+    if (seenWindows.has(windowKey)) continue;
+    seenWindows.add(windowKey);
+    if (enrichCount >= MAX_PRISMA_CONTEXT_ENRICH) break;
+    enrichCount++;
+
+    try {
+      const nearby = await fetchRenderLogsPage({
+        apiKey,
+        ownerId,
+        resourceIds: [resourceId],
+        startTime: new Date(centerMs - PRISMA_CONTEXT_WINDOW_MS).toISOString(),
+        endTime: new Date(centerMs + PRISMA_CONTEXT_WINDOW_MS).toISOString(),
+        // 不带 level：SqliteError 正文常落在非 error 行
+        direction: "forward",
+        maxPages: 1,
+        limit: 50,
+      });
+      const stitched = stitchNearbyMessages(nearby, resourceId, centerMs);
+      if (!stitched || !extractSqliteErrorMessage(stitched)) {
+        // 即使没抽到 SqliteError，只要拼到更长上下文也写回
+        if (stitched && stitched.length > message.length + 20) {
+          out[i] = { ...entry, message: formatDbErrorSample(stitched) };
+        }
+        continue;
+      }
+      out[i] = { ...entry, message: formatDbErrorSample(stitched) };
+    } catch (err) {
+      console.warn(`${LOG} prisma context enrich failed`, err);
+    }
+  }
+
+  if (enrichCount > 0) {
+    console.info(`${LOG} prisma context enrich attempts=${enrichCount}`);
+  }
+  return out;
+}
+
 function aggregateErrors(logs: RenderLogEntry[]): Map<string, ErrorBucket> {
   const buckets = new Map<string, ErrorBucket>();
 
@@ -210,11 +385,24 @@ function aggregateErrors(logs: RenderLogEntry[]): Map<string, ErrorBucket> {
     const existing = buckets.get(key);
     if (existing) {
       existing.count++;
+      // 若后到的样本含 SqliteError 全文而当前 sample 没有，升级 sample
+      if (
+        extractSqliteErrorMessage(message) &&
+        !extractSqliteErrorMessage(existing.sample)
+      ) {
+        existing.sample = message.slice(
+          0,
+          Math.max(MESSAGE_PREVIEW_LEN, DB_ERROR_PREVIEW_LEN),
+        );
+      }
       continue;
     }
+    const previewLen = extractSqliteErrorMessage(message)
+      ? DB_ERROR_PREVIEW_LEN
+      : MESSAGE_PREVIEW_LEN;
     buckets.set(key, {
       count: 1,
-      sample: message.slice(0, MESSAGE_PREVIEW_LEN),
+      sample: message.slice(0, previewLen),
       sampleAt: timestamp,
     });
   }
@@ -345,7 +533,7 @@ export async function runRenderErrorDigest(): Promise<void> {
 
   const startIso = start.toISOString();
   const endIso = end.toISOString();
-  const [logs, jobStats] = await Promise.all([
+  const [rawLogs, jobStats] = await Promise.all([
     fetchRenderErrorLogs(
       apiKey,
       ownerId,
@@ -359,6 +547,11 @@ export async function runRenderErrorDigest(): Promise<void> {
     }),
   ]);
 
+  const logs = await enrichIncompletePrismaErrors(
+    apiKey,
+    ownerId,
+    rawLogs,
+  );
   const buckets = aggregateErrors(logs);
   const errorCount = [...buckets.values()].reduce((sum, b) => sum + b.count, 0);
 

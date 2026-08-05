@@ -49,7 +49,13 @@ export { deductCredits } from "./quota/deductCredits.server";
 export {
   getShopCreditQuota,
   deductShopCredits,
+  type DeductShopCreditsAudit,
 } from "./quota/quotaRouter.server";
+export {
+  recordCreditUsage,
+  type CreditUsageSource,
+  type RecordCreditUsageParams,
+} from "./quota/recordCreditUsage.server";
 export { getTsfBootstrapData } from "./bootstrap/getTsfBootstrapData.server";
 export {
   handleTsfSubscriptionWebhook,

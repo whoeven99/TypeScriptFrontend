@@ -69,7 +69,6 @@ const LazySupportChatWidget = lazy(() =>
     default: module.SupportChatWidget,
   })),
 );
-
 const LazyPaymentModal = lazy(() => import("~/components/paymentModal"));
 
 type AppBootstrapLocales = {
@@ -579,7 +578,6 @@ export default function App() {
     location.search,
     totalChars,
   ]);
-
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
       <ConfigProvider

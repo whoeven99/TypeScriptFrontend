@@ -68,6 +68,26 @@ model ShopTargetLocale {
   @@index([shop, autoTranslate])
 }
 
+// 首次翻译新手引导状态 —— 每店一行。独立于 Account.isNew（后者只表达“是否激活过订阅”）。
+// 用于 /app 入口是否重定向到 /app/onboarding，以及记录跳过 / 完成 / 转化来源。
+model ShopOnboarding {
+  shop           String  @id // myshopify 域名
+  // not_started | preparing | recommended | skipped | completed
+  status         String  @default("not_started")
+  firstEnteredAt DateTime? // 首次进入 onboarding 的时间
+  skippedAt      DateTime? // 用户点击「暂时跳过」的时间
+  completedAt    DateTime? // 完成引导（创建首个任务或已有任务）的时间
+  startedTrialFromOnboarding     Boolean @default(false) // 从引导跳去开启试用/订阅
+  createdFirstTaskFromOnboarding Boolean @default(false) // 从引导创建了首个任务
+  recommendedTargets String? // 推荐目标语言 JSON string[]
+  recommendedModules String? // 推荐模块 JSON string[]
+  estimateCredits    Int? // 展示用积分预估（上限口径）
+  estimateMinutes    Int? // 展示用耗时预估（分钟）
+  sourceScanId       String? // 生成推荐所依据的 shop scan id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 // 取代 Java `Glossary`（字段对齐 Java GlossaryDO，便于术语表页面直接复用）
 model Glossary {
   id            Int      @id @default(autoincrement()) // 与 Java 自增 id 一致，前端按数字 id 选择/删除
@@ -197,6 +217,7 @@ model Account {
   subscription AppSubscription?
   billingLogs  BillingLog[]
   periodUsages AccountPeriodUsage[]
+  creditUsages CreditUsage[]
 }
 
 /// 套餐目录（订阅 / 一次性加量包 / 内置试用），取代前端硬编码。
@@ -308,6 +329,26 @@ model TranslateV4JobUsage {
 
   @@index([shop, recordedAt])
   @@index([recordedAt])
+}
+
+/// 积分消费审计（计费积分 credits，非现金）。
+/// source: single | image | v4_job；与 BillingLog（充值/订阅）分离。
+model CreditUsage {
+  id          String   @id @default(cuid())
+  shop        String
+  /// single | image | v4_job
+  source      String
+  /// 本次扣减的计费积分（正数）
+  credits     Int
+  /// 幂等键（防重复写入）
+  referenceId String   @unique
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  account Account @relation(fields: [shop], references: [shop])
+
+  @@index([shop, createdAt])
+  @@index([source, createdAt])
 }
 
 // ============================================================

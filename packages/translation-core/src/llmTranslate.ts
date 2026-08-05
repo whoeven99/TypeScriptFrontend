@@ -25,12 +25,13 @@ import {
 } from "./translateQuality.js";
 import {
   effectiveTranslation,
+  flattenHtmlNodeTranslations,
   hasHtmlPlaceholderLeak,
   htmlNodePartsOf,
-  restoreBrPlaceholders,
-  restoreHtmlTextNodes,
+  reassembleHtmlTranslation,
   roundtripHtmlForTest,
   sanitizeHtmlTextTranslation,
+  type HtmlNodePlan,
 } from "./htmlTranslate.js";
 import { enforceTranslateResultLimits } from "./translationFieldLimits.js";
 import {
@@ -2971,9 +2972,9 @@ Rules:
 - If a value is already entirely in "${target}", return it unchanged
 - translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
 - Each value is a plain-text leaf extracted from HTML: never include HTML tags (<td>, <tr>, <table>, etc.) in translatedValue
-- Keep opaque sentinel tokens (⟦0⟧, ⟦1⟧, ⟦2⟧, …) exactly unchanged; never translate, modify, reorder, or drop them
-- Sentinels may represent URLs or site paths (e.g. /blogs/news/article) — preserve them verbatim
-- Keep the literal token ⟦BR⟧ exactly as it appears (line-break placeholder)
+- Any token wrapped in the corner brackets ⟦ … ⟧ is an opaque placeholder. Copy it byte-for-byte, INCLUDING the ⟦ and ⟧ brackets. Never translate it, change its inner text, add or remove spaces inside it, drop it, or rewrite the brackets as [ ], 【 】, ( ), or any other characters. This applies to numeric sentinels (⟦0⟧, ⟦1⟧, …), the line-break token ⟦BR⟧, and segment markers like ⟦HTML_SEG_0_1⟧
+- Numeric sentinels ⟦0⟧, ⟦1⟧, … may represent URLs or site paths (e.g. /blogs/news/article) — preserve them verbatim
+- ⟦HTML_SEG_x_y⟧ is a separator between two adjacent text fragments. Keep every such marker, and keep the surrounding fragments in their original order relative to the marker — do not move words from one side of a ⟦HTML_SEG_x_y⟧ marker to the other
 - Output literal characters; do NOT HTML-escape. Use ' and " directly — never &#39; or &quot;
 - Do NOT add or remove leading or trailing whitespace
 - If the value is empty, return it unchanged
@@ -3409,13 +3410,13 @@ export function mergeEngineUsage(into: EngineUsage, from: EngineUsage): void {
 }
 
 type JsonSlotPlan = JsonTextSlot & {
-  htmlPlan?: { template: string; nodeParts: string[][] };
+  htmlPlan?: HtmlNodePlan;
 };
 
 type ListElementPlan = {
   index: number;
   text: string;
-  htmlPlan?: { template: string; nodeParts: string[][] };
+  htmlPlan?: HtmlNodePlan;
 };
 
 // Reconstruction plan for a field whose translation spans one or more text units.
@@ -3428,8 +3429,8 @@ type FieldPlan = {
   cacheModel: string;
 } & (
   | { kind: "plain"; parts: string[]; isHandle?: boolean }
-  | { kind: "html"; template: string; nodeParts: string[][] }
-  | { kind: "liquid_html"; template: string; nodeParts: string[][]; liquidTokens: string[] }
+  | { kind: "html"; htmlPlan: HtmlNodePlan }
+  | { kind: "liquid_html"; htmlPlan: HtmlNodePlan; liquidTokens: string[] }
   | { kind: "json"; originalValue: string; root: JsonValue; slotPlans: JsonSlotPlan[] }
   | { kind: "list"; originalValue: string; elements: ListElementPlan[] }
 );
@@ -3452,14 +3453,109 @@ function listPlanTexts(plan: Extract<FieldPlan, { kind: "list" }>): string[] {
   return texts;
 }
 
+function htmlPlanTexts(plan: HtmlNodePlan): string[] {
+  return plan.nodeParts.flat();
+}
+
+function lookupHtmlPart(
+  poolSig: string,
+  target: string,
+  lookup: LookupFn,
+  part: string,
+): { value: string; fallback: boolean } {
+  const r = lookup(poolSig, part);
+  if (!r || r.status === "fallback") {
+    return { value: part, fallback: true };
+  }
+  if (
+    looksLikeWrongScriptLeak(part, r.value, target) ||
+    looksLikeEmptySourceHallucination(part, r.value) ||
+    hasPromptSentinelLeakage(r.value)
+  ) {
+    return { value: part, fallback: true };
+  }
+  return {
+    value: effectiveTranslation(part, sanitizeHtmlTextTranslation(part, r.value)),
+    fallback: false,
+  };
+}
+
+function flattenHtmlTranslationsFromLookup(
+  htmlPlan: HtmlNodePlan,
+  poolSig: string,
+  target: string,
+  lookup: LookupFn,
+): { translations: string[]; anyFallback: boolean } {
+  let anyFallback = false;
+  const translations = flattenHtmlNodeTranslations(htmlPlan, (part) => {
+    const { value, fallback } = lookupHtmlPart(poolSig, target, lookup, part);
+    if (fallback) anyFallback = true;
+    return value;
+  });
+  return { translations, anyFallback };
+}
+
+function reassembleHtmlFieldFromPlan(
+  htmlPlan: HtmlNodePlan,
+  poolSig: string,
+  target: string,
+  lookup: LookupFn,
+): { value: string; anyFallback: boolean } {
+  const { translations, anyFallback: flattenFallback } = flattenHtmlTranslationsFromLookup(
+    htmlPlan,
+    poolSig,
+    target,
+    lookup,
+  );
+  let anyFallback = flattenFallback;
+  let value = reassembleHtmlTranslation(htmlPlan.template, translations);
+  if (hasHtmlPlaceholderLeak(value)) {
+    anyFallback = true;
+    value = reassembleHtmlTranslation(htmlPlan.template, htmlPlan.texts);
+  }
+  if (hasPromptSentinelLeakage(value)) {
+    anyFallback = true;
+    value = reassembleHtmlTranslation(htmlPlan.template, htmlPlan.texts);
+  }
+  return { value, anyFallback };
+}
+
+function reassembleLiquidFieldFromPlan(
+  htmlPlan: HtmlNodePlan,
+  liquidTokens: string[],
+  poolSig: string,
+  target: string,
+  lookup: LookupFn,
+): { value: string; anyFallback: boolean } {
+  const { translations, anyFallback: flattenFallback } = flattenHtmlTranslationsFromLookup(
+    htmlPlan,
+    poolSig,
+    target,
+    lookup,
+  );
+  let anyFallback = flattenFallback;
+  let value = reassembleLiquidHtmlTranslation(htmlPlan.template, translations, liquidTokens);
+  if (hasHtmlPlaceholderLeak(value)) {
+    anyFallback = true;
+    value = reassembleLiquidHtmlTranslation(htmlPlan.template, htmlPlan.texts, liquidTokens);
+  }
+  if (hasPromptSentinelLeakage(value)) {
+    anyFallback = true;
+    value = reassembleLiquidHtmlTranslation(htmlPlan.template, htmlPlan.texts, liquidTokens);
+  }
+  return { value, anyFallback };
+}
+
 type LookupFn = (poolSig: string, text: string) => RoutedResult | undefined;
 
 function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
   const texts =
     plan.kind === "plain"
       ? plan.parts
-      : plan.kind === "html" || plan.kind === "liquid_html"
-        ? plan.nodeParts.flat()
+      : plan.kind === "html"
+        ? htmlPlanTexts(plan.htmlPlan)
+        : plan.kind === "liquid_html"
+          ? htmlPlanTexts(plan.htmlPlan)
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
           : listPlanTexts(plan);
@@ -3470,8 +3566,10 @@ function collectPlanLeafCosts(plan: FieldPlan, lookup: LookupFn): Array<Translat
   const texts =
     plan.kind === "plain"
       ? plan.parts
-      : plan.kind === "html" || plan.kind === "liquid_html"
-        ? plan.nodeParts.flat()
+      : plan.kind === "html"
+        ? htmlPlanTexts(plan.htmlPlan)
+        : plan.kind === "liquid_html"
+          ? htmlPlanTexts(plan.htmlPlan)
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
           : listPlanTexts(plan);
@@ -3508,39 +3606,12 @@ function reconstructPlan(
       tmWrites.push(tmSetByValue(originalValue, source, target, plan.cacheModel, value, plan.digest));
     }
   } else if (plan.kind === "html") {
-    let anyFallback = false;
-    // Each marker = its parts joined back. A single oversized node was split into
-    // several parts; rejoin them (preserving inner boundaries) for that marker.
-    const out = plan.nodeParts.map((parts) => {
-      const pieces = parts.map((p) => {
-        const r = lookup(plan.poolSig, p);
-        if (!r || r.status === "fallback") {
-          anyFallback = true;
-          return p;
-        }
-        if (
-          looksLikeWrongScriptLeak(p, r.value, target) ||
-          looksLikeEmptySourceHallucination(p, r.value) ||
-          hasPromptSentinelLeakage(r.value)
-        ) {
-          anyFallback = true;
-          return p;
-        }
-        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-      });
-      const joined = pieces.join("");
-      return effectiveTranslation(parts.join(""), joined.trim());
-    });
-    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
-    let value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, out));
-    if (hasHtmlPlaceholderLeak(value)) {
-      anyFallback = true;
-      value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
-    }
-    if (hasPromptSentinelLeakage(value)) {
-      anyFallback = true;
-      value = restoreBrPlaceholders(restoreHtmlTextNodes(plan.template, originalOut));
-    }
+    const { value, anyFallback } = reassembleHtmlFieldFromPlan(
+      plan.htmlPlan,
+      plan.poolSig,
+      target,
+      lookup,
+    );
     const status = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, {
       key: plan.key,
@@ -3551,37 +3622,13 @@ function reconstructPlan(
     });
     // HTML/JSON/list: no field-digest TM — leaf texts are cached via value TM after pool translate.
   } else if (plan.kind === "liquid_html") {
-    let anyFallback = false;
-    const out = plan.nodeParts.map((parts) => {
-      const pieces = parts.map((p) => {
-        const r = lookup(plan.poolSig, p);
-        if (!r || r.status === "fallback") {
-          anyFallback = true;
-          return p;
-        }
-        if (
-          looksLikeWrongScriptLeak(p, r.value, target) ||
-          looksLikeEmptySourceHallucination(p, r.value) ||
-          hasPromptSentinelLeakage(r.value)
-        ) {
-          anyFallback = true;
-          return p;
-        }
-        return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-      });
-      const joined = pieces.join("");
-      return effectiveTranslation(parts.join(""), joined.trim());
-    });
-    const originalOut = plan.nodeParts.map((parts) => parts.join(""));
-    let value = reassembleLiquidHtmlTranslation(plan.template, out, plan.liquidTokens);
-    if (hasHtmlPlaceholderLeak(value)) {
-      anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
-    }
-    if (hasPromptSentinelLeakage(value)) {
-      anyFallback = true;
-      value = reassembleLiquidHtmlTranslation(plan.template, originalOut, plan.liquidTokens);
-    }
+    const { value, anyFallback } = reassembleLiquidFieldFromPlan(
+      plan.htmlPlan,
+      plan.liquidTokens,
+      plan.poolSig,
+      target,
+      lookup,
+    );
     const liquidStatus = anyFallback ? "fallback" : "translated";
     rm.set(plan.key, {
       key: plan.key,
@@ -3596,31 +3643,13 @@ function reconstructPlan(
     for (let i = 0; i < plan.slotPlans.length; i++) {
       const slot = plan.slotPlans[i]!;
       if (slot.htmlPlan) {
-        const out = slot.htmlPlan.nodeParts.map((parts) => {
-          const pieces = parts.map((p) => {
-            const r = lookup(plan.poolSig, p);
-            if (!r || r.status === "fallback") {
-              anyFallback = true;
-              return p;
-            }
-            if (
-              looksLikeWrongScriptLeak(p, r.value, target) ||
-              looksLikeEmptySourceHallucination(p, r.value) ||
-              hasPromptSentinelLeakage(r.value)
-            ) {
-              anyFallback = true;
-              return p;
-            }
-            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-          });
-          const joined = pieces.join("");
-          return effectiveTranslation(parts.join(""), joined.trim());
-        });
-        let slotHtml = restoreBrPlaceholders(restoreHtmlTextNodes(slot.htmlPlan.template, out));
-        if (hasHtmlPlaceholderLeak(slotHtml)) {
-          anyFallback = true;
-          slotHtml = slot.text;
-        }
+        const { value: slotHtml, anyFallback: slotFallback } = reassembleHtmlFieldFromPlan(
+          slot.htmlPlan,
+          plan.poolSig,
+          target,
+          lookup,
+        );
+        if (slotFallback) anyFallback = true;
         translatedSlots[i] = sanitizeJsonSlotTranslation(slot.text, slotHtml);
         if (hasPromptSentinelLeakage(translatedSlots[i]!)) {
           anyFallback = true;
@@ -3659,23 +3688,13 @@ function reconstructPlan(
     const result = [...list];
     for (const el of plan.elements) {
       if (el.htmlPlan) {
-        const out = el.htmlPlan.nodeParts.map((parts) => {
-          const pieces = parts.map((p) => {
-            const r = lookup(plan.poolSig, p);
-            if (!r || r.status === "fallback") {
-              anyFallback = true;
-              return p;
-            }
-            return effectiveTranslation(p, sanitizeHtmlTextTranslation(p, r.value));
-          });
-          const joined = pieces.join("");
-          return effectiveTranslation(parts.join(""), joined.trim());
-        });
-        let elHtml = restoreBrPlaceholders(restoreHtmlTextNodes(el.htmlPlan.template, out));
-        if (hasHtmlPlaceholderLeak(elHtml)) {
-          anyFallback = true;
-          elHtml = el.text;
-        }
+        const { value: elHtml, anyFallback: elFallback } = reassembleHtmlFieldFromPlan(
+          el.htmlPlan,
+          plan.poolSig,
+          target,
+          lookup,
+        );
+        if (elFallback) anyFallback = true;
         result[el.index] = elHtml;
       } else {
         const r = lookup(plan.poolSig, el.text);
@@ -3981,8 +4000,8 @@ export async function translateResources(
     }
 
     if (klass === "html") {
-      const { template, nodeParts } = htmlNodePartsOf(f.value);
-      if (nodeParts.length === 0) {
+      const htmlPlan = htmlNodePartsOf(f.value);
+      if (htmlPlan.nodeParts.length === 0) {
         rm.set(f.key, {
           key: f.key,
           translatedValue: f.value,
@@ -3992,7 +4011,7 @@ export async function translateResources(
         });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      htmlPlan.nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
       plans.push({
         kind: "html",
         resourceId,
@@ -4001,12 +4020,11 @@ export async function translateResources(
         order,
         poolSig: poolSignature(order),
         cacheModel,
-        template,
-        nodeParts,
+        htmlPlan,
       });
     } else if (klass === "liquid_html") {
-      const { plan: { template, nodeParts }, liquidTokens } = liquidHtmlNodePartsOf(f.value);
-      if (nodeParts.length === 0) {
+      const { plan: htmlPlan, liquidTokens } = liquidHtmlNodePartsOf(f.value);
+      if (htmlPlan.nodeParts.length === 0) {
         rm.set(f.key, {
           key: f.key,
           translatedValue: f.value,
@@ -4016,7 +4034,7 @@ export async function translateResources(
         });
         continue;
       }
-      nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+      htmlPlan.nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
       plans.push({
         kind: "liquid_html",
         resourceId,
@@ -4025,8 +4043,7 @@ export async function translateResources(
         order,
         poolSig: poolSignature(order),
         cacheModel,
-        template,
-        nodeParts,
+        htmlPlan,
         liquidTokens,
       });
     } else if (klass === "json") {
@@ -4059,13 +4076,13 @@ export async function translateResources(
         const slotPlans: JsonSlotPlan[] = [];
         for (const slot of slots) {
           if (slot.isHtml) {
-            const { template, nodeParts } = htmlNodePartsOf(slot.text);
-            if (nodeParts.length === 0) {
+            const htmlPlan = htmlNodePartsOf(slot.text);
+            if (htmlPlan.nodeParts.length === 0) {
               slotPlans.push({ ...slot });
               continue;
             }
-            nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
-            slotPlans.push({ ...slot, htmlPlan: { template, nodeParts } });
+            htmlPlan.nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+            slotPlans.push({ ...slot, htmlPlan });
           } else {
             addUnit(order, slot.text);
             slotPlans.push({ ...slot });
@@ -4091,10 +4108,10 @@ export async function translateResources(
         const el = list[i];
         if (!el) continue;
         if (isHtml(el)) {
-          const { template, nodeParts } = htmlNodePartsOf(el);
-          if (nodeParts.length === 0) continue;
-          nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
-          elements.push({ index: i, text: el, htmlPlan: { template, nodeParts } });
+          const htmlPlan = htmlNodePartsOf(el);
+          if (htmlPlan.nodeParts.length === 0) continue;
+          htmlPlan.nodeParts.forEach((parts) => parts.forEach((p) => addUnit(order, p)));
+          elements.push({ index: i, text: el, htmlPlan });
         } else {
           addUnit(order, el);
           elements.push({ index: i, text: el });
