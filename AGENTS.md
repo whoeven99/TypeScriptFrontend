@@ -12,7 +12,8 @@ right route, server helper, worker, extension, script, or Prisma model.
 
 1. Read `AGENTS.md` first and identify the feature area.
 2. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (Claude-style
-  collab: confirm technical choices, then plan / UI samples, then edit).
+ collab: confirm technical choices, then **P0/P1** plan / UI samples, then
+ edit; default execute P0 only).
 3. Run `git status --short` before editing. Do not overwrite user changes or
   unrelated untracked files.
 4. Read the route entry, server helper, worker or extension caller, and Prisma
@@ -1511,12 +1512,14 @@ translation, but auto-translate still does not set it. Empty Turso
 
 ## Short Locator Flow
 
-1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md`.
+1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (P0/P1 plan;
+ default execute P0 only).
 2. `git status --short`
 3. Read the matching section in this file.
 4. `rg -n "<keyword>" app worker extensions scripts prisma`
 5. Read route entry, server helper, worker/extension caller, and data model.
-6. Apply the smallest patch.
+6. Apply the smallest P0 patch.
 7. Run the validation command that matches the change.
-8. Final response should include changed files, validation result, and residual risk.
+8. Final response should include changed files, validation result, residual
+ risk, and unfinished P1 items when applicable.
 
