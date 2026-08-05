@@ -967,12 +967,13 @@ const Index = () => {
           translatedValues[record?.key || ""] ?? record?.translated
         }
         isOutdated={record?.outdated === true}
-        onSubmit={(customPrompt) => {
+        onSubmit={({ customPrompt, aiModel }) => {
           handleTranslate({
             resourceType,
             record,
             handleInputChange,
             customPrompt,
+            aiModel,
           });
           if (trackClick) {
             reportClick("editor_list_translate");
@@ -1142,11 +1143,13 @@ const Index = () => {
     record,
     handleInputChange,
     customPrompt,
+    aiModel,
   }: {
     resourceType: string;
     record: any;
     handleInputChange: (record: any, value: string) => void;
     customPrompt?: string;
+    aiModel?: string;
   }) => {
     fetcher.submit(
       {
@@ -1169,6 +1172,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

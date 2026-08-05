@@ -747,8 +747,11 @@ Historical manage-translation migration guidance:
 - The TSF-side direct save helper is `app/server/shopify/translations.server.ts`.
 - When modifying save/delete behavior, preserve the existing response shape used
 by page actions and surface Shopify `userErrors` as partial failures.
-- `SingleTextTranslate`, image translation, PageFly, and some summary/count
-behavior may still be intentionally legacy or separate from the save path.
+- Manual single-field translate uses shared `SingleTranslateAction` (modal with
+AI model `Select` + optional prompt) → `SingleTextTranslate` →
+`/api/translate-v4/single` (`aiModel`, default `deepseek-v4-flash`). Image
+translation, PageFly, and some summary/count behavior may still be separate
+from the save path.
 
 Summary/count guidance:
 
