@@ -6,6 +6,7 @@ import {
   GetShopImageData,
   ParseLiquidDataByShopNameAndLanguage,
   ReadTranslatedText,
+  CollectLiquidStrings,
 } from "./ciwi-api.js";
 import {
   asCacheableTranslationResponse,
@@ -2624,5 +2625,131 @@ export class CiwiswitcherForm extends HTMLElement {
 
   closeAllSelectors() {
     return;
+  }
+}
+
+// ============================================================
+// 自动抓取店面第三方未翻译文本（switcher opt-in）
+// 复用 skipTags / normalizeText / isElementHiddenForTranslation，
+// 遍历可见文本节点，客户端去重后上报后端；后端异步翻译回填 LiquidRule。
+// ============================================================
+
+const AUTO_LIQUID_MAX_LEN = 200;
+const AUTO_LIQUID_MIN_LEN = 2;
+const AUTO_LIQUID_BATCH = 60; // 单次最多上报条数
+const AUTO_LIQUID_REPORTED_CAP = 1500; // 客户端已报指纹上限
+
+function autoLiquidReportedKey(shopValue, language) {
+  return `ciwi_auto_liquid_reported:${shopValue}:${language}`;
+}
+
+function loadAutoLiquidReported(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveAutoLiquidReported(key, set) {
+  try {
+    let arr = Array.from(set);
+    if (arr.length > AUTO_LIQUID_REPORTED_CAP) {
+      arr = arr.slice(arr.length - AUTO_LIQUID_REPORTED_CAP);
+    }
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch {
+    // 忽略 localStorage 配额错误
+  }
+}
+
+function isAutoLiquidCandidate(text) {
+  const t = normalizeText(text);
+  if (t.length < AUTO_LIQUID_MIN_LEN || t.length > AUTO_LIQUID_MAX_LEN) return false;
+  // 至少含一个字母（含 CJK / 各语言字母），过滤纯数字 / 符号
+  if (!/\p{L}/u.test(t)) return false;
+  return true;
+}
+
+/**
+ * 抓取当前页面上未翻译文本并上报后端（仅在 switcher 开启 autoLiquidCollect 时调用）。
+ * 客户端做轻量去重 + 已报指纹缓存，重活（过滤 / 额度 / 翻译）在后端。
+ */
+export function CollectUntranslatedText(shop, ciwiBlock) {
+  try {
+    const shopValue = shop?.value || shop;
+    const language = ciwiBlock?.querySelector(
+      'input[name="language_code"]',
+    )?.value;
+    if (!shopValue || !language) return;
+
+    // 本会话已判定无需采集（未开启 / 主语言）→ 直接跳过
+    const sessionFlag = `ciwi_auto_liquid_off:${shopValue}:${language}`;
+    try {
+      if (sessionStorage.getItem(sessionFlag) === "1") return;
+    } catch {}
+
+    const reportedKey = autoLiquidReportedKey(shopValue, language);
+    const reported = loadAutoLiquidReported(reportedKey);
+
+    const seen = new Set();
+    const batch = [];
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (skipTags.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+          // 跳过 switcher 自身 UI
+          if (ciwiBlock && ciwiBlock.contains(parent))
+            return NodeFilter.FILTER_REJECT;
+          if (parent.closest("#ciwi-container"))
+            return NodeFilter.FILTER_REJECT;
+          if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
+          if (isElementHiddenForTranslation(parent))
+            return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    while (walker.nextNode()) {
+      const t = normalizeText(walker.currentNode.nodeValue || "");
+      if (!isAutoLiquidCandidate(t)) continue;
+      if (seen.has(t) || reported.has(t)) continue;
+      seen.add(t);
+      batch.push(t);
+      if (batch.length >= AUTO_LIQUID_BATCH) break;
+    }
+
+    if (!batch.length) return;
+
+    // 乐观标记为已报，避免同页多次触发 / 短时间重复上报
+    batch.forEach((t) => reported.add(t));
+    saveAutoLiquidReported(reportedKey, reported);
+
+    CollectLiquidStrings({
+      shopName: shopValue,
+      languageCode: language,
+      texts: batch,
+    })
+      .then((res) => {
+        const reason = res?.response?.reason;
+        if (
+          res?.response?.skipped &&
+          (reason === "disabled" || reason === "primary_locale")
+        ) {
+          try {
+            sessionStorage.setItem(sessionFlag, "1");
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  } catch (err) {
+    console.error("CollectUntranslatedText failed:", err);
   }
 }

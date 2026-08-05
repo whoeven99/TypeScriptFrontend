@@ -130,6 +130,31 @@ export async function ParseLiquidDataByShopNameAndLanguage({
   }
 }
 
+/**
+ * 上报店面自动抓取到的未翻译文本。后端过滤 / 去重 / 额度守卫后异步翻译，
+ * 写入 LiquidRule(source="auto")，下次访问由 CustomLiquidTextTranslate 替换。
+ * fire-and-forget：失败静默，不影响店面渲染。
+ */
+export async function CollectLiquidStrings({ shopName, languageCode, texts }) {
+  try {
+    if (!Array.isArray(texts) || texts.length === 0) return;
+    const baseUrl = resolveStorefrontApiBase();
+    if (!baseUrl) return;
+    const { data } = await fetchJson(
+      `${baseUrl}/liquid/collect?shopName=${shopName}&languageCode=${languageCode}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ texts }),
+        // 采集是尽力而为，减少重试避免额外负载
+        retryAttempts: 1,
+      },
+    );
+    return data;
+  } catch (err) {
+    console.error("Error CollectLiquidStrings:", err);
+  }
+}
+
 export async function GetProductImageData({
   shopName,
   productId,

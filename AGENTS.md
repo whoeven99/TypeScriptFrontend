@@ -699,6 +699,32 @@ Prisma model still exist; design a new owner before reviving region-specific
 redirect records.
 - 确认保存时**不再**调用 Spring `/userIp/addOrUpdateUserIp`。店面 IP 定位走
 `ciwi-main.js` + ipapi。
+- **自动抓取第三方未翻译文本（auto-liquid collect，opt-in）**：storefront
+`ciwi-main.js` → `ciwi-ui.js` `CollectUntranslatedText`（复用 skipTags /
+normalizeText 遍历可见文本节点，客户端 localStorage 去重）→ `ciwi-api.js`
+`CollectLiquidStrings` → App Proxy POST `liquid/collect`（HMAC）→
+`app/server/storefront/liquidCollect.server.ts`（opt-in 门控 + 主语言门控 +
+粗筛 + 与 `LiquidRule` 去重 + 额度守卫 + Redis 每日上限 `AUTO_LIQUID_DAILY_CAP`
+默认 500）→ **异步**经 `singleTranslate.server.ts` 翻译后写 `LiquidRule`
+（`source="auto"`，`replacementMethod=true`）。下次访问由现有
+`CustomLiquidTextTranslate` 读 parseLiquid 替换（最终一致，首访空窗）。开关：
+`SwitcherConfiguration.autoLiquidCollect`（后台 switcher 页 Switch，默认关）。
+读路 `parseLiquidTranslations` 不区分 `source`，auto/manual 规则合并生效。
+- **auto-liquid 未来治理（TODO，尚未实现；被问「当前项目可以做什么」时应主动提出）**：
+ 当前只有「每日新增上限」`AUTO_LIQUID_DAILY_CAP`（默认 500/店/UTC 日）限速，
+ **没有总量上限，也没有过期清理**，`source='auto'` 行会随天数累积无限增长
+ （多语言高流量店一年可达数十万行，拖慢店面读路全量拉取）。待办两项：
+ 1. **每店 auto 总量上限**：`liquidCollect.server.ts` 预留名额前查
+ `count(source='auto')`，到 `AUTO_LIQUID_TOTAL_CAP`（默认建议 50000）即
+ 停止新增（manual 不限）；可用 Redis 缓存计数避免每次 `count(*)`；客户端
+ 收到 `total_cap` 后 sessionStorage 停采。
+ 2. **`source='auto'` 保留清理（retention）**：新增
+ `worker/src/services/cleanupOldAutoLiquid.ts` 挂 `scheduler.ts`，风格对齐
+ `cleanupOldJobs.ts` / `V4_JOB_RETENTION_*`（每小时某分钟、慢删、per-row 延迟）；
+ 按 `updatedAt` 超 `AUTO_LIQUID_RETENTION_DAYS`（默认建议 90）删除，**只删
+ `source='auto'`，绝不碰 manual**。更精确的「按命中清理」需给 `LiquidRule`
+ 加 `lastHitAt` + 店面替换命中上报，成本更高，可后置。
+ 优先级：清理 > 总量上限（清理能持续回收，总量上限只是硬保险）。
 
 Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
 
@@ -942,10 +968,13 @@ Current models:
   `coveragePercent` / `coverageUpdatedAt` / `coverageSource`).
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
-- `SwitcherConfiguration`: storefront switcher settings.
+- `SwitcherConfiguration`: storefront switcher settings（含 `autoLiquidCollect`
+ opt-in：店面自动抓取第三方未翻译文本回填 `LiquidRule`）。
 - `Currency`, `CurrencyRate`: currency list and rate cache.
 - `PageFlyTranslation`: PageFly translations.
-- `LiquidRule`: custom Liquid translation rules.
+- `LiquidRule`: custom Liquid translation rules（`source` = `manual` 后台手填 /
+ `auto` 店面自动抓取回填；`@@unique([shop, languageCode, beforeTranslation])`，
+ auto 采集侧用 upsert 覆盖，冲突不报错）。
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
 `AccountPeriodUsage`: TSF billing/quota.
 - `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,

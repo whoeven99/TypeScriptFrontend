@@ -135,6 +135,8 @@ model SwitcherConfiguration {
   selectorPosition      String   @default("bottom_left")
   positionData          String   @default("10")
   isTransparent         Boolean  @default(false)
+  // 店面自动抓取第三方未翻译文本并回填 LiquidRule（opt-in，默认关）。
+  autoLiquidCollect     Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -187,9 +189,13 @@ model LiquidRule {
   afterTranslation  String // liquidAfterTranslation
   languageCode      String?
   replacementMethod Boolean  @default(false)
+  // 规则来源：manual = 商家后台手填；auto = switcher 店面自动抓取回填。
+  source            String   @default("manual")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // 同店 + 语言 + 原文 唯一：消除并发重复行，支撑 auto 采集 upsert（冲突即覆盖，不报错）。
+  @@unique([shop, languageCode, beforeTranslation])
   @@index([shop])
 }
 
