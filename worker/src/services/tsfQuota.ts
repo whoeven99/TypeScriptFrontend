@@ -68,15 +68,14 @@ export function quotaTokenMultiplier(aiModel?: string | null): number {
  * 由剩余额度算出允许的并发上限：
  *   remaining ≥ ceiling×perCall → 满并发（ceiling）
  *   perCall ≤ remaining < …     → floor(remaining / perCall)（平滑降速）
- *   remaining < perCall         → 1（硬停由 worker 的 abort 负责）
+ *   remaining < perCall         → 0（禁止新调用；与 callLLMOnce 预检一致）
  */
 export function quotaConcurrencyCap(remaining: number): number {
   const perCall = Math.max(1, Number(process.env.QUOTA_PER_CALL_COST) || 15000);
   const ceiling = Math.max(1, Number(process.env.QUOTA_MAX_CONCURRENCY) || 128);
-  if (remaining <= 0) return 0;
+  if (remaining < perCall) return 0;
   if (remaining >= ceiling * perCall) return ceiling;
-  if (remaining >= perCall) return Math.max(1, Math.floor(remaining / perCall));
-  return 1;
+  return Math.max(1, Math.floor(remaining / perCall));
 }
 
 /**

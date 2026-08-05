@@ -1,0 +1,14 @@
+---
+description: Plan 模式输出必须简洁（方案 / 步骤 / 优先级）
+alwaysApply: true
+---
+
+# Concise Plan
+
+进入 Plan 模式、调用 CreatePlan、或输出实现计划时：
+
+1. **完整读取并遵循** `.cursor/skills/concise-plan/SKILL.md`
+2. 正文：**方案 → 步骤 → 实现优先级**；有 UI 改动时再加 **UI 样例**，无 UI 则不加
+3. 简洁明了；禁止长背景、多方案并列、大段代码
+
+与 `deliberate-collab` 同时生效：协作流程用 deliberate-collab；**计划正文格式**以 concise-plan 为准。

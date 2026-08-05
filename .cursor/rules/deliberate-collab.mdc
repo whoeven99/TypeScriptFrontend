@@ -22,3 +22,5 @@ alwaysApply: true
 9. **收尾可验收**：改动、验证、未跑项、剩余风险。
 
 本规则与 `AGENTS.md`「Required Workflow」同时生效；协作风格以该 skill 为准，功能导航与验证以 `AGENTS.md` 为准。
+
+Plan / CreatePlan 正文格式另见 `.cursor/skills/concise-plan/SKILL.md` 与规则 `concise-plan.mdc`。

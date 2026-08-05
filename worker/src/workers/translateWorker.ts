@@ -34,6 +34,8 @@ import {
   flushKeyStats,
   pAll,
   setShopQuotaCap,
+  syncShopQuotaBudget,
+  isQuotaExhaustedError,
   type EngineUsage,
   type TranslateItem,
   type TranslatedResourceOutput,
@@ -380,6 +382,27 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   };
   let lastControlCheckAt = 0;
   const CONTROL_CHECK_THROTTLE_MS = 1000;
+  // 是否对本任务做额度校验：TsFrontend 默认开启（QUOTA_ENFORCE=false 可关），其它来源关闭。
+  const enforceQuota = quotaEnforceEnabled(job.taskSource);
+  const quotaMult = quotaTokenMultiplier(aiModel);
+  let pendingQuotaCharge = 0;
+  let lastKnownRemaining = 0;
+  let quotaFlushSeq = 0;
+  /** 是否已对本任务 seed 过 budget（避免 flush 时 resetCommitted）。 */
+  let jobBudgetSeeded = false;
+
+  /** 任务开始：记下 budget，清零 committed（预估已花费）。 */
+  const seedJobQuotaBudget = (budget: number) => {
+    if (!enforceQuota) return;
+    syncShopQuotaBudget(shopName, {
+      budgetCredits: budget,
+      quotaMultiplier: quotaMult,
+      resetCommitted: true,
+    });
+    setShopQuotaCap(shopName, quotaConcurrencyCap(budget));
+    jobBudgetSeeded = true;
+  };
+
   /**
    * 暂停/取消触发后立刻写 Redis「暂停待落盘」信号（UI 据此显示「正在暂停…」并禁用继续）。
    * 真正的 PAUSED/CANCELLED 由 abort 块在在飞批次收尾后落定。
@@ -399,6 +422,16 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     options?: { persist?: boolean },
   ) => {
     if (abort.tripped) return;
+    // 先打闸：budget=0 禁止新 LLM；不重置 committed（已在飞仍按原逻辑结算）。
+    if (enforceQuota) {
+      lastKnownRemaining = 0;
+      syncShopQuotaBudget(shopName, {
+        budgetCredits: 0,
+        quotaMultiplier: quotaMult,
+        resetCommitted: false,
+      });
+      setShopQuotaCap(shopName, 0);
+    }
     abort.tripped = true;
     abort.action = action;
     abort.reason = reason;
@@ -450,9 +483,6 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     await checkControl(true);
     return abort.tripped;
   };
-  // 是否对本任务做额度校验：TsFrontend 默认开启（QUOTA_ENFORCE=false 可关），其它来源关闭。
-  const enforceQuota = quotaEnforceEnabled(job.taskSource);
-  const quotaMult = quotaTokenMultiplier(aiModel);
 
   // 进入翻译前先按当前剩余额度设定该 shop 的并发上限（额度少→并发低）。
   // 续跑时若额度查询抖动，回退 Redis 中上次扣减后的 remaining，避免并发被 seed 到 1。
@@ -463,12 +493,13 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       queriedRemaining,
       fallbackRemaining,
     );
+    lastKnownRemaining = quotaRemaining;
     if (quotaRemaining <= 0 || quotaCap <= 0) {
       tripAbort("pause", "额度不足，已自动暂停");
     } else {
-      setShopQuotaCap(shopName, quotaCap);
+      seedJobQuotaBudget(quotaRemaining);
       console.log(
-        `[translate] job=${jobId} quota seed remaining=${quotaRemaining} concurrencyCap=${quotaCap}` +
+        `[translate] job=${jobId} quota seed budget=${quotaRemaining} concurrencyCap=${quotaCap}` +
           `${usedFallback ? " (redis fallback)" : ""}` +
           ` durableDone=${durableDone}/${translateTotal}`,
       );
@@ -476,16 +507,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   }
 
   // ── 额度累积扣减 ──────────────────────────────────────────────────────────────
-  // 原来每批都同步 HTTP 扣一次 Java 额度（在批完成的关键路径上）。高并发下这是大量
-  // 并发往返 + 每批额外延迟。改为：内存累积欠账，攒到阈值才扣一次；阈值≈一次 perCall
-  // 成本，保证并发上限(quotaConcurrencyCap)仍按每个 call 量级及时收紧，透支可控。
-  // 任务收尾(成功/中断)再 flush 一次结清尾款。
+  // 实扣仍攒批 flush；LLM 准入看任务 budget + committed（预估→实扣在 core 内替换）。
   const QUOTA_FLUSH_CHARGE = Math.max(
     1,
     Number(process.env.TRANSLATE_QUOTA_FLUSH_CHARGE) || 15_000,
   );
-  let pendingQuotaCharge = 0;
-  let quotaFlushSeq = 0;
   const flushQuota = async (): Promise<void> => {
     if (!enforceQuota) return;
     let charge = 0;
@@ -496,10 +522,10 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     if (charge <= 0) return;
     const { ok, remaining } = await deductTsfQuota(shopName, charge);
     if (!ok) {
-      setShopQuotaCap(shopName, 1);
       tripAbort("pause", "额度服务异常，已自动暂停");
       return;
     }
+    lastKnownRemaining = remaining;
     quotaFlushSeq += 1;
     await recordCreditUsage({
       shop: shopName,
@@ -516,9 +542,13 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         quotaMultiplier: quotaMult,
       },
     });
+    // 账本已空则暂停；否则只收紧并发，不改任务 budget / committed。
     const cap = quotaConcurrencyCap(remaining);
-    setShopQuotaCap(shopName, cap);
-    if (remaining <= 0) tripAbort("pause", "额度不足，已自动暂停");
+    if (remaining <= 0 || cap <= 0) {
+      tripAbort("pause", "额度不足，已自动暂停");
+    } else if (jobBudgetSeeded && !abort.tripped) {
+      setShopQuotaCap(shopName, cap);
+    }
     await setProgress(jobId, {
       quotaRemaining: String(remaining),
       quotaConcurrencyCap: String(cap),
@@ -586,7 +616,11 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
 
         if (enforceQuota) {
           const liveRemaining = await getTsfRemainingWithRetry(shopName);
-          if (liveRemaining <= 0) {
+          lastKnownRemaining = liveRemaining;
+          if (
+            liveRemaining <= 0 ||
+            quotaConcurrencyCap(Math.max(0, liveRemaining - pendingQuotaCharge)) <= 0
+          ) {
             tripAbort("pause", "额度不足，已自动暂停");
             return;
           }
@@ -638,6 +672,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
               liveTokens += Math.ceil(deltaTokens * tokenMultiplier);
               clampUnitDone();
               // 累积额度欠账；攒够一次 perCall 量级再扣（见 flushQuota）。
+              // LLM 准入的 committed 已在 callLLMOnce 内用实扣替换预估。
               if (enforceQuota && deltaTokens > 0) {
                 pendingQuotaCharge += Math.ceil(deltaTokens * quotaMult);
                 if (pendingQuotaCharge >= QUOTA_FLUSH_CHARGE) shouldFlushQuota = true;
@@ -729,10 +764,18 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           );
           mergeEngineUsage(engineUsage, usage);
         } catch (e) {
-          await runExclusive(async () => {
-            translateFailed += pendingResources.length;
-          });
-          console.warn(`[translate] chunk ${chunkIdx}/${chunkTotal} failed`, e);
+          if (isQuotaExhaustedError(e)) {
+            tripAbort("pause", "额度不足，已自动暂停");
+            console.warn(
+              `[translate] job=${jobId} chunk ${chunkIdx}/${chunkTotal} stopped: quota exhausted`,
+              e instanceof Error ? e.message : e,
+            );
+          } else {
+            await runExclusive(async () => {
+              translateFailed += pendingResources.length;
+            });
+            console.warn(`[translate] chunk ${chunkIdx}/${chunkTotal} failed`, e);
+          }
         }
 
         if (abort.tripped) return;

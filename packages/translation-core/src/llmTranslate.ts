@@ -77,9 +77,23 @@ export type { DeepSeekCallCostEstimate, DeepSeekPriceTier } from "./deepseekPric
 
 type PoolInitOptions = { model?: string };
 
+/** Thrown when shop quota gate refuses a new LLM call (cap=0 or preflight reserve fail). */
+export class QuotaExhaustedError extends Error {
+  constructor(message = "QUOTA_EXHAUSTED") {
+    super(message);
+    this.name = "QuotaExhaustedError";
+  }
+}
+
+export function isQuotaExhaustedError(err: unknown): boolean {
+  if (err instanceof QuotaExhaustedError) return true;
+  return err instanceof Error && err.message.startsWith("QUOTA_EXHAUSTED");
+}
+
 /**
  * Semaphore whose capacity can be raised or lowered at runtime.
  * Pending acquirers are woken up immediately when capacity increases.
+ * setMax(0) wakes waiters so they fail fast instead of hanging.
  */
 class AdaptiveSemaphore {
   private _max: number;
@@ -90,6 +104,10 @@ class AdaptiveSemaphore {
 
   setMax(n: number): void {
     this._max = Math.max(0, n);
+    if (this._max <= 0) {
+      while (this._waiters.length > 0) this._waiters.shift()!();
+      return;
+    }
     this._flush();
   }
   get max() { return this._max; }
@@ -97,13 +115,15 @@ class AdaptiveSemaphore {
 
   async acquire(): Promise<void> {
     if (this._max <= 0) {
-      throw new Error("QUOTA_EXHAUSTED");
+      throw new QuotaExhaustedError();
     }
     if (this._inflight < this._max) { this._inflight++; return; }
     await new Promise<void>((r) => this._waiters.push(r));
     if (this._max <= 0) {
-      this._inflight = Math.max(0, this._inflight - 1);
-      throw new Error("QUOTA_EXHAUSTED");
+      throw new QuotaExhaustedError();
+    }
+    if (this._inflight >= this._max) {
+      return this.acquire();
     }
     this._inflight++;
   }
@@ -1705,24 +1725,90 @@ function resolveModel(preferred?: string): string {
   return isDeepSeekModelId(configured) ? configured! : "deepseek-chat";
 }
 
-// ─── Per-shop quota concurrency gate ─────────────────────────────────────────
-// 按 shopName 限流：相同 shop 的 LLM 调用共用一个闸（与全局限流池叠加 min），
-// 不同 shop 互不影响。默认容量极大(不限)，仅当额度逻辑显式 setShopQuotaCap 时收紧。
-// 额度越少 → cap 越小 → 在飞批次越少 → 最大透支被锁死。
-const _shopQuotaGates = new Map<string, AdaptiveSemaphore>();
+// ─── Per-shop job budget gate（同店同时仅 1 个 TRANSLATING）──────────────────
+// 任务开始记下 budget；发 LLM 前 committed += 预估；返回后把该批预估换成实扣。
+// 准入：committed + nextEst > budget → 不发新请求。
+type ShopQuotaState = {
+  gate: AdaptiveSemaphore;
+  /** null = 未启用额度预检（非 TSF / 未 sync）。 */
+  budgetCredits: number | null;
+  /** 已占用：在飞用预估，返回后改为实扣 credits。 */
+  committedCredits: number;
+  quotaMultiplier: number;
+};
 
-function getShopQuotaGate(shop: string): AdaptiveSemaphore {
-  let g = _shopQuotaGates.get(shop);
-  if (!g) {
-    g = new AdaptiveSemaphore(MAX_POOL_CONCURRENCY);
-    _shopQuotaGates.set(shop, g);
+const _shopQuotaState = new Map<string, ShopQuotaState>();
+
+function getShopQuotaState(shop: string): ShopQuotaState {
+  let s = _shopQuotaState.get(shop);
+  if (!s) {
+    s = {
+      gate: new AdaptiveSemaphore(MAX_POOL_CONCURRENCY),
+      budgetCredits: null,
+      committedCredits: 0,
+      quotaMultiplier: 1,
+    };
+    _shopQuotaState.set(shop, s);
   }
-  return g;
+  return s;
 }
 
-/** 由额度逻辑调用：设置某 shop 的 LLM 并发上限（0=禁止新调用；硬停由调用方 abort 负责）。 */
+/** 按 budget 剩余头寸收紧并发（与 worker QUOTA_PER_CALL_COST 对齐）。 */
+function refreshGateFromBudget(s: ShopQuotaState): void {
+  if (s.budgetCredits == null) return;
+  const headroom = Math.max(0, s.budgetCredits - s.committedCredits);
+  const perCall = Math.max(1, Number(process.env.QUOTA_PER_CALL_COST) || 15_000);
+  const ceiling = Math.max(1, Number(process.env.QUOTA_MAX_CONCURRENCY) || 128);
+  if (headroom < perCall) {
+    s.gate.setMax(0);
+    return;
+  }
+  if (headroom >= ceiling * perCall) {
+    s.gate.setMax(ceiling);
+    return;
+  }
+  s.gate.setMax(Math.max(1, Math.floor(headroom / perCall)));
+}
+
+/** 由额度逻辑调用：设置某 shop 的 LLM 并发上限（0=禁止新调用）。 */
 export function setShopQuotaCap(shop: string, cap: number): void {
-  getShopQuotaGate(shop).setMax(Math.max(0, cap));
+  getShopQuotaState(shop).gate.setMax(Math.max(0, cap));
+}
+
+/**
+ * Worker 在任务 seed / 暂停时同步本任务预算。
+ * - budgetCredits：任务开始时记下的剩余额度；传 0 可禁止新调用
+ * - resetCommitted：seed 时清零「预估已花费」
+ */
+export function syncShopQuotaBudget(
+  shop: string,
+  args: {
+    budgetCredits: number;
+    quotaMultiplier?: number;
+    resetCommitted?: boolean;
+  },
+): void {
+  const s = getShopQuotaState(shop);
+  s.budgetCredits = Math.max(0, Math.floor(args.budgetCredits));
+  if (args.resetCommitted) s.committedCredits = 0;
+  if (args.quotaMultiplier != null && Number.isFinite(args.quotaMultiplier) && args.quotaMultiplier > 0) {
+    s.quotaMultiplier = args.quotaMultiplier;
+  }
+  refreshGateFromBudget(s);
+}
+
+/** @internal test helper */
+export function __resetShopQuotaStateForTest(): void {
+  _shopQuotaState.clear();
+}
+
+/** @internal test helper */
+export function __getShopQuotaCommittedForTest(shop: string): {
+  budgetCredits: number | null;
+  committedCredits: number;
+} {
+  const s = getShopQuotaState(shop);
+  return { budgetCredits: s.budgetCredits, committedCredits: s.committedCredits };
 }
 
 // ─── Engine router ──────────────────────────────────────────────────────────────
@@ -3094,6 +3180,33 @@ export function estimateTextTokens(text: string): number {
   return Math.max(0, cjk + Math.ceil(other / 4));
 }
 
+/** 预估安全系数：略放大以避免实扣 > 预估导致透支。可用 TRANSLATE_QUOTA_ESTIMATE_SAFETY 覆盖。 */
+function quotaEstimateSafety(): number {
+  const v = Number(process.env.TRANSLATE_QUOTA_ESTIMATE_SAFETY);
+  return Number.isFinite(v) && v >= 1 ? v : 1.2;
+}
+
+/**
+ * 单批 LLM 调用的额度预估（credits，已含 multiplier × safety）。
+ * system + user JSON 为 input；output 用「译文≈原文」的响应 JSON 代理。
+ */
+export function estimateLlmBatchCredits(
+  systemPrompt: string,
+  userPayloadJson: string,
+  outputProxyJson: string,
+  quotaMultiplier: number,
+): number {
+  const inputTokens =
+    estimateTextTokens(systemPrompt) + estimateTextTokens(userPayloadJson);
+  const outputTokens = estimateTextTokens(outputProxyJson);
+  const mult =
+    Number.isFinite(quotaMultiplier) && quotaMultiplier > 0 ? quotaMultiplier : 1;
+  return Math.max(
+    1,
+    Math.ceil((inputTokens + outputTokens) * mult * quotaEstimateSafety()),
+  );
+}
+
 export type SingleTranslateTokenEstimate = {
   /** 预估 LLM 原始 token（input+output，未乘额度系数）。 */
   estimatedTokens: number;
@@ -3236,34 +3349,85 @@ async function callLLMOnce(
 ): Promise<LlmOnceResult> {
   // Opaque IDs prevent the model from confusing semantic key names with content.
   const idToKey = new Map(items.map((it, idx) => [`f${idx}`, it.key]));
-  const payload  = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
+  const payload = items.map((it, idx) => ({ key: `f${idx}`, value: it.value }));
+  const userJson = JSON.stringify(payload);
 
-  // 按 shop 的额度并发闸：与全局限流池叠加，额度越少该 shop 并发越低。
-  const quotaGate = shopName ? getShopQuotaGate(shopName) : null;
+  const state = shopName ? getShopQuotaState(shopName) : null;
+  const quotaGate = state?.gate ?? null;
   if (quotaGate) await quotaGate.acquire();
 
-  const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: JSON.stringify(payload) },
-  ];
-
-  const logLlmReturn = (model: string, raw: string, tokens: number, requestId?: string) => {
-    if (!logSingleTranslate) return;
-    // 管理页单条：完整打印原文、prompt、LLM raw（不截断）。
-    console.log("[single-llm] return", {
-      shopName,
-      model,
-      source: payload,
-      prompt: messages,
-      raw,
-      tokens,
-      requestId,
-    });
+  /** 本批占坑预估；成功返回后换成实扣并清零；失败则在 finally 释放。 */
+  let reservedEst = 0;
+  const settleEstToActual = (billableTokens: number) => {
+    if (!state || reservedEst <= 0) return;
+    const actualCredits = Math.max(
+      0,
+      Math.ceil(billableTokens * state.quotaMultiplier),
+    );
+    state.committedCredits = Math.max(
+      0,
+      state.committedCredits - reservedEst + actualCredits,
+    );
+    reservedEst = 0;
+    refreshGateFromBudget(state);
+  };
+  const releaseEst = () => {
+    if (!state || reservedEst <= 0) return;
+    state.committedCredits = Math.max(0, state.committedCredits - reservedEst);
+    reservedEst = 0;
+    refreshGateFromBudget(state);
   };
 
-  // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
-  if (isGptModel(aiModel)) {
-    try {
+  try {
+    // 额度预检：committed + 本批预估 ≤ budget 才发请求。
+    if (state && state.budgetCredits != null) {
+      const outputProxy = JSON.stringify({
+        translations: payload.map((p) => ({
+          key: p.key,
+          translatedValue: p.value,
+        })),
+      });
+      const est = estimateLlmBatchCredits(
+        systemPrompt,
+        userJson,
+        outputProxy,
+        state.quotaMultiplier,
+      );
+      if (state.committedCredits + est > state.budgetCredits) {
+        throw new QuotaExhaustedError(
+          `QUOTA_EXHAUSTED est=${est} committed=${state.committedCredits} budget=${state.budgetCredits}`,
+        );
+      }
+      state.committedCredits += est;
+      reservedEst = est;
+      refreshGateFromBudget(state);
+    }
+
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userJson },
+    ];
+
+    const logLlmReturn = (
+      model: string,
+      raw: string,
+      tokens: number,
+      requestId?: string,
+    ) => {
+      if (!logSingleTranslate) return;
+      console.log("[single-llm] return", {
+        shopName,
+        model,
+        source: payload,
+        prompt: messages,
+        raw,
+        tokens,
+        requestId,
+      });
+    };
+
+    // GPT/Azure 引擎：aiModel 为 gpt-* 且配了 Gpt_ApiKey 时走这条，自成一路不进 DeepSeek 池。
+    if (isGptModel(aiModel)) {
       const model = resolveGptModel(aiModel);
       const {
         raw,
@@ -3285,71 +3449,72 @@ async function callLLMOnce(
         requestId,
         batchSize: items.length,
       });
-      // Merchant quota: exclude cache-hit input when the provider reports it.
-      return parseTranslationResult(raw, idToKey, cost, billableLlmTokens(cost));
+      const billable = billableLlmTokens(cost);
+      const parsed = parseTranslationResult(raw, idToKey, cost, billable);
+      settleEstToActual(billable);
+      return parsed;
+    }
+
+    const acq = await getPool().acquire();
+    const model = resolveModel(aiModel) || acq.model;
+    const t0 = Date.now();
+
+    try {
+      const deepseekUserId =
+        acq.transport.kind === "deepseek-fetch" && shopName
+          ? sanitizeDeepSeekUserId(shopName)
+          : undefined;
+      const {
+        content: raw,
+        tokens,
+        inputTokens,
+        outputTokens,
+        promptCacheHitTokens,
+        promptCacheMissTokens,
+        requestId,
+        response,
+        limitHints,
+      } = await invokeChatCompletion(
+        acq.transport,
+        model,
+        messages,
+        llmTimeoutMsForBatch(items.length),
+        getPool().firstTokenBudgetMs(),
+        deepseekUserId,
+      );
+
+      const rawHeaders = responseHeadersToRecord(response);
+      acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
+      logLlmReturn(model, raw, tokens, requestId);
+
+      const cost = buildLlmCallCost({
+        model,
+        tokens,
+        inputTokens,
+        outputTokens,
+        promptCacheHitTokens,
+        promptCacheMissTokens,
+        requestId,
+        batchSize: items.length,
+      });
+      const billable = billableLlmTokens(cost);
+      const parsed = parseTranslationResult(raw, idToKey, cost, billable);
+      settleEstToActual(billable);
+      return parsed;
+    } catch (e: unknown) {
+      if (e instanceof LlmRateLimitError) {
+        acq.onThrottle(retryAfterMsFromResponse(e.response));
+      } else {
+        acq.onError(classifyLlmError(e));
+      }
+      throw e;
     } finally {
-      if (quotaGate) quotaGate.release();
+      acq.release();
     }
-  }
-
-  const acq   = await getPool().acquire();
-  // 任务自带的 aiModel 优先（已知 DeepSeek 模型时），否则回退 env。
-  const model = resolveModel(aiModel) || acq.model;
-  const t0    = Date.now();
-
-  try {
-    const deepseekUserId =
-      acq.transport.kind === "deepseek-fetch" && shopName
-        ? sanitizeDeepSeekUserId(shopName)
-        : undefined;
-    const {
-      content: raw,
-      tokens,
-      inputTokens,
-      outputTokens,
-      promptCacheHitTokens,
-      promptCacheMissTokens,
-      requestId,
-      response,
-      limitHints,
-    } = await invokeChatCompletion(
-      acq.transport,
-      model,
-      messages,
-      llmTimeoutMsForBatch(items.length),
-      getPool().firstTokenBudgetMs(),
-      deepseekUserId,
-    );
-
-    const rawHeaders = responseHeadersToRecord(response);
-    // Pool telemetry uses raw provider totals (including cache hits).
-    acq.onResponse(rawHeaders, Date.now() - t0, tokens, limitHints);
-    logLlmReturn(model, raw, tokens, requestId);
-
-    const cost = buildLlmCallCost({
-      model,
-      tokens,
-      inputTokens,
-      outputTokens,
-      promptCacheHitTokens,
-      promptCacheMissTokens,
-      requestId,
-      batchSize: items.length,
-    });
-    // usedTokens / credit deduct: miss + out only when cache hit is reported.
-    return parseTranslationResult(raw, idToKey, cost, billableLlmTokens(cost));
-  } catch (e: unknown) {
-    if (e instanceof LlmRateLimitError) {
-      acq.onThrottle(retryAfterMsFromResponse(e.response));
-    } else {
-      // Count + classify non-throttle failures (timeout / parse / http / api).
-      // Timeouts also feed the congestion guard so concurrency sheds under load.
-      acq.onError(classifyLlmError(e));
-    }
-    throw e;
   } finally {
-    acq.release(); // always release pool semaphore slot
-    if (quotaGate) quotaGate.release(); // release per-shop quota gate
+    // 失败 / 预检失败：释放未结算的预估占坑。
+    releaseEst();
+    if (quotaGate) quotaGate.release();
   }
 }
 
@@ -3419,6 +3584,12 @@ async function gatherTranslations(
     }
     return;
   } catch (e) {
+    // 额度耗尽：勿拆批/重试（会继续打 API），向上抛出由 Worker 暂停任务。
+    if (isQuotaExhaustedError(e)) {
+      throw e instanceof QuotaExhaustedError
+        ? e
+        : new QuotaExhaustedError(e instanceof Error ? e.message : undefined);
+    }
     const msg = e instanceof Error ? e.message : String(e);
     const timeoutKind = e instanceof LlmTimeoutError ? e.kind : null;
     const isTimeout = timeoutKind !== null;
@@ -3507,7 +3678,14 @@ async function gatherTranslations(
         );
         applyLlmResult(map, tokens, cost);
         if (collected.has(pend[0]!.key)) return;
-      } catch {
+      } catch (retryErr) {
+        if (isQuotaExhaustedError(retryErr)) {
+          throw retryErr instanceof QuotaExhaustedError
+            ? retryErr
+            : new QuotaExhaustedError(
+                retryErr instanceof Error ? retryErr.message : undefined,
+              );
+        }
         // keep retrying up to the cap
       }
     }

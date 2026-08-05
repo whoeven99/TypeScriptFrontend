@@ -514,7 +514,11 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `DEEPSEEK_INITIAL_CONCURRENCY`.
 - Quota: `QUOTA_ENFORCE`, `DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`（DeepSeek 默认 1）,
 `QUOTA_TOKEN_MULTIPLIER`（GPT/Google 默认 1.5；Worker 额度读写直连 Turso）,
-`TRANSLATE_QUOTA_FLUSH_CHARGE`.
+`TRANSLATE_QUOTA_FLUSH_CHARGE`, `QUOTA_PER_CALL_COST`（默认 15k；`remaining < perCall` →
+并发 cap=0）, `QUOTA_MAX_CONCURRENCY`, `TRANSLATE_QUOTA_ESTIMATE_SAFETY`（默认 1.2）。
+任务 seed 记下 `budget`；发 LLM 前 `committed += 预估`；返回后预估换成实扣
+（`syncShopQuotaBudget` + `callLLMOnce`）。`committed + nextEst > budget` 则不发新请求；
+暂停/耗尽立刻 `setShopQuotaCap(0)`；已在飞仍跑完实扣。
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
 `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
 `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
