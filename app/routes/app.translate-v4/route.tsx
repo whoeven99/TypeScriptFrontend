@@ -61,6 +61,7 @@ import {
   markPerfEnd,
   markPerfStart,
 } from "~/utils/perf";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
@@ -458,6 +459,23 @@ export default function AppTranslateV4() {
             },
           });
           return true;
+        }
+        if (
+          actionType === "resume" &&
+          data?.error === "v4.create.noCreditsPricing"
+        ) {
+          finishClientLogTrace(trace, {
+            level: "info",
+            status: "failure",
+            message: t("v4.error.singleQuotaInsufficient"),
+            context: {
+              taskId,
+              httpStatus: res.status,
+              quotaBlocked: true,
+            },
+          });
+          openCreditsPurchaseModal();
+          return false;
         }
         finishClientLogTrace(trace, {
           level: "warn",

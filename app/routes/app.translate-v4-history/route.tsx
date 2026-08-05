@@ -20,6 +20,7 @@ import {
   v4PageStyle,
 } from "../app.translate-v4/v4Styles";
 import { translateV4Message } from "../app.translate-v4/v4I18n";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
 
 async function readJsonResponse<T = any>(res: Response): Promise<T> {
   const text = await res.text();
@@ -86,6 +87,13 @@ export default function AppTranslateV4History() {
           await refreshList();
           return true;
         }
+        if (
+          actionType === "resume" &&
+          data?.error === "v4.create.noCreditsPricing"
+        ) {
+          openCreditsPurchaseModal();
+          return false;
+        }
         message.error(
           data?.error ? translateV4Message(data.error, t) : t("v4.actionFailed"),
         );
@@ -150,7 +158,7 @@ export default function AppTranslateV4History() {
                   job={job}
                   translateSlotBusy={false}
                   expanded={expandedTaskId === job.taskId}
-                  onBuyCredits={() => {}}
+                  onBuyCredits={openCreditsPurchaseModal}
                   onToggleExpand={() =>
                     setExpandedTaskId((current) =>
                       current === job.taskId ? null : job.taskId,
