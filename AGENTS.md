@@ -278,8 +278,9 @@ persist/pass `profileBlock` on the Cosmos job / sync call.
 - App-side helpers kept aligned with worker: `languageStatus.server.ts`
 (language page status 0..4, consumed by `/api/translate-v4/target-locale`),
 `autoScanSchedule.server.ts` (interval 1h / shop cooldown 3h / `Asia/Shanghai`
-:00 defaults), `quotaMultiplier.server.ts` (`QUOTA_TOKEN_MULTIPLIER` default
-1.5), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
+:00 defaults), `quotaMultiplier.server.ts` (DeepSeek default 1 via
+`DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`; GPT/Google default 1.5 via
+`QUOTA_TOKEN_MULTIPLIER`), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
 called from `progress.server.ts`), `userFacingMessages.server.ts` (merchant-facing
 pause-reason sanitization), and `migration.server.ts` (`ensureShopV4Settings`).
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
@@ -511,7 +512,8 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `gpt-4.1-nano`); DeepSeek pool concurrency overrides:
 `DEEPSEEK_CONCURRENCY_LIMIT` / `DEEPSEEK_CONCURRENCY_UTIL` /
 `DEEPSEEK_INITIAL_CONCURRENCY`.
-- Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
+- Quota: `QUOTA_ENFORCE`, `DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`（DeepSeek 默认 1）,
+`QUOTA_TOKEN_MULTIPLIER`（GPT/Google 默认 1.5；Worker 额度读写直连 Turso）,
 `TRANSLATE_QUOTA_FLUSH_CHARGE`.
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
 `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
@@ -756,7 +758,8 @@ AI model `Select` + optional prompt + credit estimate) →
 `SingleTextTranslate` → `/api/translate-v4/single` (`aiModel`, default
 `deepseek-v4-flash`). Estimate: `POST /api/translate-v4/single-estimate` builds
 the real system prompt (glossary + shop profile + custom prompt) via
-`estimateSingleTranslateLlmTokens`, then `ceil(tokens × QUOTA_TOKEN_MULTIPLIER)`.
+`estimateSingleTranslateLlmTokens`, then ceil(tokens × model multiplier)
+(DeepSeek default 1, GPT/Google default 1.5).
 Image translation, PageFly, and some summary/count behavior may still be
 separate from the save path.
 

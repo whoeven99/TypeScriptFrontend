@@ -40,7 +40,10 @@ import {
   protectedLiteralsPreserved,
   restoreMaskedPlaceholders,
 } from "./placeholderMask.js";
-import { buildTargetLanguageBlock } from "./targetLanguagePrompt.js";
+import {
+  buildScriptConstraintLine,
+  buildTargetLanguageBlock,
+} from "./targetLanguagePrompt.js";
 import { getTranslationCoreRedis } from "./runtime.js";
 import { estimateDeepSeekCallCost } from "./deepseekPricing.js";
 
@@ -3019,7 +3022,7 @@ Rules:
 - Be accurate and natural for e-commerce
 - Translate ALL content into "${target}", no matter what language the input is in (English, Chinese, Spanish, etc.)
 - If a value is already entirely in "${target}", return it unchanged
-- translatedValue MUST be written entirely in "${target}"; never insert Chinese (汉字), Japanese, or Korean characters unless those exact characters already appear in the source value
+${buildScriptConstraintLine(target)}
 - Each value is a plain-text leaf extracted from HTML: never include HTML tags (<td>, <tr>, <table>, etc.) in translatedValue
 - Any token wrapped in the corner brackets ⟦ … ⟧ is an opaque placeholder. Copy it byte-for-byte, INCLUDING the ⟦ and ⟧ brackets. Never translate it, change its inner text, add or remove spaces inside it, drop it, or rewrite the brackets as [ ], 【 】, ( ), or any other characters. This applies to numeric sentinels (⟦0⟧, ⟦1⟧, …), the line-break token ⟦BR⟧, and segment markers like ⟦HTML_SEG_0_1⟧
 - Numeric sentinels ⟦0⟧, ⟦1⟧, … may represent URLs or site paths (e.g. /blogs/news/article) — preserve them verbatim

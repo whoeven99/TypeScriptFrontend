@@ -336,12 +336,12 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       await heartbeat(shopName, jobId);
     }
   };
-  // 与 Spring 扣减共用 QUOTA_TOKEN_MULTIPLIER（TRANSLATION_TOKEN_MULTIPLIER 仅作兼容覆盖）
+  // 与额度扣减共用模型系数（TRANSLATION_TOKEN_MULTIPLIER 仅作兼容覆盖）
   const translationMultOverride = Number(process.env.TRANSLATION_TOKEN_MULTIPLIER);
   const tokenMultiplier =
     Number.isFinite(translationMultOverride) && translationMultOverride > 0
       ? translationMultOverride
-      : quotaTokenMultiplier();
+      : quotaTokenMultiplier(aiModel);
   const fallbacks: Array<{ resourceId: string; module: string; key: string }> = [];
   const engineUsage: EngineUsage = {};
   // Record when this translate stage actually started (epoch ms string).
@@ -452,7 +452,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   };
   // 是否对本任务做额度校验：TsFrontend 默认开启（QUOTA_ENFORCE=false 可关），其它来源关闭。
   const enforceQuota = quotaEnforceEnabled(job.taskSource);
-  const quotaMult = quotaTokenMultiplier();
+  const quotaMult = quotaTokenMultiplier(aiModel);
 
   // 进入翻译前先按当前剩余额度设定该 shop 的并发上限（额度少→并发低）。
   // 续跑时若额度查询抖动，回退 Redis 中上次扣减后的 remaining，避免并发被 seed 到 1。

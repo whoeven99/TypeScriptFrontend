@@ -495,9 +495,6 @@ export default function AppTranslateV4() {
     normalizedPlanType !== "" && normalizedPlanType !== "free";
   const createShouldGateByCredits = shouldBlockCreateTaskByCredits({
     remainingCredits,
-    strictQuotaGate,
-    hasPaidPlan,
-    isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
   });
   const createQuotaGatePending = createShouldGateByCredits && isNew === null;
   const createQuotaGateMode: "trial" | "pricing" | null =
@@ -526,22 +523,12 @@ export default function AppTranslateV4() {
     if (createQuotaGateMode !== null) return;
 
     setCreateConfirmOpen(false);
-    const normalizedPlanType = planType?.trim().toLowerCase() || "";
-    const hasPaidPlan =
-      normalizedPlanType !== "" && normalizedPlanType !== "free";
     const remainingCredits = normalizedQuota?.remaining ?? null;
     if (remainingCredits == null) {
       message.info(t("v4.create.quotaUnavailable"));
       return;
     }
-    const shouldGateByCredits = shouldBlockCreateTaskByCredits({
-      remainingCredits,
-      strictQuotaGate,
-      hasPaidPlan,
-      isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
-    });
-
-    if (shouldGateByCredits) {
+    if (shouldBlockCreateTaskByCredits({ remainingCredits })) {
       return;
     }
 
@@ -645,10 +632,7 @@ export default function AppTranslateV4() {
     shop,
     refreshList,
     refreshQuota,
-    plan,
-    planType,
     normalizedQuota,
-    strictQuotaGate,
     t,
     createQuotaGateMode,
     createQuotaGatePending,

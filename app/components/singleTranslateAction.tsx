@@ -125,6 +125,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
             target,
             key: fieldKey?.trim() || "value",
             customPrompt: normalizeText(prompt) || undefined,
+            aiModel,
           }),
           signal: controller.signal,
         });
@@ -150,7 +151,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [open, sourceText, targetLocale, fieldKey, prompt]);
+  }, [open, sourceText, targetLocale, fieldKey, prompt, aiModel]);
 
   const actionLabel = !hasExistingTranslation
     ? t("Translate")

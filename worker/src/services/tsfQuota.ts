@@ -42,8 +42,24 @@ export function quotaEnforceEnabled(taskSource?: string | null): boolean {
   return process.env.QUOTA_ENFORCE?.trim().toLowerCase() !== "false";
 }
 
-/** 翻译系数：LLM 返回 token × 此系数 = 扣减额度 / 任务 usedTokens。默认 1.5。 */
-export function quotaTokenMultiplier(): number {
+/**
+ * 翻译系数：LLM 返回 token × 此系数 = 扣减额度 / 任务 usedTokens。
+ * DeepSeek（含默认空模型 / 非 GPT·Google）默认 1（DEEPSEEK_QUOTA_TOKEN_MULTIPLIER）；
+ * GPT / Google 默认 1.5（QUOTA_TOKEN_MULTIPLIER）。与 App quotaMultiplier.server 对齐。
+ */
+export function isDeepSeekQuotaModel(aiModel?: string | null): boolean {
+  const m = (aiModel ?? "").trim().toLowerCase();
+  if (!m) return true;
+  if (m === "google-translate" || m.startsWith("google")) return false;
+  if (/^gpt[-.]/.test(m)) return false;
+  return true;
+}
+
+export function quotaTokenMultiplier(aiModel?: string | null): number {
+  if (isDeepSeekQuotaModel(aiModel)) {
+    const v = Number(process.env.DEEPSEEK_QUOTA_TOKEN_MULTIPLIER);
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  }
   const v = Number(process.env.QUOTA_TOKEN_MULTIPLIER);
   return Number.isFinite(v) && v > 0 ? v : 1.5;
 }

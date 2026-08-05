@@ -1,6 +1,6 @@
 /**
  * 单字段手动翻译积分预估：拼与线上一致的 system prompt（含 glossary / profile），
- * 再按字符粗估 token，最后 × QUOTA_TOKEN_MULTIPLIER。
+ * 再按字符粗估 token，最后按模型 × 额度系数（DeepSeek 默认 1）。
  */
 import "./translationCoreRuntime.server";
 import {
@@ -25,6 +25,7 @@ export async function estimateSingleTranslateCredits(args: {
   target: string;
   fieldKey?: string;
   customPrompt?: string;
+  aiModel?: string;
 }): Promise<SingleTranslateCreditEstimate> {
   const sourceText = args.sourceText ?? "";
   const target = args.target.trim();
@@ -54,7 +55,10 @@ export async function estimateSingleTranslateCredits(args: {
   });
 
   return {
-    estimatedCredits: llmTokensToQuotaCredits(tokenEst.estimatedTokens),
+    estimatedCredits: llmTokensToQuotaCredits(
+      tokenEst.estimatedTokens,
+      args.aiModel,
+    ),
     estimatedTokens: tokenEst.estimatedTokens,
     inputTokens: tokenEst.inputTokens,
     outputTokens: tokenEst.outputTokens,

@@ -533,19 +533,29 @@ const Index = () => {
     [dataSource],
   );
 
-  const refreshQuota = useCallback(async () => {
+  const refreshQuota = useCallback(async (): Promise<{
+    remainingCredits: number | null;
+    strictQuotaGate: boolean;
+  } | null> => {
     try {
       const res = await fetch(
         `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
       );
       const data = await res.json();
       if (data?.ok) {
-        setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
-        setStrictQuotaGate(Boolean(data.strictQuotaGate));
+        const nextQuota = normalizeShopQuota(data.quota as ShopQuota | null);
+        const nextStrict = Boolean(data.strictQuotaGate);
+        setQuota(nextQuota);
+        setStrictQuotaGate(nextStrict);
+        return {
+          remainingCredits: nextQuota?.remaining ?? null,
+          strictQuotaGate: nextStrict,
+        };
       }
     } catch (error) {
       console.error("[language] refresh v4 quota failed:", error);
     }
+    return null;
   }, [shop]);
 
   const applyCoverageToRows = useCallback(
@@ -1035,19 +1045,16 @@ const Index = () => {
       return;
     }
 
-    const normalizedPlanType = planType?.trim().toLowerCase() || "";
-    const hasPaidPlan =
-      normalizedPlanType !== "" && normalizedPlanType !== "free";
-    const remainingCredits = normalizedQuota?.remaining ?? null;
+    // 创建前刷新额度，避免语言页仍用过期余额绕过 gate。
+    const freshQuota = await refreshQuota();
+    const remainingCredits =
+      freshQuota?.remainingCredits ?? normalizedQuota?.remaining ?? null;
     if (remainingCredits == null) {
       message.info(t("v4.create.quotaUnavailable"));
       return;
     }
     const shouldGateByCredits = shouldBlockCreateTaskByCredits({
       remainingCredits,
-      strictQuotaGate,
-      hasPaidPlan,
-      isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
     });
 
     if (shouldGateByCredits) {
@@ -1057,6 +1064,7 @@ const Index = () => {
         );
         return;
       }
+      setTranslateModalOpen(false);
       setTranslateQuotaGateMode(isNew ? "trial" : "pricing");
       return;
     }
@@ -1081,6 +1089,26 @@ const Index = () => {
 
       const summary = formatV4CreateTasksMessage(result, t, localeRegionCode);
       if (result.created.length === 0) {
+        // 服务端额度拒绝时走升级/试用引导，与首页一致。
+        if (
+          result.failed.some(
+            (item) =>
+              item.error === "v4.create.noCreditsPricing" ||
+              item.error === "v4.create.noCreditsTrial",
+          )
+        ) {
+          if (isNew === null) {
+            message.info(
+              t(
+                "Checking your trial eligibility. Please try again in a moment.",
+              ),
+            );
+            return;
+          }
+          setTranslateModalOpen(false);
+          setTranslateQuotaGateMode(isNew ? "trial" : "pricing");
+          return;
+        }
         message.error(summary);
         return;
       }
@@ -1108,10 +1136,8 @@ const Index = () => {
   }, [
     isNew,
     navigate,
-    plan,
-    planType,
     normalizedQuota?.remaining,
-    strictQuotaGate,
+    refreshQuota,
     shop,
     source?.code,
     t,

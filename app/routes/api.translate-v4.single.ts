@@ -123,13 +123,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     try {
-      await deductQuota(shop, usedTokens, {
-        target,
-        sourceLocale: source,
-        fieldKey,
-        shopifyType,
-        textLength: text.length,
-      });
+      await deductQuota(
+        shop,
+        usedTokens,
+        {
+          target,
+          sourceLocale: source,
+          fieldKey,
+          shopifyType,
+          textLength: text.length,
+        },
+        aiModel,
+      );
     } catch (err) {
       console.error(
         "[single] quota deduction failed",

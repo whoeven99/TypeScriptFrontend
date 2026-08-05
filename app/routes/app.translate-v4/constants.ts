@@ -13,7 +13,7 @@ export const DEFAULT_MODULE_KEYS = [...DEFAULT_V2_MODULE_KEYS];
 
 
 /**
- * Worker 写入的 usedTokens 已含 QUOTA_TOKEN_MULTIPLIER（默认 1.5），
+ * Worker 写入的 usedTokens 已含模型额度系数（DeepSeek 默认 1，GPT 默认 1.5），
  * 前端展示积分时此处保持 1，避免重复乘系数。
  */
 export const QUOTA_TOKEN_MULTIPLIER = 1;

@@ -18,6 +18,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     target?: string;
     key?: string;
     customPrompt?: string;
+    aiModel?: string;
   };
 
   const sourceText = typeof body.context === "string" ? body.context : "";
@@ -28,6 +29,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     typeof body.customPrompt === "string"
       ? body.customPrompt.trim().slice(0, 500)
       : "";
+  const aiModel =
+    typeof body.aiModel === "string" && body.aiModel.trim()
+      ? body.aiModel.trim()
+      : undefined;
 
   if (!target) {
     return json({ ok: false, error: "target required" }, { status: 400 });
@@ -40,6 +45,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       target,
       fieldKey,
       customPrompt: customPrompt || undefined,
+      aiModel,
     });
     return json({ ok: true, estimate });
   } catch (err) {

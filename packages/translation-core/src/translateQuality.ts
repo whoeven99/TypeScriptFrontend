@@ -86,16 +86,21 @@ export function hasPromptSentinelLeakage(text: string): boolean {
   return /\[number\]/i.test(text);
 }
 
-/** Glossary target must not inject CJK into non-CJK locales unless source already has CJK. */
+/**
+ * Glossary applicability is driven only by rangeCode:
+ * - null / empty / "ALL" → applies to any target (DB already scoped the load)
+ * - explicit locale (e.g. zh-CN) → only when target shares the same language family
+ *
+ * targetText / sourceText are unused; kept for call-site compatibility.
+ */
 export function glossaryTargetMatchesLocale(
-  targetText: string,
-  sourceText: string,
+  _targetText: string,
+  _sourceText: string,
   target: string,
+  rangeCode?: string | null,
 ): boolean {
-  const tl = targetLangCode(target);
-  if (["zh", "ja", "ko"].includes(tl)) return true;
-  if (hasCjk(targetText) && !hasCjk(sourceText)) return false;
-  return true;
+  if (!rangeCode?.trim() || rangeCode.toUpperCase() === "ALL") return true;
+  return targetLangCode(rangeCode) === targetLangCode(target);
 }
 
 export function isTranslatableLeafText(text: string): boolean {
