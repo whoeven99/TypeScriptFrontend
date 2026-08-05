@@ -60,6 +60,57 @@ const normalizeText = (text) =>
     .trim()
     .replace(/^["“”]+|["“”]+$/g, "");
 
+const normalizeCollapsedText = (text) => normalizeText(text).replace(/\s+/g, " ").trim();
+
+const shouldFlexibleWhitespaceMatch = (text) =>
+  /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "") || /[.!?]\S/.test(text || "");
+
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeSentenceSpacing = (text) =>
+  String(text ?? "").replace(/([.!?])(?=[^\s.!?])/g, "$1 ");
+
+const getSentenceAwareCollapsedText = (text) =>
+  normalizeCollapsedText(normalizeSentenceSpacing(text));
+
+const getFlexibleMatchKey = (text) =>
+  shouldFlexibleWhitespaceMatch(text)
+    ? getSentenceAwareCollapsedText(text)
+    : normalizeText(text);
+
+const getNodeMatchKeys = (text) => ({
+  strict: normalizeText(text),
+  collapsed: getSentenceAwareCollapsedText(text),
+});
+
+const buildFlexibleWhitespacePattern = (text) => {
+  const collapsed = getSentenceAwareCollapsedText(text);
+  if (!collapsed) return "";
+
+  return collapsed
+    .split(" ")
+    .map((part) => escapeRegExp(part))
+    .join("[\\s\\u00A0\\u202F]*");
+};
+
+const createPreparedTextEntry = (before, after) => {
+  const trimmedBefore = before?.trim();
+  const afterRaw = String(after ?? "");
+  if (!trimmedBefore || afterRaw.trim() === "") return null;
+
+  const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
+  return {
+    trimmedBefore,
+    afterRaw,
+    flexibleWhitespace,
+    matchKey: getFlexibleMatchKey(trimmedBefore),
+    collapsedBefore: flexibleWhitespace
+      ? getSentenceAwareCollapsedText(trimmedBefore)
+      : null,
+    re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
+  };
+};
+
 const normalizePageFlyTranslationEntries = (response) => {
   if (Array.isArray(response)) return response;
   if (!response || typeof response !== "object") return [];
@@ -1299,9 +1350,6 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   if (!translations || Object.keys(translations).length === 0) return;
 
   // 🧮 辅助函数（normalizeText / hasOuterQuote / skipTags 见模块顶部共享定义）
-  const escapeRegExp = (string) =>
-    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
   // 将 translations 拆分成精准匹配和模糊匹配
   const entries = Object.entries(translations).map(
     ([before, [after, isExact]]) => ({
@@ -1337,9 +1385,6 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     return str.length > max ? `${str.slice(0, max)}…(${str.length})` : str;
   };
 
-  const normalizeCollapsedText = (text) =>
-    normalizeText(text).replace(/\s+/g, " ").trim();
-
   let debugReplaceTextCount = 0;
 
   const preserveBoundaryWhitespace = (original, replacement) => {
@@ -1347,12 +1392,6 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const suffix = String(original ?? "").match(/\s*$/)?.[0] || "";
     return `${prefix}${String(replacement ?? "")}${suffix}`;
   };
-
-  const shouldFlexibleWhitespaceMatch = (text) =>
-    /[\n\r]/.test(text || "") || /\s{2,}/.test(text || "");
-
-    const buildFlexibleWhitespacePattern = (text) =>
-      escapeRegExp(text).replace(/\s+/g, "[\\s\\u00A0\\u202F]+");
 
   debugLog("init", {
     blockId,
@@ -1628,19 +1667,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!root?.isConnected) return;
     const preparedEntries = [];
     entryList.forEach(({ before, after }) => {
-      const trimmedBefore = before?.trim();
-      const afterRaw = String(after ?? "");
-      if (!trimmedBefore || afterRaw.trim() === "") return;
-      const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
-      preparedEntries.push({
-        trimmedBefore,
-        afterRaw,
-        flexibleWhitespace,
-        collapsedBefore: flexibleWhitespace
-          ? normalizeCollapsedText(trimmedBefore)
-          : null,
-          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
-      });
+      const prepared = createPreparedTextEntry(before, after);
+      if (!prepared) return;
+      preparedEntries.push(prepared);
     });
 
     if (preparedEntries.length === 0) return;
@@ -1682,7 +1711,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
       for (const entry of preparedEntries) {
         if (entry.flexibleWhitespace && collapsed === null) {
-          collapsed = normalizeCollapsedText(normalized);
+          collapsed = getSentenceAwareCollapsedText(normalized);
         }
         const matches = entry.flexibleWhitespace
           ? collapsed.includes(entry.collapsedBefore)
@@ -1713,15 +1742,11 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     if (!root?.isConnected) return;
     const exactMap = new Map();
     entryList.forEach(({ before, after }) => {
-      const trimmedBefore = before?.trim();
-      const afterRaw = String(after ?? "");
-      if (!trimmedBefore || afterRaw.trim() === "") return;
-      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
-        ? normalizeCollapsedText(trimmedBefore)
-        : normalizeText(trimmedBefore);
-      exactMap.set(key, {
-        replacement: afterRaw,
-        flexibleWhitespace: shouldFlexibleWhitespaceMatch(trimmedBefore),
+      const prepared = createPreparedTextEntry(before, after);
+      if (!prepared) return;
+      exactMap.set(prepared.matchKey, {
+        replacement: prepared.afterRaw,
+        flexibleWhitespace: prepared.flexibleWhitespace,
       });
     });
 
@@ -1737,8 +1762,9 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
           if (ciwiBlock && node.parentElement && ciwiBlock.contains(node.parentElement))
             return NodeFilter.FILTER_REJECT;
           if (isPriceRelatedElement(node)) return NodeFilter.FILTER_REJECT;
-          const strictKey = normalizeText(node.nodeValue);
-          const collapsedKey = normalizeCollapsedText(node.nodeValue);
+          const { strict: strictKey, collapsed: collapsedKey } = getNodeMatchKeys(
+            node.nodeValue,
+          );
           if (exactMap.has(strictKey)) return NodeFilter.FILTER_ACCEPT;
           return exactMap.has(collapsedKey)
             ? NodeFilter.FILTER_ACCEPT
@@ -1762,8 +1788,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       if (isElementHiddenForTranslation(node.parentElement)) return;
       if (isPriceRelatedElement(node)) return;
       const original = node.nodeValue;
-      const strictKey = normalizeText(original);
-      const collapsedKey = normalizeCollapsedText(original);
+      const { strict: strictKey, collapsed: collapsedKey } = getNodeMatchKeys(original);
       const entry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
       if (!entry) return;
       const keepQuote = hasOuterQuote(original);
@@ -1833,30 +1858,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
     const exactMap = new Map();
     exactEntryList.forEach(({ before, after }) => {
-      const trimmedBefore = before?.trim();
-      const afterRaw = String(after ?? "");
-      if (!trimmedBefore || afterRaw.trim() === "") return;
-      const key = shouldFlexibleWhitespaceMatch(trimmedBefore)
-        ? normalizeCollapsedText(trimmedBefore)
-        : normalizeText(trimmedBefore);
-      exactMap.set(key, { replacement: afterRaw });
+      const prepared = createPreparedTextEntry(before, after);
+      if (!prepared) return;
+      exactMap.set(prepared.matchKey, { replacement: prepared.afterRaw });
     });
 
     const fuzzyPreparedEntries = [];
     fuzzyEntryList.forEach(({ before, after }) => {
-      const trimmedBefore = before?.trim();
-      const afterRaw = String(after ?? "");
-      if (!trimmedBefore || afterRaw.trim() === "") return;
-      const flexibleWhitespace = shouldFlexibleWhitespaceMatch(trimmedBefore);
-      fuzzyPreparedEntries.push({
-        trimmedBefore,
-        afterRaw,
-        flexibleWhitespace,
-        collapsedBefore: flexibleWhitespace
-          ? normalizeCollapsedText(trimmedBefore)
-          : null,
-          re: new RegExp(buildFlexibleWhitespacePattern(trimmedBefore), "g"),
-      });
+      const prepared = createPreparedTextEntry(before, after);
+      if (!prepared) return;
+      fuzzyPreparedEntries.push(prepared);
     });
 
     if (exactMap.size === 0 && fuzzyPreparedEntries.length === 0) return;
@@ -1895,8 +1906,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         if (!isTranslatableAttribute(node, attribute)) return;
 
         const original = attribute.value;
-        const strictKey = normalizeText(original);
-        const collapsedKey = normalizeCollapsedText(original);
+        const { strict: strictKey, collapsed: collapsedKey } = getNodeMatchKeys(original);
         const exactEntry = exactMap.get(strictKey) || exactMap.get(collapsedKey);
         if (exactEntry) {
           const replacement = preserveBoundaryWhitespace(
@@ -1922,7 +1932,7 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
         for (const entry of fuzzyPreparedEntries) {
           if (entry.flexibleWhitespace && collapsed === null) {
-            collapsed = normalizeCollapsedText(normalized);
+            collapsed = getSentenceAwareCollapsedText(normalized);
           }
           const matches = entry.flexibleWhitespace
             ? collapsed.includes(entry.collapsedBefore)
@@ -2157,21 +2167,18 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
   // 因此需要支持节点内子串替换，并让普通空格能匹配 NBSP 等空白字符。
   const exactMap = new Map();
   const preparedEntries = [];
-  const escapeRegExp = (string) =>
-    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
   translations.forEach((item) => {
     const trimmedBefore = normalizeText(item?.sourceText);
     const trimmedAfter = normalizeText(item?.targetText);
     if (!trimmedBefore || !trimmedAfter) return;
-    if (!exactMap.has(trimmedBefore)) exactMap.set(trimmedBefore, trimmedAfter);
+    const prepared = createPreparedTextEntry(trimmedBefore, trimmedAfter);
+    if (!prepared) return;
+    if (!exactMap.has(prepared.matchKey)) exactMap.set(prepared.matchKey, trimmedAfter);
     preparedEntries.push({
-      before: trimmedBefore,
+      before: prepared.matchKey,
       after: trimmedAfter,
-      re: new RegExp(
-        escapeRegExp(trimmedBefore).replace(/\s+/g, "[\\s\\u00A0\\u202F]+"),
-        "g",
-      ),
+      flexibleWhitespace: prepared.flexibleWhitespace,
+      re: prepared.re,
     });
   });
   if (exactMap.size === 0 || preparedEntries.length === 0) return;
@@ -2180,9 +2187,16 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     acceptNode(node) {
       const parentTag = node.parentNode?.nodeName;
       if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
-      const normalizedValue = normalizeText(node.nodeValue);
-      if (exactMap.has(normalizedValue)) return NodeFilter.FILTER_ACCEPT;
-      return preparedEntries.some((entry) => normalizedValue.includes(entry.before))
+      const { strict: normalizedValue, collapsed: collapsedValue } = getNodeMatchKeys(
+        node.nodeValue,
+      );
+      if (exactMap.has(normalizedValue) || exactMap.has(collapsedValue))
+        return NodeFilter.FILTER_ACCEPT;
+      return preparedEntries.some((entry) =>
+        entry.flexibleWhitespace
+          ? collapsedValue.includes(entry.before)
+          : normalizedValue.includes(entry.before),
+      )
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
     },
@@ -2196,8 +2210,12 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
     if (isElementHiddenForTranslation(node.parentElement)) return;
     if (isPriceRelatedElement(node)) return;
     const original = node.nodeValue;
-    const normalizedOriginal = normalizeText(original);
-    const exactAfter = exactMap.get(normalizedOriginal);
+    const {
+      strict: normalizedOriginal,
+      collapsed: collapsedOriginal,
+    } = getNodeMatchKeys(original);
+    const exactAfter =
+      exactMap.get(normalizedOriginal) || exactMap.get(collapsedOriginal);
     if (exactAfter) {
       const keepQuote = hasOuterQuote(original);
       node.nodeValue = keepQuote ? `"${exactAfter}"` : exactAfter;
@@ -2206,7 +2224,17 @@ export async function PageFlyTextTranslate(blockId, shop, ciwiBlock) {
 
     let updatedValue = original;
     preparedEntries.forEach((entry) => {
-      if (!normalizeText(updatedValue).includes(entry.before)) return;
+      const {
+        strict: normalizedUpdatedValue,
+        collapsed: collapsedUpdatedValue,
+      } = getNodeMatchKeys(updatedValue);
+      if (
+        entry.flexibleWhitespace
+          ? !collapsedUpdatedValue.includes(entry.before)
+          : !normalizedUpdatedValue.includes(entry.before)
+      ) {
+        return;
+      }
       updatedValue = updatedValue.replace(entry.re, entry.after);
     });
 
