@@ -715,6 +715,9 @@ const Index = () => {
         }}
         loading={loadingItems.includes(record?.key || "")}
         existingTranslation={getTranslatedAltValue(record)}
+        sourceText={record?.altText ?? ""}
+        targetLocale={searchTerm || ""}
+        fieldKey={record?.shopifyKey || record?.key || "alt"}
         onSubmit={({ customPrompt, aiModel }) => {
           handleTranslate({
             resourceType: "PRODUCT_OPTION_VALUE",

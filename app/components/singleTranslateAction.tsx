@@ -13,6 +13,7 @@ const { Text } = Typography;
 
 const MAX_PROMPT_LENGTH = 500;
 const AI_MODEL_STORAGE_KEY = "ciwi.manage.singleTranslate.aiModel";
+const ESTIMATE_DEBOUNCE_MS = 350;
 
 export type SingleTranslateSubmitPayload = {
   customPrompt?: string;
@@ -23,6 +24,12 @@ interface SingleTranslateActionProps {
   existingTranslation?: string | null;
   isOutdated?: boolean;
   loading?: boolean;
+  /** 源文字段（用于积分预估）。 */
+  sourceText?: string | null;
+  /** 目标语言 locale。 */
+  targetLocale?: string | null;
+  /** Shopify 字段 key（handle 走专用 prompt）。 */
+  fieldKey?: string | null;
   onSubmit: (payload: SingleTranslateSubmitPayload) => void | Promise<void>;
   triggerProps?: AppButtonProps;
 }
@@ -53,6 +60,9 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   existingTranslation,
   isOutdated = false,
   loading = false,
+  sourceText,
+  targetLocale,
+  fieldKey,
   onSubmit,
   triggerProps,
 }) => {
@@ -60,6 +70,8 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
+  const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
   const hasSubmittedRef = useRef(false);
   const hasExistingTranslation = useMemo(
     () => normalizeText(existingTranslation).length > 0,
@@ -87,6 +99,59 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     setPrompt("");
   }, [loading]);
 
+  useEffect(() => {
+    if (!open) {
+      setEstimatedCredits(null);
+      setEstimateLoading(false);
+      return;
+    }
+    const text = sourceText ?? "";
+    const target = normalizeText(targetLocale);
+    if (!text.trim() || !target) {
+      setEstimatedCredits(0);
+      setEstimateLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setEstimateLoading(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/translate-v4/single-estimate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            context: text,
+            target,
+            key: fieldKey?.trim() || "value",
+            customPrompt: normalizeText(prompt) || undefined,
+          }),
+          signal: controller.signal,
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          estimate?: { estimatedCredits?: number };
+        };
+        if (!controller.signal.aborted) {
+          setEstimatedCredits(
+            data.ok && typeof data.estimate?.estimatedCredits === "number"
+              ? data.estimate.estimatedCredits
+              : null,
+          );
+        }
+      } catch {
+        if (!controller.signal.aborted) setEstimatedCredits(null);
+      } finally {
+        if (!controller.signal.aborted) setEstimateLoading(false);
+      }
+    }, ESTIMATE_DEBOUNCE_MS);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [open, sourceText, targetLocale, fieldKey, prompt]);
+
   const actionLabel = !hasExistingTranslation
     ? t("Translate")
     : shouldUpdateTranslation
@@ -108,6 +173,14 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     : shouldUpdateTranslation
       ? t("The source text changed. Add suggestions if you want to refresh the translation.")
       : t("Add suggestions and translate again.");
+
+  const estimateLabel = estimateLoading
+    ? t("manage.singleTranslate.estimateLoading")
+    : estimatedCredits === null
+      ? t("manage.singleTranslate.estimateUnavailable")
+      : t("manage.singleTranslate.estimateCredits", {
+          credits: estimatedCredits.toLocaleString(),
+        });
 
   const closeModal = () => {
     setOpen(false);
@@ -174,6 +247,15 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
                 onChange={setAiModel}
                 getPopupContainer={(node) => node.parentElement ?? document.body}
               />
+            </div>
+            <div>
+              <Text type="secondary">{estimateLabel}</Text>
+              <Text
+                type="secondary"
+                style={{ display: "block", marginTop: 4, fontSize: 12 }}
+              >
+                {t("manage.singleTranslate.estimateHint")}
+              </Text>
             </div>
             <div>
               <Text strong style={{ display: "block", marginBottom: 4 }}>

@@ -490,6 +490,9 @@ const Index = () => {
               confirmData.find((item: any) => item.key === record?.key)?.value ??
               record?.translated
             }
+            sourceText={record?.default_language ?? ""}
+            targetLocale={searchTerm || ""}
+            fieldKey={record?.key || "value"}
             onSubmit={({ customPrompt, aiModel }) => {
               handleTranslate(record, customPrompt, aiModel);
             }}
@@ -995,6 +998,9 @@ justifyContent: "space-between",
                                       confirmItem.key === item?.key,
                                   )?.value ?? item?.translated
                                 }
+                                sourceText={item?.default_language ?? ""}
+                                targetLocale={searchTerm || ""}
+                                fieldKey={item?.key || "value"}
                                 onSubmit={({ customPrompt, aiModel }) => {
                                   handleTranslate(item, customPrompt, aiModel);
                                 }}

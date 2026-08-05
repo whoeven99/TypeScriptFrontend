@@ -3069,6 +3069,81 @@ Return ONLY a JSON object {"translations":[{"key":"<key>","translatedValue":"<te
 }
 
 /**
+ * 粗估文本 token 数（无 tiktoken 依赖）：CJK ≈ 1 tok/字，其它 ≈ 4 chars/tok。
+ * 用于单字段预估展示，不替代 API usage。
+ */
+export function estimateTextTokens(text: string): number {
+  if (!text) return 0;
+  let cjk = 0;
+  let other = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (
+      (code >= 0x3000 && code <= 0x9fff) ||
+      (code >= 0xac00 && code <= 0xd7af) ||
+      (code >= 0xf900 && code <= 0xfaff)
+    ) {
+      cjk += 1;
+    } else {
+      other += 1;
+    }
+  }
+  return Math.max(0, cjk + Math.ceil(other / 4));
+}
+
+export type SingleTranslateTokenEstimate = {
+  /** 预估 LLM 原始 token（input+output，未乘额度系数）。 */
+  estimatedTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  systemPromptChars: number;
+  userMessageChars: number;
+};
+
+/**
+ * 按真实 system prompt + user JSON + 响应形状粗估单字段 LLM token。
+ * glossary / profileBlock / customPrompt 与线上 buildSystemPrompt 一致。
+ */
+export function estimateSingleTranslateLlmTokens(args: {
+  sourceText: string;
+  target: string;
+  fieldKey?: string;
+  glossaryLines?: string[];
+  profileBlock?: string;
+  customPrompt?: string;
+}): SingleTranslateTokenEstimate {
+  const text = args.sourceText ?? "";
+  const target = (args.target ?? "").trim() || "en";
+  const fieldKey = args.fieldKey?.trim() || "value";
+  const glossaryLines = args.glossaryLines ?? [];
+  const profileBlock = args.profileBlock ?? "";
+  const customPrompt = args.customPrompt ?? "";
+
+  const valueForPrompt = isHandleFieldKey(fieldKey)
+    ? prepareHandleSourceText(text)
+    : text;
+  const systemPrompt = isHandleFieldKey(fieldKey)
+    ? buildHandleSystemPrompt(target, glossaryLines, profileBlock, customPrompt)
+    : buildSystemPrompt(target, glossaryLines, profileBlock, customPrompt);
+  const userMessage = JSON.stringify([{ key: "f0", value: valueForPrompt }]);
+  // 响应 JSON 体积用「译文≈原文」代理，略偏上限。
+  const outputProxy = JSON.stringify({
+    translations: [{ key: "f0", translatedValue: valueForPrompt }],
+  });
+
+  const inputTokens =
+    estimateTextTokens(systemPrompt) + estimateTextTokens(userMessage);
+  const outputTokens = estimateTextTokens(outputProxy);
+  return {
+    estimatedTokens: inputTokens + outputTokens,
+    inputTokens,
+    outputTokens,
+    systemPromptChars: systemPrompt.length,
+    userMessageChars: userMessage.length,
+  };
+}
+
+/**
  * One LLM round-trip. Uses opaque numeric IDs (f0, f1, …) in the payload so the
  * model cannot accidentally swap values based on semantic key names (P1 fix).
  * Returns a map from original keys → translated values, plus the token count.

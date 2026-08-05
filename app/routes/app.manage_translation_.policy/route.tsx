@@ -409,6 +409,9 @@ const Index = () => {
         existingTranslation={
           translatedValues[record?.key || ""] ?? record?.translated
         }
+        sourceText={record?.default_language ?? ""}
+        targetLocale={searchTerm || ""}
+        fieldKey={record?.shopifyKey || record?.key || "value"}
         isOutdated={isManageTranslationOutdated(policyData, record?.resourceId, record?.shopifyKey)}
 
         onSubmit={({ customPrompt, aiModel }) => {

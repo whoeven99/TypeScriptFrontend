@@ -752,10 +752,13 @@ Historical manage-translation migration guidance:
 - When modifying save/delete behavior, preserve the existing response shape used
 by page actions and surface Shopify `userErrors` as partial failures.
 - Manual single-field translate uses shared `SingleTranslateAction` (modal with
-AI model `Select` + optional prompt) → `SingleTextTranslate` →
-`/api/translate-v4/single` (`aiModel`, default `deepseek-v4-flash`). Image
-translation, PageFly, and some summary/count behavior may still be separate
-from the save path.
+AI model `Select` + optional prompt + credit estimate) →
+`SingleTextTranslate` → `/api/translate-v4/single` (`aiModel`, default
+`deepseek-v4-flash`). Estimate: `POST /api/translate-v4/single-estimate` builds
+the real system prompt (glossary + shop profile + custom prompt) via
+`estimateSingleTranslateLlmTokens`, then `ceil(tokens × QUOTA_TOKEN_MULTIPLIER)`.
+Image translation, PageFly, and some summary/count behavior may still be
+separate from the save path.
 
 Summary/count guidance:
 
