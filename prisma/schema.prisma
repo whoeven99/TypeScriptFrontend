@@ -191,12 +191,19 @@ model LiquidRule {
   replacementMethod Boolean  @default(false)
   // 规则来源：manual = 商家后台手填；auto = switcher 店面自动抓取回填。
   source            String   @default("manual")
+  /// PENDING = 待译；TRANSLATING = 任务占用中；DONE = 可店面替换（存量默认 DONE）
+  status            String   @default("DONE")
+  /// sha256(beforeTranslation) 十六进制，便于去重/排查；唯一仍以 beforeTranslation 为准
+  sourceDigest      String?
+  /// 占用该行的 v4 jobId（TRANSLATING 时写入；完成/回退清空）
+  jobId             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   // 同店 + 语言 + 原文 唯一：消除并发重复行，支撑 auto 采集 upsert（冲突即覆盖，不报错）。
   @@unique([shop, languageCode, beforeTranslation])
   @@index([shop])
+  @@index([shop, languageCode, status])
 }
 
 // ============================================================

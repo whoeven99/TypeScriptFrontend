@@ -29,6 +29,7 @@ type Props = {
   aiModel: string;
   isCover: boolean;
   isHandle: boolean;
+  includeLiquid: boolean;
   estimate: CreateTaskEstimateView | null;
   scenario: CreateTaskConfirmScenario;
   previousTotalChars?: number;
@@ -51,6 +52,7 @@ export function CreateTaskConfirmModal({
   aiModel,
   isCover,
   isHandle,
+  includeLiquid,
   estimate,
   scenario,
   previousTotalChars,
@@ -159,6 +161,10 @@ export function CreateTaskConfirmModal({
     {
       label: t("v4.createTask.translateHandle"),
       value: isHandle ? t("Yes") : t("No"),
+    },
+    {
+      label: t("v4.createTask.includeLiquid"),
+      value: includeLiquid ? t("Yes") : t("No"),
     },
   ];
 

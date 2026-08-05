@@ -38,6 +38,7 @@ import {
   type TranslateItem,
   type TranslatedResourceOutput,
 } from "../services/llmTranslate.js";
+import { jobModulesWithLiquid } from "../services/customLiquid.js";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,
@@ -265,9 +266,10 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   // Engine routing (Google vs DeepSeek) is applied inside translateBatch.
   const blobPrefix = job.blobPrefix || `tasks/v4/${shopName}/${jobId}`;
   const hasProfileBlock = Boolean(job.profileBlock?.trim());
+  const modules = jobModulesWithLiquid(job);
 
   console.log(
-    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock}`,
+    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock} includeLiquid=${Boolean(job.includeLiquid)}`,
   );
 
   // Resume: restore token counter from Cosmos + Redis (412 on pause may leave Cosmos stale).
@@ -302,12 +304,12 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   };
 
   let durableDone = 0;
-  for (const module of job.modules) {
+  for (const module of modules) {
     durableDone += (await getModuleCheckpointIds(module)).size;
   }
   const durableUnits = await countUnitsForCheckpointedResources(
     blobPrefix,
-    job.modules,
+    modules,
     getModuleCheckpointIds,
   );
   const redisDone = Number(redisProgressAtStart.translateDone) || 0;
@@ -546,7 +548,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         chunkTotal: number;
       };
       const work: ChunkWork[] = [];
-      for (const module of job.modules) {
+      for (const module of modules) {
         await maybeHeartbeat();
         const initPaths = await blobListPaths(`${blobPrefix}/init/${module}/`);
         const chunkPaths = initPaths.filter((p) => p.endsWith(".json"));
@@ -808,7 +810,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       const redisUsedOnAbort = Number((await getProgress(jobId)).usedTokens) || 0;
       const unitsFromBlob = await countUnitsForCheckpointedResources(
         blobPrefix,
-        job.modules,
+        modules,
         getModuleCheckpointIds,
       );
       const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(
@@ -903,7 +905,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     );
     const unitsFromBlob = await countUnitsForCheckpointedResources(
       blobPrefix,
-      job.modules,
+      modules,
       getModuleCheckpointIds,
     );
     const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(

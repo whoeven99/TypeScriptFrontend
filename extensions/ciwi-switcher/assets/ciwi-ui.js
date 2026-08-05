@@ -11,6 +11,7 @@ import {
 import {
   asCacheableTranslationResponse,
   buildTranslationCacheKey,
+  CIWI_EMPTY_TRANSLATION_TTL_MS,
   CIWI_TRANSLATION_TTL_MS,
   resolveStorefrontProductId,
 } from "./ciwi-page.js";
@@ -1284,6 +1285,8 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     shop.value,
     language,
   ]);
+  // 空规则：服务端已返回 success+{}，可写入 localStorage 负缓存；
+  // 短 TTL + 跳过后台刷新，避免无 LiquidRule 店每次 pageview 打 App Proxy。
   const parseLiquidDataByShopNameAndLanguage = await useCacheThenRefresh(
     cacheKey,
     async () =>
@@ -1294,6 +1297,10 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    {
+      skipRefreshWhenEmpty: true,
+      emptyTtlMs: CIWI_EMPTY_TRANSLATION_TTL_MS,
+    },
   );
 
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
@@ -2741,7 +2748,11 @@ export function CollectUntranslatedText(shop, ciwiBlock) {
         const reason = res?.response?.reason;
         if (
           res?.response?.skipped &&
-          (reason === "disabled" || reason === "primary_locale")
+          (reason === "disabled" ||
+            reason === "primary_locale" ||
+            reason === "total_cap" ||
+            reason === "daily_cap" ||
+            reason === "no_quota")
         ) {
           try {
             sessionStorage.setItem(sessionFlag, "1");

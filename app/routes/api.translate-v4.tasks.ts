@@ -41,6 +41,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     modules?: string[];
     isCover?: boolean;
     isHandle?: boolean;
+    includeLiquid?: boolean;
     aiModel?: string;
   };
 
@@ -56,12 +57,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (target === source)
     return json({ ok: false, error: "v4.validation.sameAsSource" }, { status: 400 });
 
+  const includeLiquid = Boolean(body.includeLiquid);
   const allowedSet = new Set<string>(TRANSLATION_V4_MODULES);
-  const modules = (body.modules ?? defaultManualV4Modules())
+  const modules = (body.modules ?? (includeLiquid ? [] : defaultManualV4Modules()))
     .map((m) => m.trim().toUpperCase())
     .filter((m) => allowedSet.has(m)) as TranslationV4Module[];
 
-  if (!modules.length)
+  if (!modules.length && !includeLiquid)
     return json({ ok: false, error: "v4.validation.selectModule" }, { status: 400 });
 
   const shopName = session.shop;
@@ -91,6 +93,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     limitPerType: V4_LIMIT_UNLIMITED,
     isCover: body.isCover ?? false,
     isHandle: body.isHandle ?? false,
+    includeLiquid,
     taskSource: TS_FRONTEND_TASK_SOURCE,
     status: "INIT_QUEUED",
     blobPrefix: `tasks/v4/${shopName}/${jobId}`,

@@ -1,4 +1,5 @@
 import prisma from "~/db.server";
+import { liquidSourceDigest } from "./liquidDigest.server";
 
 /** 对齐 Java UserLiquidDO，便于 Admin 页面迁移前后复用同一套渲染逻辑。 */
 export type LiquidDoShape = {
@@ -7,6 +8,8 @@ export type LiquidDoShape = {
   liquidAfterTranslation: string;
   languageCode: string | null;
   replacementMethod: boolean;
+  source: string;
+  status: string;
 };
 
 export type LiquidTableRow = {
@@ -15,6 +18,8 @@ export type LiquidTableRow = {
   targetText: string;
   replacementMethod: boolean;
   languageCode: string;
+  source: string;
+  status: string;
 };
 
 type LiquidRow = {
@@ -24,6 +29,8 @@ type LiquidRow = {
   afterTranslation: string;
   languageCode: string | null;
   replacementMethod: boolean;
+  source: string;
+  status: string;
 };
 
 function toDo(row: LiquidRow): LiquidDoShape {
@@ -33,6 +40,8 @@ function toDo(row: LiquidRow): LiquidDoShape {
     liquidAfterTranslation: row.afterTranslation,
     languageCode: row.languageCode,
     replacementMethod: row.replacementMethod,
+    source: row.source,
+    status: row.status,
   };
 }
 
@@ -43,6 +52,8 @@ export function toLiquidTableRow(item: LiquidDoShape): LiquidTableRow {
     targetText: item.liquidAfterTranslation,
     replacementMethod: item.replacementMethod,
     languageCode: item.languageCode ?? "",
+    source: item.source,
+    status: item.status,
   };
 }
 
@@ -91,6 +102,10 @@ export async function createLiquidDo(
       afterTranslation: input.targetText,
       languageCode: input.languageCode,
       replacementMethod: input.replacementMethod ?? true,
+      source: "manual",
+      status: "DONE",
+      sourceDigest: liquidSourceDigest(input.sourceText),
+      jobId: null,
     },
   });
   return toDo(row);
@@ -118,6 +133,9 @@ export async function updateLiquidDo(
       beforeTranslation: input.sourceText,
       afterTranslation: input.targetText,
       languageCode: input.languageCode,
+      sourceDigest: liquidSourceDigest(input.sourceText),
+      status: "DONE",
+      jobId: null,
       ...(input.replacementMethod != null
         ? { replacementMethod: input.replacementMethod }
         : {}),
@@ -156,4 +174,22 @@ export async function toggleLiquidReplacementMethod(
     data: { replacementMethod: next },
   });
   return next;
+}
+
+/** 创建任务额度粗估：各目标语言 PENDING 原文总字符。 */
+export async function sumPendingLiquidChars(
+  shop: string,
+  targets: string[],
+): Promise<number> {
+  const locales = [...new Set(targets.map((t) => t.trim()).filter(Boolean))];
+  if (!locales.length) return 0;
+  const rows = await prisma.liquidRule.findMany({
+    where: {
+      shop,
+      languageCode: { in: locales },
+      status: "PENDING",
+    },
+    select: { beforeTranslation: true },
+  });
+  return rows.reduce((sum, r) => sum + (r.beforeTranslation?.length ?? 0), 0);
 }
