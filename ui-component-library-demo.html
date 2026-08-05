@@ -803,6 +803,388 @@
         font-size: var(--app-font-size-caption);
       }
 
+      .toolbar-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-left,
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: var(--app-radius-md);
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .summary-inline {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+
+      .summary-inline__item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .summary-inline__label {
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-caption);
+      }
+
+      .summary-inline__value {
+        font-size: 20px;
+        line-height: 1.2;
+        font-weight: 700;
+      }
+
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .hub-card {
+        padding: 16px;
+        border-radius: var(--app-radius-lg);
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+        box-shadow: var(--app-shadow-card);
+      }
+
+      .hub-card__title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .hub-card__desc {
+        margin: 8px 0 12px;
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .hub-card__meta {
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-caption);
+      }
+
+      .detail-shell {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 18px;
+        min-height: 520px;
+      }
+
+      .detail-sidebar {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border-radius: var(--app-radius-lg);
+        border: 1px solid var(--app-color-border-secondary);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .side-nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .side-nav__item {
+        padding: 10px 12px;
+        border-radius: var(--app-radius-md);
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+        background: transparent;
+      }
+
+      .side-nav__item.active {
+        background: var(--app-color-surface-selected);
+        color: var(--app-color-text);
+        font-weight: 600;
+      }
+
+      .detail-content {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .section-heading {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .savebar-preview {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(84, 103, 255, 0.18);
+        background: linear-gradient(180deg, rgba(84, 103, 255, 0.08), rgba(84, 103, 255, 0.04));
+      }
+
+      .savebar-preview__copy {
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .media-card {
+        padding: 14px;
+        border-radius: var(--app-radius-lg);
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+      }
+
+      .media-thumb {
+        width: 100%;
+        height: 132px;
+        border-radius: 12px;
+        border: 1px solid var(--app-color-border-secondary);
+        background:
+          linear-gradient(135deg, rgba(84, 103, 255, 0.12), rgba(84, 103, 255, 0.03)),
+          linear-gradient(180deg, #ffffff, #eef2ff);
+      }
+
+      .mobile-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .mobile-list-card {
+        padding: 14px;
+        border-radius: var(--app-radius-lg);
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+      }
+
+      .mobile-list-card__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .pricing-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 100%;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+        box-shadow: var(--app-shadow-card);
+      }
+
+      .pricing-card.recommended {
+        border-color: rgba(84, 103, 255, 0.26);
+        box-shadow: 0 18px 36px rgba(84, 103, 255, 0.12);
+      }
+
+      .pricing-price {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+
+      .pricing-price strong {
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .feature-list {
+        display: grid;
+        gap: 8px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      .feature-list li {
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .faq-item {
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+      }
+
+      .faq-item strong {
+        display: block;
+        font-size: var(--app-font-size-body);
+      }
+
+      .faq-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .analytics-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .analytics-status {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .step-chip {
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+      }
+
+      .step-chip strong {
+        display: block;
+        font-size: var(--app-font-size-body-small);
+      }
+
+      .step-chip span {
+        display: block;
+        margin-top: 4px;
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-caption);
+      }
+
+      .tag-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .term-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--app-color-surface-secondary);
+        color: var(--app-color-text-secondary);
+        font-size: var(--app-font-size-caption);
+      }
+
+      .code-panel {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--app-color-border-secondary);
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .state-card {
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--app-color-border-secondary);
+        background: var(--app-color-surface);
+        box-shadow: var(--app-shadow-card);
+      }
+
+      .progress-steps {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .progress-step__dot {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--app-accent-primary-soft);
+        color: var(--app-accent-primary);
+        font-size: var(--app-font-size-caption);
+        font-weight: 700;
+      }
+
+      .progress-step__dot.success {
+        background: var(--app-accent-growth-soft);
+        color: var(--app-accent-growth);
+      }
+
+      .history-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 28px 16px;
+        border-radius: 16px;
+        background: var(--app-color-surface-secondary);
+        text-align: center;
+      }
+
+      .history-empty__icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(84, 103, 255, 0.12), rgba(84, 103, 255, 0.04));
+      }
+
       @media (max-width: 1100px) {
         .demo-shell {
           grid-template-columns: 1fr;
@@ -816,7 +1198,13 @@
         }
 
         .preview-grid-2,
-        .preview-grid-3 {
+        .preview-grid-3,
+        .hub-grid,
+        .detail-shell,
+        .media-grid,
+        .pricing-grid,
+        .analytics-status,
+        .two-col {
           grid-template-columns: 1fr;
         }
       }
@@ -1044,7 +1432,7 @@
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
-                <h3>Typography & Buttons</h3>
+                <h3>Typography &amp; Buttons</h3>
                 <p>先锁定字号层级和按钮风格，避免每个页面自己长出一套视觉。</p>
               </div>
               <span class="source-chip">app/styles.css / AppButton.tsx</span>
@@ -1085,7 +1473,7 @@
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
-                <h3>Page Header & Status</h3>
+                <h3>Page Header &amp; Status</h3>
                 <p>对应 `AppPageHeader` 和 `AppStatusBadge`，是大多数页面都应该优先复用的头部模式。</p>
               </div>
               <span class="source-chip">AppPageHeader.tsx / AppStatusBadge.tsx</span>
@@ -1116,7 +1504,7 @@
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
-                <h3>Section Card & Setting Row</h3>
+                <h3>Section Card &amp; Setting Row</h3>
                 <p>这是后续设置页最需要稳定下来的形态，只允许调 token，不随意改信息顺序。</p>
               </div>
               <span class="source-chip">AppSectionCard.tsx / app.switcher</span>
@@ -1186,7 +1574,7 @@
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
-                <h3>Metrics & Coverage</h3>
+                <h3>Metrics &amp; Coverage</h3>
                 <p>对应 v4 概览区的摘要卡和覆盖率卡，重点是统一指标块、状态标签和轻按钮密度。</p>
               </div>
               <span class="source-chip">CoverageCard.tsx / v4Styles.ts</span>
@@ -1263,7 +1651,7 @@
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
-                <h3>Table & Index Pattern</h3>
+                <h3>Table &amp; Index Pattern</h3>
                 <p>给列表型页面一个稳定基线，后面只允许调列头字号、行高、badge 和操作密度。</p>
               </div>
               <span class="source-chip">manage_translation / table pattern</span>
@@ -1302,10 +1690,542 @@
             </div>
           </section>
 
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Manage Translation Hub</h3>
+                <p>对应 `/app/manage_translation` 的入口页，不是普通表格，而是“筛选条 + 摘要卡 + 模块入口卡片网格”的首页结构。</p>
+              </div>
+              <span class="source-chip">app.manage_translation / ManageTranslationsCard</span>
+            </div>
+            <div class="preview-frame">
+              <div class="app-page-header" style="margin-bottom: 16px;">
+                <div class="app-page-header__main">
+                  <h1 class="app-page-header__title">Manage Translation</h1>
+                </div>
+              </div>
+              <div class="app-section-card" style="margin-bottom: 14px;">
+                <div class="toolbar-row">
+                  <div class="toolbar-left">
+                    <strong>Localized content:</strong>
+                    <div class="toolbar-pill">French (FR)</div>
+                    <button class="app-button secondary">Refresh statistics</button>
+                  </div>
+                </div>
+              </div>
+              <div class="app-section-card" style="margin-bottom: 14px;">
+                <div class="summary-inline">
+                  <div class="summary-inline__item">
+                    <span class="summary-inline__label">Items Translated</span>
+                    <span class="summary-inline__value">12,480 / 18,205 (69%)</span>
+                  </div>
+                </div>
+              </div>
+              <div class="hub-grid">
+                <div class="hub-card">
+                  <h4 class="hub-card__title">Products</h4>
+                  <p class="hub-card__desc">商品标题、描述、SEO 与选项值。</p>
+                  <div class="hub-card__meta">2,310 items</div>
+                </div>
+                <div class="hub-card">
+                  <h4 class="hub-card__title">Online Store Theme</h4>
+                  <p class="hub-card__desc">Theme section、JSON template、locale content。</p>
+                  <div class="hub-card__meta">1,284 items</div>
+                </div>
+                <div class="hub-card">
+                  <h4 class="hub-card__title">Blogs and Articles</h4>
+                  <p class="hub-card__desc">博客标题、文章正文、页面内容。</p>
+                  <div class="hub-card__meta">348 items</div>
+                </div>
+                <div class="hub-card">
+                  <h4 class="hub-card__title">Liquid &amp; Third-Party Apps</h4>
+                  <p class="hub-card__desc">Custom Liquid、PageFly、第三方内容入口。</p>
+                  <div class="hub-card__meta">126 items</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Editable Detail Page Shell</h3>
+                <p>对应 `product / collection / page / article` 这一整族页面：顶部筛选、SaveBar、左侧资源菜单、右侧多段编辑表格，才是这类页面的真实骨架。</p>
+              </div>
+              <span class="source-chip">app.manage_translation_.product family</span>
+            </div>
+            <div class="preview-frame">
+              <div class="savebar-preview" style="margin-bottom: 14px;">
+                <div class="savebar-preview__copy">Unsaved changes in current resource</div>
+                <div class="button-row">
+                  <button class="app-button secondary">Cancel</button>
+                  <button class="app-button primary">Save</button>
+                </div>
+              </div>
+              <div class="toolbar-row" style="margin-bottom: 14px;">
+                <div class="toolbar-left">
+                  <div class="toolbar-pill" style="min-width: 220px;">Search...</div>
+                  <div class="toolbar-pill">French</div>
+                  <div class="toolbar-pill">Product</div>
+                </div>
+              </div>
+              <div class="detail-shell">
+                <div class="detail-sidebar">
+                  <div class="side-nav">
+                    <div class="side-nav__item active">Summer Dress</div>
+                    <div class="side-nav__item">Autumn Jacket</div>
+                    <div class="side-nav__item">Canvas Bag</div>
+                    <div class="side-nav__item">Wool Scarf</div>
+                  </div>
+                  <div class="button-row">
+                    <button class="app-button secondary">Previous</button>
+                    <button class="app-button secondary">Next</button>
+                  </div>
+                </div>
+                <div class="detail-content">
+                  <h4 class="section-heading">Summer Dress</h4>
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Field</th>
+                        <th>Source</th>
+                        <th>Translated</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Title</td>
+                        <td>Summer Dress</td>
+                        <td>Robe d&apos;été</td>
+                        <td><a class="app-link" href="javascript:void(0)">Translate</a></td>
+                      </tr>
+                      <tr>
+                        <td>Description</td>
+                        <td>Lightweight cotton dress for everyday wear.</td>
+                        <td>Robe légère en coton pour un usage quotidien.</td>
+                        <td><a class="app-link" href="javascript:void(0)">Edit</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>SEO</th>
+                        <th>Source</th>
+                        <th>Translated</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Meta title</td>
+                        <td>Summer Dress | CIWI</td>
+                        <td>Robe d&apos;été | CIWI</td>
+                        <td><a class="app-link" href="javascript:void(0)">Update</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Operation Lists</h3>
+                <p>语言、币种、术语表这类页面不是单纯 table，它们通常包含批量操作条、状态列、移动端卡片化，以及多个业务弹窗。</p>
+              </div>
+              <span class="source-chip">app.language / app.currency / app.glossary</span>
+            </div>
+            <div class="preview-frame preview-grid-2">
+              <div class="app-section-card">
+                <div class="app-section-card__stack">
+                  <div class="app-section-card__header">
+                    <div>
+                      <h3 class="app-section-card__title">Desktop List</h3>
+                      <p class="app-section-card__description">批量删除、预览、添加语言，以及状态与开关列同时出现。</p>
+                    </div>
+                    <div class="button-row">
+                      <button class="app-button secondary">Preview store</button>
+                      <button class="app-button primary">Add Language</button>
+                    </div>
+                  </div>
+                  <div class="toolbar-left">
+                    <button class="app-button secondary">Delete</button>
+                    <span class="mini-preview-note">Selected 2 items</span>
+                  </div>
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Language</th>
+                        <th>Status</th>
+                        <th>Published</th>
+                        <th>Auto translate</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Français</td>
+                        <td><span class="app-status-badge success">Healthy</span></td>
+                        <td>On</td>
+                        <td>On</td>
+                        <td><a class="app-link" href="javascript:void(0)">Manage</a></td>
+                      </tr>
+                      <tr>
+                        <td>Deutsch</td>
+                        <td><span class="app-status-badge caution">Needs review</span></td>
+                        <td>Off</td>
+                        <td>Off</td>
+                        <td><a class="app-link" href="javascript:void(0)">Translate</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="app-section-card">
+                <div class="app-section-card__stack">
+                  <div>
+                    <h3 class="app-section-card__title">Mobile Card Layout</h3>
+                    <p class="app-section-card__description">`app.language` 在移动端会退化成纵向卡片，而不是挤压原表格。</p>
+                  </div>
+                  <div class="mobile-list">
+                    <div class="mobile-list-card">
+                      <strong>Français</strong>
+                      <div class="mobile-list-card__row">
+                        <span>Status</span>
+                        <span class="app-status-badge success">Healthy</span>
+                      </div>
+                      <div class="mobile-list-card__row">
+                        <span>Publish</span>
+                        <span class="switch active" aria-hidden="true"></span>
+                      </div>
+                      <div class="mobile-list-card__row">
+                        <span>Auto translation</span>
+                        <span class="switch active" aria-hidden="true"></span>
+                      </div>
+                      <div class="button-row" style="margin-top: 12px;">
+                        <button class="app-button primary">Translate</button>
+                        <button class="app-button secondary">Manage</button>
+                      </div>
+                    </div>
+                    <div class="mobile-list-card">
+                      <strong>Deutsch</strong>
+                      <div class="mobile-list-card__row">
+                        <span>Status</span>
+                        <span class="app-status-badge caution">Review</span>
+                      </div>
+                      <div class="mobile-list-card__row">
+                        <span>Publish</span>
+                        <span class="switch" aria-hidden="true"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Media Translation Pattern</h3>
+                <p>图片翻译页是独立类型：资源选择、媒体预览、上传/删除动作、专用语言弹窗，这些都不是 generic table 可以替代的。</p>
+              </div>
+              <span class="source-chip">app.manage_translation_.productImage</span>
+            </div>
+            <div class="preview-frame">
+              <div class="detail-shell">
+                <div class="detail-sidebar">
+                  <div class="side-nav">
+                    <div class="side-nav__item active">Summer Dress</div>
+                    <div class="side-nav__item">Canvas Bag</div>
+                    <div class="side-nav__item">Leather Boots</div>
+                  </div>
+                  <div class="button-row">
+                    <button class="app-button secondary">Previous</button>
+                    <button class="app-button secondary">Next</button>
+                  </div>
+                </div>
+                <div class="detail-content">
+                  <h4 class="section-heading">Product Images</h4>
+                  <div class="media-grid">
+                    <div class="media-card">
+                      <div class="media-thumb"></div>
+                      <div class="mini-preview-note">Default language</div>
+                      <div class="button-row" style="margin-top: 12px;">
+                        <button class="app-button secondary">Upload</button>
+                        <button class="app-button secondary">Delete</button>
+                      </div>
+                    </div>
+                    <div class="media-card">
+                      <div class="media-thumb"></div>
+                      <div class="mini-preview-note">Translated target image</div>
+                      <div class="button-row" style="margin-top: 12px;">
+                        <button class="app-button primary">Image Translation</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="summary-box">
+                    <div class="summary-row">
+                      <div>
+                        <div class="summary-label">Source Language</div>
+                        <div class="fake-select" style="margin-top: 8px;">English</div>
+                      </div>
+                      <div>
+                        <div class="summary-label">Target Language</div>
+                        <div class="fake-select" style="margin-top: 8px;">French</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Pricing &amp; Commerce Page</h3>
+                <p>定价页是单独的一套商业化页面：账户信息、套餐卡、对比表、FAQ 和购买 credits 弹窗，都需要单独校准。</p>
+              </div>
+              <span class="source-chip">app.pricing / paymentModal</span>
+            </div>
+            <div class="preview-frame">
+              <div class="app-page-header" style="margin-bottom: 16px;">
+                <div class="app-page-header__main">
+                  <h1 class="app-page-header__title">Pricing</h1>
+                </div>
+                <div class="app-status-cluster">
+                  <span class="app-status-badge info">Basic Plan</span>
+                  <span class="mini-preview-note">Next payment: Sep 05</span>
+                </div>
+              </div>
+              <div class="pricing-grid" style="margin-bottom: 16px;">
+                <div class="pricing-card">
+                  <span class="app-status-badge neutral">Current plan</span>
+                  <strong>Free</strong>
+                  <div class="pricing-price"><strong>$0</strong><span>/month</span></div>
+                  <button class="app-button secondary">Current plan</button>
+                  <ul class="feature-list">
+                    <li>Basic translation quota</li>
+                    <li>Manual translation workflow</li>
+                    <li>Email support</li>
+                  </ul>
+                </div>
+                <div class="pricing-card recommended">
+                  <span class="app-status-badge caution">Recommended</span>
+                  <strong>Basic</strong>
+                  <div class="pricing-price"><strong>$19</strong><span>/month</span></div>
+                  <button class="app-button primary">Start plan</button>
+                  <ul class="feature-list">
+                    <li>Auto translation</li>
+                    <li>Glossary and switcher features</li>
+                    <li>More credits included</li>
+                  </ul>
+                </div>
+                <div class="pricing-card">
+                  <strong>Pro</strong>
+                  <div class="pricing-price"><strong>$79</strong><span>/month</span></div>
+                  <button class="app-button secondary">Choose plan</button>
+                  <ul class="feature-list">
+                    <li>Higher quota</li>
+                    <li>Priority processing</li>
+                    <li>Advanced support</li>
+                  </ul>
+                </div>
+              </div>
+              <table class="data-table" style="margin-bottom: 16px;">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>Free</th>
+                    <th>Basic</th>
+                    <th>Pro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Glossary</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                  </tr>
+                  <tr>
+                    <td>Auto translate</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="faq-list">
+                <div class="faq-item">
+                  <strong>Can I switch plans later?</strong>
+                  <span>Yes, merchants can upgrade or downgrade based on business needs.</span>
+                </div>
+                <div class="faq-item">
+                  <strong>How do credits work?</strong>
+                  <span>Credits are consumed by task size and translation operations.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Analytics / Report Page</h3>
+                <p>`Shop Profile` 这类页面更像分析后台：扫描状态、画像描述、标签、统计值、数据表和提示词块连续堆叠，不属于简单的设置页。</p>
+              </div>
+              <span class="source-chip">app.shop-profile</span>
+            </div>
+            <div class="preview-frame">
+              <div class="toolbar-row" style="margin-bottom: 16px;">
+                <div class="toolbar-left">
+                  <h1 class="app-page-header__title" style="font-size: 22px;">店铺画像扫描结果</h1>
+                  <span class="app-status-badge info">Scanning</span>
+                </div>
+                <button class="app-button primary">重新扫描</button>
+              </div>
+              <div class="analytics-stack">
+                <div class="app-section-card">
+                  <div class="app-section-card__stack">
+                    <div class="app-section-card__header">
+                      <div>
+                        <h3 class="app-section-card__title">扫描状态</h3>
+                        <p class="app-section-card__description">更新时间、阶段状态、整体扫描进度。</p>
+                      </div>
+                    </div>
+                    <div class="analytics-status">
+                      <div class="step-chip">
+                        <strong>1. Collect</strong>
+                        <span>Done</span>
+                      </div>
+                      <div class="step-chip">
+                        <strong>2. Extract</strong>
+                        <span>Done</span>
+                      </div>
+                      <div class="step-chip">
+                        <strong>3. Understand</strong>
+                        <span>Running</span>
+                      </div>
+                      <div class="step-chip">
+                        <strong>4. Strategy</strong>
+                        <span>Waiting</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="two-col">
+                  <div class="app-section-card">
+                    <div class="app-section-card__stack">
+                      <div>
+                        <h3 class="app-section-card__title">店铺画像</h3>
+                        <p class="app-section-card__description">结构化描述、标签与核心品牌语气。</p>
+                      </div>
+                      <div class="tag-row">
+                        <span class="term-tag">fashion</span>
+                        <span class="term-tag">minimal</span>
+                        <span class="term-tag">EU market</span>
+                      </div>
+                      <div class="mini-preview-note">品牌语气: clean, modern, premium but friendly</div>
+                    </div>
+                  </div>
+                  <div class="app-section-card">
+                    <div class="app-section-card__stack">
+                      <div>
+                        <h3 class="app-section-card__title">内容规模</h3>
+                        <p class="app-section-card__description">条目与字符数摘要，通常会和明细表一起出现。</p>
+                      </div>
+                      <div class="metric-grid">
+                        <div class="metric-block">
+                          <div class="metric-label">可翻译条目</div>
+                          <div class="metric-value">18,205</div>
+                        </div>
+                        <div class="metric-block">
+                          <div class="metric-label">源文字符数</div>
+                          <div class="metric-value">1.2M</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="app-section-card">
+                  <div class="app-section-card__stack">
+                    <div>
+                      <h3 class="app-section-card__title">翻译提示词预览</h3>
+                    </div>
+                    <div class="code-panel">Brand tone: minimal, premium, easy to understand.
+Target audience: cross-border fashion shoppers.
+Localization guidance: keep product names natural, preserve branded terms, prefer concise copy for CTA and merchandising blocks.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="preview-group">
+            <div class="preview-group-head">
+              <div>
+                <h3>Onboarding &amp; History States</h3>
+                <p>引导流和历史页是状态型页面，重点不在常规 table，而在准备过程、推荐结果、底部动作和 empty state 的完整节奏。</p>
+              </div>
+              <span class="source-chip">app.onboarding / app.translate-v4-history</span>
+            </div>
+            <div class="preview-frame preview-grid-2">
+              <div class="state-card">
+                <div class="app-subtle-chip">Preparing</div>
+                <h3 class="section-heading" style="margin-top: 14px;">Set up your first translation task</h3>
+                <p class="app-page-header__description">先完成 locale、coverage、recommendation 三段准备，再进入建议结果页。</p>
+                <div class="progress-steps">
+                  <div class="progress-step">
+                    <span class="progress-step__dot success">1</span>
+                    <div>
+                      <strong>Load locales</strong>
+                      <div class="mini-preview-note">Completed</div>
+                    </div>
+                  </div>
+                  <div class="progress-step">
+                    <span class="progress-step__dot success">2</span>
+                    <div>
+                      <strong>Fast coverage scan</strong>
+                      <div class="mini-preview-note">3 / 5 modules done</div>
+                    </div>
+                  </div>
+                  <div class="progress-step">
+                    <span class="progress-step__dot">3</span>
+                    <div>
+                      <strong>Build recommendation</strong>
+                      <div class="mini-preview-note">Waiting for coverage snapshot</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="button-row" style="margin-top: 16px;">
+                  <button class="app-button secondary">Skip</button>
+                  <button class="app-button primary">Create first task</button>
+                </div>
+              </div>
+              <div class="state-card">
+                <h3 class="section-heading">Task History Empty State</h3>
+                <p class="app-page-header__description">历史页空状态也是独立模式，和普通列表页的“无数据”处理不一样。</p>
+                <div class="history-empty">
+                  <div class="history-empty__icon"></div>
+                  <strong>No task history yet</strong>
+                  <span class="mini-preview-note">Completed, cancelled, or deleted tasks will appear here.</span>
+                  <button class="app-button secondary">Back to current tasks</button>
+                </div>
+              </div>
+            </div>
+          </section>
           <section class="preview-group">
             <div class="preview-group-head">
               <div>
                 <h3>Modal Pattern</h3>
+                <p>基于 `V4ModalShell` 和 `paymentModal`，后续可以只调标题字号、面板宽度、卡片 padding 和 CTA 样式。</p>
                 <p>基于 `V4ModalShell` 和 `paymentModal`，后续可以只调标题字号、面板宽度、卡片 padding 和 CTA 样式。</p>
               </div>
               <span class="source-chip">V4ModalShell.tsx / paymentModal.tsx</span>

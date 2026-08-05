@@ -1,0 +1,23 @@
+{
+  "activeView": "manageHub",
+  "shopName": "CIWI Demo Store",
+  "targetLanguage": "French (FR)",
+  "translatedCount": "12,480",
+  "totalCount": "18,205",
+  "selectedResource": "Summer Dress",
+  "secondaryResource": "Canvas Bag",
+  "selectedCount": "2",
+  "sourceLanguage": "English",
+  "showSaveBar": true,
+  "showMobileCard": true,
+  "showTranslatedImage": true,
+  "enableAutoTranslate": true,
+  "highlightThirdParty": true,
+  "pricingPlan": "basic",
+  "nextPaymentDate": "Sep 05",
+  "scanStatus": "scanning",
+  "translatableItems": "18,205",
+  "sourceCharacters": "1.2M",
+  "promptTone": "clean, modern, premium but friendly",
+  "showHistoryEmpty": true
+}
