@@ -18,6 +18,7 @@ import {
 } from "./liquidHtmlTranslate.js";
 import {
   hasPromptSentinelLeakage,
+  isPassthroughLeafText,
   isTranslatableLeafText,
   looksLikeEmptySourceHallucination,
   looksLikeUntranslated,
@@ -2046,6 +2047,10 @@ function lookupHtmlPart(
   lookup: LookupFn,
   part: string,
 ): { value: string; fallback: boolean } {
+  // Empty / BR placeholders never enter the LLM pool — keep as-is, not fallback.
+  if (!part.trim() || isPassthroughLeafText(part)) {
+    return { value: part, fallback: false };
+  }
   const r = lookup(poolSig, part);
   if (!r || r.status === "fallback") {
     return { value: part, fallback: true };
@@ -2142,7 +2147,12 @@ function planTextsReady(plan: FieldPlan, lookup: LookupFn): boolean {
         : plan.kind === "json"
           ? jsonPlanTexts(plan)
           : listPlanTexts(plan);
-  return texts.every((t) => lookup(plan.poolSig, t) !== undefined);
+  return texts.every(
+    (t) =>
+      !t.trim() ||
+      isPassthroughLeafText(t) ||
+      lookup(plan.poolSig, t) !== undefined,
+  );
 }
 
 function collectPlanLeafCosts(plan: FieldPlan, lookup: LookupFn): Array<TranslationFieldCost | undefined> {
@@ -2172,7 +2182,12 @@ function reconstructPlan(
   const fieldCost = () => mergeLeafCosts(collectPlanLeafCosts(plan, lookup));
 
   if (plan.kind === "plain") {
-    const pieces = plan.parts.map((p) => lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const });
+    const pieces = plan.parts.map((p) => {
+      if (!p.trim() || isPassthroughLeafText(p)) {
+        return { value: p, status: "translated" as const };
+      }
+      return lookup(plan.poolSig, p) ?? { value: p, status: "fallback" as const };
+    });
     const value = pieces.map((p) => p.value).join("");
     const status = pieces.some((p) => p.status === "fallback") ? "fallback" : "translated";
     const originalValue = plan.parts.join("");
@@ -2238,6 +2253,8 @@ function reconstructPlan(
           anyFallback = true;
           translatedSlots[i] = slot.text;
         }
+      } else if (!slot.text.trim() || isPassthroughLeafText(slot.text)) {
+        translatedSlots[i] = slot.text;
       } else {
         const r = lookup(plan.poolSig, slot.text);
         if (!r || r.status === "fallback") {
@@ -2279,6 +2296,8 @@ function reconstructPlan(
         );
         if (elFallback) anyFallback = true;
         result[el.index] = elHtml;
+      } else if (!el.text.trim() || isPassthroughLeafText(el.text)) {
+        result[el.index] = el.text;
       } else {
         const r = lookup(plan.poolSig, el.text);
         if (!r || r.status === "fallback") {

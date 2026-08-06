@@ -344,6 +344,9 @@ then `api.translate-v4.tasks.ts`.
 `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
 literals like `else` and `Default Title` never enter the LLM text pool;
 `{{ }}` stays in-place for `maskPlaceholders`.
+- Structural BR leaves (`⟦BR⟧` from `htmlTranslate`, ascii `[BR]`):
+  `isPassthroughLeafText` in `translateQuality.ts` skips the LLM/Google pool and
+  reassembles identity in `llmTranslate.ts` (not counted as echo/`fallback`).
 - Short plain fields (`<80` chars, not handle / meta_description): chunk-level
   JSON pack in `llmTranslate.ts` — field/value TM first, then dedupe by text,
   then size-capped JSON batches (`TRANSLATE_SHORT_JSON_MAX_CHARS` /
