@@ -20,9 +20,20 @@ export type CreateTaskCreditsPurchaseContext = {
   shortfallCredits: number | null;
 };
 
+export type SingleTranslateCreditsPurchaseContext = {
+  kind: "single_translate";
+  target: string;
+  fieldKey: string;
+  estimatedCredits: number | null;
+  currentRemainingCredits: number | null;
+  shortfallCredits: number | null;
+  state: "missing" | "quality" | "outdated";
+};
+
 export type CreditsPurchaseModalContext =
   | TranslateV4TaskCreditsPurchaseContext
-  | CreateTaskCreditsPurchaseContext;
+  | CreateTaskCreditsPurchaseContext
+  | SingleTranslateCreditsPurchaseContext;
 
 export function openCreditsPurchaseModal(
   context?: CreditsPurchaseModalContext | null,

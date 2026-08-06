@@ -46,13 +46,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const recommendedCreditsTarget = useMemo(() => {
     if (!purchaseContext) return null;
 
-    if (
-      purchaseContext.kind === "translate_v4_task" ||
-      purchaseContext.kind === "create_task"
-    ) {
-      const shortfall = purchaseContext.shortfallCredits ?? 0;
-      if (shortfall > 0) return shortfall;
-    }
+    const shortfall =
+      "shortfallCredits" in purchaseContext
+        ? purchaseContext.shortfallCredits ?? 0
+        : 0;
+    if (shortfall > 0) return shortfall;
 
     return null;
   }, [purchaseContext]);
@@ -131,8 +129,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     purchaseContext?.kind === "translate_v4_task" ? purchaseContext : null;
   const createTaskContext =
     purchaseContext?.kind === "create_task" ? purchaseContext : null;
+  const singleTranslateContext =
+    purchaseContext?.kind === "single_translate" ? purchaseContext : null;
   const ctaLabel = taskContext
     ? t("Pay and continue translation")
+    : singleTranslateContext
+      ? t("Pay and translate")
     : createTaskContext
       ? t("Pay and translate")
       : t("Buy now");
@@ -151,6 +153,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             <PolarisText as="h2" variant="headingLg" fontWeight="bold">
               {taskContext
                 ? t("Buy credits to continue task")
+                : singleTranslateContext
+                  ? t("Buy credits to translate this field")
                 : createTaskContext
                   ? t("Buy credits to create task")
                   : t("Buy credits")}
@@ -163,6 +167,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               <PolarisText as="p" variant="bodyMd" tone="subdued">
                 {taskContext
                   ? t("Review the remaining credits for this task and choose a pack.")
+                  : singleTranslateContext
+                    ? t("Review the estimated credits for this field and choose a pack.")
                   : createTaskContext
                     ? t("Review the estimated credits for this task and choose a pack.")
                   : t("Choose a pack for this task.")}
@@ -216,6 +222,79 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               <TaskStat
                 label={t("Need to top up")}
                 value={formatCreditsValue(taskContext.shortfallCredits, t)}
+                tone="critical"
+              />
+            </div>
+            {recommendedOption ? (
+              <div style={{ marginTop: 12 }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Recommended pack")}:{" "}
+                  <strong style={{ color: v4Colors.text }}>
+                    {recommendedOption.name} ·{" "}
+                    {Number(recommendedOption.Credits).toLocaleString()} {t("credits")}
+                  </strong>
+                </PolarisText>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {singleTranslateContext ? (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              background: v4Colors.cardSubdued,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                <PolarisText as="p" variant="bodyMd" fontWeight="semibold">
+                  {t("Single field translation")}
+                </PolarisText>
+                <div style={{ marginTop: 4 }}>
+                  <PolarisText as="p" variant="bodySm" tone="subdued">
+                    {singleTranslateContext.target.toUpperCase()} ·{" "}
+                    {formatSingleTranslateState(singleTranslateContext.state, t)}
+                  </PolarisText>
+                </div>
+              </div>
+              <PolarisText as="p" variant="bodySm" tone="subdued">
+                {singleTranslateContext.fieldKey}
+              </PolarisText>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <TaskStat
+                label={t("Estimated total")}
+                value={formatCreditsValue(singleTranslateContext.estimatedCredits, t)}
+              />
+              <TaskStat
+                label={t("Available now")}
+                value={formatCreditsValue(
+                  singleTranslateContext.currentRemainingCredits,
+                  t,
+                )}
+              />
+              <TaskStat
+                label={t("Need to top up")}
+                value={formatCreditsValue(singleTranslateContext.shortfallCredits, t)}
                 tone="critical"
               />
             </div>
@@ -417,6 +496,15 @@ function formatCreditsValue(
 ): string {
   if (value == null) return t("Estimating...");
   return `${Number(value).toLocaleString()} ${t("credits")}`;
+}
+
+function formatSingleTranslateState(
+  state: "missing" | "quality" | "outdated",
+  t: (key: string) => string,
+): string {
+  if (state === "missing") return t("Missing translation");
+  if (state === "outdated") return t("Source changed");
+  return t("Needs improvement");
 }
 
 export default PaymentModal;
