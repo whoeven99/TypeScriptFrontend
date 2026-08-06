@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "이 작업을 시작하려면 크레딧이 필요합니다. 무료 체험을 시작하여 현재 구성으로 계속하세요.",
   "v4.createTask.confirmBlockedTrialTitle": "이 작업을 시작할 크레딧이 부족합니다",
   "v4.createTask.confirmBuyCreditsAndStart": "크레딧 구매 및 전체 작업 시작",
-  "v4.createTask.confirmBuyCreditsOnly": "구독 건너뛰기, 크레딧만 구매",
+  "v4.createTask.confirmBuyCreditsOnly": "크레딧 구매",
   "v4.createTask.confirmBuyCreditsSecondary": "크레딧만 구매",
   "v4.createTask.confirmCompactList": "{{count}}개 선택됨 · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "선택된 항목 없음",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "귀하의 매장의 기본 언어:",
   "Your translation quota": "번역 잔액",
   "Youthful": "젊은",
-  "Zara – Modern & chic (Womenswear)": "자라 - 모던 & 시크 (여성복)"
+  "Zara – Modern & chic (Womenswear)": "자라 - 모던 & 시크 (여성복)",
+  "pricing.availableCredits": "사용 가능한 크레딧",
+  "pricing.plan.free": "무료",
+  "pricing.plan.basic": "베이직",
+  "pricing.plan.pro": "프로",
+  "pricing.plan.premium": "프리미엄 플랜",
+  "pricing.plan.yearly": "매년",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

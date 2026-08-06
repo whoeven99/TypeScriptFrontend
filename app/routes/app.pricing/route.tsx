@@ -311,6 +311,21 @@ const Index = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
+  const getPlanDisplayLabel = (planName: string | null | undefined) => {
+    switch (planName) {
+      case "Free":
+        return t("pricing.plan.free");
+      case "Basic":
+        return t("pricing.plan.basic");
+      case "Pro":
+        return t("pricing.plan.pro");
+      case "Premium":
+        return t("pricing.plan.premium");
+      default:
+        return planName ?? "";
+    }
+  };
+
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
@@ -923,7 +938,7 @@ const Index = () => {
       width: "20%",
     },
     {
-      title: "Free",
+      title: getPlanDisplayLabel("Free"),
       dataIndex: "free",
       key: "free",
       width: "20%",
@@ -939,7 +954,7 @@ const Index = () => {
       },
     },
     {
-      title: "Basic",
+      title: getPlanDisplayLabel("Basic"),
       dataIndex: "basic",
       key: "basic",
       width: "20%",
@@ -955,7 +970,7 @@ const Index = () => {
       },
     },
     {
-      title: "Pro",
+      title: getPlanDisplayLabel("Pro"),
       dataIndex: "pro",
       key: "pro",
       width: "20%",
@@ -971,7 +986,7 @@ const Index = () => {
       },
     },
     {
-      title: "Premium",
+      title: getPlanDisplayLabel("Premium"),
       dataIndex: "premium",
       key: "premium",
       width: "20%",
@@ -1129,7 +1144,9 @@ const Index = () => {
                 plan.type ? (
                   <div className="pricing-page__plan-meta">
                     <div className="app-status-cluster">
-                      <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+                      <AppStatusBadge tone="info">
+                        {getPlanDisplayLabel(plan.type)}
+                      </AppStatusBadge>
                     </div>
                     {localNextPaymentText ? (
                       <Text className="pricing-page__next-payment" type="secondary">
@@ -1230,7 +1247,15 @@ const Index = () => {
                         ) : null}
                         <div>
                           <Title level={4} style={{ margin: 0 }}>
-                            {yearly ? item.yearlyTitle : item.title}
+                            {(() => {
+                              const planLabel = getPlanDisplayLabel(item.title);
+                              return yearly
+                                ? t("pricing.plan.yearlyLabel", {
+                                    plan: planLabel,
+                                    period: t("pricing.plan.yearly"),
+                                  })
+                                : planLabel;
+                            })()}
                           </Title>
                         </div>
                         <div>

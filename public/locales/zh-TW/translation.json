@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "此任務需要點數才能開始。開始免費試用以繼續目前的設定。",
   "v4.createTask.confirmBlockedTrialTitle": "點數不足，無法開始此任務",
   "v4.createTask.confirmBuyCreditsAndStart": "購買點數並開始完整任務",
-  "v4.createTask.confirmBuyCreditsOnly": "略過訂閱，僅購買點數",
+  "v4.createTask.confirmBuyCreditsOnly": "購買積分",
   "v4.createTask.confirmBuyCreditsSecondary": "僅購買點數",
   "v4.createTask.confirmCompactList": "已選取 {{count}} 項 · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "未選取任何項目",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "您商店的預設語言：",
   "Your translation quota": "您的翻譯餘額",
   "Youthful": "青春",
-  "Zara – Modern & chic (Womenswear)": "Zara – 現代時尚（女裝）"
+  "Zara – Modern & chic (Womenswear)": "Zara – 現代時尚（女裝）",
+  "pricing.availableCredits": "可用額度",
+  "pricing.plan.free": "免費版",
+  "pricing.plan.basic": "基本版",
+  "pricing.plan.pro": "專業版",
+  "pricing.plan.premium": "高級計劃",
+  "pricing.plan.yearly": "每年",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

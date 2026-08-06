@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Bu görevin başlaması için kredi gerekiyor. Mevcut yapılandırmayla devam etmek için ücretsiz denemenizi başlatın.",
   "v4.createTask.confirmBlockedTrialTitle": "Bu görevi başlatmak için yeterli kredi yok",
   "v4.createTask.confirmBuyCreditsAndStart": "Kredi satın al ve tam görevi başlat",
-  "v4.createTask.confirmBuyCreditsOnly": "Aboneliği atla, yalnızca kredi satın al",
+  "v4.createTask.confirmBuyCreditsOnly": "Kredi satın al",
   "v4.createTask.confirmBuyCreditsSecondary": "Yalnızca kredi satın al",
   "v4.createTask.confirmCompactList": "{{count}} seçildi · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Hiçbir şey seçilmedi",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Mağazanızın varsayılan dili:",
   "Your translation quota": "Çeviri bakiyeniz",
   "Youthful": "Genç",
-  "Zara – Modern & chic (Womenswear)": "Zara – Modern ve şık (Kadın giyim)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Modern ve şık (Kadın giyim)",
+  "pricing.availableCredits": "Kullanılabilir krediler",
+  "pricing.plan.free": "Ücretsiz",
+  "pricing.plan.basic": "Temel",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Premium Paket",
+  "pricing.plan.yearly": "Yıllık",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

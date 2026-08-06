@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Denna uppgift kräver krediter innan den kan starta. Påbörja din kostnadsfria provperiod för att fortsätta med den aktuella konfigurationen.",
   "v4.createTask.confirmBlockedTrialTitle": "Inte tillräckligt med krediter för att starta denna uppgift",
   "v4.createTask.confirmBuyCreditsAndStart": "Köp credits och starta hela uppgiften",
-  "v4.createTask.confirmBuyCreditsOnly": "Hoppa över prenumeration, köp endast credits",
+  "v4.createTask.confirmBuyCreditsOnly": "Köp krediter",
   "v4.createTask.confirmBuyCreditsSecondary": "Köp endast credits",
   "v4.createTask.confirmCompactList": "{{count}} valda · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Inget valt",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Din butiks standardspråk:",
   "Your translation quota": "Ditt översättningssaldo",
   "Youthful": "Ungdomlig",
-  "Zara – Modern & chic (Womenswear)": "Zara – Modern och chic (Damkläder)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Modern och chic (Damkläder)",
+  "pricing.availableCredits": "Tillgängliga krediter",
+  "pricing.plan.free": "Gratis",
+  "pricing.plan.basic": "Grundläggande",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Premiumplan",
+  "pricing.plan.yearly": "Årlig",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

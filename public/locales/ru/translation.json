@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Для запуска этой задачи требуются кредиты. Начните бесплатную пробную версию, чтобы продолжить с текущей конфигурацией.",
   "v4.createTask.confirmBlockedTrialTitle": "Недостаточно кредитов для запуска этой задачи",
   "v4.createTask.confirmBuyCreditsAndStart": "Купить кредиты и начать полную задачу",
-  "v4.createTask.confirmBuyCreditsOnly": "Пропустить подписку, купить только кредиты",
+  "v4.createTask.confirmBuyCreditsOnly": "Купить кредит",
   "v4.createTask.confirmBuyCreditsSecondary": "Купить только кредиты",
   "v4.createTask.confirmCompactList": "{{count}} выбрано · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Ничего не выбрано",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Язык вашего магазина по умолчанию:",
   "Your translation quota": "Ваш переводческий баланс",
   "Youthful": "Неотения",
-  "Zara – Modern & chic (Womenswear)": "Zara – Модерн и шик (женская одежда)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Модерн и шик (женская одежда)",
+  "pricing.availableCredits": "Доступные кредиты",
+  "pricing.plan.free": "Бесплатный",
+  "pricing.plan.basic": "Базовый",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Премиум-план",
+  "pricing.plan.yearly": "Ежегодно",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }
