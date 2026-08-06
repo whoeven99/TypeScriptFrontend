@@ -16,6 +16,7 @@ type SingleTextTranslateArgs = {
   type: string;
   resourceId: string | null;
   customPrompt?: string;
+  aiModel?: string;
 };
 
 export const SingleTextTranslate = async (args: SingleTextTranslateArgs) => {

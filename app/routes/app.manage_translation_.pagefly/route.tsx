@@ -490,8 +490,11 @@ const Index = () => {
               confirmData.find((item: any) => item.key === record?.key)?.value ??
               record?.translated
             }
-            onSubmit={(customPrompt) => {
-              handleTranslate(record, customPrompt);
+            sourceText={record?.default_language ?? ""}
+            targetLocale={searchTerm || ""}
+            fieldKey={record?.key || "value"}
+            onSubmit={({ customPrompt, aiModel }) => {
+              handleTranslate(record, customPrompt, aiModel);
             }}
           />
         );
@@ -582,7 +585,7 @@ const Index = () => {
     });
   };
 
-  const handleTranslate = async (record: any, customPrompt?: string) => {
+  const handleTranslate = async (record: any, customPrompt?: string, aiModel?: string) => {
     if (!record) {
       return;
     }
@@ -608,6 +611,7 @@ const Index = () => {
       type: record?.type,
       resourceId: record?.resourceId,
       customPrompt,
+      aiModel,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
@@ -994,8 +998,11 @@ justifyContent: "space-between",
                                       confirmItem.key === item?.key,
                                   )?.value ?? item?.translated
                                 }
-                                onSubmit={(customPrompt) => {
-                                  handleTranslate(item, customPrompt);
+                                sourceText={item?.default_language ?? ""}
+                                targetLocale={searchTerm || ""}
+                                fieldKey={item?.key || "value"}
+                                onSubmit={({ customPrompt, aiModel }) => {
+                                  handleTranslate(item, customPrompt, aiModel);
                                 }}
                               />
                             </div>

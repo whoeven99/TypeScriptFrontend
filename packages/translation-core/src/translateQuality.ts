@@ -40,6 +40,24 @@ function hasTargetScriptChars(text: string, targetLang: string): boolean {
   }
 }
 
+/**
+ * Structural leaves that must be kept byte-for-byte and never sent to an LLM.
+ * Includes htmlTranslate's <br> placeholder ⟦BR⟧ and the ascii lookalike [BR].
+ */
+const PASSTHROUGH_LEAF_RE = /^(?:\u27E6BR\u27E7|\[BR\])$/i;
+
+/** True for line-break / structure tokens that should bypass translation engines. */
+export function isPassthroughLeafText(text: string): boolean {
+  return PASSTHROUGH_LEAF_RE.test(text.trim());
+}
+
+export function isTranslatableLeafText(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (isPassthroughLeafText(t)) return false;
+  return true;
+}
+
 export function looksLikeUntranslated(
   source: string,
   translated: string,
@@ -52,6 +70,8 @@ export function looksLikeUntranslated(
   const src = norm(source);
   const tr = norm(translated);
   if (!src || !tr) return false;
+  // Preserving structural tokens (e.g. ⟦BR⟧ / [BR]) is correct, not an echo failure.
+  if (isPassthroughLeafText(src)) return false;
 
   if (src === tr && hasLatinWords(src)) return true;
 
@@ -86,18 +106,19 @@ export function hasPromptSentinelLeakage(text: string): boolean {
   return /\[number\]/i.test(text);
 }
 
-/** Glossary target must not inject CJK into non-CJK locales unless source already has CJK. */
+/**
+ * Glossary applicability is driven only by rangeCode:
+ * - null / empty / "ALL" → applies to any target (DB already scoped the load)
+ * - explicit locale (e.g. zh-CN) → only when target shares the same language family
+ *
+ * targetText / sourceText are unused; kept for call-site compatibility.
+ */
 export function glossaryTargetMatchesLocale(
-  targetText: string,
-  sourceText: string,
+  _targetText: string,
+  _sourceText: string,
   target: string,
+  rangeCode?: string | null,
 ): boolean {
-  const tl = targetLangCode(target);
-  if (["zh", "ja", "ko"].includes(tl)) return true;
-  if (hasCjk(targetText) && !hasCjk(sourceText)) return false;
-  return true;
-}
-
-export function isTranslatableLeafText(text: string): boolean {
-  return text.trim().length > 0;
+  if (!rangeCode?.trim() || rangeCode.toUpperCase() === "ALL") return true;
+  return targetLangCode(rangeCode) === targetLangCode(target);
 }
