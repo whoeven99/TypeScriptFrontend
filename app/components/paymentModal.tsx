@@ -132,10 +132,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const createTaskContext =
     purchaseContext?.kind === "create_task" ? purchaseContext : null;
   const ctaLabel = taskContext
-    ? `${t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0} · ${t("Continue task")}`
+    ? t("Pay and continue translation")
     : createTaskContext
-      ? `${t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0} · ${t("Create task")}`
-      : `${t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}`;
+      ? t("Pay and translate")
+      : t("Buy now");
 
   return (
     <V4ModalShell open={visible} onClose={onCancel} width={560}>
