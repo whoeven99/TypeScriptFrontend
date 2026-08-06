@@ -1,12 +1,15 @@
-import { Input, Modal, Select, Space, Typography } from "antd";
+import { Input, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
 import {
   AI_MODEL_OPTIONS,
   DEFAULT_AI_MODEL,
 } from "~/routes/app.translate-v4/constants";
 import { getV4AiModelLabel } from "~/routes/app.translate-v4/v4I18n";
+import { V4ModalShell } from "~/components/V4ModalShell";
 import Button, { type AppButtonProps } from "~/ui/components/AppButton";
+import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -14,6 +17,8 @@ const { Text } = Typography;
 const MAX_PROMPT_LENGTH = 500;
 const AI_MODEL_STORAGE_KEY = "ciwi.manage.singleTranslate.aiModel";
 const ESTIMATE_DEBOUNCE_MS = 350;
+
+type SingleTranslateModalState = "missing" | "quality" | "outdated";
 
 export type SingleTranslateSubmitPayload = {
   customPrompt?: string;
@@ -56,6 +61,29 @@ function persistAiModel(aiModel: string) {
   }
 }
 
+function getModalState(args: {
+  hasExistingTranslation: boolean;
+  isOutdated: boolean;
+}): SingleTranslateModalState {
+  if (!args.hasExistingTranslation) return "missing";
+  if (args.isOutdated) return "outdated";
+  return "quality";
+}
+
+function deferOpenCreditsPurchaseModal(
+  context: Parameters<typeof openCreditsPurchaseModal>[0],
+) {
+  const schedule = () => openCreditsPurchaseModal(context);
+  if (typeof window === "undefined") return;
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(schedule);
+    });
+    return;
+  }
+  window.setTimeout(schedule, 0);
+}
+
 const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   existingTranslation,
   isOutdated = false,
@@ -72,12 +100,19 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
   const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
+  const [currentRemainingCredits, setCurrentRemainingCredits] = useState<
+    number | null
+  >(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
   const hasSubmittedRef = useRef(false);
   const hasExistingTranslation = useMemo(
     () => normalizeText(existingTranslation).length > 0,
     [existingTranslation],
   );
-  const shouldUpdateTranslation = hasExistingTranslation && isOutdated;
+  const modalState = useMemo(
+    () => getModalState({ hasExistingTranslation, isOutdated }),
+    [hasExistingTranslation, isOutdated],
+  );
 
   const aiModelOptions = useMemo(
     () =>
@@ -87,6 +122,17 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
       })),
     [t],
   );
+
+  const shortfallCredits = useMemo(() => {
+    if (estimatedCredits == null || currentRemainingCredits == null) return null;
+    return Math.max(estimatedCredits - currentRemainingCredits, 0);
+  }, [estimatedCredits, currentRemainingCredits]);
+  const quotaPrecheckPending = open && (estimateLoading || quotaLoading);
+  const quotaPrecheckReady =
+    estimatedCredits != null && currentRemainingCredits != null;
+  const shouldOpenPurchaseModal =
+    quotaPrecheckReady &&
+    (currentRemainingCredits <= 0 || estimatedCredits > currentRemainingCredits);
 
   useEffect(() => {
     if (loading) {
@@ -151,37 +197,71 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [open, sourceText, targetLocale, fieldKey, prompt, aiModel]);
+  }, [
+    open,
+    sourceText,
+    targetLocale,
+    fieldKey,
+    prompt,
+    aiModel,
+  ]);
 
-  const actionLabel = !hasExistingTranslation
-    ? t("Translate")
-    : shouldUpdateTranslation
-      ? t("Update translation")
-      : t("Retranslate");
-  const modalTitle = !hasExistingTranslation
-    ? t("Translate")
-    : shouldUpdateTranslation
-      ? t("Update translation")
-      : t("Translation quality not good enough?");
-  const submitLabel = !hasExistingTranslation
-    ? t("Start translation")
-    : shouldUpdateTranslation
-      ? t("Update translation")
-      : t("Retranslate");
-  const promptLabel = t("manage.singleTranslate.promptOptional");
-  const promptDescription = !hasExistingTranslation
-    ? t("manage.singleTranslate.promptOptionalHint")
-    : shouldUpdateTranslation
-      ? t("The source text changed. Add suggestions if you want to refresh the translation.")
-      : t("Add suggestions and translate again.");
+  useEffect(() => {
+    if (!open) {
+      setCurrentRemainingCredits(null);
+      setQuotaLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setQuotaLoading(true);
+
+    void fetch("/api/translate-v4/quota", {
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data: { quota?: { remaining?: number | string | null } }) => {
+        if (controller.signal.aborted) return;
+        const remaining = data?.quota?.remaining;
+        const parsed =
+          typeof remaining === "number"
+            ? remaining
+            : typeof remaining === "string"
+              ? Number(remaining.trim())
+              : Number.NaN;
+        setCurrentRemainingCredits(
+          Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : null,
+        );
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCurrentRemainingCredits(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setQuotaLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [open]);
+
+  const actionLabel = getActionLabel(modalState, t);
+  const modalTitle = getModalTitle(modalState, t);
+  const submitLabel = getSubmitLabel(modalState, t);
+  const promptLabel = t("manage.singleTranslate.promptSuggestion");
+  const primaryLabel = shouldOpenPurchaseModal
+    ? t("Buy credits and translate")
+    : submitLabel;
 
   const estimateLabel = estimateLoading
-    ? t("manage.singleTranslate.estimateLoading")
+    ? t("Estimating...")
     : estimatedCredits === null
-      ? t("manage.singleTranslate.estimateUnavailable")
-      : t("manage.singleTranslate.estimateCredits", {
-          credits: estimatedCredits.toLocaleString(),
-        });
+      ? "--"
+      : `${estimatedCredits.toLocaleString()} ${t("credits")}`;
+
+  const remainingLabel = quotaLoading
+    ? t("Estimating...")
+    : currentRemainingCredits == null
+      ? "--"
+      : `${currentRemainingCredits.toLocaleString()} ${t("credits")}`;
 
   const closeModal = () => {
     setOpen(false);
@@ -189,9 +269,35 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   };
 
   const handleSubmit = () => {
+    const customPrompt = normalizeText(prompt);
+
+    const openPurchaseModalWithContext = () => {
+      closeModal();
+      deferOpenCreditsPurchaseModal({
+        kind: "single_translate",
+        target: normalizeText(targetLocale) || "target",
+        fieldKey: fieldKey?.trim() || "value",
+        estimatedCredits,
+        currentRemainingCredits,
+        shortfallCredits,
+        state: modalState,
+      });
+    };
+
+    if (quotaPrecheckPending) {
+      shopify.toast.show(t("Calculating..."));
+      return;
+    }
+
+    if (shouldOpenPurchaseModal) {
+      openPurchaseModalWithContext();
+      return;
+    }
+
     persistAiModel(aiModel);
+    hasSubmittedRef.current = true;
     void onSubmit({
-      customPrompt: normalizeText(prompt) || undefined,
+      customPrompt: customPrompt || undefined,
       aiModel,
     });
   };
@@ -211,78 +317,171 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
         {actionLabel}
       </Button>
       {open ? (
-        <Modal
-          title={modalTitle}
-          open
-          centered
-          width={560}
-          destroyOnHidden
-          onCancel={closeModal}
-          footer={
-            <Space size="small">
+        <V4ModalShell open onClose={closeModal} width={560}>
+          <div style={{ padding: "24px 24px 20px" }}>
+            <div
+              style={{
+                paddingBottom: 20,
+                marginBottom: 20,
+                borderBottom: `1px solid ${v4Colors.divider}`,
+              }}
+            >
+              <Text strong style={{ display: "block", fontSize: 24, lineHeight: 1.3 }}>
+                {modalTitle}
+              </Text>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div
+                style={{
+                  padding: "14px 16px",
+                  borderRadius: 16,
+                  border: `1px solid ${v4Colors.cardBorder}`,
+                  background:
+                    shortfallCredits && shortfallCredits > 0
+                      ? "rgba(239, 68, 68, 0.06)"
+                      : v4Colors.cardSubdued,
+                }}
+              >
+                <Text strong style={{ display: "block", marginBottom: 12 }}>
+                  {t("manage.singleTranslate.summaryTitle")}
+                </Text>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <StatItem
+                    label={t("Estimated total")}
+                    value={estimateLabel}
+                    critical={false}
+                  />
+                  <StatItem
+                    label={t("Available now")}
+                    value={remainingLabel}
+                    critical={false}
+                  />
+                  <StatItem
+                    label={t("Need to top up")}
+                    value={
+                      shortfallCredits == null
+                        ? t("Estimating...")
+                        : `${shortfallCredits.toLocaleString()} ${t("credits")}`
+                    }
+                    critical={Boolean(shortfallCredits && shortfallCredits > 0)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Text strong style={{ display: "block", marginBottom: 8 }}>
+                  {t("v4.createTask.aiModel")}
+                </Text>
+                <Select
+                  style={{ width: "100%" }}
+                  options={aiModelOptions}
+                  value={aiModel}
+                  onChange={setAiModel}
+                  getPopupContainer={(node) => node.parentElement ?? document.body}
+                />
+              </div>
+
+              <div>
+                <Text strong style={{ display: "block", marginBottom: 4 }}>
+                  {promptLabel}
+                </Text>
+                <TextArea
+                  rows={4}
+                  maxLength={MAX_PROMPT_LENGTH}
+                  value={prompt}
+                  placeholder={t("manage.singleTranslate.promptPlaceholder")}
+                  onChange={(event) => setPrompt(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 12,
+                marginTop: 24,
+              }}
+            >
               <Button type="default" onClick={closeModal} disabled={loading}>
                 {t("Cancel")}
               </Button>
-              <Button type="primary" onClick={handleSubmit} loading={loading}>
-                {submitLabel}
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                loading={loading}
+                disabled={quotaPrecheckPending}
+              >
+                {primaryLabel}
               </Button>
-            </Space>
-          }
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              paddingTop: "8px",
-            }}
-          >
-            <div>
-              <Text strong style={{ display: "block", marginBottom: 8 }}>
-                {t("v4.createTask.aiModel")}
-              </Text>
-              <Select
-                style={{ width: "100%" }}
-                options={aiModelOptions}
-                value={aiModel}
-                onChange={setAiModel}
-                getPopupContainer={(node) => node.parentElement ?? document.body}
-              />
-            </div>
-            <div>
-              <Text type="secondary">{estimateLabel}</Text>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginTop: 4, fontSize: 12 }}
-              >
-                {t("manage.singleTranslate.estimateHint")}
-              </Text>
-            </div>
-            <div>
-              <Text strong style={{ display: "block", marginBottom: 4 }}>
-                {promptLabel}
-              </Text>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 8 }}
-              >
-                {promptDescription}
-              </Text>
-              <TextArea
-                rows={4}
-                maxLength={MAX_PROMPT_LENGTH}
-                value={prompt}
-                placeholder={t(
-                  "e.g. Make the wording more natural and aligned with the brand tone",
-                )}
-                onChange={(event) => setPrompt(event.target.value)}
-              />
             </div>
           </div>
-        </Modal>
+        </V4ModalShell>
       ) : null}
     </>
   );
 };
+
+function StatItem({
+  label,
+  value,
+  critical,
+}: {
+  label: string;
+  value: string;
+  critical: boolean;
+}) {
+  return (
+    <div>
+      <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+        {label}
+      </Text>
+      <Text
+        strong
+        style={{
+          display: "block",
+          marginTop: 4,
+          color: critical ? "#dc2626" : undefined,
+        }}
+      >
+        {value}
+      </Text>
+    </div>
+  );
+}
+
+function getActionLabel(
+  state: SingleTranslateModalState,
+  t: (key: string) => string,
+) {
+  if (state === "missing") return t("Translate");
+  if (state === "outdated") return t("Update translation");
+  return t("Retranslate");
+}
+
+function getModalTitle(
+  state: SingleTranslateModalState,
+  t: (key: string) => string,
+) {
+  if (state === "missing") return t("manage.singleTranslate.titleMissing");
+  if (state === "outdated") return t("manage.singleTranslate.titleOutdated");
+  return t("manage.singleTranslate.titleQuality");
+}
+
+function getSubmitLabel(
+  state: SingleTranslateModalState,
+  t: (key: string) => string,
+) {
+  if (state === "missing") return t("manage.singleTranslate.submitMissing");
+  if (state === "outdated") return t("manage.singleTranslate.submitOutdated");
+  return t("manage.singleTranslate.submitQuality");
+}
 
 export default SingleTranslateAction;
