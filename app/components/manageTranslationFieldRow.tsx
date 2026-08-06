@@ -31,12 +31,6 @@ const sectionLabelStyle = {
   color: "var(--p-color-text-secondary)",
 };
 
-const sectionHeaderStyle = {
-  display: "flex",
-  alignItems: "center" as const,
-  minHeight: 24,
-};
-
 export default function ManageTranslationFieldRow({
   record,
   isHtml = false,
@@ -59,6 +53,10 @@ export default function ManageTranslationFieldRow({
         flexDirection: "column",
         gap: 12,
         padding: "12px 0",
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        overflow: "hidden",
       }}
     >
       <Text
@@ -79,6 +77,8 @@ export default function ManageTranslationFieldRow({
             : "repeat(2, minmax(0, 1fr))",
           gap: "12px 16px",
           alignItems: "start",
+          width: "100%",
+          minWidth: 0,
         }}
       >
         <div
@@ -87,12 +87,18 @@ export default function ManageTranslationFieldRow({
             flexDirection: "column",
             gap: 8,
             minWidth: 0,
+            maxWidth: "100%",
+            overflow: "hidden",
           }}
         >
-          <div style={sectionHeaderStyle}>
-            <Text style={sectionLabelStyle}>
-              {sourceLabel}
-            </Text>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              minHeight: 24,
+            }}
+          >
+            <Text style={sectionLabelStyle}>{sourceLabel}</Text>
           </div>
           <ManageTableInput record={record} isHtml={isHtml} />
         </div>
@@ -102,30 +108,26 @@ export default function ManageTranslationFieldRow({
             flexDirection: "column",
             gap: 8,
             minWidth: 0,
-            position: "relative" as const,
+            maxWidth: "100%",
+            overflow: "hidden",
           }}
         >
           <div
             style={{
-              ...sectionHeaderStyle,
-              paddingRight: action ? 96 : 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              minHeight: 24,
             }}
           >
-            <Text style={sectionLabelStyle}>
-              {translatedLabel}
-            </Text>
+            <Text style={sectionLabelStyle}>{translatedLabel}</Text>
+            {action ? (
+              <div style={{ flex: "0 0 auto", whiteSpace: "nowrap" }}>
+                {action}
+              </div>
+            ) : null}
           </div>
-          {action ? (
-            <div
-              style={{
-                position: "absolute",
-                top: 1,
-                right: 0,
-              }}
-            >
-              {action}
-            </div>
-          ) : null}
           <ManageTableInput
             record={record}
             isHtml={isHtml}

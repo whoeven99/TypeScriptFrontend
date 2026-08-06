@@ -32,7 +32,12 @@ import {
 } from "~/lib/createTranslateV4Tasks";
 import { normalizeShopQuota } from "~/lib/translationQuota";
 import { shouldBlockCreateTaskByCredits } from "~/lib/createTranslateQuotaGuard";
-import { DEFAULT_MODULE_KEYS, DEFAULT_AI_MODEL } from "./constants";
+import {
+  AI_MODEL_OPTIONS,
+  CREATE_TASK_MODULE_OPTIONS,
+  DEFAULT_MODULE_KEYS,
+  DEFAULT_AI_MODEL,
+} from "./constants";
 import { expandV2ModuleKeys } from "~/server/translateV4/moduleCatalog";
 import { v4ContentStyle, V4_OVERVIEW_CARD_MIN_HEIGHT } from "./v4Styles";
 import { PageHeaderBar, SummaryDonutCard } from "./components/SummaryAndHeader";
@@ -61,6 +66,15 @@ import {
   markPerfEnd,
   markPerfStart,
 } from "~/utils/perf";
+import {
+  clearCreateTaskDraft,
+  loadCreateTaskDraft,
+  saveCreateTaskDraft,
+} from "~/utils/createTaskDraft";
+import {
+  parseBillingReturn,
+  stripBillingReturnParams,
+} from "~/utils/billingReturn";
 
 const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
@@ -241,6 +255,18 @@ export default function AppTranslateV4() {
   const [spotlightTaskIds, setSpotlightTaskIds] = useState<string[]>(() => {
     return initialLocationState?.spotlightTaskIds ?? [];
   });
+  const billingDraftRestoredRef = useRef(false);
+
+  const persistCreateTaskDraft = useCallback(() => {
+    saveCreateTaskDraft(shop, {
+      targets,
+      modules: moduleKeys,
+      aiModel,
+      isCover,
+      isHandle,
+    });
+  }, [shop, targets, moduleKeys, aiModel, isCover, isHandle]);
+
   const refreshCoverage = useCallback(
     async (forceRefresh = true) => {
       const perfStart = markPerfStart(
@@ -496,9 +522,6 @@ export default function AppTranslateV4() {
     normalizedPlanType !== "" && normalizedPlanType !== "free";
   const createShouldGateByCredits = shouldBlockCreateTaskByCredits({
     remainingCredits,
-    strictQuotaGate,
-    hasPaidPlan,
-    isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
   });
   const createQuotaGatePending = createShouldGateByCredits && isNew === null;
   const createQuotaGateMode: "trial" | "pricing" | null =
@@ -517,6 +540,54 @@ export default function AppTranslateV4() {
     setCreateConfirmOpen(true);
   }, [createQuotaGatePending, t]);
 
+  // After Shopify billing return: restore create-task selections and reopen confirm.
+  useEffect(() => {
+    if (billingDraftRestoredRef.current) return;
+    const billing = parseBillingReturn(location.search);
+    if (!billing) return;
+    billingDraftRestoredRef.current = true;
+
+    const cleanedPath = stripBillingReturnParams(
+      `${location.pathname}${location.search}${location.hash}`,
+    );
+    navigate(cleanedPath, { replace: true });
+
+    const draft = loadCreateTaskDraft(shop);
+    if (!draft) return;
+
+    const allowedTargets = new Set(targetOptions.map((option) => option.value));
+    const restoredTargets = draft.targets.filter((locale) =>
+      allowedTargets.has(locale),
+    );
+    const allowedModules = new Set<string>(CREATE_TASK_MODULE_OPTIONS);
+    const restoredModules = draft.modules.filter((mod) =>
+      allowedModules.has(mod),
+    );
+    const allowedModels = new Set(AI_MODEL_OPTIONS.map((option) => option.value));
+    const restoredModel = allowedModels.has(draft.aiModel)
+      ? draft.aiModel
+      : DEFAULT_AI_MODEL;
+
+    if (restoredTargets.length > 0) setTargets(restoredTargets);
+    if (restoredModules.length > 0) setModuleKeys(restoredModules);
+    setAiModel(restoredModel);
+    setIsCover(draft.isCover);
+    setIsHandle(draft.isHandle);
+    setActiveWorkbenchTab("create");
+    setCreateConfirmOpen(true);
+    void refreshQuota();
+    message.info(t("v4.create.draftRestored"));
+  }, [
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+    refreshQuota,
+    shop,
+    t,
+    targetOptions,
+  ]);
+
   const handleCreateConfirm = useCallback(async () => {
     if (createQuotaGatePending) {
       message.info(
@@ -527,25 +598,16 @@ export default function AppTranslateV4() {
     if (createQuotaGateMode !== null) return;
 
     setCreateConfirmOpen(false);
-    const normalizedPlanType = planType?.trim().toLowerCase() || "";
-    const hasPaidPlan =
-      normalizedPlanType !== "" && normalizedPlanType !== "free";
     const remainingCredits = normalizedQuota?.remaining ?? null;
     if (remainingCredits == null) {
       message.info(t("v4.create.quotaUnavailable"));
       return;
     }
-    const shouldGateByCredits = shouldBlockCreateTaskByCredits({
-      remainingCredits,
-      strictQuotaGate,
-      hasPaidPlan,
-      isInFreePlanTime: Boolean(plan?.isInFreePlanTime),
-    });
-
-    if (shouldGateByCredits) {
+    if (shouldBlockCreateTaskByCredits({ remainingCredits })) {
       return;
     }
 
+    clearCreateTaskDraft(shop);
     setCreating(true);
     const trace = startClientLogTrace({
       event: "translate_v4_create_tasks",
@@ -649,10 +711,7 @@ export default function AppTranslateV4() {
     shop,
     refreshList,
     refreshQuota,
-    plan,
-    planType,
     normalizedQuota,
-    strictQuotaGate,
     t,
     createQuotaGateMode,
     createQuotaGatePending,
@@ -960,6 +1019,7 @@ export default function AppTranslateV4() {
         }
         onClose={() => setCreateConfirmOpen(false)}
         onConfirmCreate={handleCreateConfirm}
+        onBeforeBilling={persistCreateTaskDraft}
         onBuyCredits={() => {
           setCreateConfirmOpen(false);
           setShowPaymentModal(true);

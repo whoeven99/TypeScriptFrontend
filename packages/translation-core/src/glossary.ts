@@ -9,7 +9,8 @@ import { glossaryTargetMatchesLocale } from "./translateQuality.js";
  * stays consistent.
  *
  * Source of truth: TSF Prisma/Turso `Glossary` table (迁移自旧 Java 术语表)。
- * 适用范围过滤与 Java GlossaryService 一致：rangeCode == target 或 "ALL"。
+ * 适用范围以 rangeCode 为准：DB 层 rangeCode == target / "ALL" / null；
+ * 注入前对显式 rangeCode 再按语族匹配（ALL/null 不限）。
  *
  * 产出的行做了确定性排序，使系统提示词前缀字节稳定 → 命中 LLM 的 prompt 缓存。
  */
@@ -45,7 +46,12 @@ export async function loadGlossaryLines(shopName: string, target: string): Promi
       lines = rows
         .filter((r) => r.sourceText && r.targetText)
         .filter((r) =>
-          glossaryTargetMatchesLocale(r.targetText!, r.sourceText!, target),
+          glossaryTargetMatchesLocale(
+            r.targetText!,
+            r.sourceText!,
+            target,
+            r.rangeCode,
+          ),
         )
         .map((r) => `- Translate "${r.sourceText}" as "${r.targetText}".`)
         // 去重 + 确定性排序，保持系统提示词前缀字节稳定（利于 prompt 缓存）。

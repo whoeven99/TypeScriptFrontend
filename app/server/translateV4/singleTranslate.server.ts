@@ -47,18 +47,20 @@ export type DeductQuotaAuditMeta = {
   textLength?: number;
 };
 
-/** 扣额度（tokens 为 LLM 原始用量，内部 × QUOTA_TOKEN_MULTIPLIER）并写 CreditUsage。 */
+/** 扣额度（tokens 为 LLM 原始用量，内部按模型 × 系数）并写 CreditUsage。 */
 export async function deductQuota(
   shop: string,
   rawLlmTokens: number,
   meta?: DeductQuotaAuditMeta,
+  aiModel?: string | null,
 ): Promise<void> {
-  const credits = llmTokensToQuotaCredits(rawLlmTokens);
+  const credits = llmTokensToQuotaCredits(rawLlmTokens, aiModel);
   if (credits <= 0) return;
   await deductShopCredits(shop, credits, {
     source: "single",
     metadata: {
       rawTokens: Math.max(0, Math.floor(rawLlmTokens)),
+      aiModel: aiModel ?? null,
       target: meta?.target ?? null,
       sourceLocale: meta?.sourceLocale ?? null,
       fieldKey: meta?.fieldKey ?? null,

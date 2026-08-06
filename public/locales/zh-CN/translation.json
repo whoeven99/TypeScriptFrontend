@@ -682,6 +682,13 @@
   "Translation failed": "已达到翻译限制",
   "translation optimization features not enabled": "未启用翻译优化功能",
   "Translation prompt": "翻译提示词",
+  "Start translation": "开始翻译",
+  "manage.singleTranslate.promptOptional": "翻译提示（可选）",
+  "manage.singleTranslate.promptOptionalHint": "可先填写语气或用词建议，再开始翻译。",
+  "manage.singleTranslate.estimateLoading": "正在估算积分…",
+  "manage.singleTranslate.estimateUnavailable": "暂无法估算积分",
+  "manage.singleTranslate.estimateCredits": "预计消耗约 {{credits}} 积分",
+  "manage.singleTranslate.estimateHint": "按原文长度与真实 system prompt（含术语表/店铺画像）估算；实际扣费以 LLM token × 系数为准。",
   "Translation quality assessment": "翻译质量评估",
   "Translation Quality Report": "翻译质量报告",
   "Translation quality score": "翻译质量评分",
@@ -1136,5 +1143,7 @@
   "v4.createTask.confirmPricingFeatureSpeed": "翻译速度\nx2",
   "v4.tasks.openHistory": "查看历史任务（{{count}}）",
   "v4.tasks.historyPageTitle": "历史任务 · {{count}}",
-  "v4.tasks.backToCurrent": "返回当前任务"
+  "v4.tasks.backToCurrent": "返回当前任务",
+  "v4.initLog.fetchingShopifyBulk": "{{modules}} · 正在从 Shopify 拉取数据",
+  "v4.create.draftRestored": "已恢复你之前的翻译选项，确认后即可创建任务。"
 }
