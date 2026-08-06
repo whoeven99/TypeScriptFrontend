@@ -81,9 +81,60 @@ body {
   color: var(--app-color-text);
   font-size: var(--app-font-size-body);
   line-height: 1.5;
-  /* 覆盖 Polaris 原生品牌色，统一为紫色 */
-  --p-color-bg-fill-brand: #5467ff;
+}
+
+body,
+.ui-demo-preview-scope {
+  /* 覆盖 Polaris 原生品牌色，统一为更饱和的品牌主色 */
+  --p-color-bg-fill-brand: var(--app-accent-primary);
+  --p-color-bg-fill-brand-hover: var(--app-accent-primary-hover);
+  --p-color-bg-fill-brand-active: var(--app-accent-primary-deep);
+  --p-color-border-brand: var(--app-accent-primary);
+  --p-color-border-brand-hover: var(--app-accent-primary-hover);
+  --p-color-border-brand-active: var(--app-accent-primary-deep);
+  --p-color-text-brand: var(--app-accent-primary);
+  --p-color-text-brand-hover: var(--app-accent-primary-hover);
+  --p-color-text-brand-active: var(--app-accent-primary-deep);
   --p-color-text-brand-on-bg-fill: #ffffff;
+}
+
+.Polaris-Button--variantPrimary {
+  background: var(--app-accent-primary) !important;
+  border-color: var(--app-accent-primary) !important;
+  color: var(--app-color-brand-on-fill) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
+.Polaris-Button--variantPrimary:hover:not(:disabled),
+.Polaris-Button--variantPrimary:active:not(:disabled) {
+  background: var(--app-accent-primary-hover) !important;
+  border-color: var(--app-accent-primary-hover) !important;
+  color: var(--app-color-brand-on-fill) !important;
+}
+
+.Polaris-Button--variantPrimary:focus-visible {
+  box-shadow: 0 0 0 3px rgba(84, 103, 255, 0.18) !important;
+}
+
+.Polaris-Button--variantSecondary {
+  border-color: var(--app-color-border-secondary) !important;
+  color: var(--app-color-text) !important;
+}
+
+.Polaris-Button--variantSecondary:hover:not(:disabled),
+.Polaris-Button--variantSecondary:active:not(:disabled) {
+  border-color: var(--app-accent-primary) !important;
+  color: var(--app-color-text) !important;
+}
+
+.Polaris-Button--variantTertiary,
+.Polaris-Button--variantPlain {
+  color: var(--app-accent-primary) !important;
+}
+
+.Polaris-Button--variantTertiary:hover:not(:disabled),
+.Polaris-Button--variantPlain:hover:not(:disabled) {
+  color: var(--app-accent-primary-hover) !important;
 }
 
 .app-button.ant-btn {

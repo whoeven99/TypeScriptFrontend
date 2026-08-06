@@ -24,13 +24,15 @@ import {
 import { authenticate } from "~/shopify.server";
 
 type DemoViewKey =
+  | "componentLibrary"
   | "manageHub"
   | "detailPage"
   | "operationList"
   | "media"
   | "pricing"
   | "analytics"
-  | "onboarding";
+  | "onboarding"
+  | "designStandards";
 
 type PricingPlanKey = "free" | "basic" | "pro";
 type ScanStatusKey = "preparing" | "scanning" | "ready";
@@ -39,6 +41,14 @@ interface DemoConfig {
   activeView: DemoViewKey;
   shopName: string;
   targetLanguage: string;
+  brandPrimary: string;
+  brandPrimaryHover: string;
+  brandPrimaryDeep: string;
+  bodyFontSize: string;
+  bodySmallFontSize: string;
+  captionFontSize: string;
+  headingLgFontSize: string;
+  cornerRadius: string;
   translatedCount: string;
   totalCount: string;
   selectedResource: string;
@@ -62,9 +72,17 @@ interface DemoConfig {
 const CONFIG_FILE_URL = new URL("./demo-config.json", import.meta.url);
 
 const DEFAULT_CONFIG: DemoConfig = {
-  activeView: "manageHub",
+  activeView: "componentLibrary",
   shopName: "CIWI Demo Store",
   targetLanguage: "French (FR)",
+  brandPrimary: "#5467ff",
+  brandPrimaryHover: "#4254e8",
+  brandPrimaryDeep: "#2d3572",
+  bodyFontSize: "14px",
+  bodySmallFontSize: "13px",
+  captionFontSize: "12px",
+  headingLgFontSize: "28px",
+  cornerRadius: "12px",
   translatedCount: "12,480",
   totalCount: "18,205",
   selectedResource: "Summer Dress",
@@ -91,6 +109,12 @@ const VIEW_OPTIONS: Array<{
   description: string;
   source: string;
 }> = [
+  {
+    key: "componentLibrary",
+    label: "Component Library",
+    description: "按钮、状态、表单、表格、空态和 CTA 的标准组件预览。",
+    source: "UI baseline / reusable patterns",
+  },
   {
     key: "manageHub",
     label: "Manage Translation Hub",
@@ -132,6 +156,12 @@ const VIEW_OPTIONS: Array<{
     label: "Onboarding / History",
     description: "状态型页面：引导流、进度态、空历史页。",
     source: "app.onboarding / app.translate-v4-history",
+  },
+  {
+    key: "designStandards",
+    label: "Design Standards",
+    description: "整体配色、字体字号、圆角和页面结构约束规范。",
+    source: "design tokens / layout rules",
   },
 ];
 
@@ -283,6 +313,51 @@ const inactiveNavStyle: CSSProperties = {
   background: "var(--app-color-surface)",
 };
 
+const swatchGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 16,
+};
+
+const swatchStyle: CSSProperties = {
+  borderRadius: 14,
+  overflow: "hidden",
+  border: "1px solid var(--app-color-border-secondary)",
+  background: "var(--app-color-surface)",
+};
+
+const swatchColorStyle: CSSProperties = {
+  height: 88,
+  width: "100%",
+};
+
+const ruleCardStyle: CSSProperties = {
+  padding: 16,
+  borderRadius: 16,
+  border: "1px solid var(--app-color-border-secondary)",
+  background: "rgba(255, 255, 255, 0.82)",
+};
+
+const previewPageShellStyle: CSSProperties = {
+  padding: 18,
+  borderRadius: 18,
+  border: "1px solid var(--app-color-border-secondary)",
+  background: "rgba(255, 255, 255, 0.74)",
+};
+
+function getPreviewScopeStyle(config: DemoConfig): CSSProperties {
+  return {
+    "--app-accent-primary": config.brandPrimary,
+    "--app-accent-primary-hover": config.brandPrimaryHover,
+    "--app-accent-primary-deep": config.brandPrimaryDeep,
+    "--app-font-size-body": config.bodyFontSize,
+    "--app-font-size-body-small": config.bodySmallFontSize,
+    "--app-font-size-caption": config.captionFontSize,
+    "--app-radius-lg": config.cornerRadius,
+    "--ui-demo-heading-lg": config.headingLgFontSize,
+  } as CSSProperties;
+}
+
 export default function AppUiLibraryDemo() {
   const loaderData = useLoaderData<typeof loader>();
   const saveFetcher = useFetcher<typeof action>();
@@ -351,7 +426,10 @@ export default function AppUiLibraryDemo() {
     <>
       <TitleBar title="UI Library Demo" />
       <Page fullWidth>
-        <div style={{ display: "grid", gap: 20 }}>
+        <div
+          className="ui-demo-preview-scope"
+          style={{ ...getPreviewScopeStyle(config), display: "grid", gap: 20 }}
+        >
           <Card>
             <BlockStack gap="300">
               <InlineStack align="space-between" blockAlign="center" wrap>
@@ -360,16 +438,17 @@ export default function AppUiLibraryDemo() {
                     UI Library Demo Configurator
                   </Text>
                   <Text as="p" tone="subdued" variant="bodySm">
-                      用 Polaris 组件做的轻量配置台。右侧可视化修改后点击保存，
-                      会直接写入仓库里的标准配置文件。
+                    用 Polaris 组件做的轻量配置台。现在同时包含组件规范、
+                    页面结构规范和设计 token 规范；右侧可视化修改后点击保存，
+                    会直接写入仓库里的标准配置文件。
                   </Text>
                 </BlockStack>
                 <InlineStack gap="200" wrap>
                   <Badge tone="info">Polaris</Badge>
-                    <Badge tone="success">File backed</Badge>
-                    <Badge tone={isDirty ? "attention" : "success"}>
-                      {isDirty ? "Unsaved changes" : "Synced"}
-                    </Badge>
+                  <Badge tone="success">File backed</Badge>
+                  <Badge tone={isDirty ? "attention" : "success"}>
+                    {isDirty ? "Unsaved changes" : "Synced"}
+                  </Badge>
                 </InlineStack>
               </InlineStack>
             </BlockStack>
@@ -417,26 +496,26 @@ export default function AppUiLibraryDemo() {
                     <Text as="h2" variant="headingMd">
                       Save State
                     </Text>
-                      <Badge tone="info">repo file</Badge>
+                    <Badge tone="info">repo file</Badge>
                   </InlineStack>
                   <Text as="p" tone="subdued" variant="bodySm">
                     {saveLabel}
                   </Text>
-                    <Text as="p" tone="subdued" variant="bodySm">
-                      Reference file: {loaderData.configFilePath}
-                    </Text>
+                  <Text as="p" tone="subdued" variant="bodySm">
+                    Reference file: {loaderData.configFilePath}
+                  </Text>
                   <InlineStack gap="200" wrap>
-                      <Button
-                        variant="primary"
-                        onClick={saveConfig}
-                        loading={saveFetcher.state !== "idle"}
-                        disabled={!isDirty}
-                      >
-                        Save standard
-                      </Button>
-                      <Button onClick={reloadConfig} disabled={!isDirty}>
-                        Reload file
-                      </Button>
+                    <Button
+                      variant="primary"
+                      onClick={saveConfig}
+                      loading={saveFetcher.state !== "idle"}
+                      disabled={!isDirty}
+                    >
+                      Save standard
+                    </Button>
+                    <Button onClick={reloadConfig} disabled={!isDirty}>
+                      Reload file
+                    </Button>
                     <Button onClick={copyConfig}>{copyLabel}</Button>
                     <Button onClick={resetConfig}>Reset</Button>
                   </InlineStack>
@@ -517,6 +596,60 @@ function ConfigPanel({
         />
       </div>
 
+      <div style={sectionGrid2Style}>
+        <TextField
+          label="Primary brand color"
+          value={config.brandPrimary}
+          onChange={(value) => updateConfig("brandPrimary", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Primary hover color"
+          value={config.brandPrimaryHover}
+          onChange={(value) => updateConfig("brandPrimaryHover", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Primary deep color"
+          value={config.brandPrimaryDeep}
+          onChange={(value) => updateConfig("brandPrimaryDeep", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Corner radius"
+          value={config.cornerRadius}
+          onChange={(value) => updateConfig("cornerRadius", value)}
+          autoComplete="off"
+        />
+      </div>
+
+      <div style={sectionGrid2Style}>
+        <TextField
+          label="Body font size"
+          value={config.bodyFontSize}
+          onChange={(value) => updateConfig("bodyFontSize", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Body small font size"
+          value={config.bodySmallFontSize}
+          onChange={(value) => updateConfig("bodySmallFontSize", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Caption font size"
+          value={config.captionFontSize}
+          onChange={(value) => updateConfig("captionFontSize", value)}
+          autoComplete="off"
+        />
+        <TextField
+          label="Heading LG size"
+          value={config.headingLgFontSize}
+          onChange={(value) => updateConfig("headingLgFontSize", value)}
+          autoComplete="off"
+        />
+      </div>
+
       <Select
         label="Active preview"
         options={VIEW_OPTIONS.map((option) => ({
@@ -526,6 +659,33 @@ function ConfigPanel({
         value={config.activeView}
         onChange={(value) => updateConfig("activeView", value as DemoViewKey)}
       />
+
+      {config.activeView === "componentLibrary" ? (
+        <div style={sectionGrid2Style}>
+          <Checkbox
+            label="Use saturated CTA color"
+            checked={config.enableAutoTranslate}
+            onChange={(value) => updateConfig("enableAutoTranslate", value)}
+          />
+          <Checkbox
+            label="Show mobile card pattern"
+            checked={config.showMobileCard}
+            onChange={(value) => updateConfig("showMobileCard", value)}
+          />
+          <TextField
+            label="Primary resource"
+            value={config.selectedResource}
+            onChange={(value) => updateConfig("selectedResource", value)}
+            autoComplete="off"
+          />
+          <TextField
+            label="Secondary resource"
+            value={config.secondaryResource}
+            onChange={(value) => updateConfig("secondaryResource", value)}
+            autoComplete="off"
+          />
+        </div>
+      ) : null}
 
       {config.activeView === "manageHub" ? (
         <div style={sectionGrid2Style}>
@@ -715,12 +875,43 @@ function ConfigPanel({
           />
         </div>
       ) : null}
+
+      {config.activeView === "designStandards" ? (
+        <div style={sectionGrid2Style}>
+          <TextField
+            label="Body font size"
+            value={config.bodyFontSize}
+            onChange={(value) => updateConfig("bodyFontSize", value)}
+            autoComplete="off"
+          />
+          <TextField
+            label="Heading LG size"
+            value={config.headingLgFontSize}
+            onChange={(value) => updateConfig("headingLgFontSize", value)}
+            autoComplete="off"
+          />
+          <TextField
+            label="Primary brand color"
+            value={config.brandPrimary}
+            onChange={(value) => updateConfig("brandPrimary", value)}
+            autoComplete="off"
+          />
+          <TextField
+            label="Corner radius"
+            value={config.cornerRadius}
+            onChange={(value) => updateConfig("cornerRadius", value)}
+            autoComplete="off"
+          />
+        </div>
+      ) : null}
     </BlockStack>
   );
 }
 
 function renderPreview(config: DemoConfig) {
   switch (config.activeView) {
+    case "componentLibrary":
+      return <ComponentLibraryPreview config={config} />;
     case "manageHub":
       return <ManageHubPreview config={config} />;
     case "detailPage":
@@ -735,9 +926,271 @@ function renderPreview(config: DemoConfig) {
       return <AnalyticsPreview config={config} />;
     case "onboarding":
       return <OnboardingPreview config={config} />;
+    case "designStandards":
+      return <DesignStandardsPreview config={config} />;
     default:
       return null;
   }
+}
+
+function ComponentLibraryPreview({ config }: { config: DemoConfig }) {
+  return (
+    <div style={frameStyle}>
+      <BlockStack gap="400">
+        <div style={sectionGrid2Style}>
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Button and CTA standards
+              </Text>
+              <Text as="p" tone="subdued" variant="bodySm">
+                主按钮保持高饱和品牌色，次级按钮只保留边框和轻交互反馈。
+              </Text>
+              <InlineStack gap="200" wrap>
+                <Button variant="primary">Primary action</Button>
+                <Button>Secondary action</Button>
+                <Button variant="tertiary">Tertiary action</Button>
+                <Button tone="critical" variant="secondary">
+                  Delete
+                </Button>
+              </InlineStack>
+            </BlockStack>
+          </Card>
+
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Status and feedback
+              </Text>
+              <InlineStack gap="200" wrap>
+                <Badge tone="success">Healthy</Badge>
+                <Badge tone="attention">Needs review</Badge>
+                <Badge tone="info">Draft</Badge>
+                <Badge tone="critical">Blocked</Badge>
+              </InlineStack>
+              <div style={ruleCardStyle}>
+                <Text as="p" tone="subdued" variant="bodySm">
+                  规则：状态色只用于状态，不用于大面积按钮；CTA 只保留一组主色。
+                </Text>
+              </div>
+            </BlockStack>
+          </Card>
+        </div>
+
+        <div style={sectionGrid2Style}>
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Form controls
+              </Text>
+              <TextField
+                label="Localized title"
+                value={`${config.selectedResource} (${config.targetLanguage})`}
+                onChange={() => {}}
+                autoComplete="off"
+              />
+              <Select
+                label="Target language"
+                options={[
+                  { label: config.targetLanguage, value: config.targetLanguage },
+                  { label: "Deutsch", value: "Deutsch" },
+                  { label: "Japanese", value: "Japanese" },
+                ]}
+                value={config.targetLanguage}
+                onChange={() => {}}
+              />
+              <Checkbox
+                label="Enable auto translate by default"
+                checked={config.enableAutoTranslate}
+                onChange={() => {}}
+              />
+            </BlockStack>
+          </Card>
+
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Save and empty states
+              </Text>
+              <div style={saveBarStyle}>
+                <Text as="span" tone="subdued" variant="bodySm">
+                  Unsaved changes in component standard
+                </Text>
+                <InlineStack gap="200">
+                  <Button>Cancel</Button>
+                  <Button variant="primary">Save</Button>
+                </InlineStack>
+              </div>
+              <div style={ruleCardStyle}>
+                <BlockStack gap="200">
+                  <Text as="span" fontWeight="semibold">
+                    Empty state guidance
+                  </Text>
+                  <Text as="p" tone="subdued" variant="bodySm">
+                    标题一句话讲清状态，下面给一个动作按钮，不要堆过多辅助文案。
+                  </Text>
+                  <Button variant="primary">Create first task</Button>
+                </BlockStack>
+              </div>
+            </BlockStack>
+          </Card>
+        </div>
+
+        <Card>
+          <BlockStack gap="300">
+            <InlineStack align="space-between" blockAlign="center" wrap>
+              <Text as="h3" variant="headingMd">
+                Table and mobile fallback
+              </Text>
+              <Badge tone="info">List pattern</Badge>
+            </InlineStack>
+            <DataPreviewTable
+              headers={["Field", "Source", "Translated", "Action"]}
+              rows={[
+                [
+                  "Title",
+                  config.selectedResource,
+                  `${config.selectedResource} (${config.targetLanguage})`,
+                  <ActionText key="component-edit-title">Edit</ActionText>,
+                ],
+                [
+                  "Description",
+                  "A concise product description in source language.",
+                  "Localized description preview.",
+                  <ActionText key="component-edit-body">Translate</ActionText>,
+                ],
+              ]}
+            />
+            {config.showMobileCard ? (
+              <div style={sectionGrid2Style}>
+                <MobileListCard
+                  title={config.targetLanguage}
+                  status="Healthy"
+                  autoTranslate={config.enableAutoTranslate}
+                />
+                <MobileListCard title="Deutsch" status="Needs review" autoTranslate={false} />
+              </div>
+            ) : null}
+          </BlockStack>
+        </Card>
+      </BlockStack>
+    </div>
+  );
+}
+
+function DesignStandardsPreview({ config }: { config: DemoConfig }) {
+  return (
+    <div style={frameStyle}>
+      <BlockStack gap="400">
+        <Card>
+          <BlockStack gap="300">
+            <Text as="h3" variant="headingMd">
+              Color palette and button saturation
+            </Text>
+            <div style={swatchGridStyle}>
+              <ColorSwatch label="Primary" value={config.brandPrimary} />
+              <ColorSwatch label="Hover" value={config.brandPrimaryHover} />
+              <ColorSwatch label="Deep" value={config.brandPrimaryDeep} />
+            </div>
+            <InlineStack gap="200" wrap>
+              <Button variant="primary">Primary CTA</Button>
+              <Button>Secondary CTA</Button>
+              <Button variant="tertiary">Text action</Button>
+            </InlineStack>
+          </BlockStack>
+        </Card>
+
+        <div style={sectionGrid2Style}>
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Typography scale
+              </Text>
+              <TypeScaleRow label="Heading LG" value={config.headingLgFontSize}>
+                <span style={{ fontSize: "var(--ui-demo-heading-lg)", fontWeight: 700 }}>
+                  Build clear, single-column information hierarchy
+                </span>
+              </TypeScaleRow>
+              <TypeScaleRow label="Body" value={config.bodyFontSize}>
+                <span style={{ fontSize: "var(--app-font-size-body)" }}>
+                  Body copy should stay compact and readable in product-like admin pages.
+                </span>
+              </TypeScaleRow>
+              <TypeScaleRow label="Body Small" value={config.bodySmallFontSize}>
+                <span style={{ fontSize: "var(--app-font-size-body-small)" }}>
+                  Use for helper text, captions, and table metadata.
+                </span>
+              </TypeScaleRow>
+              <TypeScaleRow label="Caption" value={config.captionFontSize}>
+                <span style={{ fontSize: "var(--app-font-size-caption)" }}>
+                  Status hints, tags, and dense secondary labels.
+                </span>
+              </TypeScaleRow>
+            </BlockStack>
+          </Card>
+
+          <Card>
+            <BlockStack gap="300">
+              <Text as="h3" variant="headingMd">
+                Layout constraints
+              </Text>
+              <RuleList
+                items={[
+                  "Settings page: single-column, section cards stacked vertically.",
+                  "Detail page: header + toolbar + left resource list + right editable content.",
+                  "List page: top actions, filters, desktop table, mobile card fallback.",
+                  "Overview page: summary cards first, then grouped actions or reports.",
+                ]}
+              />
+            </BlockStack>
+          </Card>
+        </div>
+
+        <Card>
+          <BlockStack gap="300">
+            <Text as="h3" variant="headingMd">
+              Page structure standards
+            </Text>
+            <div style={sectionGrid2Style}>
+              <PagePatternCard
+                title="Settings pattern"
+                subtitle="Single-column"
+                items={["Header", "SaveBar", "Section card", "Tight helper copy"]}
+              />
+              <PagePatternCard
+                title="Detail pattern"
+                subtitle="Editable workspace"
+                items={["Header + filters", "Sidebar list", "Editable table", "Pagination"]}
+              />
+              <PagePatternCard
+                title="Index pattern"
+                subtitle="Operation list"
+                items={["Bulk actions", "Index table", "Status cell", "Mobile cards"]}
+              />
+              <PagePatternCard
+                title="Overview pattern"
+                subtitle="Dashboard / report"
+                items={["Summary metrics", "Grouped cards", "One primary CTA", "Secondary reports"]}
+              />
+            </div>
+          </BlockStack>
+        </Card>
+
+        <div style={sectionGrid2Style}>
+          <PreviewPageShell
+            title="Settings skeleton"
+            description="适合 switcher / general settings / config forms。"
+            blocks={["Page header", "Save bar", "Section card", "Section card"]}
+          />
+          <PreviewPageShell
+            title="Detail skeleton"
+            description="适合 products / pages / articles / theme blocks。"
+            blocks={["Header + filters", "Sidebar resource list", "Editable grid", "Footer pagination"]}
+          />
+        </div>
+      </BlockStack>
+    </div>
+  );
 }
 
 function ManageHubPreview({ config }: { config: DemoConfig }) {
@@ -1418,6 +1871,142 @@ function MetricTile({ label, value }: { label: string; value: string }) {
         <Text as="p" variant="headingLg">
           {value}
         </Text>
+      </BlockStack>
+    </div>
+  );
+}
+
+function ColorSwatch({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={swatchStyle}>
+      <div style={{ ...swatchColorStyle, background: value }} />
+      <div style={{ padding: 12 }}>
+        <BlockStack gap="100">
+          <Text as="span" fontWeight="semibold">
+            {label}
+          </Text>
+          <Text as="span" tone="subdued" variant="bodySm">
+            {value}
+          </Text>
+        </BlockStack>
+      </div>
+    </div>
+  );
+}
+
+function TypeScaleRow({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value: string;
+  children: ReactNode;
+}) {
+  return (
+    <div style={ruleCardStyle}>
+      <BlockStack gap="100">
+        <InlineStack align="space-between" blockAlign="center">
+          <Text as="span" fontWeight="semibold">
+            {label}
+          </Text>
+          <Text as="span" tone="subdued" variant="bodySm">
+            {value}
+          </Text>
+        </InlineStack>
+        <div>{children}</div>
+      </BlockStack>
+    </div>
+  );
+}
+
+function RuleList({ items }: { items: string[] }) {
+  return (
+    <div style={ruleCardStyle}>
+      <BlockStack gap="200">
+        {items.map((item) => (
+          <InlineStack key={item} gap="200" blockAlign="start">
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: "var(--app-accent-primary)",
+                marginTop: 6,
+                flexShrink: 0,
+              }}
+            />
+            <Text as="p" tone="subdued" variant="bodySm">
+              {item}
+            </Text>
+          </InlineStack>
+        ))}
+      </BlockStack>
+    </div>
+  );
+}
+
+function PagePatternCard({
+  title,
+  subtitle,
+  items,
+}: {
+  title: string;
+  subtitle: string;
+  items: string[];
+}) {
+  return (
+    <div style={ruleCardStyle}>
+      <BlockStack gap="200">
+        <Text as="h4" variant="headingSm">
+          {title}
+        </Text>
+        <Text as="p" tone="subdued" variant="bodySm">
+          {subtitle}
+        </Text>
+        <RuleList items={items} />
+      </BlockStack>
+    </div>
+  );
+}
+
+function PreviewPageShell({
+  title,
+  description,
+  blocks,
+}: {
+  title: string;
+  description: string;
+  blocks: string[];
+}) {
+  return (
+    <div style={previewPageShellStyle}>
+      <BlockStack gap="300">
+        <BlockStack gap="100">
+          <Text as="h4" variant="headingSm">
+            {title}
+          </Text>
+          <Text as="p" tone="subdued" variant="bodySm">
+            {description}
+          </Text>
+        </BlockStack>
+        <BlockStack gap="200">
+          {blocks.map((block) => (
+            <div
+              key={block}
+              style={{
+                padding: "14px 16px",
+                borderRadius: 12,
+                border: "1px dashed var(--app-color-border-secondary)",
+                background: "var(--app-color-surface-secondary)",
+              }}
+            >
+              <Text as="span" variant="bodySm">
+                {block}
+              </Text>
+            </div>
+          ))}
+        </BlockStack>
       </BlockStack>
     </div>
   );
