@@ -680,6 +680,7 @@
   "Translation prompt": "Translation prompt",
   "Start translation": "Start translation",
   "manage.singleTranslate.promptOptional": "Translation prompt (optional)",
+  "manage.singleTranslate.promptSuggestion": "Translation suggestion",
   "manage.singleTranslate.promptOptionalHint": "Optionally add suggestions for tone or wording before translating.",
   "manage.singleTranslate.estimateLoading": "Estimating credits…",
   "manage.singleTranslate.estimateUnavailable": "Credit estimate unavailable",

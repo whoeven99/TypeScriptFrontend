@@ -683,6 +683,7 @@
   "Translation prompt": "翻译提示词",
   "Start translation": "开始翻译",
   "manage.singleTranslate.promptOptional": "翻译提示（可选）",
+  "manage.singleTranslate.promptSuggestion": "翻译建议",
   "manage.singleTranslate.promptOptionalHint": "可先填写语气或用词建议，再开始翻译。",
   "manage.singleTranslate.estimateLoading": "正在估算积分…",
   "manage.singleTranslate.estimateUnavailable": "暂无法估算积分",

@@ -20,12 +20,6 @@ const ESTIMATE_DEBOUNCE_MS = 350;
 
 type SingleTranslateModalState = "missing" | "quality" | "outdated";
 
-type SingleTranslatePreset = {
-  value: string;
-  label: string;
-  prompt: string;
-};
-
 export type SingleTranslateSubmitPayload = {
   customPrompt?: string;
   aiModel: string;
@@ -89,7 +83,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [selectedPreset, setSelectedPreset] = useState<string | undefined>();
   const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
   const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
@@ -116,72 +109,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     [t],
   );
 
-  const presetOptions = useMemo<SingleTranslatePreset[]>(() => {
-    if (modalState === "missing") {
-      return [
-        {
-          value: "faithful",
-          label: t("manage.singleTranslate.preset.faithful"),
-          prompt: t("manage.singleTranslate.presetPrompt.faithful"),
-        },
-        {
-          value: "natural",
-          label: t("manage.singleTranslate.preset.natural"),
-          prompt: t("manage.singleTranslate.presetPrompt.natural"),
-        },
-        {
-          value: "brand",
-          label: t("manage.singleTranslate.preset.brand"),
-          prompt: t("manage.singleTranslate.presetPrompt.brand"),
-        },
-      ];
-    }
-
-    if (modalState === "outdated") {
-      return [
-        {
-          value: "sync-latest",
-          label: t("manage.singleTranslate.preset.syncLatest"),
-          prompt: t("manage.singleTranslate.presetPrompt.syncLatest"),
-        },
-        {
-          value: "keep-tone",
-          label: t("manage.singleTranslate.preset.keepTone"),
-          prompt: t("manage.singleTranslate.presetPrompt.keepTone"),
-        },
-        {
-          value: "check-details",
-          label: t("manage.singleTranslate.preset.checkDetails"),
-          prompt: t("manage.singleTranslate.presetPrompt.checkDetails"),
-        },
-      ];
-    }
-
-    return [
-      {
-        value: "more-natural",
-        label: t("manage.singleTranslate.preset.moreNatural"),
-        prompt: t("manage.singleTranslate.presetPrompt.moreNatural"),
-      },
-      {
-        value: "brand-stronger",
-        label: t("manage.singleTranslate.preset.brandStronger"),
-        prompt: t("manage.singleTranslate.presetPrompt.brandStronger"),
-      },
-      {
-        value: "keep-terms",
-        label: t("manage.singleTranslate.preset.keepTerms"),
-        prompt: t("manage.singleTranslate.presetPrompt.keepTerms"),
-      },
-    ];
-  }, [modalState, t]);
-
-  const selectedPresetPrompt = useMemo(
-    () =>
-      presetOptions.find((option) => option.value === selectedPreset)?.prompt ?? "",
-    [presetOptions, selectedPreset],
-  );
-
   const shortfallCredits = useMemo(() => {
     if (estimatedCredits == null || currentRemainingCredits == null) return null;
     return Math.max(estimatedCredits - currentRemainingCredits, 0);
@@ -196,7 +123,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     hasSubmittedRef.current = false;
     setOpen(false);
     setPrompt("");
-    setSelectedPreset(undefined);
   }, [loading]);
 
   useEffect(() => {
@@ -217,9 +143,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     setEstimateLoading(true);
     const timer = window.setTimeout(async () => {
       try {
-        const customPrompt = [selectedPresetPrompt, normalizeText(prompt)]
-          .filter(Boolean)
-          .join("\n");
         const res = await fetch("/api/translate-v4/single-estimate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -227,7 +150,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
             context: text,
             target,
             key: fieldKey?.trim() || "value",
-            customPrompt: customPrompt || undefined,
+            customPrompt: normalizeText(prompt) || undefined,
             aiModel,
           }),
           signal: controller.signal,
@@ -261,7 +184,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     fieldKey,
     prompt,
     aiModel,
-    selectedPresetPrompt,
   ]);
 
   useEffect(() => {
@@ -304,38 +226,27 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const actionLabel = getActionLabel(modalState, t);
   const modalTitle = getModalTitle(modalState, t);
   const submitLabel = getSubmitLabel(modalState, t);
-  const promptLabel = t("manage.singleTranslate.promptOptional");
-  const promptDescription = getPromptDescription(modalState, t);
-  const stateTitle = getStateTitle(modalState, t);
-  const stateDescription = getStateDescription(modalState, t);
+  const promptLabel = t("manage.singleTranslate.promptSuggestion");
 
   const estimateLabel = estimateLoading
-    ? t("manage.singleTranslate.estimateLoading")
+    ? t("Estimating...")
     : estimatedCredits === null
-      ? t("manage.singleTranslate.estimateUnavailable")
-      : t("manage.singleTranslate.estimateCredits", {
-          credits: estimatedCredits.toLocaleString(),
-        });
+      ? "--"
+      : `${estimatedCredits.toLocaleString()} ${t("credits")}`;
 
   const remainingLabel = quotaLoading
-    ? t("manage.singleTranslate.remainingLoading")
+    ? t("Estimating...")
     : currentRemainingCredits == null
-      ? t("manage.singleTranslate.remainingUnavailable")
-      : t("manage.singleTranslate.remainingCredits", {
-          credits: currentRemainingCredits.toLocaleString(),
-        });
+      ? "--"
+      : `${currentRemainingCredits.toLocaleString()} ${t("credits")}`;
 
   const closeModal = () => {
     setOpen(false);
     setPrompt("");
-    setSelectedPreset(undefined);
   };
 
   const handleSubmit = () => {
-    const trimmedPrompt = normalizeText(prompt);
-    const customPrompt = [selectedPresetPrompt, trimmedPrompt]
-      .filter(Boolean)
-      .join("\n");
+    const customPrompt = normalizeText(prompt);
 
     const openPurchaseModalWithContext = () => {
       closeModal();
@@ -396,29 +307,8 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
                 borderBottom: `1px solid ${v4Colors.divider}`,
               }}
             >
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: "rgba(79, 70, 229, 0.1)",
-                  color: v4Colors.primary,
-                  marginBottom: 12,
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                {stateTitle}
-              </div>
               <Text strong style={{ display: "block", fontSize: 24, lineHeight: 1.3 }}>
                 {modalTitle}
-              </Text>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginTop: 10, maxWidth: 460 }}
-              >
-                {stateDescription}
               </Text>
             </div>
 
@@ -464,12 +354,6 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
                     critical={Boolean(shortfallCredits && shortfallCredits > 0)}
                   />
                 </div>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", marginTop: 10, fontSize: 12 }}
-                >
-                  {t("manage.singleTranslate.estimateHint")}
-                </Text>
               </div>
 
               <div>
@@ -486,38 +370,8 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
               </div>
 
               <div>
-                <Text strong style={{ display: "block", marginBottom: 8 }}>
-                  {t("manage.singleTranslate.goalLabel")}
-                </Text>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", marginBottom: 8 }}
-                >
-                  {getGoalDescription(modalState, t)}
-                </Text>
-                <Select
-                  style={{ width: "100%" }}
-                  placeholder={t("manage.singleTranslate.goalPlaceholder")}
-                  options={presetOptions.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                  }))}
-                  value={selectedPreset}
-                  onChange={(value) => setSelectedPreset(value)}
-                  allowClear
-                  getPopupContainer={(node) => node.parentElement ?? document.body}
-                />
-              </div>
-
-              <div>
                 <Text strong style={{ display: "block", marginBottom: 4 }}>
                   {promptLabel}
-                </Text>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", marginBottom: 8 }}
-                >
-                  {promptDescription}
                 </Text>
                 <TextArea
                   rows={4}
@@ -604,54 +458,6 @@ function getSubmitLabel(
   if (state === "missing") return t("manage.singleTranslate.submitMissing");
   if (state === "outdated") return t("manage.singleTranslate.submitOutdated");
   return t("manage.singleTranslate.submitQuality");
-}
-
-function getStateTitle(
-  state: SingleTranslateModalState,
-  t: (key: string) => string,
-) {
-  if (state === "missing") return t("manage.singleTranslate.stateMissing");
-  if (state === "outdated") return t("manage.singleTranslate.stateOutdated");
-  return t("manage.singleTranslate.stateQuality");
-}
-
-function getStateDescription(
-  state: SingleTranslateModalState,
-  t: (key: string) => string,
-) {
-  if (state === "missing") {
-    return t("manage.singleTranslate.descMissing");
-  }
-  if (state === "outdated") {
-    return t("manage.singleTranslate.descOutdated");
-  }
-  return t("manage.singleTranslate.descQuality");
-}
-
-function getGoalDescription(
-  state: SingleTranslateModalState,
-  t: (key: string) => string,
-) {
-  if (state === "missing") {
-    return t("manage.singleTranslate.goalDescMissing");
-  }
-  if (state === "outdated") {
-    return t("manage.singleTranslate.goalDescOutdated");
-  }
-  return t("manage.singleTranslate.goalDescQuality");
-}
-
-function getPromptDescription(
-  state: SingleTranslateModalState,
-  t: (key: string) => string,
-) {
-  if (state === "missing") {
-    return t("manage.singleTranslate.promptDescMissing");
-  }
-  if (state === "outdated") {
-    return t("manage.singleTranslate.promptDescOutdated");
-  }
-  return t("manage.singleTranslate.promptDescQuality");
 }
 
 export default SingleTranslateAction;
