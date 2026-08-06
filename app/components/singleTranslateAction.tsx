@@ -113,6 +113,12 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
     if (estimatedCredits == null || currentRemainingCredits == null) return null;
     return Math.max(estimatedCredits - currentRemainingCredits, 0);
   }, [estimatedCredits, currentRemainingCredits]);
+  const quotaPrecheckPending = open && (estimateLoading || quotaLoading);
+  const quotaPrecheckReady =
+    estimatedCredits != null && currentRemainingCredits != null;
+  const shouldOpenPurchaseModal =
+    quotaPrecheckReady &&
+    (currentRemainingCredits <= 0 || estimatedCredits > currentRemainingCredits);
 
   useEffect(() => {
     if (loading) {
@@ -263,16 +269,12 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
       }, 0);
     };
 
-    if (currentRemainingCredits != null && currentRemainingCredits <= 0) {
-      openPurchaseModalWithContext();
+    if (quotaPrecheckPending) {
+      shopify.toast.show(t("Calculating..."));
       return;
     }
 
-    if (
-      estimatedCredits != null &&
-      currentRemainingCredits != null &&
-      estimatedCredits > currentRemainingCredits
-    ) {
+    if (shouldOpenPurchaseModal) {
       openPurchaseModalWithContext();
       return;
     }
@@ -396,7 +398,12 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
               <Button type="default" onClick={closeModal} disabled={loading}>
                 {t("Cancel")}
               </Button>
-              <Button type="primary" onClick={handleSubmit} loading={loading}>
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                loading={loading}
+                disabled={quotaPrecheckPending}
+              >
                 {submitLabel}
               </Button>
             </div>
