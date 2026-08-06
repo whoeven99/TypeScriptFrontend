@@ -70,6 +70,20 @@ function getModalState(args: {
   return "quality";
 }
 
+function deferOpenCreditsPurchaseModal(
+  context: Parameters<typeof openCreditsPurchaseModal>[0],
+) {
+  const schedule = () => openCreditsPurchaseModal(context);
+  if (typeof window === "undefined") return;
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(schedule);
+    });
+    return;
+  }
+  window.setTimeout(schedule, 0);
+}
+
 const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   existingTranslation,
   isOutdated = false,
@@ -233,6 +247,9 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
   const modalTitle = getModalTitle(modalState, t);
   const submitLabel = getSubmitLabel(modalState, t);
   const promptLabel = t("manage.singleTranslate.promptSuggestion");
+  const primaryLabel = shouldOpenPurchaseModal
+    ? t("Buy credits and translate")
+    : submitLabel;
 
   const estimateLabel = estimateLoading
     ? t("Estimating...")
@@ -256,17 +273,15 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
 
     const openPurchaseModalWithContext = () => {
       closeModal();
-      window.setTimeout(() => {
-        openCreditsPurchaseModal({
-          kind: "single_translate",
-          target: normalizeText(targetLocale) || "target",
-          fieldKey: fieldKey?.trim() || "value",
-          estimatedCredits,
-          currentRemainingCredits,
-          shortfallCredits,
-          state: modalState,
-        });
-      }, 0);
+      deferOpenCreditsPurchaseModal({
+        kind: "single_translate",
+        target: normalizeText(targetLocale) || "target",
+        fieldKey: fieldKey?.trim() || "value",
+        estimatedCredits,
+        currentRemainingCredits,
+        shortfallCredits,
+        state: modalState,
+      });
     };
 
     if (quotaPrecheckPending) {
@@ -404,7 +419,7 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
                 loading={loading}
                 disabled={quotaPrecheckPending}
               >
-                {submitLabel}
+                {primaryLabel}
               </Button>
             </div>
           </div>
