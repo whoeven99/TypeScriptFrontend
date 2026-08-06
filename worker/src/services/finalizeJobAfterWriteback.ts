@@ -14,6 +14,10 @@ import { computeModuleCount } from "./itemsCount.js";
 import { recordJobUsageSnapshot } from "./recordJobUsageSnapshot.js";
 import { upsertLocaleCoverage } from "./localeCoverageTsf.js";
 import { getOfflineAccessTokenFromTsf } from "./tsfDb.js";
+import {
+  V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL,
+  V4_MESSAGE_WRITEBACK_ALL_FAILED,
+} from "./userFacingMessages.js";
 
 export type FinalizeAfterWritebackInput = {
   writebackDone: number;
@@ -116,12 +120,12 @@ export async function finalizeJobAfterWriteback(
         ? undefined
         : "WRITEBACK",
     errorMessage: translateIncomplete
-      ? "额度不足，仅翻译并写回了部分资源，补充额度后点击「继续」可翻译剩余内容"
+      ? V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL
       : wroteAnything
         ? nothingToTranslate
           ? null
           : undefined
-        : "写回未成功：全部资源均未写入 Shopify（请查看 worker 日志或写回详情）",
+        : V4_MESSAGE_WRITEBACK_ALL_FAILED,
     claimedBy: null,
     stageTimings,
     metrics: mergedMetrics,
