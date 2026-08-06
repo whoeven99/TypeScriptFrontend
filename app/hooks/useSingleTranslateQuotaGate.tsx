@@ -8,6 +8,7 @@ import {
   resolveSingleTranslateQuotaGateMode,
 } from "~/lib/singleTranslateQuotaFeedback";
 import { TRANSLATE_V4_ERROR_KEYS } from "~/utils/translateV4Errors";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
 
 export function useSingleTranslateQuotaGate() {
   const { t } = useTranslation();
@@ -22,6 +23,10 @@ export function useSingleTranslateQuotaGate() {
   const handleSingleTranslateFailure = useCallback(
     (errorMsg?: string | null) => {
       if (errorMsg && isSingleTranslateQuotaError(errorMsg)) {
+        if (errorMsg === "v4.create.noCreditsPricing") {
+          openCreditsPurchaseModal();
+          return;
+        }
         const mode = resolveSingleTranslateQuotaGateMode(errorMsg, isNew);
         if (mode) {
           setQuotaGateMode(mode);
@@ -59,6 +64,10 @@ export function useSingleTranslateQuotaGate() {
       ),
     openQuotaGateForError: (errorMsg?: string | null) => {
       if (!errorMsg || !isSingleTranslateQuotaError(errorMsg)) return;
+      if (errorMsg === "v4.create.noCreditsPricing") {
+        openCreditsPurchaseModal();
+        return;
+      }
       const mode = resolveSingleTranslateQuotaGateMode(errorMsg, isNew);
       if (mode) setQuotaGateMode(mode);
     },

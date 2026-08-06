@@ -55,7 +55,10 @@ import {
   markPerfEnd,
   markPerfStart,
 } from "~/utils/perf";
-import { OPEN_CREDITS_PURCHASE_MODAL_EVENT } from "~/utils/creditsPurchaseModal";
+import {
+  OPEN_CREDITS_PURCHASE_MODAL_EVENT,
+  type CreditsPurchaseModalContext,
+} from "~/utils/creditsPurchaseModal";
 import { refreshBillingBootstrap } from "~/utils/billingBootstrap";
 import {
   parseBillingReturn,
@@ -468,6 +471,8 @@ export default function App() {
   const [isClient, setIsClient] = useState(false);
   const supportChatReady = useIdleReady();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentPurchaseContext, setPaymentPurchaseContext] =
+    useState<CreditsPurchaseModalContext | null>(null);
   const [perfDebugEnabled, setPerfDebugEnabled] = useState(perfDebug);
 
   const { t } = useTranslation();
@@ -534,7 +539,12 @@ export default function App() {
   useEffect(() => {
     if (!isClient) return;
 
-    const handleOpenCreditsPurchaseModal = () => {
+    const handleOpenCreditsPurchaseModal = (
+      event: Event,
+    ) => {
+      const detail = (event as CustomEvent<CreditsPurchaseModalContext | null>)
+        .detail;
+      setPaymentPurchaseContext(detail ?? null);
       setShowPaymentModal(true);
     };
 
@@ -626,6 +636,7 @@ export default function App() {
             <LazyPaymentModal
               visible={showPaymentModal}
               setVisible={setShowPaymentModal}
+              purchaseContext={paymentPurchaseContext}
             />
           </Suspense>
         ) : null}

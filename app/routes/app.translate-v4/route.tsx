@@ -1,8 +1,6 @@
 import {
   type CSSProperties,
   Profiler,
-  Suspense,
-  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -62,8 +60,10 @@ import {
   markPerfStart,
 } from "~/utils/perf";
 import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
-
-const PaymentModal = lazy(() => import("~/components/paymentModal"));
+import {
+  buildCreateTaskCreditsPurchaseContext,
+  buildTranslateV4TaskCreditsPurchaseContext,
+} from "~/utils/creditsPurchaseTaskContext";
 
 async function readJsonResponse<T = any>(res: Response): Promise<T> {
   const text = await res.text();
@@ -229,7 +229,6 @@ export default function AppTranslateV4() {
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
   const [activeWorkbenchTab, setActiveWorkbenchTab] = useState<
     "create" | "tasks"
@@ -415,6 +414,18 @@ export default function AppTranslateV4() {
     });
   }, [refreshQuota]);
 
+  const openTaskCreditsModal = useCallback(
+    (job: TranslationJobProgressSummary) => {
+      openCreditsPurchaseModal(
+        buildTranslateV4TaskCreditsPurchaseContext(
+          job,
+          normalizedQuota?.remaining ?? null,
+        ),
+      );
+    },
+    [normalizedQuota],
+  );
+
   const handleAction = useCallback(
     async (
       taskId: string,
@@ -464,6 +475,8 @@ export default function AppTranslateV4() {
           actionType === "resume" &&
           data?.error === "v4.create.noCreditsPricing"
         ) {
+          const targetJob =
+            jobs.find((item) => item.taskId === taskId) ?? null;
           finishClientLogTrace(trace, {
             level: "info",
             status: "failure",
@@ -474,7 +487,11 @@ export default function AppTranslateV4() {
               quotaBlocked: true,
             },
           });
-          openCreditsPurchaseModal();
+          if (targetJob) {
+            openTaskCreditsModal(targetJob);
+          } else {
+            openCreditsPurchaseModal();
+          }
           return false;
         }
         finishClientLogTrace(trace, {
@@ -504,7 +521,7 @@ export default function AppTranslateV4() {
         return false;
       }
     },
-    [shop, refreshList, refreshQuota, t],
+    [jobs, openTaskCreditsModal, shop, refreshList, refreshQuota, t],
   );
   const remainingCredits = normalizedQuota?.remaining ?? null;
 
@@ -944,7 +961,7 @@ export default function AppTranslateV4() {
                     jobs={jobs}
                     spotlightTaskIds={spotlightTaskIds}
                     translateSlotBusy={translateSlotBusy}
-                    onBuyCredits={() => setShowPaymentModal(true)}
+                    onBuyCredits={openTaskCreditsModal}
                     onAction={handleAction}
                   />
                 </div>
@@ -972,18 +989,16 @@ export default function AppTranslateV4() {
         onConfirmCreate={handleCreateConfirm}
         onBuyCredits={() => {
           setCreateConfirmOpen(false);
-          setShowPaymentModal(true);
+          openCreditsPurchaseModal(
+            buildCreateTaskCreditsPurchaseContext({
+              estimatedCredits: taskEstimate?.estimatedCredits ?? null,
+              currentRemainingCredits: normalizedQuota?.remaining ?? null,
+              targetsCount: targets.length,
+              modulesCount: moduleKeys.length,
+            }),
+          );
         }}
       />
-      {showPaymentModal ? (
-        <Suspense fallback={null}>
-          <PaymentModal
-            visible={showPaymentModal}
-            setVisible={setShowPaymentModal}
-            variant="v4"
-          />
-        </Suspense>
-      ) : null}
     </Page>
   );
 }
