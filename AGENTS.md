@@ -733,13 +733,14 @@ redirect records.
 - 确认保存时**不再**调用 Spring `/userIp/addOrUpdateUserIp`。店面 IP 定位走
 `ciwi-main.js` + ipapi。
 - **第三方 / 自定义 Liquid 翻译管线（PENDING→Worker→DONE）**：
- 1. **采集（opt-in）**：storefront `CollectUntranslatedText` → App Proxy
- `POST liquid/collect` → `liquidCollect.server.ts` 只写入
+ 1. **采集（默认开，无商户开关）**：storefront `CollectUntranslatedText` → App
+ Proxy `POST liquid/collect` → `liquidCollect.server.ts` 只写入
  `LiquidRule(status=PENDING, source=auto, afterTranslation="")`，**不在 Web
- 进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`、每店
- `SwitcherConfiguration.autoLiquidCollect`、主语言（Redis 缓存 1h）、粗筛、
- 去重、额度、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认 100）、总量帽
- `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。
+ 进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`（出事可关）、主语言
+ （Redis 缓存 1h）、粗筛、去重、额度、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认
+ 100）、总量帽 `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。
+ `SwitcherConfiguration.autoLiquidCollect` 列保留且默认 `true`，保存时强制
+ `true`，Switcher UI 开关已移除。
  2. **建任务**：勾选「自定义 Liquid」→ `job.includeLiquid=true`（不进 Shopify
  module 枚举）。
  3. **Worker**：init 读 PENDING → 虚拟 module `CUSTOM_LIQUID` init blob（行
@@ -1004,7 +1005,7 @@ Current models:
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
 - `SwitcherConfiguration`: storefront switcher settings（含 `autoLiquidCollect`
- opt-in：店面自动抓取第三方未翻译文本回填 `LiquidRule`）。
+ 默认 `true`：店面自动抓取第三方未翻译文本回填 `LiquidRule`；无商户开关）。
 - `Currency`, `CurrencyRate`: currency list and rate cache.
 - `PageFlyTranslation`: PageFly translations.
 - `LiquidRule`: custom Liquid translation rules（`source` = `manual`|`auto`；

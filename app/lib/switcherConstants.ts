@@ -33,7 +33,7 @@ export const SWITCHER_UI_DEFAULTS: SwitcherConfigWriteInput = {
   selectorPosition: "bottom_left",
   positionData: "10",
   isTransparent: false,
-  autoLiquidCollect: false,
+  autoLiquidCollect: true,
 };
 
 export function buildSwitcherEditDefaults(shop: string): SwitcherEditData {

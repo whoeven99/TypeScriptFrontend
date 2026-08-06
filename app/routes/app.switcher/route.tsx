@@ -200,7 +200,7 @@ const Index = () => {
     selectorPosition: "",
     positionData: "0",
     isTransparent: false,
-    autoLiquidCollect: false,
+    autoLiquidCollect: true,
   });
   const [selectedLanguage, setSelectedLanguage] = useState<any>(
     localization.languages.find((language) => language.selected),
@@ -808,39 +808,6 @@ const Index = () => {
                             eventType: "click",
                           },
                           "switcher_ip_visible",
-                        );
-                      }}
-                    />
-                  </Flex>
-                  <Flex justify="space-between" align="center">
-                    <Text>
-                      {t("Auto-collect third-party text: ")}
-                      <Popconfirm
-                        title=""
-                        description={t(
-                          "Automatically capture untranslated text from third-party apps on your storefront and translate it. This consumes translation credits.",
-                        )}
-                        trigger="hover"
-                        showCancel={false}
-                        okText={t("OK")}
-                      >
-                        <InfoCircleOutlined style={{ marginLeft: 4 }} />
-                      </Popconfirm>
-                    </Text>
-                    <Switch
-                      checked={editData.autoLiquidCollect}
-                      onChange={(checked) => {
-                        handleEditData({ autoLiquidCollect: checked });
-                        report(
-                          {
-                            status: checked ? 1 : 0,
-                          },
-                          {
-                            action: "/app",
-                            method: "post",
-                            eventType: "click",
-                          },
-                          "switcher_auto_liquid_collect",
                         );
                       }}
                     />

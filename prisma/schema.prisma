@@ -135,8 +135,8 @@ model SwitcherConfiguration {
   selectorPosition      String   @default("bottom_left")
   positionData          String   @default("10")
   isTransparent         Boolean  @default(false)
-  // 店面自动抓取第三方未翻译文本并回填 LiquidRule（opt-in，默认关）。
-  autoLiquidCollect     Boolean  @default(false)
+  // 店面自动抓取第三方未翻译文本并回填 LiquidRule（默认开；无商户开关，可用 AUTO_LIQUID_COLLECT_ENABLED 全局关掉）。
+  autoLiquidCollect     Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

@@ -2709,7 +2709,7 @@ function isAutoLiquidCandidate(text) {
 }
 
 /**
- * 抓取当前页面上未翻译文本并上报后端（仅在 switcher 开启 autoLiquidCollect 时调用）。
+ * 抓取当前页面上未翻译文本并上报后端（默认开；主题预览 / 主语言页由调用方跳过）。
  * 客户端做轻量去重 + 已报指纹缓存，重活（过滤 / 额度 / 翻译）在后端。
  */
 export function CollectUntranslatedText(shop, ciwiBlock) {

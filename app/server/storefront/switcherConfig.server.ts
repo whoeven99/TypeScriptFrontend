@@ -32,9 +32,7 @@ export async function getSwitcherConfig(
   if (!payload) {
     return fail(10001, "query error");
   }
-  // 仅在开启自动采集时才解析主语言，避免给未用该功能的店增加 Shopify 调用。
-  if (payload.autoLiquidCollect) {
-    payload.primaryLanguage = await resolvePrimaryLanguageBestEffort(shop);
-  }
+  // 自动采集默认开：始终附带主语言，供店面跳过主语言页上报。
+  payload.primaryLanguage = await resolvePrimaryLanguageBestEffort(shop);
   return ok(payload);
 }

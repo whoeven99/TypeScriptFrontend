@@ -50,10 +50,8 @@ function normalizeWriteInput(
     selectorPosition: str(input.selectorPosition, SWITCHER_UI_DEFAULTS.selectorPosition),
     positionData: str(input.positionData, SWITCHER_UI_DEFAULTS.positionData),
     isTransparent: bool(input.isTransparent, SWITCHER_UI_DEFAULTS.isTransparent),
-    autoLiquidCollect: bool(
-      input.autoLiquidCollect,
-      SWITCHER_UI_DEFAULTS.autoLiquidCollect,
-    ),
+    // 产品默认开、无商户开关：保存时始终落 true（忽略客户端传入）。
+    autoLiquidCollect: true,
   };
 }
 

@@ -127,26 +127,18 @@ export async function collectAutoLiquidStrings(args: {
   if (!shop || !target) return { scheduled: 0, skipped: true, reason: "no_target" };
 
   // 0) 全局 kill-switch（默认开；出事设 AUTO_LIQUID_COLLECT_ENABLED=false）
+  // 产品默认采集；不再读 SwitcherConfiguration.autoLiquidCollect 商户开关。
   if (!envBool("AUTO_LIQUID_COLLECT_ENABLED", true)) {
     return { scheduled: 0, skipped: true, reason: "disabled" };
   }
 
-  // 1) opt-in 开关（无配置行 = 默认关）
-  const config = await prisma.switcherConfiguration.findUnique({
-    where: { shop },
-    select: { autoLiquidCollect: true },
-  });
-  if (!config?.autoLiquidCollect) {
-    return { scheduled: 0, skipped: true, reason: "disabled" };
-  }
-
-  // 2) 主语言门控（Redis 缓存 1h，避免每会话打 Shopify）
+  // 1) 主语言门控（Redis 缓存 1h，避免每会话打 Shopify）
   const primary = await resolvePrimaryLocaleCached(shop);
   if (primary && normalize(primary).toLowerCase() === target.toLowerCase()) {
     return { scheduled: 0, skipped: true, reason: "primary_locale" };
   }
 
-  // 3) 归一 + 去重 + 粗筛 + 单次上限
+  // 2) 归一 + 去重 + 粗筛 + 单次上限
   const seen = new Set<string>();
   const candidates: string[] = [];
   for (const raw of Array.isArray(args.texts) ? args.texts : []) {
@@ -159,7 +151,7 @@ export async function collectAutoLiquidStrings(args: {
   }
   if (!candidates.length) return { scheduled: 0, skipped: true, reason: "no_candidate" };
 
-  // 4) 去掉已存在的规则（任意 status）
+  // 3) 去掉已存在的规则（任意 status）
   const existing = await prisma.liquidRule.findMany({
     where: { shop, languageCode: target, beforeTranslation: { in: candidates } },
     select: { beforeTranslation: true },
@@ -170,7 +162,7 @@ export async function collectAutoLiquidStrings(args: {
     .slice(0, MAX_PER_REQUEST);
   if (!fresh.length) return { scheduled: 0, skipped: false, reason: "all_known" };
 
-  // 5) 总量上限（只限 source=auto）
+  // 4) 总量上限（只限 source=auto）
   const autoCount = await prisma.liquidRule.count({
     where: { shop, source: "auto" },
   });
@@ -183,18 +175,18 @@ export async function collectAutoLiquidStrings(args: {
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
 
-  // 6) 额度守卫（无额度时仍可落 PENDING，但避免无限囤积：无额度则停采）
+  // 5) 额度守卫（无额度时仍可落 PENDING，但避免无限囤积：无额度则停采）
   const quota = await getShopCreditQuota(shop);
   if (quota && quota.remaining <= 0) {
     return { scheduled: 0, skipped: true, reason: "no_quota" };
   }
 
-  // 7) 每日名额预留
+  // 6) 每日名额预留
   const allowed = await reserveDailyBudget(shop, withinTotal.length);
   if (allowed <= 0) return { scheduled: 0, skipped: true, reason: "daily_cap" };
   const toInsert = withinTotal.slice(0, allowed);
 
-  // 8) 批量插入 PENDING（不跑 LLM）
+  // 7) 批量插入 PENDING（不跑 LLM）
   try {
     const result = await prisma.liquidRule.createMany({
       data: toInsert.map((text) => ({
