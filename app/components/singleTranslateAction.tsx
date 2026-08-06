@@ -250,15 +250,17 @@ const SingleTranslateAction: React.FC<SingleTranslateActionProps> = ({
 
     const openPurchaseModalWithContext = () => {
       closeModal();
-      openCreditsPurchaseModal({
-        kind: "single_translate",
-        target: normalizeText(targetLocale) || "target",
-        fieldKey: fieldKey?.trim() || "value",
-        estimatedCredits,
-        currentRemainingCredits,
-        shortfallCredits,
-        state: modalState,
-      });
+      window.setTimeout(() => {
+        openCreditsPurchaseModal({
+          kind: "single_translate",
+          target: normalizeText(targetLocale) || "target",
+          fieldKey: fieldKey?.trim() || "value",
+          estimatedCredits,
+          currentRemainingCredits,
+          shortfallCredits,
+          state: modalState,
+        });
+      }, 0);
     };
 
     if (currentRemainingCredits != null && currentRemainingCredits <= 0) {
