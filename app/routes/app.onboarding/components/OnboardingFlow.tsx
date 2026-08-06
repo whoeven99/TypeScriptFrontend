@@ -275,6 +275,7 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
               fastCoverage={fastCoverage}
             />
             <ActionFooter
+              summary={summary}
               primaryCta={primaryCta}
               creating={creating}
               onPrimary={handlePrimary}
