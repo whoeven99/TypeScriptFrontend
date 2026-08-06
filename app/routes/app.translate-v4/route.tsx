@@ -865,6 +865,10 @@ export default function AppTranslateV4() {
     navigate("/app/language");
   }, [navigate]);
 
+  const openOnboardingPreview = useCallback(() => {
+    navigate("/app/onboarding");
+  }, [navigate]);
+
   return (
     <Page>
       <TitleBar title={t("v4.title")} />
@@ -884,7 +888,11 @@ export default function AppTranslateV4() {
       >
         <div className="v4-page" style={v4ContentStyle}>
           <div className="v4-enter">
-            <PageHeaderBar credits={remainingCredits} planType={planType} />
+            <PageHeaderBar
+              credits={remainingCredits}
+              planType={planType}
+              onOpenOnboardingPreview={openOnboardingPreview}
+            />
           </div>
 
           <div

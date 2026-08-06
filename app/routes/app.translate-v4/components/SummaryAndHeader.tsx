@@ -4,6 +4,7 @@ import { formatCredits } from "../localeDisplay";
 import type { CoverageSummary } from "~/server/translateV4/coverage.server";
 import AppPageHeader from "~/ui/components/AppPageHeader";
 import AppStatusBadge from "~/ui/components/AppStatusBadge";
+import AppButton from "~/ui/components/AppButton";
 import { useCountUp } from "../hooks/useCountUp";
 import { formatV4PlanType } from "../v4I18n";
 
@@ -359,9 +360,11 @@ function formatLargeCount(n: number): string {
 export function PageHeaderBar({
   credits,
   planType,
+  onOpenOnboardingPreview,
 }: {
   credits: number | null;
   planType: string | null;
+  onOpenOnboardingPreview?: () => void;
 }) {
   const { t } = useTranslation();
   const planLabel = formatV4PlanType(planType, t);
@@ -410,6 +413,35 @@ export function PageHeaderBar({
               {credits != null ? `${formatCredits(credits)}` : "—"}
             </span>
           </div>
+          {onOpenOnboardingPreview ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+                minWidth: 0,
+                padding: "8px 12px",
+                borderRadius: 999,
+                background: "rgba(240, 244, 255, 0.72)",
+                border: `1px solid ${v4Colors.cardBorder}`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  color: v4Colors.textMuted,
+                  lineHeight: 1.35,
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {t("v4.onboardingPreviewHint")}
+              </span>
+              <AppButton onClick={onOpenOnboardingPreview}>
+                {t("v4.onboardingPreview")}
+              </AppButton>
+            </div>
+          ) : null}
         </div>
       }
     />

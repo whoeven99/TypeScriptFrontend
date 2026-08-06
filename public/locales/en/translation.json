@@ -1023,6 +1023,8 @@
   "v4.tasks.view": "View",
   "v4.tasks.waiting": "Waiting",
   "v4.title": "Smart Translation",
+  "v4.onboardingPreview": "Open onboarding",
+  "v4.onboardingPreviewHint": "Jump straight to the onboarding preview while iterating on it.",
   "v4.translated": "Translated",
   "v4.translatedItems": "Translated items",
   "v4.translationProgress": "Translation progress",

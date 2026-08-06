@@ -1026,6 +1026,8 @@
   "v4.tasks.view": "查看",
   "v4.tasks.waiting": "等待",
   "v4.title": "智能翻译",
+  "v4.onboardingPreview": "查看新手引导",
+  "v4.onboardingPreviewHint": "需要优化 onboarding 时，可直接从这里进入。",
   "v4.translated": "已翻译",
   "v4.translatedItems": "已译条目",
   "v4.translationProgress": "翻译进度",
