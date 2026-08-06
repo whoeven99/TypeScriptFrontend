@@ -180,6 +180,7 @@ export async function collectAutoLiquidStrings(args: {
   const toInsert = withinTotal.slice(0, allowed);
 
   // 6) 批量插入 PENDING（不跑 LLM）
+  // LibSQL/Prisma adapter 不支持 createMany({ skipDuplicates })，去重已在上方 findMany 完成。
   try {
     const result = await prisma.liquidRule.createMany({
       data: toInsert.map((text) => ({
@@ -193,7 +194,6 @@ export async function collectAutoLiquidStrings(args: {
         sourceDigest: liquidSourceDigest(text),
         jobId: null,
       })),
-      skipDuplicates: true,
     });
     return { scheduled: result.count, skipped: false };
   } catch (err) {
