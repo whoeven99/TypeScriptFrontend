@@ -5,18 +5,19 @@
  *  1. 找出 COMPLETED / PAUSED、未发邮件的任务。
  *     收件人邮箱在发信时通过 Shopify GraphQL 实时查询（不用 Session 快照）。
  *  2. 手动任务（taskSource ≠ TsFrontend-Auto）：等同店内所有进行中手动任务结束后，
- *     查询该店全部待发 manual 任务并汇总发一封（对齐自动翻译合并策略）。
+ *     查询该店全部待发 manual 任务并汇总发信（对齐自动翻译合并策略）。
  *  3. 自动任务（taskSource = TsFrontend-Auto）：等同店内所有进行中自动任务结束后，
  *     查询该店全部待发 auto 任务并汇总发一封（对齐 Spring TranslateTask.sendEmail）。
  *     usedTokens=0 的语言仍出现在手动成功邮件表格中；自动成功邮件仍跳过 usedTokens=0。
- *     手动 COMPLETED + 全部 PAUSED 合并入 210764；Status 列区分 Completed / Partially Completed。
+ *     手动：积分不足 PAUSED → 211401；其余 COMPLETED / 人工暂停 / CANCELLED → 210764。
  *     PAUSED 进度百分比对齐任务列表（translateUnitTotal 口径）。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *  5. 手动任务默认仅对 2026-08-03（北京时间）及之后创建的任务发信；
  *     可用 MANUAL_EMAIL_MIN_CREATED_AT 调整或关闭（false / 0 / 空）。
  *
- * 任务类型对应模板（对齐 Spring TencentEmailService）：
- *   manual + COMPLETED/PAUSED/CANCELLED → 210764 手动翻译汇总（Status：Completed / Paused / Canceled）
+ * 任务类型对应模板：
+ *   manual + 积分不足 PAUSED → 211401 未完成（Credits used / Additional required）
+ *   manual + COMPLETED / 人工暂停 / CANCELLED → 210764 完成汇总（含 total_credits）
  *   auto   + COMPLETED → 140352 自动翻译成功（同店多语言合并）
  *   auto   + PAUSED → 159297 翻译部分完成（额度不足）
  */
@@ -41,6 +42,7 @@ import { computePausedJobProgressPercent } from "../services/metricsUtils.js";
 import { fetchShopContact } from "../services/shopEmail.js";
 import {
   sendManualTranslationSuccessEmail,
+  sendManualTranslationIncompleteEmail,
   sendAutoTranslationSuccessEmail,
   sendTranslationPartialEmail,
   hasPartialEmailProgress,
@@ -171,6 +173,34 @@ function toJobSummary(job: TranslationV4Job): TranslationJobSummary {
   };
 }
 
+/**
+ * 手动任务是否因积分不足暂停。
+ * translateWorker 对额度耗尽写入「额度不足，已自动暂停」；人工暂停多为 null。
+ */
+export function isManualQuotaInsufficientPause(
+  errorMessage: string | null | undefined,
+): boolean {
+  const msg = (errorMessage ?? "").trim();
+  if (!msg) return false;
+  return /额度不足|insufficient\s+credits|credits?\s+(?:are\s+)?insufficient|out\s+of\s+credits/i.test(
+    msg,
+  );
+}
+
+/**
+ * 剩余所需积分粗估：已用 × 剩余进度 / 已完成进度。
+ * 进度为 0 或 100、或未消耗积分时返回 0。
+ */
+export function estimateRequiredCreditsFromProgress(
+  usedTokens: number,
+  completionPercent: number,
+): number {
+  const used = Math.max(0, Math.floor(usedTokens || 0));
+  const pct = Math.max(0, Math.min(100, completionPercent || 0));
+  if (used <= 0 || pct <= 0 || pct >= 100) return 0;
+  return Math.max(1, Math.ceil((used * (100 - pct)) / pct));
+}
+
 async function markEmailSentBatch(jobs: TranslationV4Job[]): Promise<void> {
   for (const job of jobs) {
     await markEmailSent(job);
@@ -275,43 +305,93 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
       return;
     }
     const { email: to, userName } = recipient;
-    const completedJobs = jobs.filter((j) => j.status === "COMPLETED");
-    const pausedJobs = jobs.filter((j) => j.status === "PAUSED");
-    const cancelledJobs = jobs.filter((j) => j.status === "CANCELLED");
-    const jobsToEmail: TranslationJobSummary[] = jobs.map(toJobSummary);
+    const quotaPausedJobs = jobs.filter(
+      (j) =>
+        j.status === "PAUSED" &&
+        isManualQuotaInsufficientPause(j.errorMessage),
+    );
+    const successJobs = jobs.filter(
+      (j) =>
+        !(
+          j.status === "PAUSED" &&
+          isManualQuotaInsufficientPause(j.errorMessage)
+        ),
+    );
+    const completedJobs = successJobs.filter((j) => j.status === "COMPLETED");
+    const pausedJobs = successJobs.filter((j) => j.status === "PAUSED");
+    const cancelledJobs = successJobs.filter((j) => j.status === "CANCELLED");
 
     logDetail("handle-manual-split", {
       shop: shopName,
       to: maskEmail(to),
+      quotaPausedCount: quotaPausedJobs.length,
+      successCount: successJobs.length,
       completedCount: completedJobs.length,
       pausedCount: pausedJobs.length,
       cancelledCount: cancelledJobs.length,
-      completedTargets: completedJobs.map((j) => j.target),
-      pausedTargets: pausedJobs.map((j) => j.target),
-      cancelledTargets: cancelledJobs.map((j) => j.target),
-      emailedTargets: jobsToEmail.map((j) => j.target),
+      quotaPausedTargets: quotaPausedJobs.map((j) => j.target),
+      successTargets: successJobs.map((j) => j.target),
     });
 
-    const sent = await sendManualTranslationSuccessEmail(
-      shopName,
-      to,
-      userName,
-      jobsToEmail,
-    );
-    logDetail("handle-manual-send-result", {
-      shop: shopName,
-      to: maskEmail(to),
-      sent,
-      jobIds: jobs.map((j) => j.id),
-      targets: jobsToEmail.map((j) => j.target),
-    });
-    if (sent) {
-      await markEmailSentBatch(jobs);
-      logDetail("handle-manual-done", {
+    if (quotaPausedJobs.length > 0) {
+      const quotaSummaries = quotaPausedJobs.map(toJobSummary);
+      const requiredCredits = quotaSummaries.reduce(
+        (sum, summary) =>
+          sum +
+          estimateRequiredCreditsFromProgress(
+            summary.usedTokens,
+            summary.completionPercent ?? 0,
+          ),
+        0,
+      );
+      const sent = await sendManualTranslationIncompleteEmail(
+        shopName,
+        to,
+        userName,
+        quotaSummaries,
+        requiredCredits,
+      );
+      logDetail("handle-manual-incomplete-send-result", {
         shop: shopName,
-        langs: jobsToEmail.map((j) => j.target),
-        markedJobIds: jobs.map((j) => j.id),
+        to: maskEmail(to),
+        sent,
+        jobIds: quotaPausedJobs.map((j) => j.id),
+        targets: quotaSummaries.map((j) => j.target),
+        requiredCredits,
       });
+      if (sent) {
+        await markEmailSentBatch(quotaPausedJobs);
+        logDetail("handle-manual-incomplete-done", {
+          shop: shopName,
+          langs: quotaSummaries.map((j) => j.target),
+          markedJobIds: quotaPausedJobs.map((j) => j.id),
+        });
+      }
+    }
+
+    if (successJobs.length > 0) {
+      const jobsToEmail: TranslationJobSummary[] = successJobs.map(toJobSummary);
+      const sent = await sendManualTranslationSuccessEmail(
+        shopName,
+        to,
+        userName,
+        jobsToEmail,
+      );
+      logDetail("handle-manual-send-result", {
+        shop: shopName,
+        to: maskEmail(to),
+        sent,
+        jobIds: successJobs.map((j) => j.id),
+        targets: jobsToEmail.map((j) => j.target),
+      });
+      if (sent) {
+        await markEmailSentBatch(successJobs);
+        logDetail("handle-manual-done", {
+          shop: shopName,
+          langs: jobsToEmail.map((j) => j.target),
+          markedJobIds: successJobs.map((j) => j.id),
+        });
+      }
     }
   } finally {
     await releaseEmailSendLock(shopName, "manual");

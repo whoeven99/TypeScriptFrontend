@@ -478,7 +478,10 @@ job retention cleanup).
 (`COVERAGE_SUMMARY_MODULES`, excludes Policies; aligned with App
 `COVERAGE_COUNT_LABELS`).
 - `worker/src/services/workerEmail.ts`, `shopEmail.ts`: email sending; shop
-contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
+  contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
+  Manual: success merge `210764` (`total_credits`) vs quota-insufficient
+  incomplete `211401` (`total_credits_used` / `required_credits`); auto:
+  success `140352` / partial `159297`.
 - `worker/src/services/translationReport.ts` and
 `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
 for translated blob entries.
