@@ -202,7 +202,6 @@ export default function AppTranslateV4() {
     [jobs],
   );
   const [quota, setQuota] = useState<ShopQuota | null>(null);
-  const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const plan = useSelector((state: RootState) => state.userConfig.plan);
