@@ -24,7 +24,7 @@ type Props = {
   highlighted?: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
-  onBuyCredits: () => void;
+  onBuyCredits: (job: TranslationJobProgressSummary) => void;
   onAction: (
     taskId: string,
     action: "pause" | "resume" | "cancel" | "delete",
@@ -242,7 +242,11 @@ export function CompactJobCard({
           message={notice.message}
           tone={job.status === "FAILED" ? "danger" : "warning"}
           actionLabel={notice.action === "buy_credits" ? t("Buy credits") : null}
-          onAction={notice.action === "buy_credits" ? onBuyCredits : undefined}
+          onAction={
+            notice.action === "buy_credits"
+              ? () => onBuyCredits(job)
+              : undefined
+          }
         />
       ) : null}
     </div>
@@ -377,7 +381,7 @@ export function TaskQueueSection({
   jobs: TranslationJobProgressSummary[];
   spotlightTaskIds?: string[];
   translateSlotBusy: boolean;
-  onBuyCredits: () => void;
+  onBuyCredits: (job: TranslationJobProgressSummary) => void;
   onAction: Props["onAction"];
 }) {
   const { t } = useTranslation();
