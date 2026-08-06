@@ -1,11 +1,56 @@
+/** Stable tokens stored in Cosmos / Redis (pauseReason, errorMessage). */
+
 export const V4_MESSAGE_MANUAL_PAUSE = "manually paused";
 export const V4_MESSAGE_CANCELLED = "cancelled";
 export const V4_MESSAGE_TASK_CLAIMED = "task claimed by another worker";
 export const V4_MESSAGE_TASK_NOT_FOUND = "task not found";
 export const V4_MESSAGE_TASK_REQUEUED = "task requeued";
 
-const LEGACY_MANUAL_PAUSE_MESSAGES = ["已手动暂停", V4_MESSAGE_MANUAL_PAUSE, "v4.status.paused"];
-const LEGACY_CANCELLED_MESSAGES = ["已取消", V4_MESSAGE_CANCELLED, "v4.status.cancelled"];
+/** Worker / finalize merchant-facing reason codes (new writes). */
+export const V4_MESSAGE_QUOTA_INSUFFICIENT = "QUOTA_INSUFFICIENT";
+export const V4_MESSAGE_QUOTA_SERVICE_ERROR = "QUOTA_SERVICE_ERROR";
+export const V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL = "QUOTA_INSUFFICIENT_PARTIAL";
+export const V4_MESSAGE_WRITEBACK_ALL_FAILED = "WRITEBACK_ALL_FAILED";
+export const V4_MESSAGE_JOB_FAILED = "JOB_FAILED";
+export const V4_MESSAGE_INIT_REQUEUING = "INIT_REQUEUING";
+
+const KNOWN_USER_FACING_CODES = new Set([
+  V4_MESSAGE_MANUAL_PAUSE,
+  V4_MESSAGE_CANCELLED,
+  V4_MESSAGE_QUOTA_INSUFFICIENT,
+  V4_MESSAGE_QUOTA_SERVICE_ERROR,
+  V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL,
+  V4_MESSAGE_WRITEBACK_ALL_FAILED,
+  V4_MESSAGE_JOB_FAILED,
+  V4_MESSAGE_INIT_REQUEUING,
+]);
+
+/** Exact legacy Chinese / English strings → stable code. */
+const LEGACY_EXACT_TO_CODE: Record<string, string> = {
+  "额度不足，已自动暂停": V4_MESSAGE_QUOTA_INSUFFICIENT,
+  "额度服务异常，已自动暂停": V4_MESSAGE_QUOTA_SERVICE_ERROR,
+  "额度不足，仅翻译并写回了部分资源，补充额度后点击「继续」可翻译剩余内容":
+    V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL,
+  "写回未成功：全部资源均未写入 Shopify（请查看 worker 日志或写回详情）":
+    V4_MESSAGE_WRITEBACK_ALL_FAILED,
+  "已手动暂停": V4_MESSAGE_MANUAL_PAUSE,
+  [V4_MESSAGE_MANUAL_PAUSE]: V4_MESSAGE_MANUAL_PAUSE,
+  "v4.status.paused": V4_MESSAGE_MANUAL_PAUSE,
+  "已取消": V4_MESSAGE_CANCELLED,
+  [V4_MESSAGE_CANCELLED]: V4_MESSAGE_CANCELLED,
+  "v4.status.cancelled": V4_MESSAGE_CANCELLED,
+};
+
+const LEGACY_MANUAL_PAUSE_MESSAGES = [
+  "已手动暂停",
+  V4_MESSAGE_MANUAL_PAUSE,
+  "v4.status.paused",
+];
+const LEGACY_CANCELLED_MESSAGES = [
+  "已取消",
+  V4_MESSAGE_CANCELLED,
+  "v4.status.cancelled",
+];
 
 export const V4_INTERNAL_USER_MESSAGES = new Set([
   "任务已被其它 worker 接管",
@@ -30,4 +75,116 @@ export function isV4ManualPauseMessage(message: string | null | undefined): bool
 export function isV4CancelledMessage(message: string | null | undefined): boolean {
   const normalized = normalizeV4MessageToken(message);
   return LEGACY_CANCELLED_MESSAGES.includes(normalized);
+}
+
+export function isV4QuotaInsufficientMessage(
+  message: string | null | undefined,
+): boolean {
+  const trimmed = message?.trim();
+  if (!trimmed) return false;
+  if (
+    trimmed === V4_MESSAGE_QUOTA_INSUFFICIENT ||
+    trimmed === V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL
+  ) {
+    return true;
+  }
+  const normalized = trimmed.toLowerCase();
+  return (
+    normalized.includes("额度不足") ||
+    normalized.includes("积分不足") ||
+    normalized.includes("额度已用完") ||
+    normalized.includes("translation credits have been used up") ||
+    normalized.includes("translation word credits have been exhausted") ||
+    normalized.includes("not enough translation credits") ||
+    normalized.includes("out of translation credits")
+  );
+}
+
+export function isV4KnownUserFacingCode(message: string | null | undefined): boolean {
+  const trimmed = message?.trim();
+  return Boolean(trimmed && KNOWN_USER_FACING_CODES.has(trimmed));
+}
+
+export type ResolveV4UserFacingOptions = {
+  /** Job summary path: unknown Exception text → JOB_FAILED. Default null (leave unmapped). */
+  unknownAs?: "job_failed" | "null";
+};
+
+/**
+ * Map raw Worker / legacy text → stable merchant-facing code.
+ * Returns null for empty / internal ops messages.
+ * Unknown free-text: JOB_FAILED only when `unknownAs: "job_failed"` (Cosmos job errors).
+ */
+export function resolveV4UserFacingMessageCode(
+  message: string | null | undefined,
+  options?: ResolveV4UserFacingOptions,
+): string | null {
+  const trimmed = message?.trim();
+  if (!trimmed) return null;
+  if (V4_INTERNAL_USER_MESSAGES.has(trimmed)) return null;
+  if (/worker\s*接管/i.test(trimmed)) return null;
+
+  if (KNOWN_USER_FACING_CODES.has(trimmed)) return trimmed;
+
+  const exact = LEGACY_EXACT_TO_CODE[trimmed] ?? LEGACY_EXACT_TO_CODE[trimmed.toLowerCase()];
+  if (exact) return exact;
+
+  if (isV4ManualPauseMessage(trimmed)) return V4_MESSAGE_MANUAL_PAUSE;
+  if (isV4CancelledMessage(trimmed)) return V4_MESSAGE_CANCELLED;
+
+  if (/^INIT\s+.+/i.test(trimmed) && /已自动重试|requeu/i.test(trimmed)) {
+    return V4_MESSAGE_INIT_REQUEUING;
+  }
+
+  if (
+    trimmed.includes("额度服务异常") ||
+    /quota\s*service/i.test(trimmed)
+  ) {
+    return V4_MESSAGE_QUOTA_SERVICE_ERROR;
+  }
+
+  if (
+    trimmed.includes("写回未成功") ||
+    /write-?back.*failed|failed.*write-?back/i.test(trimmed)
+  ) {
+    return V4_MESSAGE_WRITEBACK_ALL_FAILED;
+  }
+
+  // Partial before generic quota (both contain 额度不足).
+  if (
+    trimmed.includes("仅翻译并写回了部分") ||
+    /partial.*quot|quot.*partial|some resources were translated/i.test(trimmed)
+  ) {
+    return V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL;
+  }
+
+  if (isV4QuotaInsufficientMessage(trimmed)) {
+    return V4_MESSAGE_QUOTA_INSUFFICIENT;
+  }
+
+  return options?.unknownAs === "job_failed" ? V4_MESSAGE_JOB_FAILED : null;
+}
+
+/** i18n key for a stable code (or null if not a known code). */
+export function v4UserFacingMessageI18nKey(code: string): string | null {
+  switch (code) {
+    case V4_MESSAGE_QUOTA_INSUFFICIENT:
+      return "v4.notice.quotaInsufficient";
+    case V4_MESSAGE_QUOTA_SERVICE_ERROR:
+      return "v4.notice.quotaServiceError";
+    case V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL:
+      return "v4.notice.quotaInsufficientPartial";
+    case V4_MESSAGE_WRITEBACK_ALL_FAILED:
+      return "v4.notice.writebackAllFailed";
+    case V4_MESSAGE_JOB_FAILED:
+      return "v4.notice.jobFailed";
+    case V4_MESSAGE_INIT_REQUEUING:
+      return "v4.notice.initRequeuing";
+    case V4_MESSAGE_MANUAL_PAUSE:
+      return "v4.status.PAUSED";
+    case V4_MESSAGE_CANCELLED:
+      return "v4.status.CANCELLED";
+    default:
+      return null;
+  }
 }
