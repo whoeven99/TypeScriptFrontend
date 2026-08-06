@@ -1,7 +1,6 @@
 import prisma from "~/db.server";
 import { getOfflineSessionAccessToken } from "~/server/shop/offlineSessionToken.server";
 import { resolveShopPrimaryLocale } from "~/server/translateV4/shopLocales.server";
-import { getShopCreditQuota } from "~/server/billing/quota/quotaRouter.server";
 import { getTranslateV4RedisClient } from "~/server/translateV4/redis.server";
 import { liquidSourceDigest } from "~/server/translateV4/liquidDigest.server";
 
@@ -175,18 +174,12 @@ export async function collectAutoLiquidStrings(args: {
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
 
-  // 5) 额度守卫（无额度时仍可落 PENDING，但避免无限囤积：无额度则停采）
-  const quota = await getShopCreditQuota(shop);
-  if (quota && quota.remaining <= 0) {
-    return { scheduled: 0, skipped: true, reason: "no_quota" };
-  }
-
-  // 6) 每日名额预留
+  // 5) 每日名额预留（采集只落 PENDING，不扣额度；翻译时再计费）
   const allowed = await reserveDailyBudget(shop, withinTotal.length);
   if (allowed <= 0) return { scheduled: 0, skipped: true, reason: "daily_cap" };
   const toInsert = withinTotal.slice(0, allowed);
 
-  // 7) 批量插入 PENDING（不跑 LLM）
+  // 6) 批量插入 PENDING（不跑 LLM）
   try {
     const result = await prisma.liquidRule.createMany({
       data: toInsert.map((text) => ({

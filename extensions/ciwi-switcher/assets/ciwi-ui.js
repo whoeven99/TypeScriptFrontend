@@ -2710,7 +2710,7 @@ function isAutoLiquidCandidate(text) {
 
 /**
  * 抓取当前页面上未翻译文本并上报后端（默认开；主题预览 / 主语言页由调用方跳过）。
- * 客户端做轻量去重 + 已报指纹缓存，重活（过滤 / 额度 / 翻译）在后端。
+ * 客户端做轻量去重 + 已报指纹缓存，重活（过滤 / 背压）在后端；翻译另走任务。
  */
 export function CollectUntranslatedText(shop, ciwiBlock) {
   try {
@@ -2779,8 +2779,7 @@ export function CollectUntranslatedText(shop, ciwiBlock) {
           (reason === "disabled" ||
             reason === "primary_locale" ||
             reason === "total_cap" ||
-            reason === "daily_cap" ||
-            reason === "no_quota")
+            reason === "daily_cap")
         ) {
           try {
             sessionStorage.setItem(sessionFlag, "1");

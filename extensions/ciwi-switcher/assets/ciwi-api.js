@@ -131,8 +131,8 @@ export async function ParseLiquidDataByShopNameAndLanguage({
 }
 
 /**
- * 上报店面自动抓取到的未翻译文本。后端过滤 / 去重 / 额度守卫后异步翻译，
- * 写入 LiquidRule(source="auto")，下次访问由 CustomLiquidTextTranslate 替换。
+ * 上报店面自动抓取到的未翻译文本。后端过滤 / 去重 / 背压后写入
+ * LiquidRule(status=PENDING, source="auto")；翻译走 v4 自定义 Liquid 任务。
  * fire-and-forget：失败静默，不影响店面渲染。
  */
 export async function CollectLiquidStrings({ shopName, languageCode, texts }) {
