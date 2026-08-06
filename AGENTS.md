@@ -276,13 +276,17 @@ persist/pass `profileBlock` on the Cosmos job / sync call.
 - Types/status rules: `app/server/translateV4/types.ts`.
 - Resume rules: `app/server/translateV4/resumeStatus.ts`.
 - App-side helpers kept aligned with worker: `languageStatus.server.ts`
-(language page status 0..4, consumed by `/api/translate-v4/target-locale`),
-`autoScanSchedule.server.ts` (interval 1h / shop cooldown 3h / `Asia/Shanghai`
-:00 defaults), `quotaMultiplier.server.ts` (DeepSeek default 1 via
-`DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`; GPT/Google default 1.5 via
-`QUOTA_TOKEN_MULTIPLIER`), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
-called from `progress.server.ts`), `userFacingMessages.server.ts` (merchant-facing
-pause-reason sanitization), and `migration.server.ts` (`ensureShopV4Settings`).
+  (language page status 0..4, consumed by `/api/translate-v4/target-locale`),
+  `autoScanSchedule.server.ts` (interval 1h / shop cooldown 3h / `Asia/Shanghai`
+  :00 defaults), `quotaMultiplier.server.ts` (DeepSeek default 1 via
+  `DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`; GPT/Google default 1.5 via
+  `QUOTA_TOKEN_MULTIPLIER`), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
+  called from `progress.server.ts`), `userFacingMessages.server.ts` (normalize
+  pause/fail reasons to stable codes like `QUOTA_INSUFFICIENT` /
+  `JOB_FAILED`; tokens + legacy Chinese dual-read in
+  `app/shared/translateV4MessageTokens.ts`; Worker writes the same codes via
+  `worker/src/services/userFacingMessages.ts`; UI renders via `v4.notice.*`
+  locale keys in `v4I18n` / `v4JobNotice`), and `migration.server.ts` (`ensureShopV4Settings`).
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
 `worker/src/services/moduleCatalog.ts`.
 - Single-field translation: `app/routes/api.translate-v4.single.ts` ->
@@ -478,7 +482,12 @@ job retention cleanup).
 (`COVERAGE_SUMMARY_MODULES`, excludes Policies; aligned with App
 `COVERAGE_COUNT_LABELS`).
 - `worker/src/services/workerEmail.ts`, `shopEmail.ts`: email sending; shop
-contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
+  contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
+  Manual: success merge `210764` (`total_credits`) vs quota-insufficient
+  incomplete `211401` (`total_credits_used` / `required_credits`); auto:
+  success `140352` / partial `159297`. Manual create persists
+  `estimatedCredits` (chars×1.6, no coverage scale) for required_credits
+  two-handed math vs `usedTokens`.
 - `worker/src/services/translationReport.ts` and
 `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
 for translated blob entries.

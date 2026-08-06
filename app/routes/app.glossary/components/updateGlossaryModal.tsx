@@ -265,7 +265,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             createdDate: res?.createdDate,
           };
           dispatch(updateGLossaryTableData(res));
-          shopify.toast.show("Saved successfully");
+          shopify.toast.show(t("Saved successfully"));
           setConfirmButtonDisable(false);
           handleCloseModal();
         } else {

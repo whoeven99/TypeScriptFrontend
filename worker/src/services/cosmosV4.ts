@@ -99,6 +99,11 @@ export type TranslationV4Job = {
   shopEmail?: string | null;
   /** 完成通知邮件是否已发送（emailWorker 写入，防重发）。 */
   emailSent?: boolean | null;
+  /**
+   * 创建时固化的单语言额度上限估算（字符×k=1.6，无覆盖率缩放）。
+   * 手动积分不足邮件用；旧任务可能缺省。
+   */
+  estimatedCredits?: number | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

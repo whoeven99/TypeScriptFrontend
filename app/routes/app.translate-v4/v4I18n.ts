@@ -2,6 +2,8 @@ import type { TFunction } from "i18next";
 import type { TranslationJobProgressSummary } from "~/server/translateV4/progress.server";
 import type { TranslationV4Status } from "~/server/translateV4/types";
 import {
+  resolveV4UserFacingMessageCode,
+  v4UserFacingMessageI18nKey,
   V4_MESSAGE_CANCELLED,
   V4_MESSAGE_MANUAL_PAUSE,
   V4_MESSAGE_TASK_CLAIMED,
@@ -42,6 +44,15 @@ export function translateV4Message(value: string, t: TFunction): string {
       ? getV4StatusLabel(rawStatus, t)
       : rawStatus;
     return t("v4.error.cannotResumeFromStatus", { status: statusLabel });
+  }
+
+  const facingCode = resolveV4UserFacingMessageCode(trimmed);
+  if (facingCode) {
+    const noticeKey = v4UserFacingMessageI18nKey(facingCode);
+    if (noticeKey) {
+      const noticeTranslated = t(noticeKey);
+      if (noticeTranslated !== noticeKey) return noticeTranslated;
+    }
   }
 
   const mappedKey = V4_RAW_MESSAGE_KEY_MAP[trimmed] ?? V4_RAW_MESSAGE_KEY_MAP[trimmed.toLowerCase()];
