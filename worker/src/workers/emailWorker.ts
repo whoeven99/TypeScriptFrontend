@@ -10,6 +10,7 @@
  *     查询该店全部待发 auto 任务并汇总发一封（对齐 Spring TranslateTask.sendEmail）。
  *     usedTokens=0 的语言仍出现在手动成功邮件表格中；自动成功邮件仍跳过 usedTokens=0。
  *     手动：积分不足 PAUSED → 211401；其余 COMPLETED / 人工暂停 / CANCELLED → 210764。
+ *     手动汇总若待发组全部是 CANCELLED：不发信，仍标记 emailSent（对齐 auto 取消）。
  *     PAUSED 进度百分比对齐任务列表（translateUnitTotal 口径）。
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *  5. 手动任务默认仅对 2026-08-03（北京时间）及之后创建的任务发信；
@@ -17,9 +18,11 @@
  *
  * 任务类型对应模板：
  *   manual + 积分不足 PAUSED → 211401 未完成（Credits used / Additional required）
- *   manual + COMPLETED / 人工暂停 / CANCELLED → 210764 完成汇总（含 total_credits）
+ *   manual + COMPLETED / 人工暂停 /（与其它终态混发的）CANCELLED → 210764 完成汇总
+ *   manual + 全部 CANCELLED → 不发信，仅 emailSent=true
  *   auto   + COMPLETED → 140352 自动翻译成功（同店多语言合并）
  *   auto   + PAUSED → 159297 翻译部分完成（额度不足）
+ *   auto   + CANCELLED → 不发信，仅 emailSent=true
  */
 
 import type { TranslationV4Job } from "../services/cosmosV4.js";
@@ -400,27 +403,39 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
     }
 
     if (successJobs.length > 0) {
-      const jobsToEmail: TranslationJobSummary[] = successJobs.map(toJobSummary);
-      const sent = await sendManualTranslationSuccessEmail(
-        shopName,
-        to,
-        userName,
-        jobsToEmail,
-      );
-      logDetail("handle-manual-send-result", {
-        shop: shopName,
-        to: maskEmail(to),
-        sent,
-        jobIds: successJobs.map((j) => j.id),
-        targets: jobsToEmail.map((j) => j.target),
-      });
-      if (sent) {
-        await markEmailSentBatch(successJobs);
-        logDetail("handle-manual-done", {
+      const allCancelled = successJobs.every((j) => j.status === "CANCELLED");
+      if (allCancelled) {
+        // 全取消：不发「完成」邮件，仍标已发送，避免重试噪声。
+        logDetail("handle-manual-success-skipped", {
+          reason: "all_cancelled",
           shop: shopName,
-          langs: jobsToEmail.map((j) => j.target),
-          markedJobIds: successJobs.map((j) => j.id),
+          jobIds: successJobs.map((j) => j.id),
+          targets: successJobs.map((j) => j.target),
         });
+        await markEmailSentBatch(successJobs);
+      } else {
+        const jobsToEmail: TranslationJobSummary[] = successJobs.map(toJobSummary);
+        const sent = await sendManualTranslationSuccessEmail(
+          shopName,
+          to,
+          userName,
+          jobsToEmail,
+        );
+        logDetail("handle-manual-send-result", {
+          shop: shopName,
+          to: maskEmail(to),
+          sent,
+          jobIds: successJobs.map((j) => j.id),
+          targets: jobsToEmail.map((j) => j.target),
+        });
+        if (sent) {
+          await markEmailSentBatch(successJobs);
+          logDetail("handle-manual-done", {
+            shop: shopName,
+            langs: jobsToEmail.map((j) => j.target),
+            markedJobIds: successJobs.map((j) => j.id),
+          });
+        }
       }
     }
   } finally {
