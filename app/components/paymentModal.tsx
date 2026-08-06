@@ -16,13 +16,20 @@ import { v4Colors } from "~/routes/app.translate-v4/v4Styles";
 import { V4ModalShell } from "~/components/V4ModalShell";
 import { buildPaymentOptions, type OptionType } from "./paymentModal.shared";
 import { buildBillingReturnPath } from "~/utils/billingReturn";
+import type { CreditsPurchaseModalContext } from "~/utils/creditsPurchaseModal";
 
 interface PaymentModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   variant?: "default" | "v4";
+  purchaseContext?: CreditsPurchaseModalContext | null;
 }
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, variant = "default" }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({
+  visible,
+  setVisible,
+  variant = "default",
+  purchaseContext = null,
+}) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const { t } = useTranslation();
@@ -36,6 +43,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
   const selectedOption = useMemo(() => {
     return options.find((item) => item.key == selectedKey) || options[0];
   }, [selectedKey, options]);
+  const recommendedCreditsTarget = useMemo(() => {
+    if (!purchaseContext) return null;
+
+    const shortfall =
+      "shortfallCredits" in purchaseContext
+        ? purchaseContext.shortfallCredits ?? 0
+        : 0;
+    if (shortfall > 0) return shortfall;
+
+    return null;
+  }, [purchaseContext]);
+  const recommendedOption = useMemo(() => {
+    if (recommendedCreditsTarget == null || recommendedCreditsTarget <= 0) {
+      return options[0] ?? null;
+    }
+    return (
+      options.find((option) => option.Credits >= recommendedCreditsTarget) ??
+      options[options.length - 1] ??
+      null
+    );
+  }, [options, recommendedCreditsTarget]);
 
   const selectOptions = useMemo(
     () =>
@@ -56,6 +84,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
       }
     }
   }, [payFetcher.data]);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!recommendedOption?.key) return;
+    setSelectedKey(recommendedOption.key);
+  }, [visible, recommendedOption]);
 
   const onClick = () => {
     setBuyButtonLoading(true);
@@ -91,6 +125,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
     // if (recommendOption) setSelectedOption(recommendOption);
   };
 
+  const taskContext =
+    purchaseContext?.kind === "translate_v4_task" ? purchaseContext : null;
+  const createTaskContext =
+    purchaseContext?.kind === "create_task" ? purchaseContext : null;
+  const singleTranslateContext =
+    purchaseContext?.kind === "single_translate" ? purchaseContext : null;
+  const ctaLabel = taskContext
+    ? t("Pay and continue translation")
+    : singleTranslateContext
+      ? t("Pay and translate")
+    : createTaskContext
+      ? t("Pay and translate")
+      : t("Buy now");
+
   return (
     <V4ModalShell open={visible} onClose={onCancel} width={560}>
       <div style={{ padding: "24px 24px 20px" }}>
@@ -103,7 +151,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <PolarisText as="h2" variant="headingLg" fontWeight="bold">
-              {t("Buy credits")}
+              {taskContext
+                ? t("Buy credits to continue task")
+                : singleTranslateContext
+                  ? t("Buy credits to translate this field")
+                : createTaskContext
+                  ? t("Buy credits to create task")
+                  : t("Buy credits")}
             </PolarisText>
             <div
               style={{
@@ -111,11 +165,201 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
               }}
             >
               <PolarisText as="p" variant="bodyMd" tone="subdued">
-                {t("Choose a pack for this task.")}
+                {taskContext
+                  ? t("Review the remaining credits for this task and choose a pack.")
+                  : singleTranslateContext
+                    ? t("Review the estimated credits for this field and choose a pack.")
+                  : createTaskContext
+                    ? t("Review the estimated credits for this task and choose a pack.")
+                  : t("Choose a pack for this task.")}
               </PolarisText>
             </div>
           </div>
         </div>
+
+        {taskContext ? (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              background: v4Colors.cardSubdued,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <PolarisText as="p" variant="bodyMd" fontWeight="semibold">
+                {`${taskContext.source.toUpperCase()} -> ${taskContext.target.toUpperCase()}`}
+              </PolarisText>
+              <PolarisText as="p" variant="bodySm" tone="subdued">
+                {`#${taskContext.taskId.split("-")[0] ?? taskContext.taskId.slice(0, 8)}`}
+              </PolarisText>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <TaskStat
+                label={t("Estimated remaining")}
+                value={formatCreditsValue(taskContext.estimatedRemainingCredits, t)}
+              />
+              <TaskStat
+                label={t("Available now")}
+                value={formatCreditsValue(taskContext.currentRemainingCredits, t)}
+              />
+              <TaskStat
+                label={t("Need to top up")}
+                value={formatCreditsValue(taskContext.shortfallCredits, t)}
+                tone="critical"
+              />
+            </div>
+            {recommendedOption ? (
+              <div style={{ marginTop: 12 }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Recommended pack")}:{" "}
+                  <strong style={{ color: v4Colors.text }}>
+                    {recommendedOption.name} ·{" "}
+                    {Number(recommendedOption.Credits).toLocaleString()} {t("credits")}
+                  </strong>
+                </PolarisText>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {singleTranslateContext ? (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              background: v4Colors.cardSubdued,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                <PolarisText as="p" variant="bodyMd" fontWeight="semibold">
+                  {t("Single field translation")}
+                </PolarisText>
+                <div style={{ marginTop: 4 }}>
+                  <PolarisText as="p" variant="bodySm" tone="subdued">
+                    {singleTranslateContext.target.toUpperCase()} ·{" "}
+                    {formatSingleTranslateState(singleTranslateContext.state, t)}
+                  </PolarisText>
+                </div>
+              </div>
+              <PolarisText as="p" variant="bodySm" tone="subdued">
+                {singleTranslateContext.fieldKey}
+              </PolarisText>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <TaskStat
+                label={t("Estimated total")}
+                value={formatCreditsValue(singleTranslateContext.estimatedCredits, t)}
+              />
+              <TaskStat
+                label={t("Available now")}
+                value={formatCreditsValue(
+                  singleTranslateContext.currentRemainingCredits,
+                  t,
+                )}
+              />
+              <TaskStat
+                label={t("Need to top up")}
+                value={formatCreditsValue(singleTranslateContext.shortfallCredits, t)}
+                tone="critical"
+              />
+            </div>
+            {recommendedOption ? (
+              <div style={{ marginTop: 12 }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Recommended pack")}:{" "}
+                  <strong style={{ color: v4Colors.text }}>
+                    {recommendedOption.name} ·{" "}
+                    {Number(recommendedOption.Credits).toLocaleString()} {t("credits")}
+                  </strong>
+                </PolarisText>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {createTaskContext ? (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: `1px solid ${v4Colors.cardBorder}`,
+              background: v4Colors.cardSubdued,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <TaskStat
+                label={t("Targets")}
+                value={String(createTaskContext.targetsCount)}
+              />
+              <TaskStat
+                label={t("Modules")}
+                value={String(createTaskContext.modulesCount)}
+              />
+              <TaskStat
+                label={t("Estimated total")}
+                value={formatCreditsValue(createTaskContext.estimatedCredits, t)}
+              />
+              <TaskStat
+                label={t("Need to top up")}
+                value={formatCreditsValue(createTaskContext.shortfallCredits, t)}
+                tone="critical"
+              />
+            </div>
+            {recommendedOption ? (
+              <div style={{ marginTop: 12 }}>
+                <PolarisText as="p" variant="bodySm" tone="subdued">
+                  {t("Recommended pack")}:{" "}
+                  <strong style={{ color: v4Colors.text }}>
+                    {recommendedOption.name} ·{" "}
+                    {Number(recommendedOption.Credits).toLocaleString()} {t("credits")}
+                  </strong>
+                </PolarisText>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div style={{ marginBottom: 24 }}>
           <PolarisSelect
@@ -208,7 +452,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
                 disabled={buyButtonLoading || !selectedKey}
                 loading={buyButtonLoading}
               >
-                {t("Buy now")} · ${selectedOption?.price.currentPrice ?? 0}
+                {ctaLabel}
               </PolarisButton>
             </div>
           </div>
@@ -217,6 +461,51 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, varian
     </V4ModalShell>
   );
 };
+
+function TaskStat({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "critical";
+}) {
+  return (
+    <div>
+      <PolarisText as="p" variant="bodySm" tone="subdued">
+        {label}
+      </PolarisText>
+      <div style={{ marginTop: 4 }}>
+        <PolarisText
+          as="p"
+          variant="headingMd"
+          fontWeight="bold"
+          tone={tone === "critical" ? "critical" : undefined}
+        >
+          {value}
+        </PolarisText>
+      </div>
+    </div>
+  );
+}
+
+function formatCreditsValue(
+  value: number | null,
+  t: (key: string) => string,
+): string {
+  if (value == null) return t("Estimating...");
+  return `${Number(value).toLocaleString()} ${t("credits")}`;
+}
+
+function formatSingleTranslateState(
+  state: "missing" | "quality" | "outdated",
+  t: (key: string) => string,
+): string {
+  if (state === "missing") return t("Missing translation");
+  if (state === "outdated") return t("Source changed");
+  return t("Needs improvement");
+}
 
 export default PaymentModal;
 export type { OptionType } from "./paymentModal.shared";
