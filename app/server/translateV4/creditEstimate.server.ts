@@ -169,3 +169,29 @@ export async function estimateCreateTaskCredits(args: {
       remainingCredits >= 0 && estimatedCredits > remainingCredits,
   };
 }
+
+/**
+ * 创建任务时写入 Cosmos 的单语言额度上限（字符×k，无覆盖率缩放）。
+ * 与确认弹窗公式同源字符口径，但不乘未译比例、不乘多语言。
+ */
+export async function estimatePersistedJobCredits(args: {
+  shop: string;
+  v4Modules: string[];
+}): Promise<number | null> {
+  const v4Modules = [
+    ...new Set(args.v4Modules.map((m) => m.trim().toUpperCase()).filter(Boolean)),
+  ];
+  if (v4Modules.length === 0) return null;
+
+  const scan = await getLatestShopScanJob(args.shop).catch(() => null);
+  const moduleStats = scan?.summary?.moduleStats;
+  const { chars: scannedChars, hitCount } = sumCharsForModules(
+    moduleStats,
+    v4Modules,
+  );
+  const chars =
+    hitCount > 0
+      ? scannedChars
+      : fallbackChars(moduleStats, [], v4Modules);
+  return estimateCreditsFromChars(chars);
+}

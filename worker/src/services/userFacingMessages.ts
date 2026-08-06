@@ -1,9 +1,32 @@
-/** Worker 内部 abort 原因 —— 只打日志，不写 Cosmos / Redis pauseReason。 */
+/**
+ * Worker abort / pause reason tokens.
+ * Values MUST stay aligned with `app/shared/translateV4MessageTokens.ts`.
+ */
+
+export const V4_MESSAGE_MANUAL_PAUSE = "manually paused";
+export const V4_MESSAGE_CANCELLED = "cancelled";
+export const V4_MESSAGE_TASK_CLAIMED = "task claimed by another worker";
+export const V4_MESSAGE_TASK_NOT_FOUND = "task not found";
+export const V4_MESSAGE_TASK_REQUEUED = "task requeued";
+export const V4_MESSAGE_PAUSED = "paused";
+
+export const V4_MESSAGE_QUOTA_INSUFFICIENT = "QUOTA_INSUFFICIENT";
+export const V4_MESSAGE_QUOTA_SERVICE_ERROR = "QUOTA_SERVICE_ERROR";
+export const V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL = "QUOTA_INSUFFICIENT_PARTIAL";
+export const V4_MESSAGE_WRITEBACK_ALL_FAILED = "WRITEBACK_ALL_FAILED";
+export const V4_MESSAGE_JOB_FAILED = "JOB_FAILED";
+export const V4_MESSAGE_INIT_REQUEUING = "INIT_REQUEUING";
+
+/** Worker 内部 abort 原因 —— 只打日志，不写 Cosmos / Redis pauseReason 商户字段。 */
 export const INTERNAL_ABORT_REASONS = new Set([
   "任务已被其它 worker 接管",
   "任务已不存在",
   "任务已重新排队",
   "已暂停",
+  V4_MESSAGE_TASK_CLAIMED,
+  V4_MESSAGE_TASK_NOT_FOUND,
+  V4_MESSAGE_TASK_REQUEUED,
+  V4_MESSAGE_PAUSED,
 ]);
 
 export function isInternalAbortReason(reason: string): boolean {

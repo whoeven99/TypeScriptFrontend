@@ -31,6 +31,7 @@ import {
   stageSlots,
   type StagePoolKind,
 } from "../services/stagePool.js";
+import { V4_MESSAGE_JOB_FAILED } from "../services/userFacingMessages.js";
 
 /**
  * Scale-out safe: hostname + pid is unique across containers even when every
@@ -475,7 +476,7 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
       console.log(`[writeback] job=${jobId} yielding for shutdown (error path)`);
       return;
     }
-    const errorMessage = e instanceof Error ? e.message : String(e);
+    const detail = e instanceof Error ? e.message : String(e);
     const failTimings = withStageTiming(
       job.stageTimings,
       "WRITEBACK",
@@ -488,7 +489,7 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
     }
     await updateJob(shopName, jobId, {
       status: "FAILED",
-      errorMessage,
+      errorMessage: V4_MESSAGE_JOB_FAILED,
       errorStage: "WRITEBACK",
       claimedBy: null,
       pauseAfterWriteback: null, // 清掉暂停意图，避免下次写回被误判
@@ -502,7 +503,7 @@ async function processWritebackJob(job: TranslationV4Job): Promise<void> {
       },
       "FAILED",
     );
-    console.error(`[writeback] failed job=${jobId}`, e);
+    console.error(`[writeback] failed job=${jobId}`, detail, e);
   } finally {
     await wakeNextWritebackForShop(shopName).catch((e) => {
       console.warn(`[writeback] wakeNext failed shop=${shopName}`, e);

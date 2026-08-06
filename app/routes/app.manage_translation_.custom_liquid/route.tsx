@@ -160,7 +160,7 @@ const Index = () => {
         (prev) => !deletedIds.includes(prev.key),
       );
       setDataSource(newData);
-      shopify.toast.show("Delete successfully");
+      shopify.toast.show(t("Delete successfully"));
     } else {
       setPageAlert(
         getTranslateV4ErrorMessage(

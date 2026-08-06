@@ -30,6 +30,10 @@ import {
   liquidRulesToInitChunk,
   releaseLiquidRulesForJob,
 } from "../services/customLiquid.js";
+import {
+  V4_MESSAGE_INIT_REQUEUING,
+  V4_MESSAGE_JOB_FAILED,
+} from "../services/userFacingMessages.js";
 
 /**
  * Scale-out safe: hostname + pid ensures uniqueness across containers that may
@@ -598,7 +602,7 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
         status: "INIT_QUEUED",
         claimedBy: null,
         errorStage: null,
-        errorMessage: `INIT ${reason}，已自动重试 (${next}/${INIT_MAX_REQUEUE})`,
+        errorMessage: V4_MESSAGE_INIT_REQUEUING,
         metrics: { ...job.metrics, initRequeues: next },
         stageTimings: withStageTiming(job.stageTimings, "INIT", stageStartedAt, new Date().toISOString()),
       });
@@ -615,14 +619,15 @@ async function processInitJob(jobId: string, shopName: string): Promise<void> {
       }, delayMs);
       return;
     }
+    const detail = e instanceof Error ? e.message : String(e);
     await updateJob(shopName, jobId, {
       status: "FAILED",
-      errorMessage,
+      errorMessage: V4_MESSAGE_JOB_FAILED,
       errorStage: "INIT",
       claimedBy: null,
       stageTimings: withStageTiming(job.stageTimings, "INIT", stageStartedAt, new Date().toISOString()),
     });
-    console.error(`[init] failed job=${jobId}`, e);
+    console.error(`[init] failed job=${jobId}`, detail, e);
   } finally {
     await wakeNextInitForShop(shopName).catch((e) => {
       console.warn(`[init] wakeNext failed shop=${shopName}`, e);
