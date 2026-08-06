@@ -514,11 +514,22 @@ function InitActivityLog({ job }: { job: TranslationJobProgressSummary }) {
     const extra = waiting.length - shown.length;
     const modulesText =
       extra > 0 ? `${shown.join(" · ")} +${extra}` : shown.join(" · ");
-    lines.push({
-      verbKey: "v4.initLog.verb.queued",
-      detail: t("v4.initLog.waitingForSlot", { modules: modulesText }),
-      kind: "pending",
-    });
+    // No active modules yet: worker is usually already on Shopify bulk submit/poll
+    // (activity used to appear only after JSONL download). Prefer that copy over
+    // "waiting for slot", which reads like the task is idle in our queue.
+    if (active.length === 0 && completed.length === 0) {
+      lines.push({
+        verbKey: "v4.initLog.verb.querying",
+        detail: t("v4.initLog.fetchingShopifyBulk", { modules: modulesText }),
+        kind: "active",
+      });
+    } else {
+      lines.push({
+        verbKey: "v4.initLog.verb.queued",
+        detail: t("v4.initLog.waitingForSlot", { modules: modulesText }),
+        kind: "pending",
+      });
+    }
   }
 
   if (lines.length === 0) {

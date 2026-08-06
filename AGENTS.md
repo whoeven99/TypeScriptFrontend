@@ -278,8 +278,9 @@ persist/pass `profileBlock` on the Cosmos job / sync call.
 - App-side helpers kept aligned with worker: `languageStatus.server.ts`
 (language page status 0..4, consumed by `/api/translate-v4/target-locale`),
 `autoScanSchedule.server.ts` (interval 1h / shop cooldown 3h / `Asia/Shanghai`
-:00 defaults), `quotaMultiplier.server.ts` (`QUOTA_TOKEN_MULTIPLIER` default
-1.5), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
+:00 defaults), `quotaMultiplier.server.ts` (DeepSeek default 1 via
+`DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`; GPT/Google default 1.5 via
+`QUOTA_TOKEN_MULTIPLIER`), `stageReconcile.server.ts` (stuck TRANSLATING -> WRITEBACK escalation,
 called from `progress.server.ts`), `userFacingMessages.server.ts` (merchant-facing
 pause-reason sanitization), and `migration.server.ts` (`ensureShopV4Settings`).
 - Module catalog: `app/server/translateV4/moduleCatalog.ts` and
@@ -316,6 +317,10 @@ Common edits:
 separate concern.
 - Change create-task UX or request body: start in `app/lib/createTranslateV4Tasks.ts`,
 then `api.translate-v4.tasks.ts`.
+- Billing return after buy-credits / subscribe from create confirm: draft in
+  `app/utils/createTaskDraft.ts` (sessionStorage); return flag via
+  `app/utils/billingReturn.ts`; restore + reopen confirm in
+  `app/routes/app.translate-v4/route.tsx`.
 - Change pause/resume/cancel: inspect `api.translate-v4.task-action.ts`,
 `resumeStatus.ts`, `translateWorker.ts`, and `writebackWorker.ts`.
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,
@@ -339,6 +344,9 @@ then `api.translate-v4.tasks.ts`.
 `<script type="application/vnd.ciwi-liquid">` elements so keywords / system
 literals like `else` and `Default Title` never enter the LLM text pool;
 `{{ }}` stays in-place for `maskPlaceholders`.
+- Structural BR leaves (`⟦BR⟧` from `htmlTranslate`, ascii `[BR]`):
+  `isPassthroughLeafText` in `translateQuality.ts` skips the LLM/Google pool and
+  reassembles identity in `llmTranslate.ts` (not counted as echo/`fallback`).
 - Short plain fields (`<80` chars, not handle / meta_description): chunk-level
   JSON pack in `llmTranslate.ts` — field/value TM first, then dedupe by text,
   then size-capped JSON batches (`TRANSLATE_SHORT_JSON_MAX_CHARS` /
@@ -350,6 +358,14 @@ literals like `else` and `Default Title` never enter the LLM text pool;
   Forced `aiModel=google-translate` still Google-only. Metafield `json`
   FieldPlan remains single-value slot extract/reassemble — it does not pack
   multiple Shopify fields into one JSON document.
+  Azure GPT chat body sampling is per-model via `resolveGptChatSampling` /
+  `buildGptChatRequestBody` in `azureGptClient.ts` (re-exported from
+  `llmTranslate.ts`): `gpt-4.1-*` send `temperature: 0.1` (+ penalty 0);
+  `gpt-5.6-*` omit temperature/penalties (Azure only allows default
+  temperature=1; sending 0.1 returns HTTP 400).
+  Transport / pool split (orchestration stays in `llmTranslate.ts`):
+  `llmErrors.ts`, `deepseekClient.ts`, `azureGptClient.ts`,
+  `googleTranslate.ts`, `llmKeyPool.ts`, `quotaGate.ts`.
 - DeepSeek usage on each LLM call is persisted from the API `usage` object onto
   blob field `cost`: `inputTokens` / `outputTokens` / `totalTokens`, plus
   `promptCacheHitTokens` / `promptCacheMissTokens` (`prompt_cache_hit_tokens` /
@@ -507,8 +523,13 @@ Admin 体量标签另用 `COSMOS_SHOP_DATABASE_ID`（默认 `shop`）、
 `gpt-4.1-nano`); DeepSeek pool concurrency overrides:
 `DEEPSEEK_CONCURRENCY_LIMIT` / `DEEPSEEK_CONCURRENCY_UTIL` /
 `DEEPSEEK_INITIAL_CONCURRENCY`.
-- Quota: `QUOTA_ENFORCE`, `QUOTA_TOKEN_MULTIPLIER`（Worker 额度读写直连 Turso，不再调 Spring `/quota`）,
-`TRANSLATE_QUOTA_FLUSH_CHARGE`.
+- Quota: `QUOTA_ENFORCE`, `DEEPSEEK_QUOTA_TOKEN_MULTIPLIER`（DeepSeek 默认 1）,
+`QUOTA_TOKEN_MULTIPLIER`（GPT/Google 默认 1.5；Worker 额度读写直连 Turso）,
+`TRANSLATE_QUOTA_FLUSH_CHARGE`, `QUOTA_PER_CALL_COST`（默认 15k；`remaining < perCall` →
+并发 cap=0）, `QUOTA_MAX_CONCURRENCY`, `TRANSLATE_QUOTA_ESTIMATE_SAFETY`（默认 1.2）。
+任务 seed 记下 `budget`；发 LLM 前 `committed += 预估`；返回后预估换成实扣
+（`syncShopQuotaBudget` + `callLLMOnce`）。`committed + nextEst > budget` 则不发新请求；
+暂停/耗尽立刻 `setShopQuotaCap(0)`；已在飞仍跑完实扣。
 - Scheduling: `WORKER_STAGES`, `WORKER_POLL_INTERVAL_MS`,
 `TRANSLATE_CHUNK_CONCURRENCY`, `MAX_CONCURRENT_AUTO_TRANSLATE_JOBS`,
 `MAX_CONCURRENT_MANUAL_TRANSLATE_JOBS`, `AUTO_TRANSLATE_*`.
@@ -747,8 +768,15 @@ Historical manage-translation migration guidance:
 - The TSF-side direct save helper is `app/server/shopify/translations.server.ts`.
 - When modifying save/delete behavior, preserve the existing response shape used
 by page actions and surface Shopify `userErrors` as partial failures.
-- `SingleTextTranslate`, image translation, PageFly, and some summary/count
-behavior may still be intentionally legacy or separate from the save path.
+- Manual single-field translate uses shared `SingleTranslateAction` (modal with
+AI model `Select` + optional prompt + credit estimate) →
+`SingleTextTranslate` → `/api/translate-v4/single` (`aiModel`, default
+`deepseek-v4-flash`). Estimate: `POST /api/translate-v4/single-estimate` builds
+the real system prompt (glossary + shop profile + custom prompt) via
+`estimateSingleTranslateLlmTokens`, then ceil(tokens × model multiplier)
+(DeepSeek default 1, GPT/Google default 1.5).
+Image translation, PageFly, and some summary/count behavior may still be
+separate from the save path.
 
 Summary/count guidance:
 
@@ -1306,7 +1334,8 @@ node worker/scripts/probe-hint-queues.mjs
 | `translate:v4:keystatlog:{label}` | List: LLM key throughput history (~30 min, TTL 2h) |
 
 Code owners: `app/server/translateV4/redis.server.ts`, `worker/src/services/redisV4.ts`,
-`packages/translation-core/src/translationMemory.ts` (TM), `llmTranslate.ts` (keystat).
+`packages/translation-core/src/translationMemory.ts` (TM), `llmKeyPool.ts` /
+`llmTranslate.ts` (keystat flush).
 
 **Query Render Key Value** (official: [Render Key Value docs](https://render.com/docs/key-value)):
 

@@ -1,13 +1,13 @@
-/** 客户端建任务 gate：积分为 0 时是否应拦截（与 evaluateCreateTaskQuotaGuard 对齐）。 */
+/** 客户端建任务 gate：与 evaluateCreateTaskQuotaGuard 对齐，remaining > 0 才放行。 */
 export function shouldBlockCreateTaskByCredits(args: {
   remainingCredits: number | null;
-  /** tsf 新账本用户为 true（来自 /api/translate-v4/quota）。 */
-  strictQuotaGate: boolean;
-  hasPaidPlan: boolean;
-  isInFreePlanTime: boolean;
+  /** @deprecated 已忽略；服务端始终按 remaining 校验。 */
+  strictQuotaGate?: boolean;
+  /** @deprecated 已忽略。 */
+  hasPaidPlan?: boolean;
+  /** @deprecated 已忽略。 */
+  isInFreePlanTime?: boolean;
 }): boolean {
   if (args.remainingCredits == null) return false;
-  if (args.remainingCredits > 0) return false;
-  if (args.strictQuotaGate) return true;
-  return !args.hasPaidPlan && !args.isInFreePlanTime;
+  return args.remainingCredits <= 0;
 }

@@ -367,6 +367,12 @@ export async function runShopifyBulkJobQueue(args: {
   /** Re-submit failed jobs when fallbackOnFailure is false (default false). */
   retryOnFailure?: boolean;
   processOutcome: (outcome: ShopifyBulkJobOutcome) => Promise<void>;
+  /**
+   * Fired when a job leaves the local queue for its first submit attempt
+   * (including submit retries). Init UI uses this so merchants see "querying"
+   * while Shopify bulk is CREATED/RUNNING — not only after JSONL is ready.
+   */
+  onJobSubmit?: (job: ShopifyBulkJob) => Promise<void>;
   logPrefix?: string;
   /** Override shared SHOPIFY_BULK_SUBMIT_WINDOW (clamped 1–5). */
   submitWindow?: number;
@@ -381,6 +387,7 @@ export async function runShopifyBulkJobQueue(args: {
     fallbackOnFailure = true,
     retryOnFailure = false,
     processOutcome,
+    onJobSubmit,
     logPrefix = LOG,
   } = args;
 
@@ -479,6 +486,13 @@ export async function runShopifyBulkJobQueue(args: {
   };
 
   const submitOneWithRetry = async (job: ShopifyBulkJob): Promise<void> => {
+    // Announce before the first attempt so UI reflects Shopify bulk wait time.
+    try {
+      await onJobSubmit?.(job);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`${logPrefix} onJobSubmit failed id=${job.id}: ${msg}`);
+    }
     for (let attempt = 1; attempt <= submitMaxRetries; attempt++) {
       if (isShutdown()) {
         throw new Error("shutdown: bulk queue yielding for deploy");

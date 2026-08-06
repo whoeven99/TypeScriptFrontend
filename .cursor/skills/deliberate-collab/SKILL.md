@@ -19,6 +19,8 @@ description: >-
 2. 按 `AGENTS.md`「Required Workflow」做仓库入口步骤（`git status`、功能区定位、调用链核对）。
 3. 判断是否存在技术/产品分叉；有分叉则先进入「确认」，不要直接改文件。
 4. 确认后给出实现方案（涉及 UI 时附样例），再执行。
+   **Plan / CreatePlan 正文**须遵循 `.cursor/skills/concise-plan/SKILL.md`
+   （方案 → 步骤 → 实现优先级；有 UI 才加 UI 样例；简洁，不写长背景）。
 5. 收尾对照验收清单报告。
 
 ## 1. 先对齐再执行
