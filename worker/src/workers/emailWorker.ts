@@ -188,17 +188,44 @@ export function isManualQuotaInsufficientPause(
 }
 
 /**
- * 剩余所需积分粗估：已用 × 剩余进度 / 已完成进度。
- * 进度为 0 或 100、或未消耗积分时返回 0。
+ * 剩余所需积分（两手准备）：
+ * - 无创建估算（旧任务）→ 仅进度外推
+ * - 实扣 < k=1.6 估算 → 估算 − 实扣
+ * - 实扣 ≥ 估算（含相等）→ 进度外推 ceil(已用 × (100−进度)/进度)
  */
+export function estimateRequiredCreditsForIncompleteEmail(args: {
+  usedTokens: number;
+  completionPercent: number;
+  estimatedCredits?: number | null;
+}): number {
+  const used = Math.max(0, Math.floor(args.usedTokens || 0));
+  const pct = Math.max(0, Math.min(100, args.completionPercent || 0));
+  const estimated =
+    typeof args.estimatedCredits === "number" &&
+    Number.isFinite(args.estimatedCredits) &&
+    args.estimatedCredits > 0
+      ? Math.floor(args.estimatedCredits)
+      : null;
+
+  const fromProgress = (): number => {
+    if (used <= 0 || pct <= 0 || pct >= 100) return 0;
+    return Math.max(1, Math.ceil((used * (100 - pct)) / pct));
+  };
+
+  if (estimated == null) return fromProgress();
+  if (used < estimated) return Math.max(0, estimated - used);
+  return fromProgress();
+}
+
+/** @deprecated 使用 {@link estimateRequiredCreditsForIncompleteEmail} */
 export function estimateRequiredCreditsFromProgress(
   usedTokens: number,
   completionPercent: number,
 ): number {
-  const used = Math.max(0, Math.floor(usedTokens || 0));
-  const pct = Math.max(0, Math.min(100, completionPercent || 0));
-  if (used <= 0 || pct <= 0 || pct >= 100) return 0;
-  return Math.max(1, Math.ceil((used * (100 - pct)) / pct));
+  return estimateRequiredCreditsForIncompleteEmail({
+    usedTokens,
+    completionPercent,
+  });
 }
 
 async function markEmailSentBatch(jobs: TranslationV4Job[]): Promise<void> {
@@ -335,15 +362,17 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
 
     if (quotaPausedJobs.length > 0) {
       const quotaSummaries = quotaPausedJobs.map(toJobSummary);
-      const requiredCredits = quotaSummaries.reduce(
-        (sum, summary) =>
+      const requiredCredits = quotaPausedJobs.reduce((sum, job, i) => {
+        const summary = quotaSummaries[i];
+        return (
           sum +
-          estimateRequiredCreditsFromProgress(
-            summary.usedTokens,
-            summary.completionPercent ?? 0,
-          ),
-        0,
-      );
+          estimateRequiredCreditsForIncompleteEmail({
+            usedTokens: summary.usedTokens,
+            completionPercent: summary.completionPercent ?? 0,
+            estimatedCredits: job.estimatedCredits,
+          })
+        );
+      }, 0);
       const sent = await sendManualTranslationIncompleteEmail(
         shopName,
         to,
@@ -358,6 +387,7 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
         jobIds: quotaPausedJobs.map((j) => j.id),
         targets: quotaSummaries.map((j) => j.target),
         requiredCredits,
+        estimatedCredits: quotaPausedJobs.map((j) => j.estimatedCredits ?? null),
       });
       if (sent) {
         await markEmailSentBatch(quotaPausedJobs);

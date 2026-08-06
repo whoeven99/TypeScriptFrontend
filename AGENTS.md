@@ -481,7 +481,9 @@ job retention cleanup).
   contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
   Manual: success merge `210764` (`total_credits`) vs quota-insufficient
   incomplete `211401` (`total_credits_used` / `required_credits`); auto:
-  success `140352` / partial `159297`.
+  success `140352` / partial `159297`. Manual create persists
+  `estimatedCredits` (chars×1.6, no coverage scale) for required_credits
+  two-handed math vs `usedTokens`.
 - `worker/src/services/translationReport.ts` and
 `worker/src/scripts/exportTranslationReport.ts`: offline quality report builder
 for translated blob entries.
