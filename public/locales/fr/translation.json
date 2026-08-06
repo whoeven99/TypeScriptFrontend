@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Cette tâche nécessite des crédits avant de pouvoir démarrer. Commencez votre essai gratuit pour continuer avec la configuration actuelle.",
   "v4.createTask.confirmBlockedTrialTitle": "Crédits insuffisants pour démarrer cette tâche",
   "v4.createTask.confirmBuyCreditsAndStart": "Acheter des crédits et commencer la tâche complète",
-  "v4.createTask.confirmBuyCreditsOnly": "Ignorer l'abonnement, acheter des crédits uniquement",
+  "v4.createTask.confirmBuyCreditsOnly": "Acheter des crédits",
   "v4.createTask.confirmBuyCreditsSecondary": "Acheter des crédits uniquement",
   "v4.createTask.confirmCompactList": "{{count}} sélectionné(s) · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Aucune sélection",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Langue par défaut de votre boutique :",
   "Your translation quota": "Votre solde de traduction",
   "Youthful": "Jeune",
-  "Zara – Modern & chic (Womenswear)": "Zara – Moderne et chic (Mode femme)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Moderne et chic (Mode femme)",
+  "pricing.availableCredits": "Crédits disponibles",
+  "pricing.plan.free": "Gratuit",
+  "pricing.plan.basic": "Basique",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Forfait Premium",
+  "pricing.plan.yearly": "Annuel",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

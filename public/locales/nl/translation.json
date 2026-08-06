@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Deze taak heeft credits nodig voordat deze kan starten. Begin uw gratis proefperiode om door te gaan met de huidige configuratie.",
   "v4.createTask.confirmBlockedTrialTitle": "Niet genoeg credits om deze taak te starten",
   "v4.createTask.confirmBuyCreditsAndStart": "Koop credits en start volledige taak",
-  "v4.createTask.confirmBuyCreditsOnly": "Abonnement overslaan, alleen credits kopen",
+  "v4.createTask.confirmBuyCreditsOnly": "Credits kopen",
   "v4.createTask.confirmBuyCreditsSecondary": "Alleen credits kopen",
   "v4.createTask.confirmCompactList": "{{count}} geselecteerd · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Niets geselecteerd",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Standaardtaal van uw winkel:",
   "Your translation quota": "Uw vertaaltegoed",
   "Youthful": "Jeugdig",
-  "Zara – Modern & chic (Womenswear)": "Zara – Modern en chic (Damesmode)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Modern en chic (Damesmode)",
+  "pricing.availableCredits": "Beschikbare credits",
+  "pricing.plan.free": "Gratis",
+  "pricing.plan.basic": "Basis",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Premium-abonnement",
+  "pricing.plan.yearly": "Jaarlijks",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

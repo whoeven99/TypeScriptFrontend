@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "このタスクを開始するにはクレジットが必要です。無料トライアルを開始して、現在の設定で続行してください。",
   "v4.createTask.confirmBlockedTrialTitle": "このタスクを開始するためのクレジットが不足しています",
   "v4.createTask.confirmBuyCreditsAndStart": "クレジットを購入して完全なタスクを開始",
-  "v4.createTask.confirmBuyCreditsOnly": "サブスクリプションをスキップしてクレジットのみ購入",
+  "v4.createTask.confirmBuyCreditsOnly": "クレジットを購入",
   "v4.createTask.confirmBuyCreditsSecondary": "クレジットのみ購入",
   "v4.createTask.confirmCompactList": "{{count}}件選択中 · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "選択なし",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "ストアのデフォルト言語：",
   "Your translation quota": "翻訳残高",
   "Youthful": "若々しい",
-  "Zara – Modern & chic (Womenswear)": "Zara – モダン＆シック（レディース）"
+  "Zara – Modern & chic (Womenswear)": "Zara – モダン＆シック（レディース）",
+  "pricing.availableCredits": "利用可能なクレジット",
+  "pricing.plan.free": "無料",
+  "pricing.plan.basic": "ベーシック",
+  "pricing.plan.pro": "プロ",
+  "pricing.plan.premium": "プレミアムプラン",
+  "pricing.plan.yearly": "毎年",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }

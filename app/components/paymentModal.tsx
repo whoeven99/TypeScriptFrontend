@@ -440,7 +440,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           >
             <div style={{ minWidth: 124 }}>
               <PolarisButton fullWidth size="large" variant="secondary" onClick={onCancel}>
-                {t("Maybe later")}
+                {t("v4.quotaGate.maybeLater")}
               </PolarisButton>
             </div>
             <div style={{ minWidth: 180 }}>

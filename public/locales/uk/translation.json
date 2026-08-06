@@ -841,7 +841,7 @@
   "v4.createTask.confirmBlockedTrialDesc": "Для запуску цього завдання потрібні кредити. Почніть безкоштовну пробну версію, щоб продовжити з поточною конфігурацією.",
   "v4.createTask.confirmBlockedTrialTitle": "Недостатньо кредитів для запуску цього завдання",
   "v4.createTask.confirmBuyCreditsAndStart": "Купити кредити та почати повне завдання",
-  "v4.createTask.confirmBuyCreditsOnly": "Пропустити підписку, купити лише кредити",
+  "v4.createTask.confirmBuyCreditsOnly": "Купити кредити",
   "v4.createTask.confirmBuyCreditsSecondary": "Купити лише кредити",
   "v4.createTask.confirmCompactList": "{{count}} вибрано · {{items}}",
   "v4.createTask.confirmCompactListEmpty": "Нічого не вибрано",
@@ -1156,5 +1156,12 @@
   "Your store's default language:": "Мова магазину за замовчуванням:",
   "Your translation quota": "Ваша квота перекладу",
   "Youthful": "Молодіжний",
-  "Zara – Modern & chic (Womenswear)": "Zara – Сучасний та шикарний (Жіночий одяг)"
+  "Zara – Modern & chic (Womenswear)": "Zara – Сучасний та шикарний (Жіночий одяг)",
+  "pricing.availableCredits": "Доступні кредити",
+  "pricing.plan.free": "Безкоштовний",
+  "pricing.plan.basic": "Базовий",
+  "pricing.plan.pro": "Pro",
+  "pricing.plan.premium": "Преміум-план",
+  "pricing.plan.yearly": "Щорічно",
+  "pricing.plan.yearlyLabel": "{{plan}} - {{period}}"
 }
