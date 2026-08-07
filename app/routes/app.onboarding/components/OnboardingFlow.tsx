@@ -28,6 +28,7 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetcher = useFetcher();
+  const [hydrated, setHydrated] = useState(false);
   const [step, setStep] = useState<Step>("preparing");
   const [phase, setPhase] = useState<PreparingPhase>("boot");
   const [creating, setCreating] = useState(false);
@@ -35,6 +36,10 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
   const prepareStartedRef = useRef(false);
 
   const primaryCta = useMemo(() => resolvePrimaryCta(summary), [summary]);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const track = useCallback(
     (event: string, context?: Record<string, unknown>) => {
@@ -185,6 +190,14 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
         return;
     }
   }, [handleConfigureLanguages, handleCreateTask, handleTrialOrUpgrade, primaryCta]);
+
+  if (!hydrated) {
+    return (
+      <Page>
+        <PreparingStep summary={summary} phase="boot" />
+      </Page>
+    );
+  }
 
   return (
     <Page>
