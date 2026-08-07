@@ -553,7 +553,9 @@ Code: `worker/src/services/shopifyBulkShared.ts`.
 同店 bulk **submit** 串行（Shopify 每店仅 1 个 bulk query）；多 module 排队 submit + 滑动下载。
 - Init bulk（全量；submit 限流/槽位忙自动重试；单 module 失败重入队 bulk，不回退分页）:
 `SHOPIFY_BULK_SUBMIT_MAX_RETRIES`（默认 24，submit 与 module 级重试共用上限）.
-Code: `worker/src/services/shopifyBulkFetch.ts`，接入 `initWorker.ts`.
+无 offline Session（卸载等）→ `shopifyBulkShared` 立刻 abort 整店队列（不 poll
+空转、不 requeue）。Code: `worker/src/services/shopifyBulkFetch.ts`，接入
+`initWorker.ts`.
 - Shop scan bulk（计量全量，无 allowlist；默认偏慢以削平 CPU）:
 `SHOP_SCAN_BULK_FALLBACK`（默认开，失败回退 `countModuleScan` 分页）,
 `SHOP_SCAN_DRAIN_MAX`（默认 1；且 tick 互斥，避免 setInterval 叠跑）,
