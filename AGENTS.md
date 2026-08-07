@@ -481,8 +481,10 @@ job retention cleanup).
 - `worker/src/services/coverageSummary.ts`: language-level coverage module set
 (`COVERAGE_SUMMARY_MODULES`, excludes Policies; aligned with App
 `COVERAGE_COUNT_LABELS`).
-- `worker/src/services/workerEmail.ts`, `shopEmail.ts`: email sending; shop
-  contact email lookup via Shopify GraphQL (1h cache) for recipient/greeting.
+- `worker/src/services/workerEmail.ts`, `shopEmail.ts`, `feishuNotify.ts`:
+  email sending; shop contact via Shopify GraphQL (1h cache). No offline
+  Session（已卸载）→ `emailWorker` 不发信、标 `emailSent`，并经
+  `FEISHU_WEBHOOK_URL_SUPPORT` 飞书通知（缺配置则跳过）；`shopEmail` 静默跳过。
   Manual: success merge `210764` (`total_credits`) vs quota-insufficient
   incomplete `211401` (`total_credits_used` / `required_credits`); auto:
   success `140352` / partial `159297`. Manual create persists
