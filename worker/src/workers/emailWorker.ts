@@ -48,6 +48,7 @@ import { computePausedJobProgressPercent } from "../services/metricsUtils.js";
 import { sendFeishuTextMessage } from "../services/feishuNotify.js";
 import { fetchShopContact } from "../services/shopEmail.js";
 import { getOfflineAccessTokenFromTsf } from "../services/tsfDb.js";
+import { isQuotaInsufficientMessage } from "../services/userFacingMessages.js";
 import {
   sendManualTranslationSuccessEmail,
   sendManualTranslationIncompleteEmail,
@@ -183,16 +184,13 @@ function toJobSummary(job: TranslationV4Job): TranslationJobSummary {
 
 /**
  * 手动任务是否因积分不足暂停。
- * translateWorker 对额度耗尽写入「额度不足，已自动暂停」；人工暂停多为 null。
+ * translateWorker 写入稳定码 `QUOTA_INSUFFICIENT`（兼认旧中英文文案）；
+ * 人工暂停多为 null / `manually paused`。
  */
 export function isManualQuotaInsufficientPause(
   errorMessage: string | null | undefined,
 ): boolean {
-  const msg = (errorMessage ?? "").trim();
-  if (!msg) return false;
-  return /额度不足|insufficient\s+credits|credits?\s+(?:are\s+)?insufficient|out\s+of\s+credits/i.test(
-    msg,
-  );
+  return isQuotaInsufficientMessage(errorMessage);
 }
 
 /**
