@@ -13,8 +13,6 @@ import type {
   OnboardingFastCoverageSnapshot,
   OnboardingSummary,
 } from "../types";
-import { CREATE_TASK_MODULE_LABELS } from "~/routes/app.translate-v4/constants";
-import { formatEstimateCredits } from "~/routes/app.translate-v4/useCreateTaskEstimate";
 
 type SuggestionPriority = "critical" | "recommended" | "optional";
 
@@ -47,6 +45,7 @@ function LabeledCard({
   );
 }
 
+<<<<<<< Updated upstream
 function getPriorityTone(priority: SuggestionPriority) {
   switch (priority) {
     case "critical":
@@ -358,6 +357,9 @@ function SuggestedCoverageBoard({ summary }: { summary: OnboardingSummary }) {
 }
 
 /** B. 店铺翻译健康度 —— 优先展示快扫结果，否则 loader 缓存 / 计算中 */
+=======
+/** 翻译健康度 —— 优先展示快扫结果，否则 loader 缓存 / 计算中 */
+>>>>>>> Stashed changes
 function TranslationHealth({
   summary,
   fastCoverage,
@@ -411,9 +413,6 @@ function TranslationHealth({
               );
             })}
           </InlineStack>
-          <Text as="p" tone="subdued" variant="bodySm">
-            {t("onboarding.health.fullScanPending")}
-          </Text>
         </BlockStack>
       </LabeledCard>
     );
@@ -436,7 +435,6 @@ function TranslationHealth({
             </Text>
           </InlineStack>
           <ProgressBar progress={percent} size="small" tone="primary" />
-          <Text as="p">{t("onboarding.health.partial")}</Text>
           {cached.topGaps.length > 0 ? (
             <Box>
               <Text as="p" tone="subdued" variant="bodySm">
@@ -465,6 +463,7 @@ function TranslationHealth({
         <Text as="p" tone="subdued">
           {t("onboarding.health.computing")}
         </Text>
+<<<<<<< Updated upstream
         <Text as="p" tone="subdued" variant="bodySm">
           {t("onboarding.health.fullScanPending")}
         </Text>
@@ -556,6 +555,8 @@ function EstimatedCost({ summary }: { summary: OnboardingSummary }) {
             {t("onboarding.cost.needMore")}
           </Text>
         ) : null}
+=======
+>>>>>>> Stashed changes
       </BlockStack>
     </LabeledCard>
   );
@@ -569,11 +570,15 @@ export function RecommendationStep({
   fastCoverage: OnboardingFastCoverageSnapshot | null;
 }) {
   return (
+<<<<<<< Updated upstream
     <BlockStack gap="400">
       <RecommendationOverview summary={summary} />
       <SuggestedCoverageBoard summary={summary} />
       <TranslationHealth summary={summary} fastCoverage={fastCoverage} />
       <EstimatedCost summary={summary} />
     </BlockStack>
+=======
+    <TranslationHealth summary={summary} fastCoverage={fastCoverage} />
+>>>>>>> Stashed changes
   );
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useFetcher } from "@remix-run/react";
-import { Page, BlockStack } from "@shopify/polaris";
+import { Page, BlockStack, Box, Button, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import { message } from "~/ui/message";
 import { reportClientLog } from "~/utils/clientLog";
@@ -13,9 +13,9 @@ import type {
 } from "../types";
 import { PreparingStep, type PreparingPhase } from "./PreparingStep";
 import { RecommendationStep } from "./RecommendationStep";
-import { ActionFooter, type PrimaryCtaKind } from "./ActionFooter";
 
 type Step = "preparing" | "recommendation";
+type PrimaryCtaKind = "create" | "trial" | "upgrade" | "configure";
 
 function resolvePrimaryCta(summary: OnboardingSummary): PrimaryCtaKind {
   const hasTargets = summary.locales.suggestedTargets.length > 0;
@@ -170,11 +170,6 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
     navigate("/app/translate-v4");
   }, [track, postIntent, navigate]);
 
-  const handleCustomize = useCallback(() => {
-    track("onboarding_customize_clicked");
-    navigate("/app/translate-v4");
-  }, [track, navigate]);
-
   const handleConfigureLanguages = useCallback(() => {
     track("onboarding_configure_languages");
     navigate("/app/language");
@@ -257,8 +252,39 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
   ]);
 
   return (
-    <Page narrowWidth title={t("onboarding.pageTitle")}>
+    <Page>
       <BlockStack gap="500">
+        {step === "recommendation" ? (
+          <Box
+            paddingBlockEnd="200"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto 1fr",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <div style={{ justifySelf: "start" }}>
+              <Button variant="plain" onClick={handleSkip}>
+                {t("onboarding.action.skip")}
+              </Button>
+            </div>
+            <Text as="h1" variant="headingLg" alignment="center">
+              {t("onboarding.pageTitle")}
+            </Text>
+            <div style={{ justifySelf: "end" }}>
+              <Button
+                variant="primary"
+                size="large"
+                loading={creating && primaryCta === "create"}
+                onClick={handlePrimary}
+              >
+                {t("onboarding.action.translateNow")}
+              </Button>
+            </div>
+          </Box>
+        ) : null}
+
         {step === "preparing" ? (
           <PreparingStep
             summary={summary}
@@ -269,6 +295,7 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
             coverageLocaleLabel={plan?.localeLabel ?? null}
           />
         ) : (
+<<<<<<< Updated upstream
           <>
             <RecommendationStep
               summary={summary}
@@ -283,6 +310,12 @@ export function OnboardingFlow({ summary }: { summary: OnboardingSummary }) {
               onSkip={handleSkip}
             />
           </>
+=======
+          <RecommendationStep
+            summary={summary}
+            fastCoverage={fastCoverage}
+          />
+>>>>>>> Stashed changes
         )}
       </BlockStack>
     </Page>

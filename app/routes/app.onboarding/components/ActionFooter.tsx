@@ -1,4 +1,4 @@
-import { Card, BlockStack, InlineStack, Button, Text } from "@shopify/polaris";
+import { Card, BlockStack, InlineStack, Button } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import type { OnboardingSummary } from "../types";
 import { formatEstimateCredits } from "~/routes/app.translate-v4/useCreateTaskEstimate";
@@ -79,9 +79,6 @@ export function ActionFooter({
             </Button>
           </InlineStack>
         </InlineStack>
-        <Text as="p" tone="subdued" variant="bodySm">
-          {t("onboarding.action.hint")}
-        </Text>
       </BlockStack>
     </Card>
   );
