@@ -1,4 +1,4 @@
-import { Card, BlockStack, InlineStack, Button } from "@shopify/polaris";
+import { Card, BlockStack, InlineStack, Button, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 import type { OnboardingSummary } from "../types";
 import { formatEstimateCredits } from "~/routes/app.translate-v4/useCreateTaskEstimate";
