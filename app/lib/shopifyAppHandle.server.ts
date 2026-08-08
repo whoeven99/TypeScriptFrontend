@@ -1,4 +1,8 @@
 import { normalizeEnvValue } from "~/config/runtimeEnv.server";
+import {
+  SHOPIFY_BILLING_RETURN_URL_MAX_LENGTH,
+  sanitizeBillingReturnPath,
+} from "~/utils/billingReturn";
 
 /** Partners app handle by API key (see shopify.app.*.toml). */
 const APP_HANDLE_BY_API_KEY: Record<string, string> = {
@@ -23,7 +27,23 @@ export function buildShopifyEmbeddedAppReturnUrl(
 ): URL {
   const storeHandle = shop.split(".")[0];
   const handle = resolveShopifyAppHandle();
-  return new URL(
-    `https://admin.shopify.com/store/${storeHandle}/apps/${handle}${appPath}`,
+  const normalizedPath = sanitizeBillingReturnPath(appPath);
+  const url = new URL(
+    `https://admin.shopify.com/store/${storeHandle}/apps/${handle}${normalizedPath}`,
   );
+
+  if (url.href.length > SHOPIFY_BILLING_RETURN_URL_MAX_LENGTH) {
+    const minimalPath = normalizedPath.split("?")[0] ?? "/app/pricing";
+    const fallback = new URL(
+      `https://admin.shopify.com/store/${storeHandle}/apps/${handle}${minimalPath}?ciwiBillingReturn=1`,
+    );
+    if (fallback.href.length <= SHOPIFY_BILLING_RETURN_URL_MAX_LENGTH) {
+      return fallback;
+    }
+    console.warn(
+      `[billing] returnUrl still exceeds ${SHOPIFY_BILLING_RETURN_URL_MAX_LENGTH} chars shop=${shop} len=${fallback.href.length}`,
+    );
+  }
+
+  return url;
 }
