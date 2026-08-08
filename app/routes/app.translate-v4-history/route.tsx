@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
@@ -20,6 +20,10 @@ import {
   v4PageStyle,
 } from "../app.translate-v4/v4Styles";
 import { translateV4Message } from "../app.translate-v4/v4I18n";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
+import type { ShopQuota } from "~/lib/translationQuota";
+import { normalizeShopQuota } from "~/lib/translationQuota";
+import { buildTranslateV4TaskCreditsPurchaseContext } from "~/utils/creditsPurchaseTaskContext";
 
 async function readJsonResponse<T = any>(res: Response): Promise<T> {
   const text = await res.text();
@@ -43,7 +47,9 @@ export default function AppTranslateV4History() {
   const navigate = useNavigate();
   const { shop, jobs: initialJobs } = useLoaderData<typeof loader>();
   const [jobs, setJobs] = useState<TranslationJobProgressSummary[]>(initialJobs);
+  const [quota, setQuota] = useState<ShopQuota | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
 
   const historyJobs = useMemo(() => jobs.filter(isHistoryV4Job), [jobs]);
 
@@ -56,6 +62,32 @@ export default function AppTranslateV4History() {
       setJobs(data.jobs as TranslationJobProgressSummary[]);
     }
   }, [shop]);
+
+  const refreshQuota = useCallback(async () => {
+    const res = await fetch(
+      `/api/translate-v4/quota?shopName=${encodeURIComponent(shop)}`,
+    );
+    const data = await readJsonResponse(res);
+    if (data?.ok) {
+      setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
+    }
+  }, [shop]);
+
+  useEffect(() => {
+    void refreshQuota();
+  }, [refreshQuota]);
+
+  const openTaskCreditsModal = useCallback(
+    (job: TranslationJobProgressSummary) => {
+      openCreditsPurchaseModal(
+        buildTranslateV4TaskCreditsPurchaseContext(
+          job,
+          normalizedQuota?.remaining ?? null,
+        ),
+      );
+    },
+    [normalizedQuota],
+  );
 
   const handleAction = useCallback(
     async (
@@ -86,6 +118,19 @@ export default function AppTranslateV4History() {
           await refreshList();
           return true;
         }
+        if (
+          actionType === "resume" &&
+          data?.error === "v4.create.noCreditsPricing"
+        ) {
+          const targetJob =
+            jobs.find((item) => item.taskId === taskId) ?? null;
+          if (targetJob) {
+            openTaskCreditsModal(targetJob);
+          } else {
+            openCreditsPurchaseModal();
+          }
+          return false;
+        }
         message.error(
           data?.error ? translateV4Message(data.error, t) : t("v4.actionFailed"),
         );
@@ -96,7 +141,7 @@ export default function AppTranslateV4History() {
         return false;
       }
     },
-    [refreshList, shop, t],
+    [jobs, openTaskCreditsModal, refreshList, shop, t],
   );
 
   return (
@@ -150,7 +195,7 @@ export default function AppTranslateV4History() {
                   job={job}
                   translateSlotBusy={false}
                   expanded={expandedTaskId === job.taskId}
-                  onBuyCredits={() => {}}
+                  onBuyCredits={openTaskCreditsModal}
                   onToggleExpand={() =>
                     setExpandedTaskId((current) =>
                       current === job.taskId ? null : job.taskId,

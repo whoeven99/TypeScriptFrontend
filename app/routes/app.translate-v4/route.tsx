@@ -1,8 +1,6 @@
 import {
   type CSSProperties,
   Profiler,
-  Suspense,
-  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -66,6 +64,11 @@ import {
   markPerfEnd,
   markPerfStart,
 } from "~/utils/perf";
+import { openCreditsPurchaseModal } from "~/utils/creditsPurchaseModal";
+import {
+  buildCreateTaskCreditsPurchaseContext,
+  buildTranslateV4TaskCreditsPurchaseContext,
+} from "~/utils/creditsPurchaseTaskContext";
 import {
   clearCreateTaskDraft,
   loadCreateTaskDraft,
@@ -75,8 +78,6 @@ import {
   parseBillingReturn,
   stripBillingReturnParams,
 } from "~/utils/billingReturn";
-
-const PaymentModal = lazy(() => import("~/components/paymentModal"));
 
 async function readJsonResponse<T = any>(res: Response): Promise<T> {
   const text = await res.text();
@@ -201,7 +202,6 @@ export default function AppTranslateV4() {
     [jobs],
   );
   const [quota, setQuota] = useState<ShopQuota | null>(null);
-  const [strictQuotaGate, setStrictQuotaGate] = useState(false);
   const normalizedQuota = useMemo(() => normalizeShopQuota(quota), [quota]);
   const [coverage, setCoverage] = useState<CoverageSummary>(initialCoverage);
   const plan = useSelector((state: RootState) => state.userConfig.plan);
@@ -243,7 +243,6 @@ export default function AppTranslateV4() {
   const [isHandle, setIsHandle] = useState(false);
   const [includeLiquid, setIncludeLiquid] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
   const [activeWorkbenchTab, setActiveWorkbenchTab] = useState<
     "create" | "tasks"
@@ -424,7 +423,6 @@ export default function AppTranslateV4() {
       });
       if (data?.ok) {
         setQuota(normalizeShopQuota(data.quota as ShopQuota | null));
-        setStrictQuotaGate(Boolean(data.strictQuotaGate));
       }
     } catch (err) {
       console.error("[translateV4] refresh quota failed:", err);
@@ -440,6 +438,18 @@ export default function AppTranslateV4() {
       markPerfEnd("translate-v4.first-load.quota", perfStart);
     });
   }, [refreshQuota]);
+
+  const openTaskCreditsModal = useCallback(
+    (job: TranslationJobProgressSummary) => {
+      openCreditsPurchaseModal(
+        buildTranslateV4TaskCreditsPurchaseContext(
+          job,
+          normalizedQuota?.remaining ?? null,
+        ),
+      );
+    },
+    [normalizedQuota],
+  );
 
   const handleAction = useCallback(
     async (
@@ -486,6 +496,29 @@ export default function AppTranslateV4() {
           });
           return true;
         }
+        if (
+          actionType === "resume" &&
+          data?.error === "v4.create.noCreditsPricing"
+        ) {
+          const targetJob =
+            jobs.find((item) => item.taskId === taskId) ?? null;
+          finishClientLogTrace(trace, {
+            level: "info",
+            status: "failure",
+            message: t("v4.error.singleQuotaInsufficient"),
+            context: {
+              taskId,
+              httpStatus: res.status,
+              quotaBlocked: true,
+            },
+          });
+          if (targetJob) {
+            openTaskCreditsModal(targetJob);
+          } else {
+            openCreditsPurchaseModal();
+          }
+          return false;
+        }
         finishClientLogTrace(trace, {
           level: "warn",
           status: "failure",
@@ -513,7 +546,7 @@ export default function AppTranslateV4() {
         return false;
       }
     },
-    [shop, refreshList, refreshQuota, t],
+    [jobs, openTaskCreditsModal, shop, refreshList, refreshQuota, t],
   );
   const remainingCredits = normalizedQuota?.remaining ?? null;
 
@@ -992,7 +1025,7 @@ export default function AppTranslateV4() {
                     jobs={jobs}
                     spotlightTaskIds={spotlightTaskIds}
                     translateSlotBusy={translateSlotBusy}
-                    onBuyCredits={() => setShowPaymentModal(true)}
+                    onBuyCredits={openTaskCreditsModal}
                     onAction={handleAction}
                   />
                 </div>
@@ -1022,18 +1055,16 @@ export default function AppTranslateV4() {
         onBeforeBilling={persistCreateTaskDraft}
         onBuyCredits={() => {
           setCreateConfirmOpen(false);
-          setShowPaymentModal(true);
+          openCreditsPurchaseModal(
+            buildCreateTaskCreditsPurchaseContext({
+              estimatedCredits: taskEstimate?.estimatedCredits ?? null,
+              currentRemainingCredits: normalizedQuota?.remaining ?? null,
+              targetsCount: targets.length,
+              modulesCount: moduleKeys.length,
+            }),
+          );
         }}
       />
-      {showPaymentModal ? (
-        <Suspense fallback={null}>
-          <PaymentModal
-            visible={showPaymentModal}
-            setVisible={setShowPaymentModal}
-            variant="v4"
-          />
-        </Suspense>
-      ) : null}
     </Page>
   );
 }
