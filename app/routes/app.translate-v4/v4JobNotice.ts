@@ -2,6 +2,15 @@ import type { TFunction } from "i18next";
 import {
   isV4CancelledMessage,
   isV4ManualPauseMessage,
+  isV4QuotaInsufficientMessage,
+  resolveV4UserFacingMessageCode,
+  v4UserFacingMessageI18nKey,
+  V4_MESSAGE_CANCELLED,
+  V4_MESSAGE_JOB_FAILED,
+  V4_MESSAGE_MANUAL_PAUSE,
+  V4_MESSAGE_QUOTA_INSUFFICIENT,
+  V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL,
+  V4_MESSAGE_QUOTA_SERVICE_ERROR,
 } from "~/shared/translateV4MessageTokens";
 import { translateV4Message } from "./v4I18n";
 
@@ -23,8 +32,8 @@ export function getV4JobNotice(
   errorMessage: string | null | undefined,
   t: TFunction,
 ): V4JobNotice {
-  const trimmed = errorMessage?.trim();
-  if (!trimmed) {
+  const code = resolveV4UserFacingMessageCode(errorMessage);
+  if (!code) {
     return {
       message: null,
       kind: null,
@@ -32,32 +41,27 @@ export function getV4JobNotice(
     };
   }
 
-  const normalized = trimmed.toLowerCase();
   let kind: V4JobNoticeKind = "generic";
-
-  if (isV4QuotaInsufficientMessage(normalized)) {
+  if (
+    code === V4_MESSAGE_QUOTA_INSUFFICIENT ||
+    code === V4_MESSAGE_QUOTA_INSUFFICIENT_PARTIAL ||
+    isV4QuotaInsufficientMessage(code)
+  ) {
     kind = "quota_insufficient";
-  } else if (isV4ManualPauseMessage(trimmed)) {
+  } else if (
+    code === V4_MESSAGE_MANUAL_PAUSE ||
+    isV4ManualPauseMessage(code)
+  ) {
     kind = "manual_pause";
-  } else if (isV4CancelledMessage(trimmed)) {
+  } else if (code === V4_MESSAGE_CANCELLED || isV4CancelledMessage(code)) {
     kind = "cancelled";
+  } else if (code === V4_MESSAGE_QUOTA_SERVICE_ERROR || code === V4_MESSAGE_JOB_FAILED) {
+    kind = "generic";
   }
 
   return {
-    message: translateV4Message(trimmed, t),
+    message: translateV4Message(code, t),
     kind,
     action: kind === "quota_insufficient" ? "buy_credits" : null,
   };
-}
-
-function isV4QuotaInsufficientMessage(normalizedMessage: string): boolean {
-  return (
-    normalizedMessage.includes("额度不足") ||
-    normalizedMessage.includes("积分不足") ||
-    normalizedMessage.includes("额度已用完") ||
-    normalizedMessage.includes("translation credits have been used up") ||
-    normalizedMessage.includes("translation word credits have been exhausted") ||
-    normalizedMessage.includes("not enough translation credits") ||
-    normalizedMessage.includes("out of translation credits")
-  );
 }

@@ -179,9 +179,8 @@ export function translationV4StatusLabel(
   errorMessage?: string | null,
   metrics?: TranslationV4Metrics,
 ): string {
-  if (status === "PAUSED" && errorMessage?.trim()) {
-    return errorMessage.trim();
-  }
+  // Pause reason lives in errorMessage / job notice; status label stays "Paused".
+  void errorMessage;
   if (status === "TRANSLATE_QUEUED" && metrics) {
     const started =
       metrics.translateDone > 0 ||

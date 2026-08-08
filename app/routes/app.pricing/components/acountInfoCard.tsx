@@ -22,7 +22,7 @@ const AcountInfoCard: React.FC<AcountInfoCardProps> = ({
     <div className="pricing-usage-card">
       <div className="pricing-usage-card__header">
         <Title level={4} style={{ margin: 0 }}>
-          {t("Available credits")}
+          {t("pricing.availableCredits")}
         </Title>
       </div>
       <div className="pricing-usage-card__content">
