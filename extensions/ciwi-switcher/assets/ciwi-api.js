@@ -3,6 +3,9 @@
  * 店面 Widget / Liquid / PageFly / 货币 / 图片 统一走 App Proxy
  *（#ciwiAppProxyBase → TSF /api/storefront/*）。
  * IP 定位仍走 Shopify / ipapi，不经额度接口。
+ *
+ * 测试 App：Liquid 默认 /apps/ciwi-test（shopify.app.test.toml subpath）。
+ * 正式 App：主题设置填 /apps/ciwi（shopify.app.prod.toml subpath）。
  */
 function resolveStorefrontApiBase() {
   const appProxyBase = document.getElementById("ciwiAppProxyBase")?.value?.trim();
@@ -139,19 +142,31 @@ export async function CollectLiquidStrings({ shopName, languageCode, texts }) {
   try {
     if (!Array.isArray(texts) || texts.length === 0) return;
     const baseUrl = resolveStorefrontApiBase();
-    if (!baseUrl) return;
-    const { data } = await fetchJson(
-      `${baseUrl}/liquid/collect?shopName=${shopName}&languageCode=${languageCode}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ texts }),
-        // 采集是尽力而为，减少重试避免额外负载
-        retryAttempts: 1,
-      },
-    );
+    if (!baseUrl) {
+      console.log("[ciwi-auto-liquid] collect skip", { reason: "APP_PROXY_MISSING" });
+      return;
+    }
+    const url = `${baseUrl}/liquid/collect?shopName=${shopName}&languageCode=${languageCode}`;
+    console.log("[ciwi-auto-liquid] collect request", {
+      url,
+      shopName,
+      languageCode,
+      textCount: texts.length,
+    });
+    const { status, data } = await fetchJson(url, {
+      method: "POST",
+      body: JSON.stringify({ texts }),
+      // 采集是尽力而为，减少重试避免额外负载
+      retryAttempts: 1,
+    });
+    console.log("[ciwi-auto-liquid] collect http", {
+      status,
+      data,
+      dataKeys: data && typeof data === "object" ? Object.keys(data) : [],
+    });
     return data;
   } catch (err) {
-    console.error("Error CollectLiquidStrings:", err);
+    console.error("[ciwi-auto-liquid] Error CollectLiquidStrings:", err);
   }
 }
 

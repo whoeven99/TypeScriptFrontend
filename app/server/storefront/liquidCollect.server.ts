@@ -178,17 +178,29 @@ export async function collectAutoLiquidStrings(args: {
 }): Promise<CollectResult> {
   const shop = args.shop.trim();
   const target = normalize(args.target);
-  if (!shop || !target) return { scheduled: 0, skipped: true, reason: "no_target" };
+  // TEMP debug：采集服务端路径日志，验收后可删。
+  const log = (step: string, extra?: Record<string, unknown>) => {
+    console.log(
+      `[auto-liquid] ${step}`,
+      JSON.stringify({ shop, target, inCount: args.texts?.length ?? 0, ...extra }),
+    );
+  };
+  if (!shop || !target) {
+    log("skip", { reason: "no_target" });
+    return { scheduled: 0, skipped: true, reason: "no_target" };
+  }
 
   // 0) 全局 kill-switch（默认开；出事设 AUTO_LIQUID_COLLECT_ENABLED=false）
   // 产品默认采集；不再读 SwitcherConfiguration.autoLiquidCollect 商户开关。
   if (!envBool("AUTO_LIQUID_COLLECT_ENABLED", true)) {
+    log("skip", { reason: "disabled" });
     return { scheduled: 0, skipped: true, reason: "disabled" };
   }
 
   // 1) 主语言门控（Redis 缓存 1h，避免每会话打 Shopify）
   const primary = await resolvePrimaryLocaleCached(shop);
   if (primary && normalize(primary).toLowerCase() === target.toLowerCase()) {
+    log("skip", { reason: "primary_locale", primary });
     return { scheduled: 0, skipped: true, reason: "primary_locale" };
   }
 
@@ -203,7 +215,15 @@ export async function collectAutoLiquidStrings(args: {
     candidates.push(t);
     if (candidates.length >= MAX_PER_REQUEST * 2) break;
   }
-  if (!candidates.length) return { scheduled: 0, skipped: true, reason: "no_candidate" };
+  if (!candidates.length) {
+    log("skip", { reason: "no_candidate", primary });
+    return { scheduled: 0, skipped: true, reason: "no_candidate" };
+  }
+  log("candidates", {
+    primary,
+    candidateCount: candidates.length,
+    sample: candidates.slice(0, 8),
+  });
 
   const redis = safeRedis();
   const digests = candidates.map((t) => liquidSourceDigest(t));
@@ -219,7 +239,10 @@ export async function collectAutoLiquidStrings(args: {
         SEEN_BATCH_TTL_SEC,
         "NX",
       );
-      if (ok === null) return { scheduled: 0, skipped: false, reason: "recently_seen" };
+      if (ok === null) {
+        log("skip", { reason: "recently_seen", candidateCount: candidates.length });
+        return { scheduled: 0, skipped: false, reason: "recently_seen" };
+      }
     } catch {
       // ignore → 继续
     }
@@ -237,7 +260,10 @@ export async function collectAutoLiquidStrings(args: {
       // ignore → unknown 保持全量，走 findMany 兜底
     }
   }
-  if (!unknown.length) return { scheduled: 0, skipped: false, reason: "all_known" };
+  if (!unknown.length) {
+    log("skip", { reason: "all_known", via: "redis_known" });
+    return { scheduled: 0, skipped: false, reason: "all_known" };
+  }
 
   // 5) 权威去重：仅对 unknown 子集查 Turso（任意 status）。
   const existing = await prisma.liquidRule.findMany({
@@ -262,22 +288,35 @@ export async function collectAutoLiquidStrings(args: {
   const fresh = unknown
     .filter((t) => !existingSet.has(t))
     .slice(0, MAX_PER_REQUEST);
-  if (!fresh.length) return { scheduled: 0, skipped: false, reason: "all_known" };
+  if (!fresh.length) {
+    log("skip", {
+      reason: "all_known",
+      via: "turso",
+      unknownCount: unknown.length,
+      existingCount: existingSet.size,
+    });
+    return { scheduled: 0, skipped: false, reason: "all_known" };
+  }
 
   // 6) 总量上限（只限 source=auto，读 Redis 计数缓存，避免每请求 COUNT）
   const autoCount = await getCachedAutoTotal(shop, redis);
   if (autoCount >= TOTAL_CAP) {
+    log("skip", { reason: "total_cap", autoCount, TOTAL_CAP });
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
   const room = Math.max(0, TOTAL_CAP - autoCount);
   const withinTotal = fresh.slice(0, room);
   if (!withinTotal.length) {
+    log("skip", { reason: "total_cap", autoCount, room });
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
 
   // 7) 每日名额预留（采集只落 PENDING，不扣额度；翻译时再计费）
   const allowed = await reserveDailyBudget(shop, withinTotal.length);
-  if (allowed <= 0) return { scheduled: 0, skipped: true, reason: "daily_cap" };
+  if (allowed <= 0) {
+    log("skip", { reason: "daily_cap", want: withinTotal.length });
+    return { scheduled: 0, skipped: true, reason: "daily_cap" };
+  }
   const toInsert = withinTotal.slice(0, allowed);
 
   // 8) 批量插入 PENDING（不跑 LLM）
@@ -308,9 +347,15 @@ export async function collectAutoLiquidStrings(args: {
         // ignore（缓存尽力而为，权威在 Turso）
       }
     }
+    log("inserted", {
+      scheduled: result.count,
+      sample: toInsert.slice(0, 8),
+      autoCountBefore: autoCount,
+    });
     return { scheduled: result.count, skipped: false };
   } catch (err) {
     console.error("[auto-liquid] createMany PENDING failed:", err);
+    log("skip", { reason: "write_failed" });
     return { scheduled: 0, skipped: true, reason: "write_failed" };
   }
 }

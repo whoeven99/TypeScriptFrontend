@@ -147,7 +147,11 @@
         </div>
       </div>
       <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
-      <input type="hidden" id="ciwiAppProxyBase" value="/apps/ciwi">
+      {%- comment -%}
+        测试 App：shopify.app.test.toml subpath=ciwi-test → /apps/ciwi-test。
+        正式 App 若共用此扩展且 subpath=ciwi，部署正式前需改回 /apps/ciwi。
+      {%- endcomment -%}
+      <input type="hidden" id="ciwiAppProxyBase" value="/apps/ciwi-test">
       <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
       <input type="hidden" name="currency_code" value="{{ localization.country.currency.iso_code }}">
       <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">

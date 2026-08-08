@@ -727,6 +727,11 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - App Proxy: `app/routes/api.storefront.$.ts`.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
 `extensions/ciwi-switcher/assets/ciwi-*.js`.
+- App Proxy 店面路径：测试 App `shopify.app.test.toml` `subpath=ciwi-test`，
+ Liquid 写死 `/apps/ciwi-test`（与正式 `subpath=ciwi` 错开，避免同店变成
+ `ciwi-4`）。同扩展部署到正式前须改回 `/apps/ciwi`。改 TOML subpath
+ **只影响新安装**；已装店需在 Admin「应用代理 URL」改成 `apps/ciwi-test`
+ 或重装测试 App。
 - Constants: `app/lib/switcherConstants.ts`.
 - `ipOpen` is the live geolocation switch and is stored on Turso
 `SwitcherConfiguration`. The old `IpRedirection` table/model was dropped
