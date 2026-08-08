@@ -20,6 +20,61 @@ const DAILY_CAP_TTL_SEC = 60 * 60 * 25;
 /** 每店 auto 行总量上限（含 PENDING/DONE）；到顶停止新增。 */
 const TOTAL_CAP = Number(process.env.AUTO_LIQUID_TOTAL_CAP || 50_000);
 const PRIMARY_LOCALE_TTL_SEC = 60 * 60;
+/**
+ * Redis 已知指纹集 TTL（安全网）：集合是 Turso PENDING 的镜像，
+ * writeback 转 DONE 时由 Worker 立即 SREM；TTL 仅用于自愈漂移（如保留清理删行）。
+ */
+const KNOWN_TTL_SEC = 30 * 24 * 60 * 60;
+/** 总量计数缓存 TTL：过期后从 Turso 重新播种，纠正漂移。 */
+const TOTAL_CACHE_TTL_SEC = 6 * 60 * 60;
+/** 批级冷却：同一批文案短时内重复上报直接跳过。 */
+const SEEN_BATCH_TTL_SEC = 5 * 60;
+
+/** 已知指纹集 = 该店该语「Turso 中非 DONE（PENDING/TRANSLATING）」原文指纹镜像。 */
+function knownDigestKey(shop: string, locale: string): string {
+  return `tsf:auto_liquid:known:${shop}:${locale}`;
+}
+/** 每店 auto 行总量计数缓存（替代每请求 COUNT）。 */
+function totalCountKey(shop: string): string {
+  return `tsf:auto_liquid:total:${shop}`;
+}
+/** 批级冷却键（按候选集合指纹）。 */
+function seenBatchKey(shop: string, locale: string, batchDigest: string): string {
+  return `tsf:auto_liquid:seen:${shop}:${locale}:${batchDigest}`;
+}
+
+/** 取 Redis 客户端；不可用返回 null，调用方降级到纯 Turso 路径。 */
+function safeRedis(): ReturnType<typeof getTranslateV4RedisClient> | null {
+  try {
+    return getTranslateV4RedisClient();
+  } catch {
+    return null;
+  }
+}
+
+/** 读总量计数（Redis 命中直接返回；否则从 Turso 播种并写回）。 */
+async function getCachedAutoTotal(
+  shop: string,
+  redis: ReturnType<typeof getTranslateV4RedisClient> | null,
+): Promise<number> {
+  if (redis) {
+    try {
+      const v = await redis.get(totalCountKey(shop));
+      if (v != null) return Number(v) || 0;
+    } catch {
+      // ignore → 回退 Turso
+    }
+  }
+  const n = await prisma.liquidRule.count({ where: { shop, source: "auto" } });
+  if (redis) {
+    try {
+      await redis.set(totalCountKey(shop), String(n), "EX", TOTAL_CACHE_TTL_SEC);
+    } catch {
+      // ignore
+    }
+  }
+  return n;
+}
 
 export type CollectResult = {
   /** 本次新写入 PENDING 的条数。 */
@@ -150,21 +205,67 @@ export async function collectAutoLiquidStrings(args: {
   }
   if (!candidates.length) return { scheduled: 0, skipped: true, reason: "no_candidate" };
 
-  // 3) 去掉已存在的规则（任意 status）
+  const redis = safeRedis();
+  const digests = candidates.map((t) => liquidSourceDigest(t));
+
+  // 3) 批级冷却：同一批文案短时内重复上报直接跳过（省去后续读写）。
+  if (redis) {
+    try {
+      const batchDigest = liquidSourceDigest([...candidates].sort().join("\u0001"));
+      const ok = await redis.set(
+        seenBatchKey(shop, target, batchDigest),
+        "1",
+        "EX",
+        SEEN_BATCH_TTL_SEC,
+        "NX",
+      );
+      if (ok === null) return { scheduled: 0, skipped: false, reason: "recently_seen" };
+    } catch {
+      // ignore → 继续
+    }
+  }
+
+  // 4) Redis 已知指纹集过滤：命中即已在 Turso（非 DONE），跳过 → 减少 findMany。
+  let unknown = candidates;
+  if (redis && digests.length) {
+    try {
+      const flags = await redis.smismember(knownDigestKey(shop, target), ...digests);
+      if (Array.isArray(flags) && flags.length === candidates.length) {
+        unknown = candidates.filter((_, i) => !Number(flags[i]));
+      }
+    } catch {
+      // ignore → unknown 保持全量，走 findMany 兜底
+    }
+  }
+  if (!unknown.length) return { scheduled: 0, skipped: false, reason: "all_known" };
+
+  // 5) 权威去重：仅对 unknown 子集查 Turso（任意 status）。
   const existing = await prisma.liquidRule.findMany({
-    where: { shop, languageCode: target, beforeTranslation: { in: candidates } },
-    select: { beforeTranslation: true },
+    where: { shop, languageCode: target, beforeTranslation: { in: unknown } },
+    select: { beforeTranslation: true, status: true },
   });
   const existingSet = new Set(existing.map((r) => r.beforeTranslation));
-  const fresh = candidates
+  // 自愈：把已存在的「非 DONE」原文补进已知集（覆盖历史 PENDING 未镜像的情况）。
+  if (redis) {
+    const heal = existing
+      .filter((r) => r.status !== "DONE")
+      .map((r) => liquidSourceDigest(r.beforeTranslation));
+    if (heal.length) {
+      try {
+        await redis.sadd(knownDigestKey(shop, target), ...heal);
+        await redis.expire(knownDigestKey(shop, target), KNOWN_TTL_SEC);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  const fresh = unknown
     .filter((t) => !existingSet.has(t))
     .slice(0, MAX_PER_REQUEST);
   if (!fresh.length) return { scheduled: 0, skipped: false, reason: "all_known" };
 
-  // 4) 总量上限（只限 source=auto）
-  const autoCount = await prisma.liquidRule.count({
-    where: { shop, source: "auto" },
-  });
+  // 6) 总量上限（只限 source=auto，读 Redis 计数缓存，避免每请求 COUNT）
+  const autoCount = await getCachedAutoTotal(shop, redis);
   if (autoCount >= TOTAL_CAP) {
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
@@ -174,13 +275,13 @@ export async function collectAutoLiquidStrings(args: {
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
 
-  // 5) 每日名额预留（采集只落 PENDING，不扣额度；翻译时再计费）
+  // 7) 每日名额预留（采集只落 PENDING，不扣额度；翻译时再计费）
   const allowed = await reserveDailyBudget(shop, withinTotal.length);
   if (allowed <= 0) return { scheduled: 0, skipped: true, reason: "daily_cap" };
   const toInsert = withinTotal.slice(0, allowed);
 
-  // 6) 批量插入 PENDING（不跑 LLM）
-  // LibSQL/Prisma adapter 不支持 createMany({ skipDuplicates })，去重已在上方 findMany 完成。
+  // 8) 批量插入 PENDING（不跑 LLM）
+  // LibSQL/Prisma adapter 不支持 createMany({ skipDuplicates })，去重已在上方完成。
   try {
     const result = await prisma.liquidRule.createMany({
       data: toInsert.map((text) => ({
@@ -195,6 +296,18 @@ export async function collectAutoLiquidStrings(args: {
         jobId: null,
       })),
     });
+    // 维护缓存：新 PENDING 指纹入已知集；总量计数自增（Worker 转 DONE 时 SREM）。
+    if (redis && result.count > 0) {
+      try {
+        const freshDigests = toInsert.map((t) => liquidSourceDigest(t));
+        await redis.sadd(knownDigestKey(shop, target), ...freshDigests);
+        await redis.expire(knownDigestKey(shop, target), KNOWN_TTL_SEC);
+        await redis.incrby(totalCountKey(shop), result.count);
+        await redis.expire(totalCountKey(shop), TOTAL_CACHE_TTL_SEC);
+      } catch {
+        // ignore（缓存尽力而为，权威在 Turso）
+      }
+    }
     return { scheduled: result.count, skipped: false };
   } catch (err) {
     console.error("[auto-liquid] createMany PENDING failed:", err);

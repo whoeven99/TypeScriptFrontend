@@ -1,6 +1,29 @@
 import { createHash } from "node:crypto";
 import { tsfExecute, hasTsfDbCredentials } from "./tsfDb.js";
+import { getRedis } from "./redisV4.js";
 import type { TranslationV4Job } from "./cosmosV4.js";
+
+/**
+ * 采集侧「已知指纹集」= Turso 中非 DONE 的原文指纹镜像（App liquidCollect 写入）。
+ * key 必须与 App `knownDigestKey` 完全一致：`tsf:auto_liquid:known:{shop}:{locale}`。
+ */
+function autoLiquidKnownKey(shop: string, locale: string): string {
+  return `tsf:auto_liquid:known:${shop}:${locale}`;
+}
+
+/** 行转 DONE 后从已知集移除对应指纹（不等 TTL，保持 Redis ≈ Turso PENDING）。 */
+async function sremAutoLiquidKnown(
+  shop: string,
+  locale: string,
+  digest: string,
+): Promise<void> {
+  if (!shop || !locale || !digest) return;
+  try {
+    await getRedis().srem(autoLiquidKnownKey(shop, locale), digest);
+  } catch {
+    // 尽力而为：失败靠 App 侧已知集 TTL 自愈，不影响写回。
+  }
+}
 
 /** Virtual module: Turso LiquidRule pipeline (not a Shopify resource type). */
 export const CUSTOM_LIQUID_MODULE = "CUSTOM_LIQUID";
@@ -113,7 +136,28 @@ export async function completeLiquidRuleWriteback(args: {
           WHERE shop = ? AND id = ? AND (jobId = ? OR jobId IS NULL)`,
     args: [after, args.shop, args.ruleId, args.jobId],
   });
-  return (res.rowsAffected ?? 0) > 0;
+  const ok = (res.rowsAffected ?? 0) > 0;
+  if (ok) {
+    // 转 DONE：从采集「已知指纹集」移除，保持 Redis ≈ Turso PENDING。
+    try {
+      const row = await tsfExecute({
+        sql: `SELECT languageCode, beforeTranslation, sourceDigest
+              FROM LiquidRule WHERE shop = ? AND id = ?`,
+        args: [args.shop, args.ruleId],
+      });
+      const r = row.rows[0];
+      if (r) {
+        const locale = String(r.languageCode ?? "");
+        const digest =
+          String(r.sourceDigest ?? "") ||
+          digestOf(String(r.beforeTranslation ?? ""));
+        await sremAutoLiquidKnown(args.shop, locale, digest);
+      }
+    } catch {
+      // 非致命：已知集 TTL 会自愈
+    }
+  }
+  return ok;
 }
 
 /** Release TRANSLATING rows for this job back to PENDING (cancel / failed / unused). */

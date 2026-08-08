@@ -2674,6 +2674,42 @@ const AUTO_LIQUID_MIN_LEN = 2;
 const AUTO_LIQUID_BATCH = 60; // 单次最多上报条数
 const AUTO_LIQUID_REPORTED_CAP = 1500; // 客户端已报指纹上限
 
+// 门A：整页「仍像源语言」的字符占比上限；低于它才认为页面已大体译完，采集残留。
+const AUTO_LIQUID_SOURCE_RATIO_MAX = 0.1;
+// 占比判定需要的最小样本字符数，样本太少不做门控（信号不足直接跳过采集）。
+const AUTO_LIQUID_MIN_SAMPLE_CHARS = 40;
+// 性能护栏：单次最多遍历节点数与时间预算，超出即放弃本页采集（可失败，不拖慢页面）。
+const AUTO_LIQUID_MAX_NODES = 6000;
+const AUTO_LIQUID_TIME_BUDGET_MS = 12;
+
+// 目标语言 → 期望脚本的正则；命中即视为「已译成目标语」。
+function targetScriptRegex(locale) {
+  const l = String(locale || "").toLowerCase();
+  if (l.startsWith("ja")) return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
+  if (l.startsWith("zh")) return /\p{Script=Han}/u;
+  if (l.startsWith("ko")) return /\p{Script=Hangul}/u;
+  if (l.startsWith("ar") || l.startsWith("fa") || l.startsWith("ur")) return /\p{Script=Arabic}/u;
+  if (l.startsWith("ru") || l.startsWith("uk") || l.startsWith("bg") || l.startsWith("sr"))
+    return /\p{Script=Cyrillic}/u;
+  if (l.startsWith("th")) return /\p{Script=Thai}/u;
+  if (l.startsWith("he") || l.startsWith("iw")) return /\p{Script=Hebrew}/u;
+  if (l.startsWith("el")) return /\p{Script=Greek}/u;
+  if (l.startsWith("hi") || l.startsWith("mr") || l.startsWith("ne"))
+    return /\p{Script=Devanagari}/u;
+  // 拉丁系目标语言（en/fr/de/es...）无法靠脚本区分源/译，返回 null 关闭占比门。
+  return null;
+}
+
+/**
+ * 判定一段候选文本相对目标语言是否「仍像源语言（未译）」。
+ * 仅对非拉丁目标语言可靠：文本不含目标脚本字符即视为源语言残留。
+ * @returns "source" | "target" | "unknown"
+ */
+function classifyAutoLiquidText(text, targetRe) {
+  if (!targetRe) return "unknown";
+  return targetRe.test(text) ? "target" : "source";
+}
+
 function autoLiquidReportedKey(shopValue, language) {
   return `ciwi_auto_liquid_reported:${shopValue}:${language}`;
 }
@@ -2710,7 +2746,9 @@ function isAutoLiquidCandidate(text) {
 
 /**
  * 抓取当前页面上未翻译文本并上报后端（默认开；主题预览 / 主语言页由调用方跳过）。
- * 客户端做轻量去重 + 已报指纹缓存，重活（过滤 / 背压）在后端；翻译另走任务。
+ * 门A：整页「仍像源语言」的字符占比低于阈值（页面已大体译完）才采集残留。
+ * 门C：只上报仍像源语言的条目。客户端去重 + 指纹缓存；重活在后端；翻译另走任务。
+ * 性能：idle 调度 + 节点/时间预算 + 可中断；可采失败，不拖慢页面。
  */
 export function CollectUntranslatedText(shop, ciwiBlock) {
   try {
@@ -2720,17 +2758,24 @@ export function CollectUntranslatedText(shop, ciwiBlock) {
     )?.value;
     if (!shopValue || !language) return;
 
-    // 本会话已判定无需采集（未开启 / 主语言）→ 直接跳过
+    // 本会话已判定无需采集（未开启 / 主语言 / 未就绪）→ 直接跳过
     const sessionFlag = `ciwi_auto_liquid_off:${shopValue}:${language}`;
     try {
       if (sessionStorage.getItem(sessionFlag) === "1") return;
     } catch {}
 
+    const targetRe = targetScriptRegex(language);
+    // 拉丁系目标语言无法靠脚本区分源/译 → 关闭占比启发式，避免误采（本会话停采）。
+    if (!targetRe) {
+      try {
+        sessionStorage.setItem(sessionFlag, "1");
+      } catch {}
+      return;
+    }
+
     const reportedKey = autoLiquidReportedKey(shopValue, language);
     const reported = loadAutoLiquidReported(reportedKey);
 
-    const seen = new Set();
-    const batch = [];
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -2752,25 +2797,71 @@ export function CollectUntranslatedText(shop, ciwiBlock) {
       },
     );
 
+    const startedAt =
+      typeof performance !== "undefined" && performance.now
+        ? performance.now()
+        : Date.now();
+    const now = () =>
+      typeof performance !== "undefined" && performance.now
+        ? performance.now()
+        : Date.now();
+
+    const seen = new Set();
+    const candidates = []; // 仍像源语言、未上报过的候选
+    let totalChars = 0; // 分母：候选文本总字符
+    let sourceChars = 0; // 分子：仍像源语言的字符
+    let nodes = 0;
+    let aborted = false;
+
     while (walker.nextNode()) {
+      nodes += 1;
+      // 性能护栏：节点/时间超预算即放弃本页（不改变已扫状态，不上报）。
+      if (nodes > AUTO_LIQUID_MAX_NODES) {
+        aborted = true;
+        break;
+      }
+      if ((nodes & 0xff) === 0 && now() - startedAt > AUTO_LIQUID_TIME_BUDGET_MS) {
+        aborted = true;
+        break;
+      }
+
       const t = normalizeText(walker.currentNode.nodeValue || "");
       if (!isAutoLiquidCandidate(t)) continue;
-      if (seen.has(t) || reported.has(t)) continue;
+      if (seen.has(t)) continue;
       seen.add(t);
-      batch.push(t);
-      if (batch.length >= AUTO_LIQUID_BATCH) break;
+
+      const cls = classifyAutoLiquidText(t, targetRe);
+      totalChars += t.length;
+      if (cls === "source") {
+        sourceChars += t.length;
+        if (!reported.has(t) && candidates.length < AUTO_LIQUID_BATCH) {
+          candidates.push(t);
+        }
+      }
     }
 
-    if (!batch.length) return;
+    // 中断 / 样本不足：信号不可靠，本次不采（不设停采旗标，下次仍可尝试）。
+    if (aborted || totalChars < AUTO_LIQUID_MIN_SAMPLE_CHARS) return;
+
+    // 门A：源语言占比过高 = 页面还没大体译完 → 不采（本会话停采该语，省请求）。
+    const ratio = sourceChars / totalChars;
+    if (ratio >= AUTO_LIQUID_SOURCE_RATIO_MAX) {
+      try {
+        sessionStorage.setItem(sessionFlag, "1");
+      } catch {}
+      return;
+    }
+
+    if (!candidates.length) return;
 
     // 乐观标记为已报，避免同页多次触发 / 短时间重复上报
-    batch.forEach((t) => reported.add(t));
+    candidates.forEach((t) => reported.add(t));
     saveAutoLiquidReported(reportedKey, reported);
 
     CollectLiquidStrings({
       shopName: shopValue,
       languageCode: language,
-      texts: batch,
+      texts: candidates,
     })
       .then((res) => {
         const reason = res?.response?.reason;
@@ -2779,7 +2870,8 @@ export function CollectUntranslatedText(shop, ciwiBlock) {
           (reason === "disabled" ||
             reason === "primary_locale" ||
             reason === "total_cap" ||
-            reason === "daily_cap")
+            reason === "daily_cap" ||
+            reason === "resource_not_ready")
         ) {
           try {
             sessionStorage.setItem(sessionFlag, "1");

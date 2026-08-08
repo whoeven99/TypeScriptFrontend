@@ -468,9 +468,14 @@ async function ciwiOnload() {
     }
   };
 
-  // 主题 custom liquid 文本：全站需要
+  // 主题 custom liquid 文本：全站需要。
+  // 捕获替换 Promise，保证「先替换已有 DONE Liquid，替换完再采集」，
+  // 避免把已译但尚未替换上屏的源文案又当残留采一遍。
+  let customLiquidReplacePromise = Promise.resolve();
   if (!isInThemePreview) {
-    CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+    customLiquidReplacePromise = Promise.resolve(
+      CustomLiquidTextTranslate(blockId, shop, ciwiBlock),
+    ).catch(() => {});
   }
   runStorefrontTranslationTasks();
 
@@ -505,11 +510,15 @@ async function ciwiOnload() {
       return;
     }
     const run = () => CollectUntranslatedText(shop, ciwiBlock);
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(run, { timeout: 4000 });
-    } else {
-      setTimeout(run, 2000);
-    }
+    const schedule = () => {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(run, { timeout: 4000 });
+      } else {
+        setTimeout(run, 2000);
+      }
+    };
+    // 先等已有 Liquid 替换完成，再 idle 采集（替换失败也继续采集）。
+    Promise.resolve(customLiquidReplacePromise).finally(schedule);
   };
 
   //获取当前语言和地区
@@ -898,7 +907,12 @@ async function ciwiOnload() {
       ciwiBlock,
     );
     runStorefrontTranslationTasks();
-    // 语言切换后为新目标语言采集
+    // 语言切换：先替换新目标语言的自定义 Liquid，再采集（保持替换先于采集）。
+    if (!isInThemePreview) {
+      customLiquidReplacePromise = Promise.resolve(
+        CustomLiquidTextTranslate(blockId, shop, ciwiBlock),
+      ).catch(() => {});
+    }
     scheduleAutoLiquidCollect();
   };
 

@@ -129,8 +129,9 @@ export function msUntilNextAutoLiquidRetention(now = new Date()): number {
 }
 
 /**
- * Slow-delete old source=auto LiquidRule rows (DONE or stale PENDING).
- * Never deletes source=manual.
+ * Slow-delete old source=auto **PENDING** LiquidRule rows (未被翻译的僵尸采集行).
+ * 只删 auto+PENDING；DONE（店面替换在用）与 TRANSLATING（任务占用中）保留；
+ * 绝不删 source=manual。
  */
 export async function cleanupOldAutoLiquidRules(): Promise<{ deleted: number }> {
   if (!isAutoLiquidRetentionEnabled()) {
@@ -150,7 +151,7 @@ export async function cleanupOldAutoLiquidRules(): Promise<{ deleted: number }> 
   const rs = await tsfExecute({
     sql: `SELECT id FROM LiquidRule
           WHERE source = 'auto'
-            AND status IN ('DONE', 'PENDING')
+            AND status = 'PENDING'
             AND updatedAt < datetime('now', ?)
           ORDER BY updatedAt ASC
           LIMIT ?`,
@@ -162,8 +163,9 @@ export async function cleanupOldAutoLiquidRules(): Promise<{ deleted: number }> 
   for (const id of ids) {
     if (isShuttingDown()) break;
     try {
+      // 二次兜底：仅删 auto+PENDING，避免竞态中该行已被任务领走（TRANSLATING）或已 DONE。
       const del = await tsfExecute({
-        sql: `DELETE FROM LiquidRule WHERE id = ? AND source = 'auto'`,
+        sql: `DELETE FROM LiquidRule WHERE id = ? AND source = 'auto' AND status = 'PENDING'`,
         args: [id],
       });
       deleted += del.rowsAffected ?? 0;
