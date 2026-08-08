@@ -2682,10 +2682,12 @@ const AUTO_LIQUID_MIN_SAMPLE_ITEMS = 5;
 const AUTO_LIQUID_MAX_NODES = 6000;
 const AUTO_LIQUID_TIME_BUDGET_MS = 12;
 
-/** TEMP debug：采集全路径日志，验收后可删。 */
+/** 店面 debug：localStorage.setItem('ciwi_debug_auto_liquid','1') 后输出采集日志。 */
 function autoLiquidLog(...args) {
   try {
-    console.log("[ciwi-auto-liquid]", ...args);
+    if (typeof localStorage !== "undefined" && localStorage.getItem("ciwi_debug_auto_liquid") === "1") {
+      console.log("[ciwi-auto-liquid]", ...args);
+    }
   } catch {
     // ignore
   }

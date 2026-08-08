@@ -727,11 +727,9 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - App Proxy: `app/routes/api.storefront.$.ts`.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
 `extensions/ciwi-switcher/assets/ciwi-*.js`.
-- App Proxy 店面路径：测试 App `shopify.app.test.toml` `subpath=ciwi-test`，
- Liquid 写死 `/apps/ciwi-test`（与正式 `subpath=ciwi` 错开，避免同店变成
- `ciwi-4`）。同扩展部署到正式前须改回 `/apps/ciwi`。改 TOML subpath
- **只影响新安装**；已装店需在 Admin「应用代理 URL」改成 `apps/ciwi-test`
- 或重装测试 App。
+- App Proxy 店面路径：Extension `ciwi-api.js` 固定 `STOREFRONT_APP_PROXY_BASE=/apps/ciwi`
+ （对齐正式 `shopify.app.prod.toml` `subpath=ciwi`）。测试 App 为 `ciwi-test` 时
+ 需临时改扩展常量或单独分支后再 `deployTest`。
 - Constants: `app/lib/switcherConstants.ts`.
 - `ipOpen` is the live geolocation switch and is stored on Turso
 `SwitcherConfiguration`. The old `IpRedirection` table/model was dropped
@@ -747,7 +745,9 @@ redirect records.
  `LiquidRule(status=PENDING, source=auto, afterTranslation="")`，**不在 Web
  进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`（出事可关）、
  shop 白名单 `AUTO_LIQUID_SHOP_ALLOWLIST`（逗号分隔；**空=全店可写**；
- 名单外仍收请求但不落库，打 `[auto-liquid] shop_not_allowlisted` 详细日志）、
+ 名单外仍收请求但不落库；Render 单行 `[auto-liquid] deny allowlist …`，
+ Redis 日聚合 `tsf:auto_liquid:deny:req|texts|shops:{utcYmd}`（8d TTL）。
+ 服务端细日志：`AUTO_LIQUID_DEBUG=true`；店面：`localStorage.ciwi_debug_auto_liquid=1`。
  主语言（Redis 缓存 1h）、粗筛、去重、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认 100）、
  总量帽 `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。店面 Switcher **全店采集上报**；
  采集只写 PENDING，**不查额度**；真正扣费在后续 v4「自定义 Liquid」翻译阶段。

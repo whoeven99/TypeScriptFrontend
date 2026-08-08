@@ -496,11 +496,7 @@ async function ciwiOnload() {
 
   // 自动抓取第三方未翻译文本（默认开；非预览）。浏览器空闲时执行，避免抢关键路径。
   const scheduleAutoLiquidCollect = () => {
-    if (isInThemePreview) {
-      console.log("[ciwi-auto-liquid] schedule skip", { reason: "theme_preview" });
-      return;
-    }
-    // 主语言页无需翻译：在店面直接拦截，避免把主语言的整页文本打到服务端。
+    if (isInThemePreview) return;
     const currentLanguage = ciwiBlock.querySelector(
       'input[name="language_code"]',
     )?.value;
@@ -510,18 +506,8 @@ async function ciwiOnload() {
       currentLanguage &&
       normalizeLocaleCode(currentLanguage) === normalizeLocaleCode(primaryLanguage)
     ) {
-      console.log("[ciwi-auto-liquid] schedule skip", {
-        reason: "primary_locale",
-        currentLanguage,
-        primaryLanguage,
-      });
       return;
     }
-    console.log("[ciwi-auto-liquid] schedule", {
-      currentLanguage,
-      primaryLanguage,
-      href: location.href,
-    });
     const run = () =>
       CollectUntranslatedText(shop, ciwiBlock, { primaryLanguage });
     const schedule = () => {

@@ -134,11 +134,49 @@ function looksTranslatable(text: string): boolean {
   return true;
 }
 
-function todayKey(shop: string): string {
+function utcYmd(): string {
   const d = new Date();
-  const ymd = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(
+  return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(
     d.getUTCDate(),
   ).padStart(2, "0")}`;
+}
+
+function autoLiquidDebugEnabled(): boolean {
+  return envBool("AUTO_LIQUID_DEBUG", false);
+}
+
+/** 灰度外（配置了 allowlist 且店不在名单）请求量：Redis 日聚合 + 单行 Render 日志。 */
+async function recordAllowlistDeny(
+  shop: string,
+  target: string,
+  inCount: number,
+): Promise<void> {
+  console.log(
+    `[auto-liquid] deny allowlist shop=${shop} target=${target} inCount=${inCount}`,
+  );
+  const redis = safeRedis();
+  if (!redis) return;
+  const day = utcYmd();
+  const ttlSec = 60 * 60 * 24 * 8;
+  try {
+    await redis.incr(`tsf:auto_liquid:deny:req:${day}`);
+    await redis.incrby(`tsf:auto_liquid:deny:texts:${day}`, Math.max(0, inCount));
+    await redis.sadd(`tsf:auto_liquid:deny:shops:${day}`, shop);
+    await redis.expire(`tsf:auto_liquid:deny:req:${day}`, ttlSec);
+    await redis.expire(`tsf:auto_liquid:deny:texts:${day}`, ttlSec);
+    await redis.expire(`tsf:auto_liquid:deny:shops:${day}`, ttlSec);
+  } catch {
+    // ignore
+  }
+}
+
+function debugLog(step: string, extra?: Record<string, unknown>): void {
+  if (!autoLiquidDebugEnabled()) return;
+  console.log(`[auto-liquid] ${step}`, JSON.stringify(extra ?? {}));
+}
+
+function todayKey(shop: string): string {
+  const ymd = utcYmd();
   return `tsf:auto_liquid:count:${shop}:${ymd}`;
 }
 
@@ -205,60 +243,31 @@ export async function collectAutoLiquidStrings(args: {
   const shop = args.shop.trim();
   const target = normalize(args.target);
   const rawTexts = Array.isArray(args.texts) ? args.texts : [];
-  // TEMP debug：采集服务端路径日志，验收后可删。
-  const log = (step: string, extra?: Record<string, unknown>) => {
-    console.log(
-      `[auto-liquid] ${step}`,
-      JSON.stringify({ shop, target, inCount: rawTexts.length, ...extra }),
-    );
-  };
+  const inCount = rawTexts.length;
+
   if (!shop || !target) {
-    log("skip", { reason: "no_target" });
+    debugLog("skip", { shop, target, reason: "no_target", inCount });
     return { scheduled: 0, skipped: true, reason: "no_target" };
   }
 
   // 0) 全局 kill-switch（默认开；出事设 AUTO_LIQUID_COLLECT_ENABLED=false）
   // 产品默认采集；不再读 SwitcherConfiguration.autoLiquidCollect 商户开关。
   if (!envBool("AUTO_LIQUID_COLLECT_ENABLED", true)) {
-    log("skip", { reason: "disabled" });
+    debugLog("skip", { shop, target, reason: "disabled", inCount });
     return { scheduled: 0, skipped: true, reason: "disabled" };
   }
 
-  // 0.5) shop 白名单：店面全量上报；名单外不落库，打详细日志便于观察流量。
+  // 0.5) shop 白名单：店面全量上报；名单外不落库，单行日志 + Redis 日聚合。
   const allowlist = parseShopAllowlist();
   if (allowlist && !isShopAllowlisted(shop)) {
-    const normalizedSamples: string[] = [];
-    const seenSample = new Set<string>();
-    for (const raw of rawTexts) {
-      const t = normalize(raw);
-      if (!t || seenSample.has(t)) continue;
-      seenSample.add(t);
-      normalizedSamples.push(t.length > 80 ? `${t.slice(0, 80)}…` : t);
-      if (normalizedSamples.length >= 12) break;
-    }
-    console.log(
-      "[auto-liquid] shop_not_allowlisted",
-      JSON.stringify({
-        reason: "shop_not_allowlisted",
-        shop,
-        target,
-        inCount: rawTexts.length,
-        uniqueSampled: seenSample.size,
-        sampleTexts: normalizedSamples,
-        pathPrefix: args.meta?.pathPrefix || null,
-        userAgent: (args.meta?.userAgent || "").slice(0, 180) || null,
-        allowlistSize: allowlist.length,
-        allowlistPreview: allowlist.slice(0, 8),
-        hint: "Add shop to AUTO_LIQUID_SHOP_ALLOWLIST to persist; empty env = allow all shops",
-      }),
-    );
+    await recordAllowlistDeny(shop, target, inCount);
     return { scheduled: 0, skipped: true, reason: "shop_not_allowlisted" };
   }
 
   // 1) 主语言门控（Redis 缓存 1h，避免每会话打 Shopify）
   const primary = await resolvePrimaryLocaleCached(shop);
   if (primary && normalize(primary).toLowerCase() === target.toLowerCase()) {
-    log("skip", { reason: "primary_locale", primary });
+    debugLog("skip", { shop, target, reason: "primary_locale", inCount, primary });
     return { scheduled: 0, skipped: true, reason: "primary_locale" };
   }
 
@@ -274,13 +283,15 @@ export async function collectAutoLiquidStrings(args: {
     if (candidates.length >= MAX_PER_REQUEST * 2) break;
   }
   if (!candidates.length) {
-    log("skip", { reason: "no_candidate", primary });
+    debugLog("skip", { shop, target, reason: "no_candidate", inCount, primary });
     return { scheduled: 0, skipped: true, reason: "no_candidate" };
   }
-  log("candidates", {
+  debugLog("candidates", {
+    shop,
+    target,
+    inCount,
     primary,
     candidateCount: candidates.length,
-    sample: candidates.slice(0, 8),
   });
 
   const redis = safeRedis();
@@ -298,7 +309,12 @@ export async function collectAutoLiquidStrings(args: {
         "NX",
       );
       if (ok === null) {
-        log("skip", { reason: "recently_seen", candidateCount: candidates.length });
+        debugLog("skip", {
+          shop,
+          target,
+          reason: "recently_seen",
+          candidateCount: candidates.length,
+        });
         return { scheduled: 0, skipped: false, reason: "recently_seen" };
       }
     } catch {
@@ -319,7 +335,7 @@ export async function collectAutoLiquidStrings(args: {
     }
   }
   if (!unknown.length) {
-    log("skip", { reason: "all_known", via: "redis_known" });
+    debugLog("skip", { shop, target, reason: "all_known", via: "redis_known" });
     return { scheduled: 0, skipped: false, reason: "all_known" };
   }
 
@@ -347,11 +363,12 @@ export async function collectAutoLiquidStrings(args: {
     .filter((t) => !existingSet.has(t))
     .slice(0, MAX_PER_REQUEST);
   if (!fresh.length) {
-    log("skip", {
+    debugLog("skip", {
+      shop,
+      target,
       reason: "all_known",
       via: "turso",
       unknownCount: unknown.length,
-      existingCount: existingSet.size,
     });
     return { scheduled: 0, skipped: false, reason: "all_known" };
   }
@@ -359,20 +376,20 @@ export async function collectAutoLiquidStrings(args: {
   // 6) 总量上限（只限 source=auto，读 Redis 计数缓存，避免每请求 COUNT）
   const autoCount = await getCachedAutoTotal(shop, redis);
   if (autoCount >= TOTAL_CAP) {
-    log("skip", { reason: "total_cap", autoCount, TOTAL_CAP });
+    debugLog("skip", { shop, target, reason: "total_cap", autoCount, TOTAL_CAP });
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
   const room = Math.max(0, TOTAL_CAP - autoCount);
   const withinTotal = fresh.slice(0, room);
   if (!withinTotal.length) {
-    log("skip", { reason: "total_cap", autoCount, room });
+    debugLog("skip", { shop, target, reason: "total_cap", autoCount, room });
     return { scheduled: 0, skipped: true, reason: "total_cap" };
   }
 
   // 7) 每日名额预留（采集只落 PENDING，不扣额度；翻译时再计费）
   const allowed = await reserveDailyBudget(shop, withinTotal.length);
   if (allowed <= 0) {
-    log("skip", { reason: "daily_cap", want: withinTotal.length });
+    debugLog("skip", { shop, target, reason: "daily_cap", want: withinTotal.length });
     return { scheduled: 0, skipped: true, reason: "daily_cap" };
   }
   const toInsert = withinTotal.slice(0, allowed);
@@ -405,15 +422,12 @@ export async function collectAutoLiquidStrings(args: {
         // ignore（缓存尽力而为，权威在 Turso）
       }
     }
-    log("inserted", {
-      scheduled: result.count,
-      sample: toInsert.slice(0, 8),
-      autoCountBefore: autoCount,
-    });
+    console.log(
+      `[auto-liquid] inserted shop=${shop} target=${target} scheduled=${result.count} inCount=${inCount}`,
+    );
     return { scheduled: result.count, skipped: false };
   } catch (err) {
     console.error("[auto-liquid] createMany PENDING failed:", err);
-    log("skip", { reason: "write_failed" });
     return { scheduled: 0, skipped: true, reason: "write_failed" };
   }
 }
