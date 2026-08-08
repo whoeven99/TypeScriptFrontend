@@ -145,7 +145,7 @@ export function CreateTaskCard({
         loading={creating}
         onClick={onCreate}
       >
-        {creating ? t("v4.createTask.creating") : "Translate Now"}
+        {creating ? t("v4.createTask.creating") : t("v4.createTask.confirmAction")}
       </Button>
     </div>
   );

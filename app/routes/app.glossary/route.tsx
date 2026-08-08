@@ -844,7 +844,7 @@ const Index = () => {
         footer={
           <Space>
             <Button onClick={() => setUpgradeModalContent(null)}>
-              {t("Maybe later")}
+              {t("v4.quotaGate.maybeLater")}
             </Button>
             <Button type="primary" onClick={() => navigate("/app/pricing")}>
               {t("Upgrade plan")}
