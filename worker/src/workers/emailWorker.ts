@@ -15,6 +15,8 @@
  *  4. 发送成功后将 emailSent=true 写回 Cosmos，防止重发。
  *  5. 手动任务默认仅对 2026-08-03（北京时间）及之后创建的任务发信；
  *     可用 MANUAL_EMAIL_MIN_CREATED_AT 调整或关闭（false / 0 / 空）。
+ *  6. 已卸载（Turso 无 offline Session）→ 不发信，仍标 emailSent，并飞书通知运营
+ *     （FEISHU_WEBHOOK_URL_SUPPORT；缺配置则跳过通知）。
  *
  * 任务类型对应模板：
  *   manual + 积分不足 PAUSED → 211401 未完成（Credits used / Additional required）
@@ -23,6 +25,7 @@
  *   auto   + COMPLETED → 140352 自动翻译成功（同店多语言合并）
  *   auto   + PAUSED → 159297 翻译部分完成（额度不足）
  *   auto   + CANCELLED → 不发信，仅 emailSent=true
+ *   无 offline token（卸载等）→ 不发信，标 emailSent，并飞书通知
  */
 
 import type { TranslationV4Job } from "../services/cosmosV4.js";
@@ -42,7 +45,10 @@ import {
   tryAcquireEmailSendLock,
 } from "../services/redisV4.js";
 import { computePausedJobProgressPercent } from "../services/metricsUtils.js";
+import { sendFeishuTextMessage } from "../services/feishuNotify.js";
 import { fetchShopContact } from "../services/shopEmail.js";
+import { getOfflineAccessTokenFromTsf } from "../services/tsfDb.js";
+import { isQuotaInsufficientMessage } from "../services/userFacingMessages.js";
 import {
   sendManualTranslationSuccessEmail,
   sendManualTranslationIncompleteEmail,
@@ -178,16 +184,13 @@ function toJobSummary(job: TranslationV4Job): TranslationJobSummary {
 
 /**
  * 手动任务是否因积分不足暂停。
- * translateWorker 对额度耗尽写入「额度不足，已自动暂停」；人工暂停多为 null。
+ * translateWorker 写入稳定码 `QUOTA_INSUFFICIENT`（兼认旧中英文文案）；
+ * 人工暂停多为 null / `manually paused`。
  */
 export function isManualQuotaInsufficientPause(
   errorMessage: string | null | undefined,
 ): boolean {
-  const msg = (errorMessage ?? "").trim();
-  if (!msg) return false;
-  return /额度不足|insufficient\s+credits|credits?\s+(?:are\s+)?insufficient|out\s+of\s+credits/i.test(
-    msg,
-  );
+  return isQuotaInsufficientMessage(errorMessage);
 }
 
 /**
@@ -246,6 +249,68 @@ export type RecipientContact = {
   email: string;
   userName: string;
 };
+
+function buildNoOfflineTokenFeishuMessage(
+  shopName: string,
+  jobs: TranslationV4Job[],
+  kind: "manual" | "auto",
+): string {
+  const targets = jobs.map((j) => j.target).join(", ");
+  const jobIds = jobs.map((j) => j.id).join(", ");
+  return [
+    "[TSF Worker] 跳过翻译完成邮件（无 offline Session，疑似已卸载）",
+    `shop: ${shopName}`,
+    `kind: ${kind}`,
+    `jobCount: ${jobs.length}`,
+    `targets: ${targets || "-"}`,
+    `jobIds: ${jobIds || "-"}`,
+    "action: emailSent=true（不发信）",
+  ].join("\n");
+}
+
+/** best-effort 飞书通知；失败不影响 emailSent 标记。 */
+async function notifyFeishuNoOfflineToken(
+  shopName: string,
+  jobs: TranslationV4Job[],
+  kind: "manual" | "auto",
+): Promise<void> {
+  const result = await sendFeishuTextMessage(
+    buildNoOfflineTokenFeishuMessage(shopName, jobs, kind),
+  );
+  logDetail(`handle-${kind}-feishu`, {
+    shop: shopName,
+    ok: result.ok,
+    skipped: "skipped" in result ? result.skipped : false,
+    reason: "reason" in result ? result.reason : null,
+  });
+  if (!result.ok && !("skipped" in result && result.skipped)) {
+    console.warn(`${LOG} feishu notify failed shop=${shopName}`, result);
+  }
+}
+
+/**
+ * 无 offline Session（常见于已卸载）时无法查 Shopify 邮箱，也不应再发通知。
+ * 返回 true 表示已跳过并标 emailSent，调用方应直接 return。
+ */
+async function skipEmailIfNoOfflineToken(
+  shopName: string,
+  jobs: TranslationV4Job[],
+  kind: "manual" | "auto",
+): Promise<boolean> {
+  const token = await getOfflineAccessTokenFromTsf(shopName);
+  if (token) return false;
+
+  logDetail(`handle-${kind}-skipped`, {
+    reason: "no_offline_token",
+    shop: shopName,
+    jobIds: jobs.map((j) => j.id),
+    targets: jobs.map((j) => j.target),
+    action: "mark_email_sent",
+  });
+  await markEmailSentBatch(jobs);
+  await notifyFeishuNoOfflineToken(shopName, jobs, kind);
+  return true;
+}
 
 /** 发信前从 Shopify GraphQL 拉取收件人与称呼。 */
 async function resolveRecipientContact(
@@ -324,6 +389,10 @@ async function handleManualJobGroup(shopName: string): Promise<void> {
       jobCount: jobs.length,
       jobs: jobs.map(describeJob),
     });
+
+    if (await skipEmailIfNoOfflineToken(shopName, jobs, "manual")) {
+      return;
+    }
 
     const recipient = await resolveRecipientContact(jobs[0]);
     if (!recipient) {
@@ -476,6 +545,10 @@ async function handleAutoJobGroup(shopName: string): Promise<void> {
     jobCount: jobs.length,
     jobs: jobs.map(describeJob),
   });
+
+  if (await skipEmailIfNoOfflineToken(shopName, jobs, "auto")) {
+    return;
+  }
 
   const recipient = await resolveRecipientContact(jobs[0]);
   if (!recipient) {
