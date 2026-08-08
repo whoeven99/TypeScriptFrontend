@@ -2,10 +2,11 @@
  * worker 专用 Tencent SES 邮件发送服务。
  * worker 进程独立运行，不能 import app/ 代码，因此此处直接调用腾讯云 SDK。
  *
- * 三个业务场景（对齐 Spring TencentEmailService）：
- *   - sendManualTranslationSuccessEmail  手动翻译汇总（模板 210764，COMPLETED + 全部 PAUSED 同表）
- *   - sendAutoTranslationSuccessEmail    自动翻译成功（模板 140352）
- *   - sendTranslationPartialEmail        自动翻译部分完成/额度暂停（模板 159297）
+ * 业务场景：
+ *   - sendManualTranslationSuccessEmail     手动翻译完成汇总（210764；含人工暂停/取消行）
+ *   - sendManualTranslationIncompleteEmail  手动翻译因积分不足未完成（211401）
+ *   - sendAutoTranslationSuccessEmail       自动翻译成功（140352）
+ *   - sendTranslationPartialEmail           自动翻译部分完成/额度暂停（159297）
  */
 
 import { ses } from "tencentcloud-sdk-nodejs-ses";
@@ -29,11 +30,13 @@ function logDetail(phase: string, payload: Record<string, unknown>): void {
 
 // ─── 模板 ID（对齐 Spring MailChimpConstants + Spark emailTemplates.server.ts）───
 const TEMPLATE_MANUAL_SUCCESS = 210764;
+const TEMPLATE_MANUAL_INCOMPLETE = 211401;
 const TEMPLATE_AUTO_SUCCESS = 140352;
 const TEMPLATE_PARTIAL = 159297;
 
 // ─── 邮件主题（对齐 Spring MailChimpConstants）───────────────────────────────────
 const SUBJECT_MANUAL_SUCCESS = "Your Translation Has Been Completed";
+const SUBJECT_MANUAL_INCOMPLETE = "Translation task incomplete";
 const SUBJECT_AUTO_SUCCESS = "Your Auto-Translation Has Been Completed";
 const SUBJECT_PARTIAL = "Your Translation Has Been Partially Completed";
 
@@ -229,10 +232,39 @@ function buildManualTranslationRows(jobs: TranslationJobSummary[]): string {
     .join("");
 }
 
+function formatIncompleteRowStatus(job: TranslationJobSummary): string {
+  if (job.terminalStatus === "PAUSED") {
+    return `<span class="failed">Incomplete</span>`;
+  }
+  if (job.terminalStatus === "CANCELLED") {
+    return `<span class="failed">Canceled</span>`;
+  }
+  return `<span class="completed">Completed</span>`;
+}
+
+/** 手动未完成邮件 211401：模板变量 translation_rows。 */
+function buildManualIncompleteRows(jobs: TranslationJobSummary[]): string {
+  return jobs
+    .map(
+      (j) =>
+        `<tr>` +
+        `<td>${j.target}</td>` +
+        `<td>${formatNumber(j.usedTokens)} credits</td>` +
+        `<td>${j.elapsedMinutes} minutes</td>` +
+        `<td>${formatIncompleteRowStatus(j)}</td>` +
+        `</tr>`,
+    )
+    .join("");
+}
+
+function sumUsedCredits(jobs: TranslationJobSummary[]): number {
+  return jobs.reduce((sum, j) => sum + Math.max(0, Math.floor(j.usedTokens || 0)), 0);
+}
+
 /**
  * 手动翻译汇总邮件（模板 210764）。
- * 同店多语言合并为一封；COMPLETED / PAUSED / CANCELLED 同表展示。
- * 模板变量 user + shop_name + translation_rows。
+ * 同店多语言合并为一封；COMPLETED / 人工暂停 / CANCELLED 同表展示。
+ * 模板变量 user + shop_name + translation_rows + total_credits。
  */
 export async function sendManualTranslationSuccessEmail(
   shopName: string,
@@ -242,6 +274,7 @@ export async function sendManualTranslationSuccessEmail(
 ): Promise<boolean> {
   const shortName = parseShopName(shopName);
   const translationRows = buildManualTranslationRows(jobs);
+  const totalCredits = sumUsedCredits(jobs);
 
   logDetail("send-manual-success-start", {
     shopName,
@@ -251,6 +284,7 @@ export async function sendManualTranslationSuccessEmail(
     jobCount: jobs.length,
     targets: jobs.map((j) => j.target),
     usedTokens: jobs.map((j) => j.usedTokens),
+    totalCredits,
     templateId: TEMPLATE_MANUAL_SUCCESS,
   });
 
@@ -271,6 +305,61 @@ export async function sendManualTranslationSuccessEmail(
       user: userName,
       shop_name: shortName,
       translation_rows: translationRows,
+      total_credits: formatNumber(totalCredits),
+    },
+    to,
+  );
+}
+
+/**
+ * 手动翻译因积分不足未完成（模板 211401）。
+ * 仅应传入额度不足 PAUSED 的语言行；同店多语言可合并为一封。
+ * 模板变量：user + shop_name + translation_rows + total_credits_used + required_credits。
+ */
+export async function sendManualTranslationIncompleteEmail(
+  shopName: string,
+  to: string,
+  userName: string,
+  jobs: TranslationJobSummary[],
+  requiredCredits: number,
+): Promise<boolean> {
+  const shortName = parseShopName(shopName);
+  const translationRows = buildManualIncompleteRows(jobs);
+  const totalCreditsUsed = sumUsedCredits(jobs);
+  const required = Math.max(0, Math.floor(requiredCredits || 0));
+
+  logDetail("send-manual-incomplete-start", {
+    shopName,
+    shortName,
+    userName,
+    to: maskEmail(to),
+    jobCount: jobs.length,
+    targets: jobs.map((j) => j.target),
+    usedTokens: jobs.map((j) => j.usedTokens),
+    totalCreditsUsed,
+    requiredCredits: required,
+    templateId: TEMPLATE_MANUAL_INCOMPLETE,
+  });
+
+  if (!translationRows) {
+    logDetail("send-manual-incomplete-skipped", {
+      reason: "no_job_rows",
+      shopName,
+      to: maskEmail(to),
+      jobCount: jobs.length,
+    });
+    return true;
+  }
+
+  return doSend(
+    TEMPLATE_MANUAL_INCOMPLETE,
+    SUBJECT_MANUAL_INCOMPLETE,
+    {
+      user: userName,
+      shop_name: shortName,
+      translation_rows: translationRows,
+      total_credits_used: formatNumber(totalCreditsUsed),
+      required_credits: formatNumber(required),
     },
     to,
   );

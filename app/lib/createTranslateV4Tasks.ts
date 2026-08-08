@@ -13,6 +13,7 @@ export type CreateTranslateV4TasksParams = {
   aiModel: string;
   isCover: boolean;
   isHandle: boolean;
+  includeLiquid?: boolean;
   targetOptions: ShopLocaleOption[];
   shop?: string;
   fetchFn?: typeof fetch;
@@ -168,6 +169,7 @@ export async function createTranslateV4Tasks(
     aiModel: params.aiModel,
     isCover: params.isCover,
     isHandle: params.isHandle,
+    includeLiquid: Boolean(params.includeLiquid),
   };
 
   const settled = await Promise.allSettled(

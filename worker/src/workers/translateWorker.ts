@@ -40,10 +40,20 @@ import {
   type TranslateItem,
   type TranslatedResourceOutput,
 } from "../services/llmTranslate.js";
+import { jobModulesWithLiquid } from "../services/customLiquid.js";
 import type { TranslationV4Job } from "../services/cosmosV4.js";
 import {
   isInternalAbortReason,
   userFacingPauseMessage,
+  V4_MESSAGE_CANCELLED,
+  V4_MESSAGE_JOB_FAILED,
+  V4_MESSAGE_MANUAL_PAUSE,
+  V4_MESSAGE_PAUSED,
+  V4_MESSAGE_QUOTA_INSUFFICIENT,
+  V4_MESSAGE_QUOTA_SERVICE_ERROR,
+  V4_MESSAGE_TASK_CLAIMED,
+  V4_MESSAGE_TASK_NOT_FOUND,
+  V4_MESSAGE_TASK_REQUEUED,
 } from "../services/userFacingMessages.js";
 import { capTranslateUnitsByResources, finalizeTranslateUnitMetricsFromBlob } from "../services/metricsUtils.js";
 import { recordJobUsageSnapshot } from "../services/recordJobUsageSnapshot.js";
@@ -267,9 +277,10 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   // Engine routing (Google vs DeepSeek) is applied inside translateBatch.
   const blobPrefix = job.blobPrefix || `tasks/v4/${shopName}/${jobId}`;
   const hasProfileBlock = Boolean(job.profileBlock?.trim());
+  const modules = jobModulesWithLiquid(job);
 
   console.log(
-    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock}`,
+    `[translate] start job=${jobId} shop=${shopName} ${source}->${target} manualProfileBlock=${hasProfileBlock} includeLiquid=${Boolean(job.includeLiquid)}`,
   );
 
   // Resume: restore token counter from Cosmos + Redis (412 on pause may leave Cosmos stale).
@@ -304,12 +315,12 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   };
 
   let durableDone = 0;
-  for (const module of job.modules) {
+  for (const module of modules) {
     durableDone += (await getModuleCheckpointIds(module)).size;
   }
   const durableUnits = await countUnitsForCheckpointedResources(
     blobPrefix,
-    job.modules,
+    modules,
     getModuleCheckpointIds,
   );
   const redisDone = Number(redisProgressAtStart.translateDone) || 0;
@@ -444,22 +455,22 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
   const verifyStillClaimed = async (): Promise<boolean> => {
     const latest = await getJob(shopName, jobId);
     if (!latest) {
-      tripAbort("pause", "任务已不存在", { persist: false });
+      tripAbort("pause", V4_MESSAGE_TASK_NOT_FOUND, { persist: false });
       return false;
     }
     if (latest.claimedBy !== WORKER_ID) {
-      tripAbort("pause", "任务已被其它 worker 接管", { persist: false });
+      tripAbort("pause", V4_MESSAGE_TASK_CLAIMED, { persist: false });
       return false;
     }
     if (latest.status === "TRANSLATING") return true;
     if (latest.status === "CANCELLED") {
-      tripAbort("cancel", "已取消", { persist: false });
+      tripAbort("cancel", V4_MESSAGE_CANCELLED, { persist: false });
       return false;
     }
     if (latest.status === "PAUSED" || latest.status === "TRANSLATE_QUEUED") {
       tripAbort(
         "pause",
-        latest.status === "PAUSED" ? "已暂停" : "任务已重新排队",
+        latest.status === "PAUSED" ? V4_MESSAGE_PAUSED : V4_MESSAGE_TASK_REQUEUED,
         { persist: false },
       );
       return false;
@@ -475,8 +486,8 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     lastControlCheckAt = now;
     if (!(await verifyStillClaimed())) return;
     const ctrl = await readControl(jobId);
-    if (ctrl === "pause") tripAbort("pause", "已手动暂停");
-    else if (ctrl === "cancel") tripAbort("cancel", "已取消");
+    if (ctrl === "pause") tripAbort("pause", V4_MESSAGE_MANUAL_PAUSE);
+    else if (ctrl === "cancel") tripAbort("cancel", V4_MESSAGE_CANCELLED);
   };
   const shouldAbort = async (): Promise<boolean> => {
     if (abort.tripped) return true;
@@ -495,7 +506,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     );
     lastKnownRemaining = quotaRemaining;
     if (quotaRemaining <= 0 || quotaCap <= 0) {
-      tripAbort("pause", "额度不足，已自动暂停");
+      tripAbort("pause", V4_MESSAGE_QUOTA_INSUFFICIENT);
     } else {
       seedJobQuotaBudget(quotaRemaining);
       console.log(
@@ -522,7 +533,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     if (charge <= 0) return;
     const { ok, remaining } = await deductTsfQuota(shopName, charge);
     if (!ok) {
-      tripAbort("pause", "额度服务异常，已自动暂停");
+      tripAbort("pause", V4_MESSAGE_QUOTA_SERVICE_ERROR);
       return;
     }
     lastKnownRemaining = remaining;
@@ -545,7 +556,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     // 账本已空则暂停；否则只收紧并发，不改任务 budget / committed。
     const cap = quotaConcurrencyCap(remaining);
     if (remaining <= 0 || cap <= 0) {
-      tripAbort("pause", "额度不足，已自动暂停");
+      tripAbort("pause", V4_MESSAGE_QUOTA_INSUFFICIENT);
     } else if (jobBudgetSeeded && !abort.tripped) {
       setShopQuotaCap(shopName, cap);
     }
@@ -576,7 +587,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
         chunkTotal: number;
       };
       const work: ChunkWork[] = [];
-      for (const module of job.modules) {
+      for (const module of modules) {
         await maybeHeartbeat();
         const initPaths = await blobListPaths(`${blobPrefix}/init/${module}/`);
         const chunkPaths = initPaths.filter((p) => p.endsWith(".json"));
@@ -621,7 +632,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
             liveRemaining <= 0 ||
             quotaConcurrencyCap(Math.max(0, liveRemaining - pendingQuotaCharge)) <= 0
           ) {
-            tripAbort("pause", "额度不足，已自动暂停");
+            tripAbort("pause", V4_MESSAGE_QUOTA_INSUFFICIENT);
             return;
           }
         }
@@ -765,7 +776,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
           mergeEngineUsage(engineUsage, usage);
         } catch (e) {
           if (isQuotaExhaustedError(e)) {
-            tripAbort("pause", "额度不足，已自动暂停");
+            tripAbort("pause", V4_MESSAGE_QUOTA_INSUFFICIENT);
             console.warn(
               `[translate] job=${jobId} chunk ${chunkIdx}/${chunkTotal} stopped: quota exhausted`,
               e instanceof Error ? e.message : e,
@@ -851,7 +862,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       const redisUsedOnAbort = Number((await getProgress(jobId)).usedTokens) || 0;
       const unitsFromBlob = await countUnitsForCheckpointedResources(
         blobPrefix,
-        job.modules,
+        modules,
         getModuleCheckpointIds,
       );
       const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(
@@ -946,7 +957,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     );
     const unitsFromBlob = await countUnitsForCheckpointedResources(
       blobPrefix,
-      job.modules,
+      modules,
       getModuleCheckpointIds,
     );
     const finalizedUnits = finalizeTranslateUnitMetricsFromBlob(
@@ -1000,7 +1011,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       `[translate] done job=${jobId} done=${translateDone} failed=${translateFailed} fallback=${translateFallback}`,
     );
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
+    const detail = e instanceof Error ? e.message : String(e);
     const failTimings = withStageTiming(
       job.stageTimings,
       "TRANSLATE",
@@ -1010,7 +1021,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
     const latestFail = await getJob(shopName, jobId).catch(() => null);
     await updateJob(shopName, jobId, {
       status: "FAILED",
-      errorMessage,
+      errorMessage: V4_MESSAGE_JOB_FAILED,
       errorStage: "TRANSLATE",
       claimedBy: null,
       stageTimings: failTimings,
@@ -1032,7 +1043,7 @@ async function processTranslateJob(job: TranslationV4Job): Promise<void> {
       },
       "FAILED",
     );
-    console.error(`[translate] failed job=${jobId}`, e);
+    console.error(`[translate] failed job=${jobId}`, detail, e);
   } finally {
     await wakeNextTranslateForShop(shopName).catch((e) => {
       console.warn(`[translate] wakeNext failed shop=${shopName}`, e);

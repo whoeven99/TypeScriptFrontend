@@ -6,10 +6,12 @@ import {
   GetShopImageData,
   ParseLiquidDataByShopNameAndLanguage,
   ReadTranslatedText,
+  CollectLiquidStrings,
 } from "./ciwi-api.js";
 import {
   asCacheableTranslationResponse,
   buildTranslationCacheKey,
+  CIWI_EMPTY_TRANSLATION_TTL_MS,
   CIWI_TRANSLATION_TTL_MS,
   resolveStorefrontProductId,
 } from "./ciwi-page.js";
@@ -1334,6 +1336,8 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     shop.value,
     language,
   ]);
+  // 空规则：服务端已返回 success+{}，可写入 localStorage 负缓存；
+  // 短 TTL + 跳过后台刷新，避免无 LiquidRule 店每次 pageview 打 App Proxy。
   const parseLiquidDataByShopNameAndLanguage = await useCacheThenRefresh(
     cacheKey,
     async () =>
@@ -1344,6 +1348,10 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         }),
       ),
     CIWI_TRANSLATION_TTL_MS,
+    {
+      skipRefreshWhenEmpty: true,
+      emptyTtlMs: CIWI_EMPTY_TRANSLATION_TTL_MS,
+    },
   );
 
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
@@ -2652,5 +2660,443 @@ export class CiwiswitcherForm extends HTMLElement {
 
   closeAllSelectors() {
     return;
+  }
+}
+
+// ============================================================
+// 自动抓取店面第三方未翻译文本（switcher opt-in）
+// 复用 skipTags / normalizeText / isElementHiddenForTranslation，
+// 遍历可见文本节点，客户端去重后上报后端；后端异步翻译回填 LiquidRule。
+// ============================================================
+
+const AUTO_LIQUID_MAX_LEN = 200;
+const AUTO_LIQUID_MIN_LEN = 2;
+const AUTO_LIQUID_BATCH = 60; // 单次最多上报条数
+const AUTO_LIQUID_REPORTED_CAP = 1500; // 客户端已报指纹上限
+
+// 门A：整页「非目标语」条数占比上限；低于它才认为页面已大体译完，采集残留。
+const AUTO_LIQUID_SOURCE_RATIO_MAX = 0.2;
+// 占比判定需要的最小样本条数，样本太少不做门控（信号不足直接跳过采集）。
+const AUTO_LIQUID_MIN_SAMPLE_ITEMS = 5;
+// 性能护栏：单次最多遍历节点数与时间预算，超出即放弃本页采集（可失败，不拖慢页面）。
+const AUTO_LIQUID_MAX_NODES = 6000;
+const AUTO_LIQUID_TIME_BUDGET_MS = 12;
+
+/** 店面 debug：localStorage.setItem('ciwi_debug_auto_liquid','1') 后输出采集日志。 */
+function autoLiquidLog(...args) {
+  try {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("ciwi_debug_auto_liquid") === "1") {
+      console.log("[ciwi-auto-liquid]", ...args);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function autoLiquidLocaleBase(locale) {
+  return String(locale || "")
+    .trim()
+    .replace(/_/g, "-")
+    .toLowerCase()
+    .split("-")[0];
+}
+
+/**
+ * 非拉丁脚本正则：命中即视为该语言脚本。
+ * 拉丁系（en/fr/pt/es…）返回 null，改走字符/词启发式。
+ */
+function localeScriptRegex(locale) {
+  const l = String(locale || "")
+    .trim()
+    .replace(/_/g, "-")
+    .toLowerCase();
+  if (l.startsWith("ja"))
+    return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
+  if (l.startsWith("zh")) return /\p{Script=Han}/u;
+  if (l.startsWith("ko")) return /\p{Script=Hangul}/u;
+  if (l.startsWith("ar") || l.startsWith("fa") || l.startsWith("ur"))
+    return /\p{Script=Arabic}/u;
+  if (
+    l.startsWith("ru") ||
+    l.startsWith("uk") ||
+    l.startsWith("bg") ||
+    l.startsWith("sr")
+  )
+    return /\p{Script=Cyrillic}/u;
+  if (l.startsWith("th")) return /\p{Script=Thai}/u;
+  if (l.startsWith("he") || l.startsWith("iw")) return /\p{Script=Hebrew}/u;
+  if (l.startsWith("el")) return /\p{Script=Greek}/u;
+  if (l.startsWith("hi") || l.startsWith("mr") || l.startsWith("ne"))
+    return /\p{Script=Devanagari}/u;
+  return null;
+}
+
+/** 拉丁目标语特有变音/标点（相对英语 ASCII 可区分）。 */
+const LATIN_DIACRITIC_RE = {
+  pt: /[ãõáàâéêíóôúüçÃÕÁÀÂÉÊÍÓÔÚÜÇ]/,
+  es: /[ñáéíóúü¿¡ÑÁÉÍÓÚÜ]/,
+  fr: /[àâäéèêëïîôùûüçœæÀÂÄÉÈÊËÏÎÔÙÛÜÇŒÆ]/,
+  de: /[äöüßÄÖÜ]/,
+  it: /[àèéìíîòóùúÀÈÉÌÍÎÒÓÙÚ]/,
+  nl: /[áéíóúäëïöüĳÁÉÍÓÚÄËÏÖÜ]/,
+  pl: /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/,
+  tr: /[çğıöşüÇĞİÖŞÜ]/,
+  sv: /[åäöÅÄÖ]/,
+  da: /[æøåÆØÅ]/,
+  nb: /[æøåÆØÅ]/,
+  nn: /[æøåÆØÅ]/,
+  fi: /[äöåÄÖÅ]/,
+  cs: /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/,
+  hu: /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/,
+  ro: /[ăâîșţțĂÂÎȘŢȚ]/,
+  vi: /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]/,
+};
+
+/** 拉丁语常见功能词（无变音时的弱信号）。 */
+const LATIN_WORD_HINT_RE = {
+  en: /\b(the|and|for|with|your|you|this|that|are|was|from|have|has|not|but|all|can|will|review|reviews|product|products|add|cart|buy|shipping|free|write|verified|customer|customers|out of|stars?)\b/i,
+  pt: /\b(para|com|uma|você|seu|sua|produto|produtos|avaliac|comprar|carrinho|frete|enviar|cliente|clientes|estrelas?)\b/i,
+  es: /\b(para|con|una|usted|producto|productos|reseña|comprar|carrito|env[ií]o|cliente|clientes|estrellas?)\b/i,
+  fr: /\b(pour|avec|une|vous|produit|produits|avis|acheter|panier|livraison|client|clients|étoiles?)\b/i,
+  de: /\b(und|für|mit|ihre?|produkt|produkte|bewertung|kaufen|warenkorb|versand|kunde|kunden|sterne?)\b/i,
+  it: /\b(per|con|una|voi|prodotto|prodotti|recensione|acquista|carrello|spedizione|cliente|clienti|stelle?)\b/i,
+};
+
+/**
+ * 拉丁文本是否「像」某 locale（变音优先，其次词表）。
+ */
+function latinLooksLikeLocale(locale, text) {
+  const base = autoLiquidLocaleBase(locale);
+  if (!base || !text) return false;
+  const dia = LATIN_DIACRITIC_RE[base];
+  if (dia && dia.test(text)) return true;
+  const words = LATIN_WORD_HINT_RE[base];
+  if (words && words.test(text)) return true;
+  return false;
+}
+
+/**
+ * 相对目标语言判定文本：source | target | unknown
+ * 不依赖 primaryLanguage：
+ * - 非拉丁：含目标脚本 → target，否则 source
+ * - 拉丁：变音/词像目标语 → target，否则 source（当未译残留）
+ */
+function classifyAutoLiquidText(text, targetLocale) {
+  const targetRe = localeScriptRegex(targetLocale);
+
+  // 目标语有独立脚本（zh/ja/ko…）：含目标脚本 → 已译；否则当未译残留
+  if (targetRe) {
+    return targetRe.test(text) ? "target" : "source";
+  }
+
+  // 拉丁目标：变音/词命中 → 已像目标语；否则当未译残留
+  if (latinLooksLikeLocale(targetLocale, text)) return "target";
+  return "source";
+}
+
+function autoLiquidReportedKey(shopValue, language) {
+  return `ciwi_auto_liquid_reported:${shopValue}:${language}`;
+}
+
+function loadAutoLiquidReported(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveAutoLiquidReported(key, set) {
+  try {
+    let arr = Array.from(set);
+    if (arr.length > AUTO_LIQUID_REPORTED_CAP) {
+      arr = arr.slice(arr.length - AUTO_LIQUID_REPORTED_CAP);
+    }
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch {
+    // 忽略 localStorage 配额错误
+  }
+}
+
+function isAutoLiquidCandidate(text) {
+  const t = normalizeText(text);
+  if (t.length < AUTO_LIQUID_MIN_LEN || t.length > AUTO_LIQUID_MAX_LEN) return false;
+  // 至少含一个字母（含 CJK / 各语言字母），过滤纯数字 / 符号
+  if (!/\p{L}/u.test(t)) return false;
+  return true;
+}
+
+/**
+ * 抓取当前页面上未翻译文本并上报后端（默认开；主题预览 / 主语言页由调用方跳过）。
+ * 门A：整页「非目标语」条数占比低于阈值（页面已大体译完）才采集残留。
+ * 门C：只上报仍像源语言的条目。客户端去重 + 指纹缓存；重活在后端；翻译另走任务。
+ * 性能：idle 调度 + 节点/时间预算 + 可中断；可采失败，不拖慢页面。
+ * @param {{ primaryLanguage?: string }} [options]
+ */
+export function CollectUntranslatedText(shop, ciwiBlock, options = {}) {
+  try {
+    const shopValue = shop?.value || shop;
+    const language = ciwiBlock?.querySelector(
+      'input[name="language_code"]',
+    )?.value;
+    const primaryLanguage = options?.primaryLanguage || "";
+    autoLiquidLog("start", {
+      shop: shopValue,
+      language,
+      primaryLanguage,
+      href: typeof location !== "undefined" ? location.href : "",
+    });
+    if (!shopValue || !language) {
+      autoLiquidLog("skip", { reason: "missing_shop_or_language", shopValue, language });
+      return;
+    }
+
+    // 本会话已判定无需采集（未开启 / 主语言 / 未就绪）→ 直接跳过
+    const sessionFlag = `ciwi_auto_liquid_off:${shopValue}:${language}`;
+    try {
+      if (sessionStorage.getItem(sessionFlag) === "1") {
+        autoLiquidLog("skip", {
+          reason: "session_off",
+          sessionFlag,
+          hint: "清 sessionStorage 该键后可重试",
+        });
+        return;
+      }
+    } catch {}
+
+    const targetScript = localeScriptRegex(language);
+    autoLiquidLog("classify_mode", {
+      language,
+      targetHasScript: !!targetScript,
+      mode: targetScript ? "script" : "latin_heuristic",
+      note: "占比只看目标语脚本/启发式，不依赖 primaryLanguage",
+      ratioMax: AUTO_LIQUID_SOURCE_RATIO_MAX,
+    });
+
+    const reportedKey = autoLiquidReportedKey(shopValue, language);
+    const reported = loadAutoLiquidReported(reportedKey);
+
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (skipTags.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+          // 跳过 switcher 自身 UI
+          if (ciwiBlock && ciwiBlock.contains(parent))
+            return NodeFilter.FILTER_REJECT;
+          if (parent.closest("#ciwi-container"))
+            return NodeFilter.FILTER_REJECT;
+          if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
+          if (isElementHiddenForTranslation(parent))
+            return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+    );
+
+    const startedAt =
+      typeof performance !== "undefined" && performance.now
+        ? performance.now()
+        : Date.now();
+    const now = () =>
+      typeof performance !== "undefined" && performance.now
+        ? performance.now()
+        : Date.now();
+
+    const seen = new Set();
+    const candidates = []; // 仍像源语言、未上报过的候选
+    /** @type {{ text: string, chars: number }[]} */
+    const targetItems = [];
+    /** @type {{ text: string, chars: number }[]} */
+    const notTargetItems = []; // source：不算目标语
+    /** @type {{ text: string, chars: number }[]} */
+    const unknownItems = [];
+    let totalChars = 0; // 分母：候选文本总字符
+    let sourceChars = 0; // 分子：仍像源语言的字符
+    let targetChars = 0;
+    let unknownChars = 0;
+    let sourceCount = 0;
+    let targetCount = 0;
+    let unknownCount = 0;
+    let nodes = 0;
+    let aborted = false;
+    let abortReason = "";
+
+    while (walker.nextNode()) {
+      nodes += 1;
+      // 性能护栏：节点/时间超预算即放弃本页（不改变已扫状态，不上报）。
+      if (nodes > AUTO_LIQUID_MAX_NODES) {
+        aborted = true;
+        abortReason = "max_nodes";
+        break;
+      }
+      if ((nodes & 0xff) === 0 && now() - startedAt > AUTO_LIQUID_TIME_BUDGET_MS) {
+        aborted = true;
+        abortReason = "time_budget";
+        break;
+      }
+
+      const t = normalizeText(walker.currentNode.nodeValue || "");
+      if (!isAutoLiquidCandidate(t)) continue;
+      if (seen.has(t)) continue;
+      seen.add(t);
+
+      const cls = classifyAutoLiquidText(t, language);
+      totalChars += t.length;
+      const row = { text: t, chars: t.length };
+      if (cls === "source") {
+        sourceChars += t.length;
+        sourceCount += 1;
+        notTargetItems.push(row);
+        if (!reported.has(t) && candidates.length < AUTO_LIQUID_BATCH) {
+          candidates.push(t);
+        }
+      } else if (cls === "target") {
+        targetChars += t.length;
+        targetCount += 1;
+        targetItems.push(row);
+      } else {
+        unknownChars += t.length;
+        unknownCount += 1;
+        unknownItems.push(row);
+      }
+    }
+
+    const elapsedMs = Math.round(now() - startedAt);
+    // 门A 按去重后的条数：非目标语条数 / 总条数
+    const totalCount = sourceCount + targetCount + unknownCount;
+    const ratio = totalCount > 0 ? sourceCount / totalCount : 0;
+    const targetRatio = totalCount > 0 ? targetCount / totalCount : 0;
+    autoLiquidLog("scan", {
+      nodes,
+      uniqueTexts: seen.size,
+      elapsedMs,
+      aborted,
+      abortReason: abortReason || null,
+      totalCount,
+      sourceCount,
+      targetCount,
+      unknownCount,
+      // chars 仅观测，不参与门控
+      totalChars,
+      sourceChars,
+      targetChars,
+      unknownChars,
+      ratio,
+      targetRatio,
+      ratioMax: AUTO_LIQUID_SOURCE_RATIO_MAX,
+      ratioPass: ratio < AUTO_LIQUID_SOURCE_RATIO_MAX,
+      candidateCount: candidates.length,
+      formula: "ratio = notTargetCount(sourceCount) / totalCount",
+    });
+    // TEMP：完整清单，便于对照哪些被算作目标语 / 非目标语
+    autoLiquidLog("ratio_detail", {
+      language,
+      totalCount,
+      sourceCount,
+      targetCount,
+      unknownCount,
+      ratio,
+      targetRatio,
+      ratioMax: AUTO_LIQUID_SOURCE_RATIO_MAX,
+      formula: "ratio = sourceCount / totalCount（按条，不按 chars）",
+      targetLanguageTexts: targetItems,
+      notTargetLanguageTexts: notTargetItems,
+      unknownTexts: unknownItems,
+    });
+
+    // 中断 / 样本不足：信号不可靠，本次不采（不设停采旗标，下次仍可尝试）。
+    if (aborted) {
+      autoLiquidLog("skip", {
+        reason: "aborted",
+        abortReason,
+        nodes,
+        elapsedMs,
+        timeBudgetMs: AUTO_LIQUID_TIME_BUDGET_MS,
+        maxNodes: AUTO_LIQUID_MAX_NODES,
+      });
+      return;
+    }
+    if (totalCount < AUTO_LIQUID_MIN_SAMPLE_ITEMS) {
+      autoLiquidLog("skip", {
+        reason: "sample_low",
+        totalCount,
+        minSampleItems: AUTO_LIQUID_MIN_SAMPLE_ITEMS,
+      });
+      return;
+    }
+
+    // 门A：非目标语条数占比过高 = 页面还没大体译完 → 不采（本会话停采该语，省请求）。
+    if (ratio >= AUTO_LIQUID_SOURCE_RATIO_MAX) {
+      try {
+        sessionStorage.setItem(sessionFlag, "1");
+      } catch {}
+      autoLiquidLog("skip", {
+        reason: "ratio_high",
+        ratio,
+        ratioMax: AUTO_LIQUID_SOURCE_RATIO_MAX,
+        sourceCount,
+        totalCount,
+        sessionFlag,
+      });
+      return;
+    }
+
+    if (!candidates.length) {
+      autoLiquidLog("skip", { reason: "no_candidates", ratio, sourceCount });
+      return;
+    }
+
+    // 乐观标记为已报，避免同页多次触发 / 短时间重复上报
+    candidates.forEach((t) => reported.add(t));
+    saveAutoLiquidReported(reportedKey, reported);
+
+    autoLiquidLog("post", {
+      language,
+      primaryLanguage,
+      ratio,
+      count: candidates.length,
+      texts: candidates.slice(0, 15).map((t) => t.slice(0, 80)),
+    });
+
+    CollectLiquidStrings({
+      shopName: shopValue,
+      languageCode: language,
+      texts: candidates,
+    })
+      .then((res) => {
+        const body = res?.response;
+        autoLiquidLog("response", {
+          success: res?.success,
+          scheduled: body?.scheduled,
+          skipped: body?.skipped,
+          reason: body?.reason,
+          raw: body,
+        });
+        const reason = body?.reason;
+        if (
+          body?.skipped &&
+          (reason === "disabled" ||
+            reason === "primary_locale" ||
+            reason === "total_cap" ||
+            reason === "daily_cap" ||
+            reason === "resource_not_ready")
+        ) {
+          try {
+            sessionStorage.setItem(sessionFlag, "1");
+          } catch {}
+          autoLiquidLog("session_off_from_server", { reason, sessionFlag });
+        }
+      })
+      .catch((err) => {
+        autoLiquidLog("request_failed", err);
+      });
+  } catch (err) {
+    console.error("[ciwi-auto-liquid] CollectUntranslatedText failed:", err);
   }
 }

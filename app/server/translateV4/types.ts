@@ -130,6 +130,11 @@ export type TranslationV4Job = {
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
+  /**
+   * 是否包含自定义 Liquid / 第三方文案（Turso LiquidRule PENDING→DONE）。
+   * 不进 Shopify module 枚举；Worker 内部用虚拟 module CUSTOM_LIQUID。
+   */
+  includeLiquid?: boolean;
   /** 任务来源标识（TsFrontend）。worker 据此区分入口。 */
   taskSource?: string | null;
   status: TranslationV4Status;
@@ -143,6 +148,11 @@ export type TranslationV4Job = {
   errorStage: string | null;
   /** 暂停/取消时先写回已翻译内容；写回完成后据此收尾（pause→PAUSED、cancel→CANCELLED）。 */
   pauseAfterWriteback?: "pause" | "cancel" | null;
+  /**
+   * 创建时固化的单语言额度上限估算（字符×k=1.6，无覆盖率缩放）。
+   * 供手动积分不足邮件 required_credits 对照 usedTokens；旧任务可能缺省。
+   */
+  estimatedCredits?: number | null;
   estimationRecordedAt?: string | null;
   createdBy: string;
   createdAt: string;

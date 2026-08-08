@@ -137,7 +137,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
           ),
         };
         handleUpdateDataSource(newData);
-        shopify.toast.show("Saved successfully");
+        shopify.toast.show(t("Saved successfully"));
         setFormData({
           ...formData,
           sourceText: "",
