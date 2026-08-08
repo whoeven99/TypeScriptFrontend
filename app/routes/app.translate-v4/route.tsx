@@ -241,6 +241,7 @@ export default function AppTranslateV4() {
   const [aiModel, setAiModel] = useState<string>(DEFAULT_AI_MODEL);
   const [isCover, setIsCover] = useState(false);
   const [isHandle, setIsHandle] = useState(false);
+  const [includeLiquid, setIncludeLiquid] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
@@ -619,6 +620,7 @@ export default function AppTranslateV4() {
         aiModel,
         isCover,
         isHandle,
+        includeLiquid,
       },
     });
     try {
@@ -629,6 +631,7 @@ export default function AppTranslateV4() {
         aiModel,
         isCover,
         isHandle,
+        includeLiquid,
         targetOptions,
         shop,
       });
@@ -703,6 +706,7 @@ export default function AppTranslateV4() {
     aiModel,
     isCover,
     isHandle,
+    includeLiquid,
     targetOptions,
     shop,
     refreshList,
@@ -789,6 +793,7 @@ export default function AppTranslateV4() {
     modules: moduleKeys,
     targets,
     isCover,
+    includeLiquid,
     untranslatedRatioByLocale,
     remainingCredits,
   });
@@ -960,6 +965,8 @@ export default function AppTranslateV4() {
                     onIsCoverChange={setIsCover}
                     isHandle={isHandle}
                     onIsHandleChange={setIsHandle}
+                    includeLiquid={includeLiquid}
+                    onIncludeLiquidChange={setIncludeLiquid}
                     estimate={taskEstimate}
                   />
                 </div>
@@ -1004,6 +1011,7 @@ export default function AppTranslateV4() {
         aiModel={aiModel}
         isCover={isCover}
         isHandle={isHandle}
+        includeLiquid={includeLiquid}
         estimate={taskEstimate}
         scenario={createConfirmScenario}
         previousTotalChars={

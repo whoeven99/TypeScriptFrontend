@@ -12,7 +12,8 @@ right route, server helper, worker, extension, script, or Prisma model.
 
 1. Read `AGENTS.md` first and identify the feature area.
 2. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (Claude-style
-  collab: confirm technical choices, then plan / UI samples, then edit).
+ collab: confirm technical choices, then **P0/P1** plan / UI samples, then
+ edit; default execute P0 only).
 3. Run `git status --short` before editing. Do not overwrite user changes or
   unrelated untracked files.
 4. Read the route entry, server helper, worker or extension caller, and Prisma
@@ -726,6 +727,9 @@ Currency changes often touch admin, App Proxy, and extension JS.
 - App Proxy: `app/routes/api.storefront.$.ts`.
 - Extension: `extensions/ciwi-switcher/blocks/ciwi_I18n_Switcher.liquid` and
 `extensions/ciwi-switcher/assets/ciwi-*.js`.
+- App Proxy 店面路径：Extension `ciwi-api.js` 固定 `STOREFRONT_APP_PROXY_BASE=/apps/ciwi`
+ （对齐正式 `shopify.app.prod.toml` `subpath=ciwi`）。测试 App 为 `ciwi-test` 时
+ 需临时改扩展常量或单独分支后再 `deployTest`。
 - Constants: `app/lib/switcherConstants.ts`.
 - `ipOpen` is the live geolocation switch and is stored on Turso
 `SwitcherConfiguration`. The old `IpRedirection` table/model was dropped
@@ -735,6 +739,33 @@ Prisma model still exist; design a new owner before reviving region-specific
 redirect records.
 - 确认保存时**不再**调用 Spring `/userIp/addOrUpdateUserIp`。店面 IP 定位走
 `ciwi-main.js` + ipapi。
+- **第三方 / 自定义 Liquid 翻译管线（PENDING→Worker→DONE）**：
+ 1. **采集（默认开，无商户开关）**：storefront `CollectUntranslatedText` → App
+ Proxy `POST liquid/collect` → `liquidCollect.server.ts` 只写入
+ `LiquidRule(status=PENDING, source=auto, afterTranslation="")`，**不在 Web
+ 进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`（出事可关）、
+ shop 白名单 `AUTO_LIQUID_SHOP_ALLOWLIST`（逗号分隔；**空=全店可写**；
+ 名单外仍收请求但不落库；Render 单行 `[auto-liquid] deny allowlist …`，
+ Redis 日聚合 `tsf:auto_liquid:deny:req|texts|shops:{utcYmd}`（8d TTL）。
+ 服务端细日志：`AUTO_LIQUID_DEBUG=true`；店面：`localStorage.ciwi_debug_auto_liquid=1`。
+ 主语言（Redis 缓存 1h）、粗筛、去重、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认 100）、
+ 总量帽 `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。店面 Switcher **全店采集上报**；
+ 采集只写 PENDING，**不查额度**；真正扣费在后续 v4「自定义 Liquid」翻译阶段。
+ `SwitcherConfiguration.autoLiquidCollect` 列保留且默认 `true`，保存时强制
+ `true`，Switcher UI 开关已移除。
+ 2. **建任务**：勾选「自定义 Liquid」→ `job.includeLiquid=true`（不进 Shopify
+ module 枚举）。
+ 3. **Worker**：init 读 PENDING → 虚拟 module `CUSTOM_LIQUID` init blob（行
+ `PENDING→TRANSLATING`+`jobId`）；translate 复用现有管线；writeback 写回
+ Turso `DONE`（**不** `registerTranslations`）。代码：
+ `worker/src/services/customLiquid.ts`、`initWorker` / `writebackWorker`。
+ 4. **店面替换**：`parseLiquidTranslations` **只返回 `status=DONE` 且译文非空**；
+ `CustomLiquidTextTranslate` + App Proxy `liquid/parse` 不变。空结果返回
+ `ok({})` 供浏览器负缓存。
+ 5. **治理**：`worker/src/services/cleanupOldAutoLiquid.ts` 挂 `scheduler.ts`
+ （默认每小时 :55），按 `updatedAt` 超 `AUTO_LIQUID_RETENTION_DAYS`（默认 90）
+ 慢删 `source='auto'`（绝不碰 manual）。管理页
+ `/app/manage_translation/custom_liquid` 展示 `status` / `source`。
 
 Do not make storefront API unauthenticated. App Proxy requests use HMAC checks.
 
@@ -985,10 +1016,14 @@ Current models:
   `coveragePercent` / `coverageUpdatedAt` / `coverageSource`).
 - `Glossary`: glossary terms.
 - `ShopProfile`: AI-generated shop profile.
-- `SwitcherConfiguration`: storefront switcher settings.
+- `SwitcherConfiguration`: storefront switcher settings（含 `autoLiquidCollect`
+ 默认 `true`：店面自动抓取第三方未翻译文本回填 `LiquidRule`；无商户开关）。
 - `Currency`, `CurrencyRate`: currency list and rate cache.
 - `PageFlyTranslation`: PageFly translations.
-- `LiquidRule`: custom Liquid translation rules.
+- `LiquidRule`: custom Liquid translation rules（`source` = `manual`|`auto`；
+ `status` = `PENDING`|`TRANSLATING`|`DONE`；可选 `sourceDigest` / `jobId`；
+ `@@unique([shop, languageCode, beforeTranslation])`；采集侧 `createMany` +
+ `skipDuplicates` 落 PENDING；Worker 写 DONE）。
 - `Account`, `PlanCatalog`, `AppSubscription`, `BillingLog`,
 `AccountPeriodUsage`: TSF billing/quota.
 - `TranslateV4JobUsage`: per-job translation usage snapshot (time, tokens,
@@ -1556,12 +1591,14 @@ translation, but auto-translate still does not set it. Empty Turso
 
 ## Short Locator Flow
 
-1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md`.
+1. Read and follow `.cursor/skills/deliberate-collab/SKILL.md` (P0/P1 plan;
+ default execute P0 only).
 2. `git status --short`
 3. Read the matching section in this file.
 4. `rg -n "<keyword>" app worker extensions scripts prisma`
 5. Read route entry, server helper, worker/extension caller, and data model.
-6. Apply the smallest patch.
+6. Apply the smallest P0 patch.
 7. Run the validation command that matches the change.
-8. Final response should include changed files, validation result, and residual risk.
+8. Final response should include changed files, validation result, residual
+ risk, and unfinished P1 items when applicable.
 
