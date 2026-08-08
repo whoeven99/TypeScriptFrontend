@@ -745,10 +745,12 @@ redirect records.
  1. **采集（默认开，无商户开关）**：storefront `CollectUntranslatedText` → App
  Proxy `POST liquid/collect` → `liquidCollect.server.ts` 只写入
  `LiquidRule(status=PENDING, source=auto, afterTranslation="")`，**不在 Web
- 进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`（出事可关）、主语言
- （Redis 缓存 1h）、粗筛、去重、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认 100）、
- 总量帽 `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。采集只写 PENDING，**不查额度**；
- 真正扣费在后续 v4「自定义 Liquid」翻译阶段。
+ 进程跑 LLM**。门控：全局 `AUTO_LIQUID_COLLECT_ENABLED`（出事可关）、
+ shop 白名单 `AUTO_LIQUID_SHOP_ALLOWLIST`（逗号分隔；**空=全店可写**；
+ 名单外仍收请求但不落库，打 `[auto-liquid] shop_not_allowlisted` 详细日志）、
+ 主语言（Redis 缓存 1h）、粗筛、去重、每日帽 `AUTO_LIQUID_DAILY_CAP`（默认 100）、
+ 总量帽 `AUTO_LIQUID_TOTAL_CAP`（默认 50000）。店面 Switcher **全店采集上报**；
+ 采集只写 PENDING，**不查额度**；真正扣费在后续 v4「自定义 Liquid」翻译阶段。
  `SwitcherConfiguration.autoLiquidCollect` 列保留且默认 `true`，保存时强制
  `true`，Switcher UI 开关已移除。
  2. **建任务**：勾选「自定义 Liquid」→ `job.includeLiquid=true`（不进 Shopify

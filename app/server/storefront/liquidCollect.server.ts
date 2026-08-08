@@ -92,6 +92,27 @@ function envBool(name: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
+/**
+ * 采集 shop 白名单：`AUTO_LIQUID_SHOP_ALLOWLIST=a.myshopify.com,b.myshopify.com`
+ * - 未配置 / 空：全店可写（店面仍可全量上报）
+ * - 已配置：仅名单内落库；名单外打详细日志后跳过
+ */
+function parseShopAllowlist(): string[] | null {
+  const raw = process.env.AUTO_LIQUID_SHOP_ALLOWLIST?.trim();
+  if (!raw) return null;
+  const list = raw
+    .split(/[,;\s]+/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return list.length ? list : null;
+}
+
+function isShopAllowlisted(shop: string): boolean {
+  const list = parseShopAllowlist();
+  if (!list) return true;
+  return list.includes(shop.trim().toLowerCase());
+}
+
 function normalize(text: string): string {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
@@ -175,14 +196,20 @@ export async function collectAutoLiquidStrings(args: {
   shop: string;
   target: string;
   texts: string[];
+  /** 可选请求上下文，用于白名单拒收时的诊断日志。 */
+  meta?: {
+    pathPrefix?: string;
+    userAgent?: string;
+  };
 }): Promise<CollectResult> {
   const shop = args.shop.trim();
   const target = normalize(args.target);
+  const rawTexts = Array.isArray(args.texts) ? args.texts : [];
   // TEMP debug：采集服务端路径日志，验收后可删。
   const log = (step: string, extra?: Record<string, unknown>) => {
     console.log(
       `[auto-liquid] ${step}`,
-      JSON.stringify({ shop, target, inCount: args.texts?.length ?? 0, ...extra }),
+      JSON.stringify({ shop, target, inCount: rawTexts.length, ...extra }),
     );
   };
   if (!shop || !target) {
@@ -197,6 +224,37 @@ export async function collectAutoLiquidStrings(args: {
     return { scheduled: 0, skipped: true, reason: "disabled" };
   }
 
+  // 0.5) shop 白名单：店面全量上报；名单外不落库，打详细日志便于观察流量。
+  const allowlist = parseShopAllowlist();
+  if (allowlist && !isShopAllowlisted(shop)) {
+    const normalizedSamples: string[] = [];
+    const seenSample = new Set<string>();
+    for (const raw of rawTexts) {
+      const t = normalize(raw);
+      if (!t || seenSample.has(t)) continue;
+      seenSample.add(t);
+      normalizedSamples.push(t.length > 80 ? `${t.slice(0, 80)}…` : t);
+      if (normalizedSamples.length >= 12) break;
+    }
+    console.log(
+      "[auto-liquid] shop_not_allowlisted",
+      JSON.stringify({
+        reason: "shop_not_allowlisted",
+        shop,
+        target,
+        inCount: rawTexts.length,
+        uniqueSampled: seenSample.size,
+        sampleTexts: normalizedSamples,
+        pathPrefix: args.meta?.pathPrefix || null,
+        userAgent: (args.meta?.userAgent || "").slice(0, 180) || null,
+        allowlistSize: allowlist.length,
+        allowlistPreview: allowlist.slice(0, 8),
+        hint: "Add shop to AUTO_LIQUID_SHOP_ALLOWLIST to persist; empty env = allow all shops",
+      }),
+    );
+    return { scheduled: 0, skipped: true, reason: "shop_not_allowlisted" };
+  }
+
   // 1) 主语言门控（Redis 缓存 1h，避免每会话打 Shopify）
   const primary = await resolvePrimaryLocaleCached(shop);
   if (primary && normalize(primary).toLowerCase() === target.toLowerCase()) {
@@ -207,7 +265,7 @@ export async function collectAutoLiquidStrings(args: {
   // 2) 归一 + 去重 + 粗筛 + 单次上限
   const seen = new Set<string>();
   const candidates: string[] = [];
-  for (const raw of Array.isArray(args.texts) ? args.texts : []) {
+  for (const raw of rawTexts) {
     const t = normalize(raw);
     if (!t || seen.has(t)) continue;
     seen.add(t);

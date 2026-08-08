@@ -135,6 +135,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         shop: auth.shop,
         target: languageCode,
         texts,
+        meta: {
+          pathPrefix: url.searchParams.get("path_prefix") ?? undefined,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        },
       });
       return json(
         { success: true, errorCode: null, errorMsg: null, response: result },
