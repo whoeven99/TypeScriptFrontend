@@ -32,9 +32,8 @@ export function resolveSingleTranslateQuotaGateMode(
 
   if (errorMsg === "v4.create.noCreditsTrial") return "trial";
   if (errorMsg === "v4.create.noCreditsPricing") return "pricing";
-
-  if (isNew === null) return "pricing";
-  return isNew ? "trial" : "pricing";
+  void isNew;
+  return null;
 }
 
 export function resolveSingleTranslateErrorMessage(
