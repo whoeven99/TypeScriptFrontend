@@ -86,7 +86,7 @@ temporary debug note is needed, delete or merge it after the issue is resolved.
 | `extensions/ciwi-switcher/*`                                 | Storefront language/currency switcher theme extension.                                    |
 | `extensions/web-pixel/*`                                     | Shopify web pixel extension.                                                              |
 | `scripts/*`                                                  | Migration, audit, diagnostic, cleanup, and one-off operational scripts.                   |
-| `public/locales/*/translation.json`                          | App i18n strings. Add at least `en` and `zh-CN` for new UI text.                          |
+| `public/locales/*/translation.json`                          | App i18n strings (15 locales，清单在 `app/lib/appI18nLanguages.ts`)。手写 `en` + `zh-CN`，其余可用 `npm run translate` 机翻补齐。 |
 | `.github/workflows/tsf-deploy.yml`                           | Manual Shopify extension/config and Render app/worker deployment workflow.                |
 | `Dockerfile`                                                 | Render container build for the Remix app; the worker is built from `worker/`.             |
 
@@ -140,10 +140,14 @@ and chip / `ChoiceList` / `Combobox` for multi-select. Avoid Ant Design
 reason; do not add page-local CSS that overrides `.ant-select-selection-item`
 globally inside a card (it breaks Ant single-select layout). ESLint
 `no-restricted-imports` blocks `Select` from `antd` under
-`app/routes/app.translate-v4/**`. Remaining Ant Selects (allow for now):
-manage-translation header / custom liquid / glossary / currency edit /
-productImage — prefer Polaris when those screens are next touched. Cursor
-rule: `.cursor/rules/polaris-dropdowns.mdc`.
+`app/routes/app.translate-v4/**`（`.eslintrc.cjs` override；`app.translate-v4-history`
+目前不在该 glob 内，新增下拉仍请用 Polaris）。Remaining Ant Selects
+(allow for now, 已核对):
+`app/components/singleTranslateAction.tsx`（AI 模型）、manage-translation 头部
+（`app.manage_translation/route.tsx`）、custom liquid `updateCustomTransModal`、
+glossary `updateGlossaryModal`、currency `currencyEditModal` — prefer Polaris
+when those screens are next touched。`app/components/paymentModal.tsx` 已是
+Polaris `Select` 的参考实现。Cursor rule: `.cursor/rules/polaris-dropdowns.mdc`.
 - Ant Design theme values should be derived from Polaris-like tokens through
 `app/ui/theme.ts`; avoid creating a second visual system.
 - Prefer existing shared wrappers in `app/ui/components/*`, including
@@ -160,7 +164,11 @@ large inline style blocks in route files.
 - One page section should have one clear primary action. Secondary actions should
 not compete visually with the main action.
 - Add i18n keys for visible UI text in `public/locales/en/translation.json` and
-`public/locales/zh-CN/translation.json`.
+`public/locales/zh-CN/translation.json`. The admin UI ships 15 locales
+(`APP_I18N_LANGUAGES` in `app/lib/appI18nLanguages.ts`); the other 13 files are
+machine-filled from `en` via `npm run translate` (needs `GOOGLE_CLOUD_API_KEY`).
+Do not leave merchant-visible English literals in route files — recent i18n
+sweeps moved plan names, modal copy, and worker notice text into locale keys.
 
 
 
@@ -196,7 +204,11 @@ and embedded `/app` redirect/landing behavior.
 
 ### Main Pages
 
-- `/app/translate-v4`: `app/routes/app.translate-v4/route.tsx`.
+- `/app/translate-v4`: `app/routes/app.translate-v4/route.tsx`（只展示进行中 /
+暂停 / 失败任务，见 `jobFilters.ts` `isCurrentV4Job`）。
+- `/app/translate-v4-history`: `app/routes/app.translate-v4-history/route.tsx`
+（终态任务历史；无导航入口，由 `TaskQueueSection.tsx` 的「历史」按钮跳入；复用
+`CompactJobCard` + `isHistoryV4Job` + `/api/translate-v4/task-action`）。
 - `/app/language`: `app/routes/app.language/route.tsx`.
 - `/app/manage_translation`: `app/routes/app.manage_translation/route.tsx`.
 - `/app/manage_translation/<module>`: `app/routes/app.manage_translation_.*/route.tsx`.
@@ -214,7 +226,9 @@ real `route.tsx` or route module is added.
 
 ### API Routes
 
-- `/api/app-bootstrap`: `app/routes/api.app-bootstrap.ts`.
+- `/api/app-bootstrap`: `app/routes/api.app-bootstrap.ts` →
+`app/server/appBootstrap.server.ts`（plan / credits / locales 一次性引导数据，
+`app/routes/app.tsx` 与 Redux `userConfig` 共用）。
 - `/api/billing/active-subscription`: `app/routes/api.billing.active-subscription.ts`.
 - `/api/shop-profile`: `app/routes/api.shop-profile.ts`.
 - `/api/support`: `app/routes/api.support.tsx`.
@@ -233,6 +247,8 @@ real `route.tsx` or route module is added.
   （Preparing 真进度：逐 label 现算最重要 1 语 × 5 模块，写 Redis 不写 Turso）。
 - `/api/translate-v4/quota`: `app/routes/api.translate-v4.quota.ts`.
 - `/api/translate-v4/single`: `app/routes/api.translate-v4.single.ts`.
+- `/api/translate-v4/single-estimate`: `app/routes/api.translate-v4.single-estimate.ts`
+（单字段积分预估，展示用；`singleTranslateEstimate.server.ts`）。
 - `/api/translate-v4/image`: `app/routes/api.translate-v4.image.ts`.
 - `/api/translate-v4/currency`: `app/routes/api.translate-v4.currency.ts`.
 - `/api/translate-v4/glossary`, `liquid`, `pagefly`, `switcher`,
@@ -251,7 +267,9 @@ Core files:
 - UI page: `app/routes/app.translate-v4/route.tsx`.
 - UI components: `app/routes/app.translate-v4/components/*`.
 - UI constants/status/i18n: `constants.ts`, `v4I18n.ts`, `jobStageUtils.ts`,
-`v4JobNotice.ts`, `localeDisplay.ts`.
+`v4JobNotice.ts`, `localeDisplay.ts`, `v4Styles.ts`（共享色板/卡片样式，
+`paymentModal` 等也在用）, `jobFilters.ts`（current / history 任务切分）,
+`hooks/useCountUp.ts`.
 - Client create-task helper: `app/lib/createTranslateV4Tasks.ts`.
 - Create/list jobs: `app/routes/api.translate-v4.tasks.ts`.
 - Create-task credit estimate (display upper bound): 
@@ -260,7 +278,8 @@ default `k=1.6` / `TRANSLATE_ESTIMATE_CREDITS_PER_CHAR`),
 `app/routes/api.translate-v4.estimate.ts`,
 `app/routes/app.translate-v4/useCreateTaskEstimate.ts` (wired in
 `CreateTaskCard` / `route.tsx`). Uses shop scan `moduleStats.chars` +
-coverage untranslated ratio; not the worker bill formula.
+coverage untranslated ratio; `includeLiquid` 时再加上 `sumPendingLiquidChars`
+（`liquidRule.server.ts`，PENDING 自定义 Liquid 字符数）。不是 worker 实扣公式。
 - Pause/resume/cancel/delete: `app/routes/api.translate-v4.task-action.ts`.
 - Progress summaries: `app/server/translateV4/progress.server.ts`.
 - Init activity UI (module `x/N` bar + i18n activity log): Redis fields
@@ -325,7 +344,8 @@ then `api.translate-v4.tasks.ts`.
 - Billing return after buy-credits / subscribe from create confirm: draft in
   `app/utils/createTaskDraft.ts` (sessionStorage); return flag via
   `app/utils/billingReturn.ts`; restore + reopen confirm in
-  `app/routes/app.translate-v4/route.tsx`.
+  `app/routes/app.translate-v4/route.tsx`. 补额度弹窗本身是全局共享的，见
+  Billing And Quota →「Credits purchase modal」。
 - Change pause/resume/cancel: inspect `api.translate-v4.task-action.ts`,
 `resumeStatus.ts`, `translateWorker.ts`, and `writebackWorker.ts`.
 - Change progress display: inspect `progress.server.ts`, `jobStageUtils.ts`,
@@ -646,6 +666,10 @@ uninstall Feishu (plan, interval, quota, size tier via
 - `app/server/billing/email/billingEmail.server.ts`: purchase/subscribe/renewal emails.
 - `app/server/billing/email/welcomeEmail.server.ts`: first-install welcome email
 (`bound: true` from `resolveBillingBinding` in `app/routes/app.tsx` loader init).
+- 收件人/后台 token：`app/server/shop/fetchShopContact.server.ts`（Shopify
+GraphQL 拉店铺联系邮箱）与 `app/server/shop/offlineSessionToken.server.ts`
+（App 侧唯一的 offline token 读取口，Turso `Session`；storefront switcher /
+liquid collect 也走它）。卸载后取不到 token 属预期，调用方需静默降级。
 - `worker/src/services/billingSubscriptionReconcile.ts`: worker-only Shopify
 subscription reconciliation (writes Turso directly; does not call TSF Web).
 Syncs `AppSubscription.currentPeriodEnd/Start` from Shopify for MONTHLY and
@@ -656,13 +680,34 @@ Shopify year) derived from `currentPeriodEnd` (never from `createdAt`).
 helpers for annual credit-cycle math.
 - `worker/src/services/accountBalance.ts`: credit pool settle helpers for renewals.
 - `app/routes/webhooks.tsx`: Shopify webhook branching.
-- `app/routes/app.pricing/route.tsx`: pricing UI/actions.
+- `app/routes/app.pricing/route.tsx`: pricing UI/actions. `action` 现在
+**返回** `response.confirmationUrl`（不再 `shopifyRedirect` 抛重定向），由客户端
+`app/utils/billingConfirmation.client.ts` `redirectToBillingConfirmation()` 在
+top frame 打开；无 confirmationUrl 时返回 `errorCode: 10002` + Shopify
+`userErrors[0].message`。
 - `app/server/billing/quota/quotaRouter.server.ts`: shared app-side quota facade;
 `/api/translate-v4/quota`, task creation, single translation, and picture
 translation all use this TSF account path.
 - `worker/src/services/tsfQuota.ts`: worker quota adapter.
 - `worker/src/services/creditUsage.ts`: Worker `CreditUsage` writer; `translateWorker`
   `flushQuota` records each successful credit flush (`source=v4_job`).
+
+Credits purchase modal（全局唯一补额度入口）:
+
+- `app/components/paymentModal.tsx`（+ `paymentModal.shared.ts`
+`buildPaymentOptions` / `paymentOptionSelect.tsx`）在 `app/routes/app.tsx` 里
+`lazy` 挂载一次，靠 window 事件 `ciwi:open-credits-purchase-modal` 打开。
+- 触发方：`app/utils/creditsPurchaseModal.ts` `openCreditsPurchaseModal(context)`，
+`context.kind` = `translate_v4_task` | `create_task` | `single_translate`，
+带 `estimatedCredits` / `currentRemainingCredits` / `shortfallCredits`；弹窗按
+shortfall 预选**最小够用**的积分包。新增调用方请复用该事件，不要在页面里再挂一个
+PaymentModal。
+- 回跳：`app/utils/billingReturn.ts`（`ciwiBillingReturn` / `ciwiBillingKind` /
+`ciwiBillingPrevTotal` 三个 query；只保留 `/app/**` pathname，剔除嵌入式 session
+参数）+ `app/lib/shopifyAppHandle.server.ts`
+`buildShopifyEmbeddedAppReturnUrl()`（按 `SHOPIFY_API_KEY` 解析 Partners app
+handle，不再读 `process.env.HANDLE`；超过 Shopify 255 字符上限时降级为无 query
+的最短路径）。改 returnUrl 时必须同时确认这个长度上限。
 
 Quota work must check:
 
@@ -799,7 +844,11 @@ gets `302` from `authenticate.admin` on `/api/picture/upload`.
 - Manage save paths use TSF/Shopify helpers such as
 `app/server/shopify/translations.server.ts`.
 - Editors: `app/components/manageTableInputEditor.tsx`,
-`manageTableInput.tsx`, `manageTableRichText.ts`, `richTextInput/*`.
+`manageTableInput.tsx`, `manageTableRichText.ts`, `manageTranslationFieldRow.tsx`,
+`richTextInput/*`.
+- 页面共享行为：`app/utils/manageSave.ts`、`manageTranslationState.ts`、
+`manageTranslationErrors.ts`（保存提交 / 脏值状态 / 错误归一）。改一个 manage 页
+的保存或报错前，先看这三个是否已经有实现。
 - Shopify translation helper: `app/server/shopify/translations.server.ts`.
 
 These pages are not the same UX as translation v4 jobs. Preserve existing
@@ -819,6 +868,15 @@ AI model `Select` + optional prompt + credit estimate) →
 the real system prompt (glossary + shop profile + custom prompt) via
 `estimateSingleTranslateLlmTokens`, then ceil(tokens × model multiplier)
 (DeepSeek default 1, GPT/Google default 1.5).
+- 单字段额度不足：打开弹窗时先预估 + 读剩余额度，`shortfallCredits > 0` 直接转到
+共享补额度弹窗（`app/components/singleTranslateAction.tsx` →
+`openCreditsPurchaseModal({ kind: "single_translate", … })`）；翻译失败后的
+额度类报错统一走 `app/hooks/useSingleTranslateQuotaGate.tsx` +
+`app/lib/singleTranslateQuotaFeedback.ts`（`v4.create.noCreditsPricing` → 补额度
+弹窗，`noCreditsTrial` → `CreateTaskQuotaGateModal` trial 模式，其余落
+`v4.error.singleQuotaInsufficient`）。20 多个 manage 页共用这一套，不要在单页
+自己拼额度文案。
+
 Image translation, PageFly, and some summary/count behavior may still be
 separate from the save path.
 
@@ -1118,6 +1176,8 @@ For "合入PR然后发布测试环境", the script will:
 | Translation quality report       | `worker/src/scripts/exportTranslationReport.ts`       | `worker/src/services/translationReport.ts`, Blob translate chunks                                       |
 | Quota mismatch                   | `quotaRouter.server.ts`                               | `webhooks.tsx`, TSF billing webhooks, worker `tsfQuota.ts`                                              |
 | Subscription/purchase bug        | `app/routes/app.pricing/route.tsx`                    | `webhooks.tsx`, `app/server/billing/*`                                                                  |
+| 补额度弹窗 / Shopify 回跳        | `app/utils/creditsPurchaseModal.ts`                   | `app/components/paymentModal.tsx`, `app/routes/app.tsx`, `app/utils/billingReturn.ts`, `app/lib/shopifyAppHandle.server.ts` |
+| 任务历史页                       | `app/routes/app.translate-v4-history/route.tsx`       | `app/routes/app.translate-v4/jobFilters.ts`, `components/TaskQueueSection.tsx`, `progress.server.ts`     |
 | Currency switcher bug            | `app/server/currency/currency.server.ts`              | `api.storefront.$.ts`, extension `ciwi-api.js`                                                          |
 | App Proxy 401/404                | `api.storefront.$.ts`                                 | `server/storefront/auth.server.ts`, extension caller                                                    |
 | Manage Translation resource page | `app/routes/app.manage_translation_.<type>/route.tsx` | `manageTranslationRoute.server.ts`, `pictureClient.ts`                                                  |
