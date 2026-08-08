@@ -7,6 +7,7 @@ import {
 } from "~/server/translateV4/cosmos.server";
 import { listV4JobSummaries } from "~/server/translateV4/progress.server";
 import { loadShopProfilePromptBlock } from "~/server/translateV4/shopProfileContext.server";
+import { estimatePersistedJobCredits } from "~/server/translateV4/creditEstimate.server";
 import {
   getTranslateV4RedisClient,
   v4HintKey,
@@ -41,6 +42,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     modules?: string[];
     isCover?: boolean;
     isHandle?: boolean;
+    includeLiquid?: boolean;
     aiModel?: string;
   };
 
@@ -56,12 +58,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (target === source)
     return json({ ok: false, error: "v4.validation.sameAsSource" }, { status: 400 });
 
+  const includeLiquid = Boolean(body.includeLiquid);
   const allowedSet = new Set<string>(TRANSLATION_V4_MODULES);
-  const modules = (body.modules ?? defaultManualV4Modules())
+  const modules = (body.modules ?? (includeLiquid ? [] : defaultManualV4Modules()))
     .map((m) => m.trim().toUpperCase())
     .filter((m) => allowedSet.has(m)) as TranslationV4Module[];
 
-  if (!modules.length)
+  if (!modules.length && !includeLiquid)
     return json({ ok: false, error: "v4.validation.selectModule" }, { status: 400 });
 
   const shopName = session.shop;
@@ -79,6 +82,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const jobId = crypto.randomUUID();
   const profileBlock = await loadShopProfilePromptBlock(shopName);
+  const estimatedCredits = await estimatePersistedJobCredits({
+    shop: shopName,
+    v4Modules: modules,
+  }).catch((err) => {
+    console.warn("[translateV4] estimatePersistedJobCredits failed:", err);
+    return null;
+  });
 
   const job = await createV4Job({
     id: jobId,
@@ -91,10 +101,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     limitPerType: V4_LIMIT_UNLIMITED,
     isCover: body.isCover ?? false,
     isHandle: body.isHandle ?? false,
+    includeLiquid,
     taskSource: TS_FRONTEND_TASK_SOURCE,
     status: "INIT_QUEUED",
     blobPrefix: `tasks/v4/${shopName}/${jobId}`,
     createdBy: shopName,
+    estimatedCredits,
   });
 
   // 推 hint 让 worker 立即拾取（best-effort）；手动任务进 manual 池

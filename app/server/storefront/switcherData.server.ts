@@ -18,6 +18,9 @@ export type WidgetConfigResponse = {
   selectorPosition: string;
   positionData: string;
   isTransparent: boolean;
+  autoLiquidCollect: boolean;
+  /** 店铺主语言 iso code（storefront 用于在店面直接跳过主语言页采集）。 */
+  primaryLanguage?: string;
 };
 
 function str(value: unknown, fallback: string): string {
@@ -47,6 +50,8 @@ function normalizeWriteInput(
     selectorPosition: str(input.selectorPosition, SWITCHER_UI_DEFAULTS.selectorPosition),
     positionData: str(input.positionData, SWITCHER_UI_DEFAULTS.positionData),
     isTransparent: bool(input.isTransparent, SWITCHER_UI_DEFAULTS.isTransparent),
+    // 产品默认开、无商户开关：保存时始终落 true（忽略客户端传入）。
+    autoLiquidCollect: true,
   };
 }
 
@@ -65,6 +70,7 @@ function toWidgetConfigResponse(
     selectorPosition: string;
     positionData: string;
     isTransparent: boolean;
+    autoLiquidCollect: boolean;
   },
 ): WidgetConfigResponse {
   return {
@@ -81,6 +87,7 @@ function toWidgetConfigResponse(
     selectorPosition: config.selectorPosition,
     positionData: config.positionData,
     isTransparent: config.isTransparent,
+    autoLiquidCollect: config.autoLiquidCollect,
   };
 }
 

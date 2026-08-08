@@ -78,6 +78,11 @@ export type TranslationV4Job = {
   limitPerType: number;
   isCover: boolean;
   isHandle: boolean;
+  /**
+   * 是否包含自定义 Liquid / 第三方文案（Turso LiquidRule PENDING→DONE）。
+   * 不进 Shopify module 枚举；内部虚拟 module CUSTOM_LIQUID。
+   */
+  includeLiquid?: boolean;
   /** 任务来源标识（如 "Ciwi-Translator-Task"，"TsFrontend"，"TsFrontend-Auto"）。旧任务可能缺省。 */
   taskSource?: string | null;
   status: TranslationV4Status;
@@ -99,6 +104,11 @@ export type TranslationV4Job = {
   shopEmail?: string | null;
   /** 完成通知邮件是否已发送（emailWorker 写入，防重发）。 */
   emailSent?: boolean | null;
+  /**
+   * 创建时固化的单语言额度上限估算（字符×k=1.6，无覆盖率缩放）。
+   * 手动积分不足邮件用；旧任务可能缺省。
+   */
+  estimatedCredits?: number | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

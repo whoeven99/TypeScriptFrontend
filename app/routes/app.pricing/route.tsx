@@ -52,6 +52,8 @@ import {
   buildBillingReturnPath,
   sanitizeBillingReturnPath,
 } from "~/utils/billingReturn";
+import { redirectToBillingConfirmation } from "~/utils/billingConfirmation.client";
+import { buildShopifyEmbeddedAppReturnUrl } from "~/lib/shopifyAppHandle.server";
 
 async function refreshBillingBootstrap(
   dispatch: Dispatch,
@@ -97,21 +99,6 @@ async function refreshBillingBootstrap(
   }
 }
 
-function redirectToBillingConfirmation(confirmationUrl: string) {
-  if (typeof window === "undefined") return false;
-  try {
-    window.open(confirmationUrl, "_top");
-    return true;
-  } catch {
-    try {
-      window.top!.location.href = confirmationUrl;
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
-
 const { Title, Text, Link } = Typography;
 
 //计划名与其对应价格Map
@@ -143,7 +130,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const { admin, redirect: shopifyRedirect } = adminAuthResult;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
   const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -155,8 +142,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!payInfo:
       try {
-        const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
+        const returnUrl = buildShopifyEmbeddedAppReturnUrl(
+          shop,
+          requestedReturnPath,
         );
         const res = await mutationAppPurchaseOneTimeCreate({
           shop,
@@ -172,21 +160,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             res?.data?.appPurchaseOneTimeCreate?.confirmationUrl;
 
           // tsf 用户入账靠 APP_PURCHASES_ONE_TIME_UPDATE → Turso，不写 Java CharsOrders
-          let orderData: {
-            success: boolean;
-            errorCode?: number;
-            errorMsg?: string;
-            response?: unknown;
-          } = { success: true, response: null };
           if (confirmationUrl) {
-            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+            return {
+              success: true,
+              response: { confirmationUrl },
+            };
           }
 
+          const userErrors =
+            res?.data?.appPurchaseOneTimeCreate?.userErrors ?? [];
           return {
-            ...orderData,
-            response: {
-              confirmationUrl,
-            },
+            success: false,
+            errorCode: 10002,
+            errorMsg: userErrors[0]?.message ?? "NO_CONFIRMATION_URL",
+            response: null,
           };
         }
 
@@ -211,8 +198,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case !!payForPlan:
       try {
-        const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}${requestedReturnPath}`,
+        const returnUrl = buildShopifyEmbeddedAppReturnUrl(
+          shop,
+          requestedReturnPath,
         );
         const res = await mutationAppSubscriptionCreate({
           shop,
@@ -234,22 +222,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const confirmationUrl =
             res?.data?.appSubscriptionCreate?.confirmationUrl;
 
-          // tsf 用户入账靠 APP_SUBSCRIPTIONS_UPDATE → Turso，不写 Java CharsOrders
-          let orderData: {
-            success: boolean;
-            errorCode?: number;
-            errorMsg?: string;
-            response?: unknown;
-          } = { success: true, response: null };
           if (confirmationUrl) {
-            throw shopifyRedirect(confirmationUrl, { target: "_top" });
+            return {
+              success: true,
+              response: { confirmationUrl },
+            };
           }
 
+          const userErrors = res?.data?.appSubscriptionCreate?.userErrors ?? [];
           return {
-            ...orderData,
-            response: {
-              confirmationUrl,
-            },
+            success: false,
+            errorCode: 10002,
+            errorMsg: userErrors[0]?.message ?? "NO_CONFIRMATION_URL",
+            response: null,
           };
         }
 
@@ -310,6 +295,21 @@ const Index = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const location = useLocation();
+
+  const getPlanDisplayLabel = (planName: string | null | undefined) => {
+    switch (planName) {
+      case "Free":
+        return t("pricing.plan.free");
+      case "Basic":
+        return t("pricing.plan.basic");
+      case "Pro":
+        return t("pricing.plan.pro");
+      case "Premium":
+        return t("pricing.plan.premium");
+      default:
+        return planName ?? "";
+    }
+  };
 
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
@@ -923,7 +923,7 @@ const Index = () => {
       width: "20%",
     },
     {
-      title: "Free",
+      title: getPlanDisplayLabel("Free"),
       dataIndex: "free",
       key: "free",
       width: "20%",
@@ -939,7 +939,7 @@ const Index = () => {
       },
     },
     {
-      title: "Basic",
+      title: getPlanDisplayLabel("Basic"),
       dataIndex: "basic",
       key: "basic",
       width: "20%",
@@ -955,7 +955,7 @@ const Index = () => {
       },
     },
     {
-      title: "Pro",
+      title: getPlanDisplayLabel("Pro"),
       dataIndex: "pro",
       key: "pro",
       width: "20%",
@@ -971,7 +971,7 @@ const Index = () => {
       },
     },
     {
-      title: "Premium",
+      title: getPlanDisplayLabel("Premium"),
       dataIndex: "premium",
       key: "premium",
       width: "20%",
@@ -1129,7 +1129,9 @@ const Index = () => {
                 plan.type ? (
                   <div className="pricing-page__plan-meta">
                     <div className="app-status-cluster">
-                      <AppStatusBadge tone="info">{`${t(plan.type)} Plan`}</AppStatusBadge>
+                      <AppStatusBadge tone="info">
+                        {getPlanDisplayLabel(plan.type)}
+                      </AppStatusBadge>
                     </div>
                     {localNextPaymentText ? (
                       <Text className="pricing-page__next-payment" type="secondary">
@@ -1230,7 +1232,15 @@ const Index = () => {
                         ) : null}
                         <div>
                           <Title level={4} style={{ margin: 0 }}>
-                            {yearly ? item.yearlyTitle : item.title}
+                            {(() => {
+                              const planLabel = getPlanDisplayLabel(item.title);
+                              return yearly
+                                ? t("pricing.plan.yearlyLabel", {
+                                    plan: planLabel,
+                                    period: t("pricing.plan.yearly"),
+                                  })
+                                : planLabel;
+                            })()}
                           </Title>
                         </div>
                         <div>

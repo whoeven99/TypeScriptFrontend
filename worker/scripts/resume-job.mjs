@@ -131,9 +131,9 @@ if (job.status === "VERIFY_QUEUED" || job.status === "VERIFYING") {
       translateIncomplete ? "TRANSLATE" : finalStatus === "FAILED" ? "WRITEBACK" : null,
     errorMessage:
       translateIncomplete
-        ? "额度不足，仅翻译并写回了部分资源，补充额度后点击「继续」可翻译剩余内容"
+        ? "QUOTA_INSUFFICIENT_PARTIAL"
         : finalStatus === "FAILED"
-          ? "写回未成功：全部资源均未写入 Shopify（请查看 worker 日志或写回详情）"
+          ? "WRITEBACK_ALL_FAILED"
           : null,
     updatedAt: new Date().toISOString(),
   });
