@@ -54,5 +54,6 @@ function getDiscountedPrice(fullPrice: number, plan: any): number {
           ? 0.9
           : 1;
 
-  return Math.floor(fullPrice * discountRatio * 100) / 100;
+  const fullPriceInCents = Math.round(fullPrice * 100);
+  return Math.floor(fullPriceInCents * discountRatio) / 100;
 }
